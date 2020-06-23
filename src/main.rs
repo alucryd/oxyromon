@@ -33,7 +33,7 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let import_dats_subcommand: App = SubCommand::with_name("import-dats")
-        .about("Parses and imports No-Intro and Redump dat files into oxyromon")
+        .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
         .arg(
             Arg::with_name("DATS")
                 .help("Sets the DAT files to import")
@@ -50,17 +50,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
 
     let import_roms_subcommand: App = SubCommand::with_name("import-roms")
-        .about("Validates and imports rom files into oxyromon")
+        .about("Validates and imports ROM files into oxyromon")
         .arg(
             Arg::with_name("ROMS")
-                .help("Sets the rom files to import")
+                .help("Sets the ROM files to import")
                 .required(true)
                 .multiple(true)
                 .index(1),
         );
 
     let sort_roms_subcommand: App = SubCommand::with_name("sort-roms")
-        .about("Sorts rom files according to region and version preferences")
+        .about("Sorts ROM files according to region and version preferences")
         .arg(
             Arg::with_name("REGIONS")
                 .short("r")
@@ -160,9 +160,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
 
     let purge_roms_subcommand: App = SubCommand::with_name("purge-roms")
-        .about("Purges deleted or moved ROM files")
+        .about("Purges trashed and missing ROM files")
         .arg(
-            Arg::with_name("empty-trash")
+            Arg::with_name("EMPTY-TRASH")
                 .short("t")
                 .long("empty-trash")
                 .help("Empties the ROM files trash directories")
@@ -178,7 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let matches = App::new("oxyromon")
         .version("0.1.0")
-        .about("Rust ROM Manager")
+        .about("Rusty ROM OrgaNizer")
         .author("Maxime Gauduin <alucryd@archlinux.org>")
         .subcommands(vec![
             import_dats_subcommand,

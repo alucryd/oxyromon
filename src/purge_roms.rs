@@ -8,29 +8,31 @@ use std::path::Path;
 
 pub fn purge_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     // delete roms in trash
-    println!("Processing trash");
-    println!("");
+    if matches.is_present("EMPTY-TRASH") {
+        println!("Processing trashed ROM files");
+        println!("");
 
-    let romfiles = find_romfiles_in_trash(&connection);
+        let romfiles = find_romfiles_in_trash(&connection);
 
-    if romfiles.len() > 0 {
-        println!("Summary:");
-        for romfile in &romfiles {
-            println!("{}", &romfile.path);
-        }
-
-        if prompt_for_yes_no(matches) {
+        if romfiles.len() > 0 {
+            println!("Summary:");
             for romfile in &romfiles {
-                if Path::new(&romfile.path).is_file() {
-                    fs::remove_file(&romfile.path)?;
-                    delete_romfile_by_id(connection, &romfile.id);
+                println!("{}", &romfile.path);
+            }
+
+            if prompt_for_yes_no(matches) {
+                for romfile in &romfiles {
+                    if Path::new(&romfile.path).is_file() {
+                        fs::remove_file(&romfile.path)?;
+                        delete_romfile_by_id(connection, &romfile.id);
+                    }
                 }
             }
         }
     }
 
     // deleted missing roms from database
-    println!("Processing missing");
+    println!("Processing missing ROM files");
     println!("");
 
     let romfiles = find_romfiles(connection);
