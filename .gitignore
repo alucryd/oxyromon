@@ -1,0 +1,6 @@
+build/
+#Cargo.lock
+.env
+*.rs.bk
+target/
+.vscode
