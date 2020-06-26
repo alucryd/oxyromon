@@ -9,13 +9,13 @@ pub enum ArchiveType {
     ZIP,
 }
 
-pub struct SevenzipInfo {
+pub struct ArchiveInfo {
     pub path: String,
     pub size: u64,
     pub crc: String,
 }
 
-pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<SevenzipInfo>, Box<dyn Error>> {
+pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Error>> {
     println!("Scanning {:?}", file_path.file_name().unwrap());
     let output = Command::new("7z")
         .arg("l")
@@ -40,9 +40,9 @@ pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<SevenzipInfo>, Box<dyn E
         .collect();
 
     // each chunk will have the path, size and crc respectively
-    let mut sevenzip_infos: Vec<SevenzipInfo> = Vec::new();
+    let mut sevenzip_infos: Vec<ArchiveInfo> = Vec::new();
     for info in lines.chunks(3) {
-        let sevenzip_info = SevenzipInfo {
+        let sevenzip_info = ArchiveInfo {
             path: String::from(info.get(0).unwrap().to_owned()),
             size: FromStr::from_str(info.get(1).unwrap()).unwrap(),
             crc: String::from(info.get(2).unwrap().to_owned()),
@@ -54,7 +54,7 @@ pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<SevenzipInfo>, Box<dyn E
 
 pub fn move_file_in_archive(
     archive_path: &PathBuf,
-    sevenzip_info: &SevenzipInfo,
+    sevenzip_info: &ArchiveInfo,
     rom: &Rom,
 ) -> Result<(), Box<dyn Error>> {
     if sevenzip_info.path != rom.name {
@@ -104,6 +104,7 @@ pub fn add_files_to_archive(
         .arg("a")
         .arg(archive_path)
         .args(paths)
+        .arg("-mx=9")
         .current_dir(current_directory)
         .output()?;
     if !output.status.success() {

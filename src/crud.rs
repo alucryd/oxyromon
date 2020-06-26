@@ -262,7 +262,7 @@ pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
     games
         .into_par_iter()
         .zip(roms_romfiles)
-        .filter(|(game, roms_romfiles)| !roms_romfiles.is_empty())
+        .filter(|(_, roms_romfiles)| !roms_romfiles.is_empty())
         .collect()
 }
 
