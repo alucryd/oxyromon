@@ -78,81 +78,75 @@ pub fn update_game<'a>(
         .expect(&format!("Error while updating game {}", game.name))
 }
 
-pub fn find_game_by_system_id_and_name<'a>(
-    connection: &PgConnection,
-    system_uuid: &Uuid,
-    game_name: &str,
-) -> Option<Game> {
-    use schema::games::dsl::*;
-    games
-        .filter(system_id.eq(system_uuid).and(name.eq(game_name)))
-        .get_result(connection)
-        .optional()
-        .expect(&format!(
-            "Error while finding game {} for system {}",
-            game_name, system_uuid
-        ))
-}
-
-pub fn find_grouped_games_by_system_id<'a>(
-    connection: &PgConnection,
-    system_uuid: &Uuid,
-) -> Vec<(Game, Vec<Game>)> {
-    use schema::games::dsl::*;
-    let parent_games = games
-        .filter(system_id.eq(system_uuid).and(parent_id.is_null()))
+pub fn find_games_by_system<'a>(connection: &PgConnection, system: &System) -> Vec<Game> {
+    Game::belonging_to(system)
         .get_results(connection)
         .expect(&format!(
             "Error while finding games for system {}",
-            system_uuid
+            system.id
+        ))
+}
+
+pub fn find_grouped_games_by_system<'a>(
+    connection: &PgConnection,
+    system: &System,
+) -> Vec<(Game, Vec<Game>)> {
+    use schema::games::dsl::*;
+    let parent_games = Game::belonging_to(system)
+        .filter(parent_id.is_null())
+        .get_results(connection)
+        .expect(&format!(
+            "Error while finding games for system {}",
+            system.id
         ));
     let clone_games = Game::belonging_to(&parent_games)
         .get_results(connection)
         .expect(&format!(
             "Error while finding clone games for system {}",
-            system_uuid
+            system.id
         ))
         .grouped_by(&parent_games);
     parent_games.into_par_iter().zip(clone_games).collect()
 }
 
-pub fn find_games_by_system_id<'a>(connection: &PgConnection, system_uuid: &Uuid) -> Vec<Game> {
+pub fn find_game_names_by_system<'a>(connection: &PgConnection, system: &System) -> Vec<String> {
     use schema::games::dsl::*;
-    games
-        .filter(system_id.eq(system_uuid))
+    Game::belonging_to(system)
+        .select(name)
         .get_results(connection)
         .expect(&format!(
             "Error while finding games for system {}",
-            system_uuid
+            system.id
         ))
 }
 
-pub fn find_game_names_by_system_id<'a>(
+pub fn find_game_by_system_and_name<'a>(
     connection: &PgConnection,
-    system_uuid: &Uuid,
-) -> Vec<String> {
+    system: &System,
+    game_name: &str,
+) -> Option<Game> {
     use schema::games::dsl::*;
-    games
-        .select(name)
-        .filter(system_id.eq(system_uuid))
-        .get_results(connection)
+    Game::belonging_to(system)
+        .filter(name.eq(game_name))
+        .get_result(connection)
+        .optional()
         .expect(&format!(
-            "Error while finding games for system {:?}",
-            system_uuid
+            "Error while finding game {} for system {}",
+            game_name, system.id
         ))
 }
 
-pub fn delete_game_by_system_id_and_name<'a>(
+pub fn delete_game_by_system_and_name<'a>(
     connection: &PgConnection,
-    system_uuid: &Uuid,
+    system: &System,
     game_name: &str,
 ) {
     use schema::games::dsl::*;
-    diesel::delete(games.filter(system_id.eq(system_uuid).and(name.eq(game_name))))
+    diesel::delete(Game::belonging_to(system).filter(name.eq(game_name)))
         .execute(connection)
         .expect(&format!(
             "Error while deleting game {} for system {:?}",
-            game_name, system_uuid
+            game_name, system.id
         ));
 }
 
@@ -250,6 +244,26 @@ pub fn find_roms_romfiles_with_romfile_by_games<'a>(
         .get_results(connection)
         .expect("Error while finding roms and romfiles")
         .grouped_by(games)
+}
+
+pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
+    connection: &PgConnection,
+    system: &System,
+) -> Vec<(Game, Vec<(Rom, Romfile)>)> {
+    use schema::romfiles;
+    let games = Game::belonging_to(system)
+        .get_results(connection)
+        .expect("Error while finding games");
+    let roms_romfiles = Rom::belonging_to(&games)
+        .inner_join(romfiles::table)
+        .get_results(connection)
+        .expect("Error while finding roms and romfiles")
+        .grouped_by(&games);
+    games
+        .into_par_iter()
+        .zip(roms_romfiles)
+        .filter(|(game, roms_romfiles)| !roms_romfiles.is_empty())
+        .collect()
 }
 
 pub fn find_roms_without_romfile_by_games<'a>(

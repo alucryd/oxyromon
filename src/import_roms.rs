@@ -1,6 +1,7 @@
 use super::crud::*;
 use super::model::*;
 use super::prompt::*;
+use super::sevenzip::*;
 use clap::ArgMatches;
 use crc::{crc32, Hasher32};
 use diesel::pg::PgConnection;
@@ -12,7 +13,6 @@ use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::str::FromStr;
 
 pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let system = prompt_for_system(&connection);
@@ -48,8 +48,12 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
 
                 // system has a header or crc is absent
                 if header.is_some() || sevenzip_info.crc == "" {
-                    let extracted_path =
-                        extract_file_from_archive(&file_path, &sevenzip_info.path, &tmp_directory)?;
+                    extract_files_from_archive(
+                        &file_path,
+                        &vec![&sevenzip_info.path],
+                        &tmp_directory,
+                    )?;
+                    let extracted_path = tmp_directory.join(&sevenzip_info.path);
                     let res = get_file_size_and_crc(&extracted_path, &header)?;
                     fs::remove_file(&extracted_path)?;
                     size = res.0;
@@ -82,8 +86,12 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
                     let size: u64;
                     let crc: String;
 
-                    let extracted_path =
-                        extract_file_from_archive(&file_path, &sevenzip_info.path, &tmp_directory)?;
+                    extract_files_from_archive(
+                        &file_path,
+                        &vec![&sevenzip_info.path],
+                        &tmp_directory,
+                    )?;
+                    let extracted_path = tmp_directory.join(&sevenzip_info.path);
 
                     // system has a header or crc is absent
                     if header.is_some() || sevenzip_info.crc == "" {
@@ -225,43 +233,6 @@ fn find_rom(
     Ok(rom)
 }
 
-fn parse_archive(file_path: &PathBuf) -> Result<Vec<SevenzipInfo>, Box<dyn Error>> {
-    println!("Scanning {:?}", file_path.file_name().unwrap());
-    let output = Command::new("7z")
-        .arg("l")
-        .arg("-slt")
-        .arg(&file_path)
-        .output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
-        println!("{}", stderr);
-        bail!(stderr);
-    }
-
-    let stdout = String::from_utf8(output.stdout)?;
-    let lines: Vec<&str> = stdout
-        .lines()
-        .filter(|&line| {
-            line.starts_with("Path =") || line.starts_with("Size =") || line.starts_with("CRC =")
-        })
-        .skip(1) // the first line is the archive itself
-        .map(|line| line.split("=").last().unwrap().trim()) // keep only the rhs
-        .collect();
-
-    // each chunk will have the path, size and crc respectively
-    let mut sevenzip_infos: Vec<SevenzipInfo> = Vec::new();
-    for info in lines.chunks(3) {
-        let sevenzip_info = SevenzipInfo {
-            path: String::from(info.get(0).unwrap().to_owned()),
-            size: FromStr::from_str(info.get(1).unwrap()).unwrap(),
-            crc: String::from(info.get(2).unwrap().to_owned()),
-        };
-        sevenzip_infos.push(sevenzip_info);
-    }
-    Ok(sevenzip_infos)
-}
-
 fn get_file_size_and_crc(
     file_path: &PathBuf,
     header: &Option<Header>,
@@ -337,48 +308,6 @@ fn get_chd_crcs(file_path: &PathBuf, sizes: &Vec<u64>) -> Result<Vec<String>, Bo
         crcs.push(format!("{:08x}", digest.sum32()));
     }
     Ok(crcs)
-}
-
-fn move_file_in_archive(
-    archive_path: &PathBuf,
-    sevenzip_info: &SevenzipInfo,
-    rom: &Rom,
-) -> Result<(), Box<dyn Error>> {
-    if sevenzip_info.path != rom.name {
-        println!("Renaming \"{}\" to \"{}\"", sevenzip_info.path, rom.name);
-        let output = Command::new("7z")
-            .arg("rn")
-            .arg(archive_path)
-            .arg(&sevenzip_info.path)
-            .arg(&rom.name)
-            .output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8(output.stderr)?;
-            println!("{}", stderr);
-            bail!(stderr);
-        }
-    }
-    Ok(())
-}
-
-fn extract_file_from_archive(
-    archive_path: &PathBuf,
-    path: &str,
-    tmp_directory: &Path,
-) -> Result<PathBuf, Box<dyn Error>> {
-    println!("Extracting \"{}\" to {:?}", path, tmp_directory);
-    let output = Command::new("7z")
-        .arg("x")
-        .arg(archive_path)
-        .arg(format!("-o{}", tmp_directory.as_os_str().to_str().unwrap()))
-        .arg(path)
-        .output()?;
-    if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
-        println!("{}", stderr);
-        bail!(stderr)
-    }
-    Ok(tmp_directory.join(path))
 }
 
 fn extract_chd(

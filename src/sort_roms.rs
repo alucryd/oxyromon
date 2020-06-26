@@ -83,7 +83,7 @@ pub fn sort_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), 
 
         // 1G1R mode
         if !one_regions.is_empty() {
-            let grouped_games = find_grouped_games_by_system_id(connection, &system.id);
+            let grouped_games = find_grouped_games_by_system(connection, &system);
 
             for (parent, mut clones) in grouped_games {
                 let mut parent_clones: Vec<Game> = vec![parent];
@@ -122,7 +122,7 @@ pub fn sort_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), 
             }
         // Regions mode
         } else if !regions.is_empty() {
-            games = find_games_by_system_id(&connection, &system.id);
+            games = find_games_by_system(&connection, &system);
 
             // trim unwanted games
             if unwanted_regex.is_some() {
@@ -142,7 +142,7 @@ pub fn sort_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), 
                 }
             }
         } else {
-            games = find_games_by_system_id(&connection, &system.id);
+            games = find_games_by_system(&connection, &system);
 
             // trim unwanted games
             if unwanted_regex.is_some() {

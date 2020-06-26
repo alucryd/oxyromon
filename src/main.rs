@@ -11,6 +11,7 @@ extern crate simple_error;
 extern crate rayon;
 extern crate uuid;
 
+mod convert_roms;
 mod crud;
 mod import_dats;
 mod import_roms;
@@ -18,8 +19,10 @@ mod model;
 mod prompt;
 mod purge_roms;
 mod schema;
+mod sevenzip;
 mod sort_roms;
 
+use self::convert_roms::convert_roms;
 use self::import_dats::import_dats;
 use self::import_roms::import_roms;
 use self::purge_roms::purge_roms;
@@ -152,11 +155,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let convert_roms_subcommand: App = SubCommand::with_name("convert-roms")
         .about("Converts ROM files")
         .arg(
-            Arg::with_name("empty-trash")
-                .short("t")
-                .long("empty-trash")
-                .help("Empties the ROM files trash directories")
-                .required(false),
+            Arg::with_name("FORMAT")
+                .short("f")
+                .long("format")
+                .help("Sets the destination format")
+                .required(false)
+                .takes_value(true)
+                .possible_values(&["7Z", "CHD", "ORIGINAL", "ZIP"]),
         );
 
     let purge_roms_subcommand: App = SubCommand::with_name("purge-roms")
@@ -192,6 +197,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     if matches.subcommand.is_some() {
         let connection = establish_connection();
         match matches.subcommand_name() {
+            Some("convert-roms") => convert_roms(
+                &connection,
+                &matches.subcommand_matches("convert-roms").unwrap(),
+            )?,
             Some("import-dats") => import_dats(
                 &connection,
                 &matches.subcommand_matches("import-dats").unwrap(),

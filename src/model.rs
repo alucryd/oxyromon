@@ -2,7 +2,7 @@ use super::schema::{games, headers, releases, romfiles, roms, systems};
 use serde::Deserialize;
 use uuid::Uuid;
 
-#[derive(Identifiable, Queryable)]
+#[derive(Identifiable, PartialEq, Queryable)]
 pub struct System {
     pub id: Uuid,
     pub name: String,
@@ -36,7 +36,7 @@ impl<'a> From<&'a SystemXml> for SystemInput<'a> {
     }
 }
 
-#[derive(Associations, Identifiable, Queryable)]
+#[derive(Associations, Identifiable, PartialEq, Queryable)]
 #[belongs_to(System)]
 pub struct Header {
     pub id: Uuid,
@@ -73,7 +73,7 @@ impl<'a> From<DetectorXmlSystemId<'a>> for HeaderInput<'a> {
     }
 }
 
-#[derive(Associations, Identifiable, Queryable)]
+#[derive(Associations, Identifiable, PartialEq, Queryable)]
 #[belongs_to(System)]
 #[belongs_to(Game, foreign_key = "parent_id")]
 pub struct Game {
@@ -119,7 +119,7 @@ impl<'a> From<GameXmlSystemIdParentId<'a>> for GameInput<'a> {
     }
 }
 
-#[derive(Associations, Identifiable, Queryable)]
+#[derive(Associations, Identifiable, PartialEq, Queryable)]
 #[belongs_to(Game)]
 pub struct Release {
     pub id: Uuid,
@@ -205,7 +205,7 @@ impl<'a> From<RomXmlGameId<'a>> for RomInput<'a> {
     }
 }
 
-#[derive(Identifiable, Queryable)]
+#[derive(Identifiable, PartialEq, Queryable)]
 pub struct Romfile {
     pub id: Uuid,
     pub path: String,
@@ -247,10 +247,4 @@ pub struct RuleXml {
 pub struct DataXml {
     pub offset: String,
     pub value: String,
-}
-
-pub struct SevenzipInfo {
-    pub path: String,
-    pub size: u64,
-    pub crc: String,
 }

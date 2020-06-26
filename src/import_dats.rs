@@ -121,10 +121,10 @@ fn create_or_update_header(connection: &PgConnection, detector_xml: &DetectorXml
 
 fn delete_old_games(connection: &PgConnection, games_xml: &Vec<GameXml>, system: &System) {
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
-    let game_names = find_game_names_by_system_id(&connection, &system.id);
+    let game_names = find_game_names_by_system(&connection, &system);
     for game_name in game_names {
         if !game_names_xml.contains(&&game_name) {
-            delete_game_by_system_id_and_name(&connection, &system.id, &game_name)
+            delete_game_by_system_and_name(&connection, &system, &game_name)
         }
     }
 }
@@ -144,7 +144,7 @@ fn create_or_update_games(
         .filter(|game_xml| game_xml.cloneof.is_some())
         .collect();
     for parent_game_xml in parent_games_xml {
-        let game = find_game_by_system_id_and_name(connection, &system.id, &parent_game_xml.name);
+        let game = find_game_by_system_and_name(connection, &system, &parent_game_xml.name);
         let game = match game {
             Some(game) => update_game(
                 connection,
@@ -170,10 +170,10 @@ fn create_or_update_games(
         }
     }
     for child_game_xml in child_games_xml {
-        let game = find_game_by_system_id_and_name(connection, &system.id, &child_game_xml.name);
-        let parent_game = find_game_by_system_id_and_name(
+        let game = find_game_by_system_and_name(connection, &system, &child_game_xml.name);
+        let parent_game = find_game_by_system_and_name(
             connection,
-            &system.id,
+            &system,
             child_game_xml.cloneof.as_ref().unwrap(),
         )
         .unwrap();
