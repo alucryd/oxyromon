@@ -153,7 +153,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
 
     let convert_roms_subcommand: App = SubCommand::with_name("convert-roms")
-        .about("Converts ROM files")
+        .about("Converts ROM files between common formats")
         .arg(
             Arg::with_name("FORMAT")
                 .short("f")

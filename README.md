@@ -10,6 +10,7 @@ Rusty ROM OrgaNizer
         -V, --version    Prints version information
 
     SUBCOMMANDS:
+        convert-roms    Converts ROM files between common formats
         help            Prints this message or the help of the given subcommand(s)
         import-dats     Parses and imports No-Intro and Redump DAT files into oxyromon
         import-roms     Validates and imports ROM files into oxyromon
@@ -44,6 +45,21 @@ Validates and imports ROM files into oxyromon
 
     ARGS:
         <ROMS>...    Sets the rom files to import
+
+## oxyromon-convert-roms
+
+Converts ROM files between common formats
+
+    USAGE:
+        oxyromon convert-roms [OPTIONS]
+
+    FLAGS:
+        -h, --help       Prints help information
+        -V, --version    Prints version information
+
+    OPTIONS:
+        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, ORIGINAL, ZIP]
+
 
 ## oxyromon-sort-roms 
 
