@@ -1,11 +1,13 @@
 use super::chdman::*;
 use super::crud::*;
+use super::maxcso::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use clap::ArgMatches;
 use diesel::pg::PgConnection;
 use rayon::prelude::*;
+use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -13,7 +15,7 @@ use std::path::{Path, PathBuf};
 pub fn convert_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
     let format = matches.value_of("FORMAT");
-    let tmp_directory = Path::new("/tmp").to_path_buf();
+    let tmp_directory = Path::new(&env::var("TMP_DIRECTORY").unwrap()).canonicalize()?;
 
     for system in systems {
         println!("Processing {}", system.name);
@@ -22,6 +24,7 @@ pub fn convert_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(
         match format {
             Some("7Z") => to_archive(&connection, &system, &tmp_directory, ArchiveType::SEVENZIP)?,
             Some("CHD") => to_chd(&connection, &system)?,
+            Some("CSO") => to_cso(&connection, &system)?,
             Some("ZIP") => to_archive(&connection, &system, &tmp_directory, ArchiveType::ZIP)?,
             Some(_) => bail!("Not implemented"),
             None => bail!("Not possible"),
@@ -197,6 +200,31 @@ fn to_chd(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Erro
             update_rom_romfile(connection, &rom, &chd_romfile.id);
             delete_romfile_by_id(connection, &romfile.id);
             fs::remove_file(&romfile.path)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn to_cso(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Error>> {
+    let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
+        find_games_roms_romfiles_with_romfile_by_system(connection, &system);
+
+    // keep ISO only
+    games_roms_romfiles.retain(|(_, roms_romfiles)| {
+        roms_romfiles
+            .par_iter()
+            .any(|(_, romfile)| romfile.path.ends_with(".iso"))
+    });
+
+    for (_, roms_romfiles) in games_roms_romfiles {
+        for (_, romfile) in roms_romfiles {
+            let iso_path = Path::new(&romfile.path).to_path_buf();
+            let cso_path = create_cso(&iso_path)?;
+            let romfile_input = RomfileInput {
+                path: &String::from(cso_path.as_os_str().to_str().unwrap()),
+            };
+            update_romfile(connection, &romfile, &romfile_input);
         }
     }
 

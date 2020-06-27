@@ -7,7 +7,7 @@ pub fn create_chd(cue_path: &PathBuf) -> Result<PathBuf, Box<dyn Error>> {
     let mut chd_path = cue_path.clone();
     chd_path.set_extension("chd");
 
-    println!("Creating {:?} from {:?}", chd_path, cue_path);
+    println!("Compressing {:?}", cue_path);
     let output = Command::new("chdman")
         .arg("createcd")
         .arg("-i")
@@ -20,7 +20,6 @@ pub fn create_chd(cue_path: &PathBuf) -> Result<PathBuf, Box<dyn Error>> {
         println!("{}", stderr);
         bail!(stderr)
     }
-    fs::remove_file(cue_path)?;
     Ok(chd_path)
 }
 
@@ -29,11 +28,7 @@ pub fn extract_chd(
     directory: &Path,
     cue_name: &str,
 ) -> Result<PathBuf, Box<dyn Error>> {
-    println!(
-        "Extracting {:?} to {:?}",
-        chd_path.file_name().unwrap(),
-        directory
-    );
+    println!("Extracting {:?}", chd_path.file_name().unwrap());
     let cue_path = directory.join(cue_name);
     let mut bin_name = chd_path.file_stem().unwrap().to_os_string();
     bin_name.push(".bin");

@@ -331,13 +331,13 @@ pub fn create_romfile<'a>(connection: &PgConnection, romfile_input: &RomfileInpu
 
 pub fn update_romfile<'a>(
     connection: &PgConnection,
-    file: &Romfile,
-    file_input: &RomfileInput,
+    romfile: &Romfile,
+    romfile_input: &RomfileInput,
 ) -> Romfile {
-    diesel::update(file)
-        .set(file_input)
+    diesel::update(romfile)
+        .set(romfile_input)
         .get_result(connection)
-        .expect(&format!("Error while updating file {}", file.path))
+        .expect(&format!("Error while updating file {}", romfile.path))
 }
 
 pub fn find_romfile_by_id<'a>(connection: &PgConnection, file_uuid: &Uuid) -> Option<Romfile> {

@@ -79,7 +79,7 @@ pub fn extract_files_from_archive(
     paths: &Vec<&str>,
     directory: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Extracting {:?} to {:?}", paths, directory);
+    println!("Extracting {:?}", paths);
     let output = Command::new("7z")
         .arg("x")
         .arg(archive_path)
@@ -99,7 +99,7 @@ pub fn add_files_to_archive(
     paths: &Vec<&str>,
     current_directory: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Adding {:?} to {:?}", paths, archive_path);
+    println!("Compressing {:?}", paths);
     let output = Command::new("7z")
         .arg("a")
         .arg(archive_path)

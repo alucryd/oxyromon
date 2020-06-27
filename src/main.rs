@@ -11,12 +11,13 @@ extern crate simple_error;
 extern crate rayon;
 extern crate uuid;
 
-mod checksum;
 mod chdman;
+mod checksum;
 mod convert_roms;
 mod crud;
 mod import_dats;
 mod import_roms;
+mod maxcso;
 mod model;
 mod prompt;
 mod purge_roms;
