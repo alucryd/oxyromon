@@ -11,6 +11,8 @@ extern crate simple_error;
 extern crate rayon;
 extern crate uuid;
 
+mod checksum;
+mod chdman;
 mod convert_roms;
 mod crud;
 mod import_dats;

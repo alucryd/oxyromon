@@ -1,18 +1,15 @@
+use super::chdman::*;
+use super::checksum::*;
 use super::crud::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use clap::ArgMatches;
-use crc::{crc32, Hasher32};
 use diesel::pg::PgConnection;
-use std::convert::TryFrom;
 use std::env;
 use std::error::Error;
-use std::ffi::OsStr;
 use std::fs;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let system = prompt_for_system(&connection);
@@ -146,7 +143,11 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
             roms.sort_by(|a, b| a.name.cmp(&b.name));
 
             let sizes: Vec<u64> = roms.iter().map(|rom| rom.size as u64).collect();
-            let bin_path = extract_chd(&file_path, &tmp_directory, &cue_path.file_name().unwrap())?;
+            let bin_path = extract_chd(
+                &file_path,
+                &tmp_directory,
+                &cue_path.file_name().unwrap().to_str().unwrap(),
+            )?;
             let crcs = get_chd_crcs(&bin_path, &sizes);
             fs::remove_file(&bin_path)?;
 
@@ -231,115 +232,6 @@ fn find_rom(
     }
 
     Ok(rom)
-}
-
-fn get_file_size_and_crc(
-    file_path: &PathBuf,
-    header: &Option<Header>,
-) -> Result<(u64, String), Box<dyn Error>> {
-    let mut f = fs::File::open(&file_path)?;
-    let mut size = f.metadata().unwrap().len();
-
-    // extract a potential header, revert if none is found
-    if header.is_some() {
-        let header = header.as_ref().unwrap();
-
-        let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
-        (&mut f).take(header.size as u64).read_to_end(&mut buffer)?;
-        let start = header.start as usize;
-        let hex_values: Vec<String> = buffer[start..].iter().map(|b| format!("{:x}", b)).collect();
-        let hex_value = hex_values.join("").to_uppercase();
-
-        if hex_value.starts_with(&header.hex_value.to_uppercase()) {
-            size -= header.size as u64;
-        } else {
-            f.seek(std::io::SeekFrom::Start(0))?;
-        }
-    }
-
-    // read our file in 4k chunks
-    let mut digest = crc32::Digest::new(crc32::IEEE);
-    let mut buffer = [0; 4096];
-    loop {
-        let n = f.read(&mut buffer[..])?;
-        if n == 0 {
-            break;
-        }
-        digest.write(&mut buffer[..n]);
-    }
-
-    let crc = format!("{:08x}", digest.sum32());
-    Ok((size, crc))
-}
-
-fn get_chd_crcs(file_path: &PathBuf, sizes: &Vec<u64>) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut f = fs::File::open(&file_path)?;
-    let size = f.metadata().unwrap().len();
-
-    if size != sizes.iter().sum() {
-        println!("Size(s) don't match");
-        bail!("Size(s) don't match");
-    }
-
-    let mut crcs: Vec<String> = Vec::new();
-    const BUFFER_SIZE: usize = 4096;
-
-    for size in sizes {
-        let mut digest = crc32::Digest::new(crc32::IEEE);
-        let mut buffer = [0; BUFFER_SIZE];
-        let mut consumed_bytes: usize = 0;
-
-        // read 4k chunks until near the end
-        loop {
-            let n = f.read(&mut buffer[..])?;
-            digest.write(&mut buffer[..n]);
-            consumed_bytes += n;
-            if (consumed_bytes as u64) + (BUFFER_SIZE as u64) >= *size {
-                break;
-            }
-        }
-        // read the exact remaining amount
-        let remaining_bytes = size - consumed_bytes as u64;
-        let remaining_bytes_usize = usize::try_from(remaining_bytes).unwrap();
-        let mut buffer: Vec<u8> = Vec::with_capacity(remaining_bytes_usize);
-        (&mut f).take(remaining_bytes).read_to_end(&mut buffer)?;
-        digest.write(&mut buffer);
-
-        crcs.push(format!("{:08x}", digest.sum32()));
-    }
-    Ok(crcs)
-}
-
-fn extract_chd(
-    chd_path: &PathBuf,
-    tmp_directory: &Path,
-    meta_name: &OsStr,
-) -> Result<PathBuf, Box<dyn Error>> {
-    println!(
-        "Extracting {:?} to {:?}",
-        chd_path.file_name().unwrap(),
-        tmp_directory
-    );
-    let meta_path = tmp_directory.join(meta_name);
-    let mut bin_name = chd_path.file_stem().unwrap().to_os_string();
-    bin_name.push(".bin");
-    let bin_path = tmp_directory.join(bin_name);
-    let output = Command::new("chdman")
-        .arg("extractcd")
-        .arg("-i")
-        .arg(chd_path)
-        .arg("-o")
-        .arg(&meta_path)
-        .arg("-ob")
-        .arg(&bin_path)
-        .output()?;
-    if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
-        println!("{}", stderr);
-        bail!(stderr)
-    }
-    fs::remove_file(meta_path)?;
-    Ok(bin_path)
 }
 
 fn move_file(old_path: &PathBuf, new_path: &PathBuf) -> Result<(), Box<dyn Error>> {

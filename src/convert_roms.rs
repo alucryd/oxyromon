@@ -1,3 +1,4 @@
+use super::chdman::*;
 use super::crud::*;
 use super::model::*;
 use super::prompt::*;
@@ -20,6 +21,7 @@ pub fn convert_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(
 
         match format {
             Some("7Z") => to_archive(&connection, &system, &tmp_directory, ArchiveType::SEVENZIP)?,
+            Some("CHD") => to_chd(&connection, &system)?,
             Some("ZIP") => to_archive(&connection, &system, &tmp_directory, ArchiveType::ZIP)?,
             Some(_) => bail!("Not implemented"),
             None => bail!("Not possible"),
@@ -115,14 +117,11 @@ fn to_archive(
         if roms_romfiles.len() == 1 {
             let (rom, romfile) = roms_romfiles.remove(0);
             let directory = Path::new(&romfile.path).parent().unwrap().to_path_buf();
-            let archive_path = directory.join(&format!(
-                "{}.{}",
-                &rom.name,
-                match archive_type {
-                    ArchiveType::SEVENZIP => "7z",
-                    ArchiveType::ZIP => "zip",
-                }
-            ));
+            let mut archive_path = directory.join(&rom.name);
+            archive_path.push(match archive_type {
+                ArchiveType::SEVENZIP => "7z",
+                ArchiveType::ZIP => "zip",
+            });
 
             add_files_to_archive(&archive_path, &vec![&rom.name], &directory)?;
             fs::remove_file(directory.join(&rom.name))?;
@@ -142,14 +141,11 @@ fn to_archive(
                 .parent()
                 .unwrap()
                 .to_path_buf();
-            let archive_path = directory.join(&format!(
-                "{}.{}",
-                &game.name,
-                match archive_type {
-                    ArchiveType::SEVENZIP => "7z",
-                    ArchiveType::ZIP => "zip",
-                }
-            ));
+            let mut archive_path = directory.join(&game.name);
+            archive_path.push(match archive_type {
+                ArchiveType::SEVENZIP => "7z",
+                ArchiveType::ZIP => "zip",
+            });
 
             add_files_to_archive(&archive_path, &paths, &directory)?;
             for path in paths {
@@ -165,6 +161,42 @@ fn to_archive(
             for romfile in romfiles {
                 delete_romfile_by_id(connection, &romfile.id)
             }
+        }
+    }
+
+    Ok(())
+}
+
+fn to_chd(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Error>> {
+    let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
+        find_games_roms_romfiles_with_romfile_by_system(connection, &system);
+
+    // keep CUE/BIN only
+    games_roms_romfiles.retain(|(_, roms_romfiles)| {
+        roms_romfiles
+            .par_iter()
+            .any(|(_, romfile)| romfile.path.ends_with(".cue"))
+            && roms_romfiles
+                .par_iter()
+                .any(|(_, romfile)| romfile.path.ends_with(".bin"))
+    });
+
+    for (_, roms_romfiles) in games_roms_romfiles {
+        let (mut cue_rom_romfile, bin_roms_romfiles): (Vec<(Rom, Romfile)>, Vec<(Rom, Romfile)>) =
+            roms_romfiles
+                .into_par_iter()
+                .partition(|(rom, _)| rom.name.ends_with(".cue"));
+        let (_, cue_romfile) = cue_rom_romfile.remove(0);
+        let cue_path = Path::new(&cue_romfile.path).to_path_buf();
+        let chd_path = create_chd(&cue_path)?;
+        let romfile_input = RomfileInput {
+            path: &String::from(chd_path.as_os_str().to_str().unwrap()),
+        };
+        let chd_romfile = create_romfile(connection, &romfile_input);
+        for (rom, romfile) in bin_roms_romfiles {
+            update_rom_romfile(connection, &rom, &chd_romfile.id);
+            delete_romfile_by_id(connection, &romfile.id);
+            fs::remove_file(&romfile.path)?;
         }
     }
 

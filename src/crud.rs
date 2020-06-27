@@ -251,11 +251,13 @@ pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
     system: &System,
 ) -> Vec<(Game, Vec<(Rom, Romfile)>)> {
     use schema::romfiles;
+    use schema::roms;
     let games = Game::belonging_to(system)
         .get_results(connection)
         .expect("Error while finding games");
     let roms_romfiles = Rom::belonging_to(&games)
         .inner_join(romfiles::table)
+        .order_by(roms::name.asc())
         .get_results(connection)
         .expect("Error while finding roms and romfiles")
         .grouped_by(&games);
