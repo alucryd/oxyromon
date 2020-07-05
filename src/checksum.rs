@@ -88,23 +88,3 @@ pub fn get_file_size_and_crc(
     let crc = format!("{:08x}", digest.finalize());
     Ok((size, crc))
 }
-
-pub fn get_chd_crcs(file_path: &PathBuf, sizes: &Vec<u64>) -> Result<Vec<String>, Box<dyn Error>> {
-    let f = fs::File::open(&file_path)?;
-    let size = f.metadata().unwrap().len();
-
-    if size != sizes.iter().sum() {
-        println!("Size(s) don't match");
-        bail!("Size(s) don't match");
-    }
-
-    let mut crcs: Vec<String> = Vec::new();
-    for size in sizes {
-        let mut digest = Crc32::new();
-        let mut handle = (&f).take(*size);
-        io::copy(&mut handle, &mut digest)?;
-        crcs.push(format!("{:08x}", digest.finalize()));
-    }
-
-    Ok(crcs)
-}

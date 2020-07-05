@@ -74,7 +74,9 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
                 new_path.push(&file_extension);
 
                 // move file inside archive if needed
-                move_file_in_archive(&file_path, &sevenzip_info, &rom)?;
+                if sevenzip_info.path != rom.name {
+                    move_file_in_archive(&file_path, &sevenzip_info.path, &rom.name)?;
+                }
 
                 // move archive if needed
                 move_file(&file_path, &new_path)?;
@@ -148,19 +150,23 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
                 .collect();
             roms.sort_by(|a, b| a.name.cmp(&b.name));
 
-            let sizes: Vec<u64> = roms.iter().map(|rom| rom.size as u64).collect();
-            let bin_path = extract_chd(
+            let names_sizes: Vec<(&str, u64)> = roms
+                .iter()
+                .map(|rom| (rom.name.as_str(), rom.size as u64))
+                .collect();
+            let bin_paths = extract_chd(
                 &file_path,
                 &tmp_directory,
+                &tmp_directory,
                 &cue_path.file_name().unwrap().to_str().unwrap(),
+                &names_sizes,
             )?;
-            let crcs = get_chd_crcs(&bin_path, &sizes);
-            fs::remove_file(&bin_path)?;
-
-            let crcs = match crcs {
-                Ok(crcs) => crcs,
-                Err(_) => continue,
-            };
+            let mut crcs: Vec<String> = Vec::new();
+            for bin_path in bin_paths {
+                let (_, crc) = get_file_size_and_crc(&bin_path, &header)?;
+                crcs.push(crc);
+                fs::remove_file(&bin_path)?;
+            }
 
             for (i, rom) in roms.iter().enumerate() {
                 if crcs[i] != rom.crc {

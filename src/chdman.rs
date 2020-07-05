@@ -1,5 +1,7 @@
 use std::error::Error;
 use std::fs;
+use std::io;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -26,13 +28,16 @@ pub fn create_chd(cue_path: &PathBuf) -> Result<PathBuf, Box<dyn Error>> {
 pub fn extract_chd(
     chd_path: &PathBuf,
     directory: &Path,
+    tmp_directory: &Path,
     cue_name: &str,
-) -> Result<PathBuf, Box<dyn Error>> {
+    bin_names_sizes: &Vec<(&str, u64)>,
+) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+    let mut bin_paths: Vec<PathBuf> = Vec::new();
     println!("Extracting {:?}", chd_path.file_name().unwrap());
-    let cue_path = directory.join(cue_name);
+    let cue_path = tmp_directory.join(cue_name);
     let mut bin_name = chd_path.file_stem().unwrap().to_os_string();
     bin_name.push(".bin");
-    let bin_path = directory.join(bin_name);
+    let bin_path = tmp_directory.join(bin_name);
     let output = Command::new("chdman")
         .arg("extractcd")
         .arg("-i")
@@ -48,5 +53,14 @@ pub fn extract_chd(
         bail!(stderr)
     }
     fs::remove_file(cue_path)?;
-    Ok(bin_path)
+    let bin_file = fs::File::open(&bin_path)?;
+    for (bin_name, size) in bin_names_sizes {
+        let split_bin_path = directory.join(bin_name);
+        let mut split_bin_file = fs::File::create(&split_bin_path)?;
+        let mut handle = (&bin_file).take(*size);
+        io::copy(&mut handle, &mut split_bin_file)?;
+        bin_paths.push(split_bin_path);
+    }
+    fs::remove_file(&bin_path)?;
+    Ok(bin_paths)
 }

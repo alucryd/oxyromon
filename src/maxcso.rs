@@ -2,8 +2,8 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn create_cso(iso_path: &PathBuf) -> Result<PathBuf, Box<dyn Error>> {
-    let mut cso_path = iso_path.clone();
+pub fn create_cso(iso_path: &PathBuf, directory: &Path) -> Result<PathBuf, Box<dyn Error>> {
+    let mut cso_path = directory.join(iso_path.file_name().unwrap());
     cso_path.set_extension("cso");
 
     println!("Compressing {:?}", iso_path);

@@ -1,4 +1,3 @@
-use super::model::Rom;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -54,36 +53,34 @@ pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Er
 
 pub fn move_file_in_archive(
     archive_path: &PathBuf,
-    sevenzip_info: &ArchiveInfo,
-    rom: &Rom,
+    file_name: &str,
+    new_file_name: &str,
 ) -> Result<(), Box<dyn Error>> {
-    if sevenzip_info.path != rom.name {
-        println!("Renaming \"{}\" to \"{}\"", sevenzip_info.path, rom.name);
-        let output = Command::new("7z")
-            .arg("rn")
-            .arg(archive_path)
-            .arg(&sevenzip_info.path)
-            .arg(&rom.name)
-            .output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8(output.stderr)?;
-            println!("{}", stderr);
-            bail!(stderr);
-        }
+    println!("Renaming \"{}\" to \"{}\"", file_name, new_file_name);
+    let output = Command::new("7z")
+        .arg("rn")
+        .arg(archive_path)
+        .arg(file_name)
+        .arg(new_file_name)
+        .output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8(output.stderr)?;
+        println!("{}", stderr);
+        bail!(stderr);
     }
     Ok(())
 }
 
 pub fn extract_files_from_archive(
     archive_path: &PathBuf,
-    paths: &Vec<&str>,
+    file_names: &Vec<&str>,
     directory: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Extracting {:?}", paths);
+    println!("Extracting {:?}", file_names);
     let output = Command::new("7z")
         .arg("x")
         .arg(archive_path)
-        .args(paths)
+        .args(file_names)
         .current_dir(directory)
         .output()?;
     if !output.status.success() {
@@ -96,16 +93,16 @@ pub fn extract_files_from_archive(
 
 pub fn add_files_to_archive(
     archive_path: &PathBuf,
-    paths: &Vec<&str>,
-    current_directory: &PathBuf,
+    file_names: &Vec<&str>,
+    directory: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Compressing {:?}", paths);
+    println!("Compressing {:?}", file_names);
     let output = Command::new("7z")
         .arg("a")
         .arg(archive_path)
-        .args(paths)
+        .args(file_names)
         .arg("-mx=9")
-        .current_dir(current_directory)
+        .current_dir(directory)
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr)?;
