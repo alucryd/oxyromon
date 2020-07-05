@@ -1,7 +1,8 @@
 extern crate clap;
-extern crate crc;
+extern crate crc32fast;
 #[macro_use]
 extern crate diesel;
+extern crate digest;
 extern crate dotenv;
 extern crate quick_xml;
 extern crate regex;

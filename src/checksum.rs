@@ -1,10 +1,62 @@
 use super::model::Header;
-use crc::{crc32, Hasher32};
-use std::convert::TryFrom;
+use crc32fast::Hasher;
+use digest::generic_array::typenum::{U4, U64};
+use digest::generic_array::GenericArray;
+use digest::Digest;
+use digest::{BlockInput, FixedOutputDirty, Reset, Update};
 use std::error::Error;
 use std::fs;
+use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
+
+#[derive(Clone, Default)]
+struct Crc32 {
+    hasher: Hasher,
+}
+
+impl Crc32 {
+    pub fn new() -> Self {
+        Self {
+            hasher: Hasher::new(),
+        }
+    }
+}
+
+impl FixedOutputDirty for Crc32 {
+    type OutputSize = U4;
+
+    fn finalize_into_dirty(&mut self, out: &mut GenericArray<u8, U4>) {
+        out.copy_from_slice(&self.hasher.to_owned().finalize().to_be_bytes());
+    }
+}
+
+impl BlockInput for Crc32 {
+    type BlockSize = U64;
+}
+
+impl Update for Crc32 {
+    fn update(&mut self, input: impl AsRef<[u8]>) {
+        self.hasher.update(input.as_ref());
+    }
+}
+
+impl Reset for Crc32 {
+    fn reset(&mut self) {
+        self.hasher.reset();
+    }
+}
+
+impl io::Write for Crc32 {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        Update::update(self, buf);
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
 
 pub fn get_file_size_and_crc(
     file_path: &PathBuf,
@@ -30,23 +82,15 @@ pub fn get_file_size_and_crc(
         }
     }
 
-    // read our file in 4k chunks
-    let mut digest = crc32::Digest::new(crc32::IEEE);
-    let mut buffer = [0; 4096];
-    loop {
-        let n = f.read(&mut buffer[..])?;
-        if n == 0 {
-            break;
-        }
-        digest.write(&mut buffer[..n]);
-    }
-
-    let crc = format!("{:08x}", digest.sum32());
+    // compute the checksum
+    let mut digest = Crc32::new();
+    io::copy(&mut f, &mut digest)?;
+    let crc = format!("{:08x}", digest.finalize());
     Ok((size, crc))
 }
 
 pub fn get_chd_crcs(file_path: &PathBuf, sizes: &Vec<u64>) -> Result<Vec<String>, Box<dyn Error>> {
-    let mut f = fs::File::open(&file_path)?;
+    let f = fs::File::open(&file_path)?;
     let size = f.metadata().unwrap().len();
 
     if size != sizes.iter().sum() {
@@ -55,30 +99,12 @@ pub fn get_chd_crcs(file_path: &PathBuf, sizes: &Vec<u64>) -> Result<Vec<String>
     }
 
     let mut crcs: Vec<String> = Vec::new();
-    const BUFFER_SIZE: usize = 4096;
-
     for size in sizes {
-        let mut digest = crc32::Digest::new(crc32::IEEE);
-        let mut buffer = [0; BUFFER_SIZE];
-        let mut consumed_bytes: usize = 0;
-
-        // read 4k chunks until near the end
-        loop {
-            let n = f.read(&mut buffer[..])?;
-            digest.write(&mut buffer[..n]);
-            consumed_bytes += n;
-            if (consumed_bytes as u64) + (BUFFER_SIZE as u64) >= *size {
-                break;
-            }
-        }
-        // read the exact remaining amount
-        let remaining_bytes = size - consumed_bytes as u64;
-        let remaining_bytes_usize = usize::try_from(remaining_bytes).unwrap();
-        let mut buffer: Vec<u8> = Vec::with_capacity(remaining_bytes_usize);
-        (&mut f).take(remaining_bytes).read_to_end(&mut buffer)?;
-        digest.write(&mut buffer);
-
-        crcs.push(format!("{:08x}", digest.sum32()));
+        let mut digest = Crc32::new();
+        let mut handle = (&f).take(*size);
+        io::copy(&mut handle, &mut digest)?;
+        crcs.push(format!("{:08x}", digest.finalize()));
     }
+
     Ok(crcs)
 }
