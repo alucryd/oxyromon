@@ -10,6 +10,7 @@ use diesel::SqliteConnection;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::ffi::OsString;
 
 pub fn import_roms(
     connection: &SqliteConnection,
@@ -71,9 +72,10 @@ pub fn import_roms(
                     Err(_) => continue,
                 };
 
-                let mut new_path = new_directory.join(&rom.name);
-                new_path.push(".");
-                new_path.push(&file_extension);
+                let mut new_name = OsString::from(&rom.name);
+                new_name.push(".");
+                new_name.push(&file_extension);
+                let new_path = new_directory.join(new_name);
 
                 // move file inside archive if needed
                 if sevenzip_info.path != rom.name {

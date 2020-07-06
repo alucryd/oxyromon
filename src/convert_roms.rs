@@ -11,6 +11,7 @@ use std::error::Error;
 use std::fs;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
+use std::ffi::OsString;
 
 pub fn convert_roms(
     connection: &SqliteConnection,
@@ -130,11 +131,12 @@ fn to_archive(
         if roms_romfiles.len() == 1 {
             let (rom, romfile) = roms_romfiles.remove(0);
             let directory = Path::new(&romfile.path).parent().unwrap().to_path_buf();
-            let mut archive_path = directory.join(&rom.name);
-            archive_path.push(match archive_type {
-                ArchiveType::SEVENZIP => "7z",
-                ArchiveType::ZIP => "zip",
+            let mut archive_name = OsString::from(&rom.name);
+            archive_name.push(match archive_type {
+                ArchiveType::SEVENZIP => ".7z",
+                ArchiveType::ZIP => ".zip",
             });
+            let archive_path = directory.join(archive_name);
 
             add_files_to_archive(&archive_path, &vec![&rom.name], &directory)?;
             fs::remove_file(directory.join(&rom.name))?;
@@ -154,11 +156,12 @@ fn to_archive(
                 .parent()
                 .unwrap()
                 .to_path_buf();
-            let mut archive_path = directory.join(&game.name);
-            archive_path.push(match archive_type {
-                ArchiveType::SEVENZIP => "7z",
-                ArchiveType::ZIP => "zip",
+            let mut archive_name = OsString::from(&game.name);
+            archive_name.push(match archive_type {
+                ArchiveType::SEVENZIP => ".7z",
+                ArchiveType::ZIP => ".zip",
             });
+            let archive_path = directory.join(archive_name);
 
             add_files_to_archive(&archive_path, &file_names, &directory)?;
             for file_name in file_names {
