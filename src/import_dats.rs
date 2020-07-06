@@ -66,6 +66,7 @@ pub fn import_dats(
         println!("System: {}", datafile_xml.system.name);
         println!("Version: {}", datafile_xml.system.version);
         println!("Games: {}", datafile_xml.games.len());
+        println!("");
         if matches.is_present("INFO") {
             break;
         }
