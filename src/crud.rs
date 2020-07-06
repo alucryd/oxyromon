@@ -1,244 +1,270 @@
 use super::model::*;
-use diesel::pg::PgConnection;
+use super::schema::*;
 use diesel::prelude::*;
+use diesel::SqliteConnection;
 use rayon::prelude::*;
 use std::convert::TryFrom;
-use uuid::Uuid;
 
-pub fn create_system(connection: &PgConnection, system_xml: &SystemXml) -> System {
-    use schema::systems;
+pub fn create_system(connection: &SqliteConnection, system_xml: &SystemXml) -> System {
+    let system_input = SystemInput::from(system_xml);
     diesel::insert_into(systems::table)
-        .values(&SystemInput::from(system_xml))
-        .get_result(connection)
-        .expect("Error while creating system")
+        .values(&system_input)
+        .execute(connection)
+        .expect("Error while creating system");
+    find_system_by_name(connection, &system_input.name).unwrap()
 }
 
 pub fn update_system<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     system: &System,
     system_xml: &SystemXml,
 ) -> System {
+    let system_input = SystemInput::from(system_xml);
     diesel::update(system)
-        .set(&SystemInput::from(system_xml))
-        .get_result(connection)
-        .expect(&format!("Error while updating system {}", system.name))
+        .set(&system_input)
+        .execute(connection)
+        .expect(&format!("Error while updating system with name {}", system.name));
+    find_system_by_name(connection, &system_input.name).unwrap()
 }
 
-pub fn find_system_by_name<'a>(connection: &PgConnection, system_name: &str) -> Option<System> {
-    use schema::systems::dsl::*;
-    systems
-        .filter(name.eq(system_name))
+pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str) -> Option<System> {
+    systems::table
+        .filter(systems::dsl::name.eq(system_name))
         .get_result(connection)
         .optional()
-        .expect(&format!("Error while finding system {}", system_name))
+        .expect(&format!("Error while finding system with name {}", system_name))
 }
 
-pub fn find_systems<'a>(connection: &PgConnection) -> Vec<System> {
-    use schema::systems::dsl::*;
-    systems
+pub fn find_systems<'a>(connection: &SqliteConnection) -> Vec<System> {
+    systems::table
         .get_results(connection)
         .expect(&format!("Error while finding systems"))
 }
 
 pub fn create_game<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     game_xml: &GameXml,
     regions: &String,
-    system_uuid: &Uuid,
-    parent_uuid: Option<&Uuid>,
+    system_id: i32,
+    parent_id: Option<i32>,
 ) -> Game {
-    use schema::games;
+    let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::insert_into(games::table)
-        .values(&GameInput::from((
-            game_xml,
-            regions,
-            system_uuid,
-            parent_uuid,
-        )))
-        .get_result(connection)
-        .expect("Error while creating game")
+        .values(&game_input)
+        .execute(connection)
+        .expect("Error while creating game");
+    find_game_by_name_and_system_id(connection, &game_input.name, system_id).unwrap()
 }
 
 pub fn update_game<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     game: &Game,
     game_xml: &GameXml,
     regions: &String,
-    system_uuid: &Uuid,
-    parent_uuid: Option<&Uuid>,
+    system_id: i32,
+    parent_id: Option<i32>,
 ) -> Game {
+    let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::update(game)
-        .set(&GameInput::from((
-            game_xml,
-            regions,
-            system_uuid,
-            parent_uuid,
-        )))
-        .get_result(connection)
-        .expect(&format!("Error while updating game {}", game.name))
+        .set(&game_input)
+        .execute(connection)
+        .expect(&format!("Error while updating game with name {}", game.name));
+    find_game_by_name_and_system_id(connection, &game_input.name, system_id).unwrap()
 }
 
-pub fn find_games_by_system<'a>(connection: &PgConnection, system: &System) -> Vec<Game> {
+pub fn find_game_by_name_and_system_id<'a>(
+    connection: &SqliteConnection,
+    name: &str,
+    system_id: i32,
+) -> Option<Game> {
+    games::table
+        .filter(games::dsl::name.eq(name))
+        .filter(games::dsl::system_id.eq(system_id))
+        .get_result(connection)
+        .optional()
+        .expect(&format!(
+            "Error while finding game with name {} for system with id {}",
+            name, system_id
+        ))
+}
+
+pub fn find_games_by_system<'a>(connection: &SqliteConnection, system: &System) -> Vec<Game> {
     Game::belonging_to(system)
         .get_results(connection)
         .expect(&format!(
-            "Error while finding games for system {}",
-            system.id
+            "Error while finding games for system with name {}",
+            system.name
         ))
 }
 
 pub fn find_grouped_games_by_system<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     system: &System,
 ) -> Vec<(Game, Vec<Game>)> {
-    use schema::games::dsl::*;
     let parent_games = Game::belonging_to(system)
-        .filter(parent_id.is_null())
+        .filter(games::dsl::parent_id.is_null())
         .get_results(connection)
         .expect(&format!(
-            "Error while finding games for system {}",
-            system.id
+            "Error while finding games for system with name {}",
+            system.name
         ));
     let clone_games = Game::belonging_to(&parent_games)
         .get_results(connection)
         .expect(&format!(
-            "Error while finding clone games for system {}",
-            system.id
+            "Error while finding clone games for system with name {}",
+            system.name
         ))
         .grouped_by(&parent_games);
     parent_games.into_par_iter().zip(clone_games).collect()
 }
 
-pub fn find_game_names_by_system<'a>(connection: &PgConnection, system: &System) -> Vec<String> {
-    use schema::games::dsl::*;
+pub fn find_game_names_by_system<'a>(
+    connection: &SqliteConnection,
+    system: &System,
+) -> Vec<String> {
     Game::belonging_to(system)
-        .select(name)
+        .select(games::dsl::name)
         .get_results(connection)
         .expect(&format!(
-            "Error while finding games for system {}",
-            system.id
+            "Error while finding games for system with name {}",
+            system.name
         ))
 }
 
-pub fn find_game_by_system_and_name<'a>(
-    connection: &PgConnection,
-    system: &System,
-    game_name: &str,
-) -> Option<Game> {
-    use schema::games::dsl::*;
-    Game::belonging_to(system)
-        .filter(name.eq(game_name))
-        .get_result(connection)
-        .optional()
-        .expect(&format!(
-            "Error while finding game {} for system {}",
-            game_name, system.id
-        ))
-}
-
-pub fn delete_game_by_system_and_name<'a>(
-    connection: &PgConnection,
-    system: &System,
-    game_name: &str,
+pub fn delete_game_by_name_and_system_id<'a>(
+    connection: &SqliteConnection,
+    name: &str,
+    system_id: i32,
 ) {
-    use schema::games::dsl::*;
-    diesel::delete(Game::belonging_to(system).filter(name.eq(game_name)))
-        .execute(connection)
-        .expect(&format!(
-            "Error while deleting game {} for system {:?}",
-            game_name, system.id
-        ));
+    diesel::delete(
+        games::table
+            .filter(games::dsl::name.eq(name))
+            .filter(games::dsl::system_id.eq(system_id)),
+    )
+    .execute(connection)
+    .expect(&format!(
+        "Error while deleting game {} for system with id {}",
+        name, system_id
+    ));
 }
 
 pub fn create_release<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     release_xml: &ReleaseXml,
-    game_uuid: &Uuid,
+    game_id: i32,
 ) -> Release {
-    use schema::releases;
+    let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::insert_into(releases::table)
-        .values(&ReleaseInput::from((release_xml, game_uuid)))
-        .get_result(connection)
-        .expect("Error while creating release")
+        .values(&release_input)
+        .execute(connection)
+        .expect("Error while creating release");
+    find_release_by_name_and_region_and_game_id(
+        connection,
+        &release_input.name,
+        &release_input.region,
+        game_id,
+    )
+    .unwrap()
 }
 
 pub fn update_release<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     release: &Release,
     release_xml: &ReleaseXml,
-    game_uuid: &Uuid,
+    game_id: i32,
 ) -> Release {
+    let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::update(release)
-        .set(&ReleaseInput::from((release_xml, game_uuid)))
-        .get_result(connection)
-        .expect(&format!("Error while updating release {}", release.name))
+        .set(&release_input)
+        .execute(connection)
+        .expect(&format!("Error while updating release with name {}", release.name));
+    find_release_by_name_and_region_and_game_id(
+        connection,
+        &release_input.name,
+        &release_input.region,
+        game_id,
+    )
+    .unwrap()
 }
 
-pub fn find_release_by_game_id_and_name_and_region<'a>(
-    connection: &PgConnection,
-    game_uuid: &Uuid,
-    release_name: &str,
-    release_region: &str,
+pub fn find_release_by_name_and_region_and_game_id<'a>(
+    connection: &SqliteConnection,
+    name: &str,
+    region: &str,
+    game_id: i32,
 ) -> Option<Release> {
-    use schema::releases::dsl::*;
-    releases
-        .filter(
-            game_id
-                .eq(game_uuid)
-                .and(name.eq(release_name))
-                .and(region.eq(release_region)),
-        )
+    releases::table
+        .filter(releases::dsl::name.eq(name))
+        .filter(releases::dsl::region.eq(region))
+        .filter(releases::dsl::game_id.eq(game_id))
         .get_result(connection)
         .optional()
         .expect(&format!(
-            "Error while finding release {} for game {}",
-            release_name, game_uuid
+            "Error while finding release {} for region {} and game with id {}",
+            name, region, game_id
         ))
 }
 
-pub fn create_rom<'a>(connection: &PgConnection, rom_xml: &RomXml, game_uuid: &Uuid) -> Rom {
-    use schema::roms;
+pub fn create_rom<'a>(connection: &SqliteConnection, rom_xml: &RomXml, game_id: i32) -> Rom {
+    let rom_input = RomInput::from((rom_xml, game_id));
     diesel::insert_into(roms::table)
-        .values(&RomInput::from((rom_xml, game_uuid)))
-        .get_result(connection)
-        .expect("Error while creating rom")
+        .values(&rom_input)
+        .execute(connection)
+        .expect("Error while creating rom");
+    find_rom_by_name_and_game_id(connection, &rom_input.name, game_id).unwrap()
 }
 
 pub fn update_rom<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     rom: &Rom,
     rom_xml: &RomXml,
-    game_uuid: &Uuid,
+    game_id: i32,
 ) -> Rom {
+    let rom_input = RomInput::from((rom_xml, game_id));
     diesel::update(rom)
-        .set(&RomInput::from((rom_xml, game_uuid)))
-        .get_result(connection)
-        .expect(&format!("Error while updating rom {}", rom.name))
+        .set(&rom_input)
+        .execute(connection)
+        .expect(&format!("Error while updating rom with name {}", rom.name));
+    find_rom_by_name_and_game_id(connection, &rom_input.name, game_id).unwrap()
 }
 
-pub fn update_rom_romfile<'a>(connection: &PgConnection, rom: &Rom, romfile_uuid: &Uuid) -> Rom {
-    use schema::roms::dsl::*;
+pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_id: i32) -> usize {
     diesel::update(rom)
-        .set(romfile_id.eq(romfile_uuid))
-        .get_result(connection)
+        .set(roms::dsl::romfile_id.eq(romfile_id))
+        .execute(connection)
         .expect(&format!(
-            "Error while updating rom {} with file {}",
-            rom.name, romfile_uuid
+            "Error while updating rom with name {} with romfile id {}",
+            rom.name, romfile_id
         ))
 }
 
-pub fn find_roms_by_game_id<'a>(connection: &PgConnection, game_uuid: &Uuid) -> Vec<Rom> {
-    use schema::roms::dsl::*;
-    roms.filter(game_id.eq(game_uuid))
+pub fn find_rom_by_name_and_game_id<'a>(
+    connection: &SqliteConnection,
+    name: &str,
+    game_id: i32,
+) -> Option<Rom> {
+    roms::table
+        .filter(roms::dsl::name.eq(name))
+        .filter(roms::dsl::game_id.eq(game_id))
+        .get_result(connection)
+        .optional()
+        .expect(&format!(
+            "Error while finding rom with {} for game with id {}",
+            name, game_id
+        ))
+}
+
+pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i32) -> Vec<Rom> {
+    roms::table
+        .filter(roms::dsl::game_id.eq(game_id))
         .get_results(connection)
-        .expect(&format!("Error while finding roms for game {}", game_uuid))
+        .expect(&format!("Error while finding roms for game with id {}", game_id))
 }
 
 pub fn find_roms_romfiles_with_romfile_by_games<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     games: &Vec<Game>,
 ) -> Vec<Vec<(Rom, Romfile)>> {
-    use schema::romfiles;
     Rom::belonging_to(games)
         .inner_join(romfiles::table)
         .get_results(connection)
@@ -246,30 +272,8 @@ pub fn find_roms_romfiles_with_romfile_by_games<'a>(
         .grouped_by(games)
 }
 
-pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
-    connection: &PgConnection,
-    system: &System,
-) -> Vec<(Game, Vec<(Rom, Romfile)>)> {
-    use schema::romfiles;
-    use schema::roms;
-    let games = Game::belonging_to(system)
-        .get_results(connection)
-        .expect("Error while finding games");
-    let roms_romfiles = Rom::belonging_to(&games)
-        .inner_join(romfiles::table)
-        .order_by(roms::name.asc())
-        .get_results(connection)
-        .expect("Error while finding roms and romfiles")
-        .grouped_by(&games);
-    games
-        .into_par_iter()
-        .zip(roms_romfiles)
-        .filter(|(_, roms_romfiles)| !roms_romfiles.is_empty())
-        .collect()
-}
-
 pub fn find_roms_without_romfile_by_games<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     games: &Vec<Game>,
 ) -> Vec<Rom> {
     use schema::roms::dsl::*;
@@ -280,145 +284,150 @@ pub fn find_roms_without_romfile_by_games<'a>(
         .expect("Error while finding roms")
 }
 
-pub fn find_rom_by_game_id_and_name<'a>(
-    connection: &PgConnection,
-    game_uuid: &Uuid,
-    rom_name: &str,
-) -> Option<Rom> {
-    use schema::roms::dsl::*;
-    roms.filter(game_id.eq(game_uuid).and(name.eq(rom_name)))
-        .get_result(connection)
-        .optional()
-        .expect(&format!(
-            "Error while finding rom {} for game {}",
-            rom_name, game_uuid
-        ))
-}
-
-pub fn find_roms_by_size_and_crc_and_system<'a>(
-    connection: &PgConnection,
-    rom_size: u64,
-    rom_crc: &str,
-    system_uuid: &Uuid,
-) -> Vec<Rom> {
-    use schema::games;
-    use schema::roms::dsl::*;
-    let rom_game: Vec<(Rom, Game)> = roms
-        .inner_join(games::table)
-        .filter(
-            size.eq(&i64::try_from(rom_size).unwrap())
-                .and(crc.eq(rom_crc.to_lowercase()))
-                .and(games::dsl::system_id.eq(system_uuid)),
-        )
+pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
+    connection: &SqliteConnection,
+    system: &System,
+) -> Vec<(Game, Vec<(Rom, Romfile)>)> {
+    let games = Game::belonging_to(system)
         .get_results(connection)
-        .expect(&format!(
-            "Error while finding rom with size {} and CRC {} for system {}",
-            rom_size, rom_crc, system_uuid
-        ));
-    rom_game
-        .into_iter()
-        .map(|rom_game_system| rom_game_system.0)
+        .expect("Error while finding games");
+    let roms_romfiles = Rom::belonging_to(&games)
+        .inner_join(romfiles::table)
+        .order_by(roms::dsl::name.asc())
+        .get_results(connection)
+        .expect("Error while finding roms and romfiles")
+        .grouped_by(&games);
+    games
+        .into_par_iter()
+        .zip(roms_romfiles)
+        .filter(|(_, roms_romfiles)| !roms_romfiles.is_empty())
         .collect()
 }
 
-pub fn create_romfile<'a>(connection: &PgConnection, romfile_input: &RomfileInput) -> Romfile {
-    use schema::romfiles;
+pub fn find_roms_by_size_and_crc_and_system<'a>(
+    connection: &SqliteConnection,
+    size: u64,
+    crc: &str,
+    system_id: i32,
+) -> Vec<Rom> {
+    let roms_games: Vec<(Rom, Game)> = roms::table
+        .inner_join(games::table)
+        .filter(roms::dsl::size.eq(&i64::try_from(size).unwrap()))
+        .filter(roms::dsl::crc.eq(crc.to_lowercase()))
+        .filter(games::dsl::system_id.eq(system_id))
+        .get_results(connection)
+        .expect(&format!(
+            "Error while finding rom with size {} and CRC {} for system with id {}",
+            size, crc, system_id
+        ));
+    roms_games.into_iter().map(|rom_game| rom_game.0).collect()
+}
+
+pub fn create_romfile<'a>(connection: &SqliteConnection, romfile_input: &RomfileInput) -> Romfile {
     diesel::insert_into(romfiles::table)
         .values(romfile_input)
-        .get_result(connection)
-        .expect("Error while creating file")
+        .execute(connection)
+        .expect("Error while creating romfile");
+    find_romfile_by_path(connection, &romfile_input.path).unwrap()
 }
 
 pub fn update_romfile<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     romfile: &Romfile,
     romfile_input: &RomfileInput,
 ) -> Romfile {
     diesel::update(romfile)
         .set(romfile_input)
-        .get_result(connection)
-        .expect(&format!("Error while updating file {}", romfile.path))
+        .execute(connection)
+        .expect(&format!(
+            "Error while updating romfile with path {}",
+            romfile.path
+        ));
+    find_romfile_by_path(connection, &romfile_input.path).unwrap()
 }
 
-pub fn find_romfile_by_id<'a>(connection: &PgConnection, file_uuid: &Uuid) -> Option<Romfile> {
-    use schema::romfiles::dsl::*;
-    romfiles
-        .filter(id.eq(file_uuid))
-        .get_result(connection)
-        .optional()
-        .expect(&format!("Error while finding file {}", file_uuid))
-}
-
-pub fn find_romfile_by_path<'a>(connection: &PgConnection, file_path: &str) -> Option<Romfile> {
-    use schema::romfiles::dsl::*;
-    romfiles
-        .filter(path.eq(file_path))
+pub fn find_romfile_by_path<'a>(connection: &SqliteConnection, path: &str) -> Option<Romfile> {
+    romfiles::table
+        .filter(romfiles::dsl::path.eq(path))
         .get_result(connection)
         .optional()
-        .expect(&format!("Error while finding file with path {}", file_path))
+        .expect(&format!("Error while finding file with path {}", path))
 }
 
-pub fn find_romfiles_in_trash<'a>(connection: &PgConnection) -> Vec<Romfile> {
-    use schema::romfiles::dsl::*;
-    romfiles
-        .filter(path.like("%/Trash/%"))
-        .order_by(path.asc())
+pub fn find_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i32) -> Option<Romfile> {
+    romfiles::table
+        .filter(romfiles::dsl::id.eq(romfile_id))
+        .get_result(connection)
+        .optional()
+        .expect(&format!(
+            "Error while finding romfile with id {}",
+            romfile_id
+        ))
+}
+
+pub fn find_romfiles_in_trash<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
+    romfiles::table
+        .filter(romfiles::dsl::path.like("%/Trash/%"))
+        .order_by(romfiles::dsl::path.asc())
         .get_results(connection)
         .expect(&format!("Error while finding romfiles in trash"))
 }
 
-pub fn find_romfiles<'a>(connection: &PgConnection) -> Vec<Romfile> {
-    use schema::romfiles::dsl::*;
-    romfiles
+pub fn find_romfiles<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
+    romfiles::table
         .get_results(connection)
         .expect(&format!("Error while finding romfiles"))
 }
 
-pub fn delete_romfile_by_id<'a>(connection: &PgConnection, romfile_uuid: &Uuid) {
-    use schema::romfiles::dsl::*;
-    diesel::delete(romfiles.filter(id.eq(romfile_uuid)))
+pub fn delete_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i32) {
+    diesel::delete(romfiles::table.filter(romfiles::dsl::id.eq(romfile_id)))
         .execute(connection)
         .expect(&format!(
             "Error while deleting romfile with id {}",
-            romfile_uuid
+            romfile_id
         ));
 }
 
 pub fn create_header<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     detector_xml: &DetectorXml,
-    system_uuid: &Uuid,
+    system_id: i32,
 ) -> Header {
-    use schema::headers;
+    let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::insert_into(headers::table)
-        .values(&HeaderInput::from((detector_xml, system_uuid)))
-        .get_result(connection)
-        .expect("Error while creating header")
+        .values(&header_input)
+        .execute(connection)
+        .expect("Error while creating header");
+    find_header_by_system_id(connection, system_id).unwrap()
 }
 
 pub fn update_header<'a>(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     header: &Header,
     detector_xml: &DetectorXml,
-    system_uuid: &Uuid,
+    system_id: i32,
 ) -> Header {
+    let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::update(header)
-        .set(&HeaderInput::from((detector_xml, system_uuid)))
-        .get_result(connection)
-        .expect(&format!("Error while updating header {}", header.name))
+        .set(&header_input)
+        .execute(connection)
+        .expect(&format!(
+            "Error while updating header with name {}",
+            header.name
+        ));
+    find_header_by_system_id(connection, system_id).unwrap()
 }
 
 pub fn find_header_by_system_id<'a>(
-    connection: &PgConnection,
-    system_uuid: &Uuid,
+    connection: &SqliteConnection,
+    system_id: i32,
 ) -> Option<Header> {
-    use schema::headers::dsl::*;
-    headers
-        .filter(system_id.eq(system_uuid))
+    headers::table
+        .filter(headers::dsl::system_id.eq(system_id))
         .get_result(connection)
         .optional()
         .expect(&format!(
             "Error while finding header for system {}",
-            system_uuid
+            system_id
         ))
 }

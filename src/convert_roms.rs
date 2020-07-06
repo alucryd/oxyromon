@@ -5,18 +5,20 @@ use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use clap::ArgMatches;
-use diesel::pg::PgConnection;
+use diesel::SqliteConnection;
 use rayon::prelude::*;
-use std::env;
 use std::error::Error;
 use std::fs;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
 
-pub fn convert_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn convert_roms(
+    connection: &SqliteConnection,
+    matches: &ArgMatches,
+    tmp_directory: &PathBuf,
+) -> Result<(), Box<dyn Error>> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
     let format = matches.value_of("FORMAT");
-    let tmp_directory = Path::new(&env::var("TMP_DIRECTORY").unwrap()).canonicalize()?;
 
     for system in systems {
         println!("Processing {}", system.name);
@@ -37,7 +39,7 @@ pub fn convert_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(
 }
 
 fn to_archive(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     system: &System,
     tmp_directory: &PathBuf,
     archive_type: ArchiveType,
@@ -167,10 +169,10 @@ fn to_archive(
             };
             let archive_romfile = create_romfile(connection, &archive_romfile_input);
             for rom in roms {
-                update_rom_romfile(connection, &rom, &archive_romfile.id);
+                update_rom_romfile(connection, &rom, archive_romfile.id);
             }
             for romfile in romfiles {
-                delete_romfile_by_id(connection, &romfile.id)
+                delete_romfile_by_id(connection, romfile.id)
             }
         }
     }
@@ -178,7 +180,7 @@ fn to_archive(
     Ok(())
 }
 
-fn to_chd(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Error>> {
+fn to_chd(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn Error>> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -204,17 +206,17 @@ fn to_chd(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Erro
             path: &String::from(chd_path.as_os_str().to_str().unwrap()),
         };
         let chd_romfile = create_romfile(connection, &chd_romfile_input);
-        for (rom, romfile) in bin_roms_romfiles {
-            update_rom_romfile(connection, &rom, &chd_romfile.id);
-            delete_romfile_by_id(connection, &romfile.id);
-            fs::remove_file(&romfile.path)?;
+        for (bin_rom, bin_romfile) in bin_roms_romfiles {
+            update_rom_romfile(connection, &bin_rom, chd_romfile.id);
+            delete_romfile_by_id(connection, bin_romfile.id);
+            fs::remove_file(&bin_romfile.path)?;
         }
     }
 
     Ok(())
 }
 
-fn to_cso(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Error>> {
+fn to_cso(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn Error>> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -241,7 +243,7 @@ fn to_cso(connection: &PgConnection, system: &System) -> Result<(), Box<dyn Erro
 }
 
 fn to_original(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     system: &System,
     tmp_directory: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
@@ -308,9 +310,9 @@ fn to_original(
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
             };
             let romfile = create_romfile(connection, &romfile_input);
-            update_rom_romfile(connection, &rom, &romfile.id);
+            update_rom_romfile(connection, &rom, romfile.id);
         }
-        delete_romfile_by_id(connection, &archive_romfile.id);
+        delete_romfile_by_id(connection, archive_romfile.id);
     }
 
     // convert CHDs
@@ -354,9 +356,9 @@ fn to_original(
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
             };
             let romfile = create_romfile(connection, &romfile_input);
-            update_rom_romfile(connection, &rom, &romfile.id);
+            update_rom_romfile(connection, &rom, romfile.id);
         }
-        delete_romfile_by_id(connection, &chd_romfile.id);
+        delete_romfile_by_id(connection, chd_romfile.id);
     }
 
     // convert CSOs

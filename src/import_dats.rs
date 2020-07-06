@@ -1,7 +1,7 @@
 use super::crud::*;
 use super::model::*;
 use clap::ArgMatches;
-use diesel::pg::PgConnection;
+use diesel::SqliteConnection;
 use quick_xml::de;
 use regex::Regex;
 use std::error::Error;
@@ -9,7 +9,10 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub fn import_dats(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn import_dats(
+    connection: &SqliteConnection,
+    matches: &ArgMatches,
+) -> Result<(), Box<dyn Error>> {
     let region_codes: Vec<(Regex, Vec<&str>)> = vec![
         (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
         (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
@@ -102,7 +105,7 @@ fn get_regions_from_game_name<'r>(
     return regions;
 }
 
-fn create_or_update_system(connection: &PgConnection, system_xml: &SystemXml) -> System {
+fn create_or_update_system(connection: &SqliteConnection, system_xml: &SystemXml) -> System {
     let system = find_system_by_name(connection, &system_xml.name);
     let system = match system {
         Some(system) => update_system(connection, &system, system_xml),
@@ -111,26 +114,30 @@ fn create_or_update_system(connection: &PgConnection, system_xml: &SystemXml) ->
     return system;
 }
 
-fn create_or_update_header(connection: &PgConnection, detector_xml: &DetectorXml, system: &System) {
-    let header = find_header_by_system_id(connection, &system.id);
+fn create_or_update_header(
+    connection: &SqliteConnection,
+    detector_xml: &DetectorXml,
+    system: &System,
+) {
+    let header = find_header_by_system_id(connection, system.id);
     match header {
-        Some(header) => update_header(connection, &header, detector_xml, &system.id),
-        None => create_header(connection, detector_xml, &system.id),
+        Some(header) => update_header(connection, &header, detector_xml, system.id),
+        None => create_header(connection, detector_xml, system.id),
     };
 }
 
-fn delete_old_games(connection: &PgConnection, games_xml: &Vec<GameXml>, system: &System) {
+fn delete_old_games(connection: &SqliteConnection, games_xml: &Vec<GameXml>, system: &System) {
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
     let game_names = find_game_names_by_system(&connection, &system);
     for game_name in game_names {
         if !game_names_xml.contains(&&game_name) {
-            delete_game_by_system_and_name(&connection, &system, &game_name)
+            delete_game_by_name_and_system_id(&connection, &game_name, system.id)
         }
     }
 }
 
 fn create_or_update_games(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     games_xml: &Vec<GameXml>,
     system: &System,
     region_codes: &Vec<(Regex, Vec<&str>)>,
@@ -144,21 +151,21 @@ fn create_or_update_games(
         .filter(|game_xml| game_xml.cloneof.is_some())
         .collect();
     for parent_game_xml in parent_games_xml {
-        let game = find_game_by_system_and_name(connection, &system, &parent_game_xml.name);
+        let game = find_game_by_name_and_system_id(connection, &parent_game_xml.name, system.id);
         let game = match game {
             Some(game) => update_game(
                 connection,
                 &game,
                 parent_game_xml,
                 &game.regions,
-                &system.id,
+                system.id,
                 None,
             ),
             None => create_game(
                 connection,
                 parent_game_xml,
                 &get_regions_from_game_name(&parent_game_xml.name, region_codes).join(","),
-                &system.id,
+                system.id,
                 None,
             ),
         };
@@ -170,11 +177,11 @@ fn create_or_update_games(
         }
     }
     for child_game_xml in child_games_xml {
-        let game = find_game_by_system_and_name(connection, &system, &child_game_xml.name);
-        let parent_game = find_game_by_system_and_name(
+        let game = find_game_by_name_and_system_id(connection, &child_game_xml.name, system.id);
+        let parent_game = find_game_by_name_and_system_id(
             connection,
-            &system,
             child_game_xml.cloneof.as_ref().unwrap(),
+            system.id
         )
         .unwrap();
         let game = match game {
@@ -183,15 +190,15 @@ fn create_or_update_games(
                 &game,
                 child_game_xml,
                 &game.regions,
-                &system.id,
-                Some(&parent_game.id),
+                system.id,
+                Some(parent_game.id),
             ),
             None => create_game(
                 connection,
                 child_game_xml,
                 &get_regions_from_game_name(&child_game_xml.name, region_codes).join(","),
-                &system.id,
-                Some(&parent_game.id),
+                system.id,
+                Some(parent_game.id),
             ),
         };
         if !child_game_xml.releases.is_empty() {
@@ -204,30 +211,30 @@ fn create_or_update_games(
 }
 
 fn create_or_update_releases(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     releases_xml: &Vec<ReleaseXml>,
     game: &Game,
 ) {
     for release_xml in releases_xml {
-        let release = find_release_by_game_id_and_name_and_region(
+        let release = find_release_by_name_and_region_and_game_id(
             connection,
-            &game.id,
             &release_xml.name,
             &release_xml.region,
+            game.id,
         );
         match release {
-            Some(release) => update_release(connection, &release, &release_xml, &game.id),
-            None => create_release(connection, &release_xml, &game.id),
+            Some(release) => update_release(connection, &release, &release_xml, game.id),
+            None => create_release(connection, &release_xml, game.id),
         };
     }
 }
 
-fn create_or_update_roms(connection: &PgConnection, roms_xml: &Vec<RomXml>, game: &Game) {
+fn create_or_update_roms(connection: &SqliteConnection, roms_xml: &Vec<RomXml>, game: &Game) {
     for rom_xml in roms_xml {
-        let rom = find_rom_by_game_id_and_name(connection, &game.id, &rom_xml.name);
+        let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game.id);
         match rom {
-            Some(rom) => update_rom(connection, &rom, &rom_xml, &game.id),
-            None => create_rom(connection, &rom_xml, &game.id),
+            Some(rom) => update_rom(connection, &rom, &rom_xml, game.id),
+            None => create_rom(connection, &rom_xml, game.id),
         };
     }
 }

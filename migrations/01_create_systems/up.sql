@@ -1,7 +1,5 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE systems (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id INTEGER NOT NULL PRIMARY KEY,
     name VARCHAR UNIQUE NOT NULL,
     description VARCHAR NOT NULL,
     version VARCHAR NOT NULL

@@ -2,17 +2,14 @@ use super::crud::*;
 use super::model::*;
 use super::prompt::*;
 use clap::ArgMatches;
-use diesel::pg::PgConnection;
+use diesel::SqliteConnection;
 use rayon::prelude::*;
 use regex::Regex;
-use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn sort_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    let rom_directory = Path::new(&env::var("ROM_DIRECTORY").unwrap()).canonicalize()?;
-
+pub fn sort_roms(connection: &SqliteConnection, matches: &ArgMatches, rom_directory: &PathBuf) -> Result<(), Box<dyn Error>> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
 
     // unordered regions to keep
@@ -232,7 +229,7 @@ pub fn sort_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), 
 }
 
 fn process_games(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     games: Vec<Game>,
     directory: &PathBuf,
 ) -> Vec<(Romfile, String)> {

@@ -1,62 +1,62 @@
 table! {
     games (id) {
-        id -> Uuid,
-        name -> Varchar,
-        description -> Varchar,
-        regions -> Varchar,
-        system_id -> Uuid,
-        parent_id -> Nullable<Uuid>,
+        id -> Integer,
+        name -> Text,
+        description -> Text,
+        regions -> Text,
+        system_id -> Integer,
+        parent_id -> Nullable<Integer>,
     }
 }
 
 table! {
     headers (id) {
-        id -> Uuid,
-        name -> Varchar,
-        version -> Varchar,
-        start -> Int4,
-        size -> Int4,
-        hex_value -> Varchar,
-        system_id -> Uuid,
+        id -> Integer,
+        name -> Text,
+        version -> Text,
+        start_byte -> BigInt,
+        size -> BigInt,
+        hex_value -> Text,
+        system_id -> Integer,
     }
 }
 
 table! {
     releases (id) {
-        id -> Uuid,
-        name -> Varchar,
-        region -> Varchar,
-        game_id -> Uuid,
+        id -> Integer,
+        name -> Text,
+        region -> Text,
+        game_id -> Integer,
     }
 }
 
 table! {
     romfiles (id) {
-        id -> Uuid,
-        path -> Varchar,
+        id -> Integer,
+        path -> Text,
     }
 }
 
 table! {
     roms (id) {
-        id -> Uuid,
-        name -> Varchar,
-        size -> Int8,
-        crc -> Varchar,
-        md5 -> Varchar,
-        sha1 -> Varchar,
-        status -> Nullable<Varchar>,
-        game_id -> Uuid,
-        romfile_id -> Nullable<Uuid>,
+        id -> Integer,
+        name -> Text,
+        size -> BigInt,
+        crc -> Text,
+        md5 -> Text,
+        sha1 -> Text,
+        rom_status -> Nullable<Text>,
+        game_id -> Integer,
+        romfile_id -> Nullable<Integer>,
     }
 }
 
 table! {
     systems (id) {
-        id -> Uuid,
-        name -> Varchar,
-        description -> Varchar,
-        version -> Varchar,
+        id -> Integer,
+        name -> Text,
+        description -> Text,
+        version -> Text,
     }
 }
 
@@ -66,11 +66,4 @@ joinable!(releases -> games (game_id));
 joinable!(roms -> games (game_id));
 joinable!(roms -> romfiles (romfile_id));
 
-allow_tables_to_appear_in_same_query!(
-    games,
-    headers,
-    releases,
-    romfiles,
-    roms,
-    systems,
-);
+allow_tables_to_appear_in_same_query!(games, headers, releases, romfiles, roms, systems,);

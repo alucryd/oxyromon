@@ -2,6 +2,8 @@ extern crate clap;
 extern crate crc32fast;
 #[macro_use]
 extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
 extern crate digest;
 extern crate dotenv;
 extern crate quick_xml;
@@ -10,7 +12,6 @@ extern crate serde;
 #[macro_use]
 extern crate simple_error;
 extern crate rayon;
-extern crate uuid;
 
 mod chdman;
 mod checksum;
@@ -32,11 +33,14 @@ use self::import_roms::import_roms;
 use self::purge_roms::purge_roms;
 use self::sort_roms::sort_roms;
 use clap::{App, Arg, SubCommand};
-use diesel::pg::PgConnection;
 use diesel::prelude::*;
+use diesel::SqliteConnection;
 use dotenv::dotenv;
 use std::env;
 use std::error::Error;
+use std::path::{Path, PathBuf};
+
+embed_migrations!("migrations");
 
 fn main() -> Result<(), Box<dyn Error>> {
     let import_dats_subcommand: App = SubCommand::with_name("import-dats")
@@ -199,11 +203,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .get_matches();
 
     if matches.subcommand.is_some() {
-        let connection = establish_connection();
+        dotenv().ok();
+        let rom_directory =
+            Path::new(&env::var("ROM_DIRECTORY").expect("ROM_DIRECTORY must be set"))
+                .canonicalize()?;
+        let tmp_directory = env::temp_dir();
+        let connection = establish_connection(&rom_directory)?;
+
         match matches.subcommand_name() {
             Some("convert-roms") => convert_roms(
                 &connection,
                 &matches.subcommand_matches("convert-roms").unwrap(),
+                &tmp_directory,
             )?,
             Some("import-dats") => import_dats(
                 &connection,
@@ -212,6 +223,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             Some("import-roms") => import_roms(
                 &connection,
                 &matches.subcommand_matches("import-roms").unwrap(),
+                &rom_directory,
+                &tmp_directory,
             )?,
             Some("purge-roms") => purge_roms(
                 &connection,
@@ -220,6 +233,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Some("sort-roms") => sort_roms(
                 &connection,
                 &matches.subcommand_matches("sort-roms").unwrap(),
+                &rom_directory,
             )?,
             _ => (),
         }
@@ -228,8 +242,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn establish_connection() -> PgConnection {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+fn establish_connection(rom_directory: &PathBuf) -> Result<SqliteConnection, Box<dyn Error>> {
+    let database_path = rom_directory.join(".oxyromon.db");
+    let database_url = database_path.as_os_str().to_str().unwrap();
+    let connection = SqliteConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url));
+    embedded_migrations::run(&connection)?;
+    Ok(connection)
 }

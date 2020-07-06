@@ -1,12 +1,12 @@
 use super::crud::find_systems;
 use super::model::{Rom, System};
 use clap::ArgMatches;
-use diesel::pg::PgConnection;
+use diesel::SqliteConnection;
 use regex::Regex;
 use std::io;
 use std::str::FromStr;
 
-pub fn prompt_for_systems(connection: &PgConnection, all: bool) -> Vec<System> {
+pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<System> {
     let mut systems = find_systems(&connection);
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -54,7 +54,7 @@ pub fn prompt_for_systems(connection: &PgConnection, all: bool) -> Vec<System> {
         .collect()
 }
 
-pub fn prompt_for_system(connection: &PgConnection) -> System {
+pub fn prompt_for_system(connection: &SqliteConnection) -> System {
     let mut systems = find_systems(&connection);
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 

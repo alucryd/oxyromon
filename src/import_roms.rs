@@ -6,18 +6,20 @@ use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use clap::ArgMatches;
-use diesel::pg::PgConnection;
-use std::env;
+use diesel::SqliteConnection;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn import_roms(
+    connection: &SqliteConnection,
+    matches: &ArgMatches,
+    rom_directory: &PathBuf,
+    tmp_directory: &PathBuf,
+) -> Result<(), Box<dyn Error>> {
     let system = prompt_for_system(&connection);
-    let header = find_header_by_system_id(&connection, &system.id);
+    let header = find_header_by_system_id(&connection, system.id);
 
-    let tmp_directory = Path::new(&env::var("TMP_DIRECTORY").unwrap()).canonicalize()?;
-    let rom_directory = Path::new(&env::var("ROM_DIRECTORY").unwrap()).canonicalize()?;
     let new_directory = rom_directory.join(&system.name);
     let archive_extensions = vec!["7z", "zip"];
     let cue_extension = "cue";
@@ -144,7 +146,7 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
                 Err(_) => continue,
             };
 
-            let mut roms: Vec<Rom> = find_roms_by_game_id(&connection, &cue_rom.game_id)
+            let mut roms: Vec<Rom> = find_roms_by_game_id(&connection, cue_rom.game_id)
                 .into_iter()
                 .filter(|rom| rom.id != cue_rom.id)
                 .collect();
@@ -225,13 +227,13 @@ pub fn import_roms(connection: &PgConnection, matches: &ArgMatches) -> Result<()
 }
 
 fn find_rom(
-    connection: &PgConnection,
+    connection: &SqliteConnection,
     size: u64,
     crc: &str,
     system: &System,
 ) -> Result<Rom, Box<dyn Error>> {
     let rom: Rom;
-    let mut roms = find_roms_by_size_and_crc_and_system(&connection, size, &crc, &system.id);
+    let mut roms = find_roms_by_size_and_crc_and_system(&connection, size, &crc, system.id);
 
     if roms.is_empty() {
         println!("No matching rom");
@@ -248,7 +250,7 @@ fn find_rom(
 
     // abort if rom already has a file
     if rom.romfile_id.is_some() {
-        let romfile = find_romfile_by_id(&connection, &rom.romfile_id.unwrap());
+        let romfile = find_romfile_by_id(&connection, rom.romfile_id.unwrap());
         if romfile.is_some() {
             let romfile = romfile.unwrap();
             println!("Duplicate of \"{}\"", romfile.path);
@@ -267,7 +269,7 @@ fn move_file(old_path: &PathBuf, new_path: &PathBuf) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-pub fn create_or_update_file(connection: &PgConnection, path: &PathBuf, rom: &Rom) {
+pub fn create_or_update_file(connection: &SqliteConnection, path: &PathBuf, rom: &Rom) {
     let romfile_input = RomfileInput {
         path: &String::from(path.as_os_str().to_str().unwrap()),
     };
@@ -276,5 +278,5 @@ pub fn create_or_update_file(connection: &PgConnection, path: &PathBuf, rom: &Ro
         Some(file) => update_romfile(&connection, &file, &romfile_input),
         None => create_romfile(&connection, &romfile_input),
     };
-    update_rom_romfile(&connection, rom, &file.id);
+    update_rom_romfile(&connection, rom, file.id);
 }

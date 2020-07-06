@@ -71,8 +71,8 @@ pub fn get_file_size_and_crc(
 
         let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
         (&mut f).take(header.size as u64).read_to_end(&mut buffer)?;
-        let start = header.start as usize;
-        let hex_values: Vec<String> = buffer[start..].iter().map(|b| format!("{:x}", b)).collect();
+        let start_byte = header.start_byte as usize;
+        let hex_values: Vec<String> = buffer[start_byte..].iter().map(|b| format!("{:x}", b)).collect();
         let hex_value = hex_values.join("").to_uppercase();
 
         if hex_value.starts_with(&header.hex_value.to_uppercase()) {
