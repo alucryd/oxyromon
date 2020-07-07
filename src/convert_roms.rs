@@ -170,9 +170,9 @@ fn to_archive(
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
-            let archive_romfile = create_romfile(connection, &archive_romfile_input);
+            let archive_romfile_id = create_romfile(connection, &archive_romfile_input);
             for rom in roms {
-                update_rom_romfile(connection, &rom, archive_romfile.id);
+                update_rom_romfile(connection, &rom, archive_romfile_id);
             }
             for romfile in romfiles {
                 delete_romfile_by_id(connection, romfile.id)
@@ -208,9 +208,9 @@ fn to_chd(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn 
         let chd_romfile_input = RomfileInput {
             path: &String::from(chd_path.as_os_str().to_str().unwrap()),
         };
-        let chd_romfile = create_romfile(connection, &chd_romfile_input);
+        let chd_romfile_id = create_romfile(connection, &chd_romfile_input);
         for (bin_rom, bin_romfile) in bin_roms_romfiles {
-            update_rom_romfile(connection, &bin_rom, chd_romfile.id);
+            update_rom_romfile(connection, &bin_rom, chd_romfile_id);
             delete_romfile_by_id(connection, bin_romfile.id);
             fs::remove_file(&bin_romfile.path)?;
         }
@@ -312,8 +312,8 @@ fn to_original(
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
             };
-            let romfile = create_romfile(connection, &romfile_input);
-            update_rom_romfile(connection, &rom, romfile.id);
+            let romfile_id = create_romfile(connection, &romfile_input);
+            update_rom_romfile(connection, &rom, romfile_id);
         }
         delete_romfile_by_id(connection, archive_romfile.id);
     }
@@ -358,8 +358,8 @@ fn to_original(
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
             };
-            let romfile = create_romfile(connection, &romfile_input);
-            update_rom_romfile(connection, &rom, romfile.id);
+            let romfile_id = create_romfile(connection, &romfile_input);
+            update_rom_romfile(connection, &rom, romfile_id);
         }
         delete_romfile_by_id(connection, chd_romfile.id);
     }

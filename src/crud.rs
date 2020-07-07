@@ -1,30 +1,37 @@
 use super::model::*;
 use super::schema::*;
 use diesel::prelude::*;
+use diesel::sql_types;
 use diesel::SqliteConnection;
 use rayon::prelude::*;
 use std::convert::TryFrom;
 
-pub fn create_system(connection: &SqliteConnection, system_xml: &SystemXml) -> System {
+no_arg_sql_function!(
+    last_insert_rowid,
+    sql_types::BigInt,
+    "Returns the last inserted rowid"
+);
+
+pub fn create_system(connection: &SqliteConnection, system_xml: &SystemXml) -> i64 {
     let system_input = SystemInput::from(system_xml);
     diesel::insert_into(systems::table)
         .values(&system_input)
         .execute(connection)
         .expect("Error while creating system");
-    find_system_by_name(connection, &system_input.name).unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
-pub fn update_system<'a>(
-    connection: &SqliteConnection,
-    system: &System,
-    system_xml: &SystemXml,
-) -> System {
+pub fn update_system<'a>(connection: &SqliteConnection, system: &System, system_xml: &SystemXml) {
     let system_input = SystemInput::from(system_xml);
     diesel::update(system)
         .set(&system_input)
         .execute(connection)
-        .expect(&format!("Error while updating system with name {}", system.name));
-    find_system_by_name(connection, &system_input.name).unwrap()
+        .expect(&format!(
+            "Error while updating system with name {}",
+            system.name
+        ));
 }
 
 pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str) -> Option<System> {
@@ -32,7 +39,10 @@ pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str)
         .filter(systems::dsl::name.eq(system_name))
         .get_result(connection)
         .optional()
-        .expect(&format!("Error while finding system with name {}", system_name))
+        .expect(&format!(
+            "Error while finding system with name {}",
+            system_name
+        ))
 }
 
 pub fn find_systems<'a>(connection: &SqliteConnection) -> Vec<System> {
@@ -47,13 +57,15 @@ pub fn create_game<'a>(
     regions: &String,
     system_id: i64,
     parent_id: Option<i64>,
-) -> Game {
+) -> i64 {
     let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::insert_into(games::table)
         .values(&game_input)
         .execute(connection)
         .expect("Error while creating game");
-    find_game_by_name_and_system_id(connection, &game_input.name, system_id).unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
 pub fn update_game<'a>(
@@ -63,13 +75,15 @@ pub fn update_game<'a>(
     regions: &String,
     system_id: i64,
     parent_id: Option<i64>,
-) -> Game {
+) {
     let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::update(game)
         .set(&game_input)
         .execute(connection)
-        .expect(&format!("Error while updating game with name {}", game.name));
-    find_game_by_name_and_system_id(connection, &game_input.name, system_id).unwrap()
+        .expect(&format!(
+            "Error while updating game with name {}",
+            game.name
+        ));
 }
 
 pub fn find_game_by_name_and_system_id<'a>(
@@ -118,16 +132,17 @@ pub fn find_grouped_games_by_system<'a>(
     parent_games.into_par_iter().zip(clone_games).collect()
 }
 
-pub fn find_game_names_by_system<'a>(
+pub fn find_game_names_by_system_id<'a>(
     connection: &SqliteConnection,
-    system: &System,
+    system_id: i64,
 ) -> Vec<String> {
-    Game::belonging_to(system)
+    games::table
         .select(games::dsl::name)
+        .filter(games::dsl::system_id.eq(system_id))
         .get_results(connection)
         .expect(&format!(
-            "Error while finding games for system with name {}",
-            system.name
+            "Error while finding games for system with id {}",
+            system_id
         ))
 }
 
@@ -152,19 +167,15 @@ pub fn create_release<'a>(
     connection: &SqliteConnection,
     release_xml: &ReleaseXml,
     game_id: i64,
-) -> Release {
+) -> i64 {
     let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::insert_into(releases::table)
         .values(&release_input)
         .execute(connection)
         .expect("Error while creating release");
-    find_release_by_name_and_region_and_game_id(
-        connection,
-        &release_input.name,
-        &release_input.region,
-        game_id,
-    )
-    .unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
 pub fn update_release<'a>(
@@ -172,19 +183,15 @@ pub fn update_release<'a>(
     release: &Release,
     release_xml: &ReleaseXml,
     game_id: i64,
-) -> Release {
+) {
     let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::update(release)
         .set(&release_input)
         .execute(connection)
-        .expect(&format!("Error while updating release with name {}", release.name));
-    find_release_by_name_and_region_and_game_id(
-        connection,
-        &release_input.name,
-        &release_input.region,
-        game_id,
-    )
-    .unwrap()
+        .expect(&format!(
+            "Error while updating release with name {}",
+            release.name
+        ));
 }
 
 pub fn find_release_by_name_and_region_and_game_id<'a>(
@@ -205,27 +212,23 @@ pub fn find_release_by_name_and_region_and_game_id<'a>(
         ))
 }
 
-pub fn create_rom<'a>(connection: &SqliteConnection, rom_xml: &RomXml, game_id: i64) -> Rom {
+pub fn create_rom<'a>(connection: &SqliteConnection, rom_xml: &RomXml, game_id: i64) -> i64 {
     let rom_input = RomInput::from((rom_xml, game_id));
     diesel::insert_into(roms::table)
         .values(&rom_input)
         .execute(connection)
         .expect("Error while creating rom");
-    find_rom_by_name_and_game_id(connection, &rom_input.name, game_id).unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
-pub fn update_rom<'a>(
-    connection: &SqliteConnection,
-    rom: &Rom,
-    rom_xml: &RomXml,
-    game_id: i64,
-) -> Rom {
+pub fn update_rom<'a>(connection: &SqliteConnection, rom: &Rom, rom_xml: &RomXml, game_id: i64) {
     let rom_input = RomInput::from((rom_xml, game_id));
     diesel::update(rom)
         .set(&rom_input)
         .execute(connection)
         .expect(&format!("Error while updating rom with name {}", rom.name));
-    find_rom_by_name_and_game_id(connection, &rom_input.name, game_id).unwrap()
 }
 
 pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_id: i64) -> usize {
@@ -258,7 +261,10 @@ pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i64) -> 
     roms::table
         .filter(roms::dsl::game_id.eq(game_id))
         .get_results(connection)
-        .expect(&format!("Error while finding roms for game with id {}", game_id))
+        .expect(&format!(
+            "Error while finding roms for game with id {}",
+            game_id
+        ))
 }
 
 pub fn find_roms_romfiles_with_romfile_by_games<'a>(
@@ -323,19 +329,21 @@ pub fn find_roms_by_size_and_crc_and_system<'a>(
     roms_games.into_iter().map(|rom_game| rom_game.0).collect()
 }
 
-pub fn create_romfile<'a>(connection: &SqliteConnection, romfile_input: &RomfileInput) -> Romfile {
+pub fn create_romfile<'a>(connection: &SqliteConnection, romfile_input: &RomfileInput) -> i64 {
     diesel::insert_into(romfiles::table)
         .values(romfile_input)
         .execute(connection)
         .expect("Error while creating romfile");
-    find_romfile_by_path(connection, &romfile_input.path).unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
 pub fn update_romfile<'a>(
     connection: &SqliteConnection,
     romfile: &Romfile,
     romfile_input: &RomfileInput,
-) -> Romfile {
+) {
     diesel::update(romfile)
         .set(romfile_input)
         .execute(connection)
@@ -343,7 +351,6 @@ pub fn update_romfile<'a>(
             "Error while updating romfile with path {}",
             romfile.path
         ));
-    find_romfile_by_path(connection, &romfile_input.path).unwrap()
 }
 
 pub fn find_romfile_by_path<'a>(connection: &SqliteConnection, path: &str) -> Option<Romfile> {
@@ -392,13 +399,15 @@ pub fn create_header<'a>(
     connection: &SqliteConnection,
     detector_xml: &DetectorXml,
     system_id: i64,
-) -> Header {
+) -> i64 {
     let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::insert_into(headers::table)
         .values(&header_input)
         .execute(connection)
         .expect("Error while creating header");
-    find_header_by_system_id(connection, system_id).unwrap()
+    diesel::select(last_insert_rowid)
+        .get_result(connection)
+        .expect("Failed to get last inserted rowid")
 }
 
 pub fn update_header<'a>(
@@ -406,7 +415,7 @@ pub fn update_header<'a>(
     header: &Header,
     detector_xml: &DetectorXml,
     system_id: i64,
-) -> Header {
+) {
     let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::update(header)
         .set(&header_input)
@@ -415,7 +424,6 @@ pub fn update_header<'a>(
             "Error while updating header with name {}",
             header.name
         ));
-    find_header_by_system_id(connection, system_id).unwrap()
 }
 
 pub fn find_header_by_system_id<'a>(

@@ -72,9 +72,9 @@ pub fn import_dats(
         }
 
         // persist everything into the database
-        let system = create_or_update_system(&connection, &datafile_xml.system);
-        delete_old_games(&connection, &datafile_xml.games, &system);
-        create_or_update_games(&connection, &datafile_xml.games, &system, &region_codes);
+        let system_id = create_or_update_system(&connection, &datafile_xml.system);
+        delete_old_games(&connection, &datafile_xml.games, system_id);
+        create_or_update_games(&connection, &datafile_xml.games, system_id, &region_codes);
 
         // parse header file if needed
         if datafile_xml.system.clrmamepro.is_some() {
@@ -84,7 +84,7 @@ pub fn import_dats(
             let reader = io::BufReader::new(header_file);
             let detector_xml: DetectorXml =
                 de::from_reader(reader).expect("Failed to parse the header file");
-            create_or_update_header(&connection, &detector_xml, &system);
+            create_or_update_header(&connection, &detector_xml, system_id);
         }
     }
 
@@ -106,33 +106,38 @@ fn get_regions_from_game_name<'r>(
     return regions;
 }
 
-fn create_or_update_system(connection: &SqliteConnection, system_xml: &SystemXml) -> System {
+fn create_or_update_system(connection: &SqliteConnection, system_xml: &SystemXml) -> i64 {
     let system = find_system_by_name(connection, &system_xml.name);
-    let system = match system {
-        Some(system) => update_system(connection, &system, system_xml),
+    match system {
+        Some(system) => {
+            update_system(connection, &system, system_xml);
+            system.id
+        }
         None => create_system(connection, system_xml),
-    };
-    return system;
+    }
 }
 
 fn create_or_update_header(
     connection: &SqliteConnection,
     detector_xml: &DetectorXml,
-    system: &System,
+    system_id: i64,
 ) {
-    let header = find_header_by_system_id(connection, system.id);
+    let header = find_header_by_system_id(connection, system_id);
     match header {
-        Some(header) => update_header(connection, &header, detector_xml, system.id),
-        None => create_header(connection, detector_xml, system.id),
+        Some(header) => {
+            update_header(connection, &header, detector_xml, system_id);
+            header.id
+        }
+        None => create_header(connection, detector_xml, system_id),
     };
 }
 
-fn delete_old_games(connection: &SqliteConnection, games_xml: &Vec<GameXml>, system: &System) {
+fn delete_old_games(connection: &SqliteConnection, games_xml: &Vec<GameXml>, system_id: i64) {
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
-    let game_names = find_game_names_by_system(&connection, &system);
+    let game_names = find_game_names_by_system_id(&connection, system_id);
     for game_name in game_names {
         if !game_names_xml.contains(&&game_name) {
-            delete_game_by_name_and_system_id(&connection, &game_name, system.id)
+            delete_game_by_name_and_system_id(&connection, &game_name, system_id)
         }
     }
 }
@@ -140,7 +145,7 @@ fn delete_old_games(connection: &SqliteConnection, games_xml: &Vec<GameXml>, sys
 fn create_or_update_games(
     connection: &SqliteConnection,
     games_xml: &Vec<GameXml>,
-    system: &System,
+    system_id: i64,
     region_codes: &Vec<(Regex, Vec<&str>)>,
 ) {
     let parent_games_xml: Vec<&GameXml> = games_xml
@@ -152,61 +157,67 @@ fn create_or_update_games(
         .filter(|game_xml| game_xml.cloneof.is_some())
         .collect();
     for parent_game_xml in parent_games_xml {
-        let game = find_game_by_name_and_system_id(connection, &parent_game_xml.name, system.id);
-        let game = match game {
-            Some(game) => update_game(
-                connection,
-                &game,
-                parent_game_xml,
-                &game.regions,
-                system.id,
-                None,
-            ),
+        let game = find_game_by_name_and_system_id(connection, &parent_game_xml.name, system_id);
+        let game_id = match game {
+            Some(game) => {
+                update_game(
+                    connection,
+                    &game,
+                    parent_game_xml,
+                    &game.regions,
+                    system_id,
+                    None,
+                );
+                game.id
+            }
             None => create_game(
                 connection,
                 parent_game_xml,
                 &get_regions_from_game_name(&parent_game_xml.name, region_codes).join(","),
-                system.id,
+                system_id,
                 None,
             ),
         };
         if !parent_game_xml.releases.is_empty() {
-            create_or_update_releases(connection, &parent_game_xml.releases, &game);
+            create_or_update_releases(connection, &parent_game_xml.releases, game_id);
         }
         if !parent_game_xml.roms.is_empty() {
-            create_or_update_roms(connection, &parent_game_xml.roms, &game);
+            create_or_update_roms(connection, &parent_game_xml.roms, game_id);
         }
     }
     for child_game_xml in child_games_xml {
-        let game = find_game_by_name_and_system_id(connection, &child_game_xml.name, system.id);
+        let game = find_game_by_name_and_system_id(connection, &child_game_xml.name, system_id);
         let parent_game = find_game_by_name_and_system_id(
             connection,
             child_game_xml.cloneof.as_ref().unwrap(),
-            system.id
+            system_id,
         )
         .unwrap();
-        let game = match game {
-            Some(game) => update_game(
-                connection,
-                &game,
-                child_game_xml,
-                &game.regions,
-                system.id,
-                Some(parent_game.id),
-            ),
+        let game_id = match game {
+            Some(game) => {
+                update_game(
+                    connection,
+                    &game,
+                    child_game_xml,
+                    &game.regions,
+                    system_id,
+                    Some(parent_game.id),
+                );
+                game.id
+            }
             None => create_game(
                 connection,
                 child_game_xml,
                 &get_regions_from_game_name(&child_game_xml.name, region_codes).join(","),
-                system.id,
+                system_id,
                 Some(parent_game.id),
             ),
         };
         if !child_game_xml.releases.is_empty() {
-            create_or_update_releases(connection, &child_game_xml.releases, &game);
+            create_or_update_releases(connection, &child_game_xml.releases, game_id);
         }
         if !child_game_xml.roms.is_empty() {
-            create_or_update_roms(connection, &child_game_xml.roms, &game);
+            create_or_update_roms(connection, &child_game_xml.roms, game_id);
         }
     }
 }
@@ -214,28 +225,34 @@ fn create_or_update_games(
 fn create_or_update_releases(
     connection: &SqliteConnection,
     releases_xml: &Vec<ReleaseXml>,
-    game: &Game,
+    game_id: i64,
 ) {
     for release_xml in releases_xml {
         let release = find_release_by_name_and_region_and_game_id(
             connection,
             &release_xml.name,
             &release_xml.region,
-            game.id,
+            game_id,
         );
         match release {
-            Some(release) => update_release(connection, &release, &release_xml, game.id),
-            None => create_release(connection, &release_xml, game.id),
+            Some(release) => {
+                update_release(connection, &release, &release_xml, game_id);
+                release.id
+            }
+            None => create_release(connection, &release_xml, game_id),
         };
     }
 }
 
-fn create_or_update_roms(connection: &SqliteConnection, roms_xml: &Vec<RomXml>, game: &Game) {
+fn create_or_update_roms(connection: &SqliteConnection, roms_xml: &Vec<RomXml>, game_id: i64) {
     for rom_xml in roms_xml {
-        let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game.id);
+        let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id);
         match rom {
-            Some(rom) => update_rom(connection, &rom, &rom_xml, game.id),
-            None => create_rom(connection, &rom_xml, game.id),
+            Some(rom) => {
+                update_rom(connection, &rom, &rom_xml, game_id);
+                rom.id
+            }
+            None => create_rom(connection, &rom_xml, game_id),
         };
     }
 }

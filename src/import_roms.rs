@@ -8,9 +8,9 @@ use super::sevenzip::*;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::ffi::OsString;
 
 pub fn import_roms(
     connection: &SqliteConnection,
@@ -276,9 +276,12 @@ pub fn create_or_update_file(connection: &SqliteConnection, path: &PathBuf, rom:
         path: &String::from(path.as_os_str().to_str().unwrap()),
     };
     let file = find_romfile_by_path(&connection, &romfile_input.path);
-    let file = match file {
-        Some(file) => update_romfile(&connection, &file, &romfile_input),
+    let file_id = match file {
+        Some(file) => {
+            update_romfile(&connection, &file, &romfile_input);
+            file.id
+        }
         None => create_romfile(&connection, &romfile_input),
     };
-    update_rom_romfile(&connection, rom, file.id);
+    update_rom_romfile(&connection, rom, file_id);
 }
