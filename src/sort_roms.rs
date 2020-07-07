@@ -242,11 +242,11 @@ fn process_games(
     let mut romfile_moves: Vec<(Romfile, String)> = Vec::new();
 
     let roms_romfiles = find_roms_romfiles_with_romfile_by_games(&connection, &games);
-    let rom_count = roms_romfiles.len();
     let game_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         games.into_par_iter().zip(roms_romfiles).collect();
 
     for (game, roms_romfiles) in game_roms_romfiles {
+        let rom_count = roms_romfiles.len();
         romfile_moves.append(
             &mut roms_romfiles
                 .into_par_iter()
