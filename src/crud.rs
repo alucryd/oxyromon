@@ -278,14 +278,14 @@ pub fn find_roms_romfiles_with_romfile_by_games<'a>(
         .grouped_by(games)
 }
 
-pub fn find_roms_without_romfile_by_games<'a>(
+pub fn find_roms_without_romfile_by_game_ids<'a>(
     connection: &SqliteConnection,
-    games: &Vec<Game>,
+    game_ids: &Vec<i64>,
 ) -> Vec<Rom> {
-    use schema::roms::dsl::*;
-    Rom::belonging_to(games)
-        .filter(romfile_id.is_null())
-        .order_by(name.asc())
+    roms::table
+        .filter(roms::dsl::romfile_id.is_null())
+        .filter(roms::dsl::game_id.eq_any(game_ids))
+        .order_by(roms::dsl::name.asc())
         .get_results(connection)
         .expect("Error while finding roms")
 }

@@ -6,10 +6,15 @@ use diesel::SqliteConnection;
 use rayon::prelude::*;
 use regex::Regex;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub fn sort_roms(connection: &SqliteConnection, matches: &ArgMatches, rom_directory: &PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn sort_roms(
+    connection: &SqliteConnection,
+    matches: &ArgMatches,
+    rom_directory: &PathBuf,
+) -> Result<(), Box<dyn Error>> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
 
     // unordered regions to keep
@@ -155,10 +160,11 @@ pub fn sort_roms(connection: &SqliteConnection, matches: &ArgMatches, rom_direct
         }
 
         if matches.is_present("MISSING") {
-            let mut games: Vec<Game> = Vec::new();
-            games.append(&mut all_regions_games);
-            games.append(&mut one_region_games);
-            let missing_roms: Vec<Rom> = find_roms_without_romfile_by_games(&connection, &games);
+            let mut game_ids: Vec<i64> = Vec::new();
+            game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
+            game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
+            let missing_roms: Vec<Rom> =
+                find_roms_without_romfile_by_game_ids(&connection, &game_ids);
 
             println!("Missing:");
             for rom in missing_roms {
@@ -236,6 +242,7 @@ fn process_games(
     let mut romfile_moves: Vec<(Romfile, String)> = Vec::new();
 
     let roms_romfiles = find_roms_romfiles_with_romfile_by_games(&connection, &games);
+    let rom_count = roms_romfiles.len();
     let game_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         games.into_par_iter().zip(roms_romfiles).collect();
 
@@ -244,7 +251,12 @@ fn process_games(
             &mut roms_romfiles
                 .into_par_iter()
                 .map(|(rom, romfile)| {
-                    let new_path = get_new_path(&game, &rom, &romfile, &directory);
+                    let new_path = String::from(
+                        get_new_path(&game, &rom, &romfile, rom_count, &directory)
+                            .as_os_str()
+                            .to_str()
+                            .unwrap(),
+                    );
                     return (romfile, new_path);
                 })
                 .filter(|(romfile, new_path)| &romfile.path != new_path)
@@ -255,19 +267,44 @@ fn process_games(
     return romfile_moves;
 }
 
-fn get_new_path(game: &Game, rom: &Rom, romfile: &Romfile, directory: &PathBuf) -> String {
+fn get_new_path(
+    game: &Game,
+    rom: &Rom,
+    romfile: &Romfile,
+    rom_count: usize,
+    directory: &PathBuf,
+) -> PathBuf {
     let archive_extensions = vec!["7z", "zip"];
     let chd_extension = "chd";
+    let cso_extension = "cso";
 
-    let romfile_path = Path::new(&romfile.path);
+    let romfile_path = Path::new(&romfile.path).to_path_buf();
     let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
-    let directory_str = directory.as_os_str().to_str().unwrap();
+    let mut new_romfile_path: PathBuf;
 
     if archive_extensions.contains(&romfile_extension) {
-        format!("{}/{}.{}", directory_str, rom.name, romfile_extension)
-    } else if chd_extension == romfile_extension {
-        format!("{}/{}.{}", directory_str, game.name, chd_extension)
+        let mut romfile_name = match rom_count {
+            1 => OsString::from(&rom.name),
+            _ => OsString::from(&game.name),
+        };
+        romfile_name.push(".");
+        romfile_name.push(&romfile_extension);
+        new_romfile_path = directory.join(romfile_name);
+    } else if romfile_extension == chd_extension {
+        if rom_count == 2 {
+            new_romfile_path = directory.join(&rom.name);
+            new_romfile_path.set_extension(&romfile_extension);
+        } else {
+            let mut romfile_name = OsString::from(&game.name);
+            romfile_name.push(".");
+            romfile_name.push(&romfile_extension);
+            new_romfile_path = directory.join(romfile_name);
+        }
+    } else if romfile_extension == cso_extension {
+        new_romfile_path = directory.join(&rom.name);
+        new_romfile_path.set_extension(&romfile_extension);
     } else {
-        format!("{}/{}", directory_str, rom.name)
+        new_romfile_path = directory.join(&rom.name);
     }
+    new_romfile_path
 }
