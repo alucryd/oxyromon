@@ -35,9 +35,8 @@ pub fn extract_chd(
     let mut bin_paths: Vec<PathBuf> = Vec::new();
     println!("Extracting {:?}", chd_path.file_name().unwrap());
     let cue_path = tmp_directory.join(cue_name);
-    let mut bin_name = chd_path.file_stem().unwrap().to_os_string();
-    bin_name.push(".bin");
-    let bin_path = tmp_directory.join(bin_name);
+    let mut tmp_bin_path = cue_path.clone();
+    tmp_bin_path.set_extension("bin");
     let output = Command::new("chdman")
         .arg("extractcd")
         .arg("-i")
@@ -45,7 +44,7 @@ pub fn extract_chd(
         .arg("-o")
         .arg(&cue_path)
         .arg("-ob")
-        .arg(&bin_path)
+        .arg(&tmp_bin_path)
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr)?;
@@ -53,14 +52,23 @@ pub fn extract_chd(
         bail!(stderr)
     }
     fs::remove_file(cue_path)?;
-    let bin_file = fs::File::open(&bin_path)?;
-    for (bin_name, size) in bin_names_sizes {
-        let split_bin_path = directory.join(bin_name);
-        let mut split_bin_file = fs::File::create(&split_bin_path)?;
-        let mut handle = (&bin_file).take(*size);
-        io::copy(&mut handle, &mut split_bin_file)?;
-        bin_paths.push(split_bin_path);
+    if bin_names_sizes.len() == 1 {
+        let (bin_name, _) = bin_names_sizes.get(0).unwrap();
+        let bin_path = directory.join(bin_name);
+        if bin_path != tmp_bin_path {
+            fs::rename(&tmp_bin_path, &bin_path)?;
+        }
+        bin_paths.push(bin_path);
+    } else {
+        let bin_file = fs::File::open(&tmp_bin_path)?;
+        for (bin_name, size) in bin_names_sizes {
+            let split_bin_path = directory.join(bin_name);
+            let mut split_bin_file = fs::File::create(&split_bin_path)?;
+            let mut handle = (&bin_file).take(*size);
+            io::copy(&mut handle, &mut split_bin_file)?;
+            bin_paths.push(split_bin_path);
+        }
+        fs::remove_file(&tmp_bin_path)?;
     }
-    fs::remove_file(&bin_path)?;
     Ok(bin_paths)
 }
