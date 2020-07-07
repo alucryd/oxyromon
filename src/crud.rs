@@ -45,8 +45,8 @@ pub fn create_game<'a>(
     connection: &SqliteConnection,
     game_xml: &GameXml,
     regions: &String,
-    system_id: i32,
-    parent_id: Option<i32>,
+    system_id: i64,
+    parent_id: Option<i64>,
 ) -> Game {
     let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::insert_into(games::table)
@@ -61,8 +61,8 @@ pub fn update_game<'a>(
     game: &Game,
     game_xml: &GameXml,
     regions: &String,
-    system_id: i32,
-    parent_id: Option<i32>,
+    system_id: i64,
+    parent_id: Option<i64>,
 ) -> Game {
     let game_input = GameInput::from((game_xml, regions, system_id, parent_id));
     diesel::update(game)
@@ -75,7 +75,7 @@ pub fn update_game<'a>(
 pub fn find_game_by_name_and_system_id<'a>(
     connection: &SqliteConnection,
     name: &str,
-    system_id: i32,
+    system_id: i64,
 ) -> Option<Game> {
     games::table
         .filter(games::dsl::name.eq(name))
@@ -134,7 +134,7 @@ pub fn find_game_names_by_system<'a>(
 pub fn delete_game_by_name_and_system_id<'a>(
     connection: &SqliteConnection,
     name: &str,
-    system_id: i32,
+    system_id: i64,
 ) {
     diesel::delete(
         games::table
@@ -151,7 +151,7 @@ pub fn delete_game_by_name_and_system_id<'a>(
 pub fn create_release<'a>(
     connection: &SqliteConnection,
     release_xml: &ReleaseXml,
-    game_id: i32,
+    game_id: i64,
 ) -> Release {
     let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::insert_into(releases::table)
@@ -171,7 +171,7 @@ pub fn update_release<'a>(
     connection: &SqliteConnection,
     release: &Release,
     release_xml: &ReleaseXml,
-    game_id: i32,
+    game_id: i64,
 ) -> Release {
     let release_input = ReleaseInput::from((release_xml, game_id));
     diesel::update(release)
@@ -191,7 +191,7 @@ pub fn find_release_by_name_and_region_and_game_id<'a>(
     connection: &SqliteConnection,
     name: &str,
     region: &str,
-    game_id: i32,
+    game_id: i64,
 ) -> Option<Release> {
     releases::table
         .filter(releases::dsl::name.eq(name))
@@ -205,7 +205,7 @@ pub fn find_release_by_name_and_region_and_game_id<'a>(
         ))
 }
 
-pub fn create_rom<'a>(connection: &SqliteConnection, rom_xml: &RomXml, game_id: i32) -> Rom {
+pub fn create_rom<'a>(connection: &SqliteConnection, rom_xml: &RomXml, game_id: i64) -> Rom {
     let rom_input = RomInput::from((rom_xml, game_id));
     diesel::insert_into(roms::table)
         .values(&rom_input)
@@ -218,7 +218,7 @@ pub fn update_rom<'a>(
     connection: &SqliteConnection,
     rom: &Rom,
     rom_xml: &RomXml,
-    game_id: i32,
+    game_id: i64,
 ) -> Rom {
     let rom_input = RomInput::from((rom_xml, game_id));
     diesel::update(rom)
@@ -228,7 +228,7 @@ pub fn update_rom<'a>(
     find_rom_by_name_and_game_id(connection, &rom_input.name, game_id).unwrap()
 }
 
-pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_id: i32) -> usize {
+pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_id: i64) -> usize {
     diesel::update(rom)
         .set(roms::dsl::romfile_id.eq(romfile_id))
         .execute(connection)
@@ -241,7 +241,7 @@ pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_
 pub fn find_rom_by_name_and_game_id<'a>(
     connection: &SqliteConnection,
     name: &str,
-    game_id: i32,
+    game_id: i64,
 ) -> Option<Rom> {
     roms::table
         .filter(roms::dsl::name.eq(name))
@@ -254,7 +254,7 @@ pub fn find_rom_by_name_and_game_id<'a>(
         ))
 }
 
-pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i32) -> Vec<Rom> {
+pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i64) -> Vec<Rom> {
     roms::table
         .filter(roms::dsl::game_id.eq(game_id))
         .get_results(connection)
@@ -308,7 +308,7 @@ pub fn find_roms_by_size_and_crc_and_system<'a>(
     connection: &SqliteConnection,
     size: u64,
     crc: &str,
-    system_id: i32,
+    system_id: i64,
 ) -> Vec<Rom> {
     let roms_games: Vec<(Rom, Game)> = roms::table
         .inner_join(games::table)
@@ -354,7 +354,7 @@ pub fn find_romfile_by_path<'a>(connection: &SqliteConnection, path: &str) -> Op
         .expect(&format!("Error while finding file with path {}", path))
 }
 
-pub fn find_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i32) -> Option<Romfile> {
+pub fn find_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i64) -> Option<Romfile> {
     romfiles::table
         .filter(romfiles::dsl::id.eq(romfile_id))
         .get_result(connection)
@@ -379,7 +379,7 @@ pub fn find_romfiles<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
         .expect(&format!("Error while finding romfiles"))
 }
 
-pub fn delete_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i32) {
+pub fn delete_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i64) {
     diesel::delete(romfiles::table.filter(romfiles::dsl::id.eq(romfile_id)))
         .execute(connection)
         .expect(&format!(
@@ -391,7 +391,7 @@ pub fn delete_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i32) 
 pub fn create_header<'a>(
     connection: &SqliteConnection,
     detector_xml: &DetectorXml,
-    system_id: i32,
+    system_id: i64,
 ) -> Header {
     let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::insert_into(headers::table)
@@ -405,7 +405,7 @@ pub fn update_header<'a>(
     connection: &SqliteConnection,
     header: &Header,
     detector_xml: &DetectorXml,
-    system_id: i32,
+    system_id: i64,
 ) -> Header {
     let header_input = HeaderInput::from((detector_xml, system_id));
     diesel::update(header)
@@ -420,7 +420,7 @@ pub fn update_header<'a>(
 
 pub fn find_header_by_system_id<'a>(
     connection: &SqliteConnection,
-    system_id: i32,
+    system_id: i64,
 ) -> Option<Header> {
     headers::table
         .filter(headers::dsl::system_id.eq(system_id))

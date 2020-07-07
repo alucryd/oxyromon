@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 #[derive(Identifiable, PartialEq, Queryable)]
 pub struct System {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub description: String,
     pub version: String,
@@ -38,13 +38,13 @@ impl<'a> From<&'a SystemXml> for SystemInput<'a> {
 #[derive(Associations, Identifiable, PartialEq, Queryable)]
 #[belongs_to(System)]
 pub struct Header {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub version: String,
     pub start_byte: i64,
     pub size: i64,
     pub hex_value: String,
-    pub system_id: i32,
+    pub system_id: i64,
 }
 
 #[derive(AsChangeset, Insertable)]
@@ -55,10 +55,10 @@ pub struct HeaderInput<'a> {
     pub start_byte: i64,
     pub size: i64,
     pub hex_value: &'a String,
-    pub system_id: i32,
+    pub system_id: i64,
 }
 
-type DetectorXmlSystemId<'a> = (&'a DetectorXml, i32);
+type DetectorXmlSystemId<'a> = (&'a DetectorXml, i64);
 impl<'a> From<DetectorXmlSystemId<'a>> for HeaderInput<'a> {
     fn from(detector_xml_system_id: DetectorXmlSystemId<'a>) -> Self {
         Self {
@@ -77,12 +77,12 @@ impl<'a> From<DetectorXmlSystemId<'a>> for HeaderInput<'a> {
 #[belongs_to(System)]
 #[belongs_to(Game, foreign_key = "parent_id")]
 pub struct Game {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub description: String,
     pub regions: String,
-    pub system_id: i32,
-    pub parent_id: Option<i32>,
+    pub system_id: i64,
+    pub parent_id: Option<i64>,
 }
 
 #[derive(AsChangeset, Insertable)]
@@ -91,8 +91,8 @@ pub struct GameInput<'a> {
     pub name: &'a String,
     pub description: &'a String,
     pub regions: &'a String,
-    pub system_id: i32,
-    pub parent_id: Option<i32>,
+    pub system_id: i64,
+    pub parent_id: Option<i64>,
 }
 
 #[derive(Deserialize)]
@@ -106,7 +106,7 @@ pub struct GameXml {
     pub roms: Vec<RomXml>,
 }
 
-type GameXmlSystemIdParentId<'a> = (&'a GameXml, &'a String, i32, Option<i32>);
+type GameXmlSystemIdParentId<'a> = (&'a GameXml, &'a String, i64, Option<i64>);
 impl<'a> From<GameXmlSystemIdParentId<'a>> for GameInput<'a> {
     fn from(game_xml_system_id_parent_id: GameXmlSystemIdParentId<'a>) -> Self {
         Self {
@@ -122,10 +122,10 @@ impl<'a> From<GameXmlSystemIdParentId<'a>> for GameInput<'a> {
 #[derive(Associations, Identifiable, PartialEq, Queryable)]
 #[belongs_to(Game)]
 pub struct Release {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub region: String,
-    pub game_id: i32,
+    pub game_id: i64,
 }
 
 #[derive(AsChangeset, Insertable)]
@@ -133,7 +133,7 @@ pub struct Release {
 pub struct ReleaseInput<'a> {
     pub name: &'a String,
     pub region: &'a String,
-    pub game_id: i32,
+    pub game_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -142,7 +142,7 @@ pub struct ReleaseXml {
     pub region: String,
 }
 
-type ReleaseXmlGameId<'a> = (&'a ReleaseXml, i32);
+type ReleaseXmlGameId<'a> = (&'a ReleaseXml, i64);
 impl<'a> From<ReleaseXmlGameId<'a>> for ReleaseInput<'a> {
     fn from(release_xml_game_id: ReleaseXmlGameId<'a>) -> Self {
         Self {
@@ -157,15 +157,15 @@ impl<'a> From<ReleaseXmlGameId<'a>> for ReleaseInput<'a> {
 #[belongs_to(Game)]
 #[belongs_to(Romfile)]
 pub struct Rom {
-    pub id: i32,
+    pub id: i64,
     pub name: String,
     pub size: i64,
     pub crc: String,
     pub md5: String,
     pub sha1: String,
     pub rom_status: Option<String>,
-    pub game_id: i32,
-    pub romfile_id: Option<i32>,
+    pub game_id: i64,
+    pub romfile_id: Option<i64>,
 }
 
 #[derive(AsChangeset, Insertable)]
@@ -177,7 +177,7 @@ pub struct RomInput<'a> {
     pub md5: &'a String,
     pub sha1: &'a String,
     pub rom_status: Option<&'a String>,
-    pub game_id: i32,
+    pub game_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -190,7 +190,7 @@ pub struct RomXml {
     pub status: Option<String>,
 }
 
-type RomXmlGameId<'a> = (&'a RomXml, i32);
+type RomXmlGameId<'a> = (&'a RomXml, i64);
 impl<'a> From<RomXmlGameId<'a>> for RomInput<'a> {
     fn from(rom_xml: RomXmlGameId<'a>) -> Self {
         Self {
@@ -207,7 +207,7 @@ impl<'a> From<RomXmlGameId<'a>> for RomInput<'a> {
 
 #[derive(Identifiable, PartialEq, Queryable)]
 pub struct Romfile {
-    pub id: i32,
+    pub id: i64,
     pub path: String,
 }
 

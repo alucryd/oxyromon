@@ -1,59 +1,59 @@
 table! {
     games (id) {
-        id -> Integer,
+        id -> BigInt,
         name -> Text,
         description -> Text,
         regions -> Text,
-        system_id -> Integer,
-        parent_id -> Nullable<Integer>,
+        system_id -> BigInt,
+        parent_id -> Nullable<BigInt>,
     }
 }
 
 table! {
     headers (id) {
-        id -> Integer,
+        id -> BigInt,
         name -> Text,
         version -> Text,
         start_byte -> BigInt,
         size -> BigInt,
         hex_value -> Text,
-        system_id -> Integer,
+        system_id -> BigInt,
     }
 }
 
 table! {
     releases (id) {
-        id -> Integer,
+        id -> BigInt,
         name -> Text,
         region -> Text,
-        game_id -> Integer,
+        game_id -> BigInt,
     }
 }
 
 table! {
     romfiles (id) {
-        id -> Integer,
+        id -> BigInt,
         path -> Text,
     }
 }
 
 table! {
     roms (id) {
-        id -> Integer,
+        id -> BigInt,
         name -> Text,
         size -> BigInt,
         crc -> Text,
         md5 -> Text,
         sha1 -> Text,
         rom_status -> Nullable<Text>,
-        game_id -> Integer,
-        romfile_id -> Nullable<Integer>,
+        game_id -> BigInt,
+        romfile_id -> Nullable<BigInt>,
     }
 }
 
 table! {
     systems (id) {
-        id -> Integer,
+        id -> BigInt,
         name -> Text,
         description -> Text,
         version -> Text,

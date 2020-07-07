@@ -237,6 +237,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             )?,
             _ => (),
         }
+
+        close_connection(connection)?;
     }
 
     Ok(())
@@ -247,6 +249,27 @@ fn establish_connection(rom_directory: &PathBuf) -> Result<SqliteConnection, Box
     let database_url = database_path.as_os_str().to_str().unwrap();
     let connection = SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url));
+
+    connection
+        .execute(
+            "
+            PRAGMA foreign_keys = ON;
+            PRAGMA journal_mode = WAL;
+            PRAGMA locking_mode = EXCLUSIVE;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA temp_store = MEMORY;
+            PRAGMA wal_checkpoint(TRUNCATE);
+            ",
+        )
+        .map_err(ConnectionError::CouldntSetupConfiguration)?;
+
     embedded_migrations::run(&connection)?;
+
     Ok(connection)
+}
+
+fn close_connection(connection: SqliteConnection) -> Result<(), Box<dyn Error>> {
+    connection.execute("PRAGMA optimize;")?;
+
+    Ok(())
 }
