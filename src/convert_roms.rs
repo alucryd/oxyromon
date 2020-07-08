@@ -4,20 +4,20 @@ use super::maxcso::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
+use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
 use rayon::prelude::*;
-use std::error::Error;
-use std::fs;
+use std::ffi::OsString;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
-use std::ffi::OsString;
+use super::util::*;
 
 pub fn convert_roms(
     connection: &SqliteConnection,
     matches: &ArgMatches,
     tmp_directory: &PathBuf,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
     let format = matches.value_of("FORMAT");
 
@@ -44,7 +44,7 @@ fn to_archive(
     system: &System,
     tmp_directory: &PathBuf,
     archive_type: ArchiveType,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -81,13 +81,13 @@ fn to_archive(
             let mut archive_path = Path::new(&romfile.path).to_path_buf();
 
             extract_files_from_archive(&archive_path, &vec![&rom.name], tmp_directory)?;
-            fs::remove_file(&archive_path)?;
+            remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => "7z",
                 ArchiveType::ZIP => "zip",
             });
             add_files_to_archive(&archive_path, &vec![&rom.name], tmp_directory)?;
-            fs::remove_file(tmp_directory.join(&rom.name))?;
+            remove_file(&tmp_directory.join(&rom.name))?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
@@ -110,14 +110,14 @@ fn to_archive(
             let mut archive_path = Path::new(&archive_romfile.path).to_path_buf();
 
             extract_files_from_archive(&archive_path, &file_names, tmp_directory)?;
-            fs::remove_file(&archive_path)?;
+            remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => "7z",
                 ArchiveType::ZIP => "zip",
             });
             add_files_to_archive(&archive_path, &file_names, tmp_directory)?;
             for file_name in file_names {
-                fs::remove_file(tmp_directory.join(file_name))?;
+                remove_file(&tmp_directory.join(file_name))?;
                 let archive_romfile_input = RomfileInput {
                     path: &String::from(archive_path.as_os_str().to_str().unwrap()),
                 };
@@ -139,7 +139,7 @@ fn to_archive(
             let archive_path = directory.join(archive_name);
 
             add_files_to_archive(&archive_path, &vec![&rom.name], &directory)?;
-            fs::remove_file(directory.join(&rom.name))?;
+            remove_file(&directory.join(&rom.name))?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
@@ -165,7 +165,7 @@ fn to_archive(
 
             add_files_to_archive(&archive_path, &file_names, &directory)?;
             for file_name in file_names {
-                fs::remove_file(directory.join(file_name))?;
+                remove_file(&directory.join(file_name))?;
             }
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
@@ -183,7 +183,7 @@ fn to_archive(
     Ok(())
 }
 
-fn to_chd(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn Error>> {
+fn to_chd(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -212,14 +212,14 @@ fn to_chd(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn 
         for (bin_rom, bin_romfile) in bin_roms_romfiles {
             update_rom_romfile(connection, &bin_rom, chd_romfile_id);
             delete_romfile_by_id(connection, bin_romfile.id);
-            fs::remove_file(&bin_romfile.path)?;
+            remove_file(&Path::new(&bin_romfile.path).to_path_buf())?;
         }
     }
 
     Ok(())
 }
 
-fn to_cso(connection: &SqliteConnection, system: &System) -> Result<(), Box<dyn Error>> {
+fn to_cso(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -249,7 +249,7 @@ fn to_original(
     connection: &SqliteConnection,
     system: &System,
     tmp_directory: &PathBuf,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     let games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -307,7 +307,7 @@ fn to_original(
         let directory = archive_path.parent().unwrap();
         let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
         extract_files_from_archive(&archive_path, &file_names, &directory)?;
-        fs::remove_file(&archive_path)?;
+        remove_file(&archive_path)?;
         for rom in roms {
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
@@ -353,7 +353,7 @@ fn to_original(
             &cue_path.file_name().unwrap().to_str().unwrap(),
             &file_names_sizes,
         )?;
-        fs::remove_file(&chd_path)?;
+        remove_file(&chd_path)?;
         for rom in roms {
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),

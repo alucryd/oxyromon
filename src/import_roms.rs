@@ -5,19 +5,20 @@ use super::maxcso::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
+use super::util::*;
+use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
-use std::error::Error;
 use std::ffi::OsString;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub fn import_roms(
     connection: &SqliteConnection,
     matches: &ArgMatches,
     rom_directory: &PathBuf,
     tmp_directory: &PathBuf,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     let system = prompt_for_system(&connection);
     let header = find_header_by_system_id(&connection, system.id);
 
@@ -28,11 +29,14 @@ pub fn import_roms(
     let cso_extension = "cso";
 
     if !new_directory.is_dir() {
-        fs::create_dir_all(&new_directory)?;
+        try_with!(
+            fs::create_dir_all(&new_directory),
+            format!("Failed to create {:?}", &new_directory)
+        );
     }
 
     for f in matches.values_of("ROMS").unwrap() {
-        let file_path = Path::new(f).canonicalize()?;
+        let file_path = get_canonicalized_path(f)?;
         let file_extension = file_path
             .extension()
             .unwrap()
@@ -60,7 +64,7 @@ pub fn import_roms(
                     )?;
                     let extracted_path = tmp_directory.join(&sevenzip_info.path);
                     let res = get_file_size_and_crc(&extracted_path, &header)?;
-                    fs::remove_file(&extracted_path)?;
+                    remove_file(&extracted_path)?;
                     size = res.0;
                     crc = res.1;
                 } else {
@@ -68,10 +72,12 @@ pub fn import_roms(
                     crc = String::from(&sevenzip_info.crc);
                 }
 
-                let rom = find_rom(&connection, size, &crc, &system);
-                let rom = match rom {
-                    Ok(rom) => rom,
-                    Err(_) => continue,
+                let rom = match find_rom(&connection, size, &crc, &system) {
+                    Some(rom) => rom,
+                    None => {
+                        println!("");
+                        continue;
+                    }
                 };
 
                 let mut new_name = OsString::from(&rom.name);
@@ -113,10 +119,12 @@ pub fn import_roms(
                         crc = String::from(&sevenzip_info.crc);
                     }
 
-                    let rom = find_rom(&connection, size, &crc, &system);
-                    let rom = match rom {
-                        Ok(rom) => rom,
-                        Err(_) => continue,
+                    let rom = match find_rom(&connection, size, &crc, &system) {
+                        Some(rom) => rom,
+                        None => {
+                            println!("");
+                            continue;
+                        }
                     };
 
                     let mut new_path = new_directory.join(&rom.name);
@@ -131,7 +139,7 @@ pub fn import_roms(
                 }
 
                 // delete archive
-                fs::remove_file(&file_path)?;
+                remove_file(&file_path)?;
             }
         // file is a CHD
         } else if chd_extension == file_extension {
@@ -139,15 +147,18 @@ pub fn import_roms(
             cue_path.set_extension(&cue_extension);
 
             if !cue_path.is_file() {
-                println!("Couldn't find {:?}", cue_path.file_name().unwrap());
+                println!("Missing {:?}", cue_path.file_name().unwrap());
+                println!("");
                 continue;
             }
 
             let (size, crc) = get_file_size_and_crc(&cue_path, &header)?;
-            let cue_rom = find_rom(&connection, size, &crc, &system);
-            let cue_rom = match cue_rom {
-                Ok(cue_rom) => cue_rom,
-                Err(_) => continue,
+            let cue_rom = match find_rom(&connection, size, &crc, &system) {
+                Some(rom) => rom,
+                None => {
+                    println!("");
+                    continue;
+                }
             };
 
             let mut roms: Vec<Rom> = find_roms_by_game_id(&connection, cue_rom.game_id)
@@ -171,12 +182,13 @@ pub fn import_roms(
             for bin_path in bin_paths {
                 let (_, crc) = get_file_size_and_crc(&bin_path, &header)?;
                 crcs.push(crc);
-                fs::remove_file(&bin_path)?;
+                remove_file(&bin_path)?;
             }
 
             for (i, rom) in roms.iter().enumerate() {
                 if crcs[i] != rom.crc {
                     println!("CRC(s) don't match");
+                    println!("");
                     continue;
                 }
             }
@@ -198,8 +210,14 @@ pub fn import_roms(
         } else if cso_extension == file_extension {
             let iso_path = extract_cso(&file_path, &tmp_directory)?;
             let (size, crc) = get_file_size_and_crc(&iso_path, &header)?;
-            let rom = find_rom(&connection, size, &crc, &system)?;
-            fs::remove_file(&iso_path)?;
+            let rom = match find_rom(&connection, size, &crc, &system) {
+                Some(rom) => rom,
+                None => {
+                    println!("");
+                    continue;
+                }
+            };
+            remove_file(&iso_path)?;
 
             let mut new_file_path = new_directory.join(&rom.name);
             new_file_path.set_extension(cso_extension);
@@ -211,10 +229,12 @@ pub fn import_roms(
             create_or_update_file(&connection, &new_file_path, &rom);
         } else {
             let (size, crc) = get_file_size_and_crc(&file_path, &header)?;
-            let rom = find_rom(&connection, size, &crc, &system);
-            let rom = match rom {
-                Ok(rom) => rom,
-                Err(_) => continue,
+            let rom = match find_rom(&connection, size, &crc, &system) {
+                Some(rom) => rom,
+                None => {
+                    println!("");
+                    continue;
+                }
             };
 
             let new_path = new_directory.join(&rom.name);
@@ -231,18 +251,14 @@ pub fn import_roms(
     Ok(())
 }
 
-fn find_rom(
-    connection: &SqliteConnection,
-    size: u64,
-    crc: &str,
-    system: &System,
-) -> Result<Rom, Box<dyn Error>> {
+fn find_rom(connection: &SqliteConnection, size: u64, crc: &str, system: &System) -> Option<Rom> {
     let rom: Rom;
     let mut roms = find_roms_by_size_and_crc_and_system(&connection, size, &crc, system.id);
 
+    // abort if no match
     if roms.is_empty() {
         println!("No matching rom");
-        bail!("No matching rom");
+        return None;
     }
 
     // let user choose the rom if there are multiple matches
@@ -259,17 +275,17 @@ fn find_rom(
         if romfile.is_some() {
             let romfile = romfile.unwrap();
             println!("Duplicate of \"{}\"", romfile.path);
-            bail!("Duplicate of \"{}\"", romfile.path);
+            return None;
         }
     }
 
-    Ok(rom)
+    Some(rom)
 }
 
-fn move_file(old_path: &PathBuf, new_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+fn move_file(old_path: &PathBuf, new_path: &PathBuf) -> SimpleResult<()> {
     if old_path != new_path {
         println!("Moving to {:?}", new_path);
-        fs::rename(&old_path, &new_path)?;
+        rename_file(&old_path, &new_path)?;
     }
     Ok(())
 }

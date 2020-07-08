@@ -1,18 +1,14 @@
 use super::crud::*;
 use super::model::*;
+use super::util::*;
+use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
 use quick_xml::de;
 use regex::Regex;
-use std::error::Error;
-use std::fs;
 use std::io;
-use std::path::Path;
 
-pub fn import_dats(
-    connection: &SqliteConnection,
-    matches: &ArgMatches,
-) -> Result<(), Box<dyn Error>> {
+pub fn import_dats(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     let region_codes: Vec<(Regex, Vec<&str>)> = vec![
         (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
         (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
@@ -52,8 +48,8 @@ pub fn import_dats(
     ];
 
     for d in matches.values_of("DATS").unwrap() {
-        let dat_path = Path::new(d).canonicalize()?;
-        let f = fs::File::open(&dat_path)?;
+        let dat_path = get_canonicalized_path(d)?;
+        let f = open_file(&dat_path)?;
         let reader = io::BufReader::new(f);
         let mut datafile_xml: DatfileXml =
             de::from_reader(reader).expect("Failed to parse the datafile");
@@ -80,7 +76,7 @@ pub fn import_dats(
         if datafile_xml.system.clrmamepro.is_some() {
             let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
             let header_file_path = dat_path.parent().unwrap().join(header_file_name);
-            let header_file = fs::File::open(&header_file_path)?;
+            let header_file = open_file(&header_file_path)?;
             let reader = io::BufReader::new(header_file);
             let detector_xml: DetectorXml =
                 de::from_reader(reader).expect("Failed to parse the header file");

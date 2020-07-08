@@ -1,4 +1,4 @@
-use std::error::Error;
+use super::SimpleResult;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
@@ -14,21 +14,23 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
-pub fn parse_archive(archive_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Error>> {
+pub fn parse_archive(archive_path: &PathBuf) -> SimpleResult<Vec<ArchiveInfo>> {
     println!("Scanning {:?}", archive_path.file_name().unwrap());
-    let output = Command::new("7z")
-        .arg("l")
-        .arg("-slt")
-        .arg(&archive_path)
-        .output()?;
-
+    let output = try_with!(
+        Command::new("7z")
+            .arg("l")
+            .arg("-slt")
+            .arg(&archive_path)
+            .output(),
+        "Failed to parse archive"
+    );
     if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
+        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
         println!("{}", stderr);
-        bail!(stderr);
+        bail!(stderr.as_str());
     }
 
-    let stdout = String::from_utf8(output.stdout)?;
+    let stdout = try_with!(String::from_utf8(output.stdout), "Failed to get stdout");
     let lines: Vec<&str> = stdout
         .lines()
         .filter(|&line| {
@@ -55,18 +57,21 @@ pub fn move_file_in_archive(
     archive_path: &PathBuf,
     file_name: &str,
     new_file_name: &str,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     println!("Renaming \"{}\" to \"{}\"", file_name, new_file_name);
-    let output = Command::new("7z")
-        .arg("rn")
-        .arg(archive_path)
-        .arg(file_name)
-        .arg(new_file_name)
-        .output()?;
+    let output = try_with!(
+        Command::new("7z")
+            .arg("rn")
+            .arg(archive_path)
+            .arg(file_name)
+            .arg(new_file_name)
+            .output(),
+        "Failed to rename file in archive"
+    );
     if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
+        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
         println!("{}", stderr);
-        bail!(stderr);
+        bail!(stderr.as_str());
     }
     Ok(())
 }
@@ -75,22 +80,25 @@ pub fn extract_files_from_archive(
     archive_path: &PathBuf,
     file_names: &Vec<&str>,
     directory: &Path,
-) -> Result<(), Box<dyn Error>> {
+) -> SimpleResult<()> {
     println!(
         "Extracting {:?} from {:?}",
         file_names,
         archive_path.file_name().unwrap()
     );
-    let output = Command::new("7z")
-        .arg("x")
-        .arg(archive_path)
-        .args(file_names)
-        .current_dir(directory)
-        .output()?;
+    let output = try_with!(
+        Command::new("7z")
+            .arg("x")
+            .arg(archive_path)
+            .args(file_names)
+            .current_dir(directory)
+            .output(),
+        "Failed to extract files from archive"
+    );
     if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
+        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
         println!("{}", stderr);
-        bail!(stderr)
+        bail!(stderr.as_str())
     }
     Ok(())
 }
@@ -99,19 +107,26 @@ pub fn add_files_to_archive(
     archive_path: &PathBuf,
     file_names: &Vec<&str>,
     directory: &Path,
-) -> Result<(), Box<dyn Error>> {
-    println!("Compressing {:?} to {:?}", file_names, archive_path.file_name().unwrap());
-    let output = Command::new("7z")
-        .arg("a")
-        .arg(archive_path)
-        .args(file_names)
-        .arg("-mx=9")
-        .current_dir(directory)
-        .output()?;
+) -> SimpleResult<()> {
+    println!(
+        "Compressing {:?} to {:?}",
+        file_names,
+        archive_path.file_name().unwrap()
+    );
+    let output = try_with!(
+        Command::new("7z")
+            .arg("a")
+            .arg(archive_path)
+            .args(file_names)
+            .arg("-mx=9")
+            .current_dir(directory)
+            .output(),
+        "Failed to add files to archive"
+    );
     if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr)?;
+        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
         println!("{}", stderr);
-        bail!(stderr)
+        bail!(stderr.as_str())
     }
     Ok(())
 }

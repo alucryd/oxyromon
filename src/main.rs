@@ -26,23 +26,27 @@ mod purge_roms;
 mod schema;
 mod sevenzip;
 mod sort_roms;
+mod util;
 
 use self::convert_roms::convert_roms;
 use self::import_dats::import_dats;
 use self::import_roms::import_roms;
 use self::purge_roms::purge_roms;
 use self::sort_roms::sort_roms;
+use self::util::*;
 use clap::{App, Arg, SubCommand};
 use diesel::prelude::*;
 use diesel::SqliteConnection;
 use dotenv::dotenv;
+use simple_error::SimpleError;
 use std::env;
-use std::error::Error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 embed_migrations!("migrations");
 
-fn main() -> Result<(), Box<dyn Error>> {
+pub type SimpleResult<T> = Result<T, SimpleError>;
+
+fn main() -> SimpleResult<()> {
     let import_dats_subcommand: App = SubCommand::with_name("import-dats")
         .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
         .arg(
@@ -56,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Arg::with_name("INFO")
                 .short("i")
                 .long("info")
-                .help("Show the DAT information and exit")
+                .help("Shows the DAT information and exit")
                 .required(false),
         );
 
@@ -169,7 +173,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help("Sets the destination format")
                 .required(false)
                 .takes_value(true)
-                .possible_values(&["7Z", "CHD", "ORIGINAL", "ZIP"]),
+                .possible_values(&["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"]),
         );
 
     let purge_roms_subcommand: App = SubCommand::with_name("purge-roms")
@@ -205,11 +209,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     if matches.subcommand.is_some() {
         dotenv().ok();
         let rom_directory =
-            Path::new(&env::var("ROM_DIRECTORY").expect("ROM_DIRECTORY must be set"))
-                .canonicalize()?;
+            get_canonicalized_path(&env::var("ROM_DIRECTORY").expect("ROM_DIRECTORY must be set"))?;
         let tmp_directory = env::var("TMP_DIRECTORY");
         let tmp_directory = match tmp_directory {
-            Ok(s) => Path::new(&s).canonicalize()?,
+            Ok(tmp_directory) => get_canonicalized_path(&tmp_directory)?,
             Err(_) => env::temp_dir(),
         };
         let connection = establish_connection(&rom_directory)?;
@@ -248,14 +251,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn establish_connection(rom_directory: &PathBuf) -> Result<SqliteConnection, Box<dyn Error>> {
+fn establish_connection(rom_directory: &PathBuf) -> SimpleResult<SqliteConnection> {
     let database_path = rom_directory.join(".oxyromon.db");
     let database_url = database_path.as_os_str().to_str().unwrap();
     let connection = SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url));
 
-    connection
-        .execute(
+    try_with!(
+        connection.execute(
             "
             PRAGMA foreign_keys = ON;
             PRAGMA journal_mode = WAL;
@@ -264,16 +267,22 @@ fn establish_connection(rom_directory: &PathBuf) -> Result<SqliteConnection, Box
             PRAGMA temp_store = MEMORY;
             PRAGMA wal_checkpoint(TRUNCATE);
             ",
-        )
-        .map_err(ConnectionError::CouldntSetupConfiguration)?;
+        ),
+        "Failed to setup the database"
+    );
 
-    embedded_migrations::run(&connection)?;
+    try_with!(
+        embedded_migrations::run(&connection),
+        "Failed to run embedded migrations"
+    );
 
     Ok(connection)
 }
 
-fn close_connection(connection: SqliteConnection) -> Result<(), Box<dyn Error>> {
-    connection.execute("PRAGMA optimize;")?;
-
+fn close_connection(connection: SqliteConnection) -> SimpleResult<()> {
+    try_with!(
+        connection.execute("PRAGMA optimize;"),
+        "Failed to optimize the database"
+    );
     Ok(())
 }

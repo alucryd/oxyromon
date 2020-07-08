@@ -1,11 +1,11 @@
 use super::model::Header;
+use super::util::*;
+use super::SimpleResult;
 use crc32fast::Hasher;
 use digest::generic_array::typenum::{U4, U64};
 use digest::generic_array::GenericArray;
 use digest::Digest;
 use digest::{BlockInput, FixedOutputDirty, Reset, Update};
-use std::error::Error;
-use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -61,9 +61,9 @@ impl io::Write for Crc32 {
 pub fn get_file_size_and_crc(
     file_path: &PathBuf,
     header: &Option<Header>,
-) -> Result<(u64, String), Box<dyn Error>> {
+) -> SimpleResult<(u64, String)> {
     println!("Scanning {:?}", file_path.file_name().unwrap());
-    let mut f = fs::File::open(&file_path)?;
+    let mut f = open_file(&file_path)?;
     let mut size = f.metadata().unwrap().len();
 
     // extract a potential header, revert if none is found
@@ -71,21 +71,27 @@ pub fn get_file_size_and_crc(
         let header = header.as_ref().unwrap();
 
         let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
-        (&mut f).take(header.size as u64).read_to_end(&mut buffer)?;
+        try_with!(
+            (&mut f).take(header.size as u64).read_to_end(&mut buffer),
+            "Failed to read into buffer"
+        );
         let start_byte = header.start_byte as usize;
-        let hex_values: Vec<String> = buffer[start_byte..].iter().map(|b| format!("{:x}", b)).collect();
+        let hex_values: Vec<String> = buffer[start_byte..]
+            .iter()
+            .map(|b| format!("{:x}", b))
+            .collect();
         let hex_value = hex_values.join("").to_uppercase();
 
         if hex_value.starts_with(&header.hex_value.to_uppercase()) {
             size -= header.size as u64;
         } else {
-            f.seek(std::io::SeekFrom::Start(0))?;
+            try_with!(f.seek(std::io::SeekFrom::Start(0)), "Failed to seek file");
         }
     }
 
     // compute the checksum
     let mut digest = Crc32::new();
-    io::copy(&mut f, &mut digest)?;
+    try_with!(io::copy(&mut f, &mut digest), "Failed to copy data");
     let crc = format!("{:08x}", digest.finalize());
     Ok((size, crc))
 }

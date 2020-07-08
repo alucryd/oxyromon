@@ -1,12 +1,12 @@
 use super::crud::*;
 use super::prompt::*;
+use super::util::*;
+use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
-use std::error::Error;
-use std::fs;
 use std::path::Path;
 
-pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     // delete roms in trash
     if matches.is_present("EMPTY-TRASH") {
         println!("Processing trashed ROM files");
@@ -22,8 +22,9 @@ pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> Result
 
             if prompt_for_yes_no(matches) {
                 for romfile in &romfiles {
-                    if Path::new(&romfile.path).is_file() {
-                        fs::remove_file(&romfile.path)?;
+                    let romfile_path = Path::new(&romfile.path).to_path_buf();
+                    if romfile_path.is_file() {
+                        remove_file(&romfile_path)?;
                         delete_romfile_by_id(connection, romfile.id);
                     }
                 }
