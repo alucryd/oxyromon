@@ -207,7 +207,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         let rom_directory =
             Path::new(&env::var("ROM_DIRECTORY").expect("ROM_DIRECTORY must be set"))
                 .canonicalize()?;
-        let tmp_directory = env::temp_dir();
+        let tmp_directory = env::var("TMP_DIRECTORY");
+        let tmp_directory = match tmp_directory {
+            Ok(s) => Path::new(&s).canonicalize()?,
+            Err(_) => env::temp_dir(),
+        };
         let connection = establish_connection(&rom_directory)?;
 
         match matches.subcommand_name() {
