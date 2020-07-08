@@ -40,6 +40,8 @@ pub fn import_roms(
             .unwrap()
             .to_lowercase();
 
+        println!("Scanning {:?}", file_path.file_name().unwrap());
+
         if archive_extensions.contains(&file_extension.as_str()) {
             let sevenzip_infos = parse_archive(&file_path)?;
 
@@ -137,7 +139,7 @@ pub fn import_roms(
             cue_path.set_extension(&cue_extension);
 
             if !cue_path.is_file() {
-                println!("Couldn't find {:?}", cue_path);
+                println!("Couldn't find {:?}", cue_path.file_name().unwrap());
                 continue;
             }
 
@@ -223,6 +225,7 @@ pub fn import_roms(
             // persist in database
             create_or_update_file(&connection, &new_path, &rom);
         }
+        println!("");
     }
 
     Ok(())

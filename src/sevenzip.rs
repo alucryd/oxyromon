@@ -15,7 +15,6 @@ pub struct ArchiveInfo {
 }
 
 pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Error>> {
-    println!("Scanning {:?}", file_path.file_name().unwrap());
     let output = Command::new("7z")
         .arg("l")
         .arg("-slt")
