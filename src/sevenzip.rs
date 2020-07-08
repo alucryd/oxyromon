@@ -75,7 +75,11 @@ pub fn extract_files_from_archive(
     file_names: &Vec<&str>,
     directory: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Extracting {:?}", file_names);
+    println!(
+        "Extracting {:?} from {:?}",
+        file_names,
+        archive_path.file_name().unwrap()
+    );
     let output = Command::new("7z")
         .arg("x")
         .arg(archive_path)
