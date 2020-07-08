@@ -62,6 +62,7 @@ pub fn get_file_size_and_crc(
     file_path: &PathBuf,
     header: &Option<Header>,
 ) -> Result<(u64, String), Box<dyn Error>> {
+    println!("Scanning {:?}", file_path.file_name().unwrap());
     let mut f = fs::File::open(&file_path)?;
     let mut size = f.metadata().unwrap().len();
 

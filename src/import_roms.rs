@@ -40,7 +40,7 @@ pub fn import_roms(
             .unwrap()
             .to_lowercase();
 
-        println!("Scanning {:?}", file_path.file_name().unwrap());
+        println!("Processing {:?}", file_path.file_name().unwrap());
 
         if archive_extensions.contains(&file_extension.as_str()) {
             let sevenzip_infos = parse_archive(&file_path)?;

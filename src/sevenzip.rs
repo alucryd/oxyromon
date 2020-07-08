@@ -14,11 +14,12 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
-pub fn parse_archive(file_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Error>> {
+pub fn parse_archive(archive_path: &PathBuf) -> Result<Vec<ArchiveInfo>, Box<dyn Error>> {
+    println!("Scanning {:?}", archive_path.file_name().unwrap());
     let output = Command::new("7z")
         .arg("l")
         .arg("-slt")
-        .arg(&file_path)
+        .arg(&archive_path)
         .output()?;
 
     if !output.status.success() {
@@ -99,7 +100,7 @@ pub fn add_files_to_archive(
     file_names: &Vec<&str>,
     directory: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Compressing {:?}", file_names);
+    println!("Compressing {:?} to {:?}", file_names, archive_path.file_name().unwrap());
     let output = Command::new("7z")
         .arg("a")
         .arg(archive_path)
