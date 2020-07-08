@@ -8,11 +8,13 @@ It is designed with archiving in mind, as such it only supports original and los
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 
 ### Configuration
+
 Environment variables:
-- ROM_DIRECTORY (required): full path to your ROM directory
-- TMP_DIRECTORY (optional): full path to a temporary directory for file extraction, see [here](https://doc.rust-lang.org/std/env/fn.temp_dir.html) for the default value
+- `ROM_DIRECTORY` (required): full path to your ROM directory
+- `TMP_DIRECTORY` (optional): full path to a temporary directory for file extraction, see [here](https://doc.rust-lang.org/std/env/fn.temp_dir.html) for the default value
 
 ### Directory Layout
+
     ${ROM_DIRECTORY}
         ⮡ .oxyromon.db # SQLite database 
         ...
@@ -22,13 +24,15 @@ Environment variables:
         ...
 
 ### External programs
+
 - 7z: 7Z and ZIP support
 - chdman: CHD support
 - maxcso: CSO support
 
 ### TODO
+
 - Write tests
-- Support NKIT and NKIT.GCZ (NKIT is currently broken on Linux for Wii Games)
+- Support NKIT and NKIT.GCZ (NKIT is currently broken on Linux for Wii games)
 - Have convert-roms optionally handle one game at a time
 
 ## oxyromon
@@ -55,8 +59,10 @@ Parses and imports No-Intro and Redump DAT files into oxyromon
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
 
 Supported DAT providers:
-- No-Intro
-- Redump
+* No-Intro
+* Redump
+
+Note: Some systems require a header definition to be placed alongside the DAT file.
 
     USAGE:
         oxyromon import-dats [FLAGS] <DATS>...
@@ -74,13 +80,14 @@ Supported DAT providers:
 Validates and imports ROM files into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to. Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
-Importing a CHD requires the matching CUE file from Redump.
 
 Supported ROM formats:
-- All No-Intro and Redump supported formats
-- 7Z and ZIP archives
-- CHD (Compressed Hunks of Data)
-- CSO (Compressed ISO)
+* All No-Intro and Redump supported formats
+* 7Z and ZIP archives
+* CHD (Compressed Hunks of Data)
+* CSO (Compressed ISO)
+
+Note: Importing a CHD requires the matching CUE file from Redump.
 
     USAGE:
         oxyromon import-roms <ROMS>...
@@ -99,9 +106,12 @@ Converts ROM files between common formats
 ROMs can be converted back and forth at most one format away from their original format. That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive. 
 
 Supported ROM formats:
-- All No-Intro and Redump supported formats <-> 7Z and ZIP archives
-- CUE/BIN <-> CHD (Compressed Hunks of Data)
-- ISO <-> CSO (Compressed ISO)
+
+* All No-Intro and Redump supported formats <-> 7Z and ZIP archives
+* CUE/BIN <-> CHD (Compressed Hunks of Data)
+* ISO <-> CSO (Compressed ISO)
+
+Note: CHD will be extracted to their original split CUE/BIN when applicable.
 
     USAGE:
         oxyromon convert-roms [OPTIONS]
@@ -112,7 +122,6 @@ Supported ROM formats:
 
     OPTIONS:
         -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
-
 
 ## oxyromon-sort-roms 
 
