@@ -80,7 +80,7 @@ pub fn extract_files_from_archive(
     archive_path: &PathBuf,
     file_names: &Vec<&str>,
     directory: &Path,
-) -> SimpleResult<()> {
+) -> SimpleResult<Vec<PathBuf>> {
     println!(
         "Extracting {:?} from {:?}",
         file_names,
@@ -100,7 +100,10 @@ pub fn extract_files_from_archive(
         println!("{}", stderr);
         bail!(stderr.as_str())
     }
-    Ok(())
+    Ok(file_names
+        .iter()
+        .map(|file_name| directory.join(file_name))
+        .collect())
 }
 
 pub fn add_files_to_archive(

@@ -307,10 +307,11 @@ fn to_original(
         let archive_path = Path::new(&archive_romfile.path).to_path_buf();
         let directory = archive_path.parent().unwrap();
         let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
-        extract_files_from_archive(&archive_path, &file_names, &directory)?;
-        for rom in roms {
+        let extracted_paths = extract_files_from_archive(&archive_path, &file_names, &directory)?;
+        let roms_extracted_paths: Vec<(Rom, PathBuf)> = roms.into_iter().zip(extracted_paths).collect();
+        for (rom, extracted_path) in roms_extracted_paths {
             let romfile_input = RomfileInput {
-                path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
+                path: &String::from(extracted_path.as_os_str().to_str().unwrap()),
             };
             let romfile_id = create_romfile(connection, &romfile_input);
             update_rom_romfile(connection, &rom, romfile_id);

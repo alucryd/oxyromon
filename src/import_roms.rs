@@ -51,16 +51,15 @@ pub fn import_roms(
 
                 // system has a header or crc is absent
                 if header.is_some() || sevenzip_info.crc == "" {
-                    extract_files_from_archive(
+                    let extracted_path = extract_files_from_archive(
                         &file_path,
                         &vec![&sevenzip_info.path],
                         &tmp_directory,
-                    )?;
-                    let extracted_path = tmp_directory.join(&sevenzip_info.path);
-                    let res = get_file_size_and_crc(&extracted_path, &header)?;
+                    )?.remove(0);
+                    let size_crc = get_file_size_and_crc(&extracted_path, &header)?;
                     remove_file(&extracted_path)?;
-                    size = res.0;
-                    crc = res.1;
+                    size = size_crc.0;
+                    crc = size_crc.1;
                 } else {
                     size = sevenzip_info.size;
                     crc = String::from(&sevenzip_info.crc);
@@ -96,18 +95,17 @@ pub fn import_roms(
                     let size: u64;
                     let crc: String;
 
-                    extract_files_from_archive(
+                    let extracted_path = extract_files_from_archive(
                         &file_path,
                         &vec![&sevenzip_info.path],
                         &tmp_directory,
-                    )?;
-                    let extracted_path = tmp_directory.join(&sevenzip_info.path);
+                    )?.remove(0);
 
                     // system has a header or crc is absent
                     if header.is_some() || sevenzip_info.crc == "" {
-                        let res = get_file_size_and_crc(&extracted_path, &header)?;
-                        size = res.0;
-                        crc = res.1;
+                        let size_crc = get_file_size_and_crc(&extracted_path, &header)?;
+                        size = size_crc.0;
+                        crc = size_crc.1;
                     } else {
                         size = sevenzip_info.size;
                         crc = String::from(&sevenzip_info.crc);
@@ -117,6 +115,7 @@ pub fn import_roms(
                         Some(rom) => rom,
                         None => {
                             println!("");
+                            remove_file(&extracted_path)?;
                             continue;
                         }
                     };
@@ -204,6 +203,7 @@ pub fn import_roms(
         } else if cso_extension == file_extension {
             let iso_path = extract_cso(&file_path, &tmp_directory)?;
             let (size, crc) = get_file_size_and_crc(&iso_path, &header)?;
+            remove_file(&iso_path)?;
             let rom = match find_rom(&connection, size, &crc, &system) {
                 Some(rom) => rom,
                 None => {
@@ -211,7 +211,6 @@ pub fn import_roms(
                     continue;
                 }
             };
-            remove_file(&iso_path)?;
 
             let mut new_file_path = system_directory.join(&rom.name);
             new_file_path.set_extension(cso_extension);
