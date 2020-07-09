@@ -52,6 +52,14 @@ table! {
 }
 
 table! {
+    settings (id) {
+        id -> BigInt,
+        key -> Text,
+        value -> Nullable<Text>,
+    }
+}
+
+table! {
     systems (id) {
         id -> BigInt,
         name -> Text,

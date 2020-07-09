@@ -1,4 +1,4 @@
-use super::schema::{games, headers, releases, romfiles, roms, systems};
+use super::schema::*;
 use serde::Deserialize;
 
 #[derive(Identifiable, PartialEq, Queryable)]
@@ -247,4 +247,18 @@ pub struct RuleXml {
 pub struct DataXml {
     pub offset: String,
     pub value: String,
+}
+
+#[derive(Identifiable, PartialEq, Queryable)]
+pub struct Setting {
+    pub id: i64,
+    pub key: String,
+    pub value: Option<String>,
+}
+
+#[derive(AsChangeset, Insertable)]
+#[table_name = "settings"]
+pub struct SettingInput<'a> {
+    pub key: &'a String,
+    pub value: Option<&'a String>,
 }

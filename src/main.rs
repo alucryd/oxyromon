@@ -5,6 +5,7 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 extern crate digest;
+extern crate dirs;
 extern crate dotenv;
 extern crate quick_xml;
 extern crate regex;
@@ -15,6 +16,7 @@ extern crate rayon;
 
 mod chdman;
 mod checksum;
+mod config;
 mod convert_roms;
 mod crud;
 mod import_dats;
@@ -28,7 +30,9 @@ mod sevenzip;
 mod sort_roms;
 mod util;
 
+use self::config::config;
 use self::convert_roms::convert_roms;
+use self::crud::*;
 use self::import_dats::import_dats;
 use self::import_roms::import_roms;
 use self::purge_roms::purge_roms;
@@ -47,6 +51,46 @@ embed_migrations!("migrations");
 pub type SimpleResult<T> = Result<T, SimpleError>;
 
 fn main() -> SimpleResult<()> {
+    let config_subcommand: App = SubCommand::with_name("config")
+        .about("Queries and modifies the oxyromon settings")
+        .arg(
+            Arg::with_name("LIST")
+                .short("l")
+                .long("list")
+                .help("Prints the whole configuration")
+                .required(false)
+                .conflicts_with_all(&["GET", "SET"]),
+        )
+        .arg(
+            Arg::with_name("GET")
+                .short("g")
+                .long("get")
+                .help("Prints a single setting")
+                .required(false)
+                .takes_value(true)
+                .value_name("KEY"),
+        )
+        .arg(
+            Arg::with_name("SET")
+                .short("s")
+                .long("set")
+                .help("Configures a single setting")
+                .required(false)
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(2)
+                .value_names(&["KEY", "VALUE"]),
+        )
+        .arg(
+            Arg::with_name("DELETE")
+                .short("d")
+                .long("delete")
+                .help("Deletes a single setting")
+                .required(false)
+                .takes_value(true)
+                .value_name("KEY"),
+        );
+
     let import_dats_subcommand: App = SubCommand::with_name("import-dats")
         .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
         .arg(
@@ -198,6 +242,7 @@ fn main() -> SimpleResult<()> {
         .about("Rusty ROM OrgaNizer")
         .author("Maxime Gauduin <alucryd@archlinux.org>")
         .subcommands(vec![
+            config_subcommand,
             import_dats_subcommand,
             import_roms_subcommand,
             sort_roms_subcommand,
@@ -208,21 +253,20 @@ fn main() -> SimpleResult<()> {
 
     if matches.subcommand.is_some() {
         dotenv().ok();
-        let rom_directory =
-            get_canonicalized_path(&env::var("ROM_DIRECTORY").expect("ROM_DIRECTORY must be set"))?;
-        let tmp_directory = env::var("TMP_DIRECTORY");
-        let tmp_directory = match tmp_directory {
-            Ok(tmp_directory) => get_canonicalized_path(&tmp_directory)?,
-            Err(_) => env::temp_dir(),
-        };
-        let connection = establish_connection(&rom_directory)?;
+        let data_directory = dirs::data_dir().unwrap().join("oxyromon");
+        create_directory(&data_directory)?;
+        let connection = establish_connection(&data_directory)?;
+        let rom_directory = get_directory(
+            &connection,
+            "ROM_DIRECTORY",
+            dirs::home_dir().unwrap().join("Emulation"),
+        )?;
+        create_directory(&rom_directory)?;
+        let tmp_directory = get_directory(&connection, "TMP_DIRECTORY", env::temp_dir())?;
+        create_directory(&tmp_directory)?;
 
         match matches.subcommand_name() {
-            Some("convert-roms") => convert_roms(
-                &connection,
-                &matches.subcommand_matches("convert-roms").unwrap(),
-                &tmp_directory,
-            )?,
+            Some("config") => config(&connection, &matches.subcommand_matches("config").unwrap())?,
             Some("import-dats") => import_dats(
                 &connection,
                 &matches.subcommand_matches("import-dats").unwrap(),
@@ -233,14 +277,19 @@ fn main() -> SimpleResult<()> {
                 &rom_directory,
                 &tmp_directory,
             )?,
-            Some("purge-roms") => purge_roms(
-                &connection,
-                &matches.subcommand_matches("purge-roms").unwrap(),
-            )?,
             Some("sort-roms") => sort_roms(
                 &connection,
                 &matches.subcommand_matches("sort-roms").unwrap(),
                 &rom_directory,
+            )?,
+            Some("convert-roms") => convert_roms(
+                &connection,
+                &matches.subcommand_matches("convert-roms").unwrap(),
+                &tmp_directory,
+            )?,
+            Some("purge-roms") => purge_roms(
+                &connection,
+                &matches.subcommand_matches("purge-roms").unwrap(),
             )?,
             _ => (),
         }
@@ -251,8 +300,8 @@ fn main() -> SimpleResult<()> {
     Ok(())
 }
 
-fn establish_connection(rom_directory: &PathBuf) -> SimpleResult<SqliteConnection> {
-    let database_path = rom_directory.join(".oxyromon.db");
+fn establish_connection(directory: &PathBuf) -> SimpleResult<SqliteConnection> {
+    let database_path = directory.join("oxyromon.db");
     let database_url = database_path.as_os_str().to_str().unwrap();
     let connection = SqliteConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url));
@@ -285,4 +334,25 @@ fn close_connection(connection: SqliteConnection) -> SimpleResult<()> {
         "Failed to optimize the database"
     );
     Ok(())
+}
+
+fn get_directory(
+    connection: &SqliteConnection,
+    key: &str,
+    default: PathBuf,
+) -> SimpleResult<PathBuf> {
+    let directory = match find_setting_by_key(&connection, key) {
+        Some(setting) => match setting.value {
+            Some(directory) => get_canonicalized_path(&directory)?,
+            None => {
+                update_setting(connection, &setting, default.as_os_str().to_str().unwrap());
+                default
+            }
+        },
+        None => {
+            create_setting(connection, key, default.as_os_str().to_str().unwrap());
+            default
+        }
+    };
+    Ok(directory)
 }

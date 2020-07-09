@@ -1,6 +1,6 @@
 # oxyromon 0.1.0
 
-Rusty ROM OrgaNizer
+### Rusty ROM OrgaNizer
 
 OxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
@@ -9,14 +9,18 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 
 ### Configuration
 
-Environment variables:
-- `ROM_DIRECTORY` (required): full path to your ROM directory
-- `TMP_DIRECTORY` (optional): full path to a temporary directory for file extraction, see [here](https://doc.rust-lang.org/std/env/fn.temp_dir.html) for the default value
+Configuration is done from the command line and settings are stored in the SQLite database.
+The database itself is stored in `${data_dir}/Emulation` as defined in the (dirs)[https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html] crate.
+
+Available settings:
+- `ROM_DIRECTORY`: full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the (dirs)[https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html] crate
+- `TMP_DIRECTORY`: full path to a temporary directory for file extraction, defaults to [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+
+Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
 ### Directory Layout
 
     ${ROM_DIRECTORY}
-        ⮡ .oxyromon.db # SQLite database 
         ...
         ⮡ ${SYSTEM_NAME} # Base directory for each system, allowed regions will be stored here
             ⮡ 1G1R # Sub directory for 1G1R games
@@ -24,6 +28,8 @@ Environment variables:
         ...
 
 ### External programs
+
+These should be in your `${PATH}` for extra features.
 
 - 7z: 7Z and ZIP support
 - chdman: CHD support
@@ -46,11 +52,31 @@ Environment variables:
 
     SUBCOMMANDS:
         help            Prints this message or the help of the given subcommand(s)
+        config          Queries and modifies the oxyromon settings
         import-dats     Parses and imports No-Intro and Redump DAT files into oxyromon
         import-roms     Validates and imports ROM files into oxyromon
         sort-roms       Sorts ROM files according to region and version preferences
         convert-roms    Converts ROM files between common formats
         purge-roms      Purges deleted or moved ROM files
+
+## oxyromon-config
+
+Queries and configures the oxyromon settings
+
+The settings can be queried, modified and deleted from the command line.
+
+    USAGE:
+        oxyromon config [FLAGS] [OPTIONS]
+
+    FLAGS:
+        -l, --list       Prints the whole configuration
+        -h, --help       Prints help information
+        -V, --version    Prints version information
+
+    OPTIONS:
+        -d, --delete <KEY>         Deletes a single setting
+        -g, --get <KEY>            Prints a single setting
+        -s, --set <KEY> <VALUE>    Configures a single setting
 
 ## oxyromon-import-dats
 
@@ -79,7 +105,9 @@ Note: Some systems require a header definition to be placed alongside the DAT fi
 
 Validates and imports ROM files into oxyromon
 
-ROM files that match against the database will be placed in the base directory of the system they belong to. Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
+ROM files that match against the database will be placed in the base directory of the system they belong to. 
+You will be prompted for the system you want to check your ROMs against.
+Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported ROM formats:
 * All No-Intro and Redump supported formats
@@ -103,7 +131,9 @@ Note: Importing a CHD requires the matching CUE file from Redump.
 
 Converts ROM files between common formats
 
-ROMs can be converted back and forth at most one format away from their original format. That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive. 
+ROMs can be converted back and forth at most one format away from their original format.
+That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive.
+Invoking this command will convert all eligible roms for some or all systems.
 
 Supported ROM formats:
 
@@ -127,7 +157,9 @@ Note: CHD will be extracted to their original split CUE/BIN when applicable.
 
 Sorts ROM files according to region and version preferences
 
-Sorting can be done using several strategies. You can also choose to discard certain types of games. Optionally you can print a list of games you may be missing, you hoarder, you.
+Sorting can be done using several strategies.
+You can also choose to discard certain types of games.
+Optionally you can print a list of games you may be missing, you hoarder, you.
 
 Supported modes:
 - Regions mode

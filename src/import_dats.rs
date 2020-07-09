@@ -64,7 +64,7 @@ pub fn import_dats(connection: &SqliteConnection, matches: &ArgMatches) -> Simpl
         println!("Games: {}", datafile_xml.games.len());
         println!("");
         if matches.is_present("INFO") {
-            break;
+            continue;
         }
 
         // persist everything into the database

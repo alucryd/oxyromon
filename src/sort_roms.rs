@@ -8,7 +8,6 @@ use diesel::SqliteConnection;
 use rayon::prelude::*;
 use regex::Regex;
 use std::ffi::OsString;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 pub fn sort_roms(
@@ -183,9 +182,7 @@ pub fn sort_roms(
             &one_region_directory,
             &trash_directory,
         ] {
-            if !d.is_dir() {
-                try_with!(fs::create_dir_all(d), "Failed to create {:?}", d);
-            }
+            create_directory(&d)?;
         }
 
         // process all_region_games

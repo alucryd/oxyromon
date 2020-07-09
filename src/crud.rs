@@ -47,6 +47,7 @@ pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str)
 
 pub fn find_systems<'a>(connection: &SqliteConnection) -> Vec<System> {
     systems::table
+        .order_by(systems::dsl::name.asc())
         .get_results(connection)
         .expect(&format!("Error while finding systems"))
 }
@@ -438,4 +439,55 @@ pub fn find_header_by_system_id<'a>(
             "Error while finding header for system {}",
             system_id
         ))
+}
+
+pub fn create_setting<'a>(connection: &SqliteConnection, key: &str, value: &str) {
+    let value = Some(value.to_owned());
+    let setting_input = SettingInput {
+        key: &key.to_owned(),
+        value: value.as_ref(),
+    };
+    diesel::insert_into(settings::table)
+        .values(&setting_input)
+        .execute(connection)
+        .expect("Error while creating setting");
+}
+
+pub fn update_setting<'a>(connection: &SqliteConnection, setting: &Setting, value: &str) {
+    let value = Some(value.to_owned());
+    let setting_input = SettingInput {
+        key: &setting.key,
+        value: value.as_ref(),
+    };
+    diesel::update(setting)
+        .set(&setting_input)
+        .execute(connection)
+        .expect(&format!(
+            "Error while updating setting with key {}",
+            setting.key
+        ));
+}
+
+pub fn find_setting_by_key<'a>(connection: &SqliteConnection, key: &str) -> Option<Setting> {
+    settings::table
+        .filter(settings::dsl::key.eq(key))
+        .get_result(connection)
+        .optional()
+        .expect(&format!("Error while finding setting with key {}", key))
+}
+
+pub fn find_settings<'a>(connection: &SqliteConnection) -> Vec<Setting> {
+    settings::table
+        .order_by(settings::dsl::key.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding settings"))
+}
+
+pub fn delete_setting_by_key<'a>(connection: &SqliteConnection, key: &str) {
+    diesel::delete(settings::table.filter(settings::dsl::key.eq(key)))
+        .execute(connection)
+        .expect(&format!(
+            "Error while deleting setting with key {}",
+            key
+        ));
 }

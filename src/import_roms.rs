@@ -10,7 +10,6 @@ use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
 use std::ffi::OsString;
-use std::fs;
 use std::path::PathBuf;
 
 pub fn import_roms(
@@ -22,18 +21,13 @@ pub fn import_roms(
     let system = prompt_for_system(&connection);
     let header = find_header_by_system_id(&connection, system.id);
 
-    let new_directory = rom_directory.join(&system.name);
+    let system_directory = rom_directory.join(&system.name);
     let archive_extensions = vec!["7z", "zip"];
     let cue_extension = "cue";
     let chd_extension = "chd";
     let cso_extension = "cso";
 
-    if !new_directory.is_dir() {
-        try_with!(
-            fs::create_dir_all(&new_directory),
-            format!("Failed to create {:?}", &new_directory)
-        );
-    }
+    create_directory(&system_directory)?;
 
     for f in matches.values_of("ROMS").unwrap() {
         let file_path = get_canonicalized_path(f)?;
@@ -83,7 +77,7 @@ pub fn import_roms(
                 let mut new_name = OsString::from(&rom.name);
                 new_name.push(".");
                 new_name.push(&file_extension);
-                let new_path = new_directory.join(new_name);
+                let new_path = system_directory.join(new_name);
 
                 // move file inside archive if needed
                 if sevenzip_info.path != rom.name {
@@ -127,7 +121,7 @@ pub fn import_roms(
                         }
                     };
 
-                    let mut new_path = new_directory.join(&rom.name);
+                    let mut new_path = system_directory.join(&rom.name);
                     new_path.push(".");
                     new_path.push(&file_extension);
 
@@ -193,7 +187,7 @@ pub fn import_roms(
                 }
             }
 
-            let new_meta_path = new_directory.join(&cue_rom.name);
+            let new_meta_path = system_directory.join(&cue_rom.name);
             let mut new_file_path = new_meta_path.clone();
             new_file_path.set_extension(chd_extension);
 
@@ -219,7 +213,7 @@ pub fn import_roms(
             };
             remove_file(&iso_path)?;
 
-            let mut new_file_path = new_directory.join(&rom.name);
+            let mut new_file_path = system_directory.join(&rom.name);
             new_file_path.set_extension(cso_extension);
 
             // move CSO if needed
@@ -237,7 +231,7 @@ pub fn import_roms(
                 }
             };
 
-            let new_path = new_directory.join(&rom.name);
+            let new_path = system_directory.join(&rom.name);
 
             // move file if needed
             move_file(&file_path, &new_path)?;

@@ -1,9 +1,13 @@
 use super::SimpleResult;
 use std::fs;
-use std::path::{Path,PathBuf};
+use std::path::{Path, PathBuf};
 
 pub fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
-    let canonicalized_path = try_with!(Path::new(path).canonicalize(), "Failed to get canonicalized path for {}", path);
+    let canonicalized_path = try_with!(
+        Path::new(path).canonicalize(),
+        "Failed to get canonicalized path for {}",
+        path
+    );
     Ok(canonicalized_path)
 }
 
@@ -27,5 +31,15 @@ pub fn rename_file(old_path: &PathBuf, new_path: &PathBuf) -> SimpleResult<()> {
 
 pub fn remove_file(path: &PathBuf) -> SimpleResult<()> {
     try_with!(fs::remove_file(path), "Failed to delete {:?}", path);
+    Ok(())
+}
+
+pub fn create_directory(path: &PathBuf) -> SimpleResult<()> {
+    if !path.is_dir() {
+        try_with!(
+            fs::create_dir_all(path),
+            format!("Failed to create {:?}", path)
+        );
+    }
     Ok(())
 }
