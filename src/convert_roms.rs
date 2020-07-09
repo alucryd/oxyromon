@@ -4,6 +4,7 @@ use super::maxcso::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
+use super::util::*;
 use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
@@ -11,7 +12,6 @@ use rayon::prelude::*;
 use std::ffi::OsString;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
-use super::util::*;
 
 pub fn convert_roms(
     connection: &SqliteConnection,
@@ -87,11 +87,11 @@ fn to_archive(
                 ArchiveType::ZIP => "zip",
             });
             add_files_to_archive(&archive_path, &vec![&rom.name], tmp_directory)?;
-            remove_file(&tmp_directory.join(&rom.name))?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
             update_romfile(connection, &romfile, &archive_romfile_input);
+            remove_file(&tmp_directory.join(&rom.name))?;
         } else {
             let mut roms: Vec<Rom> = Vec::new();
             let mut romfiles: Vec<Romfile> = Vec::new();
@@ -117,11 +117,11 @@ fn to_archive(
             });
             add_files_to_archive(&archive_path, &file_names, tmp_directory)?;
             for file_name in file_names {
-                remove_file(&tmp_directory.join(file_name))?;
                 let archive_romfile_input = RomfileInput {
                     path: &String::from(archive_path.as_os_str().to_str().unwrap()),
                 };
                 update_romfile(connection, &archive_romfile, &archive_romfile_input);
+                remove_file(&tmp_directory.join(file_name))?;
             }
         }
     }
@@ -139,11 +139,11 @@ fn to_archive(
             let archive_path = directory.join(archive_name);
 
             add_files_to_archive(&archive_path, &vec![&rom.name], &directory)?;
-            remove_file(&directory.join(&rom.name))?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
             update_romfile(connection, &romfile, &archive_romfile_input);
+            remove_file(&directory.join(&rom.name))?;
         } else {
             let mut roms: Vec<Rom> = Vec::new();
             let mut romfiles: Vec<Romfile> = Vec::new();
@@ -164,18 +164,18 @@ fn to_archive(
             let archive_path = directory.join(archive_name);
 
             add_files_to_archive(&archive_path, &file_names, &directory)?;
-            for file_name in file_names {
-                remove_file(&directory.join(file_name))?;
-            }
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
             let archive_romfile_id = create_romfile(connection, &archive_romfile_input);
-            for rom in roms {
+            for rom in &roms {
                 update_rom_romfile(connection, &rom, archive_romfile_id);
             }
             for romfile in romfiles {
                 delete_romfile_by_id(connection, romfile.id)
+            }
+            for file_name in file_names {
+                remove_file(&directory.join(file_name))?;
             }
         }
     }
@@ -239,6 +239,7 @@ fn to_cso(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
                 path: &String::from(cso_path.as_os_str().to_str().unwrap()),
             };
             update_romfile(connection, &iso_romfile, &cso_romfile_input);
+            remove_file(&iso_path)?;
         }
     }
 
@@ -307,7 +308,6 @@ fn to_original(
         let directory = archive_path.parent().unwrap();
         let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
         extract_files_from_archive(&archive_path, &file_names, &directory)?;
-        remove_file(&archive_path)?;
         for rom in roms {
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
@@ -316,6 +316,7 @@ fn to_original(
             update_rom_romfile(connection, &rom, romfile_id);
         }
         delete_romfile_by_id(connection, archive_romfile.id);
+        remove_file(&archive_path)?;
     }
 
     // convert CHDs
@@ -353,7 +354,6 @@ fn to_original(
             &cue_path.file_name().unwrap().to_str().unwrap(),
             &file_names_sizes,
         )?;
-        remove_file(&chd_path)?;
         for rom in roms {
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
@@ -362,6 +362,7 @@ fn to_original(
             update_rom_romfile(connection, &rom, romfile_id);
         }
         delete_romfile_by_id(connection, chd_romfile.id);
+        remove_file(&chd_path)?;
     }
 
     // convert CSOs
@@ -374,6 +375,7 @@ fn to_original(
                 path: &String::from(iso_path.as_os_str().to_str().unwrap()),
             };
             update_romfile(connection, &cso_romfile, &iso_romfile_input);
+            remove_file(&cso_path)?;
         }
     }
 
