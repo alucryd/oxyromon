@@ -1,6 +1,6 @@
 [package]
 name = "oxyromon"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Maxime Gauduin <alucryd@archlinux.org>"]
 license = "GPL-3.0+"
 description = "Rusty ROM Manager"
