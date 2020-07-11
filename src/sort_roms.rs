@@ -1,5 +1,6 @@
 use super::crud::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -15,6 +16,8 @@ pub fn sort_roms(
     matches: &ArgMatches,
     rom_directory: &PathBuf,
 ) -> SimpleResult<()> {
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
+
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
 
     // unordered regions to keep
@@ -30,8 +33,8 @@ pub fn sort_roms(
     }
 
     for system in systems {
-        println!("Processing {}", system.name);
-        println!("");
+        progress_bar.println(&format!("Processing {}", system.name));
+        progress_bar.set_message("Processing games");
 
         let mut all_regions_games: Vec<Game> = Vec::new();
         let mut one_region_games: Vec<Game> = Vec::new();
@@ -160,17 +163,17 @@ pub fn sort_roms(
         }
 
         if matches.is_present("MISSING") {
+            progress_bar.set_message("Processing missing games");
             let mut game_ids: Vec<i64> = Vec::new();
             game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
             game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
             let missing_roms: Vec<Rom> =
                 find_roms_without_romfile_by_game_ids(&connection, &game_ids);
 
-            println!("Missing:");
+            progress_bar.println("Missing:");
             for rom in missing_roms {
-                println!("{} [{}]", rom.name, rom.crc.to_uppercase());
+                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
             }
-            println!("");
         }
 
         // create necessary directories
@@ -210,11 +213,10 @@ pub fn sort_roms(
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
         romfile_moves.dedup_by(|a, b| a.1 == b.1);
 
-        println!("Summary:");
+        progress_bar.println("Summary:");
         for file_move in &romfile_moves {
-            println!("{} -> {}", file_move.0.path, file_move.1);
+            progress_bar.println(&format!("{} -> {}", file_move.0.path, file_move.1));
         }
-        println!("");
 
         // prompt user for confirmation
         if prompt_for_yes_no(matches) {
@@ -228,7 +230,6 @@ pub fn sort_roms(
                 update_romfile(&connection, &romfile_move.0, &romfile_input);
             }
         }
-        println!("");
     }
 
     Ok(())

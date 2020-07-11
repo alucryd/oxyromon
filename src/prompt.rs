@@ -44,7 +44,6 @@ pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<Syste
             .map(|i| FromStr::from_str(i).unwrap())
             .collect();
     }
-    println!("");
 
     systems
         .into_iter()
@@ -80,7 +79,6 @@ pub fn prompt_for_system(connection: &SqliteConnection) -> System {
 
         system_index = FromStr::from_str(&input).expect("Not a valid number");
     }
-    println!("");
 
     systems.remove(system_index)
 }
@@ -108,7 +106,6 @@ pub fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
 
         rom_index = FromStr::from_str(&input).expect("Not a valid number");
     }
-    println!("");
 
     roms.remove(rom_index)
 }

@@ -1,4 +1,5 @@
 use super::crud::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -7,17 +8,18 @@ use diesel::SqliteConnection;
 use std::path::Path;
 
 pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
+
     // delete roms in trash
     if matches.is_present("EMPTY-TRASH") {
-        println!("Processing trashed ROM files");
-        println!("");
+        progress_bar.set_message("Processing trashed ROM files");
 
         let romfiles = find_romfiles_in_trash(&connection);
 
         if romfiles.len() > 0 {
-            println!("Summary:");
+            progress_bar.println("Summary:");
             for romfile in &romfiles {
-                println!("{}", &romfile.path);
+                progress_bar.println(&romfile.path);
             }
 
             if prompt_for_yes_no(matches) {
@@ -33,8 +35,7 @@ pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> Simple
     }
 
     // deleted missing roms from database
-    println!("Processing missing ROM files");
-    println!("");
+    progress_bar.set_message("Processing missing ROM files");
 
     let romfiles = find_romfiles(connection);
     let mut count = 0;
@@ -47,7 +48,10 @@ pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> Simple
     }
 
     if count > 0 {
-        println!("Deleted {} missing rom(s) from the database", count);
+        progress_bar.println(&format!(
+            "Deleted {} missing rom(s) from the database",
+            count
+        ));
     }
 
     Ok(())

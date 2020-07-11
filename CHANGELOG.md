@@ -1,3 +1,7 @@
+# 0.3.0
+* Add progress indicators and bars
+* Add dependency on the indicatif crate
+
 # 0.2.2
 * Cleanup files on unsuccessful matches
 

@@ -2,35 +2,50 @@ use super::chdman::*;
 use super::crud::*;
 use super::maxcso::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
+use indicatif::ProgressBar;
 use rayon::prelude::*;
 use std::ffi::OsString;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
 
-pub fn convert_roms(
+pub fn convert_roms<'a>(
     connection: &SqliteConnection,
-    matches: &ArgMatches,
+    matches: &ArgMatches<'a>,
     tmp_directory: &PathBuf,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
     let format = matches.value_of("FORMAT");
 
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
+
     for system in systems {
-        println!("Processing {}", system.name);
-        println!("");
+        progress_bar.println(&format!("Processing \"{}\"", system.name));
 
         match format {
-            Some("7Z") => to_archive(&connection, &system, &tmp_directory, ArchiveType::SEVENZIP)?,
-            Some("CHD") => to_chd(&connection, &system)?,
-            Some("CSO") => to_cso(&connection, &system)?,
-            Some("ORIGINAL") => to_original(&connection, &system, &tmp_directory)?,
-            Some("ZIP") => to_archive(&connection, &system, &tmp_directory, ArchiveType::ZIP)?,
+            Some("7Z") => to_archive(
+                &connection,
+                &system,
+                &tmp_directory,
+                &progress_bar,
+                ArchiveType::SEVENZIP,
+            )?,
+            Some("CHD") => to_chd(&connection, &system, &progress_bar)?,
+            Some("CSO") => to_cso(&connection, &system, &progress_bar)?,
+            Some("ORIGINAL") => to_original(&connection, &system, &progress_bar)?,
+            Some("ZIP") => to_archive(
+                &connection,
+                &system,
+                &tmp_directory,
+                &progress_bar,
+                ArchiveType::ZIP,
+            )?,
             Some(_) => bail!("Not implemented"),
             None => bail!("Not possible"),
         }
@@ -43,6 +58,7 @@ fn to_archive(
     connection: &SqliteConnection,
     system: &System,
     tmp_directory: &PathBuf,
+    progress_bar: &ProgressBar,
     archive_type: ArchiveType,
 ) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
@@ -80,13 +96,23 @@ fn to_archive(
             let (rom, romfile) = roms_romfiles.remove(0);
             let mut archive_path = Path::new(&romfile.path).to_path_buf();
 
-            extract_files_from_archive(&archive_path, &vec![&rom.name], tmp_directory)?;
+            extract_files_from_archive(
+                &archive_path,
+                &vec![&rom.name],
+                tmp_directory,
+                &progress_bar,
+            )?;
             remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => "7z",
                 ArchiveType::ZIP => "zip",
             });
-            add_files_to_archive(&archive_path, &vec![&rom.name], tmp_directory)?;
+            add_files_to_archive(
+                &archive_path,
+                &vec![&rom.name],
+                tmp_directory,
+                &progress_bar,
+            )?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
@@ -109,13 +135,13 @@ fn to_archive(
             let archive_romfile = romfiles.remove(0);
             let mut archive_path = Path::new(&archive_romfile.path).to_path_buf();
 
-            extract_files_from_archive(&archive_path, &file_names, tmp_directory)?;
+            extract_files_from_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
             remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => "7z",
                 ArchiveType::ZIP => "zip",
             });
-            add_files_to_archive(&archive_path, &file_names, tmp_directory)?;
+            add_files_to_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
             for file_name in file_names {
                 let archive_romfile_input = RomfileInput {
                     path: &String::from(archive_path.as_os_str().to_str().unwrap()),
@@ -138,7 +164,7 @@ fn to_archive(
             });
             let archive_path = directory.join(archive_name);
 
-            add_files_to_archive(&archive_path, &vec![&rom.name], &directory)?;
+            add_files_to_archive(&archive_path, &vec![&rom.name], &directory, &progress_bar)?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
@@ -163,7 +189,7 @@ fn to_archive(
             });
             let archive_path = directory.join(archive_name);
 
-            add_files_to_archive(&archive_path, &file_names, &directory)?;
+            add_files_to_archive(&archive_path, &file_names, &directory, progress_bar)?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
@@ -183,7 +209,11 @@ fn to_archive(
     Ok(())
 }
 
-fn to_chd(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
+fn to_chd(
+    connection: &SqliteConnection,
+    system: &System,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -204,7 +234,7 @@ fn to_chd(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
                 .partition(|(rom, _)| rom.name.ends_with(".cue"));
         let (_, cue_romfile) = cue_rom_romfile.remove(0);
         let cue_path = Path::new(&cue_romfile.path).to_path_buf();
-        let chd_path = create_chd(&cue_path)?;
+        let chd_path = create_chd(&cue_path, &progress_bar)?;
         let chd_romfile_input = RomfileInput {
             path: &String::from(chd_path.as_os_str().to_str().unwrap()),
         };
@@ -219,7 +249,11 @@ fn to_chd(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
     Ok(())
 }
 
-fn to_cso(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
+fn to_cso(
+    connection: &SqliteConnection,
+    system: &System,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -234,7 +268,7 @@ fn to_cso(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
         for (_, iso_romfile) in roms_romfiles {
             let iso_path = Path::new(&iso_romfile.path).to_path_buf();
             let directory = iso_path.parent().unwrap();
-            let cso_path = create_cso(&iso_path, &directory)?;
+            let cso_path = create_cso(&iso_path, &directory, progress_bar)?;
             let cso_romfile_input = RomfileInput {
                 path: &String::from(cso_path.as_os_str().to_str().unwrap()),
             };
@@ -249,7 +283,7 @@ fn to_cso(connection: &SqliteConnection, system: &System) -> SimpleResult<()> {
 fn to_original(
     connection: &SqliteConnection,
     system: &System,
-    tmp_directory: &PathBuf,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
@@ -307,8 +341,10 @@ fn to_original(
         let archive_path = Path::new(&archive_romfile.path).to_path_buf();
         let directory = archive_path.parent().unwrap();
         let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
-        let extracted_paths = extract_files_from_archive(&archive_path, &file_names, &directory)?;
-        let roms_extracted_paths: Vec<(Rom, PathBuf)> = roms.into_iter().zip(extracted_paths).collect();
+        let extracted_paths =
+            extract_files_from_archive(&archive_path, &file_names, &directory, &progress_bar)?;
+        let roms_extracted_paths: Vec<(Rom, PathBuf)> =
+            roms.into_iter().zip(extracted_paths).collect();
         for (rom, extracted_path) in roms_extracted_paths {
             let romfile_input = RomfileInput {
                 path: &String::from(extracted_path.as_os_str().to_str().unwrap()),
@@ -321,17 +357,13 @@ fn to_original(
     }
 
     // convert CHDs
-    for (_, roms_romfiles) in chds {
-        let (mut cue_rom_romfile, chd_roms_romfiles): (Vec<(Rom, Romfile)>, Vec<(Rom, Romfile)>) =
-            roms_romfiles
-                .into_par_iter()
-                .partition(|(rom, _)| rom.name.ends_with(".cue"));
-        let (_, cue_romfile) = cue_rom_romfile.remove(0);
-        let cue_path = Path::new(&cue_romfile.path).to_path_buf();
+    for (_, mut roms_romfiles) in chds {
+        // we don't need the cue sheet
+        roms_romfiles.retain(|(rom, _)| rom.name.ends_with(".chd"));
 
         let mut roms: Vec<Rom> = Vec::new();
         let mut romfiles: Vec<Romfile> = Vec::new();
-        for (rom, romfile) in chd_roms_romfiles {
+        for (rom, romfile) in roms_romfiles {
             roms.push(rom);
             romfiles.push(romfile);
         }
@@ -348,13 +380,7 @@ fn to_original(
             .iter()
             .map(|rom| (rom.name.as_str(), rom.size as u64))
             .collect();
-        extract_chd(
-            &chd_path,
-            &directory,
-            &tmp_directory,
-            &cue_path.file_name().unwrap().to_str().unwrap(),
-            &file_names_sizes,
-        )?;
+        extract_chd(&chd_path, &directory, &file_names_sizes, &progress_bar)?;
         for rom in roms {
             let romfile_input = RomfileInput {
                 path: &String::from(directory.join(&rom.name).as_os_str().to_str().unwrap()),
@@ -371,7 +397,11 @@ fn to_original(
         for (_, cso_romfile) in roms_romfiles {
             let cso_path = Path::new(&cso_romfile.path).to_path_buf();
             let directory = cso_path.parent().unwrap();
-            let iso_path = extract_cso(&cso_path, &directory)?;
+            let iso_path = extract_cso(
+                &cso_path,
+                &directory,
+                &get_progress_bar(0, get_bytes_progress_style()),
+            )?;
             let iso_romfile_input = RomfileInput {
                 path: &String::from(iso_path.as_os_str().to_str().unwrap()),
             };

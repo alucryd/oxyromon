@@ -1,9 +1,11 @@
 use super::crud::*;
 use super::model::*;
+use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
+use indicatif::ProgressBar;
 use quick_xml::de;
 use regex::Regex;
 use std::io;
@@ -62,18 +64,30 @@ pub fn import_dats(connection: &SqliteConnection, matches: &ArgMatches) -> Simpl
         println!("System: {}", datafile_xml.system.name);
         println!("Version: {}", datafile_xml.system.version);
         println!("Games: {}", datafile_xml.games.len());
-        println!("");
         if matches.is_present("INFO") {
             continue;
         }
 
+        let progress_bar =
+            get_progress_bar(datafile_xml.games.len() as u64, get_count_progress_style());
+
         // persist everything into the database
+        progress_bar.set_message("Processing system");
         let system_id = create_or_update_system(&connection, &datafile_xml.system);
+        progress_bar.set_message("Deleting old games");
         delete_old_games(&connection, &datafile_xml.games, system_id);
-        create_or_update_games(&connection, &datafile_xml.games, system_id, &region_codes);
+        progress_bar.set_message("Processing games");
+        create_or_update_games(
+            &connection,
+            &datafile_xml.games,
+            system_id,
+            &region_codes,
+            &progress_bar,
+        );
 
         // parse header file if needed
         if datafile_xml.system.clrmamepro.is_some() {
+            progress_bar.set_message("Processing header");
             let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
             let header_file_path = dat_path.parent().unwrap().join(header_file_name);
             let header_file = open_file(&header_file_path)?;
@@ -143,6 +157,7 @@ fn create_or_update_games(
     games_xml: &Vec<GameXml>,
     system_id: i64,
     region_codes: &Vec<(Regex, Vec<&str>)>,
+    progress_bar: &ProgressBar,
 ) {
     let parent_games_xml: Vec<&GameXml> = games_xml
         .iter()
@@ -180,6 +195,7 @@ fn create_or_update_games(
         if !parent_game_xml.roms.is_empty() {
             create_or_update_roms(connection, &parent_game_xml.roms, game_id);
         }
+        progress_bar.inc(1)
     }
     for child_game_xml in child_games_xml {
         let game = find_game_by_name_and_system_id(connection, &child_game_xml.name, system_id);
@@ -215,6 +231,7 @@ fn create_or_update_games(
         if !child_game_xml.roms.is_empty() {
             create_or_update_roms(connection, &child_game_xml.roms, game_id);
         }
+        progress_bar.inc(1)
     }
 }
 

@@ -1,4 +1,5 @@
 use super::model::Header;
+use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use crc32fast::Hasher;
@@ -6,6 +7,7 @@ use digest::generic_array::typenum::{U4, U64};
 use digest::generic_array::GenericArray;
 use digest::Digest;
 use digest::{BlockInput, FixedOutputDirty, Reset, Update};
+use indicatif::ProgressBar;
 use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
@@ -61,8 +63,10 @@ impl io::Write for Crc32 {
 pub fn get_file_size_and_crc(
     file_path: &PathBuf,
     header: &Option<Header>,
+    progress_bar: &ProgressBar,
+    position: usize,
+    total: usize,
 ) -> SimpleResult<(u64, String)> {
-    println!("Scanning {:?}", file_path.file_name().unwrap());
     let mut f = open_file(&file_path)?;
     let mut size = f.metadata().unwrap().len();
 
@@ -89,9 +93,17 @@ pub fn get_file_size_and_crc(
         }
     }
 
+    progress_bar.reset();
+    progress_bar.set_message(&format!("Computing CRC ({}/{})", position, total));
+    progress_bar.set_style(get_bytes_progress_style());
+    progress_bar.set_length(size);
+
     // compute the checksum
     let mut digest = Crc32::new();
-    try_with!(io::copy(&mut f, &mut digest), "Failed to copy data");
+    try_with!(
+        io::copy(&mut progress_bar.wrap_read(f), &mut digest),
+        "Failed to copy data"
+    );
     let crc = format!("{:08x}", digest.finalize());
     Ok((size, crc))
 }

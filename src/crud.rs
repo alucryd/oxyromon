@@ -261,6 +261,7 @@ pub fn find_rom_by_name_and_game_id<'a>(
 pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i64) -> Vec<Rom> {
     roms::table
         .filter(roms::dsl::game_id.eq(game_id))
+        .order_by(roms::dsl::name)
         .get_results(connection)
         .expect(&format!(
             "Error while finding roms for game with id {}",

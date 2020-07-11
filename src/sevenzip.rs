@@ -1,4 +1,6 @@
+use super::progress::*;
 use super::SimpleResult;
+use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
@@ -14,23 +16,25 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
-pub fn parse_archive(archive_path: &PathBuf) -> SimpleResult<Vec<ArchiveInfo>> {
-    println!("Scanning {:?}", archive_path.file_name().unwrap());
-    let output = try_with!(
-        Command::new("7z")
-            .arg("l")
-            .arg("-slt")
-            .arg(&archive_path)
-            .output(),
-        "Failed to parse archive"
-    );
+pub fn parse_archive(
+    archive_path: &PathBuf,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<Vec<ArchiveInfo>> {
+    progress_bar.set_message("Parsing archive");
+    progress_bar.set_style(get_none_progress_style());
+
+    let output = Command::new("7z")
+        .arg("l")
+        .arg("-slt")
+        .arg(&archive_path)
+        .output()
+        .expect("Failed to parse archive");
+
     if !output.status.success() {
-        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
-        println!("{}", stderr);
-        bail!(stderr.as_str());
+        bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
 
-    let stdout = try_with!(String::from_utf8(output.stdout), "Failed to get stdout");
+    let stdout = String::from_utf8(output.stdout).unwrap();
     let lines: Vec<&str> = stdout
         .lines()
         .filter(|&line| {
@@ -50,29 +54,31 @@ pub fn parse_archive(archive_path: &PathBuf) -> SimpleResult<Vec<ArchiveInfo>> {
         };
         sevenzip_infos.push(sevenzip_info);
     }
+
     Ok(sevenzip_infos)
 }
 
-pub fn move_file_in_archive(
+pub fn rename_file_in_archive(
     archive_path: &PathBuf,
     file_name: &str,
     new_file_name: &str,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    println!("Renaming \"{}\" to \"{}\"", file_name, new_file_name);
-    let output = try_with!(
-        Command::new("7z")
-            .arg("rn")
-            .arg(archive_path)
-            .arg(file_name)
-            .arg(new_file_name)
-            .output(),
-        "Failed to rename file in archive"
-    );
+    progress_bar.set_message("Renaming file in archive");
+    progress_bar.set_style(get_none_progress_style());
+
+    let output = Command::new("7z")
+        .arg("rn")
+        .arg(archive_path)
+        .arg(file_name)
+        .arg(new_file_name)
+        .output()
+        .expect("Failed to rename file in archive");
+
     if !output.status.success() {
-        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
-        println!("{}", stderr);
-        bail!(stderr.as_str());
+        bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
+
     Ok(())
 }
 
@@ -80,26 +86,23 @@ pub fn extract_files_from_archive(
     archive_path: &PathBuf,
     file_names: &Vec<&str>,
     directory: &Path,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<PathBuf>> {
-    println!(
-        "Extracting {:?} from {:?}",
-        file_names,
-        archive_path.file_name().unwrap()
-    );
-    let output = try_with!(
-        Command::new("7z")
-            .arg("x")
-            .arg(archive_path)
-            .args(file_names)
-            .current_dir(directory)
-            .output(),
-        "Failed to extract files from archive"
-    );
+    progress_bar.set_message("Extracting archive");
+    progress_bar.set_style(get_none_progress_style());
+
+    let output = Command::new("7z")
+        .arg("x")
+        .arg(archive_path)
+        .args(file_names)
+        .current_dir(directory)
+        .output()
+        .expect("Failed to extract archive");
+
     if !output.status.success() {
-        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
-        println!("{}", stderr);
-        bail!(stderr.as_str())
+        bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
+
     Ok(file_names
         .iter()
         .map(|file_name| directory.join(file_name))
@@ -110,26 +113,23 @@ pub fn add_files_to_archive(
     archive_path: &PathBuf,
     file_names: &Vec<&str>,
     directory: &Path,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    println!(
-        "Compressing {:?} to {:?}",
-        file_names,
-        archive_path.file_name().unwrap()
-    );
-    let output = try_with!(
-        Command::new("7z")
-            .arg("a")
-            .arg(archive_path)
-            .args(file_names)
-            .arg("-mx=9")
-            .current_dir(directory)
-            .output(),
-        "Failed to add files to archive"
-    );
+    progress_bar.set_message("Extracting archive");
+    progress_bar.set_style(get_none_progress_style());
+
+    let output = Command::new("7z")
+        .arg("a")
+        .arg(archive_path)
+        .args(file_names)
+        .arg("-mx=9")
+        .current_dir(directory)
+        .output()
+        .expect("Failed to create archive");
+
     if !output.status.success() {
-        let stderr = try_with!(String::from_utf8(output.stderr), "Failed to get stderr");
-        println!("{}", stderr);
-        bail!(stderr.as_str())
+        bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
+
     Ok(())
 }
