@@ -10,7 +10,7 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
-The database itself is stored in `${data_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 
 Available settings:
 - `ROM_DIRECTORY`: full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
