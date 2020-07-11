@@ -1,4 +1,4 @@
-# oxyromon 0.2.2
+# oxyromon 0.3.0
 
 ### Rusty ROM OrgaNizer
 
