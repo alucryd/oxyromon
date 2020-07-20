@@ -3,14 +3,33 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::ArgMatches;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use regex::Regex;
 use std::io;
 
-pub fn import_dats(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("import-dats")
+        .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
+        .arg(
+            Arg::with_name("DATS")
+                .help("Sets the DAT files to import")
+                .required(true)
+                .multiple(true)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("INFO")
+                .short("i")
+                .long("info")
+                .help("Shows the DAT information and exit")
+                .required(false),
+        )
+}
+
+pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     let region_codes: Vec<(Regex, Vec<&str>)> = vec![
         (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
         (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),

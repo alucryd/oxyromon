@@ -1,13 +1,55 @@
 use super::crud::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::ArgMatches;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-pub fn config(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("config")
+        .about("Queries and modifies the oxyromon settings")
+        .arg(
+            Arg::with_name("LIST")
+                .short("l")
+                .long("list")
+                .help("Prints the whole configuration")
+                .required(false)
+                .conflicts_with_all(&["GET", "SET"]),
+        )
+        .arg(
+            Arg::with_name("GET")
+                .short("g")
+                .long("get")
+                .help("Prints a single setting")
+                .required(false)
+                .takes_value(true)
+                .value_name("KEY"),
+        )
+        .arg(
+            Arg::with_name("SET")
+                .short("s")
+                .long("set")
+                .help("Configures a single setting")
+                .required(false)
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(2)
+                .value_names(&["KEY", "VALUE"]),
+        )
+        .arg(
+            Arg::with_name("DELETE")
+                .short("d")
+                .long("delete")
+                .help("Deletes a single setting")
+                .required(false)
+                .takes_value(true)
+                .value_name("KEY"),
+        )
+}
+
+pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     if matches.is_present("LIST") {
         let settings = find_settings(connection);
         for setting in settings {
@@ -75,7 +117,8 @@ pub fn set_directory(connection: &SqliteConnection, key: &str, value: &PathBuf) 
 }
 
 pub fn get_directory(connection: &SqliteConnection, key: &str) -> Option<PathBuf> {
-    find_setting_by_key(&connection, key).map(|p| get_canonicalized_path(&p.value.unwrap()).unwrap())
+    find_setting_by_key(&connection, key)
+        .map(|p| get_canonicalized_path(&p.value.unwrap()).unwrap())
 }
 
 pub fn get_rom_directory(connection: &SqliteConnection) -> PathBuf {

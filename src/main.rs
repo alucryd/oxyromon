@@ -33,12 +33,8 @@ mod sort_roms;
 mod util;
 
 use self::config::*;
-use self::convert_roms::convert_roms;
-use self::import_dats::import_dats;
-use self::import_roms::import_roms;
-use self::purge_roms::purge_roms;
 use self::util::*;
-use clap::{App, Arg, SubCommand};
+use clap::App;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
 use dotenv::dotenv;
@@ -49,113 +45,17 @@ embed_migrations!("migrations");
 pub type SimpleResult<T> = Result<T, SimpleError>;
 
 fn main() -> SimpleResult<()> {
-    let config_subcommand: App = SubCommand::with_name("config")
-        .about("Queries and modifies the oxyromon settings")
-        .arg(
-            Arg::with_name("LIST")
-                .short("l")
-                .long("list")
-                .help("Prints the whole configuration")
-                .required(false)
-                .conflicts_with_all(&["GET", "SET"]),
-        )
-        .arg(
-            Arg::with_name("GET")
-                .short("g")
-                .long("get")
-                .help("Prints a single setting")
-                .required(false)
-                .takes_value(true)
-                .value_name("KEY"),
-        )
-        .arg(
-            Arg::with_name("SET")
-                .short("s")
-                .long("set")
-                .help("Configures a single setting")
-                .required(false)
-                .takes_value(true)
-                .multiple(true)
-                .number_of_values(2)
-                .value_names(&["KEY", "VALUE"]),
-        )
-        .arg(
-            Arg::with_name("DELETE")
-                .short("d")
-                .long("delete")
-                .help("Deletes a single setting")
-                .required(false)
-                .takes_value(true)
-                .value_name("KEY"),
-        );
-
-    let import_dats_subcommand: App = SubCommand::with_name("import-dats")
-        .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
-        .arg(
-            Arg::with_name("DATS")
-                .help("Sets the DAT files to import")
-                .required(true)
-                .multiple(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("INFO")
-                .short("i")
-                .long("info")
-                .help("Shows the DAT information and exit")
-                .required(false),
-        );
-
-    let import_roms_subcommand: App = SubCommand::with_name("import-roms")
-        .about("Validates and imports ROM files into oxyromon")
-        .arg(
-            Arg::with_name("ROMS")
-                .help("Sets the ROM files to import")
-                .required(true)
-                .multiple(true)
-                .index(1),
-        );
-
-    let convert_roms_subcommand: App = SubCommand::with_name("convert-roms")
-        .about("Converts ROM files between common formats")
-        .arg(
-            Arg::with_name("FORMAT")
-                .short("f")
-                .long("format")
-                .help("Sets the destination format")
-                .required(false)
-                .takes_value(true)
-                .possible_values(&["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"]),
-        );
-
-    let purge_roms_subcommand: App = SubCommand::with_name("purge-roms")
-        .about("Purges trashed and missing ROM files")
-        .arg(
-            Arg::with_name("EMPTY_TRASH")
-                .short("t")
-                .long("empty-trash")
-                .help("Empties the ROM files trash directories")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("YES")
-                .short("y")
-                .long("yes")
-                .help("Automatically says yes to prompts")
-                .required(false),
-        );
-
     let matches = App::new("oxyromon")
         .version("0.1.0")
         .about("Rusty ROM OrgaNizer")
         .author("Maxime Gauduin <alucryd@archlinux.org>")
         .subcommands(vec![
-            config_subcommand,
-            import_dats_subcommand,
-            import_roms_subcommand,
+            config::subcommand(),
+            import_dats::subcommand(),
+            import_roms::subcommand(),
             sort_roms::subcommand(),
-            convert_roms_subcommand,
-            purge_roms_subcommand,
+            convert_roms::subcommand(),
+            purge_roms::subcommand(),
         ])
         .get_matches();
 
@@ -176,12 +76,14 @@ fn main() -> SimpleResult<()> {
         create_directory(&tmp_directory)?;
 
         match matches.subcommand_name() {
-            Some("config") => config(&connection, &matches.subcommand_matches("config").unwrap())?,
-            Some("import-dats") => import_dats(
+            Some("config") => {
+                config::main(&connection, &matches.subcommand_matches("config").unwrap())?
+            }
+            Some("import-dats") => import_dats::main(
                 &connection,
                 &matches.subcommand_matches("import-dats").unwrap(),
             )?,
-            Some("import-roms") => import_roms(
+            Some("import-roms") => import_roms::main(
                 &connection,
                 &matches.subcommand_matches("import-roms").unwrap(),
                 &rom_directory,
@@ -192,12 +94,12 @@ fn main() -> SimpleResult<()> {
                 &matches.subcommand_matches("sort-roms").unwrap(),
                 &rom_directory,
             )?,
-            Some("convert-roms") => convert_roms(
+            Some("convert-roms") => convert_roms::main(
                 &connection,
                 &matches.subcommand_matches("convert-roms").unwrap(),
                 &tmp_directory,
             )?,
-            Some("purge-roms") => purge_roms(
+            Some("purge-roms") => purge_roms::main(
                 &connection,
                 &matches.subcommand_matches("purge-roms").unwrap(),
             )?,

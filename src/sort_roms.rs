@@ -486,7 +486,7 @@ fn get_new_path(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::*;
+    use super::super::config::set_bool;
     use super::super::establish_connection;
     use super::*;
 

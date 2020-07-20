@@ -8,13 +8,25 @@ use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::ArgMatches;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use indicatif::ProgressBar;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-pub fn import_roms<'a>(
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("import-roms")
+        .about("Validates and imports ROM files into oxyromon")
+        .arg(
+            Arg::with_name("ROMS")
+                .help("Sets the ROM files to import")
+                .required(true)
+                .multiple(true)
+                .index(1),
+        )
+}
+
+pub fn main<'a>(
     connection: &SqliteConnection,
     matches: &ArgMatches<'a>,
     rom_directory: &PathBuf,
