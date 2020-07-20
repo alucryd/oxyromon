@@ -7,7 +7,7 @@ use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::ArgMatches;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use indicatif::ProgressBar;
 use rayon::prelude::*;
@@ -15,7 +15,21 @@ use std::ffi::OsString;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
 
-pub fn convert_roms<'a>(
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("convert-roms")
+        .about("Converts ROM files between common formats")
+        .arg(
+            Arg::with_name("FORMAT")
+                .short("f")
+                .long("format")
+                .help("Sets the destination format")
+                .required(false)
+                .takes_value(true)
+                .possible_values(&["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"]),
+        )
+}
+
+pub fn main<'a>(
     connection: &SqliteConnection,
     matches: &ArgMatches<'a>,
     tmp_directory: &PathBuf,

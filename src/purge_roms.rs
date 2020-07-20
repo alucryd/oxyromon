@@ -3,11 +3,30 @@ use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::ArgMatches;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use std::path::Path;
 
-pub fn purge_roms(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("purge-roms")
+        .about("Purges trashed and missing ROM files")
+        .arg(
+            Arg::with_name("EMPTY_TRASH")
+                .short("t")
+                .long("empty-trash")
+                .help("Empties the ROM files trash directories")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("YES")
+                .short("y")
+                .long("yes")
+                .help("Automatically says yes to prompts")
+                .required(false),
+        )
+}
+
+pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
     // delete roms in trash
