@@ -7,12 +7,16 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+pub static CHD_EXTENSION: &str = "chd";
+pub static CUE_EXTENSION: &str = "cue";
+pub static BIN_EXTENSION: &str = "bin";
+
 pub fn create_chd(cue_path: &PathBuf, progress_bar: &ProgressBar) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
 
     let mut chd_path = cue_path.clone();
-    chd_path.set_extension("chd");
+    chd_path.set_extension(CHD_EXTENSION);
 
     let output = Command::new("chdman")
         .arg("createcd")
@@ -40,10 +44,11 @@ pub fn extract_chd(
     progress_bar.set_style(get_none_progress_style());
 
     let mut bin_path = directory.join(chd_path.file_name().unwrap());
-    bin_path.set_extension("bin");
+    bin_path.set_extension(BIN_EXTENSION);
 
     let mut cue_name = bin_path.file_name().unwrap().to_os_string();
-    cue_name.push(".cue");
+    cue_name.push(".");
+    cue_name.push(CUE_EXTENSION);
     let cue_path = directory.join(cue_name);
 
     let output = Command::new("chdman")

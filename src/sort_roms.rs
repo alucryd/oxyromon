@@ -1,8 +1,11 @@
+use super::chdman::*;
 use super::config::*;
 use super::crud::*;
+use super::maxcso::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
+use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::{App, Arg, ArgMatches, SubCommand};
@@ -449,15 +452,11 @@ fn get_new_path(
     rom_count: usize,
     directory: &PathBuf,
 ) -> PathBuf {
-    let archive_extensions = vec!["7z", "zip"];
-    let chd_extension = "chd";
-    let cso_extension = "cso";
-
     let romfile_path = Path::new(&romfile.path).to_path_buf();
     let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
     let mut new_romfile_path: PathBuf;
 
-    if archive_extensions.contains(&romfile_extension) {
+    if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
         let mut romfile_name = match rom_count {
             1 => OsString::from(&rom.name),
             _ => OsString::from(&game.name),
@@ -465,7 +464,7 @@ fn get_new_path(
         romfile_name.push(".");
         romfile_name.push(&romfile_extension);
         new_romfile_path = directory.join(romfile_name);
-    } else if romfile_extension == chd_extension {
+    } else if romfile_extension == CHD_EXTENSION {
         if rom_count == 2 {
             new_romfile_path = directory.join(&rom.name);
             new_romfile_path.set_extension(&romfile_extension);
@@ -475,7 +474,7 @@ fn get_new_path(
             romfile_name.push(&romfile_extension);
             new_romfile_path = directory.join(romfile_name);
         }
-    } else if romfile_extension == cso_extension {
+    } else if romfile_extension == CSO_EXTENSION {
         new_romfile_path = directory.join(&rom.name);
         new_romfile_path.set_extension(&romfile_extension);
     } else {

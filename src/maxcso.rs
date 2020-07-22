@@ -4,6 +4,9 @@ use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+pub static CSO_EXTENSION: &str = "cso";
+pub static ISO_EXTENSION: &str = "iso";
+
 pub fn create_cso(
     iso_path: &PathBuf,
     directory: &Path,
@@ -13,7 +16,7 @@ pub fn create_cso(
     progress_bar.set_style(get_none_progress_style());
 
     let mut cso_path = directory.join(iso_path.file_name().unwrap());
-    cso_path.set_extension("cso");
+    cso_path.set_extension(CSO_EXTENSION);
 
     let output = Command::new("maxcso")
         .arg(iso_path)
@@ -38,7 +41,7 @@ pub fn extract_cso(
     progress_bar.set_style(get_none_progress_style());
 
     let mut iso_path = directory.join(cso_path.file_name().unwrap());
-    iso_path.set_extension("iso");
+    iso_path.set_extension(ISO_EXTENSION);
 
     let output = Command::new("maxcso")
         .arg("--decompress")

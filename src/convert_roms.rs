@@ -118,8 +118,8 @@ fn to_archive(
             )?;
             remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
-                ArchiveType::SEVENZIP => "7z",
-                ArchiveType::ZIP => "zip",
+                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
+                ArchiveType::ZIP => ZIP_EXTENSION,
             });
             add_files_to_archive(
                 &archive_path,
@@ -152,8 +152,8 @@ fn to_archive(
             extract_files_from_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
             remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
-                ArchiveType::SEVENZIP => "7z",
-                ArchiveType::ZIP => "zip",
+                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
+                ArchiveType::ZIP => ZIP_EXTENSION,
             });
             add_files_to_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
             for file_name in file_names {
@@ -197,9 +197,10 @@ fn to_archive(
                 .unwrap()
                 .to_path_buf();
             let mut archive_name = OsString::from(&game.name);
+            archive_name.push(".");
             archive_name.push(match archive_type {
-                ArchiveType::SEVENZIP => ".7z",
-                ArchiveType::ZIP => ".zip",
+                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
+                ArchiveType::ZIP => ZIP_EXTENSION,
             });
             let archive_path = directory.join(archive_name);
 

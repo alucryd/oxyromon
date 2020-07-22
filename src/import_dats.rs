@@ -9,28 +9,10 @@ use indicatif::ProgressBar;
 use quick_xml::de;
 use regex::Regex;
 use std::io;
+use std::path::PathBuf;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("import-dats")
-        .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
-        .arg(
-            Arg::with_name("DATS")
-                .help("Sets the DAT files to import")
-                .required(true)
-                .multiple(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("INFO")
-                .short("i")
-                .long("info")
-                .help("Shows the DAT information and exit")
-                .required(false),
-        )
-}
-
-pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
-    let region_codes: Vec<(Regex, Vec<&str>)> = vec![
+lazy_static! {
+    pub static ref REGION_CODES: Vec<(Regex, Vec<&'static str>)> = vec![
         (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
         (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
         (Regex::new(r"\(.*Austria,?.*\)").unwrap(), vec!["AUT"]),
@@ -67,65 +49,87 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
             vec!["EUR", "JPN", "USA"],
         ),
     ];
+}
 
+    pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+    SubCommand::with_name("import-dats")
+        .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
+        .arg(
+            Arg::with_name("DATS")
+                .help("Sets the DAT files to import")
+                .required(true)
+                .multiple(true)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("INFO")
+                .short("i")
+                .long("info")
+                .help("Shows the DAT information and exit")
+                .required(false),
+        )
+    }
+
+pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     for d in matches.values_of("DATS").unwrap() {
         let dat_path = get_canonicalized_path(d)?;
-        let f = open_file(&dat_path)?;
-        let reader = io::BufReader::new(f);
-        let mut datafile_xml: DatfileXml =
-            de::from_reader(reader).expect("Failed to parse the datafile");
-
-        // strip the parentheses qualifiers from the system name
-        let re = Regex::new(r"\(.*\)").unwrap();
-        datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
-
-        // print information
-        println!("System: {}", datafile_xml.system.name);
-        println!("Version: {}", datafile_xml.system.version);
-        println!("Games: {}", datafile_xml.games.len());
-        if matches.is_present("INFO") {
-            continue;
-        }
-
-        let progress_bar =
-            get_progress_bar(datafile_xml.games.len() as u64, get_count_progress_style());
-
-        // persist everything into the database
-        progress_bar.set_message("Processing system");
-        let system_id = create_or_update_system(&connection, &datafile_xml.system);
-        progress_bar.set_message("Deleting old games");
-        delete_old_games(&connection, &datafile_xml.games, system_id);
-        progress_bar.set_message("Processing games");
-        create_or_update_games(
-            &connection,
-            &datafile_xml.games,
-            system_id,
-            &region_codes,
-            &progress_bar,
-        );
-
-        // parse header file if needed
-        if datafile_xml.system.clrmamepro.is_some() {
-            progress_bar.set_message("Processing header");
-            let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
-            let header_file_path = dat_path.parent().unwrap().join(header_file_name);
-            let header_file = open_file(&header_file_path)?;
-            let reader = io::BufReader::new(header_file);
-            let detector_xml: DetectorXml =
-                de::from_reader(reader).expect("Failed to parse the header file");
-            create_or_update_header(&connection, &detector_xml, system_id);
-        }
+        parse_dat(connection, matches, &dat_path)?;
     }
 
     Ok(())
 }
 
-fn get_regions_from_game_name<'r>(
-    name: &String,
-    region_codes: &Vec<(Regex, Vec<&'r str>)>,
-) -> Vec<&'r str> {
+fn parse_dat(
+    connection: &SqliteConnection,
+    matches: &ArgMatches,
+    dat_path: &PathBuf,
+) -> SimpleResult<()> {
+    let f = open_file(&dat_path)?;
+    let reader = io::BufReader::new(f);
+    let mut datafile_xml: DatfileXml =
+        de::from_reader(reader).expect("Failed to parse the datafile");
+
+    // strip the parentheses qualifiers from the system name
+    let re = Regex::new(r"\(.*\)").unwrap();
+    datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
+
+    // print information
+    println!("System: {}", datafile_xml.system.name);
+    println!("Version: {}", datafile_xml.system.version);
+    println!("Games: {}", datafile_xml.games.len());
+    if matches.is_present("INFO") {
+        return Ok(());
+    }
+
+    let progress_bar =
+        get_progress_bar(datafile_xml.games.len() as u64, get_count_progress_style());
+
+    // persist everything into the database
+    progress_bar.set_message("Processing system");
+    let system_id = create_or_update_system(&connection, &datafile_xml.system);
+    progress_bar.set_message("Deleting old games");
+    delete_old_games(&connection, &datafile_xml.games, system_id);
+    progress_bar.set_message("Processing games");
+    create_or_update_games(&connection, &datafile_xml.games, system_id, &progress_bar);
+
+    // parse header file if needed
+    if datafile_xml.system.clrmamepro.is_some() {
+        progress_bar.set_message("Processing header");
+        let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
+        let header_file_path = dat_path.parent().unwrap().join(header_file_name);
+        let header_file = open_file(&header_file_path)?;
+        let reader = io::BufReader::new(header_file);
+        let detector_xml: DetectorXml =
+            de::from_reader(reader).expect("Failed to parse the header file");
+        create_or_update_header(&connection, &detector_xml, system_id);
+    }
+
+    Ok(())
+}
+
+fn get_regions_from_game_name<'a>(name: &String) -> Vec<&'a str> {
     let mut regions: Vec<&str> = Vec::new();
-    for (re, regions_vec) in region_codes {
+    for (re, regions_vec) in &*REGION_CODES {
         if re.find(name).is_some() {
             regions.append(&mut regions_vec.clone());
         }
@@ -175,7 +179,6 @@ fn create_or_update_games(
     connection: &SqliteConnection,
     games_xml: &Vec<GameXml>,
     system_id: i64,
-    region_codes: &Vec<(Regex, Vec<&str>)>,
     progress_bar: &ProgressBar,
 ) {
     let parent_games_xml: Vec<&GameXml> = games_xml
@@ -203,7 +206,7 @@ fn create_or_update_games(
             None => create_game(
                 connection,
                 parent_game_xml,
-                &get_regions_from_game_name(&parent_game_xml.name, region_codes).join(","),
+                &get_regions_from_game_name(&parent_game_xml.name).join(","),
                 system_id,
                 None,
             ),
@@ -239,7 +242,7 @@ fn create_or_update_games(
             None => create_game(
                 connection,
                 child_game_xml,
-                &get_regions_from_game_name(&child_game_xml.name, region_codes).join(","),
+                &get_regions_from_game_name(&child_game_xml.name).join(","),
                 system_id,
                 Some(parent_game.id),
             ),

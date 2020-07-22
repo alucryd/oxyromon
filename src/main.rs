@@ -8,6 +8,8 @@ extern crate digest;
 extern crate dirs;
 extern crate dotenv;
 extern crate indicatif;
+#[macro_use]
+extern crate lazy_static;
 extern crate quick_xml;
 extern crate regex;
 extern crate serde;

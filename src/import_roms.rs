@@ -36,10 +36,6 @@ pub fn main<'a>(
     let header = find_header_by_system_id(&connection, system.id);
 
     let system_directory = rom_directory.join(&system.name);
-    let archive_extensions = vec!["7z", "zip"];
-    let cue_extension = "cue";
-    let chd_extension = "chd";
-    let cso_extension = "cso";
 
     create_directory(&system_directory)?;
 
@@ -56,7 +52,7 @@ pub fn main<'a>(
 
         progress_bar.println(&format!("Processing {:?}", file_path.file_name().unwrap()));
 
-        if archive_extensions.contains(&file_extension.as_str()) {
+        if ARCHIVE_EXTENSIONS.contains(&file_extension.as_str()) {
             let sevenzip_infos = parse_archive(&file_path, &progress_bar)?;
 
             // archive contains a single file
@@ -158,9 +154,9 @@ pub fn main<'a>(
                 remove_file(&file_path)?;
             }
         // file is a CHD
-        } else if chd_extension == file_extension {
+        } else if CHD_EXTENSION == file_extension {
             let mut cue_path = file_path.clone();
-            cue_path.set_extension(&cue_extension);
+            cue_path.set_extension(CUE_EXTENSION);
 
             if !cue_path.is_file() {
                 progress_bar.println(&format!("Missing {:?}", cue_path.file_name().unwrap()));
@@ -198,7 +194,7 @@ pub fn main<'a>(
 
             let new_meta_path = system_directory.join(&cue_rom.name);
             let mut new_file_path = new_meta_path.clone();
-            new_file_path.set_extension(chd_extension);
+            new_file_path.set_extension(CHD_EXTENSION);
 
             // move cue and chd if needed
             move_file(&cue_path, &new_meta_path, &progress_bar)?;
@@ -210,7 +206,7 @@ pub fn main<'a>(
                 create_or_update_file(&connection, &new_file_path, &rom);
             }
         // file is a CSO
-        } else if cso_extension == file_extension {
+        } else if CSO_EXTENSION == file_extension {
             let iso_path = extract_cso(&file_path, &tmp_directory, &progress_bar)?;
             let (size, crc) = get_file_size_and_crc(&iso_path, &header, &progress_bar, 1, 1)?;
             remove_file(&iso_path)?;
@@ -220,7 +216,7 @@ pub fn main<'a>(
             };
 
             let mut new_file_path = system_directory.join(&rom.name);
-            new_file_path.set_extension(cso_extension);
+            new_file_path.set_extension(CSO_EXTENSION);
 
             // move CSO if needed
             move_file(&file_path, &new_file_path, &progress_bar)?;

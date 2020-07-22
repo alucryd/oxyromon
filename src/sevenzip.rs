@@ -5,6 +5,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
+pub static SEVENZIP_EXTENSION: &str = "7z";
+pub static ZIP_EXTENSION: &str = "zip";
+pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+
 pub enum ArchiveType {
     SEVENZIP,
     ZIP,
