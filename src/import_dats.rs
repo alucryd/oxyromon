@@ -51,7 +51,7 @@ lazy_static! {
     ];
 }
 
-    pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
+pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
         .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
         .arg(
@@ -68,7 +68,7 @@ lazy_static! {
                 .help("Shows the DAT information and exit")
                 .required(false),
         )
-    }
+}
 
 pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     for d in matches.values_of("DATS").unwrap() {
@@ -127,7 +127,7 @@ fn parse_dat(
     Ok(())
 }
 
-fn get_regions_from_game_name<'a>(name: &String) -> Vec<&'a str> {
+fn get_regions_from_game_name<'a>(name: &str) -> Vec<&'a str> {
     let mut regions: Vec<&str> = Vec::new();
     for (re, regions_vec) in &*REGION_CODES {
         if re.find(name).is_some() {
@@ -289,5 +289,101 @@ fn create_or_update_roms(connection: &SqliteConnection, roms_xml: &Vec<RomXml>, 
             }
             None => create_rom(connection, &rom_xml, game_id),
         };
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::crud::*;
+    use super::super::establish_connection;
+    use super::*;
+    use std::path::Path;
+
+    embed_migrations!("migrations");
+
+    #[test]
+    fn test_import_dat() {
+        // given
+        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let connection = establish_connection(":memory:").unwrap();
+        let matches = subcommand()
+            .get_matches_from(vec!["import-dats", &dat_path.as_os_str().to_str().unwrap()]);
+
+        // when
+        parse_dat(&connection, &matches, &dat_path).unwrap();
+
+        // then
+        let mut systems = find_systems(&connection);
+        assert_eq!(1, systems.len());
+
+        let system = systems.remove(0);
+        assert_eq!("Test System", system.name);
+    }
+
+    #[test]
+    fn test_import_dat_parent_clone() {
+        // given
+        let dat_path = Path::new("test/test_parent_clone.dat").to_path_buf();
+        let connection = establish_connection(":memory:").unwrap();
+        let matches = subcommand()
+            .get_matches_from(vec!["import-dats", &dat_path.as_os_str().to_str().unwrap()]);
+
+        // when
+        parse_dat(&connection, &matches, &dat_path).unwrap();
+
+        // then
+        let mut systems = find_systems(&connection);
+        assert_eq!(1, systems.len());
+
+        let system = systems.remove(0);
+        assert_eq!("Test System", system.name);
+    }
+
+    #[test]
+    fn test_import_dat_info() {
+        // given
+        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let connection = establish_connection(":memory:").unwrap();
+        let matches = subcommand().get_matches_from(vec![
+            "import-dats",
+            "--info",
+            &dat_path.as_os_str().to_str().unwrap(),
+        ]);
+
+        // when
+        parse_dat(&connection, &matches, &dat_path).unwrap();
+
+        // then
+        let systems = find_systems(&connection);
+        assert_eq!(0, systems.len());
+    }
+
+    #[test]
+    fn test_get_regions_from_game_name_world() {
+        // given
+        let game_name = "Test Game (World)";
+
+        // when
+        let mut regions = get_regions_from_game_name(game_name);
+
+        // then
+        assert_eq!(3, regions.len());
+        assert_eq!("EUR", regions.remove(0));
+        assert_eq!("JPN", regions.remove(0));
+        assert_eq!("USA", regions.remove(0));
+    }
+
+    #[test]
+    fn test_get_regions_from_game_name_france_germany() {
+        // given
+        let game_name = "Test Game (France, Germany)";
+
+        // when
+        let mut regions = get_regions_from_game_name(game_name);
+
+        // then
+        assert_eq!(2, regions.len());
+        assert_eq!("FRA", regions.remove(0));
+        assert_eq!("GER", regions.remove(0));
     }
 }

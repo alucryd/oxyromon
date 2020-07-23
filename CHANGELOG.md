@@ -1,3 +1,7 @@
+# 0.4.0
+* Add a config subcommand and use the database to store the settings
+* Add unit tests
+
 # 0.3.0
 * Add progress indicators and bars
 * Add dependency on the indicatif crate
