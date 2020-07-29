@@ -8,20 +8,20 @@ extern crate digest;
 extern crate dirs;
 extern crate dotenv;
 extern crate indicatif;
-#[macro_use]
-extern crate lazy_static;
+extern crate once_cell;
 extern crate quick_xml;
 extern crate regex;
 extern crate serde;
 #[macro_use]
 extern crate simple_error;
 extern crate rayon;
+extern crate tempfile;
 
 mod chdman;
 mod checksum;
 mod config;
 mod convert_roms;
-mod crud;
+mod database;
 mod import_dats;
 mod import_roms;
 mod maxcso;
@@ -34,17 +34,13 @@ mod sevenzip;
 mod sort_roms;
 mod util;
 
-use self::config::*;
-use self::util::*;
 use clap::App;
-use diesel::prelude::*;
-use diesel::SqliteConnection;
+use database::*;
 use dotenv::dotenv;
 use simple_error::SimpleError;
+use util::*;
 
-embed_migrations!("migrations");
-
-pub type SimpleResult<T> = Result<T, SimpleError>;
+type SimpleResult<T> = Result<T, SimpleError>;
 
 fn main() -> SimpleResult<()> {
     let matches = App::new("oxyromon")
@@ -63,8 +59,10 @@ fn main() -> SimpleResult<()> {
 
     if matches.subcommand.is_some() {
         dotenv().ok();
+
         let data_directory = dirs::data_dir().unwrap().join("oxyromon");
         create_directory(&data_directory)?;
+
         let connection = establish_connection(
             data_directory
                 .join("oxyromon.db")
@@ -72,10 +70,6 @@ fn main() -> SimpleResult<()> {
                 .to_str()
                 .unwrap(),
         )?;
-        let rom_directory = get_rom_directory(&connection);
-        create_directory(&rom_directory)?;
-        let tmp_directory = get_tmp_directory(&connection);
-        create_directory(&tmp_directory)?;
 
         match matches.subcommand_name() {
             Some("config") => {
@@ -88,18 +82,14 @@ fn main() -> SimpleResult<()> {
             Some("import-roms") => import_roms::main(
                 &connection,
                 &matches.subcommand_matches("import-roms").unwrap(),
-                &rom_directory,
-                &tmp_directory,
             )?,
             Some("sort-roms") => sort_roms::main(
                 &connection,
                 &matches.subcommand_matches("sort-roms").unwrap(),
-                &rom_directory,
             )?,
             Some("convert-roms") => convert_roms::main(
                 &connection,
                 &matches.subcommand_matches("convert-roms").unwrap(),
-                &tmp_directory,
             )?,
             Some("purge-roms") => purge_roms::main(
                 &connection,
@@ -111,39 +101,5 @@ fn main() -> SimpleResult<()> {
         close_connection(connection)?;
     }
 
-    Ok(())
-}
-
-fn establish_connection(url: &str) -> SimpleResult<SqliteConnection> {
-    let connection =
-        SqliteConnection::establish(url).expect(&format!("Error connecting to {}", url));
-
-    try_with!(
-        connection.execute(
-            "
-            PRAGMA foreign_keys = ON;
-            PRAGMA journal_mode = WAL;
-            PRAGMA locking_mode = EXCLUSIVE;
-            PRAGMA synchronous = NORMAL;
-            PRAGMA temp_store = MEMORY;
-            PRAGMA wal_checkpoint(TRUNCATE);
-            ",
-        ),
-        "Failed to setup the database"
-    );
-
-    try_with!(
-        embedded_migrations::run(&connection),
-        "Failed to run embedded migrations"
-    );
-
-    Ok(connection)
-}
-
-fn close_connection(connection: SqliteConnection) -> SimpleResult<()> {
-    try_with!(
-        connection.execute("PRAGMA optimize;"),
-        "Failed to optimize the database"
-    );
     Ok(())
 }

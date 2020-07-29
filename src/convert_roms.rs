@@ -1,5 +1,5 @@
 use super::chdman::*;
-use super::crud::*;
+use super::database::*;
 use super::maxcso::*;
 use super::model::*;
 use super::progress::*;
@@ -29,12 +29,8 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub fn main<'a>(
-    connection: &SqliteConnection,
-    matches: &ArgMatches<'a>,
-    tmp_directory: &PathBuf,
-) -> SimpleResult<()> {
-    let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
+pub fn main<'a>(connection: &SqliteConnection, matches: &ArgMatches<'a>) -> SimpleResult<()> {
+    let systems = prompt_for_systems(connection, matches.is_present("ALL"));
     let format = matches.value_of("FORMAT");
 
     let progress_bar = get_progress_bar(0, get_none_progress_style());
@@ -43,23 +39,11 @@ pub fn main<'a>(
         progress_bar.println(&format!("Processing \"{}\"", system.name));
 
         match format {
-            Some("7Z") => to_archive(
-                &connection,
-                &system,
-                &tmp_directory,
-                &progress_bar,
-                ArchiveType::SEVENZIP,
-            )?,
-            Some("CHD") => to_chd(&connection, &system, &progress_bar)?,
-            Some("CSO") => to_cso(&connection, &system, &progress_bar)?,
-            Some("ORIGINAL") => to_original(&connection, &system, &progress_bar)?,
-            Some("ZIP") => to_archive(
-                &connection,
-                &system,
-                &tmp_directory,
-                &progress_bar,
-                ArchiveType::ZIP,
-            )?,
+            Some("7Z") => to_archive(connection, &system, &progress_bar, ArchiveType::SEVENZIP)?,
+            Some("CHD") => to_chd(connection, &system, &progress_bar)?,
+            Some("CSO") => to_cso(connection, &system, &progress_bar)?,
+            Some("ORIGINAL") => to_original(connection, &system, &progress_bar)?,
+            Some("ZIP") => to_archive(connection, &system, &progress_bar, ArchiveType::ZIP)?,
             Some(_) => bail!("Not implemented"),
             None => bail!("Not possible"),
         }
@@ -71,10 +55,10 @@ pub fn main<'a>(
 fn to_archive(
     connection: &SqliteConnection,
     system: &System,
-    tmp_directory: &PathBuf,
     progress_bar: &ProgressBar,
     archive_type: ArchiveType,
 ) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection)?;
     let mut games_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         find_games_roms_romfiles_with_romfile_by_system(connection, &system);
 
@@ -113,7 +97,7 @@ fn to_archive(
             extract_files_from_archive(
                 &archive_path,
                 &vec![&rom.name],
-                tmp_directory,
+                &tmp_directory.path().to_path_buf(),
                 &progress_bar,
             )?;
             remove_file(&archive_path)?;
@@ -124,14 +108,14 @@ fn to_archive(
             add_files_to_archive(
                 &archive_path,
                 &vec![&rom.name],
-                tmp_directory,
+                &tmp_directory.path().to_path_buf(),
                 &progress_bar,
             )?;
             let archive_romfile_input = RomfileInput {
                 path: &String::from(archive_path.as_os_str().to_str().unwrap()),
             };
             update_romfile(connection, &romfile, &archive_romfile_input);
-            remove_file(&tmp_directory.join(&rom.name))?;
+            remove_file(&tmp_directory.path().join(&rom.name))?;
         } else {
             let mut roms: Vec<Rom> = Vec::new();
             let mut romfiles: Vec<Romfile> = Vec::new();
@@ -149,19 +133,29 @@ fn to_archive(
             let archive_romfile = romfiles.remove(0);
             let mut archive_path = Path::new(&archive_romfile.path).to_path_buf();
 
-            extract_files_from_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
+            extract_files_from_archive(
+                &archive_path,
+                &file_names,
+                &tmp_directory.path().to_path_buf(),
+                &progress_bar,
+            )?;
             remove_file(&archive_path)?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
             });
-            add_files_to_archive(&archive_path, &file_names, tmp_directory, &progress_bar)?;
+            add_files_to_archive(
+                &archive_path,
+                &file_names,
+                &tmp_directory.path().to_path_buf(),
+                &progress_bar,
+            )?;
             for file_name in file_names {
                 let archive_romfile_input = RomfileInput {
                     path: &String::from(archive_path.as_os_str().to_str().unwrap()),
                 };
                 update_romfile(connection, &archive_romfile, &archive_romfile_input);
-                remove_file(&tmp_directory.join(file_name))?;
+                remove_file(&tmp_directory.path().join(file_name))?;
             }
         }
     }

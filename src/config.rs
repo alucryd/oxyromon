@@ -1,11 +1,15 @@
-use super::crud::*;
+use super::database::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
+use once_cell::sync::OnceCell;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
+
+static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
+static TMP_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("config")
@@ -117,30 +121,34 @@ pub fn set_directory(connection: &SqliteConnection, key: &str, value: &PathBuf) 
 }
 
 pub fn get_directory(connection: &SqliteConnection, key: &str) -> Option<PathBuf> {
-    find_setting_by_key(&connection, key)
+    find_setting_by_key(connection, &key)
         .map(|p| get_canonicalized_path(&p.value.unwrap()).unwrap())
 }
 
-pub fn get_rom_directory(connection: &SqliteConnection) -> PathBuf {
-    let rom_directory = get_directory(&connection, "ROM_DIRECTORY");
-    match rom_directory {
-        Some(rom_directory) => rom_directory,
-        None => {
-            let d = dirs::home_dir().unwrap().join("Emulation");
-            set_directory(connection, "ROM_DIRECTORY", &d);
-            d
+pub fn get_rom_directory(connection: &SqliteConnection) -> &PathBuf {
+    ROM_DIRECTORY.get_or_init(|| {
+        let rom_directory = get_directory(connection, "ROM_DIRECTORY");
+        match rom_directory {
+            Some(rom_directory) => rom_directory,
+            None => {
+                let d = dirs::home_dir().unwrap().join("Emulation");
+                set_directory(connection, "ROM_DIRECTORY", &d);
+                d
+            }
         }
-    }
+    })
 }
 
-pub fn get_tmp_directory(connection: &SqliteConnection) -> PathBuf {
-    let tmp_directory = get_directory(&connection, "TMP_DIRECTORY");
-    match tmp_directory {
-        Some(tmp_directory) => tmp_directory,
-        None => {
-            let d = env::temp_dir();
-            set_directory(connection, "TMP_DIRECTORY", &d);
-            d
+pub fn get_tmp_directory(connection: &SqliteConnection) -> &PathBuf {
+    TMP_DIRECTORY.get_or_init(|| {
+        let tmp_directory = get_directory(connection, "TMP_DIRECTORY");
+        match tmp_directory {
+            Some(tmp_directory) => tmp_directory,
+            None => {
+                let d = env::temp_dir();
+                set_directory(connection, "TMP_DIRECTORY", &d);
+                d
+            }
         }
-    }
+    })
 }

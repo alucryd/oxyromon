@@ -1,16 +1,54 @@
 use super::model::*;
 use super::schema::*;
+use super::SimpleResult;
 use diesel::prelude::*;
-use diesel::sql_types;
-use diesel::SqliteConnection;
+use diesel::{sql_types, SqliteConnection};
 use rayon::prelude::*;
 use std::convert::TryFrom;
+
+embed_migrations!("migrations");
 
 no_arg_sql_function!(
     last_insert_rowid,
     sql_types::BigInt,
     "Returns the last inserted rowid"
 );
+
+pub fn establish_connection(url: &str) -> SimpleResult<SqliteConnection> {
+    let connection = try_with!(
+        SqliteConnection::establish(url),
+        &format!("Error connecting to {}", url)
+    );
+
+    try_with!(
+        connection.execute(
+            "
+            PRAGMA foreign_keys = ON;
+            PRAGMA journal_mode = WAL;
+            PRAGMA locking_mode = EXCLUSIVE;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA temp_store = MEMORY;
+            PRAGMA wal_checkpoint(TRUNCATE);
+            ",
+        ),
+        "Failed to setup the database"
+    );
+
+    try_with!(
+        embedded_migrations::run(&connection),
+        "Failed to run embedded migrations"
+    );
+
+    Ok(connection)
+}
+
+pub fn close_connection(connection: SqliteConnection) -> SimpleResult<()> {
+    try_with!(
+        connection.execute("PRAGMA optimize;"),
+        "Failed to optimize the database"
+    );
+    Ok(())
+}
 
 pub fn create_system(connection: &SqliteConnection, system_xml: &SystemXml) -> i64 {
     let system_input = SystemInput::from(system_xml);
@@ -487,8 +525,5 @@ pub fn find_settings<'a>(connection: &SqliteConnection) -> Vec<Setting> {
 pub fn delete_setting_by_key<'a>(connection: &SqliteConnection, key: &str) {
     diesel::delete(settings::table.filter(settings::dsl::key.eq(key)))
         .execute(connection)
-        .expect(&format!(
-            "Error while deleting setting with key {}",
-            key
-        ));
+        .expect(&format!("Error while deleting setting with key {}", key));
 }

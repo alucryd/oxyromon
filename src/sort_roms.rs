@@ -1,6 +1,6 @@
 use super::chdman::*;
 use super::config::*;
-use super::crud::*;
+use super::database::*;
 use super::maxcso::*;
 use super::model::*;
 use super::progress::*;
@@ -163,14 +163,10 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub fn main(
-    connection: &SqliteConnection,
-    matches: &ArgMatches,
-    rom_directory: &PathBuf,
-) -> SimpleResult<()> {
+pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-    let systems = prompt_for_systems(&connection, matches.is_present("ALL"));
+    let systems = prompt_for_systems(connection, matches.is_present("ALL"));
 
     // unordered regions to keep
     let mut all_regions: Vec<&str> = Vec::new();
@@ -241,7 +237,7 @@ pub fn main(
             }
         // Regions mode
         } else if !all_regions.is_empty() {
-            games = find_games_by_system(&connection, &system);
+            games = find_games_by_system(connection, &system);
 
             // trim unwanted games
             match unwanted_regex.as_ref() {
@@ -266,7 +262,7 @@ pub fn main(
                 }
             }
         } else {
-            games = find_games_by_system(&connection, &system);
+            games = find_games_by_system(connection, &system);
 
             // trim unwanted games
             match unwanted_regex.as_ref() {
@@ -289,7 +285,7 @@ pub fn main(
             game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
             game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
             let missing_roms: Vec<Rom> =
-                find_roms_without_romfile_by_game_ids(&connection, &game_ids);
+                find_roms_without_romfile_by_game_ids(connection, &game_ids);
 
             progress_bar.println("Missing:");
             for rom in missing_roms {
@@ -298,7 +294,7 @@ pub fn main(
         }
 
         // create necessary directories
-        let all_regions_directory = rom_directory.join(system.name);
+        let all_regions_directory = get_rom_directory(connection).join(&system.name);
         let one_region_directory = all_regions_directory.join("1G1R");
         let trash_directory = all_regions_directory.join("Trash");
         for d in vec![
@@ -311,21 +307,21 @@ pub fn main(
 
         // process all_region_games
         romfile_moves.append(&mut process_games(
-            &connection,
+            connection,
             all_regions_games,
             &all_regions_directory,
         ));
 
         // process one_region_games
         romfile_moves.append(&mut process_games(
-            &connection,
+            connection,
             one_region_games,
             &one_region_directory,
         ));
 
         // process trash_games
         romfile_moves.append(&mut process_games(
-            &connection,
+            connection,
             trash_games,
             &trash_directory,
         ));
@@ -348,7 +344,7 @@ pub fn main(
                 let romfile_input = RomfileInput {
                     path: &romfile_move.1,
                 };
-                update_romfile(&connection, &romfile_move.0, &romfile_input);
+                update_romfile(connection, &romfile_move.0, &romfile_input);
             }
         }
     }
@@ -363,7 +359,7 @@ fn process_games(
 ) -> Vec<(Romfile, String)> {
     let mut romfile_moves: Vec<(Romfile, String)> = Vec::new();
 
-    let roms_romfiles = find_roms_romfiles_with_romfile_by_games(&connection, &games);
+    let roms_romfiles = find_roms_romfiles_with_romfile_by_games(connection, &games);
     let game_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
         games.into_par_iter().zip(roms_romfiles).collect();
 

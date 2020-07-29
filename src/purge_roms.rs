@@ -1,10 +1,10 @@
-use super::crud::*;
+use super::database::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
+use clap::{App, Arg, ArgMatches, SubCommand};
 use std::path::Path;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
@@ -33,7 +33,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
     if matches.is_present("EMPTY-TRASH") {
         progress_bar.set_message("Processing trashed ROM files");
 
-        let romfiles = find_romfiles_in_trash(&connection);
+        let romfiles = find_romfiles_in_trash(connection);
 
         if romfiles.len() > 0 {
             progress_bar.println("Summary:");

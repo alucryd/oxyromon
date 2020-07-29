@@ -1,4 +1,4 @@
-use super::crud::*;
+use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
@@ -6,50 +6,13 @@ use super::SimpleResult;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use diesel::SqliteConnection;
 use indicatif::ProgressBar;
+use once_cell::sync::OnceCell;
 use quick_xml::de;
 use regex::Regex;
 use std::io;
 use std::path::PathBuf;
 
-lazy_static! {
-    pub static ref REGION_CODES: Vec<(Regex, Vec<&'static str>)> = vec![
-        (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
-        (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
-        (Regex::new(r"\(.*Austria,?.*\)").unwrap(), vec!["AUT"]),
-        (Regex::new(r"\(.*Belgium,?.*\)").unwrap(), vec!["BEL"]),
-        (Regex::new(r"\(.*Brazil,?.*\)").unwrap(), vec!["BRA"]),
-        (Regex::new(r"\(.*Canada,?.*\)").unwrap(), vec!["CAN"]),
-        (Regex::new(r"\(.*China,?.*\)").unwrap(), vec!["CHN"]),
-        (Regex::new(r"\(.*Denmark,?.*\)").unwrap(), vec!["DAN"]),
-        (Regex::new(r"\(.*Europe,?.*\)").unwrap(), vec!["EUR"]),
-        (Regex::new(r"\(.*Finland,?.*\)").unwrap(), vec!["FIN"]),
-        (Regex::new(r"\(.*France,?.*\)").unwrap(), vec!["FRA"]),
-        (Regex::new(r"\(.*Germany,?.*\)").unwrap(), vec!["GER"]),
-        (Regex::new(r"\(.*Greece,?.*\)").unwrap(), vec!["GRC"]),
-        (Regex::new(r"\(.*Hong Kong,?.*\)").unwrap(), vec!["HKG"]),
-        (Regex::new(r"\(.*Ireland,?.*\)").unwrap(), vec!["IRL"]),
-        (Regex::new(r"\(.*Israel,?.*\)").unwrap(), vec!["ISR"]),
-        (Regex::new(r"\(.*Italy,?.*\)").unwrap(), vec!["ITA"]),
-        (Regex::new(r"\(.*Japan,?.*\)").unwrap(), vec!["JPN"]),
-        (Regex::new(r"\(.*Korea,?.*\)").unwrap(), vec!["KOR"]),
-        (Regex::new(r"\(.*Netherlands,?.*\)").unwrap(), vec!["HOL"]),
-        (Regex::new(r"\(.*Norway,?.*\)").unwrap(), vec!["NOR"]),
-        (Regex::new(r"\(.*Poland,?.*\)").unwrap(), vec!["POL"]),
-        (Regex::new(r"\(.*Portugal,?.*\)").unwrap(), vec!["PRT"]),
-        (Regex::new(r"\(.*Russia,?.*\)").unwrap(), vec!["RUS"]),
-        (Regex::new(r"\(.*Scandinavia,?.*\)").unwrap(), vec!["SCA"]),
-        (Regex::new(r"\(.*Spain,?.*\)").unwrap(), vec!["SPA"]),
-        (Regex::new(r"\(.*Sweden,?.*\)").unwrap(), vec!["SWE"]),
-        (Regex::new(r"\(.*Taiwan,?.*\)").unwrap(), vec!["TAI"]),
-        (Regex::new(r"\(.*UK,?.*\)").unwrap(), vec!["GBR"]),
-        (Regex::new(r"\(.*Unknown,?.*\)").unwrap(), vec!["UNK"]),
-        (Regex::new(r"\(.*USA,?.*\)").unwrap(), vec!["USA"]),
-        (
-            Regex::new(r"\(.*World,?.*\)").unwrap(),
-            vec!["EUR", "JPN", "USA"],
-        ),
-    ];
-}
+static REGION_CODES: OnceCell<Vec<(Regex, Vec<&'static str>)>> = OnceCell::new();
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
@@ -71,18 +34,23 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
-    for d in matches.values_of("DATS").unwrap() {
-        let dat_path = get_canonicalized_path(d)?;
-        parse_dat(connection, matches, &dat_path)?;
+    let dats: Vec<String> = matches.values_of_lossy("DATS").unwrap();
+    let info = matches.is_present("INFO");
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
+
+    for dat in dats {
+        let dat_path = get_canonicalized_path(&dat)?;
+        import_dat(connection, &dat_path, info, &progress_bar)?;
     }
 
     Ok(())
 }
 
-fn parse_dat(
+pub fn import_dat(
     connection: &SqliteConnection,
-    matches: &ArgMatches,
     dat_path: &PathBuf,
+    info: bool,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let f = open_file(&dat_path)?;
     let reader = io::BufReader::new(f);
@@ -97,20 +65,22 @@ fn parse_dat(
     println!("System: {}", datafile_xml.system.name);
     println!("Version: {}", datafile_xml.system.version);
     println!("Games: {}", datafile_xml.games.len());
-    if matches.is_present("INFO") {
+
+    if info {
         return Ok(());
     }
 
-    let progress_bar =
-        get_progress_bar(datafile_xml.games.len() as u64, get_count_progress_style());
+    progress_bar.reset();
+    progress_bar.set_style(get_count_progress_style());
+    progress_bar.set_length(datafile_xml.games.len() as u64);
 
     // persist everything into the database
     progress_bar.set_message("Processing system");
-    let system_id = create_or_update_system(&connection, &datafile_xml.system);
+    let system_id = create_or_update_system(connection, &datafile_xml.system);
     progress_bar.set_message("Deleting old games");
-    delete_old_games(&connection, &datafile_xml.games, system_id);
+    delete_old_games(connection, &datafile_xml.games, system_id);
     progress_bar.set_message("Processing games");
-    create_or_update_games(&connection, &datafile_xml.games, system_id, &progress_bar);
+    create_or_update_games(connection, &datafile_xml.games, system_id, &progress_bar);
 
     // parse header file if needed
     if datafile_xml.system.clrmamepro.is_some() {
@@ -121,22 +91,61 @@ fn parse_dat(
         let reader = io::BufReader::new(header_file);
         let detector_xml: DetectorXml =
             de::from_reader(reader).expect("Failed to parse the header file");
-        create_or_update_header(&connection, &detector_xml, system_id);
+        create_or_update_header(connection, &detector_xml, system_id);
     }
 
     Ok(())
 }
 
 fn get_regions_from_game_name<'a>(name: &str) -> Vec<&'a str> {
+    let region_codes = REGION_CODES.get_or_init(|| {
+        vec![
+            (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
+            (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
+            (Regex::new(r"\(.*Austria,?.*\)").unwrap(), vec!["AUT"]),
+            (Regex::new(r"\(.*Belgium,?.*\)").unwrap(), vec!["BEL"]),
+            (Regex::new(r"\(.*Brazil,?.*\)").unwrap(), vec!["BRA"]),
+            (Regex::new(r"\(.*Canada,?.*\)").unwrap(), vec!["CAN"]),
+            (Regex::new(r"\(.*China,?.*\)").unwrap(), vec!["CHN"]),
+            (Regex::new(r"\(.*Denmark,?.*\)").unwrap(), vec!["DAN"]),
+            (Regex::new(r"\(.*Europe,?.*\)").unwrap(), vec!["EUR"]),
+            (Regex::new(r"\(.*Finland,?.*\)").unwrap(), vec!["FIN"]),
+            (Regex::new(r"\(.*France,?.*\)").unwrap(), vec!["FRA"]),
+            (Regex::new(r"\(.*Germany,?.*\)").unwrap(), vec!["GER"]),
+            (Regex::new(r"\(.*Greece,?.*\)").unwrap(), vec!["GRC"]),
+            (Regex::new(r"\(.*Hong Kong,?.*\)").unwrap(), vec!["HKG"]),
+            (Regex::new(r"\(.*Ireland,?.*\)").unwrap(), vec!["IRL"]),
+            (Regex::new(r"\(.*Israel,?.*\)").unwrap(), vec!["ISR"]),
+            (Regex::new(r"\(.*Italy,?.*\)").unwrap(), vec!["ITA"]),
+            (Regex::new(r"\(.*Japan,?.*\)").unwrap(), vec!["JPN"]),
+            (Regex::new(r"\(.*Korea,?.*\)").unwrap(), vec!["KOR"]),
+            (Regex::new(r"\(.*Netherlands,?.*\)").unwrap(), vec!["HOL"]),
+            (Regex::new(r"\(.*Norway,?.*\)").unwrap(), vec!["NOR"]),
+            (Regex::new(r"\(.*Poland,?.*\)").unwrap(), vec!["POL"]),
+            (Regex::new(r"\(.*Portugal,?.*\)").unwrap(), vec!["PRT"]),
+            (Regex::new(r"\(.*Russia,?.*\)").unwrap(), vec!["RUS"]),
+            (Regex::new(r"\(.*Scandinavia,?.*\)").unwrap(), vec!["SCA"]),
+            (Regex::new(r"\(.*Spain,?.*\)").unwrap(), vec!["SPA"]),
+            (Regex::new(r"\(.*Sweden,?.*\)").unwrap(), vec!["SWE"]),
+            (Regex::new(r"\(.*Taiwan,?.*\)").unwrap(), vec!["TAI"]),
+            (Regex::new(r"\(.*UK,?.*\)").unwrap(), vec!["GBR"]),
+            (Regex::new(r"\(.*Unknown,?.*\)").unwrap(), vec!["UNK"]),
+            (Regex::new(r"\(.*USA,?.*\)").unwrap(), vec!["USA"]),
+            (
+                Regex::new(r"\(.*World,?.*\)").unwrap(),
+                vec!["EUR", "JPN", "USA"],
+            ),
+        ]
+    });
     let mut regions: Vec<&str> = Vec::new();
-    for (re, regions_vec) in &*REGION_CODES {
+    for (re, regions_vec) in region_codes {
         if re.find(name).is_some() {
             regions.append(&mut regions_vec.clone());
         }
     }
     regions.sort();
     regions.dedup();
-    return regions;
+    regions
 }
 
 fn create_or_update_system(connection: &SqliteConnection, system_xml: &SystemXml) -> i64 {
@@ -167,10 +176,10 @@ fn create_or_update_header(
 
 fn delete_old_games(connection: &SqliteConnection, games_xml: &Vec<GameXml>, system_id: i64) {
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
-    let game_names = find_game_names_by_system_id(&connection, system_id);
-    for game_name in game_names {
-        if !game_names_xml.contains(&&game_name) {
-            delete_game_by_name_and_system_id(&connection, &game_name, system_id)
+    let game_names = find_game_names_by_system_id(connection, system_id);
+    for game_name in &game_names {
+        if !game_names_xml.contains(&game_name) {
+            delete_game_by_name_and_system_id(connection, &game_name, system_id)
         }
     }
 }
@@ -294,8 +303,7 @@ fn create_or_update_roms(connection: &SqliteConnection, roms_xml: &Vec<RomXml>, 
 
 #[cfg(test)]
 mod test {
-    use super::super::crud::*;
-    use super::super::establish_connection;
+    use super::super::database::*;
     use super::*;
     use std::path::Path;
 
@@ -304,58 +312,52 @@ mod test {
     #[test]
     fn test_import_dat() {
         // given
-        let dat_path = Path::new("test/test.dat").to_path_buf();
         let connection = establish_connection(":memory:").unwrap();
-        let matches = subcommand()
-            .get_matches_from(vec!["import-dats", &dat_path.as_os_str().to_str().unwrap()]);
+        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let progress_bar = ProgressBar::hidden();
 
         // when
-        parse_dat(&connection, &matches, &dat_path).unwrap();
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
 
         // then
         let mut systems = find_systems(&connection);
-        assert_eq!(1, systems.len());
+        assert_eq!(systems.len(), 1);
 
         let system = systems.remove(0);
-        assert_eq!("Test System", system.name);
+        assert_eq!(system.name, "Test System");
     }
 
     #[test]
     fn test_import_dat_parent_clone() {
         // given
-        let dat_path = Path::new("test/test_parent_clone.dat").to_path_buf();
         let connection = establish_connection(":memory:").unwrap();
-        let matches = subcommand()
-            .get_matches_from(vec!["import-dats", &dat_path.as_os_str().to_str().unwrap()]);
+        let dat_path = Path::new("test/test_parent_clone.dat").to_path_buf();
+        let progress_bar = ProgressBar::hidden();
 
         // when
-        parse_dat(&connection, &matches, &dat_path).unwrap();
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
 
         // then
         let mut systems = find_systems(&connection);
-        assert_eq!(1, systems.len());
+        assert_eq!(systems.len(), 1);
 
         let system = systems.remove(0);
-        assert_eq!("Test System", system.name);
+        assert_eq!(system.name, "Test System");
     }
 
     #[test]
     fn test_import_dat_info() {
         // given
-        let dat_path = Path::new("test/test.dat").to_path_buf();
         let connection = establish_connection(":memory:").unwrap();
-        let matches = subcommand().get_matches_from(vec![
-            "import-dats",
-            "--info",
-            &dat_path.as_os_str().to_str().unwrap(),
-        ]);
+        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let progress_bar = ProgressBar::hidden();
 
         // when
-        parse_dat(&connection, &matches, &dat_path).unwrap();
+        import_dat(&connection, &dat_path, true, &progress_bar).unwrap();
 
         // then
         let systems = find_systems(&connection);
-        assert_eq!(0, systems.len());
+        assert_eq!(systems.len(), 0);
     }
 
     #[test]
@@ -367,10 +369,10 @@ mod test {
         let mut regions = get_regions_from_game_name(game_name);
 
         // then
-        assert_eq!(3, regions.len());
-        assert_eq!("EUR", regions.remove(0));
-        assert_eq!("JPN", regions.remove(0));
-        assert_eq!("USA", regions.remove(0));
+        assert_eq!(regions.len(), 3);
+        assert_eq!(regions.remove(0), "EUR");
+        assert_eq!(regions.remove(0), "JPN");
+        assert_eq!(regions.remove(0), "USA");
     }
 
     #[test]
@@ -382,8 +384,8 @@ mod test {
         let mut regions = get_regions_from_game_name(game_name);
 
         // then
-        assert_eq!(2, regions.len());
-        assert_eq!("FRA", regions.remove(0));
-        assert_eq!("GER", regions.remove(0));
+        assert_eq!(regions.len(), 2);
+        assert_eq!(regions.remove(0), "FRA");
+        assert_eq!(regions.remove(0), "GER");
     }
 }

@@ -1,5 +1,5 @@
-use super::crud::find_systems;
-use super::model::{Rom, System};
+use super::database::*;
+use super::model::*;
 use clap::ArgMatches;
 use diesel::SqliteConnection;
 use regex::Regex;
@@ -7,7 +7,7 @@ use std::io;
 use std::str::FromStr;
 
 pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<System> {
-    let mut systems = find_systems(&connection);
+    let mut systems = find_systems(connection);
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
     if all {
@@ -54,7 +54,7 @@ pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<Syste
 }
 
 pub fn prompt_for_system(connection: &SqliteConnection) -> System {
-    let mut systems = find_systems(&connection);
+    let mut systems = find_systems(connection);
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
     println!("Please select a system:");

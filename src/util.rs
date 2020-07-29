@@ -1,6 +1,9 @@
+use super::config::*;
 use super::SimpleResult;
+use diesel::SqliteConnection;
 use std::fs;
 use std::path::{Path, PathBuf};
+use tempfile::TempDir;
 
 pub fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
@@ -42,4 +45,12 @@ pub fn create_directory(path: &PathBuf) -> SimpleResult<()> {
         );
     }
     Ok(())
+}
+
+pub fn create_tmp_directory(connection: &SqliteConnection) -> SimpleResult<TempDir> {
+    let tmp_directory = try_with!(
+        TempDir::new_in(get_tmp_directory(connection)),
+        "Failed to create temp directory"
+    );
+    Ok(tmp_directory)
 }
