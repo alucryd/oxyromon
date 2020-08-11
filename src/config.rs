@@ -54,6 +54,10 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+    // make sure 
+    get_rom_directory(connection);
+    get_tmp_directory(connection);
+
     if matches.is_present("LIST") {
         let settings = find_settings(connection);
         for setting in settings {

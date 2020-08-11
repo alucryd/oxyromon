@@ -418,13 +418,286 @@ mod test {
     embed_migrations!("migrations");
 
     #[test]
+    fn test_import_sevenzip_single() {
+        // given
+        let connection = establish_connection(":memory:").unwrap();
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let system_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).rom.7z");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).rom.7z"),
+            &rom_path.as_os_str().to_str().unwrap(),
+        )
+        .unwrap();
+        set_directory(
+            &connection,
+            "ROM_DIRECTORY",
+            &system_directory.path().to_path_buf(),
+        );
+
+        let system = find_systems(&connection).remove(0);
+
+        // when
+        import_archive(
+            &connection,
+            &system_directory.path().to_path_buf(),
+            &system,
+            &None,
+            &rom_path,
+            &rom_path.extension().unwrap().to_str().unwrap(),
+            &progress_bar,
+        )
+        .unwrap();
+
+        // then
+        let mut games_roms_romfiles =
+            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
+        assert_eq!(games_roms_romfiles.len(), 1);
+
+        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        assert_eq!(game.name, "Test Game (USA, Europe)");
+        assert_eq!(roms_romfiles.len(), 1);
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).rom.7z")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+    }
+
+    #[test]
+    fn test_import_zip_single() {
+        // given
+        let connection = establish_connection(":memory:").unwrap();
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let system_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).rom.zip");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).rom.zip"),
+            &rom_path.as_os_str().to_str().unwrap(),
+        )
+        .unwrap();
+        set_directory(
+            &connection,
+            "ROM_DIRECTORY",
+            &system_directory.path().to_path_buf(),
+        );
+
+        let system = find_systems(&connection).remove(0);
+
+        // when
+        import_archive(
+            &connection,
+            &system_directory.path().to_path_buf(),
+            &system,
+            &None,
+            &rom_path,
+            &rom_path.extension().unwrap().to_str().unwrap(),
+            &progress_bar,
+        )
+        .unwrap();
+
+        // then
+        let mut games_roms_romfiles =
+            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
+        assert_eq!(games_roms_romfiles.len(), 1);
+
+        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        assert_eq!(game.name, "Test Game (USA, Europe)");
+        assert_eq!(roms_romfiles.len(), 1);
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).rom.zip")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+    }
+
+    fn test_import_chd() {
+        // given
+        let connection = establish_connection(":memory:").unwrap();
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let system_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).cue");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).cue"),
+            &rom_path.as_os_str().to_str().unwrap(),
+        )
+        .unwrap();
+        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).chd");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).chd"),
+            &rom_path.as_os_str().to_str().unwrap(),
+        )
+        .unwrap();
+        set_directory(
+            &connection,
+            "ROM_DIRECTORY",
+            &system_directory.path().to_path_buf(),
+        );
+
+        let system = find_systems(&connection).remove(0);
+
+        // when
+        import_chd(
+            &connection,
+            &system_directory.path().to_path_buf(),
+            &system,
+            &None,
+            &rom_path,
+            &progress_bar,
+        )
+        .unwrap();
+
+        // then
+        let mut games_roms_romfiles =
+            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
+        assert_eq!(games_roms_romfiles.len(), 1);
+
+        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        assert_eq!(game.name, "Test Game (USA, Europe) (CUE/BIN)");
+        assert_eq!(roms_romfiles.len(), 3);
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).cue")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 1).bin");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).chd")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 2).bin");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).chd")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+    }
+
+    #[test]
+    fn test_import_cso() {
+        // given
+        let connection = establish_connection(":memory:").unwrap();
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let system_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).cso");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).cso"),
+            &rom_path.as_os_str().to_str().unwrap(),
+        )
+        .unwrap();
+        set_directory(
+            &connection,
+            "ROM_DIRECTORY",
+            &system_directory.path().to_path_buf(),
+        );
+
+        let system = find_systems(&connection).remove(0);
+
+        // when
+        import_cso(
+            &connection,
+            &system_directory.path().to_path_buf(),
+            &system,
+            &None,
+            &rom_path,
+            &progress_bar,
+        )
+        .unwrap();
+
+        // then
+        let mut games_roms_romfiles =
+            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
+        assert_eq!(games_roms_romfiles.len(), 1);
+
+        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        assert_eq!(game.name, "Test Game (USA, Europe) (ISO)");
+        assert_eq!(roms_romfiles.len(), 1);
+
+        let (rom, romfile) = roms_romfiles.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .path()
+                .join("Test Game (USA, Europe).cso")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file());
+    }
+
+    #[test]
     fn test_import_other() {
         // given
         let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
-        let dat_path = test_directory.join("test.dat");
+        let dat_path = test_directory.join("Test System.dat");
         import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();

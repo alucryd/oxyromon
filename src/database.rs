@@ -72,6 +72,13 @@ pub fn update_system<'a>(connection: &SqliteConnection, system: &System, system_
         ));
 }
 
+pub fn find_systems<'a>(connection: &SqliteConnection) -> Vec<System> {
+    systems::table
+        .order_by(systems::dsl::name.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding systems"))
+}
+
 pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str) -> Option<System> {
     systems::table
         .filter(systems::dsl::name.eq(system_name))
@@ -81,13 +88,6 @@ pub fn find_system_by_name<'a>(connection: &SqliteConnection, system_name: &str)
             "Error while finding system with name {}",
             system_name
         ))
-}
-
-pub fn find_systems<'a>(connection: &SqliteConnection) -> Vec<System> {
-    systems::table
-        .order_by(systems::dsl::name.asc())
-        .get_results(connection)
-        .expect(&format!("Error while finding systems"))
 }
 
 pub fn create_game<'a>(
@@ -125,20 +125,11 @@ pub fn update_game<'a>(
         ));
 }
 
-pub fn find_game_by_name_and_system_id<'a>(
-    connection: &SqliteConnection,
-    name: &str,
-    system_id: i64,
-) -> Option<Game> {
+pub fn find_games<'a>(connection: &SqliteConnection) -> Vec<Game> {
     games::table
-        .filter(games::dsl::name.eq(name))
-        .filter(games::dsl::system_id.eq(system_id))
-        .get_result(connection)
-        .optional()
-        .expect(&format!(
-            "Error while finding game with name {} for system with id {}",
-            name, system_id
-        ))
+        .order_by(games::dsl::name.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding games"))
 }
 
 pub fn find_games_by_system<'a>(connection: &SqliteConnection, system: &System) -> Vec<Game> {
@@ -182,6 +173,22 @@ pub fn find_game_names_by_system_id<'a>(
         .expect(&format!(
             "Error while finding games for system with id {}",
             system_id
+        ))
+}
+
+pub fn find_game_by_name_and_system_id<'a>(
+    connection: &SqliteConnection,
+    name: &str,
+    system_id: i64,
+) -> Option<Game> {
+    games::table
+        .filter(games::dsl::name.eq(name))
+        .filter(games::dsl::system_id.eq(system_id))
+        .get_result(connection)
+        .optional()
+        .expect(&format!(
+            "Error while finding game with name {} for system with id {}",
+            name, system_id
         ))
 }
 
@@ -233,6 +240,13 @@ pub fn update_release<'a>(
         ));
 }
 
+pub fn find_releases<'a>(connection: &SqliteConnection) -> Vec<Release> {
+    releases::table
+        .order_by(releases::dsl::name.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding releases"))
+}
+
 pub fn find_release_by_name_and_region_and_game_id<'a>(
     connection: &SqliteConnection,
     name: &str,
@@ -280,6 +294,47 @@ pub fn update_rom_romfile<'a>(connection: &SqliteConnection, rom: &Rom, romfile_
         ))
 }
 
+pub fn find_roms<'a>(connection: &SqliteConnection) -> Vec<Rom> {
+    roms::table
+        .order_by(roms::dsl::name.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding roms"))
+}
+
+pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i64) -> Vec<Rom> {
+    roms::table
+        .filter(roms::dsl::game_id.eq(game_id))
+        .order_by(roms::dsl::name)
+        .get_results(connection)
+        .expect(&format!(
+            "Error while finding roms for game with id {}",
+            game_id
+        ))
+}
+
+pub fn find_roms_without_romfile_by_game_ids<'a>(
+    connection: &SqliteConnection,
+    game_ids: &Vec<i64>,
+) -> Vec<Rom> {
+    roms::table
+        .filter(roms::dsl::romfile_id.is_null())
+        .filter(roms::dsl::game_id.eq_any(game_ids))
+        .order_by(roms::dsl::name.asc())
+        .get_results(connection)
+        .expect("Error while finding roms")
+}
+
+pub fn find_roms_romfiles_with_romfile_by_games<'a>(
+    connection: &SqliteConnection,
+    games: &Vec<Game>,
+) -> Vec<Vec<(Rom, Romfile)>> {
+    Rom::belonging_to(games)
+        .inner_join(romfiles::table)
+        .get_results(connection)
+        .expect("Error while finding roms and romfiles")
+        .grouped_by(games)
+}
+
 pub fn find_rom_by_name_and_game_id<'a>(
     connection: &SqliteConnection,
     name: &str,
@@ -294,40 +349,6 @@ pub fn find_rom_by_name_and_game_id<'a>(
             "Error while finding rom with {} for game with id {}",
             name, game_id
         ))
-}
-
-pub fn find_roms_by_game_id<'a>(connection: &SqliteConnection, game_id: i64) -> Vec<Rom> {
-    roms::table
-        .filter(roms::dsl::game_id.eq(game_id))
-        .order_by(roms::dsl::name)
-        .get_results(connection)
-        .expect(&format!(
-            "Error while finding roms for game with id {}",
-            game_id
-        ))
-}
-
-pub fn find_roms_romfiles_with_romfile_by_games<'a>(
-    connection: &SqliteConnection,
-    games: &Vec<Game>,
-) -> Vec<Vec<(Rom, Romfile)>> {
-    Rom::belonging_to(games)
-        .inner_join(romfiles::table)
-        .get_results(connection)
-        .expect("Error while finding roms and romfiles")
-        .grouped_by(games)
-}
-
-pub fn find_roms_without_romfile_by_game_ids<'a>(
-    connection: &SqliteConnection,
-    game_ids: &Vec<i64>,
-) -> Vec<Rom> {
-    roms::table
-        .filter(roms::dsl::romfile_id.is_null())
-        .filter(roms::dsl::game_id.eq_any(game_ids))
-        .order_by(roms::dsl::name.asc())
-        .get_results(connection)
-        .expect("Error while finding roms")
 }
 
 pub fn find_games_roms_romfiles_with_romfile_by_system<'a>(
@@ -393,6 +414,21 @@ pub fn update_romfile<'a>(
         ));
 }
 
+pub fn find_romfiles<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
+    romfiles::table
+        .order_by(romfiles::dsl::path.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding romfiles"))
+}
+
+pub fn find_romfiles_in_trash<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
+    romfiles::table
+        .filter(romfiles::dsl::path.like("%/Trash/%"))
+        .order_by(romfiles::dsl::path.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding romfiles in trash"))
+}
+
 pub fn find_romfile_by_path<'a>(connection: &SqliteConnection, path: &str) -> Option<Romfile> {
     romfiles::table
         .filter(romfiles::dsl::path.eq(path))
@@ -410,20 +446,6 @@ pub fn find_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i64) ->
             "Error while finding romfile with id {}",
             romfile_id
         ))
-}
-
-pub fn find_romfiles_in_trash<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
-    romfiles::table
-        .filter(romfiles::dsl::path.like("%/Trash/%"))
-        .order_by(romfiles::dsl::path.asc())
-        .get_results(connection)
-        .expect(&format!("Error while finding romfiles in trash"))
-}
-
-pub fn find_romfiles<'a>(connection: &SqliteConnection) -> Vec<Romfile> {
-    romfiles::table
-        .get_results(connection)
-        .expect(&format!("Error while finding romfiles"))
 }
 
 pub fn delete_romfile_by_id<'a>(connection: &SqliteConnection, romfile_id: i64) {
@@ -507,19 +529,19 @@ pub fn update_setting<'a>(connection: &SqliteConnection, setting: &Setting, valu
         ));
 }
 
+pub fn find_settings<'a>(connection: &SqliteConnection) -> Vec<Setting> {
+    settings::table
+        .order_by(settings::dsl::key.asc())
+        .get_results(connection)
+        .expect(&format!("Error while finding settings"))
+}
+
 pub fn find_setting_by_key<'a>(connection: &SqliteConnection, key: &str) -> Option<Setting> {
     settings::table
         .filter(settings::dsl::key.eq(key))
         .get_result(connection)
         .optional()
         .expect(&format!("Error while finding setting with key {}", key))
-}
-
-pub fn find_settings<'a>(connection: &SqliteConnection) -> Vec<Setting> {
-    settings::table
-        .order_by(settings::dsl::key.asc())
-        .get_results(connection)
-        .expect(&format!("Error while finding settings"))
 }
 
 pub fn delete_setting_by_key<'a>(connection: &SqliteConnection, key: &str) {

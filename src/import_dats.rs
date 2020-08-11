@@ -313,7 +313,7 @@ mod test {
     fn test_import_dat() {
         // given
         let connection = establish_connection(":memory:").unwrap();
-        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let dat_path = Path::new("test/Test System.dat").to_path_buf();
         let progress_bar = ProgressBar::hidden();
 
         // when
@@ -325,13 +325,17 @@ mod test {
 
         let system = systems.remove(0);
         assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&connection).len(), 6);
+        assert_eq!(find_releases(&connection).len(), 10);
+        assert_eq!(find_roms(&connection).len(), 8);
     }
 
     #[test]
     fn test_import_dat_parent_clone() {
         // given
         let connection = establish_connection(":memory:").unwrap();
-        let dat_path = Path::new("test/test_parent_clone.dat").to_path_buf();
+        let dat_path = Path::new("test/Test System (Parent-Clone).dat").to_path_buf();
         let progress_bar = ProgressBar::hidden();
 
         // when
@@ -343,13 +347,17 @@ mod test {
 
         let system = systems.remove(0);
         assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&connection).len(), 4);
+        assert_eq!(find_releases(&connection).len(), 6);
+        assert_eq!(find_roms(&connection).len(), 4);
     }
 
     #[test]
     fn test_import_dat_info() {
         // given
         let connection = establish_connection(":memory:").unwrap();
-        let dat_path = Path::new("test/test.dat").to_path_buf();
+        let dat_path = Path::new("test/Test System.dat").to_path_buf();
         let progress_bar = ProgressBar::hidden();
 
         // when
@@ -358,6 +366,10 @@ mod test {
         // then
         let systems = find_systems(&connection);
         assert_eq!(systems.len(), 0);
+
+        assert_eq!(find_games(&connection).len(), 0);
+        assert_eq!(find_releases(&connection).len(), 0);
+        assert_eq!(find_roms(&connection).len(), 0);
     }
 
     #[test]
