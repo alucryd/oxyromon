@@ -1,13 +1,13 @@
 use super::database::*;
 use super::model::*;
 use clap::ArgMatches;
-use diesel::SqliteConnection;
 use regex::Regex;
-use std::io;
+use sqlx::SqliteConnection;
+use async_std::io;
 use std::str::FromStr;
 
-pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<System> {
-    let mut systems = find_systems(connection);
+pub async fn prompt_for_systems(connection: &mut SqliteConnection, all: bool) -> Vec<System> {
+    let mut systems = find_systems(connection).await;
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
     if all {
@@ -27,6 +27,7 @@ pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<Syste
     while system_indices.iter().any(|i| i >= &systems.len()) {
         io::stdin()
             .read_line(&mut input)
+            .await
             .expect("Failed to get input");
         input = input.trim().to_owned();
 
@@ -53,8 +54,8 @@ pub fn prompt_for_systems(connection: &SqliteConnection, all: bool) -> Vec<Syste
         .collect()
 }
 
-pub fn prompt_for_system(connection: &SqliteConnection) -> System {
-    let mut systems = find_systems(connection);
+pub async fn prompt_for_system(connection: &mut SqliteConnection) -> System {
+    let mut systems = find_systems(connection).await;
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
     println!("Please select a system:");
@@ -69,6 +70,7 @@ pub fn prompt_for_system(connection: &SqliteConnection) -> System {
     while system_index >= systems.len() {
         io::stdin()
             .read_line(&mut input)
+            .await
             .expect("Failed to get input");
         input = input.trim().to_owned();
 
@@ -83,7 +85,7 @@ pub fn prompt_for_system(connection: &SqliteConnection) -> System {
     systems.remove(system_index)
 }
 
-pub fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
+pub async fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
     println!("Please select a rom:");
     for (i, rom) in roms.iter().enumerate() {
         println!("[{}] {}", i, rom.name);
@@ -96,6 +98,7 @@ pub fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
     while rom_index >= roms.len() {
         io::stdin()
             .read_line(&mut input)
+            .await
             .expect("Failed to get input");
         input = input.trim().to_owned();
 
@@ -110,7 +113,7 @@ pub fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
     roms.remove(rom_index)
 }
 
-pub fn prompt_for_yes_no(matches: &ArgMatches) -> bool {
+pub async fn prompt_for_yes_no(matches: &ArgMatches<'_>) -> bool {
     println!("Proceed? (y|N)");
     let mut input = String::new();
     if matches.is_present("YES") {
@@ -118,6 +121,7 @@ pub fn prompt_for_yes_no(matches: &ArgMatches) -> bool {
     } else {
         io::stdin()
             .read_line(&mut input)
+            .await
             .expect("Failed to get input");
         input = input.trim().to_lowercase().to_owned();
     }

@@ -1,5 +1,0 @@
-CREATE TABLE settings (
-    id INTEGER NOT NULL PRIMARY KEY,
-    key VARCHAR NOT NULL,
-    value VARCHAR
-);

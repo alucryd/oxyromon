@@ -1,7 +1,7 @@
 use super::progress::*;
 use super::SimpleResult;
+use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub static CSO_EXTENSION: &str = "cso";

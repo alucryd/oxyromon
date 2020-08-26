@@ -1,0 +1,1197 @@
+{
+  "db": "SQLite",
+  "05ba1abbfdb9dfe30b3cdbb6ec17f4c1b68e40db4cc214aba2d8c2e3ec6153f3": {
+    "query": "\n        INSERT INTO headers (name, version, start_byte, size, hex_value, system_id)\n        VALUES (?, ?, ?, ?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 6
+      },
+      "nullable": []
+    }
+  },
+  "131b8065f348cdca113c13866cf7066448ae898b3ef4d3f916354b67c6feed7f": {
+    "query": "\n        UPDATE releases\n        SET name = ?, region = ?, game_id = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 4
+      },
+      "nullable": []
+    }
+  },
+  "136c3dbb219af3eecb3695825ec3f4f5b2a58812031d7514c1b9ab61f4a9b89b": {
+    "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND game_id IN (\n            SELECT id\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "17f260b51d34301c1deda20ac17fd20423e04d070e6c4cde92eaa12a8968e69b": {
+    "query": "\n        SELECT *\n        FROM headers\n        WHERE system_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "start_byte",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "size",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "hex_value",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 6,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "1eeffd9a376616690656bfc31c362262558171ca01dd6f908cf94e5985ca4114": {
+    "query": "\n        SELECT *\n        FROM releases\n        WHERE name = ?\n        AND region = ?\n        AND game_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "region",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 3
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "27e2e596115d6349177db6fdb7ce12fbf0912a7d03ff1f2914519dacee9a8d74": {
+    "query": "\n        INSERT INTO games (name, description, regions, system_id, parent_id)\n        VALUES (?, ?, ?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 5
+      },
+      "nullable": []
+    }
+  },
+  "3092204f83ee7d660a1d73c2dd6abb604bedef4cc2556231d0942d79ac452c88": {
+    "query": "\n        INSERT INTO romfiles (path)\n        VALUES (?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "348438518219e889e2e5d5bf3fa78b3610690c5360d892c330a70ccb9d5319a2": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE name = ?\n        AND system_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "3a0c278261ef31ef89809d78b5a55d165615ce7dd93c2bc3107d18f9dcc2b823": {
+    "query": "\n        SELECT *\n        FROM roms\n        WHERE name = ?\n        AND game_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "59a4f91f7e56ed6cb5980b9857a32a0ec8f97ba3c5c1b035546db25bbfae0841": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NOT NULL\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "5b3d774d597a94d1550f998dd0e5a9ea76296034cb75ac31c9bd7fbfbfbd6590": {
+    "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  },
+  "631aceb6dd0a49a5363f1460313b677113fbf66b35ea3904f41880510c288192": {
+    "query": "\n        UPDATE games\n        SET name = ?, description = ?, regions = ?, system_id = ?, parent_id = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 6
+      },
+      "nullable": []
+    }
+  },
+  "65a1f48ac5d7564d5e5966a1fdd2df7db93835cc776e60fa4296e72abc590146": {
+    "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NULL\n        AND game_id IN (\n            SELECT id\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "6c6669fc177d144496af30fbdd1cbba3eb212ecb6839f6c6d23789f3325f2800": {
+    "query": "\n        DELETE FROM games\n        WHERE name = ?\n        AND system_id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "70a539062caf4564bc71cea22d81b1920e64b2040111a4c1d24e6d29bf5fb4b2": {
+    "query": "\n        UPDATE settings\n        SET value = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "718603323fd3e270284d060343a938c582d9d640e45e2c5cb1616d250c68906a": {
+    "query": "\n        SELECT *\n        FROM roms\n        WHERE game_id = ?\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "7b64c4b09c0d942301c9580f8ff30193e77ea4156599aee51aac26d341bb31c5": {
+    "query": "\n        SELECT r.id, r.name, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.size = ?\n        AND r.crc = ?\n        AND g.system_id = ?\n        ORDER BY r.name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 3
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "844dbf7aef773c64c2d11f0d3202bb437d5e2d8caaef9d384afb9490aacb6042": {
+    "query": "\n        UPDATE romfiles \n        SET path = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "8776895fa04c2bca3abe6c79b6cd5d58d68d287e5b10b93a567132b1fe447e79": {
+    "query": "\n        SELECT *\n        FROM roms\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "crc",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "md5",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 7,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "982dae142f659199400afbe7634b999e9d7cb7913a64901ebabf85fe94f08301": {
+    "query": "\n        UPDATE systems\n        SET name = ?, description = ?, version = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 4
+      },
+      "nullable": []
+    }
+  },
+  "99b650243290f2bb1292f9053011cea3df52c24b94565c0b2eabe07ceb14397a": {
+    "query": "\n        INSERT INTO releases (name, region, game_id)\n        VALUES (?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 3
+      },
+      "nullable": []
+    }
+  },
+  "9a2ad65a97d75cc6a739b34989bae92403f87479788ee17f68acf09f96ea6183": {
+    "query": "\n        SELECT *\n        FROM games\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "a125e578d08f63cd1a8420b3547952bd41ef8f32db3b814684a57d3fb61abb1a": {
+    "query": "\n        SELECT *\n        FROM systems\n        WHERE name = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 3,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "a1d261ee89ace572e49b4a12a25aff1f8582ea82bd9cd9a9a38e93e1d23b89e4": {
+    "query": "\n        SELECT *\n        FROM settings\n        WHERE key = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "key",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "value",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "a4029553caead26f6e1966703c972c3aba9401b00128724cfd926ba5756f4d59": {
+    "query": "\n        INSERT INTO systems (name, description, version)\n        VALUES (?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 3
+      },
+      "nullable": []
+    }
+  },
+  "a65bce5fcf037c2c81f5dcf1b7dabb294b9ac459e5a13ba5b4ab8fb2731ec036": {
+    "query": "\n        UPDATE roms\n        SET name = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 8
+      },
+      "nullable": []
+    }
+  },
+  "a6766e68ff62758f5affa7a93f61c33187afe0bdf32c2fb3966e7cb1e3b63b1e": {
+    "query": "\n        SELECT *\n        FROM settings\n        ORDER BY key\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "key",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "value",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "a75cd7388d4cdb67e7a51270797a75f377ef96e5c5ee2b659f935b9f39ccdf19": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "ae0a47996a2a7141e860dcdb03449db941214143d393272b78b8129dc9dfa2ef": {
+    "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM roms\n            WHERE game_id IN (\n                SELECT id\n                FROM games\n                WHERE system_id = ?\n            )\n        )\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  },
+  "af8b226131f3e2e776c6a114ce603bcba6c3b6a7f31e0014418a046569d545e7": {
+    "query": "\n        UPDATE headers\n        SET name = ?, version = ?, start_byte = ?, size = ?, hex_value = ?, system_id = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 7
+      },
+      "nullable": []
+    }
+  },
+  "bbafa2927f3e33bc537537f97f2b7b779157f91f452a3f56904f93e56a577d9b": {
+    "query": "\n        SELECT *\n        FROM romfiles\n        ORDER BY path\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  },
+  "c49459637186ff64b1c3ea188ff0f197430fde59e265ce8902a5d15eaa97990b": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "c5c7e520b5d70b5244a3f804e01fd52d3dfac6b4a8c11a8936db4c868dbd4fff": {
+    "query": "\n        SELECT *\n        FROM systems\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 3,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "cacf79234ca0831c227bc64e3d7d684bfa69a4020e58e034d15d8f216e8a6878": {
+    "query": "\n        INSERT INTO roms (name, size, crc, md5, sha1, rom_status, game_id)\n        VALUES (?, ?, ?, ?, ?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 7
+      },
+      "nullable": []
+    }
+  },
+  "d1c3473bc7b33d4b7a84372aeaa95a1e51a8e6f4df8db35a3d6b23e81ff71669": {
+    "query": "\n        INSERT INTO settings (key, value)\n        VALUES (?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "dc2c49c1449cfc840d3b8d86737987d70ee4d021e956eedb691bedfeb0cb929f": {
+    "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  },
+  "e0922f9c233a89f2f5407139930fd07a68ecb3e4a09b45f5a5ef07c98b3cc0ee": {
+    "query": "\n        SELECT *\n        FROM releases\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "region",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "e9b366d3e79caec0241f12c9ea624b6f9ee70f0976bb1948e0cd0f28312e8d2d": {
+    "query": "\n        UPDATE roms\n        SET romfile_id = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
+  "f3ff1aa3dee226609e68186b45580ca6972aced2158b2f9204b9626bb8d3b968": {
+    "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path LIKE \"%/Trash/%\"\n        ORDER BY path\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": [
+        false,
+        false
+      ]
+    }
+  },
+  "f912258534fc9febb111b7572c6b25b52ed9ff39cddabcd1d73f2ee00845f187": {
+    "query": "\n        DELETE FROM settings\n        WHERE key = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "f9d703f7af627b2d525e8e39a2a70cc3b110b5232e7d79aef22c3e5fe4a9241b": {
+    "query": "\n        DELETE FROM romfiles\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  }
+}

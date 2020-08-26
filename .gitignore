@@ -4,3 +4,4 @@ build/
 *.rs.bk
 target/
 .vscode
+*.db

@@ -1,7 +1,7 @@
 use super::progress::*;
 use super::SimpleResult;
+use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
@@ -54,7 +54,7 @@ pub fn parse_archive(
         let sevenzip_info = ArchiveInfo {
             path: String::from(info.get(0).unwrap().to_owned()),
             size: FromStr::from_str(info.get(1).unwrap()).unwrap(),
-            crc: String::from(info.get(2).unwrap().to_owned()),
+            crc: String::from(info.get(2).unwrap().to_owned().to_lowercase()),
         };
         sevenzip_infos.push(sevenzip_info);
     }

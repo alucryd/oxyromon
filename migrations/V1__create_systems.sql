@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS systems (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name VARCHAR UNIQUE NOT NULL,
+    description VARCHAR NOT NULL,
+    version VARCHAR NOT NULL
+);

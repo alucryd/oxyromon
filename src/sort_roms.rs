@@ -8,12 +8,13 @@ use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
-use diesel::SqliteConnection;
 use rayon::prelude::*;
 use regex::Regex;
+use sqlx::SqliteConnection;
+use std::collections::HashMap;
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("sort-roms")
@@ -163,10 +164,10 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
+pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-    let systems = prompt_for_systems(connection, matches.is_present("ALL"));
+    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await;
 
     // unordered regions to keep
     let mut all_regions: Vec<&str> = Vec::new();
@@ -181,7 +182,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
     }
 
     // unwanted regex
-    let unwanted_regex = compute_unwanted_regex(connection, matches);
+    let unwanted_regex = compute_unwanted_regex(connection, matches).await;
 
     for system in systems {
         progress_bar.println(&format!("Processing {}", system.name));
@@ -191,15 +192,30 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
         let mut all_regions_games: Vec<Game> = Vec::new();
         let mut one_region_games: Vec<Game> = Vec::new();
         let mut trash_games: Vec<Game> = Vec::new();
-        let mut romfile_moves: Vec<(Romfile, String)> = Vec::new();
+        let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
+
+        let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+        let romfiles_by_id: HashMap<i64, Romfile> = romfiles
+            .into_iter()
+            .map(|romfile| (romfile.id, romfile))
+            .collect();
 
         // 1G1R mode
         if !one_regions.is_empty() {
-            let grouped_games = find_grouped_games_by_system(connection, &system);
+            let parent_games = find_parent_games_by_system_id(connection, system.id).await;
+            let clone_games = find_clone_games_by_system_id(connection, system.id).await;
 
-            for (parent, mut clones) in grouped_games {
-                games = vec![parent];
-                games.append(&mut clones);
+            let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
+            clone_games.into_iter().for_each(|game| {
+                let group = clone_games_by_parent_id
+                    .entry(game.parent_id.unwrap())
+                    .or_insert(vec![]);
+                group.push(game);
+            });
+
+            for parent in parent_games {
+                games = clone_games_by_parent_id.remove(&parent.id).unwrap();
+                games.insert(0, parent);
 
                 // trim unwanted games
                 match unwanted_regex.as_ref() {
@@ -237,7 +253,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
             }
         // Regions mode
         } else if !all_regions.is_empty() {
-            games = find_games_by_system(connection, &system);
+            games = find_games_by_system_id(connection, system.id).await;
 
             // trim unwanted games
             match unwanted_regex.as_ref() {
@@ -262,7 +278,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
                 }
             }
         } else {
-            games = find_games_by_system(connection, &system);
+            games = find_games_by_system_id(connection, system.id).await;
 
             // trim unwanted games
             match unwanted_regex.as_ref() {
@@ -285,7 +301,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
             game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
             game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
             let missing_roms: Vec<Rom> =
-                find_roms_without_romfile_by_game_ids(connection, &game_ids);
+                find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
 
             progress_bar.println("Missing:");
             for rom in missing_roms {
@@ -294,7 +310,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
         }
 
         // create necessary directories
-        let all_regions_directory = get_rom_directory(connection).join(&system.name);
+        let all_regions_directory = get_rom_directory(connection).await.join(&system.name);
         let one_region_directory = all_regions_directory.join("1G1R");
         let trash_directory = all_regions_directory.join("Trash");
         for d in vec![
@@ -302,29 +318,35 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
             &one_region_directory,
             &trash_directory,
         ] {
-            create_directory(&d)?;
+            create_directory(&d).await?;
         }
 
         // process all_region_games
-        romfile_moves.append(&mut process_games(
-            connection,
-            all_regions_games,
-            &all_regions_directory,
-        ));
+        romfile_moves.append(
+            &mut process_games(
+                connection,
+                all_regions_games,
+                &all_regions_directory,
+                &romfiles_by_id,
+            )
+            .await,
+        );
 
         // process one_region_games
-        romfile_moves.append(&mut process_games(
-            connection,
-            one_region_games,
-            &one_region_directory,
-        ));
+        romfile_moves.append(
+            &mut process_games(
+                connection,
+                one_region_games,
+                &one_region_directory,
+                &romfiles_by_id,
+            )
+            .await,
+        );
 
         // process trash_games
-        romfile_moves.append(&mut process_games(
-            connection,
-            trash_games,
-            &trash_directory,
-        ));
+        romfile_moves.append(
+            &mut process_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
+        );
 
         // sort moves and print a summary
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
@@ -336,15 +358,12 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
         }
 
         // prompt user for confirmation
-        if prompt_for_yes_no(matches) {
+        if prompt_for_yes_no(matches).await {
             for romfile_move in romfile_moves {
                 let old_path = Path::new(&romfile_move.0.path).to_path_buf();
                 let new_path = Path::new(&romfile_move.1).to_path_buf();
-                rename_file(&old_path, &new_path)?;
-                let romfile_input = RomfileInput {
-                    path: &romfile_move.1,
-                };
-                update_romfile(connection, &romfile_move.0, &romfile_input);
+                rename_file(&old_path, &new_path).await?;
+                update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
             }
         }
     }
@@ -352,23 +371,32 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
     Ok(())
 }
 
-fn process_games(
-    connection: &SqliteConnection,
+async fn process_games<'a>(
+    connection: &mut SqliteConnection,
     games: Vec<Game>,
     directory: &PathBuf,
-) -> Vec<(Romfile, String)> {
-    let mut romfile_moves: Vec<(Romfile, String)> = Vec::new();
+    romfiles_by_id: &'a HashMap<i64, Romfile>,
+) -> Vec<(&'a Romfile, String)> {
+    let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
-    let roms_romfiles = find_roms_romfiles_with_romfile_by_games(connection, &games);
-    let game_roms_romfiles: Vec<(Game, Vec<(Rom, Romfile)>)> =
-        games.into_par_iter().zip(roms_romfiles).collect();
+    let roms =
+        find_roms_with_romfile_by_game_ids(connection, &games.iter().map(|game| game.id).collect())
+            .await;
 
-    for (game, roms_romfiles) in game_roms_romfiles {
-        let rom_count = roms_romfiles.len();
+    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    roms.into_iter().for_each(|rom| {
+        let group = roms_by_game_id.entry(rom.game_id).or_insert(vec![]);
+        group.push(rom);
+    });
+
+    for game in games {
+        let roms = roms_by_game_id.get(&game.id).unwrap();
+        let rom_count = roms.len();
         romfile_moves.append(
-            &mut roms_romfiles
+            &mut roms
                 .into_par_iter()
-                .map(|(rom, romfile)| {
+                .map(|rom| {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let new_path = String::from(
                         get_new_path(&game, &rom, &romfile, rom_count, &directory)
                             .as_os_str()
@@ -385,7 +413,11 @@ fn process_games(
     return romfile_moves;
 }
 
-fn do_discard(connection: &SqliteConnection, matches: &ArgMatches, name: &str) -> bool {
+async fn do_discard(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    name: &str,
+) -> bool {
     let flags = (
         matches.is_present(&format!("WITH_{}", name)),
         matches.is_present(&format!("WITHOUT_{}", name)),
@@ -394,42 +426,45 @@ fn do_discard(connection: &SqliteConnection, matches: &ArgMatches, name: &str) -
     if flags.0 ^ flags.1 {
         flags.1
     } else {
-        get_bool(connection, &format!("DISCARD_{}", name))
+        get_bool(connection, &format!("DISCARD_{}", name)).await
     }
 }
 
-fn compute_unwanted_regex(connection: &SqliteConnection, matches: &ArgMatches) -> Option<Regex> {
+async fn compute_unwanted_regex(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+) -> Option<Regex> {
     let mut unwanted_keywords: Vec<&str> = Vec::new();
 
-    if do_discard(connection, matches, "BETA") {
+    if do_discard(connection, matches, "BETA").await {
         unwanted_keywords.push("Beta( [0-9]+)?");
     }
 
-    if do_discard(connection, matches, "DEBUG") {
+    if do_discard(connection, matches, "DEBUG").await {
         unwanted_keywords.push("Debug");
     }
 
-    if do_discard(connection, matches, "DEMO") {
+    if do_discard(connection, matches, "DEMO").await {
         unwanted_keywords.push("Demo");
     }
 
-    if do_discard(connection, matches, "PROGRAM") {
+    if do_discard(connection, matches, "PROGRAM").await {
         unwanted_keywords.push("Program");
     }
 
-    if do_discard(connection, matches, "PROTO") {
+    if do_discard(connection, matches, "PROTO").await {
         unwanted_keywords.push("Proto( [0-9]+)?");
     }
 
-    if do_discard(connection, matches, "SAMPLE") {
+    if do_discard(connection, matches, "SAMPLE").await {
         unwanted_keywords.push("Sample");
     }
 
-    if do_discard(connection, matches, "SEGA_CHANNEL") {
+    if do_discard(connection, matches, "SEGA_CHANNEL").await {
         unwanted_keywords.push("Sega Channel");
     }
 
-    if do_discard(connection, matches, "VIRTUAL_CONSOLE") {
+    if do_discard(connection, matches, "VIRTUAL_CONSOLE").await {
         unwanted_keywords.push("([A-z ]+)?Virtual Console");
     }
 
@@ -482,59 +517,80 @@ fn get_new_path(
 #[cfg(test)]
 mod test {
     use super::super::config::set_bool;
-    use super::super::establish_connection;
+    use super::super::database::*;
+    use super::super::embedded;
     use super::*;
+    use refinery::config::{Config, ConfigDbType};
+    use tempfile::NamedTempFile;
 
-    embed_migrations!("migrations");
-
-    #[test]
-    fn test_do_discard_with_flag_should_return_false() {
+    #[async_std::test]
+    async fn test_do_discard_with_flag_should_return_false() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let matches = subcommand().get_matches_from(vec!["config", "--with-beta"]);
 
         // when
-        let result = do_discard(&connection, &matches, "BETA");
+        let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
         assert_eq!(false, result);
     }
 
-    #[test]
-    fn test_do_discard_without_flag_should_return_true() {
+    #[async_std::test]
+    async fn test_do_discard_without_flag_should_return_true() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let matches = subcommand().get_matches_from(vec!["config", "--without-beta"]);
 
         // when
-        let result = do_discard(&connection, &matches, "BETA");
+        let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
         assert_eq!(true, result);
     }
 
-    #[test]
-    fn test_do_discard_no_flag_should_return_false_from_db() {
+    #[async_std::test]
+    async fn test_do_discard_no_flag_should_return_false_from_db() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let matches = subcommand().get_matches_from(vec!["config"]);
 
         // when
-        let result = do_discard(&connection, &matches, "BETA");
+        let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
         assert_eq!(false, result);
     }
 
-    #[test]
-    fn test_do_discard_no_flag_should_return_true_from_db() {
+    #[async_std::test]
+    async fn test_do_discard_no_flag_should_return_true_from_db() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let matches = subcommand().get_matches_from(vec!["config"]);
 
         // when
-        set_bool(&connection, "DISCARD_BETA", true);
-        let result = do_discard(&connection, &matches, "BETA");
+        set_bool(&mut connection, "DISCARD_BETA", true).await;
+        let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
         assert_eq!(true, result);

@@ -1,8 +1,8 @@
-FILE "Test Game (USA, Europe) (Track 1).bin" BINARY
-  TRACK 01 MODE1/2352
+CATALOG 0000000000000
+FILE "Test Game (USA, Europe) (Track 01).bin" BINARY
+  TRACK 01 AUDIO
+    INDEX 01 00:00:00
+FILE "Test Game (USA, Europe) (Track 02).bin" BINARY
+  TRACK 02 MODE1/2352
     INDEX 00 00:00:00
-    INDEX 01 00:02:00
-FILE "Test Game (USA, Europe) (Track 2).bin" BINARY
-  TRACK 02 AUDIO
-    INDEX 00 00:00:00
-    INDEX 01 00:02:00
+    INDEX 01 00:03:06

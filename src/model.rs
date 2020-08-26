@@ -1,7 +1,5 @@
-use super::schema::*;
 use serde::Deserialize;
 
-#[derive(Identifiable, PartialEq, Queryable)]
 pub struct System {
     pub id: i64,
     pub name: String,
@@ -9,34 +7,6 @@ pub struct System {
     pub version: String,
 }
 
-#[derive(AsChangeset, Insertable)]
-#[table_name = "systems"]
-pub struct SystemInput<'a> {
-    pub name: &'a String,
-    pub description: &'a String,
-    pub version: &'a String,
-}
-
-#[derive(Deserialize)]
-pub struct SystemXml {
-    pub name: String,
-    pub description: String,
-    pub version: String,
-    pub clrmamepro: Option<ClrMameProXml>,
-}
-
-impl<'a> From<&'a SystemXml> for SystemInput<'a> {
-    fn from(system_xml: &'a SystemXml) -> Self {
-        Self {
-            name: &system_xml.name,
-            description: &system_xml.description,
-            version: &system_xml.version,
-        }
-    }
-}
-
-#[derive(Associations, Identifiable, PartialEq, Queryable)]
-#[belongs_to(System)]
 pub struct Header {
     pub id: i64,
     pub name: String,
@@ -47,35 +17,7 @@ pub struct Header {
     pub system_id: i64,
 }
 
-#[derive(AsChangeset, Insertable)]
-#[table_name = "headers"]
-pub struct HeaderInput<'a> {
-    pub name: &'a String,
-    pub version: &'a String,
-    pub start_byte: i64,
-    pub size: i64,
-    pub hex_value: &'a String,
-    pub system_id: i64,
-}
-
-type DetectorXmlSystemId<'a> = (&'a DetectorXml, i64);
-impl<'a> From<DetectorXmlSystemId<'a>> for HeaderInput<'a> {
-    fn from(detector_xml_system_id: DetectorXmlSystemId<'a>) -> Self {
-        Self {
-            name: &detector_xml_system_id.0.name,
-            version: &detector_xml_system_id.0.version,
-            start_byte: i64::from_str_radix(&detector_xml_system_id.0.rule.data.offset, 16)
-                .unwrap(),
-            size: i64::from_str_radix(&detector_xml_system_id.0.rule.start_offset, 16).unwrap(),
-            hex_value: &detector_xml_system_id.0.rule.data.value,
-            system_id: detector_xml_system_id.1,
-        }
-    }
-}
-
-#[derive(Associations, Identifiable, PartialEq, Queryable)]
-#[belongs_to(System)]
-#[belongs_to(Game, foreign_key = "parent_id")]
+#[derive(sqlx::FromRow)]
 pub struct Game {
     pub id: i64,
     pub name: String,
@@ -85,14 +27,58 @@ pub struct Game {
     pub parent_id: Option<i64>,
 }
 
-#[derive(AsChangeset, Insertable)]
-#[table_name = "games"]
-pub struct GameInput<'a> {
-    pub name: &'a String,
-    pub description: &'a String,
-    pub regions: &'a String,
-    pub system_id: i64,
-    pub parent_id: Option<i64>,
+pub struct Release {
+    pub id: i64,
+    pub name: String,
+    pub region: String,
+    pub game_id: i64,
+}
+
+#[derive(sqlx::FromRow)]
+pub struct Rom {
+    pub id: i64,
+    pub name: String,
+    pub size: i64,
+    pub crc: String,
+    pub md5: String,
+    pub sha1: String,
+    pub rom_status: Option<String>,
+    pub game_id: i64,
+    pub romfile_id: Option<i64>,
+}
+
+#[derive(sqlx::FromRow)]
+#[derive(PartialEq)]
+pub struct Romfile {
+    pub id: i64,
+    pub path: String,
+}
+
+pub struct Setting {
+    pub id: i64,
+    pub key: String,
+    pub value: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct DatfileXml {
+    #[serde(rename = "header")]
+    pub system: SystemXml,
+    #[serde(rename = "game")]
+    pub games: Vec<GameXml>,
+}
+
+#[derive(Deserialize)]
+pub struct SystemXml {
+    pub name: String,
+    pub description: String,
+    pub version: String,
+    pub clrmamepro: Option<ClrMameProXml>,
+}
+
+#[derive(Deserialize)]
+pub struct ClrMameProXml {
+    pub header: String,
 }
 
 #[derive(Deserialize)]
@@ -106,78 +92,10 @@ pub struct GameXml {
     pub roms: Vec<RomXml>,
 }
 
-type GameXmlSystemIdParentId<'a> = (&'a GameXml, &'a String, i64, Option<i64>);
-impl<'a> From<GameXmlSystemIdParentId<'a>> for GameInput<'a> {
-    fn from(game_xml_system_id_parent_id: GameXmlSystemIdParentId<'a>) -> Self {
-        Self {
-            name: &game_xml_system_id_parent_id.0.name,
-            description: &game_xml_system_id_parent_id.0.description,
-            regions: game_xml_system_id_parent_id.1,
-            system_id: game_xml_system_id_parent_id.2,
-            parent_id: game_xml_system_id_parent_id.3,
-        }
-    }
-}
-
-#[derive(Associations, Identifiable, PartialEq, Queryable)]
-#[belongs_to(Game)]
-pub struct Release {
-    pub id: i64,
-    pub name: String,
-    pub region: String,
-    pub game_id: i64,
-}
-
-#[derive(AsChangeset, Insertable)]
-#[table_name = "releases"]
-pub struct ReleaseInput<'a> {
-    pub name: &'a String,
-    pub region: &'a String,
-    pub game_id: i64,
-}
-
 #[derive(Deserialize)]
 pub struct ReleaseXml {
     pub name: String,
     pub region: String,
-}
-
-type ReleaseXmlGameId<'a> = (&'a ReleaseXml, i64);
-impl<'a> From<ReleaseXmlGameId<'a>> for ReleaseInput<'a> {
-    fn from(release_xml_game_id: ReleaseXmlGameId<'a>) -> Self {
-        Self {
-            name: &release_xml_game_id.0.name,
-            region: &release_xml_game_id.0.region,
-            game_id: release_xml_game_id.1,
-        }
-    }
-}
-
-#[derive(Associations, Debug, Identifiable, PartialEq, Queryable)]
-#[belongs_to(Game)]
-#[belongs_to(Romfile)]
-pub struct Rom {
-    pub id: i64,
-    pub name: String,
-    pub size: i64,
-    pub crc: String,
-    pub md5: String,
-    pub sha1: String,
-    pub rom_status: Option<String>,
-    pub game_id: i64,
-    pub romfile_id: Option<i64>,
-}
-
-#[derive(AsChangeset, Insertable)]
-#[table_name = "roms"]
-pub struct RomInput<'a> {
-    pub name: &'a String,
-    pub size: i64,
-    pub crc: &'a String,
-    pub md5: &'a String,
-    pub sha1: &'a String,
-    pub rom_status: Option<&'a String>,
-    pub game_id: i64,
 }
 
 #[derive(Deserialize)]
@@ -188,46 +106,6 @@ pub struct RomXml {
     pub md5: String,
     pub sha1: String,
     pub status: Option<String>,
-}
-
-type RomXmlGameId<'a> = (&'a RomXml, i64);
-impl<'a> From<RomXmlGameId<'a>> for RomInput<'a> {
-    fn from(rom_xml: RomXmlGameId<'a>) -> Self {
-        Self {
-            name: &rom_xml.0.name,
-            size: rom_xml.0.size,
-            crc: &rom_xml.0.crc,
-            md5: &rom_xml.0.md5,
-            sha1: &rom_xml.0.sha1,
-            rom_status: rom_xml.0.status.as_ref(),
-            game_id: rom_xml.1,
-        }
-    }
-}
-
-#[derive(Identifiable, PartialEq, Queryable)]
-pub struct Romfile {
-    pub id: i64,
-    pub path: String,
-}
-
-#[derive(AsChangeset, Insertable)]
-#[table_name = "romfiles"]
-pub struct RomfileInput<'a> {
-    pub path: &'a String,
-}
-
-#[derive(Deserialize)]
-pub struct ClrMameProXml {
-    pub header: String,
-}
-
-#[derive(Deserialize)]
-pub struct DatfileXml {
-    #[serde(rename = "header")]
-    pub system: SystemXml,
-    #[serde(rename = "game")]
-    pub games: Vec<GameXml>,
 }
 
 #[derive(Deserialize)]
@@ -247,18 +125,4 @@ pub struct RuleXml {
 pub struct DataXml {
     pub offset: String,
     pub value: String,
-}
-
-#[derive(Identifiable, PartialEq, Queryable)]
-pub struct Setting {
-    pub id: i64,
-    pub key: String,
-    pub value: Option<String>,
-}
-
-#[derive(AsChangeset, Insertable)]
-#[table_name = "settings"]
-pub struct SettingInput<'a> {
-    pub key: &'a String,
-    pub value: Option<&'a String>,
 }

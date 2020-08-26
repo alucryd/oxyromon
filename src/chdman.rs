@@ -1,10 +1,10 @@
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::io;
+use async_std::path::{Path, PathBuf};
+use async_std::prelude::*;
 use indicatif::ProgressBar;
-use std::io;
-use std::io::Read;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub static CHD_EXTENSION: &str = "chd";
@@ -34,7 +34,7 @@ pub fn create_chd(cue_path: &PathBuf, progress_bar: &ProgressBar) -> SimpleResul
     Ok(chd_path)
 }
 
-pub fn extract_chd(
+pub async fn extract_chd(
     chd_path: &PathBuf,
     directory: &Path,
     bin_names_sizes: &Vec<(&str, u64)>,
@@ -62,7 +62,7 @@ pub fn extract_chd(
         .output()
         .expect("Failed to spawn chdman process");
 
-    remove_file(&cue_path)?;
+    remove_file(&cue_path).await?;
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
@@ -71,28 +71,30 @@ pub fn extract_chd(
     if bin_names_sizes.len() == 1 {
         let new_bin_path = directory.join(bin_names_sizes.get(0).unwrap().0);
         if bin_path != new_bin_path {
-            rename_file(&bin_path, &new_bin_path)?;
+            rename_file(&bin_path, &new_bin_path).await?;
         }
         return Ok(vec![new_bin_path]);
     }
 
     let mut bin_paths: Vec<PathBuf> = Vec::new();
-    let bin_file = open_file(&bin_path)?;
+    let bin_file = open_file(&bin_path).await?;
 
     for (bin_name, size) in bin_names_sizes {
         progress_bar.set_length(*size);
 
         let split_bin_path = directory.join(bin_name);
-        let mut split_bin_file = create_file(&split_bin_path)?;
+        let mut split_bin_file = create_file(&split_bin_path).await?;
 
         let mut handle = (&bin_file).take(*size);
 
-        io::copy(&mut handle, &mut split_bin_file).expect("Failed to copy data");
+        io::copy(&mut handle, &mut split_bin_file)
+            .await
+            .expect("Failed to copy data");
 
         bin_paths.push(split_bin_path);
     }
 
-    remove_file(&bin_path)?;
+    remove_file(&bin_path).await?;
 
     Ok(bin_paths)
 }

@@ -24,9 +24,9 @@
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe)" region="EUR" />
 		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Test Game (USA, Europe).cue" size="231" crc="1ac8c614" md5="ef05f070e26a91e0be1f4e108bd100ed" sha1="16026c7cc5bdb9e17d018aac739016dfdebb2521" status="verified" />
-		<rom name="Test Game (USA, Europe) (Track 1).bin" size="256" crc="1d56037d" md5="c1d3f728d2cbd41b9861ee99b7d6fec2" sha1="367b4eac8b3776be05b950a851598a5af3374028" status="verified" />
-		<rom name="Test Game (USA, Europe) (Track 2).bin" size="1164240" crc="d00f54c4" md5="cc325c2484ff41e7d4b0e9060894146b" sha1="ac73d5629875586db0a5d776a13beef377d9a854" status="verified" />
+		<rom name="Test Game (USA, Europe).cue" size="233" crc="94789b9d" md5="6e6423ddeeeb2d1557c49fa9064c9963" sha1="bac6d2b0bdd8be39c4a69dec0da0df7757cf9a26" status="verified" />
+		<rom name="Test Game (USA, Europe) (Track 1).bin" size="7914480" crc="b979500c" md5="a25a2c129b7100092cc40e9b6e176a63" sha1="9ac3f1a11d434d186466917f1c7955bf7670c910" status="verified" />
+		<rom name="Test Game (USA, Europe) (Track 2).bin" size="20309520" crc="9fe63aa2" md5="d4b799c30a4e1939fd02686c4deb8ab8" sha1="c19c6189ffc93a266d13b25e72368037b4a6ad1e" status="verified" />
 	</game>
 	<game name="Test Game (Japan)">
 		<description>Test Game (Japan)</description>

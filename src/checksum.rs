@@ -2,6 +2,7 @@ use super::model::Header;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::path::PathBuf;
 use crc32fast::Hasher;
 use digest::generic_array::typenum::{U4, U64};
 use digest::generic_array::GenericArray;
@@ -10,7 +11,6 @@ use digest::{BlockInput, FixedOutputDirty, Reset, Update};
 use indicatif::ProgressBar;
 use std::io;
 use std::io::prelude::*;
-use std::path::PathBuf;
 
 #[derive(Clone, Default)]
 struct Crc32 {
@@ -60,14 +60,14 @@ impl io::Write for Crc32 {
     }
 }
 
-pub fn get_file_size_and_crc(
+pub async fn get_file_size_and_crc(
     file_path: &PathBuf,
     header: &Option<Header>,
     progress_bar: &ProgressBar,
     position: usize,
     total: usize,
 ) -> SimpleResult<(u64, String)> {
-    let mut f = open_file(&file_path)?;
+    let mut f = open_file_sync(&file_path.into())?;
     let mut size = f.metadata().unwrap().len();
 
     // extract a potential header, revert if none is found

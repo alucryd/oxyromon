@@ -1,11 +1,11 @@
 use super::database::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use diesel::SqliteConnection;
 use once_cell::sync::OnceCell;
+use sqlx::SqliteConnection;
 use std::env;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
@@ -53,13 +53,13 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult<()> {
-    // make sure 
-    get_rom_directory(connection);
-    get_tmp_directory(connection);
+pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
+    // make sure rom and tmp directories are initialized
+    get_rom_directory(connection).await;
+    get_tmp_directory(connection).await;
 
     if matches.is_present("LIST") {
-        let settings = find_settings(connection);
+        let settings = find_settings(connection).await;
         for setting in settings {
             println!("{} = {}", setting.key, setting.value.unwrap_or_default());
         }
@@ -67,7 +67,7 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
 
     if matches.is_present("GET") {
         let key = matches.value_of("GET").unwrap();
-        let setting = find_setting_by_key(connection, key).unwrap();
+        let setting = find_setting_by_key(connection, key).await.unwrap();
         println!("{} = {}", setting.key, setting.value.unwrap_or_default());
     }
 
@@ -77,82 +77,107 @@ pub fn main(connection: &SqliteConnection, matches: &ArgMatches) -> SimpleResult
         let value = key_value.remove(0);
 
         if key.ends_with("_DIRECTORY") {
-            let p = get_canonicalized_path(value)?;
-            create_directory(&p)?;
-            set_directory(connection, key, &p);
+            let p = get_canonicalized_path(value).await?;
+            create_directory(&p).await?;
+            set_directory(connection, key, &p).await;
         } else if key.starts_with("DISCARD_") {
             let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
-            set_bool(connection, key, b);
+            set_bool(connection, key, b).await;
         } else {
-            set_str(connection, key, value);
+            set_str(connection, key, value).await;
         }
     }
 
     if matches.is_present("DELETE") {
         let key = matches.value_of("DELETE").unwrap();
-        delete_setting_by_key(connection, key);
+        delete_setting_by_key(connection, key).await;
     }
 
     Ok(())
 }
 
-pub fn set_str(connection: &SqliteConnection, key: &str, value: &str) {
-    let setting = find_setting_by_key(connection, key);
+pub async fn set_str(connection: &mut SqliteConnection, key: &str, value: &str) {
+    let setting = find_setting_by_key(connection, key).await;
     match setting {
-        Some(setting) => update_setting(connection, &setting, value),
-        None => create_setting(connection, key, value),
+        Some(setting) => update_setting(connection, setting.id, value).await,
+        None => create_setting(connection, key, value).await,
     };
 }
 
-pub fn set_bool(connection: &SqliteConnection, key: &str, value: bool) {
-    let setting = find_setting_by_key(connection, key);
+pub async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
+    let setting = find_setting_by_key(connection, key).await;
     match setting {
-        Some(setting) => update_setting(connection, &setting, &format!("{}", value)),
-        None => create_setting(connection, key, &format!("{}", value)),
+        Some(setting) => update_setting(connection, setting.id, &format!("{}", value)).await,
+        None => create_setting(connection, key, &format!("{}", value)).await,
     };
 }
 
-pub fn get_bool(connection: &SqliteConnection, key: &str) -> bool {
-    FromStr::from_str(&find_setting_by_key(connection, key).unwrap().value.unwrap()).unwrap()
+pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
+    FromStr::from_str(
+        &find_setting_by_key(connection, key)
+            .await
+            .unwrap()
+            .value
+            .unwrap(),
+    )
+    .unwrap()
 }
 
-pub fn set_directory(connection: &SqliteConnection, key: &str, value: &PathBuf) {
-    let setting = find_setting_by_key(connection, key);
+pub async fn set_directory(connection: &mut SqliteConnection, key: &str, value: &PathBuf) {
+    let setting = find_setting_by_key(connection, key).await;
     match setting {
-        Some(setting) => update_setting(connection, &setting, value.as_os_str().to_str().unwrap()),
-        None => create_setting(connection, key, value.as_os_str().to_str().unwrap()),
-    };
-}
-
-pub fn get_directory(connection: &SqliteConnection, key: &str) -> Option<PathBuf> {
-    find_setting_by_key(connection, &key)
-        .map(|p| get_canonicalized_path(&p.value.unwrap()).unwrap())
-}
-
-pub fn get_rom_directory(connection: &SqliteConnection) -> &PathBuf {
-    ROM_DIRECTORY.get_or_init(|| {
-        let rom_directory = get_directory(connection, "ROM_DIRECTORY");
-        match rom_directory {
-            Some(rom_directory) => rom_directory,
-            None => {
-                let d = dirs::home_dir().unwrap().join("Emulation");
-                set_directory(connection, "ROM_DIRECTORY", &d);
-                d
-            }
+        Some(setting) => {
+            update_setting(connection, setting.id, value.as_os_str().to_str().unwrap()).await
         }
-    })
+        None => create_setting(connection, key, value.as_os_str().to_str().unwrap()).await,
+    };
 }
 
-pub fn get_tmp_directory(connection: &SqliteConnection) -> &PathBuf {
-    TMP_DIRECTORY.get_or_init(|| {
-        let tmp_directory = get_directory(connection, "TMP_DIRECTORY");
-        match tmp_directory {
-            Some(tmp_directory) => tmp_directory,
-            None => {
-                let d = env::temp_dir();
-                set_directory(connection, "TMP_DIRECTORY", &d);
-                d
-            }
+pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Option<PathBuf> {
+    match find_setting_by_key(connection, &key).await {
+        Some(p) => Some(get_canonicalized_path(&p.value.unwrap()).await.unwrap()),
+        None => None,
+    }
+}
+
+pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &PathBuf {
+    match ROM_DIRECTORY.get() {
+        Some(rom_directory) => rom_directory,
+        None => {
+            let rom_directory = get_directory(connection, "ROM_DIRECTORY").await;
+            let rom_directory = match rom_directory {
+                Some(rom_directory) => rom_directory,
+                None => {
+                    let rom_directory = PathBuf::from(dirs::home_dir().unwrap()).join("Emulation");
+                    set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+                    rom_directory
+                }
+            };
+            ROM_DIRECTORY
+                .set(rom_directory)
+                .expect("Failed to set rom directory");
+            ROM_DIRECTORY.get().unwrap()
         }
-    })
+    }
+}
+
+pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &PathBuf {
+    match TMP_DIRECTORY.get() {
+        Some(tmp_directory) => tmp_directory,
+        None => {
+            let tmp_directory = get_directory(connection, "TMP_DIRECTORY").await;
+            let tmp_directory = match tmp_directory {
+                Some(tmp_directory) => tmp_directory,
+                None => {
+                    let tmp_directory = PathBuf::from(env::temp_dir());
+                    set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+                    tmp_directory
+                }
+            };
+            TMP_DIRECTORY
+                .set(tmp_directory)
+                .expect("Failed to set tmp directory");
+            TMP_DIRECTORY.get().unwrap()
+        }
+    }
 }

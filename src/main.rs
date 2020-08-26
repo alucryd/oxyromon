@@ -1,17 +1,16 @@
+extern crate async_std;
 extern crate clap;
 extern crate crc32fast;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate diesel_migrations;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
 extern crate indicatif;
 extern crate once_cell;
 extern crate quick_xml;
+extern crate refinery;
 extern crate regex;
 extern crate serde;
+extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
 extern crate rayon;
@@ -29,20 +28,27 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
-mod schema;
 mod sevenzip;
 mod sort_roms;
 mod util;
 
+mod embedded {
+    use refinery::embed_migrations;
+    embed_migrations!("migrations");
+}
+
+use async_std::path::PathBuf;
 use clap::App;
 use database::*;
 use dotenv::dotenv;
+use refinery::config::{Config, ConfigDbType};
 use simple_error::SimpleError;
 use util::*;
 
 type SimpleResult<T> = Result<T, SimpleError>;
 
-fn main() -> SimpleResult<()> {
+#[async_std::main]
+async fn main() -> SimpleResult<()> {
     let matches = App::new("oxyromon")
         .version("0.1.0")
         .about("Rusty ROM OrgaNizer")
@@ -60,45 +66,63 @@ fn main() -> SimpleResult<()> {
     if matches.subcommand.is_some() {
         dotenv().ok();
 
-        let data_directory = dirs::data_dir().unwrap().join("oxyromon");
-        create_directory(&data_directory)?;
+        let data_directory = PathBuf::from(dirs::data_dir().unwrap()).join("oxyromon");
+        create_directory(&data_directory).await?;
 
-        let connection = establish_connection(
-            data_directory
-                .join("oxyromon.db")
-                .as_os_str()
-                .to_str()
-                .unwrap(),
-        )?;
+        let db_file = data_directory.join("oxyromon.db");
+        let mut connection = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
+
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.as_os_str().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
 
         match matches.subcommand_name() {
             Some("config") => {
-                config::main(&connection, &matches.subcommand_matches("config").unwrap())?
+                config::main(
+                    &mut connection,
+                    &matches.subcommand_matches("config").unwrap(),
+                )
+                .await?
             }
-            Some("import-dats") => import_dats::main(
-                &connection,
-                &matches.subcommand_matches("import-dats").unwrap(),
-            )?,
-            Some("import-roms") => import_roms::main(
-                &connection,
-                &matches.subcommand_matches("import-roms").unwrap(),
-            )?,
-            Some("sort-roms") => sort_roms::main(
-                &connection,
-                &matches.subcommand_matches("sort-roms").unwrap(),
-            )?,
-            Some("convert-roms") => convert_roms::main(
-                &connection,
-                &matches.subcommand_matches("convert-roms").unwrap(),
-            )?,
-            Some("purge-roms") => purge_roms::main(
-                &connection,
-                &matches.subcommand_matches("purge-roms").unwrap(),
-            )?,
+            Some("import-dats") => {
+                import_dats::main(
+                    &mut connection,
+                    &matches.subcommand_matches("import-dats").unwrap(),
+                )
+                .await?
+            }
+            Some("import-roms") => {
+                import_roms::main(
+                    &mut connection,
+                    &matches.subcommand_matches("import-roms").unwrap(),
+                )
+                .await?
+            }
+            Some("sort-roms") => {
+                sort_roms::main(
+                    &mut connection,
+                    &matches.subcommand_matches("sort-roms").unwrap(),
+                )
+                .await?
+            }
+            Some("convert-roms") => {
+                convert_roms::main(
+                    &mut connection,
+                    &matches.subcommand_matches("convert-roms").unwrap(),
+                )
+                .await?
+            }
+            Some("purge-roms") => {
+                purge_roms::main(
+                    &mut connection,
+                    &matches.subcommand_matches("purge-roms").unwrap(),
+                )
+                .await?
+            }
             _ => (),
         }
 
-        close_connection(connection)?;
+        close_connection(&mut connection).await;
     }
 
     Ok(())

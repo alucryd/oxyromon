@@ -1,6 +1,0 @@
-CREATE TABLE systems (
-    id INTEGER NOT NULL PRIMARY KEY,
-    name VARCHAR UNIQUE NOT NULL,
-    description VARCHAR NOT NULL,
-    version VARCHAR NOT NULL
-);

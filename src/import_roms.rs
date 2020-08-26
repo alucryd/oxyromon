@@ -9,11 +9,11 @@ use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use diesel::SqliteConnection;
 use indicatif::ProgressBar;
+use sqlx::SqliteConnection;
 use std::ffi::OsString;
-use std::path::PathBuf;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-roms")
@@ -27,18 +27,21 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub fn main<'a>(connection: &SqliteConnection, matches: &ArgMatches<'a>) -> SimpleResult<()> {
+pub async fn main<'a>(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'a>,
+) -> SimpleResult<()> {
     let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
-    let system = prompt_for_system(connection);
+    let system = prompt_for_system(connection).await;
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-    let header = find_header_by_system_id(connection, system.id);
+    let header = find_header_by_system_id(connection, system.id).await;
 
-    let system_directory = (get_rom_directory(connection)).join(&system.name);
-    create_directory(&system_directory)?;
+    let system_directory = get_rom_directory(connection).await.join(&system.name);
+    create_directory(&system_directory).await?;
 
     for rom in roms {
-        let rom_path = get_canonicalized_path(&rom)?;
+        let rom_path = get_canonicalized_path(&rom).await?;
         import_rom(
             connection,
             &system_directory,
@@ -46,14 +49,15 @@ pub fn main<'a>(connection: &SqliteConnection, matches: &ArgMatches<'a>) -> Simp
             &header,
             &rom_path,
             &progress_bar,
-        )?;
+        )
+        .await?;
     }
 
     Ok(())
 }
 
-fn import_rom(
-    connection: &SqliteConnection,
+async fn import_rom(
+    connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
@@ -78,7 +82,8 @@ fn import_rom(
             &rom_path,
             &rom_extension,
             &progress_bar,
-        )?;
+        )
+        .await?;
     } else if CHD_EXTENSION == rom_extension {
         import_chd(
             connection,
@@ -87,7 +92,8 @@ fn import_rom(
             &header,
             &rom_path,
             &progress_bar,
-        )?;
+        )
+        .await?;
     } else if CSO_EXTENSION == rom_extension {
         import_cso(
             connection,
@@ -96,7 +102,8 @@ fn import_rom(
             &header,
             &rom_path,
             &progress_bar,
-        )?;
+        )
+        .await?;
     } else {
         import_other(
             connection,
@@ -105,14 +112,15 @@ fn import_rom(
             &header,
             &rom_path,
             &progress_bar,
-        )?;
+        )
+        .await?;
     }
 
     Ok(())
 }
 
-fn import_archive(
-    connection: &SqliteConnection,
+async fn import_archive(
+    connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
@@ -120,7 +128,8 @@ fn import_archive(
     rom_extension: &str,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection)?;
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_path = PathBuf::from(&tmp_directory.path());
     let sevenzip_infos = parse_archive(rom_path, &progress_bar)?;
 
     // archive contains a single file
@@ -134,12 +143,13 @@ fn import_archive(
             let extracted_path = extract_files_from_archive(
                 rom_path,
                 &vec![&sevenzip_info.path],
-                &tmp_directory.path().to_path_buf(),
+                &tmp_path,
                 &progress_bar,
             )?
             .remove(0);
-            let size_crc = get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1)?;
-            remove_file(&extracted_path)?;
+            let size_crc =
+                get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1).await?;
+            remove_file(&extracted_path).await?;
             size = size_crc.0;
             crc = size_crc.1;
         } else {
@@ -147,7 +157,7 @@ fn import_archive(
             crc = sevenzip_info.crc.clone();
         }
 
-        let rom = match find_rom(connection, size, &crc, &system, &progress_bar) {
+        let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
             Some(rom) => rom,
             None => return Ok(()),
         };
@@ -163,10 +173,10 @@ fn import_archive(
         }
 
         // move archive if needed
-        move_file(rom_path, &new_path, &progress_bar)?;
+        move_file(rom_path, &new_path, &progress_bar).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_path, &rom);
+        create_or_update_romfile(connection, &new_path, &rom).await;
 
     // archive contains multiple files
     } else {
@@ -177,7 +187,7 @@ fn import_archive(
             let extracted_path = extract_files_from_archive(
                 rom_path,
                 &vec![&sevenzip_info.path],
-                &tmp_directory.path().to_path_buf(),
+                &tmp_path,
                 &progress_bar,
             )?
             .remove(0);
@@ -185,7 +195,7 @@ fn import_archive(
             // system has a header or crc is absent
             if header.is_some() || sevenzip_info.crc == "" {
                 let size_crc =
-                    get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1)?;
+                    get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1).await?;
                 size = size_crc.0;
                 crc = size_crc.1;
             } else {
@@ -193,10 +203,10 @@ fn import_archive(
                 crc = sevenzip_info.crc.clone();
             }
 
-            let rom = match find_rom(connection, size, &crc, &system, &progress_bar) {
+            let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
                 Some(rom) => rom,
                 None => {
-                    remove_file(&extracted_path)?;
+                    remove_file(&extracted_path).await?;
                     return Ok(());
                 }
             };
@@ -206,43 +216,45 @@ fn import_archive(
             new_path.push(&rom_extension);
 
             // move file
-            move_file(&extracted_path, &new_path, &progress_bar)?;
+            move_file(&extracted_path, &new_path, &progress_bar).await?;
 
             // persist in database
-            create_or_update_romfile(connection, &new_path, &rom);
+            create_or_update_romfile(connection, &new_path, &rom).await;
         }
 
         // delete archive
-        remove_file(rom_path)?;
+        remove_file(rom_path).await?;
     }
 
     Ok(())
 }
 
-fn import_chd(
-    connection: &SqliteConnection,
+async fn import_chd(
+    connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
     rom_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection)?;
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_path = PathBuf::from(&tmp_directory.path());
     let mut cue_path = rom_path.clone();
     cue_path.set_extension(CUE_EXTENSION);
 
-    if !cue_path.is_file() {
+    if !cue_path.is_file().await {
         progress_bar.println(&format!("Missing {:?}", cue_path.file_name().unwrap()));
         return Ok(());
     }
 
-    let (size, crc) = get_file_size_and_crc(&cue_path, &header, &progress_bar, 1, 1)?;
-    let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar) {
+    let (size, crc) = get_file_size_and_crc(&cue_path, &header, &progress_bar, 1, 1).await?;
+    let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
         None => return Ok(()),
     };
 
     let roms: Vec<Rom> = find_roms_by_game_id(connection, cue_rom.game_id)
+        .await
         .into_iter()
         .filter(|rom| rom.id != cue_rom.id)
         .collect();
@@ -253,16 +265,17 @@ fn import_chd(
         .collect();
     let bin_paths = extract_chd(
         rom_path,
-        &tmp_directory.path().to_path_buf(),
+        &tmp_path,
         &names_sizes,
         &progress_bar,
-    )?;
+    )
+    .await?;
     let mut crcs: Vec<String> = Vec::new();
     for (i, bin_path) in bin_paths.iter().enumerate() {
         let (_, crc) =
-            get_file_size_and_crc(&bin_path, &header, &progress_bar, i, bin_paths.len())?;
+            get_file_size_and_crc(&bin_path, &header, &progress_bar, i, bin_paths.len()).await?;
         crcs.push(crc);
-        remove_file(&bin_path)?;
+        remove_file(&bin_path).await?;
     }
 
     if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
@@ -275,31 +288,36 @@ fn import_chd(
     new_file_path.set_extension(CHD_EXTENSION);
 
     // move cue and chd if needed
-    move_file(&cue_path, &new_meta_path, &progress_bar)?;
-    move_file(rom_path, &new_file_path, &progress_bar)?;
+    move_file(&cue_path, &new_meta_path, &progress_bar).await?;
+    move_file(rom_path, &new_file_path, &progress_bar).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_meta_path, &cue_rom);
+    create_or_update_romfile(connection, &new_meta_path, &cue_rom).await;
     for rom in roms {
-        create_or_update_romfile(connection, &new_file_path, &rom);
+        create_or_update_romfile(connection, &new_file_path, &rom).await;
     }
 
     Ok(())
 }
 
-fn import_cso(
-    connection: &SqliteConnection,
+async fn import_cso(
+    connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
     rom_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection)?;
-    let iso_path = extract_cso(rom_path, &tmp_directory.path().to_path_buf(), &progress_bar)?;
-    let (size, crc) = get_file_size_and_crc(&iso_path, &header, &progress_bar, 1, 1)?;
-    remove_file(&iso_path)?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar) {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_path = PathBuf::from(&tmp_directory.path());
+    let iso_path = extract_cso(
+        rom_path,
+        &tmp_path,
+        &progress_bar,
+    )?;
+    let (size, crc) = get_file_size_and_crc(&iso_path, &header, &progress_bar, 1, 1).await?;
+    remove_file(&iso_path).await?;
+    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
         None => return Ok(()),
     };
@@ -308,24 +326,24 @@ fn import_cso(
     new_file_path.set_extension(CSO_EXTENSION);
 
     // move CSO if needed
-    move_file(rom_path, &new_file_path, &progress_bar)?;
+    move_file(rom_path, &new_file_path, &progress_bar).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_file_path, &rom);
+    create_or_update_romfile(connection, &new_file_path, &rom).await;
 
     Ok(())
 }
 
-fn import_other(
-    connection: &SqliteConnection,
+async fn import_other(
+    connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
     rom_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let (size, crc) = get_file_size_and_crc(rom_path, &header, &progress_bar, 1, 1)?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar) {
+    let (size, crc) = get_file_size_and_crc(rom_path, &header, &progress_bar, 1, 1).await?;
+    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
         None => return Ok(()),
     };
@@ -333,23 +351,23 @@ fn import_other(
     let new_path = system_directory.join(&rom.name);
 
     // move file if needed
-    move_file(rom_path, &new_path, &progress_bar)?;
+    move_file(rom_path, &new_path, &progress_bar).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_path, &rom);
+    create_or_update_romfile(connection, &new_path, &rom).await;
 
     Ok(())
 }
 
-fn find_rom(
-    connection: &SqliteConnection,
+async fn find_rom(
+    connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
     system: &System,
     progress_bar: &ProgressBar,
 ) -> Option<Rom> {
     let rom: Rom;
-    let mut roms = find_roms_by_size_and_crc_and_system(connection, size, crc, system.id);
+    let mut roms = find_roms_by_size_and_crc_and_system_id(connection, size, crc, system.id).await;
 
     // abort if no match
     if roms.is_empty() {
@@ -362,12 +380,12 @@ fn find_rom(
         rom = roms.remove(0);
         progress_bar.println(&format!("Matches \"{}\"", rom.name));
     } else {
-        rom = prompt_for_rom(&mut roms);
+        rom = prompt_for_rom(&mut roms).await;
     }
 
     // abort if rom already has a file
     if rom.romfile_id.is_some() {
-        let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap());
+        let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
         if romfile.is_some() {
             let romfile = romfile.unwrap();
             progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
@@ -378,29 +396,31 @@ fn find_rom(
     Some(rom)
 }
 
-pub fn create_or_update_romfile(connection: &SqliteConnection, path: &PathBuf, rom: &Rom) {
-    let romfile_input = RomfileInput {
-        path: &String::from(path.as_os_str().to_str().unwrap()),
-    };
-    let file = find_romfile_by_path(connection, &romfile_input.path);
-    let file_id = match file {
-        Some(file) => {
-            update_romfile(connection, &file, &romfile_input);
-            file.id
+pub async fn create_or_update_romfile(
+    connection: &mut SqliteConnection,
+    path: &PathBuf,
+    rom: &Rom,
+) {
+    let romfile_path = path.as_os_str().to_str().unwrap();
+    let romfile = find_romfile_by_path(connection, romfile_path).await;
+    let romfile_id = match romfile {
+        Some(romfile) => {
+            update_romfile(connection, romfile.id, romfile_path).await;
+            romfile.id
         }
-        None => create_romfile(connection, &romfile_input),
+        None => create_romfile(connection, romfile_path).await,
     };
-    update_rom_romfile(connection, rom, file_id);
+    update_rom_romfile(connection, rom.id, romfile_id).await;
 }
 
-fn move_file(
+async fn move_file(
     old_path: &PathBuf,
     new_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if old_path != new_path {
         progress_bar.println(&format!("Moving to {:?}", new_path));
-        rename_file(old_path, new_path)?;
+        rename_file(old_path, new_path).await?;
     }
     Ok(())
 }
@@ -409,344 +429,450 @@ fn move_file(
 mod test {
     use super::super::config::set_directory;
     use super::super::database::*;
+    use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::*;
-    use std::fs;
-    use std::path::Path;
-    use tempfile::TempDir;
+    use refinery::config::{Config, ConfigDbType};
+    use async_std::fs;
+    use async_std::path::Path;
+    use tempfile::{NamedTempFile, TempDir};
 
-    embed_migrations!("migrations");
-
-    #[test]
-    fn test_import_sevenzip_single() {
+    #[async_std::test]
+    async fn test_import_sevenzip_single() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let dat_path = test_directory.join("Test System.dat");
-        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = PathBuf::from(&tmp_directory.path());
         let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).rom.7z");
+        let system_path = PathBuf::from(&system_directory.path());
+        let rom_path = tmp_path.join("Test Game (USA, Europe).rom.7z");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.7z"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
         set_directory(
-            &connection,
+            &mut connection,
             "ROM_DIRECTORY",
-            &system_directory.path().to_path_buf(),
-        );
+            &system_path,
+        )
+        .await;
 
-        let system = find_systems(&connection).remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
-            &connection,
-            &system_directory.path().to_path_buf(),
+            &mut connection,
+            &system_path,
             &system,
             &None,
             &rom_path,
             &rom_path.extension().unwrap().to_str().unwrap(),
             &progress_bar,
         )
+        .await
         .unwrap();
 
         // then
-        let mut games_roms_romfiles =
-            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
-        assert_eq!(games_roms_romfiles.len(), 1);
+        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 1);
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+        let mut games = find_games_by_ids(
+            &mut connection,
+            &roms.iter().map(|rom| rom.game_id).collect(),
+        )
+        .await;
+        assert_eq!(games.len(), 1);
 
-        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        let game = games.remove(0);
         assert_eq!(game.name, "Test Game (USA, Europe)");
-        assert_eq!(roms_romfiles.len(), 1);
+        assert_eq!(game.system_id, system.id);
 
-        let (rom, romfile) = roms_romfiles.remove(0);
+        let rom = roms.remove(0);
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
-            system_directory
-                .path()
+            system_path
                 .join("Test Game (USA, Europe).rom.7z")
                 .as_os_str()
                 .to_str()
                 .unwrap(),
         );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
-    #[test]
-    fn test_import_zip_single() {
+    #[async_std::test]
+    async fn test_import_zip_single() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let dat_path = test_directory.join("Test System.dat");
-        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = PathBuf::from(&tmp_directory.path());
         let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).rom.zip");
+        let system_path = PathBuf::from(&system_directory.path());
+        let rom_path = tmp_path.join("Test Game (USA, Europe).rom.zip");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.zip"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
         set_directory(
-            &connection,
+            &mut connection,
             "ROM_DIRECTORY",
-            &system_directory.path().to_path_buf(),
-        );
+            &system_path,
+        )
+        .await;
 
-        let system = find_systems(&connection).remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
-            &connection,
-            &system_directory.path().to_path_buf(),
+            &mut connection,
+            &system_path,
             &system,
             &None,
             &rom_path,
             &rom_path.extension().unwrap().to_str().unwrap(),
             &progress_bar,
         )
+        .await
         .unwrap();
 
         // then
-        let mut games_roms_romfiles =
-            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
-        assert_eq!(games_roms_romfiles.len(), 1);
+        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 1);
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+        let mut games = find_games_by_ids(
+            &mut connection,
+            &roms.iter().map(|rom| rom.game_id).collect(),
+        )
+        .await;
+        assert_eq!(games.len(), 1);
 
-        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        let game = games.remove(0);
         assert_eq!(game.name, "Test Game (USA, Europe)");
-        assert_eq!(roms_romfiles.len(), 1);
+        assert_eq!(game.system_id, system.id);
 
-        let (rom, romfile) = roms_romfiles.remove(0);
+        let rom = roms.remove(0);
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
-            system_directory
-                .path()
+            system_path
                 .join("Test Game (USA, Europe).rom.zip")
                 .as_os_str()
                 .to_str()
                 .unwrap(),
         );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
-    fn test_import_chd() {
+    #[async_std::test]
+    async fn test_import_chd() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let dat_path = test_directory.join("Test System.dat");
-        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = PathBuf::from(&tmp_directory.path());
         let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).cue");
+        let system_path = PathBuf::from(&system_directory.path());
+        let rom_path = tmp_path.join("Test Game (USA, Europe).cue");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cue"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).chd");
+        let rom_path = tmp_path.join("Test Game (USA, Europe).chd");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).chd"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
         set_directory(
-            &connection,
+            &mut connection,
             "ROM_DIRECTORY",
-            &system_directory.path().to_path_buf(),
-        );
+            &system_path,
+        )
+        .await;
 
-        let system = find_systems(&connection).remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_chd(
-            &connection,
-            &system_directory.path().to_path_buf(),
+            &mut connection,
+            &system_path,
             &system,
             &None,
             &rom_path,
             &progress_bar,
         )
+        .await
         .unwrap();
 
         // then
-        let mut games_roms_romfiles =
-            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
-        assert_eq!(games_roms_romfiles.len(), 1);
+        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 3);
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 2);
+        let mut games = find_games_by_ids(
+            &mut connection,
+            &roms.iter().map(|rom| rom.game_id).collect(),
+        )
+        .await;
+        assert_eq!(games.len(), 1);
 
-        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        let game = games.remove(0);
         assert_eq!(game.name, "Test Game (USA, Europe) (CUE/BIN)");
-        assert_eq!(roms_romfiles.len(), 3);
+        assert_eq!(game.system_id, system.id);
 
-        let (rom, romfile) = roms_romfiles.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 1).bin");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
-            system_directory
-                .path()
+            system_path
+                .join("Test Game (USA, Europe).chd")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 2).bin");
+        assert_eq!(rom.game_id, game.id);
+
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
+        assert_eq!(
+            romfile.path,
+            system_path
                 .join("Test Game (USA, Europe).cue")
                 .as_os_str()
                 .to_str()
                 .unwrap(),
         );
-        assert!(Path::new(&romfile.path).is_file());
-
-        let (rom, romfile) = roms_romfiles.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 1).bin");
-        assert_eq!(
-            romfile.path,
-            system_directory
-                .path()
-                .join("Test Game (USA, Europe).chd")
-                .as_os_str()
-                .to_str()
-                .unwrap(),
-        );
-        assert!(Path::new(&romfile.path).is_file());
-
-        let (rom, romfile) = roms_romfiles.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 2).bin");
-        assert_eq!(
-            romfile.path,
-            system_directory
-                .path()
-                .join("Test Game (USA, Europe).chd")
-                .as_os_str()
-                .to_str()
-                .unwrap(),
-        );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
-    #[test]
-    fn test_import_cso() {
+    #[async_std::test]
+    async fn test_import_cso() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let dat_path = test_directory.join("Test System.dat");
-        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = PathBuf::from(&tmp_directory.path());
         let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).cso");
+        let system_path = PathBuf::from(&system_directory.path());
+        let rom_path = tmp_path.join("Test Game (USA, Europe).cso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cso"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
         set_directory(
-            &connection,
+            &mut connection,
             "ROM_DIRECTORY",
-            &system_directory.path().to_path_buf(),
-        );
+            &system_path,
+        )
+        .await;
 
-        let system = find_systems(&connection).remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_cso(
-            &connection,
-            &system_directory.path().to_path_buf(),
+            &mut connection,
+            &system_path,
             &system,
             &None,
             &rom_path,
             &progress_bar,
         )
+        .await
         .unwrap();
 
         // then
-        let mut games_roms_romfiles =
-            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
-        assert_eq!(games_roms_romfiles.len(), 1);
+        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 1);
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+        let mut games = find_games_by_ids(
+            &mut connection,
+            &roms.iter().map(|rom| rom.game_id).collect(),
+        )
+        .await;
+        assert_eq!(games.len(), 1);
 
-        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        let game = games.remove(0);
         assert_eq!(game.name, "Test Game (USA, Europe) (ISO)");
-        assert_eq!(roms_romfiles.len(), 1);
+        assert_eq!(game.system_id, system.id);
 
-        let (rom, romfile) = roms_romfiles.remove(0);
+        let rom = roms.remove(0);
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
-            system_directory
-                .path()
+            system_path
                 .join("Test Game (USA, Europe).cso")
                 .as_os_str()
                 .to_str()
                 .unwrap(),
         );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
-    #[test]
-    fn test_import_other() {
+    #[async_std::test]
+    async fn test_import_other() {
         // given
-        let connection = establish_connection(":memory:").unwrap();
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
         let dat_path = test_directory.join("Test System.dat");
-        import_dat(&connection, &dat_path, false, &progress_bar).unwrap();
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = PathBuf::from(&tmp_directory.path());
         let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_path = tmp_directory.path().join("Test Game (USA, Europe).rom");
+        let system_path = PathBuf::from(&system_directory.path());
+        let rom_path = tmp_path.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
             &rom_path.as_os_str().to_str().unwrap(),
         )
+        .await
         .unwrap();
         set_directory(
-            &connection,
+            &mut connection,
             "ROM_DIRECTORY",
-            &system_directory.path().to_path_buf(),
-        );
+            &system_path,
+        )
+        .await;
 
-        let system = find_systems(&connection).remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_other(
-            &connection,
-            &system_directory.path().to_path_buf(),
+            &mut connection,
+            &system_path,
             &system,
             &None,
             &rom_path,
             &progress_bar,
         )
+        .await
         .unwrap();
 
         // then
-        let mut games_roms_romfiles =
-            find_games_roms_romfiles_with_romfile_by_system(&connection, &system);
-        assert_eq!(games_roms_romfiles.len(), 1);
+        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 1);
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+        let mut games = find_games_by_ids(
+            &mut connection,
+            &roms.iter().map(|rom| rom.game_id).collect(),
+        )
+        .await;
+        assert_eq!(games.len(), 1);
 
-        let (game, mut roms_romfiles) = games_roms_romfiles.remove(0);
+        let game = games.remove(0);
         assert_eq!(game.name, "Test Game (USA, Europe)");
-        assert_eq!(roms_romfiles.len(), 1);
+        assert_eq!(game.system_id, system.id);
 
-        let (rom, romfile) = roms_romfiles.remove(0);
+        let rom = roms.remove(0);
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+        assert_eq!(rom.game_id, game.id);
+
+        let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
-            system_directory
-                .path()
+            system_path
                 .join("Test Game (USA, Europe).rom")
                 .as_os_str()
                 .to_str()
                 .unwrap(),
         );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 }
