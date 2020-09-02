@@ -49,10 +49,10 @@ type SimpleResult<T> = Result<T, SimpleError>;
 
 #[async_std::main]
 async fn main() -> SimpleResult<()> {
-    let matches = App::new("oxyromon")
-        .version("0.1.0")
-        .about("Rusty ROM OrgaNizer")
-        .author("Maxime Gauduin <alucryd@archlinux.org>")
+    let matches = App::new(env!("CARGO_BIN_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
+        .author(env!("CARGO_PKG_AUTHORS"))
         .subcommands(vec![
             config::subcommand(),
             import_dats::subcommand(),

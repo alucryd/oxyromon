@@ -981,7 +981,7 @@ dependencies = [
 
 [[package]]
 name = "oxyromon"
-version = "0.3.0"
+version = "0.4.0-beta.1"
 dependencies = [
  "async-std",
  "clap",
