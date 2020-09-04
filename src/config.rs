@@ -3,15 +3,18 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use once_cell::sync::OnceCell;
 use sqlx::SqliteConnection;
 use std::str::FromStr;
 
 cfg_if::cfg_if! {
     if #[cfg(test)] {
+        use async_std::sync::Mutex;
+
         static mut ROM_DIRECTORY: Option<PathBuf> = None;
         static mut TMP_DIRECTORY: Option<PathBuf> = None;
+        pub static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
     } else {
-        use once_cell::sync::OnceCell;
         use std::env;
 
         static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();

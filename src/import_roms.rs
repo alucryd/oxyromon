@@ -417,7 +417,7 @@ async fn move_file(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::set_directory;
+    use super::super::config::{set_directory, MUTEX};
     use super::super::database::*;
     use super::super::embedded;
     use super::super::import_dats::import_dat;
@@ -425,17 +425,14 @@ mod test {
     use async_std::fs;
     use async_std::path::Path;
     use async_std::sync::Mutex;
-    use once_cell::sync::OnceCell;
     use refinery::config::{Config, ConfigDbType};
     use tempfile::{NamedTempFile, TempDir};
-
-    static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
 
     #[async_std::test]
     async fn test_import_sevenzip_single() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
-        
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
