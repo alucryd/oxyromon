@@ -56,7 +56,7 @@ pub async fn main<'a>(
     Ok(())
 }
 
-async fn import_rom(
+pub async fn import_rom(
     connection: &mut SqliteConnection,
     system_directory: &PathBuf,
     system: &System,
@@ -263,13 +263,7 @@ async fn import_chd(
         .iter()
         .map(|rom| (rom.name.as_str(), rom.size as u64))
         .collect();
-    let bin_paths = extract_chd(
-        rom_path,
-        &tmp_path,
-        &names_sizes,
-        &progress_bar,
-    )
-    .await?;
+    let bin_paths = extract_chd(rom_path, &tmp_path, &names_sizes, &progress_bar).await?;
     let mut crcs: Vec<String> = Vec::new();
     for (i, bin_path) in bin_paths.iter().enumerate() {
         let (_, crc) =
@@ -310,11 +304,7 @@ async fn import_cso(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let tmp_path = PathBuf::from(&tmp_directory.path());
-    let iso_path = extract_cso(
-        rom_path,
-        &tmp_path,
-        &progress_bar,
-    )?;
+    let iso_path = extract_cso(rom_path, &tmp_path, &progress_bar)?;
     let (size, crc) = get_file_size_and_crc(&iso_path, &header, &progress_bar, 1, 1).await?;
     remove_file(&iso_path).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
@@ -432,14 +422,20 @@ mod test {
     use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::*;
-    use refinery::config::{Config, ConfigDbType};
     use async_std::fs;
     use async_std::path::Path;
+    use async_std::sync::Mutex;
+    use once_cell::sync::OnceCell;
+    use refinery::config::{Config, ConfigDbType};
     use tempfile::{NamedTempFile, TempDir};
+
+    static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
 
     #[async_std::test]
     async fn test_import_sevenzip_single() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
@@ -455,9 +451,10 @@ mod test {
             .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = PathBuf::from(&tmp_directory.path());
-        let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let system_path = PathBuf::from(&system_directory.path());
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
         let rom_path = tmp_path.join("Test Game (USA, Europe).rom.7z");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.7z"),
@@ -465,12 +462,7 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(
-            &mut connection,
-            "ROM_DIRECTORY",
-            &system_path,
-        )
-        .await;
+        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -523,6 +515,8 @@ mod test {
     #[async_std::test]
     async fn test_import_zip_single() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
@@ -538,9 +532,10 @@ mod test {
             .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = PathBuf::from(&tmp_directory.path());
-        let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let system_path = PathBuf::from(&system_directory.path());
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
         let rom_path = tmp_path.join("Test Game (USA, Europe).rom.zip");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.zip"),
@@ -548,12 +543,7 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(
-            &mut connection,
-            "ROM_DIRECTORY",
-            &system_path,
-        )
-        .await;
+        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -606,6 +596,8 @@ mod test {
     #[async_std::test]
     async fn test_import_chd() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
@@ -621,9 +613,10 @@ mod test {
             .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = PathBuf::from(&tmp_directory.path());
-        let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let system_path = PathBuf::from(&system_directory.path());
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
         let rom_path = tmp_path.join("Test Game (USA, Europe).cue");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cue"),
@@ -638,12 +631,7 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(
-            &mut connection,
-            "ROM_DIRECTORY",
-            &system_path,
-        )
-        .await;
+        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -715,6 +703,8 @@ mod test {
     #[async_std::test]
     async fn test_import_cso() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
@@ -730,9 +720,10 @@ mod test {
             .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = PathBuf::from(&tmp_directory.path());
-        let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let system_path = PathBuf::from(&system_directory.path());
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
         let rom_path = tmp_path.join("Test Game (USA, Europe).cso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cso"),
@@ -740,12 +731,7 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(
-            &mut connection,
-            "ROM_DIRECTORY",
-            &system_path,
-        )
-        .await;
+        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -797,6 +783,8 @@ mod test {
     #[async_std::test]
     async fn test_import_other() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 
@@ -812,9 +800,10 @@ mod test {
             .unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = PathBuf::from(&tmp_directory.path());
-        let system_directory = TempDir::new_in(&test_directory).unwrap();
-        let system_path = PathBuf::from(&system_directory.path());
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
         let rom_path = tmp_path.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -822,12 +811,7 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(
-            &mut connection,
-            "ROM_DIRECTORY",
-            &system_path,
-        )
-        .await;
+        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 

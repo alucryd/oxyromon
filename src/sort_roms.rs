@@ -10,6 +10,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
+use indicatif::ProgressBar;
 use rayon::prelude::*;
 use regex::Regex;
 use sqlx::SqliteConnection;
@@ -185,75 +186,65 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
     let unwanted_regex = compute_unwanted_regex(connection, matches).await;
 
     for system in systems {
-        progress_bar.println(&format!("Processing {}", system.name));
-        progress_bar.set_message("Processing games");
+        process_system(
+            connection,
+            matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &unwanted_regex,
+            &progress_bar,
+        )
+        .await?;
+    }
 
-        let mut games: Vec<Game>;
-        let mut all_regions_games: Vec<Game> = Vec::new();
-        let mut one_region_games: Vec<Game> = Vec::new();
-        let mut trash_games: Vec<Game> = Vec::new();
-        let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
+    Ok(())
+}
 
-        let romfiles = find_romfiles_by_system_id(connection, system.id).await;
-        let romfiles_by_id: HashMap<i64, Romfile> = romfiles
-            .into_iter()
-            .map(|romfile| (romfile.id, romfile))
-            .collect();
+async fn process_system(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    system: &System,
+    all_regions: &Vec<&str>,
+    one_regions: &Vec<&str>,
+    unwanted_regex: &Option<Regex>,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
+    progress_bar.println(&format!("Processing {}", system.name));
+    progress_bar.set_message("Processing games");
 
-        // 1G1R mode
-        if !one_regions.is_empty() {
-            let parent_games = find_parent_games_by_system_id(connection, system.id).await;
-            let clone_games = find_clone_games_by_system_id(connection, system.id).await;
+    let mut games: Vec<Game>;
+    let mut all_regions_games: Vec<Game> = Vec::new();
+    let mut one_region_games: Vec<Game> = Vec::new();
+    let mut trash_games: Vec<Game> = Vec::new();
+    let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
-            let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
-            clone_games.into_iter().for_each(|game| {
-                let group = clone_games_by_parent_id
-                    .entry(game.parent_id.unwrap())
-                    .or_insert(vec![]);
-                group.push(game);
-            });
+    let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+    let romfiles_by_id: HashMap<i64, Romfile> = romfiles
+        .into_iter()
+        .map(|romfile| (romfile.id, romfile))
+        .collect();
 
-            for parent in parent_games {
+    // 1G1R mode
+    if !one_regions.is_empty() {
+        let parent_games = find_parent_games_by_system_id(connection, system.id).await;
+        let clone_games = find_clone_games_by_system_id(connection, system.id).await;
+
+        let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
+        clone_games.into_iter().for_each(|game| {
+            let group = clone_games_by_parent_id
+                .entry(game.parent_id.unwrap())
+                .or_insert(vec![]);
+            group.push(game);
+        });
+
+        for parent in parent_games {
+            if clone_games_by_parent_id.contains_key(&parent.id) {
                 games = clone_games_by_parent_id.remove(&parent.id).unwrap();
-                games.insert(0, parent);
-
-                // trim unwanted games
-                match unwanted_regex.as_ref() {
-                    Some(unwanted_regex) => {
-                        let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                            .into_par_iter()
-                            .partition(|game| unwanted_regex.find(&game.name).is_some());
-                        trash_games.append(&mut unwanted_games);
-                        games = regular_games;
-                    }
-                    None => (),
-                }
-
-                // find the one game we want to keep, if any
-                for region in &one_regions {
-                    let i = games.iter().position(|game| game.regions.contains(region));
-                    if i.is_some() {
-                        one_region_games.push(games.remove(i.unwrap()));
-                        break;
-                    }
-                }
-
-                // go through the remaining games
-                while !games.is_empty() {
-                    let game = games.remove(0);
-                    if all_regions
-                        .iter()
-                        .any(|region| game.regions.contains(region))
-                    {
-                        all_regions_games.push(game);
-                    } else {
-                        trash_games.push(game);
-                    }
-                }
+            } else {
+                games = Vec::new();
             }
-        // Regions mode
-        } else if !all_regions.is_empty() {
-            games = find_games_by_system_id(connection, system.id).await;
+            games.insert(0, parent);
 
             // trim unwanted games
             match unwanted_regex.as_ref() {
@@ -267,7 +258,18 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
                 None => (),
             }
 
-            for game in games {
+            // find the one game we want to keep, if any
+            for region in one_regions {
+                let i = games.iter().position(|game| game.regions.contains(region));
+                if i.is_some() {
+                    one_region_games.push(games.remove(i.unwrap()));
+                    break;
+                }
+            }
+
+            // go through the remaining games
+            while !games.is_empty() {
+                let game = games.remove(0);
                 if all_regions
                     .iter()
                     .any(|region| game.regions.contains(region))
@@ -277,94 +279,120 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
                     trash_games.push(game);
                 }
             }
-        } else {
-            games = find_games_by_system_id(connection, system.id).await;
+        }
+    // Regions mode
+    } else if !all_regions.is_empty() {
+        games = find_games_by_system_id(connection, system.id).await;
 
-            // trim unwanted games
-            match unwanted_regex.as_ref() {
-                Some(unwanted_regex) => {
-                    let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                        .into_par_iter()
-                        .partition(|game| unwanted_regex.find(&game.name).is_some());
-                    trash_games.append(&mut unwanted_games);
-                    games = regular_games;
-                }
-                None => (),
+        // trim unwanted games
+        match unwanted_regex.as_ref() {
+            Some(unwanted_regex) => {
+                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
+                    .into_par_iter()
+                    .partition(|game| unwanted_regex.find(&game.name).is_some());
+                trash_games.append(&mut unwanted_games);
+                games = regular_games;
             }
-
-            all_regions_games.append(&mut games);
+            None => (),
         }
 
-        if matches.is_present("MISSING") {
-            progress_bar.set_message("Processing missing games");
-            let mut game_ids: Vec<i64> = Vec::new();
-            game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
-            game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
-            let missing_roms: Vec<Rom> =
-                find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
-
-            progress_bar.println("Missing:");
-            for rom in missing_roms {
-                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
+        for game in games {
+            if all_regions
+                .iter()
+                .any(|region| game.regions.contains(region))
+            {
+                all_regions_games.push(game);
+            } else {
+                trash_games.push(game);
             }
         }
+    } else {
+        games = find_games_by_system_id(connection, system.id).await;
 
-        // create necessary directories
-        let all_regions_directory = get_rom_directory(connection).await.join(&system.name);
-        let one_region_directory = all_regions_directory.join("1G1R");
-        let trash_directory = all_regions_directory.join("Trash");
-        for d in vec![
+        // trim unwanted games
+        match unwanted_regex.as_ref() {
+            Some(unwanted_regex) => {
+                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
+                    .into_par_iter()
+                    .partition(|game| unwanted_regex.find(&game.name).is_some());
+                trash_games.append(&mut unwanted_games);
+                games = regular_games;
+            }
+            None => (),
+        }
+
+        all_regions_games.append(&mut games);
+    }
+
+    if matches.is_present("MISSING") {
+        progress_bar.set_message("Processing missing games");
+        let mut game_ids: Vec<i64> = Vec::new();
+        game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
+        game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
+        let missing_roms: Vec<Rom> =
+            find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
+
+        progress_bar.println("Missing:");
+        for rom in missing_roms {
+            progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
+        }
+    }
+
+    // create necessary directories
+    let all_regions_directory = get_rom_directory(connection).await.join(&system.name);
+    let one_region_directory = all_regions_directory.join("1G1R");
+    let trash_directory = all_regions_directory.join("Trash");
+    for d in vec![
+        &all_regions_directory,
+        &one_region_directory,
+        &trash_directory,
+    ] {
+        create_directory(&d).await?;
+    }
+
+    // process all_region_games
+    romfile_moves.append(
+        &mut process_games(
+            connection,
+            all_regions_games,
             &all_regions_directory,
+            &romfiles_by_id,
+        )
+        .await,
+    );
+
+    // process one_region_games
+    romfile_moves.append(
+        &mut process_games(
+            connection,
+            one_region_games,
             &one_region_directory,
-            &trash_directory,
-        ] {
-            create_directory(&d).await?;
-        }
+            &romfiles_by_id,
+        )
+        .await,
+    );
 
-        // process all_region_games
-        romfile_moves.append(
-            &mut process_games(
-                connection,
-                all_regions_games,
-                &all_regions_directory,
-                &romfiles_by_id,
-            )
-            .await,
-        );
+    // process trash_games
+    romfile_moves.append(
+        &mut process_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
+    );
 
-        // process one_region_games
-        romfile_moves.append(
-            &mut process_games(
-                connection,
-                one_region_games,
-                &one_region_directory,
-                &romfiles_by_id,
-            )
-            .await,
-        );
+    // sort moves and print a summary
+    romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
+    romfile_moves.dedup_by(|a, b| a.1 == b.1);
 
-        // process trash_games
-        romfile_moves.append(
-            &mut process_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
-        );
+    progress_bar.println("Summary:");
+    for romfile_move in &romfile_moves {
+        progress_bar.println(&format!("{} -> {}", romfile_move.0.path, romfile_move.1));
+    }
 
-        // sort moves and print a summary
-        romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
-        romfile_moves.dedup_by(|a, b| a.1 == b.1);
-
-        progress_bar.println("Summary:");
-        for file_move in &romfile_moves {
-            progress_bar.println(&format!("{} -> {}", file_move.0.path, file_move.1));
-        }
-
-        // prompt user for confirmation
-        if prompt_for_yes_no(matches).await {
-            for romfile_move in romfile_moves {
-                let old_path = Path::new(&romfile_move.0.path).to_path_buf();
-                let new_path = Path::new(&romfile_move.1).to_path_buf();
-                rename_file(&old_path, &new_path).await?;
-                update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
-            }
+    // prompt user for confirmation
+    if prompt_for_yes_no(matches).await {
+        for romfile_move in romfile_moves {
+            let old_path = Path::new(&romfile_move.0.path).to_path_buf();
+            let new_path = Path::new(&romfile_move.1).to_path_buf();
+            rename_file(&old_path, &new_path).await?;
+            update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
         }
     }
 
@@ -390,7 +418,11 @@ async fn process_games<'a>(
     });
 
     for game in games {
-        let roms = roms_by_game_id.get(&game.id).unwrap();
+        let roms = roms_by_game_id.get(&game.id);
+        let roms = match roms {
+            Some(roms) => roms,
+            None => continue,
+        };
         let rom_count = roms.len();
         romfile_moves.append(
             &mut roms
@@ -516,12 +548,20 @@ fn get_new_path(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::set_bool;
+    use super::super::config::{set_bool, set_rom_directory};
     use super::super::database::*;
     use super::super::embedded;
+    use super::super::import_dats::import_dat;
+    use super::super::import_roms::import_rom;
+    use super::super::util::*;
     use super::*;
+    use async_std::fs;
+    use async_std::sync::Mutex;
+    use once_cell::sync::OnceCell;
     use refinery::config::{Config, ConfigDbType};
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, TempDir};
+
+    static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
 
     #[async_std::test]
     async fn test_do_discard_with_flag_should_return_false() {
@@ -594,5 +634,428 @@ mod test {
 
         // then
         assert_eq!(true, result);
+    }
+
+    #[async_std::test]
+    async fn test_sort_roms_keep_all() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+            "Test Game (USA, Europe) (Beta).rom",
+        ];
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        for rom_name in &rom_names {
+            let rom_path = tmp_path.join(rom_name);
+            fs::copy(
+                test_directory.join(rom_name),
+                &rom_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &rom_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
+
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
+        let all_regions = vec![];
+        let one_regions = vec![];
+
+        // when
+        process_system(
+            &mut connection,
+            &matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &None,
+            &progress_bar,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        assert_eq!(4, romfiles.len());
+
+        let all_regions_indices = vec![0, 1, 2, 3];
+
+        for i in all_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+    }
+
+    #[async_std::test]
+    async fn test_sort_roms_discard_beta() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+            "Test Game (USA, Europe) (Beta).rom",
+        ];
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        for rom_name in &rom_names {
+            let rom_path = tmp_path.join(rom_name);
+            fs::copy(
+                test_directory.join(rom_name),
+                &rom_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &rom_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
+
+        let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
+        let all_regions = vec![];
+        let one_regions = vec![];
+        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+
+        // when
+        process_system(
+            &mut connection,
+            &matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &unwanted_regex,
+            &progress_bar,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        assert_eq!(4, romfiles.len());
+
+        let all_regions_indices = vec![0, 1, 2];
+        let trash_indices = vec![3];
+
+        for i in all_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+
+        for i in trash_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join("Trash")
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+    }
+
+    #[async_std::test]
+    async fn test_sort_roms_discard_asia() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+            "Test Game (USA, Europe) (Beta).rom",
+        ];
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        for rom_name in &rom_names {
+            let rom_path = tmp_path.join(rom_name);
+            fs::copy(
+                test_directory.join(rom_name),
+                &rom_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &rom_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
+
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
+        let all_regions = vec!["USA", "EUR", "JPN"];
+        let one_regions = vec![];
+        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+
+        // when
+        process_system(
+            &mut connection,
+            &matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &unwanted_regex,
+            &progress_bar,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        assert_eq!(4, romfiles.len());
+
+        let all_regions_indices = vec![1, 2, 3];
+        let trash_indices = vec![0];
+
+        for i in all_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+
+        for i in trash_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join("Trash")
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+    }
+
+    #[async_std::test]
+    async fn test_sort_roms_1g1r_without_parent_clone_information() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+            "Test Game (USA, Europe) (Beta).rom",
+        ];
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        for rom_name in &rom_names {
+            let rom_path = tmp_path.join(rom_name);
+            fs::copy(
+                test_directory.join(rom_name),
+                &rom_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &rom_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
+
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
+        let all_regions = vec![];
+        let one_regions = vec!["USA", "EUR"];
+        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+
+        // when
+        process_system(
+            &mut connection,
+            &matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &unwanted_regex,
+            &progress_bar,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        assert_eq!(4, romfiles.len());
+
+        let all_regions_indices = vec![3];
+        let one_regions_indices = vec![2];
+        let trash_indices = vec![0, 1];
+
+        for i in all_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+
+        for i in one_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join("1G1R")
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+
+        for i in trash_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join("Trash")
+                    .join(&rom_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
     }
 }
