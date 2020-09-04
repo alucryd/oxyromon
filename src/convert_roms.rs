@@ -34,10 +34,10 @@ pub async fn main<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'a>,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await;
-    let format = matches.value_of("FORMAT");
-
     let progress_bar = get_progress_bar(0, get_none_progress_style());
+
+    let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
+    let format = matches.value_of("FORMAT");
 
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
@@ -141,23 +141,13 @@ async fn to_archive(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let mut archive_path = Path::new(&romfile.path).to_path_buf();
 
-            extract_files_from_archive(
-                &archive_path,
-                &vec![&rom.name],
-                &tmp_path,
-                &progress_bar,
-            )?;
+            extract_files_from_archive(&archive_path, &vec![&rom.name], &tmp_path, &progress_bar)?;
             remove_file(&archive_path).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
             });
-            add_files_to_archive(
-                &archive_path,
-                &vec![&rom.name],
-                &tmp_path,
-                &progress_bar,
-            )?;
+            add_files_to_archive(&archive_path, &vec![&rom.name], &tmp_path, &progress_bar)?;
             update_romfile(
                 connection,
                 romfile.id,
@@ -180,23 +170,13 @@ async fn to_archive(
             let romfile = romfiles.get(0).unwrap();
             let mut archive_path = Path::new(&romfile.path).to_path_buf();
 
-            extract_files_from_archive(
-                &archive_path,
-                &file_names,
-                &tmp_path,
-                &progress_bar,
-            )?;
+            extract_files_from_archive(&archive_path, &file_names, &tmp_path, &progress_bar)?;
             remove_file(&archive_path).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
             });
-            add_files_to_archive(
-                &archive_path,
-                &file_names,
-                &tmp_path,
-                &progress_bar,
-            )?;
+            add_files_to_archive(&archive_path, &file_names, &tmp_path, &progress_bar)?;
             for file_name in file_names {
                 update_romfile(
                     connection,

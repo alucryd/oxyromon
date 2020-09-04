@@ -168,7 +168,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await;
+    let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
 
     // unordered regions to keep
     let mut all_regions: Vec<&str> = Vec::new();
@@ -387,7 +387,7 @@ async fn process_system(
     }
 
     // prompt user for confirmation
-    if prompt_for_yes_no(matches).await {
+    if prompt_for_yes_no(matches, progress_bar).await {
         for romfile_move in romfile_moves {
             let old_path = Path::new(&romfile_move.0.path).to_path_buf();
             let new_path = Path::new(&romfile_move.1).to_path_buf();

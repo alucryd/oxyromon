@@ -31,9 +31,10 @@ pub async fn main<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'a>,
 ) -> SimpleResult<()> {
-    let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
-    let system = prompt_for_system(connection).await;
     let progress_bar = get_progress_bar(0, get_none_progress_style());
+
+    let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
+    let system = prompt_for_system(connection, &progress_bar).await;
 
     let header = find_header_by_system_id(connection, system.id).await;
 
@@ -370,7 +371,7 @@ async fn find_rom(
         rom = roms.remove(0);
         progress_bar.println(&format!("Matches \"{}\"", rom.name));
     } else {
-        rom = prompt_for_rom(&mut roms).await;
+        rom = prompt_for_rom(&mut roms, progress_bar).await;
     }
 
     // abort if rom already has a file

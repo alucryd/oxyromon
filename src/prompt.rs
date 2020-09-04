@@ -1,12 +1,17 @@
 use super::database::*;
 use super::model::*;
+use async_std::io;
 use clap::ArgMatches;
+use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;
-use async_std::io;
 use std::str::FromStr;
 
-pub async fn prompt_for_systems(connection: &mut SqliteConnection, all: bool) -> Vec<System> {
+pub async fn prompt_for_systems(
+    connection: &mut SqliteConnection,
+    all: bool,
+    progress_bar: &ProgressBar,
+) -> Vec<System> {
     let mut systems = find_systems(connection).await;
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -14,11 +19,11 @@ pub async fn prompt_for_systems(connection: &mut SqliteConnection, all: bool) ->
         return systems;
     }
 
-    println!("Please select systems (space separated):");
+    progress_bar.println("Please select systems (space separated):");
     for (i, system) in systems.iter().enumerate() {
-        println!("[{}] {}", i, system.name);
+        progress_bar.println(format!("[{}] {}", i, system.name));
     }
-    println!("[*] All");
+    progress_bar.println("[*] All");
 
     let mut system_indices: Vec<usize> = vec![systems.len()];
     let mut input = String::new();
@@ -32,7 +37,7 @@ pub async fn prompt_for_systems(connection: &mut SqliteConnection, all: bool) ->
         input = input.trim().to_owned();
 
         if !input_validation.is_match(&input) {
-            println!("Please select valid systems (space separated):");
+            progress_bar.println("Please select valid systems (space separated):");
             continue;
         }
 
@@ -54,13 +59,16 @@ pub async fn prompt_for_systems(connection: &mut SqliteConnection, all: bool) ->
         .collect()
 }
 
-pub async fn prompt_for_system(connection: &mut SqliteConnection) -> System {
+pub async fn prompt_for_system(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+) -> System {
     let mut systems = find_systems(connection).await;
     systems.sort_by(|a, b| a.name.cmp(&b.name));
 
-    println!("Please select a system:");
+    progress_bar.println("Please select a system:");
     for (i, system) in systems.iter().enumerate() {
-        println!("[{}] {}", i, system.name);
+        progress_bar.println(format!("[{}] {}", i, system.name));
     }
 
     let mut system_index: usize = systems.len();
@@ -75,7 +83,7 @@ pub async fn prompt_for_system(connection: &mut SqliteConnection) -> System {
         input = input.trim().to_owned();
 
         if !input_validation.is_match(&input) {
-            println!("Please select a valid system:");
+            progress_bar.println("Please select a valid system:");
             continue;
         }
 
@@ -85,10 +93,10 @@ pub async fn prompt_for_system(connection: &mut SqliteConnection) -> System {
     systems.remove(system_index)
 }
 
-pub async fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
-    println!("Please select a rom:");
+pub async fn prompt_for_rom(roms: &mut Vec<Rom>, progress_bar: &ProgressBar) -> Rom {
+    progress_bar.println("Please select a rom:");
     for (i, rom) in roms.iter().enumerate() {
-        println!("[{}] {}", i, rom.name);
+        progress_bar.println(format!("[{}] {}", i, rom.name));
     }
 
     let mut rom_index: usize = roms.len();
@@ -103,7 +111,7 @@ pub async fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
         input = input.trim().to_owned();
 
         if !input_validation.is_match(&input) {
-            println!("Please select a valid rom:");
+            progress_bar.println("Please select a valid rom:");
             continue;
         }
 
@@ -113,8 +121,8 @@ pub async fn prompt_for_rom(roms: &mut Vec<Rom>) -> Rom {
     roms.remove(rom_index)
 }
 
-pub async fn prompt_for_yes_no(matches: &ArgMatches<'_>) -> bool {
-    println!("Proceed? (y|N)");
+pub async fn prompt_for_yes_no(matches: &ArgMatches<'_>, progress_bar: &ProgressBar) -> bool {
+    progress_bar.println("Proceed? (y|N)");
     let mut input = String::new();
     if matches.is_present("YES") {
         input = String::from("y");

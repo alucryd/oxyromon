@@ -41,7 +41,7 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
                 progress_bar.println(&romfile.path);
             }
 
-            if prompt_for_yes_no(matches).await {
+            if prompt_for_yes_no(matches, &progress_bar).await {
                 for romfile in &romfiles {
                     let romfile_path = Path::new(&romfile.path).to_path_buf();
                     if romfile_path.is_file().await {
