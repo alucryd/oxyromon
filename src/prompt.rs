@@ -122,7 +122,7 @@ pub async fn prompt_for_rom(roms: &mut Vec<Rom>, progress_bar: &ProgressBar) -> 
 }
 
 pub async fn prompt_for_yes_no(matches: &ArgMatches<'_>, progress_bar: &ProgressBar) -> bool {
-    progress_bar.println("Proceed? (y|N)");
+    progress_bar.set_message("Proceed? (y|N)");
     let mut input = String::new();
     if matches.is_present("YES") {
         input = String::from("y");
