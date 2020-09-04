@@ -1,4 +1,5 @@
 extern crate async_std;
+extern crate cfg_if;
 extern crate clap;
 extern crate crc32fast;
 extern crate digest;
@@ -70,6 +71,9 @@ async fn main() -> SimpleResult<()> {
         create_directory(&data_directory).await?;
 
         let db_file = data_directory.join("oxyromon.db");
+        if !db_file.is_file().await {
+            create_file(&db_file).await?;
+        }
         let mut connection = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
 
         let mut config =

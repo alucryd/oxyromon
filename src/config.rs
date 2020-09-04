@@ -5,11 +5,22 @@ use async_std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use once_cell::sync::OnceCell;
 use sqlx::SqliteConnection;
-use std::env;
 use std::str::FromStr;
 
-static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
-static TMP_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
+cfg_if::cfg_if! {
+    if #[cfg(test)] {
+        use async_std::sync::Mutex;
+
+        static mut ROM_DIRECTORY: Option<PathBuf> = None;
+        static mut TMP_DIRECTORY: Option<PathBuf> = None;
+        pub static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
+    } else {
+        use std::env;
+
+        static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
+        static TMP_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
+    }
+}
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("config")
@@ -140,44 +151,74 @@ pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Opti
     }
 }
 
-pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &PathBuf {
-    match ROM_DIRECTORY.get() {
-        Some(rom_directory) => rom_directory,
-        None => {
-            let rom_directory = get_directory(connection, "ROM_DIRECTORY").await;
-            let rom_directory = match rom_directory {
+cfg_if::cfg_if! {
+    if #[cfg(test)] {
+        pub fn set_rom_directory(rom_directory: PathBuf) -> &'static PathBuf {
+            unsafe {
+                ROM_DIRECTORY.replace(rom_directory);
+                ROM_DIRECTORY.as_ref().unwrap()
+            }
+        }
+
+        pub async fn get_rom_directory(_connection: &mut SqliteConnection) -> &'static PathBuf {
+            unsafe {
+                ROM_DIRECTORY.as_ref().unwrap()
+            }
+        }
+
+        pub fn set_tmp_directory(tmp_directory: PathBuf) -> &'static PathBuf {
+            unsafe {
+                TMP_DIRECTORY.replace(tmp_directory);
+                TMP_DIRECTORY.as_ref().unwrap()
+            }
+        }
+
+        pub async fn get_tmp_directory(_connection: &mut SqliteConnection) -> &'static PathBuf {
+            unsafe {
+                TMP_DIRECTORY.as_ref().unwrap()
+            }
+        }
+    } else {
+        pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &PathBuf {
+            match ROM_DIRECTORY.get() {
                 Some(rom_directory) => rom_directory,
                 None => {
-                    let rom_directory = PathBuf::from(dirs::home_dir().unwrap()).join("Emulation");
-                    set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
-                    rom_directory
+                    let rom_directory = get_directory(connection, "ROM_DIRECTORY").await;
+                    let rom_directory = match rom_directory {
+                        Some(rom_directory) => rom_directory,
+                        None => {
+                            let rom_directory = PathBuf::from(dirs::home_dir().unwrap()).join("Emulation");
+                            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+                            rom_directory
+                        }
+                    };
+                    ROM_DIRECTORY
+                        .set(rom_directory)
+                        .expect("Failed to set rom directory");
+                    ROM_DIRECTORY.get().unwrap()
                 }
-            };
-            ROM_DIRECTORY
-                .set(rom_directory)
-                .expect("Failed to set rom directory");
-            ROM_DIRECTORY.get().unwrap()
+            }
         }
-    }
-}
 
-pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &PathBuf {
-    match TMP_DIRECTORY.get() {
-        Some(tmp_directory) => tmp_directory,
-        None => {
-            let tmp_directory = get_directory(connection, "TMP_DIRECTORY").await;
-            let tmp_directory = match tmp_directory {
+        pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &PathBuf {
+            match TMP_DIRECTORY.get() {
                 Some(tmp_directory) => tmp_directory,
                 None => {
-                    let tmp_directory = PathBuf::from(env::temp_dir());
-                    set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
-                    tmp_directory
+                    let tmp_directory = get_directory(connection, "TMP_DIRECTORY").await;
+                    let tmp_directory = match tmp_directory {
+                        Some(tmp_directory) => tmp_directory,
+                        None => {
+                            let tmp_directory = PathBuf::from(env::temp_dir());
+                            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+                            tmp_directory
+                        }
+                    };
+                    TMP_DIRECTORY
+                        .set(tmp_directory)
+                        .expect("Failed to set tmp directory");
+                    TMP_DIRECTORY.get().unwrap()
                 }
-            };
-            TMP_DIRECTORY
-                .set(tmp_directory)
-                .expect("Failed to set tmp directory");
-            TMP_DIRECTORY.get().unwrap()
+            }
         }
     }
 }
