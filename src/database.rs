@@ -380,6 +380,9 @@ pub async fn create_rom<'a>(
     rom_xml: &RomXml,
     game_id: i64,
 ) -> i64 {
+    let crc = rom_xml.crc.to_uppercase();
+    let md5 = rom_xml.md5.to_uppercase();
+    let sha1 = rom_xml.sha1.to_uppercase();
     sqlx::query!(
         "
         INSERT INTO roms (name, size, crc, md5, sha1, rom_status, game_id)
@@ -387,9 +390,9 @@ pub async fn create_rom<'a>(
         ",
         rom_xml.name,
         rom_xml.size,
-        rom_xml.crc,
-        rom_xml.md5,
-        rom_xml.sha1,
+        crc,
+        md5,
+        sha1,
         rom_xml.status,
         game_id,
     )
@@ -405,6 +408,9 @@ pub async fn update_rom(
     rom_xml: &RomXml,
     game_id: i64,
 ) {
+    let crc = rom_xml.crc.to_uppercase();
+    let md5 = rom_xml.md5.to_uppercase();
+    let sha1 = rom_xml.sha1.to_uppercase();
     sqlx::query!(
         "
         UPDATE roms
@@ -413,9 +419,9 @@ pub async fn update_rom(
         ",
         rom_xml.name,
         rom_xml.size,
-        rom_xml.crc,
-        rom_xml.md5,
-        rom_xml.sha1,
+        crc,
+        md5,
+        sha1,
         rom_xml.status,
         game_id,
         id,
@@ -597,6 +603,7 @@ pub async fn find_roms_by_size_and_crc_and_system_id(
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
+    let crc = crc.to_uppercase();
     sqlx::query_as!(
         Rom,
         "

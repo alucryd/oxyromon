@@ -63,9 +63,9 @@ pub async fn import_dat(
     datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
 
     // print information
-    println!("System: {}", datafile_xml.system.name);
-    println!("Version: {}", datafile_xml.system.version);
-    println!("Games: {}", datafile_xml.games.len());
+    progress_bar.println(format!("System: {}", datafile_xml.system.name));
+    progress_bar.println(format!("Version: {}", datafile_xml.system.version));
+    progress_bar.println(format!("Games: {}", datafile_xml.games.len()));
 
     if info {
         return Ok(());
