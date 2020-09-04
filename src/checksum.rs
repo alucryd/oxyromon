@@ -104,6 +104,6 @@ pub async fn get_file_size_and_crc(
         io::copy(&mut progress_bar.wrap_read(f), &mut digest),
         "Failed to copy data"
     );
-    let crc = format!("{:08x}", digest.finalize());
+    let crc = format!("{:08x}", digest.finalize()).to_uppercase();
     Ok((size, crc))
 }
