@@ -186,7 +186,7 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
     let unwanted_regex = compute_unwanted_regex(connection, matches).await;
 
     for system in systems {
-        process_system(
+        sort_system(
             connection,
             matches,
             &system,
@@ -201,7 +201,7 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
     Ok(())
 }
 
-async fn process_system(
+pub async fn sort_system(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     system: &System,
@@ -352,7 +352,7 @@ async fn process_system(
 
     // process all_region_games
     romfile_moves.append(
-        &mut process_games(
+        &mut sort_games(
             connection,
             all_regions_games,
             &all_regions_directory,
@@ -363,7 +363,7 @@ async fn process_system(
 
     // process one_region_games
     romfile_moves.append(
-        &mut process_games(
+        &mut sort_games(
             connection,
             one_region_games,
             &one_region_directory,
@@ -374,7 +374,7 @@ async fn process_system(
 
     // process trash_games
     romfile_moves.append(
-        &mut process_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
+        &mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
     );
 
     // sort moves and print a summary
@@ -399,7 +399,7 @@ async fn process_system(
     Ok(())
 }
 
-async fn process_games<'a>(
+async fn sort_games<'a>(
     connection: &mut SqliteConnection,
     games: Vec<Game>,
     directory: &PathBuf,
@@ -686,12 +686,12 @@ mod test {
             .unwrap();
         }
 
-        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
+        let matches = subcommand().get_matches_from(vec!["sort-roms", "-y"]);
         let all_regions = vec![];
         let one_regions = vec![];
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
@@ -782,7 +782,7 @@ mod test {
         let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
@@ -888,7 +888,7 @@ mod test {
         let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
@@ -994,7 +994,7 @@ mod test {
         let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
@@ -1101,7 +1101,7 @@ mod test {
         let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
@@ -1208,7 +1208,7 @@ mod test {
         let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
 
         // when
-        process_system(
+        sort_system(
             &mut connection,
             &matches,
             &system,
