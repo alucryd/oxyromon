@@ -418,7 +418,7 @@ async fn move_file(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::{set_directory, MUTEX};
+    use super::super::config::MUTEX;
     use super::super::database::*;
     use super::super::embedded;
     use super::super::import_dats::import_dat;
@@ -460,7 +460,6 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -541,7 +540,6 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -629,7 +627,6 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -662,7 +659,7 @@ mod test {
         assert_eq!(game.system_id, system.id);
 
         let rom = roms.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 1).bin");
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
         assert_eq!(rom.game_id, game.id);
 
         let romfile = romfiles.remove(0);
@@ -678,7 +675,7 @@ mod test {
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
         let rom = roms.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 2).bin");
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
         assert_eq!(rom.game_id, game.id);
 
         let rom = roms.remove(0);
@@ -729,7 +726,6 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -809,7 +805,6 @@ mod test {
         )
         .await
         .unwrap();
-        set_directory(&mut connection, "ROM_DIRECTORY", &system_path).await;
 
         let system = find_systems(&mut connection).await.remove(0);
 
