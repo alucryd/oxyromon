@@ -57,7 +57,7 @@ async fn purge_missing_roms(
 
     if count > 0 {
         progress_bar.println(&format!(
-            "Deleted {} missing rom(s) from the database",
+            "Deleted {} missing ROM file(s) from the database",
             count
         ));
     }
@@ -73,6 +73,7 @@ async fn purge_trashed_roms(
     progress_bar.set_message("Processing trashed ROM files");
 
     let romfiles = find_romfiles_in_trash(connection).await;
+    let mut count = 0;
 
     if romfiles.len() > 0 {
         progress_bar.println("Summary:");
@@ -86,7 +87,12 @@ async fn purge_trashed_roms(
                 if romfile_path.is_file().await {
                     remove_file(&romfile_path).await?;
                     delete_romfile_by_id(connection, romfile.id).await;
+                    count += 1;
                 }
+            }
+
+            if count > 0 {
+                progress_bar.println(&format!("Deleted {} trashed ROM file(s)", count));
             }
         }
     }
