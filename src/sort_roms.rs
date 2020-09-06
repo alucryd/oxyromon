@@ -325,16 +325,19 @@ pub async fn sort_system(
     }
 
     if matches.is_present("MISSING") {
-        progress_bar.set_message("Processing missing games");
         let mut game_ids: Vec<i64> = Vec::new();
         game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
         game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
         let missing_roms: Vec<Rom> =
             find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
 
-        progress_bar.println("Missing:");
-        for rom in missing_roms {
-            progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
+        if !missing_roms.is_empty() {
+            progress_bar.println("Missing:");
+            for rom in missing_roms {
+                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
+            }
+        } else {
+            progress_bar.println("No missing ROMs");
         }
     }
 
@@ -375,6 +378,8 @@ pub async fn sort_system(
     // process trash_games
     romfile_moves
         .append(&mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await);
+
+    progress_bar.set_message("");
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
