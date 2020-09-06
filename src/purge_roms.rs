@@ -30,7 +30,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-    if matches.is_present("EMPTY-TRASH") {
+    if matches.is_present("EMPTY_TRASH") {
         purge_trashed_roms(connection, matches, &progress_bar).await?;
     }
 
