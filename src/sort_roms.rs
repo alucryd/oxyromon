@@ -517,7 +517,7 @@ async fn compute_unwanted_regex(
     }
 
     if do_discard(connection, matches, "VIRTUAL_CONSOLE").await {
-        unwanted_keywords.push("([A-z ]+)?Virtual Console");
+        unwanted_keywords.push("([0-9A-z ]+)?Virtual Console");
     }
 
     if do_discard(connection, matches, "WII").await {
