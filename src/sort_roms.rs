@@ -373,27 +373,30 @@ pub async fn sort_system(
     );
 
     // process trash_games
-    romfile_moves.append(
-        &mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await,
-    );
+    romfile_moves
+        .append(&mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await);
 
-    // sort moves and print a summary
-    romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
-    romfile_moves.dedup_by(|a, b| a.1 == b.1);
+    if !romfile_moves.is_empty() {
+        // sort moves and print a summary
+        romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
+        romfile_moves.dedup_by(|a, b| a.1 == b.1);
 
-    progress_bar.println("Summary:");
-    for romfile_move in &romfile_moves {
-        progress_bar.println(&format!("{} -> {}", romfile_move.0.path, romfile_move.1));
-    }
-
-    // prompt user for confirmation
-    if prompt_for_yes_no(matches, progress_bar).await {
-        for romfile_move in romfile_moves {
-            let old_path = Path::new(&romfile_move.0.path).to_path_buf();
-            let new_path = Path::new(&romfile_move.1).to_path_buf();
-            rename_file(&old_path, &new_path).await?;
-            update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
+        progress_bar.println("Summary:");
+        for romfile_move in &romfile_moves {
+            progress_bar.println(&format!("{} -> {}", romfile_move.0.path, romfile_move.1));
         }
+
+        // prompt user for confirmation
+        if prompt_for_yes_no(matches, progress_bar).await {
+            for romfile_move in romfile_moves {
+                let old_path = Path::new(&romfile_move.0.path).to_path_buf();
+                let new_path = Path::new(&romfile_move.1).to_path_buf();
+                rename_file(&old_path, &new_path).await?;
+                update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
+            }
+        }
+    } else {
+        progress_bar.println("Nothing to do");
     }
 
     Ok(())

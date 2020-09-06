@@ -9,7 +9,6 @@ const BYTES_TEMPLATE: &str =
 
 pub fn get_progress_bar(length: u64, style: ProgressStyle) -> ProgressBar {
     let progress_bar = ProgressBar::new(length).with_style(style);
-    progress_bar.enable_steady_tick(100);
     progress_bar
 }
 
