@@ -489,7 +489,7 @@ async fn compute_unwanted_regex(
     }
 
     if do_discard(connection, matches, "DEBUG").await {
-        unwanted_keywords.push("Debug");
+        unwanted_keywords.push("Debug( Version)?");
     }
 
     if do_discard(connection, matches, "DEMO").await {
