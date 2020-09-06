@@ -1,0 +1,11 @@
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION', 'false');
+
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('DISCARD_CLASSIC_MINI', 'false');
+
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('DISCARD_SWITCH_ONLINE', 'false');
+
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('DISCARD_WII', 'false');
