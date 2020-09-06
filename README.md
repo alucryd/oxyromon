@@ -1,4 +1,4 @@
-# oxyromon 0.3.0
+# oxyromon 0.4.0
 
 ### Rusty ROM OrgaNizer
 
@@ -13,8 +13,16 @@ Configuration is done from the command line and settings are stored in the SQLit
 The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 
 Available settings:
-- `ROM_DIRECTORY`: full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
-- `TMP_DIRECTORY`: full path to a temporary directory for file extraction, defaults to [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
+- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `DISCARD_BETA`: Discard beta ROMs
+- `DISCARD_DEBUG`: Discard debug ROMs
+- `DISCARD_DEMO`: Discard demo ROMs
+- `DISCARD_PROGRAM`: Discard program ROMs
+- `DISCARD_PROTO`: Discard prototype ROMs
+- `DISCARD_SAMPLE`: Discard sample ROMs
+- `DISCARD_SEGA_CHANNEL`: Discard Sega Channel ROMs
+- `DISCARD_VIRTUAL_CONSOLE`: Discard Virtual Console ROMs
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -37,8 +45,8 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Write tests
-- Support NKIT and NKIT.GCZ (NKIT is currently broken on Linux for Wii games)
+- Support NKIT and NKIT.GCZ (NKIT is currently broken on Linux for Wii games)?
+- Support RVZ?
 - Have convert-roms optionally handle one game at a time
 
 ## oxyromon

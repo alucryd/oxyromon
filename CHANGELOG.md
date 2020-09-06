@@ -1,4 +1,6 @@
 # 0.4.0
+* Replace diesel with sqlx and refinery
+* Use async_std
 * Add a config subcommand and use the database to store the settings
 * Add unit tests
 
