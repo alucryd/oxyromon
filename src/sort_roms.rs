@@ -500,7 +500,7 @@ async fn compute_unwanted_regex(
     }
 
     if do_discard(connection, matches, "SAMPLE").await {
-        unwanted_keywords.push("Sample");
+        unwanted_keywords.push("Sample( [0-9]+)?");
     }
 
     if do_discard(connection, matches, "SEGA_CHANNEL").await {
