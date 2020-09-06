@@ -475,6 +475,14 @@ async fn compute_unwanted_regex(
         unwanted_keywords.push("Beta( [0-9]+)?");
     }
 
+    if do_discard(connection, matches, "CASTLEVANIA_ANNIVERSARY_COLLECTION").await {
+        unwanted_keywords.push("Castlevania Anniversary Collection");
+    }
+
+    if do_discard(connection, matches, "CLASSIC_MINI").await {
+        unwanted_keywords.push("Classic Mini");
+    }
+
     if do_discard(connection, matches, "DEBUG").await {
         unwanted_keywords.push("Debug");
     }
@@ -499,13 +507,21 @@ async fn compute_unwanted_regex(
         unwanted_keywords.push("Sega Channel");
     }
 
+    if do_discard(connection, matches, "SWITCH_ONLINE").await {
+        unwanted_keywords.push("Switch Online");
+    }
+
     if do_discard(connection, matches, "VIRTUAL_CONSOLE").await {
         unwanted_keywords.push("([A-z ]+)?Virtual Console");
     }
 
+    if do_discard(connection, matches, "WII").await {
+        unwanted_keywords.push("Wii");
+    }
+
     // compile unwanted regex
     if !unwanted_keywords.is_empty() {
-        Some(Regex::new(&format!(r"\((({})(, )?)+\)", unwanted_keywords.join("|"))).unwrap())
+        Some(Regex::new(&format!(r"\(({})(, )?.*\)", unwanted_keywords.join("|"))).unwrap())
     } else {
         None
     }

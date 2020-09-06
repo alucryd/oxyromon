@@ -19,13 +19,17 @@ Available settings:
 - `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
 - `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
 - `DISCARD_BETA`: Discard beta ROMs
+- `DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION`: Discard Castlevania Anniversary Collection ROMs
+- `DISCARD_CLASSIC_MINI`: Discard Classic Mini ROMs
 - `DISCARD_DEBUG`: Discard debug ROMs
 - `DISCARD_DEMO`: Discard demo ROMs
 - `DISCARD_PROGRAM`: Discard program ROMs
 - `DISCARD_PROTO`: Discard prototype ROMs
 - `DISCARD_SAMPLE`: Discard sample ROMs
 - `DISCARD_SEGA_CHANNEL`: Discard Sega Channel ROMs
+- `DISCARD_SWITCH_ONLINE`: Discard Switch Online ROMs
 - `DISCARD_VIRTUAL_CONSOLE`: Discard Virtual Console ROMs
+- `DISCARD_WII`: Discard Wii ROMs
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
