@@ -20,13 +20,24 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          components: clippy
+          override: true
       - name: Install dependencies
         run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools
+      - name: Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          args: --all-features
+      - name: Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release
+          args: --release --all-features
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
       - name: Upload to codecov.io
