@@ -43,7 +43,7 @@ async fn purge_missing_roms(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.set_message("Processing missing ROM files");
+    progress_bar.println("Processing missing ROM files");
 
     let romfiles = find_romfiles(connection).await;
     let mut count = 0;
@@ -70,7 +70,7 @@ async fn purge_trashed_roms(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.set_message("Processing trashed ROM files");
+    progress_bar.println("Processing trashed ROM files");
 
     let romfiles = find_romfiles_in_trash(connection).await;
     let mut count = 0;

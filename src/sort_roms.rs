@@ -211,7 +211,6 @@ pub async fn sort_system(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing {}", system.name));
-    progress_bar.set_message("Processing games");
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = Vec::new();
@@ -378,8 +377,6 @@ pub async fn sort_system(
     // process trash_games
     romfile_moves
         .append(&mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await);
-
-    progress_bar.set_message("");
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary

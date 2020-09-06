@@ -76,16 +76,16 @@ pub async fn import_dat(
     progress_bar.set_length(datafile_xml.games.len() as u64);
 
     // persist everything into the database
-    progress_bar.set_message("Processing system");
+    progress_bar.println("Processing system");
     let system_id = create_or_update_system(connection, &datafile_xml.system).await;
-    progress_bar.set_message("Deleting old games");
+    progress_bar.println("Deleting old games");
     delete_old_games(connection, &datafile_xml.games, system_id).await;
-    progress_bar.set_message("Processing games");
+    progress_bar.println("Processing games");
     create_or_update_games(connection, &datafile_xml.games, system_id, &progress_bar).await;
 
     // parse header file if needed
     if datafile_xml.system.clrmamepro.is_some() {
-        progress_bar.set_message("Processing header");
+        progress_bar.println("Processing header");
         let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
         let header_file_path = dat_path.parent().unwrap().join(header_file_name);
         let header_file = open_file_sync(&header_file_path.into())?;
