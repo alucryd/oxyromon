@@ -10,6 +10,7 @@ readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
 keywords = ["cli", "rom"]
 categories = ["command-line-utilities", "games"]
+exclude = ["test/"]
 
 [dependencies]
 async-std = { version = "1.6.2", features = ["attributes"] }
