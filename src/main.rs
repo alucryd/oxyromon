@@ -42,6 +42,7 @@ use async_std::path::PathBuf;
 use clap::App;
 use database::*;
 use dotenv::dotenv;
+use progress::*;
 use refinery::config::{Config, ConfigDbType};
 use simple_error::SimpleError;
 use util::*;
@@ -80,6 +81,8 @@ async fn main() -> SimpleResult<()> {
             Config::new(ConfigDbType::Sqlite).set_db_path(db_file.as_os_str().to_str().unwrap());
         embedded::migrations::runner().run(&mut config).unwrap();
 
+        let progress_bar = get_progress_bar(0, get_none_progress_style());
+
         match matches.subcommand_name() {
             Some("config") => {
                 config::main(
@@ -92,6 +95,7 @@ async fn main() -> SimpleResult<()> {
                 import_dats::main(
                     &mut connection,
                     &matches.subcommand_matches("import-dats").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }
@@ -99,6 +103,7 @@ async fn main() -> SimpleResult<()> {
                 import_roms::main(
                     &mut connection,
                     &matches.subcommand_matches("import-roms").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }
@@ -106,6 +111,7 @@ async fn main() -> SimpleResult<()> {
                 sort_roms::main(
                     &mut connection,
                     &matches.subcommand_matches("sort-roms").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }
@@ -113,6 +119,7 @@ async fn main() -> SimpleResult<()> {
                 convert_roms::main(
                     &mut connection,
                     &matches.subcommand_matches("convert-roms").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }
@@ -120,6 +127,7 @@ async fn main() -> SimpleResult<()> {
                 purge_roms::main(
                     &mut connection,
                     &matches.subcommand_matches("purge-roms").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }

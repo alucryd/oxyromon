@@ -93,6 +93,49 @@ pub async fn prompt_for_system(
     systems.remove(system_index)
 }
 
+pub async fn prompt_for_roms(roms: Vec<Rom>, all: bool, progress_bar: &ProgressBar) -> Vec<Rom> {
+    progress_bar.println("Please select ROMs (space separated):");
+    for (i, rom) in roms.iter().enumerate() {
+        progress_bar.println(format!("[{}] {}", i, rom.name));
+    }
+
+    if all {
+        return roms;
+    }
+
+    let mut rom_indices: Vec<usize> = vec![roms.len()];
+    let mut input = String::new();
+    let input_validation = Regex::new(r"(\*|[0-9 ]+)").unwrap();
+
+    while rom_indices.iter().any(|i| i >= &roms.len()) {
+        io::stdin()
+            .read_line(&mut input)
+            .await
+            .expect("Failed to get input");
+        input = input.trim().to_owned();
+
+        if !input_validation.is_match(&input) {
+            progress_bar.println("Please select valid ROMs (space separated):");
+            continue;
+        }
+
+        if input == "*" {
+            return roms;
+        }
+
+        rom_indices = input
+            .split(' ')
+            .map(|i| FromStr::from_str(i).unwrap())
+            .collect();
+    }
+
+    roms.into_iter()
+        .enumerate()
+        .filter(|(i, _)| rom_indices.contains(i))
+        .map(|(_, rom)| rom)
+        .collect()
+}
+
 pub async fn prompt_for_rom(roms: &mut Vec<Rom>, progress_bar: &ProgressBar) -> Rom {
     progress_bar.println("Please select a rom:");
     for (i, rom) in roms.iter().enumerate() {

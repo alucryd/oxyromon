@@ -548,6 +548,32 @@ pub async fn find_roms_with_romfile_by_system_id<'a>(
     .expect("Error while finding roms with romfile")
 }
 
+pub async fn find_roms_with_romfile_by_system_id_and_name<'a>(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    name: &str,
+) -> Vec<Rom> {
+    let sql = format!(
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND game_id IN (
+            SELECT id
+            FROM games
+            WHERE system_id = {}
+            AND name LIKE '%{}%'
+        )
+        ORDER BY name
+    ",
+        system_id, name
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .expect("Error while finding roms with romfile")
+}
+
 pub async fn find_roms_with_romfile_by_game_ids<'a>(
     connection: &mut SqliteConnection,
     game_ids: &Vec<i64>,

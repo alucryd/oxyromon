@@ -1,7 +1,7 @@
 ![CI](https://github.com/alucryd/oxyromon/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 
-# oxyromon 0.4.0
+# oxyromon 0.5.0
 
 ### Rusty ROM OrgaNizer
 
@@ -52,9 +52,7 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Support NKIT and NKIT.GCZ (NKIT is currently broken on Linux for Wii games)?
-- Support RVZ?
-- Have convert-roms optionally handle one game at a time
+- Support RVZ
 
 ## oxyromon
 
@@ -149,6 +147,8 @@ Converts ROM files between common formats
 ROMs can be converted back and forth at most one format away from their original format.
 That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive.
 Invoking this command will convert all eligible roms for some or all systems.
+You may optionally filter ROMs by name, the matching string is not case sensitive
+and doesn't need to be the full ROM name.
 
 Supported ROM formats:
 
@@ -159,14 +159,16 @@ Supported ROM formats:
 Note: CHD will be extracted to their original split CUE/BIN when applicable.
 
     USAGE:
-        oxyromon convert-roms [OPTIONS]
+        oxyromon convert-roms [FLAGS] [OPTIONS]
 
     FLAGS:
+        -a, --all        Converts all systems/all ROMs
         -h, --help       Prints help information
         -V, --version    Prints version information
 
     OPTIONS:
         -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
+        -n, --name <NAME>        Selects ROMs by name
 
 ## oxyromon-sort-roms 
 
@@ -192,19 +194,25 @@ In every mode, discarded games are placed in the Trash subdirectory.
         oxyromon sort-roms [FLAGS] [OPTIONS]
 
     FLAGS:
-        -a, --all                   Sorts all systems
-        -m, --missing               Shows missing games
-            --no-beta               Discards beta games
-            --no-debug              Discards debug games
-            --no-demo               Discards demo games
-            --no-program            Discards program games
-            --no-proto              Discards prototype games
-            --no-sample             Discards sample games
-            --no-sega-channel       Discards sega channel games
-            --no-virtual-console    Discards virtual console games
-        -y, --yes                   Automatically says yes to prompts
-        -h, --help                  Prints help information
-        -V, --version               Prints version information
+        -a, --all                        Sorts all systems
+        -m, --missing                    Shows missing games
+            --without-beta               Discards beta games
+            --without-debug              Discards debug games
+            --without-demo               Discards demo games
+            --without-program            Discards program games
+            --without-proto              Discards prototype games
+            --without-sample             Discards sample games
+            --with-beta                  Keeps beta games
+            --with-debug                 Keeps debug games
+            --with-demo                  Keeps demo games
+            --with-program               Keeps program games
+            --with-proto                 Keeps prototype games
+            --with-sample                Keeps sample games
+            --with-sega-channel          Keeps sega channel games
+            --with-virtual-console       Keeps virtual console games
+        -y, --yes                        Automatically says yes to prompts
+        -h, --help                       Prints help information
+        -V, --version                    Prints version information
 
     OPTIONS:
         -g, --1g1r <1G1R>...          Sets the 1G1R regions to keep (ordered)

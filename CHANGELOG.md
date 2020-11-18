@@ -1,3 +1,6 @@
+# 0.5.0
+* Filter ROMs by name in convert-roms
+
 # 0.4.0
 * Replace diesel with sqlx and refinery
 * Use async_std

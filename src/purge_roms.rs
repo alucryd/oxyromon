@@ -1,5 +1,4 @@
 use super::database::*;
-use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -27,9 +26,11 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
-    let progress_bar = get_progress_bar(0, get_none_progress_style());
-
+pub async fn main(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     if matches.is_present("EMPTY_TRASH") {
         purge_trashed_roms(connection, matches, &progress_bar).await?;
     }

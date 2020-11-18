@@ -4,7 +4,6 @@ use super::config::*;
 use super::database::*;
 use super::maxcso::*;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
@@ -30,9 +29,8 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 pub async fn main<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'a>,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let progress_bar = get_progress_bar(0, get_none_progress_style());
-
     let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
     let system = prompt_for_system(connection, &progress_bar).await;
 

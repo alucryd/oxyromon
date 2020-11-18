@@ -34,10 +34,13 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
+pub async fn main(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     let dats: Vec<String> = matches.values_of_lossy("DATS").unwrap();
     let info = matches.is_present("INFO");
-    let progress_bar = get_progress_bar(0, get_none_progress_style());
 
     for dat in dats {
         let dat_path = get_canonicalized_path(&dat).await?;
@@ -331,8 +334,8 @@ mod test {
     use super::super::database::*;
     use super::super::embedded;
     use super::*;
-    use refinery::config::{Config, ConfigDbType};
     use async_std::path::Path;
+    use refinery::config::{Config, ConfigDbType};
     use tempfile::NamedTempFile;
 
     #[async_std::test]

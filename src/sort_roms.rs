@@ -3,7 +3,6 @@ use super::config::*;
 use super::database::*;
 use super::maxcso::*;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
@@ -117,32 +116,6 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .conflicts_with("WITH_SAMPLE"),
         )
         .arg(
-            Arg::with_name("WITH_SEGA_CHANNEL")
-                .long("with-sega-channel")
-                .help("Keeps sega channel games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_SEGA_CHANNEL")
-                .long("without-sega-channel")
-                .help("Discards sega channel games")
-                .required(false)
-                .conflicts_with("WITH_SEGA_CHANNEL"),
-        )
-        .arg(
-            Arg::with_name("WITH_VIRTUAL_CONSOLE")
-                .long("with-virtual-console")
-                .help("Keeps virtual console games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_VIRTUAL_CONSOLE")
-                .long("without-virtual-console")
-                .help("Discards virtual console games")
-                .required(false)
-                .conflicts_with("WITH_VIRTUAL_CONSOLE"),
-        )
-        .arg(
             Arg::with_name("MISSING")
                 .short("m")
                 .long("missing")
@@ -165,9 +138,11 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
-    let progress_bar = get_progress_bar(0, get_none_progress_style());
-
+pub async fn main(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
 
     // unordered regions to keep
