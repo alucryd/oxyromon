@@ -2,7 +2,7 @@ name: CD
 
 on:
   release:
-    types: [created]
+    types: [created, edited]
 
 jobs:
   release:
@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Build and release
-        uses: Douile/rust-build.action@v0.1.7
+        uses: Douile/rust-build.action@v0.1.11
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           RUSTTARGET: ${{matrix.target}}
