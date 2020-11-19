@@ -45,9 +45,9 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main<'a>(
+pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'a>,
+    matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
@@ -76,7 +76,11 @@ pub async fn main<'a>(
 
         let romfiles = find_romfiles_by_ids(
             connection,
-            &roms.iter().map(|rom| rom.romfile_id.unwrap()).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.romfile_id.unwrap())
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
 
@@ -172,13 +176,13 @@ async fn to_archive(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let mut archive_path = Path::new(&romfile.path).to_path_buf();
 
-            extract_files_from_archive(&archive_path, &vec![&rom.name], &tmp_path, &progress_bar)?;
+            extract_files_from_archive(&archive_path, &[&rom.name], &tmp_path, &progress_bar)?;
             remove_file(&archive_path).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
             });
-            add_files_to_archive(&archive_path, &vec![&rom.name], &tmp_path, &progress_bar)?;
+            add_files_to_archive(&archive_path, &[&rom.name], &tmp_path, &progress_bar)?;
             update_romfile(
                 connection,
                 romfile.id,
@@ -221,8 +225,11 @@ async fn to_archive(
     }
 
     // convert others
-    let games =
-        find_games_by_ids(connection, &others.keys().map(|game_id| *game_id).collect()).await;
+    let games = find_games_by_ids(
+        connection,
+        &others.keys().copied().collect::<Vec<i64>>().as_slice(),
+    )
+    .await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
 
     for (game_id, roms) in others {
@@ -237,7 +244,7 @@ async fn to_archive(
             });
             let archive_path = directory.join(archive_name);
 
-            add_files_to_archive(&archive_path, &vec![&rom.name], &directory, &progress_bar)?;
+            add_files_to_archive(&archive_path, &[&rom.name], &directory, &progress_bar)?;
             update_romfile(
                 connection,
                 romfile.id,

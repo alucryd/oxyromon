@@ -45,7 +45,7 @@ pub fn parse_archive(
             line.starts_with("Path =") || line.starts_with("Size =") || line.starts_with("CRC =")
         })
         .skip(1) // the first line is the archive itself
-        .map(|line| line.split("=").last().unwrap().trim()) // keep only the rhs
+        .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
         .collect();
 
     // each chunk will have the path, size and crc respectively
@@ -54,7 +54,7 @@ pub fn parse_archive(
         let sevenzip_info = ArchiveInfo {
             path: String::from(info.get(0).unwrap().to_owned()),
             size: FromStr::from_str(info.get(1).unwrap()).unwrap(),
-            crc: String::from(info.get(2).unwrap().to_owned().to_lowercase()),
+            crc: info.get(2).unwrap().to_owned().to_lowercase(),
         };
         sevenzip_infos.push(sevenzip_info);
     }
@@ -88,7 +88,7 @@ pub fn rename_file_in_archive(
 
 pub fn extract_files_from_archive(
     archive_path: &PathBuf,
-    file_names: &Vec<&str>,
+    file_names: &[&str],
     directory: &Path,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<PathBuf>> {
@@ -115,7 +115,7 @@ pub fn extract_files_from_archive(
 
 pub fn add_files_to_archive(
     archive_path: &PathBuf,
-    file_names: &Vec<&str>,
+    file_names: &[&str],
     directory: &Path,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {

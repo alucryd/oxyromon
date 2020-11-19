@@ -180,8 +180,8 @@ pub async fn sort_system(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     system: &System,
-    all_regions: &Vec<&str>,
-    one_regions: &Vec<&str>,
+    all_regions: &[&str],
+    one_regions: &[&str],
     unwanted_regex: &Option<Regex>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
@@ -221,15 +221,12 @@ pub async fn sort_system(
             games.insert(0, parent);
 
             // trim unwanted games
-            match unwanted_regex.as_ref() {
-                Some(unwanted_regex) => {
-                    let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                        .into_par_iter()
-                        .partition(|game| unwanted_regex.find(&game.name).is_some());
-                    trash_games.append(&mut unwanted_games);
-                    games = regular_games;
-                }
-                None => (),
+            if let Some(unwanted_regex) = unwanted_regex.as_ref() {
+                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
+                    .into_par_iter()
+                    .partition(|game| unwanted_regex.find(&game.name).is_some());
+                trash_games.append(&mut unwanted_games);
+                games = regular_games;
             }
 
             // find the one game we want to keep, if any
@@ -259,15 +256,12 @@ pub async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        match unwanted_regex.as_ref() {
-            Some(unwanted_regex) => {
-                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                    .into_par_iter()
-                    .partition(|game| unwanted_regex.find(&game.name).is_some());
-                trash_games.append(&mut unwanted_games);
-                games = regular_games;
-            }
-            None => (),
+        if let Some(unwanted_regex) = unwanted_regex.as_ref() {
+            let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
+                .into_par_iter()
+                .partition(|game| unwanted_regex.find(&game.name).is_some());
+            trash_games.append(&mut unwanted_games);
+            games = regular_games;
         }
 
         for game in games {
@@ -284,15 +278,12 @@ pub async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        match unwanted_regex.as_ref() {
-            Some(unwanted_regex) => {
-                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                    .into_par_iter()
-                    .partition(|game| unwanted_regex.find(&game.name).is_some());
-                trash_games.append(&mut unwanted_games);
-                games = regular_games;
-            }
-            None => (),
+        if let Some(unwanted_regex) = unwanted_regex.as_ref() {
+            let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
+                .into_par_iter()
+                .partition(|game| unwanted_regex.find(&game.name).is_some());
+            trash_games.append(&mut unwanted_games);
+            games = regular_games;
         }
 
         all_regions_games.append(&mut games);
@@ -319,7 +310,7 @@ pub async fn sort_system(
     let all_regions_directory = get_rom_directory(connection).await.join(&system.name);
     let one_region_directory = all_regions_directory.join("1G1R");
     let trash_directory = all_regions_directory.join("Trash");
-    for d in vec![
+    for d in &[
         &all_regions_directory,
         &one_region_directory,
         &trash_directory,
@@ -387,9 +378,15 @@ async fn sort_games<'a>(
 ) -> Vec<(&'a Romfile, String)> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
-    let roms =
-        find_roms_with_romfile_by_game_ids(connection, &games.iter().map(|game| game.id).collect())
-            .await;
+    let roms = find_roms_with_romfile_by_game_ids(
+        connection,
+        &games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>()
+            .as_slice(),
+    )
+    .await;
 
     let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
@@ -415,14 +412,14 @@ async fn sort_games<'a>(
                             .to_str()
                             .unwrap(),
                     );
-                    return (romfile, new_path);
+                    (romfile, new_path)
                 })
                 .filter(|(romfile, new_path)| &romfile.path != new_path)
                 .collect(),
         );
     }
 
-    return romfile_moves;
+    romfile_moves
 }
 
 async fn do_discard(

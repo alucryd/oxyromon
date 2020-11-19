@@ -76,7 +76,7 @@ async fn purge_trashed_roms(
     let romfiles = find_romfiles_in_trash(connection).await;
     let mut count = 0;
 
-    if romfiles.len() > 0 {
+    if !romfiles.is_empty() {
         progress_bar.println("Summary:");
         for romfile in &romfiles {
             progress_bar.println(&romfile.path);

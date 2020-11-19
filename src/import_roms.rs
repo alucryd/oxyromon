@@ -26,9 +26,9 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main<'a>(
+pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'a>,
+    matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
@@ -141,7 +141,7 @@ async fn import_archive(
         if header.is_some() || sevenzip_info.crc == "" {
             let extracted_path = extract_files_from_archive(
                 rom_path,
-                &vec![&sevenzip_info.path],
+                &[&sevenzip_info.path],
                 &tmp_path,
                 &progress_bar,
             )?
@@ -185,7 +185,7 @@ async fn import_archive(
 
             let extracted_path = extract_files_from_archive(
                 rom_path,
-                &vec![&sevenzip_info.path],
+                &[&sevenzip_info.path],
                 &tmp_path,
                 &progress_bar,
             )?
@@ -482,7 +482,11 @@ mod test {
         assert_eq!(romfiles.len(), 1);
         let mut games = find_games_by_ids(
             &mut connection,
-            &roms.iter().map(|rom| rom.game_id).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.game_id)
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
         assert_eq!(games.len(), 1);
@@ -562,7 +566,11 @@ mod test {
         assert_eq!(romfiles.len(), 1);
         let mut games = find_games_by_ids(
             &mut connection,
-            &roms.iter().map(|rom| rom.game_id).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.game_id)
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
         assert_eq!(games.len(), 1);
@@ -648,7 +656,11 @@ mod test {
         assert_eq!(romfiles.len(), 2);
         let mut games = find_games_by_ids(
             &mut connection,
-            &roms.iter().map(|rom| rom.game_id).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.game_id)
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
         assert_eq!(games.len(), 1);
@@ -755,7 +767,11 @@ mod test {
         assert_eq!(romfiles.len(), 1);
         let mut games = find_games_by_ids(
             &mut connection,
-            &roms.iter().map(|rom| rom.game_id).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.game_id)
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
         assert_eq!(games.len(), 1);
@@ -834,7 +850,11 @@ mod test {
         assert_eq!(romfiles.len(), 1);
         let mut games = find_games_by_ids(
             &mut connection,
-            &roms.iter().map(|rom| rom.game_id).collect(),
+            &roms
+                .iter()
+                .map(|rom| rom.game_id)
+                .collect::<Vec<i64>>()
+                .as_slice(),
         )
         .await;
         assert_eq!(games.len(), 1);

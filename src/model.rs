@@ -47,8 +47,7 @@ pub struct Rom {
     pub romfile_id: Option<i64>,
 }
 
-#[derive(sqlx::FromRow)]
-#[derive(PartialEq)]
+#[derive(sqlx::FromRow, PartialEq)]
 pub struct Romfile {
     pub id: i64,
     pub path: String,

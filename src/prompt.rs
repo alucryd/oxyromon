@@ -174,7 +174,7 @@ pub async fn prompt_for_yes_no(matches: &ArgMatches<'_>, progress_bar: &Progress
             .read_line(&mut input)
             .await
             .expect("Failed to get input");
-        input = input.trim().to_lowercase().to_owned();
+        input = input.trim().to_lowercase();
     }
     input == "y"
 }

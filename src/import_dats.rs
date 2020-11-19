@@ -147,7 +147,7 @@ fn get_regions_from_game_name<'a>(name: &str) -> Vec<&'a str> {
             regions.append(&mut regions_vec.clone());
         }
     }
-    regions.sort();
+    regions.sort_unstable();
     regions.dedup();
     regions
 }
@@ -180,7 +180,7 @@ async fn create_or_update_header(
 
 async fn delete_old_games(
     connection: &mut SqliteConnection,
-    games_xml: &Vec<GameXml>,
+    games_xml: &[GameXml],
     system_id: i64,
 ) {
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
@@ -198,7 +198,7 @@ async fn delete_old_games(
 
 async fn create_or_update_games(
     connection: &mut SqliteConnection,
-    games_xml: &Vec<GameXml>,
+    games_xml: &[GameXml],
     system_id: i64,
     progress_bar: &ProgressBar,
 ) {
@@ -291,7 +291,7 @@ async fn create_or_update_games(
 
 async fn create_or_update_releases(
     connection: &mut SqliteConnection,
-    releases_xml: &Vec<ReleaseXml>,
+    releases_xml: &[ReleaseXml],
     game_id: i64,
 ) {
     for release_xml in releases_xml {
@@ -314,7 +314,7 @@ async fn create_or_update_releases(
 
 async fn create_or_update_roms(
     connection: &mut SqliteConnection,
-    roms_xml: &Vec<RomXml>,
+    roms_xml: &[RomXml],
     game_id: i64,
 ) {
     for rom_xml in roms_xml {

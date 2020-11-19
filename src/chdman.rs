@@ -37,7 +37,7 @@ pub fn create_chd(cue_path: &PathBuf, progress_bar: &ProgressBar) -> SimpleResul
 pub async fn extract_chd(
     chd_path: &PathBuf,
     directory: &Path,
-    bin_names_sizes: &Vec<(&str, u64)>,
+    bin_names_sizes: &[(&str, u64)],
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting CHD");
