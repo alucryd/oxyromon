@@ -146,7 +146,10 @@ pub async fn set_directory(connection: &mut SqliteConnection, key: &str, value: 
 
 pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Option<PathBuf> {
     match find_setting_by_key(connection, &key).await {
-        Some(p) => Some(get_canonicalized_path(&p.value.unwrap()).await.unwrap()),
+        Some(p) => match get_canonicalized_path(&p.value.unwrap()).await {
+            Ok(path) => Some(path),
+            Err(_) => None,
+        },
         None => None,
     }
 }
@@ -220,5 +223,47 @@ cfg_if::cfg_if! {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::super::embedded;
+    use super::*;
+    use async_std::fs;
+    use async_std::path::{Path, PathBuf};
+    use async_std::sync::Mutex;
+    use refinery::config::{Config, ConfigDbType};
+    use tempfile::{NamedTempFile, TempDir};
+
+    #[async_std::test]
+    async fn test_set_directory_when_missing() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut config =
+            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
+        embedded::migrations::runner().run(&mut config).unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let old_directory = PathBuf::from(&tmp_directory.path()).join("old");
+        create_directory(&old_directory).await.unwrap();
+        set_directory(&mut connection, "TEST_DIRECTORY", &old_directory).await;
+        fs::remove_dir_all(&old_directory).await.unwrap();
+
+        // when
+        get_directory(&mut connection, "TEST_DIRECTORY").await;
+        let new_directory = PathBuf::from(&tmp_directory.path()).join("new");
+        create_directory(&new_directory).await.unwrap();
+        set_directory(&mut connection, "TEST_DIRECTORY", &new_directory).await;
+
+        // then
+        let directory = get_directory(&mut connection, "TEST_DIRECTORY").await;
+        assert!(directory.is_some());
+        assert!(&directory.unwrap().as_os_str() == &new_directory.as_os_str());
     }
 }
