@@ -252,6 +252,7 @@ mod test {
     use async_std::path::Path;
     use async_std::prelude::*;
     use async_std::sync::Mutex;
+    use std::env;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -442,6 +443,14 @@ mod test {
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
         let test_directory = Path::new("test");
+        env::set_var(
+            "PATH",
+            format!(
+                "{}:{}",
+                test_directory.as_os_str().to_str().unwrap(),
+                env::var("PATH").unwrap()
+            ),
+        );
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();

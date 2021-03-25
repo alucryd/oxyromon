@@ -30,10 +30,6 @@ simple-error = "0.2.3"
 sqlx = { version = "0.5.1", features = ["migrate", "offline", "runtime-async-std-native-tls", "sqlite"] }
 tempfile = "3.2.0"
 
-[target.'cfg(windows)'.dependencies.libsqlite3-sys]
-version = "0.20.1"
-features = ["bundled"]
-
 [[bin]]
 name = "oxyromon"
 path = "src/main.rs"
