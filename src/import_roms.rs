@@ -70,7 +70,10 @@ pub async fn import_rom(
         .unwrap()
         .to_lowercase();
 
-    progress_bar.println(&format!("Processing {:?}", romfile_path.file_name().unwrap()));
+    progress_bar.println(&format!(
+        "Processing {:?}",
+        romfile_path.file_name().unwrap()
+    ));
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         import_archive(
@@ -138,7 +141,7 @@ async fn import_archive(
         let sevenzip_info = sevenzip_infos.get(0).unwrap();
 
         // system has a header or crc is absent
-        if header.is_some() || sevenzip_info.crc == "" {
+        if header.is_some() || sevenzip_info.crc.is_empty() {
             let extracted_path = extract_files_from_archive(
                 romfile_path,
                 &[&sevenzip_info.path],
@@ -192,7 +195,7 @@ async fn import_archive(
             .remove(0);
 
             // system has a header or crc is absent
-            if header.is_some() || sevenzip_info.crc == "" {
+            if header.is_some() || sevenzip_info.crc.is_empty() {
                 let size_crc =
                     get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1).await?;
                 size = size_crc.0;

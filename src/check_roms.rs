@@ -154,7 +154,7 @@ async fn check_archive(
     for sevenzip_info in sevenzip_infos {
         let size: u64;
         let crc: String;
-        if header.is_some() || sevenzip_info.crc == "" {
+        if header.is_some() || sevenzip_info.crc.is_empty() {
             let tmp_directory = create_tmp_directory(connection).await?;
             let tmp_path = PathBuf::from(&tmp_directory.path());
             let extracted_path = extract_files_from_archive(
