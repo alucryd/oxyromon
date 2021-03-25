@@ -84,9 +84,9 @@ pub async fn get_file_size_and_crc(
             .iter()
             .map(|b| format!("{:x}", b))
             .collect();
-        let hex_value = hex_values.join("").to_uppercase();
+        let hex_value = hex_values.join("").to_lowercase();
 
-        if hex_value.starts_with(&header.hex_value.to_uppercase()) {
+        if hex_value.starts_with(&header.hex_value.to_lowercase()) {
             size -= header.size as u64;
         } else {
             try_with!(f.seek(std::io::SeekFrom::Start(0)), "Failed to seek file");
@@ -104,6 +104,6 @@ pub async fn get_file_size_and_crc(
         io::copy(&mut progress_bar.wrap_read(f), &mut digest),
         "Failed to copy data"
     );
-    let crc = format!("{:08x}", digest.finalize()).to_uppercase();
+    let crc = format!("{:08x}", digest.finalize()).to_lowercase();
     Ok((size, crc))
 }

@@ -1,7 +1,7 @@
-![CI](https://github.com/alucryd/oxyromon/workflows/CI/badge.svg)
+![CI](https://github.com/alucryd/oxyromon/workflows/continuous-integration/badge.svg)
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 
-# oxyromon 0.5.0
+# oxyromon 0.6.0
 
 ### Rusty ROM OrgaNizer
 
@@ -13,11 +13,14 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
-The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+The database itself is stored in `${data_dir}/oxyromon` as defined in the
+[dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 
 Available settings:
-- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
-- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
+[dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
+- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
+[temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
 - `DISCARD_BETA`: Discard beta ROMs
 - `DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION`: Discard Castlevania Anniversary Collection ROMs
 - `DISCARD_CLASSIC_MINI`: Discard Classic Mini ROMs
@@ -70,6 +73,7 @@ These should be in your `${PATH}` for extra features.
         import-roms     Validates and imports ROM files into oxyromon
         sort-roms       Sorts ROM files according to region and version preferences
         convert-roms    Converts ROM files between common formats
+        check-roms      Checks ROM files integrity
         purge-roms      Purges deleted or moved ROM files
 
 ## oxyromon-config
@@ -140,36 +144,6 @@ Note: Importing a CHD requires the matching CUE file from Redump.
     ARGS:
         <ROMS>...    Sets the rom files to import
 
-## oxyromon-convert-roms
-
-Converts ROM files between common formats
-
-ROMs can be converted back and forth at most one format away from their original format.
-That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive.
-Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter ROMs by name, the matching string is not case sensitive
-and doesn't need to be the full ROM name.
-
-Supported ROM formats:
-
-* All No-Intro and Redump supported formats <-> 7Z and ZIP archives
-* CUE/BIN <-> CHD (Compressed Hunks of Data)
-* ISO <-> CSO (Compressed ISO)
-
-Note: CHD will be extracted to their original split CUE/BIN when applicable.
-
-    USAGE:
-        oxyromon convert-roms [FLAGS] [OPTIONS]
-
-    FLAGS:
-        -a, --all        Converts all systems/all ROMs
-        -h, --help       Prints help information
-        -V, --version    Prints version information
-
-    OPTIONS:
-        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
-        -n, --name <NAME>        Selects ROMs by name
-
 ## oxyromon-sort-roms 
 
 Sorts ROM files according to region and version preferences
@@ -183,12 +157,16 @@ Supported modes:
 - 1G1R mode
 - Hybrid mode
 
-In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the system.
-In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of precedence.
-In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base directory.
+In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
+system.
+In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
+precedence.
+In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
+directory.
 In every mode, discarded games are placed in the Trash subdirectory.
 
-1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will actually play, while keeping original Japanese games for translation patches and other hacks.
+1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
+actually play, while keeping original Japanese games for translation patches and other hacks.
 
     USAGE:
         oxyromon sort-roms [FLAGS] [OPTIONS]
@@ -218,11 +196,57 @@ In every mode, discarded games are placed in the Trash subdirectory.
         -g, --1g1r <1G1R>...          Sets the 1G1R regions to keep (ordered)
         -r, --regions <REGIONS>...    Sets the regions to keep (unordered)
 
+## oxyromon-convert-roms
+
+Converts ROM files between common formats
+
+ROMs can be converted back and forth at most one format away from their original format.
+That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive.
+Invoking this command will convert all eligible roms for some or all systems.
+You may optionally filter ROMs by name, the matching string is not case sensitive and doesn't need to be the full ROM
+name.
+
+Supported ROM formats:
+
+* All No-Intro and Redump supported formats <-> 7Z and ZIP archives
+* CUE/BIN <-> CHD (Compressed Hunks of Data)
+* ISO <-> CSO (Compressed ISO)
+
+Note: CHD will be extracted to their original split CUE/BIN when applicable.
+
+    USAGE:
+        oxyromon convert-roms [FLAGS] [OPTIONS]
+
+    FLAGS:
+        -a, --all        Converts all systems/all ROMs
+        -h, --help       Prints help information
+        -V, --version    Prints version information
+
+    OPTIONS:
+        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
+        -n, --name <NAME>        Selects ROMs by name
+
+## oxyromon-check-roms
+
+Checks ROM files integrity
+
+This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
+
+    USAGE:
+        oxyromon check-roms [FLAGS]
+
+    FLAGS:
+        -a, --all        Checks all systems
+        -y, --yes        Automatically says yes to prompts
+        -h, --help       Prints help information
+        -V, --version    Prints version information
+
 ## oxyromon-purge-roms 
 
 Purges trashed and missing ROM files
 
-This will purge the database from every ROM file that has gone missing, as well as optionally delete all games in the Trash subdirectories.
+This will purge the database from every ROM file that has gone missing, as well as optionally delete all games in the
+Trash subdirectories.
 
     USAGE:
         oxyromon purge-roms [FLAGS]

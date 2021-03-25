@@ -31,7 +31,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let roms: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
+    let romfile_paths: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
     let system = prompt_for_system(connection, &progress_bar).await;
 
     let header = find_header_by_system_id(connection, system.id).await;
@@ -39,14 +39,14 @@ pub async fn main(
     let system_directory = get_rom_directory(connection).await.join(&system.name);
     create_directory(&system_directory).await?;
 
-    for rom in roms {
-        let rom_path = get_canonicalized_path(&rom).await?;
+    for romfile_path in romfile_paths {
+        let romfile_path = get_canonicalized_path(&romfile_path).await?;
         import_rom(
             connection,
             &system_directory,
             &system,
             &header,
-            &rom_path,
+            &romfile_path,
             &progress_bar,
         )
         .await?;
@@ -60,46 +60,49 @@ pub async fn import_rom(
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
-    rom_path: &PathBuf,
+    romfile_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let rom_extension = rom_path
+    let romfile_extension = romfile_path
         .extension()
         .unwrap()
         .to_str()
         .unwrap()
         .to_lowercase();
 
-    progress_bar.println(&format!("Processing {:?}", rom_path.file_name().unwrap()));
+    progress_bar.println(&format!(
+        "Processing {:?}",
+        romfile_path.file_name().unwrap()
+    ));
 
-    if ARCHIVE_EXTENSIONS.contains(&rom_extension.as_str()) {
+    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         import_archive(
             connection,
             &system_directory,
             &system,
             &header,
-            &rom_path,
-            &rom_extension,
+            &romfile_path,
+            &romfile_extension,
             &progress_bar,
         )
         .await?;
-    } else if CHD_EXTENSION == rom_extension {
+    } else if CHD_EXTENSION == romfile_extension {
         import_chd(
             connection,
             &system_directory,
             &system,
             &header,
-            &rom_path,
+            &romfile_path,
             &progress_bar,
         )
         .await?;
-    } else if CSO_EXTENSION == rom_extension {
+    } else if CSO_EXTENSION == romfile_extension {
         import_cso(
             connection,
             &system_directory,
             &system,
             &header,
-            &rom_path,
+            &romfile_path,
             &progress_bar,
         )
         .await?;
@@ -109,7 +112,7 @@ pub async fn import_rom(
             &system_directory,
             &system,
             &header,
-            &rom_path,
+            &romfile_path,
             &progress_bar,
         )
         .await?;
@@ -123,13 +126,13 @@ async fn import_archive(
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
-    rom_path: &PathBuf,
-    rom_extension: &str,
+    romfile_path: &PathBuf,
+    romfile_extension: &str,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let tmp_path = PathBuf::from(&tmp_directory.path());
-    let sevenzip_infos = parse_archive(rom_path, &progress_bar)?;
+    let sevenzip_infos = parse_archive(romfile_path, &progress_bar)?;
 
     // archive contains a single file
     if sevenzip_infos.len() == 1 {
@@ -138,9 +141,9 @@ async fn import_archive(
         let sevenzip_info = sevenzip_infos.get(0).unwrap();
 
         // system has a header or crc is absent
-        if header.is_some() || sevenzip_info.crc == "" {
+        if header.is_some() || sevenzip_info.crc.is_empty() {
             let extracted_path = extract_files_from_archive(
-                rom_path,
+                romfile_path,
                 &[&sevenzip_info.path],
                 &tmp_path,
                 &progress_bar,
@@ -163,16 +166,16 @@ async fn import_archive(
 
         let mut new_name = OsString::from(&rom.name);
         new_name.push(".");
-        new_name.push(&rom_extension);
+        new_name.push(&romfile_extension);
         let new_path = system_directory.join(&new_name);
 
         // move file inside archive if needed
         if sevenzip_info.path != rom.name {
-            rename_file_in_archive(rom_path, &sevenzip_info.path, &rom.name, &progress_bar)?;
+            rename_file_in_archive(romfile_path, &sevenzip_info.path, &rom.name, &progress_bar)?;
         }
 
         // move archive if needed
-        move_file(rom_path, &new_path, &progress_bar).await?;
+        move_file(romfile_path, &new_path, &progress_bar).await?;
 
         // persist in database
         create_or_update_romfile(connection, &new_path, &rom).await;
@@ -184,7 +187,7 @@ async fn import_archive(
             let crc: String;
 
             let extracted_path = extract_files_from_archive(
-                rom_path,
+                romfile_path,
                 &[&sevenzip_info.path],
                 &tmp_path,
                 &progress_bar,
@@ -192,7 +195,7 @@ async fn import_archive(
             .remove(0);
 
             // system has a header or crc is absent
-            if header.is_some() || sevenzip_info.crc == "" {
+            if header.is_some() || sevenzip_info.crc.is_empty() {
                 let size_crc =
                     get_file_size_and_crc(&extracted_path, &header, &progress_bar, 1, 1).await?;
                 size = size_crc.0;
@@ -212,7 +215,7 @@ async fn import_archive(
 
             let mut new_path = system_directory.join(&rom.name);
             new_path.push(".");
-            new_path.push(&rom_extension);
+            new_path.push(&romfile_extension);
 
             // move file
             move_file(&extracted_path, &new_path, &progress_bar).await?;
@@ -222,7 +225,7 @@ async fn import_archive(
         }
 
         // delete archive
-        remove_file(rom_path).await?;
+        remove_file(romfile_path).await?;
     }
 
     Ok(())
@@ -233,12 +236,12 @@ async fn import_chd(
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
-    rom_path: &PathBuf,
+    romfile_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let tmp_path = PathBuf::from(&tmp_directory.path());
-    let mut cue_path = rom_path.clone();
+    let mut cue_path = romfile_path.clone();
     cue_path.set_extension(CUE_EXTENSION);
 
     if !cue_path.is_file().await {
@@ -262,7 +265,7 @@ async fn import_chd(
         .iter()
         .map(|rom| (rom.name.as_str(), rom.size as u64))
         .collect();
-    let bin_paths = extract_chd(rom_path, &tmp_path, &names_sizes, &progress_bar).await?;
+    let bin_paths = extract_chd(romfile_path, &tmp_path, &names_sizes, &progress_bar).await?;
     let mut crcs: Vec<String> = Vec::new();
     for (i, bin_path) in bin_paths.iter().enumerate() {
         let (_, crc) =
@@ -276,18 +279,18 @@ async fn import_chd(
         return Ok(());
     }
 
-    let new_meta_path = system_directory.join(&cue_rom.name);
-    let mut new_file_path = new_meta_path.clone();
-    new_file_path.set_extension(CHD_EXTENSION);
+    let new_cue_path = system_directory.join(&cue_rom.name);
+    let mut new_chd_path = new_cue_path.clone();
+    new_chd_path.set_extension(CHD_EXTENSION);
 
     // move cue and chd if needed
-    move_file(&cue_path, &new_meta_path, &progress_bar).await?;
-    move_file(rom_path, &new_file_path, &progress_bar).await?;
+    move_file(&cue_path, &new_cue_path, &progress_bar).await?;
+    move_file(romfile_path, &new_chd_path, &progress_bar).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_meta_path, &cue_rom).await;
+    create_or_update_romfile(connection, &new_cue_path, &cue_rom).await;
     for rom in roms {
-        create_or_update_romfile(connection, &new_file_path, &rom).await;
+        create_or_update_romfile(connection, &new_chd_path, &rom).await;
     }
 
     Ok(())
@@ -298,12 +301,12 @@ async fn import_cso(
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
-    rom_path: &PathBuf,
+    romfile_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let tmp_path = PathBuf::from(&tmp_directory.path());
-    let iso_path = extract_cso(rom_path, &tmp_path, &progress_bar)?;
+    let iso_path = extract_cso(romfile_path, &tmp_path, &progress_bar)?;
     let (size, crc) = get_file_size_and_crc(&iso_path, &header, &progress_bar, 1, 1).await?;
     remove_file(&iso_path).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
@@ -311,14 +314,14 @@ async fn import_cso(
         None => return Ok(()),
     };
 
-    let mut new_file_path = system_directory.join(&rom.name);
-    new_file_path.set_extension(CSO_EXTENSION);
+    let mut new_cso_path = system_directory.join(&rom.name);
+    new_cso_path.set_extension(CSO_EXTENSION);
 
     // move CSO if needed
-    move_file(rom_path, &new_file_path, &progress_bar).await?;
+    move_file(romfile_path, &new_cso_path, &progress_bar).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_file_path, &rom).await;
+    create_or_update_romfile(connection, &new_cso_path, &rom).await;
 
     Ok(())
 }
@@ -328,10 +331,10 @@ async fn import_other(
     system_directory: &PathBuf,
     system: &System,
     header: &Option<Header>,
-    rom_path: &PathBuf,
+    romfile_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let (size, crc) = get_file_size_and_crc(rom_path, &header, &progress_bar, 1, 1).await?;
+    let (size, crc) = get_file_size_and_crc(romfile_path, &header, &progress_bar, 1, 1).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
         None => return Ok(()),
@@ -340,7 +343,7 @@ async fn import_other(
     let new_path = system_directory.join(&rom.name);
 
     // move file if needed
-    move_file(rom_path, &new_path, &progress_bar).await?;
+    move_file(romfile_path, &new_path, &progress_bar).await?;
 
     // persist in database
     create_or_update_romfile(connection, &new_path, &rom).await;
@@ -418,13 +421,11 @@ async fn move_file(
 mod test {
     use super::super::config::MUTEX;
     use super::super::database::*;
-    use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::*;
     use async_std::fs;
     use async_std::path::Path;
     use async_std::sync::Mutex;
-    use refinery::config::{Config, ConfigDbType};
     use std::env;
     use tempfile::{NamedTempFile, TempDir};
 
@@ -437,9 +438,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -521,9 +519,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -605,9 +600,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -723,9 +715,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -806,9 +795,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");

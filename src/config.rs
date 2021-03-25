@@ -228,12 +228,10 @@ cfg_if::cfg_if! {
 
 #[cfg(test)]
 mod test {
-    use super::super::embedded;
     use super::*;
     use async_std::fs;
     use async_std::path::{Path, PathBuf};
     use async_std::sync::Mutex;
-    use refinery::config::{Config, ConfigDbType};
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -244,9 +242,6 @@ mod test {
         let test_directory = Path::new("test");
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
