@@ -1,3 +1,7 @@
+# 0.6.0
+* Replace refinery with sqlx migrate
+* Add a check-roms subcommand
+
 # 0.5.0
 * Filter ROMs by name in convert-roms
 

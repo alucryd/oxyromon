@@ -299,7 +299,7 @@ pub async fn sort_system(
         if !missing_roms.is_empty() {
             progress_bar.println("Missing:");
             for rom in missing_roms {
-                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc.to_uppercase()));
+                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc));
             }
         } else {
             progress_bar.println("No missing ROMs");
@@ -543,23 +543,18 @@ fn get_new_path(
 mod test {
     use super::super::config::{set_bool, set_rom_directory, MUTEX};
     use super::super::database::*;
-    use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::super::import_roms::import_rom;
     use super::super::util::*;
     use super::*;
     use async_std::fs;
     use async_std::sync::Mutex;
-    use refinery::config::{Config, ConfigDbType};
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
     async fn test_do_discard_with_flag_should_return_false() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = subcommand().get_matches_from(vec!["config", "--with-beta"]);
@@ -575,9 +570,6 @@ mod test {
     async fn test_do_discard_without_flag_should_return_true() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = subcommand().get_matches_from(vec!["config", "--without-beta"]);
@@ -593,9 +585,6 @@ mod test {
     async fn test_do_discard_no_flag_should_return_false_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = subcommand().get_matches_from(vec!["config"]);
@@ -611,9 +600,6 @@ mod test {
     async fn test_do_discard_no_flag_should_return_true_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = subcommand().get_matches_from(vec!["config"]);
@@ -635,9 +621,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -725,9 +708,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -831,9 +811,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -937,9 +914,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (Parent-Clone).dat");
@@ -1044,9 +1018,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1151,9 +1122,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (Parent-Clone).dat");

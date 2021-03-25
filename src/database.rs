@@ -3,8 +3,11 @@ use rayon::prelude::*;
 use sqlx::prelude::*;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
 use sqlx::SqliteConnection;
+use sqlx::migrate::Migrator;
 use std::convert::TryFrom;
 use std::str::FromStr;
+
+static MIGRATOR: Migrator = sqlx::migrate!();
 
 pub async fn establish_connection(url: &str) -> SqliteConnection {
     let mut connection: SqliteConnection = SqliteConnectOptions::from_str(url)
@@ -26,6 +29,11 @@ pub async fn establish_connection(url: &str) -> SqliteConnection {
         )
         .await
         .expect("Failed to setup the database");
+
+    MIGRATOR
+        .run(&mut connection)
+        .await
+        .expect("Failed to run database migrations");
 
     connection
 }
@@ -387,9 +395,9 @@ pub async fn create_rom<'a>(
     rom_xml: &RomXml,
     game_id: i64,
 ) -> i64 {
-    let crc = rom_xml.crc.to_uppercase();
-    let md5 = rom_xml.md5.to_uppercase();
-    let sha1 = rom_xml.sha1.to_uppercase();
+    let crc = rom_xml.crc.to_lowercase();
+    let md5 = rom_xml.md5.to_lowercase();
+    let sha1 = rom_xml.sha1.to_lowercase();
     sqlx::query!(
         "
         INSERT INTO roms (name, size, crc, md5, sha1, rom_status, game_id)
@@ -415,9 +423,9 @@ pub async fn update_rom(
     rom_xml: &RomXml,
     game_id: i64,
 ) {
-    let crc = rom_xml.crc.to_uppercase();
-    let md5 = rom_xml.md5.to_uppercase();
-    let sha1 = rom_xml.sha1.to_uppercase();
+    let crc = rom_xml.crc.to_lowercase();
+    let md5 = rom_xml.md5.to_lowercase();
+    let sha1 = rom_xml.sha1.to_lowercase();
     sqlx::query!(
         "
         UPDATE roms
@@ -638,7 +646,7 @@ pub async fn find_roms_by_size_and_crc_and_system_id(
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
-    let crc = crc.to_uppercase();
+    let crc = crc.to_lowercase();
     sqlx::query_as!(
         Rom,
         "

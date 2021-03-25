@@ -332,10 +332,8 @@ async fn create_or_update_roms(
 #[cfg(test)]
 mod test {
     use super::super::database::*;
-    use super::super::embedded;
     use super::*;
     use async_std::path::Path;
-    use refinery::config::{Config, ConfigDbType};
     use tempfile::NamedTempFile;
 
     #[async_std::test]
@@ -345,9 +343,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -376,9 +371,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (Parent-Clone).dat");
@@ -407,9 +399,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");

@@ -8,7 +8,6 @@ extern crate dotenv;
 extern crate indicatif;
 extern crate once_cell;
 extern crate quick_xml;
-extern crate refinery;
 extern crate regex;
 extern crate serde;
 extern crate sqlx;
@@ -19,6 +18,7 @@ extern crate tempfile;
 
 mod chdman;
 mod checksum;
+mod check_roms;
 mod config;
 mod convert_roms;
 mod database;
@@ -33,17 +33,11 @@ mod sevenzip;
 mod sort_roms;
 mod util;
 
-mod embedded {
-    use refinery::embed_migrations;
-    embed_migrations!("migrations");
-}
-
 use async_std::path::PathBuf;
 use clap::App;
 use database::*;
 use dotenv::dotenv;
 use progress::*;
-use refinery::config::{Config, ConfigDbType};
 use simple_error::SimpleError;
 use util::*;
 
@@ -61,6 +55,7 @@ async fn main() -> SimpleResult<()> {
             import_roms::subcommand(),
             sort_roms::subcommand(),
             convert_roms::subcommand(),
+            check_roms::subcommand(),
             purge_roms::subcommand(),
         ])
         .get_matches();
@@ -76,10 +71,6 @@ async fn main() -> SimpleResult<()> {
             create_file(&db_file).await?;
         }
         let mut connection = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
-
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.as_os_str().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
@@ -119,6 +110,14 @@ async fn main() -> SimpleResult<()> {
                 convert_roms::main(
                     &mut connection,
                     &matches.subcommand_matches("convert-roms").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("check-roms") => {
+                check_roms::main(
+                    &mut connection,
+                    &matches.subcommand_matches("check-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?

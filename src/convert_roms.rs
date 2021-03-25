@@ -507,14 +507,12 @@ async fn to_original(
 mod test {
     use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
     use super::super::database::*;
-    use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::super::import_roms::import_rom;
     use super::*;
     use async_std::fs;
     use async_std::path::Path;
     use async_std::sync::Mutex;
-    use refinery::config::{Config, ConfigDbType};
     use std::env;
     use tempfile::{NamedTempFile, TempDir};
 
@@ -527,9 +525,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -613,9 +608,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -702,9 +694,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -790,9 +779,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -876,9 +862,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -961,9 +944,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1046,9 +1026,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1132,9 +1109,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1226,9 +1200,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1319,9 +1290,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1404,9 +1372,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -1530,9 +1495,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");

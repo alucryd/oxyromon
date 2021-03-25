@@ -105,7 +105,6 @@ async fn purge_trashed_roms(
 mod test {
     use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
     use super::super::database::*;
-    use super::super::embedded;
     use super::super::import_dats::import_dat;
     use super::super::import_roms::import_rom;
     use super::super::sort_roms::sort_system;
@@ -114,7 +113,6 @@ mod test {
     use async_std::path::{Path, PathBuf};
     use async_std::prelude::*;
     use async_std::sync::Mutex;
-    use refinery::config::{Config, ConfigDbType};
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -126,9 +124,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
@@ -186,9 +181,6 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut config =
-            Config::new(ConfigDbType::Sqlite).set_db_path(db_file.path().to_str().unwrap());
-        embedded::migrations::runner().run(&mut config).unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System.dat");
