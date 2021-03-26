@@ -1,4 +1,4 @@
-![CI](https://github.com/alucryd/oxyromon/workflows/continuous-integration/badge.svg)
+![CI](https://github.com/alucryd/oxyromon/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 
 # oxyromon 0.6.0
