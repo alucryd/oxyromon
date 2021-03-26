@@ -1,6 +1,6 @@
 [package]
 name = "oxyromon"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Maxime Gauduin <alucryd@archlinux.org>"]
 license = "GPL-3.0+"
 description = "Rusty ROM OrgaNizer"
@@ -29,6 +29,9 @@ serde = { version = "1.0.125", features = ["derive"] }
 simple-error = "0.2.3"
 sqlx = { version = "0.5.1", features = ["migrate", "offline", "runtime-async-std-native-tls", "sqlite"] }
 tempfile = "3.2.0"
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+native-tls = { version = '0.2.7', features = ["vendored"] }
 
 [[bin]]
 name = "oxyromon"
