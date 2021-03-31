@@ -6,14 +6,14 @@ use super::SimpleResult;
 use async_std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
-use once_cell::sync::OnceCell;
 use quick_xml::de;
 use rayon::prelude::*;
 use regex::Regex;
+use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
+use shiratsu_naming::naming::TokenizedName;
+use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
 use std::io;
-
-static REGION_CODES: OnceCell<Vec<(Regex, Vec<&'static str>)>> = OnceCell::new();
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
@@ -101,55 +101,17 @@ pub async fn import_dat(
     Ok(())
 }
 
-fn get_regions_from_game_name<'a>(name: &str) -> Vec<&'a str> {
-    let region_codes = REGION_CODES.get_or_init(|| {
-        vec![
-            (Regex::new(r"\(.*Asia,?.*\)").unwrap(), vec!["ASI"]),
-            (Regex::new(r"\(.*Australia,?.*\)").unwrap(), vec!["AUS"]),
-            (Regex::new(r"\(.*Austria,?.*\)").unwrap(), vec!["AUT"]),
-            (Regex::new(r"\(.*Belgium,?.*\)").unwrap(), vec!["BEL"]),
-            (Regex::new(r"\(.*Brazil,?.*\)").unwrap(), vec!["BRA"]),
-            (Regex::new(r"\(.*Canada,?.*\)").unwrap(), vec!["CAN"]),
-            (Regex::new(r"\(.*China,?.*\)").unwrap(), vec!["CHN"]),
-            (Regex::new(r"\(.*Denmark,?.*\)").unwrap(), vec!["DAN"]),
-            (Regex::new(r"\(.*Europe,?.*\)").unwrap(), vec!["EUR"]),
-            (Regex::new(r"\(.*Finland,?.*\)").unwrap(), vec!["FIN"]),
-            (Regex::new(r"\(.*France,?.*\)").unwrap(), vec!["FRA"]),
-            (Regex::new(r"\(.*Germany,?.*\)").unwrap(), vec!["GER"]),
-            (Regex::new(r"\(.*Greece,?.*\)").unwrap(), vec!["GRC"]),
-            (Regex::new(r"\(.*Hong Kong,?.*\)").unwrap(), vec!["HKG"]),
-            (Regex::new(r"\(.*Ireland,?.*\)").unwrap(), vec!["IRL"]),
-            (Regex::new(r"\(.*Israel,?.*\)").unwrap(), vec!["ISR"]),
-            (Regex::new(r"\(.*Italy,?.*\)").unwrap(), vec!["ITA"]),
-            (Regex::new(r"\(.*Japan,?.*\)").unwrap(), vec!["JPN"]),
-            (Regex::new(r"\(.*Korea,?.*\)").unwrap(), vec!["KOR"]),
-            (Regex::new(r"\(.*Netherlands,?.*\)").unwrap(), vec!["HOL"]),
-            (Regex::new(r"\(.*Norway,?.*\)").unwrap(), vec!["NOR"]),
-            (Regex::new(r"\(.*Poland,?.*\)").unwrap(), vec!["POL"]),
-            (Regex::new(r"\(.*Portugal,?.*\)").unwrap(), vec!["PRT"]),
-            (Regex::new(r"\(.*Russia,?.*\)").unwrap(), vec!["RUS"]),
-            (Regex::new(r"\(.*Scandinavia,?.*\)").unwrap(), vec!["SCA"]),
-            (Regex::new(r"\(.*Spain,?.*\)").unwrap(), vec!["SPA"]),
-            (Regex::new(r"\(.*Sweden,?.*\)").unwrap(), vec!["SWE"]),
-            (Regex::new(r"\(.*Taiwan,?.*\)").unwrap(), vec!["TAI"]),
-            (Regex::new(r"\(.*UK,?.*\)").unwrap(), vec!["GBR"]),
-            (Regex::new(r"\(.*Unknown,?.*\)").unwrap(), vec!["UNK"]),
-            (Regex::new(r"\(.*USA,?.*\)").unwrap(), vec!["USA"]),
-            (
-                Regex::new(r"\(.*World,?.*\)").unwrap(),
-                vec!["EUR", "JPN", "USA"],
-            ),
-        ]
-    });
-    let mut regions: Vec<&str> = Vec::new();
-    for (re, regions_vec) in region_codes {
-        if re.find(name).is_some() {
-            regions.append(&mut regions_vec.clone());
+fn get_regions_from_game_name<'a>(name: &str) -> SimpleResult<String> {
+    let name = try_with!(
+        NoIntroName::try_parse(name),
+        "Failed to parse no-intro name"
+    );
+    for token in name.iter() {
+        if let NoIntroToken::Region(_, regions) = token {
+            return Ok(Region::to_normalized_region_string(regions));
         }
     }
-    regions.sort_unstable();
-    regions.dedup();
-    regions
+    Ok(String::from(""))
 }
 
 async fn create_or_update_system(connection: &mut SqliteConnection, system_xml: &SystemXml) -> i64 {
@@ -219,7 +181,7 @@ async fn create_or_update_games(
                     connection,
                     game.id,
                     parent_game_xml,
-                    &game.regions,
+                    &get_regions_from_game_name(&parent_game_xml.name).unwrap(),
                     system_id,
                     None,
                 )
@@ -230,7 +192,7 @@ async fn create_or_update_games(
                 create_game(
                     connection,
                     parent_game_xml,
-                    &get_regions_from_game_name(&parent_game_xml.name).join(","),
+                    &get_regions_from_game_name(&parent_game_xml.name).unwrap(),
                     system_id,
                     None,
                 )
@@ -261,7 +223,7 @@ async fn create_or_update_games(
                     connection,
                     game.id,
                     child_game_xml,
-                    &game.regions,
+                    &get_regions_from_game_name(&child_game_xml.name).unwrap(),
                     system_id,
                     Some(parent_game.id),
                 )
@@ -272,7 +234,7 @@ async fn create_or_update_games(
                 create_game(
                     connection,
                     child_game_xml,
-                    &get_regions_from_game_name(&child_game_xml.name).join(","),
+                    &get_regions_from_game_name(&child_game_xml.name).unwrap(),
                     system_id,
                     Some(parent_game.id),
                 )
@@ -423,13 +385,10 @@ mod test {
         let game_name = "Test Game (World)";
 
         // when
-        let mut regions = get_regions_from_game_name(game_name);
+        let regions = get_regions_from_game_name(game_name).unwrap();
 
         // then
-        assert_eq!(regions.len(), 3);
-        assert_eq!(regions.remove(0), "EUR");
-        assert_eq!(regions.remove(0), "JPN");
-        assert_eq!(regions.remove(0), "USA");
+        assert_eq!(regions, "US-JP-EU");
     }
 
     #[test]
@@ -438,11 +397,9 @@ mod test {
         let game_name = "Test Game (France, Germany)";
 
         // when
-        let mut regions = get_regions_from_game_name(game_name);
+        let regions = get_regions_from_game_name(game_name).unwrap();
 
         // then
-        assert_eq!(regions.len(), 2);
-        assert_eq!(regions.remove(0), "FRA");
-        assert_eq!(regions.remove(0), "GER");
+        assert_eq!(regions, "FR-DE");
     }
 }

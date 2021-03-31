@@ -1,9 +1,9 @@
 use super::model::*;
 use rayon::prelude::*;
+use sqlx::migrate::Migrator;
 use sqlx::prelude::*;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
 use sqlx::SqliteConnection;
-use sqlx::migrate::Migrator;
 use std::convert::TryFrom;
 use std::str::FromStr;
 

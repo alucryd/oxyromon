@@ -17,8 +17,8 @@ extern crate rayon;
 extern crate tempfile;
 
 mod chdman;
-mod checksum;
 mod check_roms;
+mod checksum;
 mod config;
 mod convert_roms;
 mod database;

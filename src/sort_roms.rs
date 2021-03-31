@@ -11,7 +11,9 @@ use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
-use regex::Regex;
+use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
+use shiratsu_naming::naming::{FlagType, TokenizedName};
+use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
 use std::ffi::OsString;
@@ -146,19 +148,31 @@ pub async fn main(
     let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
 
     // unordered regions to keep
-    let mut all_regions: Vec<&str> = Vec::new();
+    let mut all_regions: Vec<Region> = Vec::new();
     if matches.is_present("REGIONS") {
-        all_regions = matches.values_of("REGIONS").unwrap().collect();
+        all_regions = matches
+            .values_of("REGIONS")
+            .unwrap()
+            .map(|r| Region::try_from_tosec_region(r).expect("Failed to parse region code"))
+            .flatten()
+            .collect();
+        all_regions.dedup();
     }
 
     // ordered regions to use for 1G1R
-    let mut one_regions: Vec<&str> = Vec::new();
+    let mut one_regions: Vec<Region> = Vec::new();
     if matches.is_present("1G1R") {
-        one_regions = matches.values_of("1G1R").unwrap().collect();
+        one_regions = matches
+            .values_of("1G1R")
+            .unwrap()
+            .map(|r| Region::try_from_tosec_region(r).expect("Failed to parse region code"))
+            .flatten()
+            .collect();
+        one_regions.dedup();
     }
 
-    // unwanted regex
-    let unwanted_regex = compute_unwanted_regex(connection, matches).await;
+    // unwanted tokens
+    let unwanted_tokens = compute_unwanted_tokens(connection, matches).await;
 
     for system in systems {
         sort_system(
@@ -167,7 +181,7 @@ pub async fn main(
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await?;
@@ -176,13 +190,13 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn sort_system(
+pub async fn sort_system<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     system: &System,
-    all_regions: &[&str],
-    one_regions: &[&str],
-    unwanted_regex: &Option<Regex>,
+    all_regions: &[Region],
+    one_regions: &[Region],
+    unwanted_tokens: &Vec<NoIntroToken<'a>>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing {}", system.name));
@@ -221,17 +235,19 @@ pub async fn sort_system(
             games.insert(0, parent);
 
             // trim unwanted games
-            if let Some(unwanted_regex) = unwanted_regex.as_ref() {
-                let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                    .into_par_iter()
-                    .partition(|game| unwanted_regex.find(&game.name).is_some());
+            if !unwanted_tokens.is_empty() {
+                let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
                 trash_games.append(&mut unwanted_games);
                 games = regular_games;
             }
 
             // find the one game we want to keep, if any
             for region in one_regions {
-                let i = games.iter().position(|game| game.regions.contains(region));
+                let i = games.iter().position(|game| {
+                    Region::try_from_tosec_region(&game.regions)
+                        .unwrap()
+                        .contains(region)
+                });
                 if i.is_some() {
                     one_region_games.push(games.remove(i.unwrap()));
                     break;
@@ -241,10 +257,11 @@ pub async fn sort_system(
             // go through the remaining games
             while !games.is_empty() {
                 let game = games.remove(0);
-                if all_regions
-                    .iter()
-                    .any(|region| game.regions.contains(region))
-                {
+                if all_regions.iter().any(|region| {
+                    Region::try_from_tosec_region(&game.regions)
+                        .unwrap()
+                        .contains(region)
+                }) {
                     all_regions_games.push(game);
                 } else {
                     trash_games.push(game);
@@ -256,19 +273,18 @@ pub async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        if let Some(unwanted_regex) = unwanted_regex.as_ref() {
-            let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                .into_par_iter()
-                .partition(|game| unwanted_regex.find(&game.name).is_some());
+        if !unwanted_tokens.is_empty() {
+            let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
             trash_games.append(&mut unwanted_games);
             games = regular_games;
         }
 
         for game in games {
-            if all_regions
-                .iter()
-                .any(|region| game.regions.contains(region))
-            {
+            if all_regions.iter().any(|region| {
+                Region::try_from_tosec_region(&game.regions)
+                    .unwrap()
+                    .contains(region)
+            }) {
                 all_regions_games.push(game);
             } else {
                 trash_games.push(game);
@@ -278,10 +294,8 @@ pub async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        if let Some(unwanted_regex) = unwanted_regex.as_ref() {
-            let (mut unwanted_games, regular_games): (Vec<Game>, Vec<Game>) = games
-                .into_par_iter()
-                .partition(|game| unwanted_regex.find(&game.name).is_some());
+        if !unwanted_tokens.is_empty() {
+            let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
             trash_games.append(&mut unwanted_games);
             games = regular_games;
         }
@@ -422,6 +436,22 @@ async fn sort_games<'a>(
     romfile_moves
 }
 
+fn trim_games<'a>(
+    games: Vec<Game>,
+    unwanted_tokens: &Vec<NoIntroToken<'a>>,
+) -> (Vec<Game>, Vec<Game>) {
+    games.into_par_iter().partition(|game| {
+        if let Ok(name) = NoIntroName::try_parse(&game.name) {
+            for token in name.iter() {
+                if unwanted_tokens.contains(token) {
+                    return true;
+                }
+            }
+        }
+        false
+    })
+}
+
 async fn do_discard(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
@@ -439,66 +469,141 @@ async fn do_discard(
     }
 }
 
-async fn compute_unwanted_regex(
+async fn compute_unwanted_tokens<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
-) -> Option<Regex> {
-    let mut unwanted_keywords: Vec<&str> = Vec::new();
+) -> Vec<NoIntroToken<'a>> {
+    let mut unwanted_tokens: Vec<NoIntroToken> = Vec::new();
 
     if do_discard(connection, matches, "BETA").await {
-        unwanted_keywords.push("Beta( [0-9]+)?");
+        unwanted_tokens.push(NoIntroToken::Release("Beta", None));
+        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("1")));
+        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("2")));
+        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("3")));
     }
 
     if do_discard(connection, matches, "CASTLEVANIA_ANNIVERSARY_COLLECTION").await {
-        unwanted_keywords.push("Castlevania Anniversary Collection");
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Castlevania Anniversary Collection",
+        ));
     }
 
     if do_discard(connection, matches, "CLASSIC_MINI").await {
-        unwanted_keywords.push("Classic Mini");
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Classic Mini"));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Classic Mini, Switch Online",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Virtual Console, Classic Mini, Switch Online",
+        ));
     }
 
     if do_discard(connection, matches, "DEBUG").await {
-        unwanted_keywords.push("Debug( Version)?");
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Debug"));
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Debug Version"));
     }
 
     if do_discard(connection, matches, "DEMO").await {
-        unwanted_keywords.push("Demo");
+        unwanted_tokens.push(NoIntroToken::Release("Demo", None));
+    }
+
+    if do_discard(connection, matches, "GOG").await {
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "GOG"));
     }
 
     if do_discard(connection, matches, "PROGRAM").await {
-        unwanted_keywords.push("Program");
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Program"));
     }
 
     if do_discard(connection, matches, "PROTO").await {
-        unwanted_keywords.push("Proto( [0-9]+)?");
+        unwanted_tokens.push(NoIntroToken::Release("Proto", None));
+        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("1")));
+        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("2")));
+        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("3")));
     }
 
     if do_discard(connection, matches, "SAMPLE").await {
-        unwanted_keywords.push("Sample( [0-9]+)?");
+        unwanted_tokens.push(NoIntroToken::Release("Sample", None));
+        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("1")));
+        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("2")));
+        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("3")));
     }
 
     if do_discard(connection, matches, "SEGA_CHANNEL").await {
-        unwanted_keywords.push("Sega Channel");
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Sega Channel"));
+    }
+
+    if do_discard(connection, matches, "SNES_MINI").await {
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "SNES Mini"));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "SNES Mini, Switch Online",
+        ));
+    }
+
+    if do_discard(connection, matches, "SONIC_CLASSIC_COLLECTION").await {
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Sonic Classic Collection",
+        ));
     }
 
     if do_discard(connection, matches, "SWITCH_ONLINE").await {
-        unwanted_keywords.push("Switch Online");
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Classic Mini, Switch Online",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "SNES Mini, Switch Online",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Switch Online"));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Virtual Console, Switch Online",
+        ));
     }
 
     if do_discard(connection, matches, "VIRTUAL_CONSOLE").await {
-        unwanted_keywords.push("([0-9A-z ]+)?Virtual Console");
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "3DS Virtual Console",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Virtual Console",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Virtual Console, Classic Mini, Switch Online",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Virtual Console, Switch Online",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Wii U Virtual Console",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Wii and Wii U Virtual Console",
+        ));
+        unwanted_tokens.push(NoIntroToken::Flag(
+            FlagType::Parenthesized,
+            "Wii Virtual Console",
+        ));
     }
 
     if do_discard(connection, matches, "WII").await {
-        unwanted_keywords.push("Wii");
+        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Wii"));
     }
 
-    // compile unwanted regex
-    if !unwanted_keywords.is_empty() {
-        Some(Regex::new(&format!(r"\(({})(, )?.*\)", unwanted_keywords.join("|"))).unwrap())
-    } else {
-        None
-    }
+    unwanted_tokens.dedup();
+    unwanted_tokens
 }
 
 fn get_new_path(
@@ -673,7 +778,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &None,
+            &vec![],
             &progress_bar,
         )
         .await
@@ -752,7 +857,7 @@ mod test {
         let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
         let all_regions = vec![];
         let one_regions = vec![];
-        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -761,7 +866,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await
@@ -853,9 +958,9 @@ mod test {
         }
 
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
-        let all_regions = vec!["USA", "EUR", "JPN"];
+        let all_regions = vec![Region::UnitedStates, Region::Europe, Region::Japan];
         let one_regions = vec![];
-        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -864,7 +969,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await
@@ -957,8 +1062,8 @@ mod test {
 
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![];
-        let one_regions = vec!["USA", "EUR"];
-        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+        let one_regions = vec![Region::UnitedStates, Region::Europe];
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -967,7 +1072,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await
@@ -1061,8 +1166,8 @@ mod test {
 
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![];
-        let one_regions = vec!["USA", "EUR"];
-        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+        let one_regions = vec![Region::UnitedStates, Region::Europe];
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1071,7 +1176,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await
@@ -1164,9 +1269,9 @@ mod test {
         }
 
         let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
-        let all_regions = vec!["JPN"];
-        let one_regions = vec!["USA", "EUR"];
-        let unwanted_regex = compute_unwanted_regex(&mut connection, &matches).await;
+        let all_regions = vec![Region::Japan];
+        let one_regions = vec![Region::UnitedStates, Region::Europe];
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1175,7 +1280,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_regex,
+            &unwanted_tokens,
             &progress_bar,
         )
         .await
