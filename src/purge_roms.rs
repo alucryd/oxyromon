@@ -113,6 +113,7 @@ mod test {
     use async_std::path::{Path, PathBuf};
     use async_std::prelude::*;
     use async_std::sync::Mutex;
+    use shiratsu_naming::region::Region;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -215,7 +216,7 @@ mod test {
         .unwrap();
 
         let matches = subcommand().get_matches_from(vec!["sort-roms", "-y"]);
-        let all_regions = vec!["JPN"];
+        let all_regions = vec![Region::Japan];
         let one_regions = vec![];
 
         sort_system(
@@ -224,7 +225,7 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &None,
+            &vec![],
             &progress_bar,
         )
         .await
