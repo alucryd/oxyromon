@@ -4,3 +4,4 @@ build/
 target/
 .vscode
 *.db
+lcov.info

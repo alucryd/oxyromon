@@ -1,7 +1,8 @@
 ![CI](https://github.com/alucryd/oxyromon/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
+[![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyromon 0.6.0
+# oxyromon 0.6.1
 
 ### Rusty ROM OrgaNizer
 
@@ -26,10 +27,13 @@ Available settings:
 - `DISCARD_CLASSIC_MINI`: Discard Classic Mini ROMs
 - `DISCARD_DEBUG`: Discard debug ROMs
 - `DISCARD_DEMO`: Discard demo ROMs
+- `DISCARD_GOG`: Discard GOG ROMs
 - `DISCARD_PROGRAM`: Discard program ROMs
 - `DISCARD_PROTO`: Discard prototype ROMs
 - `DISCARD_SAMPLE`: Discard sample ROMs
 - `DISCARD_SEGA_CHANNEL`: Discard Sega Channel ROMs
+- `DISCARD_SNES_MINI`: Discard SNES Mini ROMs
+- `DISCARD_SONIC_CLASSIC_COLLECTION`: Discard Sonic Classic Collection ROMs
 - `DISCARD_SWITCH_ONLINE`: Discard Switch Online ROMs
 - `DISCARD_VIRTUAL_CONSOLE`: Discard Virtual Console ROMs
 - `DISCARD_WII`: Discard Wii ROMs
@@ -168,6 +172,8 @@ In every mode, discarded games are placed in the Trash subdirectory.
 1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
 actually play, while keeping original Japanese games for translation patches and other hacks.
 
+The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention).
+
     USAGE:
         oxyromon sort-roms [FLAGS] [OPTIONS]
 
@@ -195,6 +201,9 @@ actually play, while keeping original Japanese games for translation patches and
     OPTIONS:
         -g, --1g1r <1G1R>...          Sets the 1G1R regions to keep (ordered)
         -r, --regions <REGIONS>...    Sets the regions to keep (unordered)
+    
+    EXAMPLE:
+        oxyromon sort-roms -g US EU -r US EU JP
 
 ## oxyromon-convert-roms
 
