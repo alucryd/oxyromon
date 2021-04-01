@@ -2,6 +2,7 @@
 * Add a unique constraint to the settings::key column
 * Use shiratsu_naming to parse No-Intro names
 * Delete obsolete roms and releases when importing updated dats and automatically reimport orphan romfiles
+* Drop releases, we don't need them
 
 **WARNING** The internal region format is now TOSEC's, all dats need to be reimported for the change to take effect.
 

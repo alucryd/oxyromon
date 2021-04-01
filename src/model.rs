@@ -27,13 +27,6 @@ pub struct Game {
     pub parent_id: Option<i64>,
 }
 
-pub struct Release {
-    pub id: i64,
-    pub name: String,
-    pub region: String,
-    pub game_id: i64,
-}
-
 #[derive(sqlx::FromRow)]
 pub struct Rom {
     pub id: i64,
@@ -85,16 +78,8 @@ pub struct GameXml {
     pub name: String,
     pub description: String,
     pub cloneof: Option<String>,
-    #[serde(rename = "release", default)]
-    pub releases: Vec<ReleaseXml>,
     #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
-}
-
-#[derive(Deserialize)]
-pub struct ReleaseXml {
-    pub name: String,
-    pub region: String,
 }
 
 #[derive(Deserialize)]
