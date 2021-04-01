@@ -59,7 +59,9 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Support RVZ
+- Support RVZ (when dolphin adds it to its CLI)
+- Iron out dat upgrades and their effect on existing romfiles
+- Find a way to automatically update dats, or at least check if updates are available
 
 ## oxyromon
 

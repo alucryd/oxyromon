@@ -186,10 +186,6 @@ async fn create_or_update_games(
                 .await
             }
         };
-        if !parent_game_xml.releases.is_empty() {
-            create_or_update_releases(connection, &parent_game_xml.releases, game_id).await;
-        }
-        delete_old_releases(connection, &parent_game_xml.releases, game_id).await;
         if !parent_game_xml.roms.is_empty() {
             create_or_update_roms(connection, &parent_game_xml.roms, game_id).await;
         }
@@ -231,10 +227,6 @@ async fn create_or_update_games(
                 .await
             }
         };
-        if !child_game_xml.releases.is_empty() {
-            create_or_update_releases(connection, &child_game_xml.releases, game_id).await;
-        }
-        delete_old_releases(connection, &child_game_xml.releases, game_id).await;
         if !child_game_xml.roms.is_empty() {
             create_or_update_roms(connection, &child_game_xml.roms, game_id).await;
         }
@@ -247,29 +239,6 @@ async fn create_or_update_games(
         reimport_orphan_romfiles(connection, system_id, orphan_romfile_ids, progress_bar).await?;
     }
     Ok(())
-}
-
-async fn create_or_update_releases(
-    connection: &mut SqliteConnection,
-    releases_xml: &[ReleaseXml],
-    game_id: i64,
-) {
-    for release_xml in releases_xml {
-        let release = find_release_by_name_and_region_and_game_id(
-            connection,
-            &release_xml.name,
-            &release_xml.region,
-            game_id,
-        )
-        .await;
-        match release {
-            Some(release) => {
-                update_release(connection, release.id, &release_xml, game_id).await;
-                release.id
-            }
-            None => create_release(connection, &release_xml, game_id).await,
-        };
-    }
 }
 
 async fn create_or_update_roms(
@@ -303,34 +272,6 @@ async fn delete_old_games(
     for game_name in &game_names {
         if !game_names_xml.contains(&game_name) {
             delete_game_by_name_and_system_id(connection, &game_name, system_id).await
-        }
-    }
-}
-
-async fn delete_old_releases(
-    connection: &mut SqliteConnection,
-    releases_xml: &[ReleaseXml],
-    game_id: i64,
-) {
-    let release_names_regions_xml: Vec<(&String, &String)> = releases_xml
-        .iter()
-        .map(|release_xml| (&release_xml.name, &release_xml.region))
-        .collect();
-    let release_names_regions: Vec<(String, String)> =
-        find_releases_by_game_id(connection, game_id)
-            .await
-            .into_par_iter()
-            .map(|release| (release.name, release.region))
-            .collect();
-    for release_tuple in &release_names_regions {
-        if !release_names_regions_xml.contains(&(&release_tuple.0, &release_tuple.1)) {
-            delete_release_by_name_and_region_and_game_id(
-                connection,
-                &release_tuple.0,
-                &release_tuple.1,
-                game_id,
-            )
-            .await
         }
     }
 }
@@ -418,7 +359,6 @@ mod test {
         assert_eq!(system.name, "Test System");
 
         assert_eq!(find_games(&mut connection).await.len(), 6);
-        assert_eq!(find_releases(&mut connection).await.len(), 10);
         assert_eq!(find_roms(&mut connection).await.len(), 8);
     }
 
@@ -446,7 +386,6 @@ mod test {
         assert_eq!(system.name, "Test System");
 
         assert_eq!(find_games(&mut connection).await.len(), 4);
-        assert_eq!(find_releases(&mut connection).await.len(), 6);
         assert_eq!(find_roms(&mut connection).await.len(), 4);
     }
 
@@ -471,7 +410,6 @@ mod test {
         assert_eq!(systems.len(), 0);
 
         assert_eq!(find_games(&mut connection).await.len(), 0);
-        assert_eq!(find_releases(&mut connection).await.len(), 0);
         assert_eq!(find_roms(&mut connection).await.len(), 0);
     }
 
@@ -532,23 +470,18 @@ mod test {
         assert_eq!(system.name, "Test System");
 
         let mut games = find_games(&mut connection).await;
-        let mut releases = find_releases(&mut connection).await;
         let mut roms = find_roms(&mut connection).await;
         let mut romfiles = find_romfiles(&mut connection).await;
 
         assert_eq!(games.len(), 1);
-        assert_eq!(releases.len(), 1);
         assert_eq!(roms.len(), 1);
         assert_eq!(romfiles.len(), 1);
 
         let game = games.remove(0);
-        let release = releases.remove(0);
         let rom = roms.remove(0);
         let romfile = romfiles.remove(0);
 
         assert_eq!(game.name, "Test Game (USA, Europe)");
-        assert_eq!(release.name, "Test Game (USA, Europe)");
-        assert_eq!(release.region, "USA");
         assert_eq!(rom.name, "Test Game (USA, Europe).bin");
         assert!(rom.romfile_id.is_some());
         assert_eq!(rom.romfile_id.unwrap(), romfile.id);
