@@ -20,7 +20,7 @@
 		<release name="Test Game (USA, Europe)" region="USA" />
 		<rom name="Test Game (USA, Europe).iso" size="358400" crc="68b66ab6" md5="08b3b81e017d1c562c3252598aff275c" sha1="762a227d4d157c20e671b53041741ba6c22c552b" status="verified" />
 	</game>
-	<game name="Test Game (USA, Europe) (CUE/BIN)">
+	<game name="Test Game (USA, Europe) (CUE BIN)">
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe)" region="EUR" />
 		<release name="Test Game (USA, Europe)" region="USA" />

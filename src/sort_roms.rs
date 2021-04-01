@@ -668,7 +668,7 @@ mod test {
         let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
-        assert_eq!(false, result);
+        assert_eq!(result, false);
     }
 
     #[async_std::test]
@@ -683,7 +683,7 @@ mod test {
         let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
-        assert_eq!(true, result);
+        assert_eq!(result, true);
     }
 
     #[async_std::test]
@@ -698,7 +698,7 @@ mod test {
         let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
-        assert_eq!(false, result);
+        assert_eq!(result, false);
     }
 
     #[async_std::test]
@@ -711,10 +711,419 @@ mod test {
 
         // when
         set_bool(&mut connection, "DISCARD_BETA", true).await;
+        set_bool(
+            &mut connection,
+            "DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION",
+            true,
+        )
+        .await;
         let result = do_discard(&mut connection, &matches, "BETA").await;
 
         // then
-        assert_eq!(true, result);
+        assert_eq!(result, true);
+    }
+
+    #[async_std::test]
+    async fn test_trim_games_should_discard_everything() {
+        // given
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let matches = subcommand().get_matches_from(vec!["config"]);
+
+        set_bool(&mut connection, "DISCARD_BETA", true).await;
+        set_bool(
+            &mut connection,
+            "DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION",
+            true,
+        )
+        .await;
+        set_bool(&mut connection, "DISCARD_CLASSIC_MINI", true).await;
+        set_bool(&mut connection, "DISCARD_DEBUG", true).await;
+        set_bool(&mut connection, "DISCARD_DEMO", true).await;
+        set_bool(&mut connection, "DISCARD_GOG", true).await;
+        set_bool(&mut connection, "DISCARD_PROGRAM", true).await;
+        set_bool(&mut connection, "DISCARD_PROTO", true).await;
+        set_bool(&mut connection, "DISCARD_SAMPLE", true).await;
+        set_bool(&mut connection, "DISCARD_SEGA_CHANNEL", true).await;
+        set_bool(&mut connection, "DISCARD_SNES_MINI", true).await;
+        set_bool(&mut connection, "DISCARD_SONIC_CLASSIC_COLLECTION", true).await;
+        set_bool(&mut connection, "DISCARD_SWITCH_ONLINE", true).await;
+        set_bool(&mut connection, "DISCARD_VIRTUAL_CONSOLE", true).await;
+        set_bool(&mut connection, "DISCARD_WII", true).await;
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
+
+        let games = vec![
+            Game {
+                id: 1,
+                name: String::from("Game (USA)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 2,
+                name: String::from("Game (USA) (Beta)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 3,
+                name: String::from("Game (USA) (Beta 1)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 4,
+                name: String::from("Game (USA) (Castlevania Anniversary Collection)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 5,
+                name: String::from("Game (USA) (Classic Mini)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 6,
+                name: String::from("Game (USA) (Debug)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 7,
+                name: String::from("Game (USA) (Demo)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 8,
+                name: String::from("Game (USA) (GOG)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 9,
+                name: String::from("Game (USA) (Program)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 10,
+                name: String::from("Game (USA) (Proto)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 11,
+                name: String::from("Game (USA) (Proto 1)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 12,
+                name: String::from("Game (USA) (Sample)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 13,
+                name: String::from("Game (USA) (Sample 1)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 14,
+                name: String::from("Game (USA) (Sega Channel)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 15,
+                name: String::from("Game (USA) (SNES Mini)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 16,
+                name: String::from("Game (USA) (Sonic Classic Collection)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 17,
+                name: String::from("Game (USA) (Switch Online)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 18,
+                name: String::from("Game (USA) (Virtual Console)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+            Game {
+                id: 19,
+                name: String::from("Game (USA) (Wii)"),
+                description: String::from(""),
+                regions: String::from(""),
+                system_id: 1,
+                parent_id: None,
+            },
+        ];
+        // when
+        let (unwanted_games, regular_games) = trim_games(games, &unwanted_tokens);
+
+        // then
+        assert_eq!(unwanted_games.len(), 18);
+        assert_eq!(regular_games.len(), 1);
+        assert_eq!(regular_games.get(0).unwrap().name, "Game (USA)")
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_archive_single_file() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.rom"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.7z"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("rom name.rom.7z"));
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_archive_multiple_files() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.rom"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.7z"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("game name.7z"));
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_chd_single_file() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.bin"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.chd"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("rom name.chd"));
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_chd_multiple_files() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.bin"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.chd"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 3, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("game name.chd"));
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_cso() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.iso"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.cso"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("rom name.cso"));
+    }
+
+    #[async_std::test]
+    async fn test_get_new_path_other() {
+        // given
+        let test_directory = Path::new("test");
+        let game = Game {
+            id: 1,
+            name: String::from("game name"),
+            description: String::from(""),
+            regions: String::from(""),
+            system_id: 1,
+            parent_id: None,
+        };
+        let rom = Rom {
+            id: 1,
+            name: String::from("rom name.rom"),
+            size: 1,
+            crc: String::from(""),
+            md5: String::from(""),
+            sha1: String::from(""),
+            rom_status: None,
+            game_id: 1,
+            romfile_id: Some(1),
+        };
+        let romfile = Romfile {
+            id: 1,
+            path: String::from("romfile.rom"),
+        };
+
+        // when
+        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+
+        // then
+        assert_eq!(path, test_directory.join("rom name.rom"));
     }
 
     #[async_std::test]
@@ -733,7 +1142,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -741,17 +1150,18 @@ mod test {
         ];
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
         let system_path = &tmp_path.join("Test System");
         create_directory(&system_path).await.unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -760,7 +1170,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -794,7 +1204,7 @@ mod test {
             let romfile = romfiles.get(i).unwrap();
             assert_eq!(
                 &system_path
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -820,7 +1230,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -834,11 +1244,11 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -847,7 +1257,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -883,7 +1293,7 @@ mod test {
             let romfile = romfiles.get(i).unwrap();
             assert_eq!(
                 &system_path
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -897,7 +1307,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("Trash")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -923,7 +1333,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -937,11 +1347,11 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -950,7 +1360,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -986,7 +1396,7 @@ mod test {
             let romfile = romfiles.get(i).unwrap();
             assert_eq!(
                 &system_path
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1000,7 +1410,110 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("Trash")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+    }
+
+    #[async_std::test]
+    async fn test_sort_roms_discard_beta_and_asia() {
+        // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System.dat");
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        let romfile_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+            "Test Game (USA, Europe) (Beta).rom",
+        ];
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_path = set_rom_directory(PathBuf::from(&tmp_directory.path()));
+        let system_path = &tmp_path.join("Test System");
+        create_directory(&system_path).await.unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
+            fs::copy(
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &romfile_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
+
+        let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
+        let all_regions = vec![Region::UnitedStates, Region::Europe, Region::Japan];
+        let one_regions = vec![];
+        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
+
+        // when
+        sort_system(
+            &mut connection,
+            &matches,
+            &system,
+            &all_regions,
+            &one_regions,
+            &unwanted_tokens,
+            &progress_bar,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        assert_eq!(4, romfiles.len());
+
+        let all_regions_indices = vec![1, 2];
+        let trash_indices = vec![0, 3];
+
+        for i in all_regions_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join(&romfile_names.get(i).unwrap())
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+                &romfile.path
+            );
+            assert_eq!(true, Path::new(&romfile.path).is_file().await);
+        }
+
+        for i in trash_indices {
+            let romfile = romfiles.get(i).unwrap();
+            assert_eq!(
+                &system_path
+                    .join("Trash")
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1026,7 +1539,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -1040,11 +1553,11 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -1053,7 +1566,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -1090,7 +1603,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("1G1R")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1104,7 +1617,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("Trash")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1130,7 +1643,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -1144,11 +1657,11 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -1157,7 +1670,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -1194,7 +1707,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("1G1R")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1208,7 +1721,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("Trash")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1234,7 +1747,7 @@ mod test {
             .await
             .unwrap();
 
-        let rom_names = vec![
+        let romfile_names = vec![
             "Test Game (Asia).rom",
             "Test Game (Japan).rom",
             "Test Game (USA, Europe).rom",
@@ -1248,11 +1761,11 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        for rom_name in &rom_names {
-            let rom_path = tmp_path.join(rom_name);
+        for romfile_name in &romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
             fs::copy(
-                test_directory.join(rom_name),
-                &rom_path.as_os_str().to_str().unwrap(),
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
             )
             .await
             .unwrap();
@@ -1261,7 +1774,7 @@ mod test {
                 &system_path,
                 &system,
                 &None,
-                &rom_path,
+                &romfile_path,
                 &progress_bar,
             )
             .await
@@ -1298,7 +1811,7 @@ mod test {
             let romfile = romfiles.get(i).unwrap();
             assert_eq!(
                 &system_path
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1312,7 +1825,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("1G1R")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),
@@ -1326,7 +1839,7 @@ mod test {
             assert_eq!(
                 &system_path
                     .join("Trash")
-                    .join(&rom_names.get(i).unwrap())
+                    .join(&romfile_names.get(i).unwrap())
                     .as_os_str()
                     .to_str()
                     .unwrap(),

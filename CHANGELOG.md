@@ -1,3 +1,9 @@
+# 0.6.1
+* Add a unique constraint to the settings::key column
+* Use shiratsu_naming to parse No-Intro names
+
+**WARNING** The internal region format is now TOSEC's, all dats need to be reimported for the change to take effect.
+
 # 0.6.0
 * Replace refinery with sqlx migrate
 * Add a check-roms subcommand

@@ -658,7 +658,7 @@ mod test {
         assert_eq!(games.len(), 1);
 
         let game = games.remove(0);
-        assert_eq!(game.name, "Test Game (USA, Europe) (CUE/BIN)");
+        assert_eq!(game.name, "Test Game (USA, Europe) (CUE BIN)");
         assert_eq!(game.system_id, system.id);
 
         let rom = roms.remove(0);
