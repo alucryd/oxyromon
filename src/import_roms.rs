@@ -378,11 +378,8 @@ async fn find_rom(
     // abort if rom already has a file
     if rom.romfile_id.is_some() {
         let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
-        if romfile.is_some() {
-            let romfile = romfile.unwrap();
-            progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
-            return None;
-        }
+        progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+        return None;
     }
 
     Some(rom)
@@ -440,7 +437,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -521,7 +518,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -602,7 +599,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -717,7 +714,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -797,7 +794,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
