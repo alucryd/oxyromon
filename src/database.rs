@@ -16,7 +16,7 @@ pub async fn establish_connection(url: &str) -> SqliteConnection {
         .journal_mode(SqliteJournalMode::Wal)
         .connect()
         .await
-        .unwrap_or_else(|_| panic!("Error connecting to {}", url));
+        .expect(&format!("Error connecting to {}", url));
 
     connection
         .execute(
@@ -75,7 +75,7 @@ pub async fn update_system(connection: &mut SqliteConnection, id: i64, system_xm
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating system with id {}", id));
+    .expect(&format!("Error while updating system with id {}", id));
 }
 
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
@@ -92,6 +92,21 @@ pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     .expect("Error while finding systems")
 }
 
+pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_one(connection)
+    .await
+    .expect(&format!("Error while finding system with id {}", id))
+}
+
 pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) -> Option<System> {
     sqlx::query_as!(
         System,
@@ -104,7 +119,7 @@ pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) 
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
+    .expect(&format!("Error while finding system with name {}", name))
 }
 
 pub async fn create_game<'a>(
@@ -154,7 +169,7 @@ pub async fn update_game(
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
+    .expect(&format!("Error while updating game with id {}", id));
 }
 
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
@@ -186,7 +201,10 @@ pub async fn find_games_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
+    .expect(&format!(
+        "Error while finding games with system id {}",
+        system_id
+    ))
 }
 
 pub async fn find_games_by_ids<'a>(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
@@ -223,12 +241,10 @@ pub async fn find_parent_games_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding parent games with system id {}",
-            system_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding parent games with system id {}",
+        system_id
+    ))
 }
 
 pub async fn find_clone_games_by_system_id(
@@ -247,12 +263,10 @@ pub async fn find_clone_games_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding parent games with system id {}",
-            system_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding parent games with system id {}",
+        system_id
+    ))
 }
 
 pub async fn find_game_by_name_and_system_id(
@@ -273,12 +287,10 @@ pub async fn find_game_by_name_and_system_id(
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding games with name {} and system id {}",
-            name, system_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding games with name {} and system id {}",
+        name, system_id
+    ))
 }
 
 pub async fn delete_game_by_name_and_system_id(
@@ -297,12 +309,10 @@ pub async fn delete_game_by_name_and_system_id(
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while deleting games with name {} and system_id {}",
-            name, system_id
-        )
-    });
+    .expect(&format!(
+        "Error while deleting game with name {} and system_id {}",
+        name, system_id
+    ));
 }
 
 pub async fn create_release(
@@ -344,7 +354,7 @@ pub async fn update_release(
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating release with id {}", id));
+    .expect(&format!("Error while updating release with id {}", id));
 }
 
 pub async fn find_releases(connection: &mut SqliteConnection) -> Vec<Release> {
@@ -355,6 +365,25 @@ pub async fn find_releases(connection: &mut SqliteConnection) -> Vec<Release> {
         FROM releases
         ORDER BY name
         ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding releases")
+}
+
+pub async fn find_releases_by_game_id(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Release> {
+    sqlx::query_as!(
+        Release,
+        "
+        SELECT *
+        FROM releases
+        WHERE game_id = ?
+        ORDER BY name
+        ",
+        game_id,
     )
     .fetch_all(connection)
     .await
@@ -382,12 +411,35 @@ pub async fn find_release_by_name_and_region_and_game_id<'a>(
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding release with name {} and region {} and game id {}",
-            name, region, game_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding release with name {} and region {} and game id {}",
+        name, region, game_id
+    ))
+}
+
+pub async fn delete_release_by_name_and_region_and_game_id(
+    connection: &mut SqliteConnection,
+    name: &str,
+    region: &str,
+    game_id: i64,
+) {
+    sqlx::query!(
+        "
+        DELETE FROM releases
+        WHERE name = ?
+        AND region = ?
+        AND game_id = ?
+        ",
+        name,
+        region,
+        game_id,
+    )
+    .execute(connection)
+    .await
+    .expect(&format!(
+        "Error while deleting release with name {} and region {} and game_id {}",
+        name, region, game_id
+    ));
 }
 
 pub async fn create_rom<'a>(
@@ -443,7 +495,7 @@ pub async fn update_rom(
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
+    .expect(&format!("Error while updating rom with id {}", id));
 }
 
 pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romfile_id: i64) {
@@ -458,7 +510,7 @@ pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romf
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
+    .expect(&format!("Error while updating rom with id {}", id));
 }
 
 pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
@@ -488,7 +540,7 @@ pub async fn find_roms_by_game_id<'a>(connection: &mut SqliteConnection, game_id
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding rom with game id {}", game_id))
+    .expect(&format!("Error while finding rom with game id {}", game_id))
 }
 
 pub async fn find_roms_without_romfile_by_system_id(
@@ -631,12 +683,10 @@ pub async fn find_rom_by_name_and_game_id<'a>(
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding rom with name {} and game id {}",
-            name, game_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding rom with name {} and game id {}",
+        name, game_id
+    ))
 }
 
 pub async fn find_roms_by_size_and_crc_and_system_id(
@@ -664,12 +714,32 @@ pub async fn find_roms_by_size_and_crc_and_system_id(
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding rom with size {} and CRC {} and system id {}",
-            size, crc, system_id
-        )
-    })
+    .expect(&format!(
+        "Error while finding rom with size {} and CRC {} and system id {}",
+        size, crc, system_id
+    ))
+}
+
+pub async fn delete_rom_by_name_and_game_id(
+    connection: &mut SqliteConnection,
+    name: &str,
+    game_id: i64,
+) {
+    sqlx::query!(
+        "
+        DELETE FROM roms
+        WHERE name = ?
+        AND game_id = ?
+        ",
+        name,
+        game_id,
+    )
+    .execute(connection)
+    .await
+    .expect(&format!(
+        "Error while deleting rom with name {} and game_id {}",
+        name, game_id
+    ));
 }
 
 pub async fn create_romfile(connection: &mut SqliteConnection, path: &str) -> i64 {
@@ -682,7 +752,7 @@ pub async fn create_romfile(connection: &mut SqliteConnection, path: &str) -> i6
     )
     .execute(connection)
     .await
-    .expect("Error while creating romfile")
+    .expect(&format!("Error while creating romfile"))
     .last_insert_rowid()
 }
 
@@ -698,7 +768,7 @@ pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &s
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating romfile with id {}", id));
+    .expect(&format!("Error while updating romfile with id {}", id));
 }
 
 pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
@@ -712,7 +782,7 @@ pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles")
+    .expect(&format!("Error while finding romfiles"))
 }
 
 pub async fn find_romfiles_by_ids<'a>(
@@ -733,7 +803,7 @@ pub async fn find_romfiles_by_ids<'a>(
     sqlx::query_as::<_, Romfile>(&sql)
         .fetch_all(connection)
         .await
-        .expect("Error while finding romfiles")
+        .expect(&format!("Error while finding romfiles"))
 }
 
 pub async fn find_romfiles_by_system_id<'a>(
@@ -759,7 +829,7 @@ pub async fn find_romfiles_by_system_id<'a>(
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .expect(&format!("Error while finding romfiles in trash"))
 }
 
 pub async fn find_romfiles_in_trash<'a>(connection: &mut SqliteConnection) -> Vec<Romfile> {
@@ -774,7 +844,7 @@ pub async fn find_romfiles_in_trash<'a>(connection: &mut SqliteConnection) -> Ve
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .expect(&format!("Error while finding romfiles in trash"))
 }
 
 pub async fn find_romfile_by_path<'a>(
@@ -792,10 +862,10 @@ pub async fn find_romfile_by_path<'a>(
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding romfile with path {}", path))
+    .expect(&format!("Error while finding romfile with path {}", path))
 }
 
-pub async fn find_romfile_by_id<'a>(connection: &mut SqliteConnection, id: i64) -> Option<Romfile> {
+pub async fn find_romfile_by_id(connection: &mut SqliteConnection, id: i64) -> Romfile {
     sqlx::query_as!(
         Romfile,
         "
@@ -805,9 +875,9 @@ pub async fn find_romfile_by_id<'a>(connection: &mut SqliteConnection, id: i64) 
         ",
         id,
     )
-    .fetch_optional(connection)
+    .fetch_one(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding romfile with id {}", id))
+    .expect(&format!("Error while finding romfile with id {}", id))
 }
 
 pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
@@ -820,7 +890,7 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while deleting setting with id {}", id));
+    .expect(&format!("Error while deleting setting with id {}", id));
 }
 
 pub async fn create_header(
@@ -844,7 +914,7 @@ pub async fn create_header(
     )
     .execute(connection)
     .await
-    .expect("Error while creating header")
+    .expect(&format!("Error while creating header"))
     .last_insert_rowid()
 }
 
@@ -872,7 +942,7 @@ pub async fn update_header(
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating header with id {}", id));
+    .expect(&format!("Error while updating header with id {}", id));
 }
 
 pub async fn find_header_by_system_id(
@@ -890,7 +960,10 @@ pub async fn find_header_by_system_id(
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding header with system id {}", system_id))
+    .expect(&format!(
+        "Error while finding header with system id {}",
+        system_id
+    ))
 }
 
 pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: &str) {
@@ -904,7 +977,7 @@ pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value:
     )
     .execute(connection)
     .await
-    .expect("Error while creating setting");
+    .expect(&format!("Error while creating setting"));
 }
 
 pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: &str) {
@@ -919,7 +992,7 @@ pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: &
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while updating setting with id {}", id));
+    .expect(&format!("Error while updating setting with id {}", id));
 }
 
 pub async fn find_settings(connection: &mut SqliteConnection) -> Vec<Setting> {
@@ -948,7 +1021,7 @@ pub async fn find_setting_by_key(connection: &mut SqliteConnection, key: &str) -
     )
     .fetch_optional(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding setting with key {}", key))
+    .expect(&format!("Error while finding setting with key {}", key))
 }
 
 pub async fn delete_setting_by_key(connection: &mut SqliteConnection, key: &str) {
@@ -961,5 +1034,5 @@ pub async fn delete_setting_by_key(connection: &mut SqliteConnection, key: &str)
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while deleting setting with key {}", key));
+    .expect(&format!("Error while deleting setting with key {}", key));
 }

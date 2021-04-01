@@ -10,6 +10,42 @@
       "nullable": []
     }
   },
+  "0cf1e903d705704d912476b70a980da875df78ae8b6de1370bafc802259143a1": {
+    "query": "\n        SELECT *\n        FROM systems\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 3,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
   "131b8065f348cdca113c13866cf7066448ae898b3ef4d3f916354b67c6feed7f": {
     "query": "\n        UPDATE releases\n        SET name = ?, region = ?, game_id = ?\n        WHERE id = ?\n        ",
     "describe": {
@@ -918,6 +954,52 @@
       ]
     }
   },
+  "a902ed5d3727350e28b6aaca921798294f7a7940323059496922de18ee388ae4": {
+    "query": "\n        DELETE FROM releases\n        WHERE name = ?\n        AND region = ?\n        AND game_id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 3
+      },
+      "nullable": []
+    }
+  },
+  "adb25afa7edfa40633dc635d907bca5f14fb7fbc000b189b4ffcec7cba823c69": {
+    "query": "\n        SELECT *\n        FROM releases\n        WHERE game_id = ?\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "region",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
   "ae0a47996a2a7141e860dcdb03449db941214143d393272b78b8129dc9dfa2ef": {
     "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM roms\n            WHERE game_id IN (\n                SELECT id\n                FROM games\n                WHERE system_id = ?\n            )\n        )\n        ",
     "describe": {
@@ -1172,6 +1254,16 @@
         false,
         false
       ]
+    }
+  },
+  "f4d60d24b7c389d4f60d84495abe94de0b2e000bc2439c90a7a5c23175b50da8": {
+    "query": "\n        DELETE FROM roms\n        WHERE name = ?\n        AND game_id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
     }
   },
   "f912258534fc9febb111b7572c6b25b52ed9ff39cddabcd1d73f2ee00845f187": {

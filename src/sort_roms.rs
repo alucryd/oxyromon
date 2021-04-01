@@ -1137,7 +1137,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1225,7 +1225,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1328,7 +1328,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1431,7 +1431,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1534,7 +1534,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System (Parent-Clone).dat");
+        let dat_path = test_directory.join("Test System 20200721 (Parent-Clone).dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1638,7 +1638,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1742,7 +1742,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System (Parent-Clone).dat");
+        let dat_path = test_directory.join("Test System 20200721 (Parent-Clone).dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();

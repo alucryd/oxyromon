@@ -527,7 +527,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -558,9 +558,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -610,7 +608,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -641,9 +639,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -696,7 +692,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -727,9 +723,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -781,7 +775,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -812,9 +806,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -864,7 +856,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -895,9 +887,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -946,7 +936,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -977,9 +967,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -1028,7 +1016,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1059,9 +1047,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -1111,7 +1097,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1142,9 +1128,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -1202,7 +1186,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1233,9 +1217,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -1292,7 +1274,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1323,9 +1305,7 @@ mod test {
         .await
         .unwrap();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap())
-            .await
-            .unwrap();
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -1374,7 +1354,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1429,9 +1409,7 @@ mod test {
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         for rom in &roms {
-            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap())
-                .await
-                .unwrap();
+            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
             romfiles_by_id.insert(romfile.id, romfile);
         }
         roms_by_game_id.insert(roms[0].game_id, roms);
@@ -1497,7 +1475,7 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System.dat");
+        let dat_path = test_directory.join("Test System 20200721.dat");
         import_dat(&mut connection, &dat_path, false, &progress_bar)
             .await
             .unwrap();
@@ -1538,9 +1516,7 @@ mod test {
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         for rom in &roms {
-            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap())
-                .await
-                .unwrap();
+            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
             romfiles_by_id.insert(romfile.id, romfile);
         }
         roms_by_game_id.insert(roms[0].game_id, roms);
