@@ -428,7 +428,7 @@ mod test {
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 2);
 
         for romfile in romfiles {

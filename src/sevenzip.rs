@@ -68,7 +68,7 @@ pub fn rename_file_in_archive(
     new_file_name: &str,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.set_message("Renaming file in archive");
+    progress_bar.set_message("Renaming file");
     progress_bar.set_style(get_none_progress_style());
 
     let output = Command::new("7z")
@@ -92,8 +92,11 @@ pub fn extract_files_from_archive(
     directory: &Path,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<PathBuf>> {
-    progress_bar.set_message("Extracting archive");
+    progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
+    for &file_name in file_names {
+        progress_bar.println(format!("Extracting {}", file_name));
+    }
 
     let output = Command::new("7z")
         .arg("x")
@@ -119,8 +122,11 @@ pub fn add_files_to_archive(
     directory: &Path,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.set_message("Extracting archive");
+    progress_bar.set_message("Compressing files");
     progress_bar.set_style(get_none_progress_style());
+    for &file_name in file_names {
+        progress_bar.println(format!("Compressing {}", file_name));
+    }
 
     let output = Command::new("7z")
         .arg("a")
