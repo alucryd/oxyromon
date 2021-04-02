@@ -63,17 +63,26 @@ pub async fn import_rom(
     romfile_path: &PathBuf,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    progress_bar.println(&format!(
+        "Processing {:?}",
+        romfile_path.file_name().unwrap()
+    ));
+
+    // abort if the romfile is already in the database
+    if find_romfile_by_path(connection, romfile_path.as_os_str().to_str().unwrap())
+        .await
+        .is_some()
+    {
+        progress_bar.println("Already in database");
+        return Ok(());
+    }
+
     let romfile_extension = romfile_path
         .extension()
         .unwrap()
         .to_str()
         .unwrap()
         .to_lowercase();
-
-    progress_bar.println(&format!(
-        "Processing {:?}",
-        romfile_path.file_name().unwrap()
-    ));
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         import_archive(
@@ -161,7 +170,10 @@ async fn import_archive(
 
         let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
             Some(rom) => rom,
-            None => return Ok(()),
+            None => {
+                move_to_trash(system_directory, romfile_path, progress_bar).await?;
+                return Ok(());
+            }
         };
 
         let mut new_name = OsString::from(&rom.name);
@@ -182,6 +194,7 @@ async fn import_archive(
 
     // archive contains multiple files
     } else {
+        let delete = true;
         for sevenzip_info in sevenzip_infos {
             let size: u64;
             let crc: String;
@@ -224,8 +237,12 @@ async fn import_archive(
             create_or_update_romfile(connection, &new_path, &rom).await;
         }
 
-        // delete archive
-        remove_file(romfile_path).await?;
+        // delete archive or trash archive
+        if delete {
+            remove_file(romfile_path).await?;
+        } else {
+            move_to_trash(system_directory, romfile_path, progress_bar).await?;
+        }
     }
 
     Ok(())
@@ -252,7 +269,10 @@ async fn import_chd(
     let (size, crc) = get_file_size_and_crc(&cue_path, &header, &progress_bar, 1, 1).await?;
     let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
-        None => return Ok(()),
+        None => {
+            move_to_trash(system_directory, &cue_path, progress_bar).await?;
+            return Ok(());
+        }
     };
 
     let roms: Vec<Rom> = find_roms_by_game_id(connection, cue_rom.game_id)
@@ -276,6 +296,7 @@ async fn import_chd(
 
     if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
         progress_bar.println("CRC mismatch");
+        move_to_trash(system_directory, romfile_path, progress_bar).await?;
         return Ok(());
     }
 
@@ -311,7 +332,10 @@ async fn import_cso(
     remove_file(&iso_path).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
-        None => return Ok(()),
+        None => {
+            move_to_trash(system_directory, romfile_path, progress_bar).await?;
+            return Ok(());
+        }
     };
 
     let mut new_cso_path = system_directory.join(&rom.name);
@@ -337,7 +361,10 @@ async fn import_other(
     let (size, crc) = get_file_size_and_crc(romfile_path, &header, &progress_bar, 1, 1).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
         Some(rom) => rom,
-        None => return Ok(()),
+        None => {
+            move_to_trash(system_directory, romfile_path, progress_bar).await?;
+            return Ok(());
+        }
     };
 
     let new_path = system_directory.join(&rom.name);
@@ -400,6 +427,18 @@ pub async fn create_or_update_romfile(
         None => create_romfile(connection, romfile_path).await,
     };
     update_rom_romfile(connection, rom.id, romfile_id).await;
+}
+
+async fn move_to_trash(
+    system_directory: &PathBuf,
+    romfile_path: &PathBuf,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
+    let new_path = system_directory
+        .join("Trash")
+        .join(romfile_path.file_name().unwrap());
+    move_file(romfile_path, &new_path, progress_bar).await?;
+    Ok(())
 }
 
 async fn move_file(

@@ -766,6 +766,23 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     .expect(&format!("Error while deleting setting with id {}", id));
 }
 
+pub async fn delete_romfiles_without_rom<'a>(connection: &mut SqliteConnection) {
+    sqlx::query!(
+        "
+        DELETE
+        FROM romfiles
+        WHERE id NOT IN (
+            SELECT DISTINCT(romfile_id)
+            FROM roms 
+            WHERE romfile_id IS NOT NULL
+        )
+        "
+    )
+    .execute(connection)
+    .await
+    .expect(&format!("Error while finding romfiles without rom"));
+}
+
 pub async fn create_header(
     connection: &mut SqliteConnection,
     detector_xml: &DetectorXml,
