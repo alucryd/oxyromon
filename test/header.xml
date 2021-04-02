@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<detector>
+  <name>Test Header</name>
+  <author>Maxime Gauduin</author>
+  <version>20210402</version>
+  <rule start_offset="10">
+    <data offset="0" value="4E4553"/>
+  </rule>
+</detector>

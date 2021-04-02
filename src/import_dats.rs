@@ -97,10 +97,19 @@ pub async fn import_dat(
     }
 
     // persist games
+    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     progress_bar.println("Deleting old games");
-    delete_old_games(connection, &datafile_xml.games, system_id).await;
+    orphan_romfile_ids
+        .append(&mut delete_old_games(connection, &datafile_xml.games, system_id).await);
     progress_bar.println("Processing games");
-    create_or_update_games(connection, &datafile_xml.games, system_id, &progress_bar).await?;
+    orphan_romfile_ids.append(
+        &mut create_or_update_games(connection, &datafile_xml.games, system_id, &progress_bar)
+            .await?,
+    );
+    if !orphan_romfile_ids.is_empty() {
+        progress_bar.println("Processing orphan romfiles");
+        reimport_orphan_romfiles(connection, system_id, orphan_romfile_ids, progress_bar).await?;
+    }
 
     Ok(())
 }
@@ -149,7 +158,7 @@ async fn create_or_update_games(
     games_xml: &[GameXml],
     system_id: i64,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> SimpleResult<Vec<i64>> {
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     let parent_games_xml: Vec<&GameXml> = games_xml
         .iter()
@@ -187,7 +196,9 @@ async fn create_or_update_games(
             }
         };
         if !parent_game_xml.roms.is_empty() {
-            create_or_update_roms(connection, &parent_game_xml.roms, game_id).await;
+            orphan_romfile_ids.append(
+                &mut create_or_update_roms(connection, &parent_game_xml.roms, game_id).await,
+            );
         }
         orphan_romfile_ids
             .append(&mut delete_old_roms(connection, &parent_game_xml.roms, game_id).await);
@@ -228,52 +239,64 @@ async fn create_or_update_games(
             }
         };
         if !child_game_xml.roms.is_empty() {
-            create_or_update_roms(connection, &child_game_xml.roms, game_id).await;
+            orphan_romfile_ids.append(
+                &mut create_or_update_roms(connection, &child_game_xml.roms, game_id).await,
+            );
         }
         orphan_romfile_ids
             .append(&mut delete_old_roms(connection, &child_game_xml.roms, game_id).await);
         progress_bar.inc(1)
     }
-    if !orphan_romfile_ids.is_empty() {
-        progress_bar.println("Reimporting orphan romfiles");
-        reimport_orphan_romfiles(connection, system_id, orphan_romfile_ids, progress_bar).await?;
-    }
-    Ok(())
+    Ok(orphan_romfile_ids)
 }
 
 async fn create_or_update_roms(
     connection: &mut SqliteConnection,
     roms_xml: &[RomXml],
     game_id: i64,
-) {
+) -> Vec<i64> {
+    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     for rom_xml in roms_xml {
         let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await;
         match rom {
             Some(rom) => {
                 update_rom(connection, rom.id, &rom_xml, game_id).await;
+                if rom_xml.size != rom.size || rom_xml.crc != rom.crc {
+                    if let Some(romfile_id) = rom.romfile_id {
+                        orphan_romfile_ids.push(romfile_id);
+                        update_rom_romfile(connection, rom.id, None).await;
+                    }
+                }
                 rom.id
             }
             None => create_rom(connection, &rom_xml, game_id).await,
         };
     }
+    orphan_romfile_ids
 }
 
 async fn delete_old_games(
     connection: &mut SqliteConnection,
     games_xml: &[GameXml],
     system_id: i64,
-) {
+) -> Vec<i64> {
+    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
-    let game_names: Vec<String> = find_games_by_system_id(connection, system_id)
+    let games: Vec<Game> = find_games_by_system_id(connection, system_id)
         .await
         .into_par_iter()
-        .map(|game| game.name)
+        .filter(|game| !game_names_xml.contains(&&game.name))
         .collect();
-    for game_name in &game_names {
-        if !game_names_xml.contains(&game_name) {
-            delete_game_by_name_and_system_id(connection, &game_name, system_id).await
-        }
+    for game in games {
+        orphan_romfile_ids.extend(
+            find_roms_by_game_id(connection, game.id)
+                .await
+                .into_iter()
+                .filter_map(|rom| rom.romfile_id),
+        );
+        delete_game_by_name_and_system_id(connection, &game.name, system_id).await;
     }
+    orphan_romfile_ids
 }
 
 async fn delete_old_roms(
@@ -390,6 +413,33 @@ mod test {
     }
 
     #[async_std::test]
+    async fn test_import_dat_headered() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System 20210402 (Headered).dat");
+
+        // when
+        import_dat(&mut connection, &dat_path, false, &progress_bar)
+            .await
+            .unwrap();
+
+        // then
+        let mut systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.remove(0);
+        assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&mut connection).await.len(), 1);
+        assert_eq!(find_roms(&mut connection).await.len(), 1);
+    }
+
+    #[async_std::test]
     async fn test_import_dat_info() {
         // given
         let test_directory = Path::new("test");
@@ -434,26 +484,34 @@ mod test {
         let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
         let system_path = &tmp_path.join("Test System");
         create_directory(&system_path).await.unwrap();
-        let romfile_path = tmp_path.join("Test Game (USA, Europe).rom");
-        fs::copy(
-            test_directory.join("Test Game (USA, Europe).rom"),
-            &romfile_path.as_os_str().to_str().unwrap(),
-        )
-        .await
-        .unwrap();
+        create_directory(&system_path.join("Trash")).await.unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        import_rom(
-            &mut connection,
-            &system_path,
-            &system,
-            &None,
-            &romfile_path,
-            &progress_bar,
-        )
-        .await
-        .unwrap();
+        let romfile_names = vec![
+            "Test Game (Asia).rom",
+            "Test Game (Japan).rom",
+            "Test Game (USA, Europe).rom",
+        ];
+        for romfile_name in romfile_names {
+            let romfile_path = tmp_path.join(romfile_name);
+            fs::copy(
+                test_directory.join(romfile_name),
+                &romfile_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .unwrap();
+            import_rom(
+                &mut connection,
+                &system_path,
+                &system,
+                &None,
+                &romfile_path,
+                &progress_bar,
+            )
+            .await
+            .unwrap();
+        }
 
         let dat_path = test_directory.join("Test System 20210401.dat");
 
@@ -473,16 +531,34 @@ mod test {
         let mut roms = find_roms(&mut connection).await;
         let mut romfiles = find_romfiles(&mut connection).await;
 
-        assert_eq!(games.len(), 1);
-        assert_eq!(roms.len(), 1);
-        assert_eq!(romfiles.len(), 1);
+        assert_eq!(games.len(), 3);
+        assert_eq!(roms.len(), 3);
+        assert_eq!(romfiles.len(), 3);
+
+        let game = games.remove(0);
+        let rom = roms.remove(0);
+        let romfile = romfiles.remove(1);
+
+        assert_eq!(game.name, "Test Game (Asia)");
+        assert_eq!(rom.name, "Test Game (Asia).rom");
+        assert!(rom.romfile_id.is_none());
+        assert!(romfile.path.contains("/Trash/"));
+
+        let game = games.remove(0);
+        let rom = roms.remove(1);
+        let romfile = romfiles.remove(1);
+
+        assert_eq!(game.name, "Test Game (USA, Europe)");
+        assert_eq!(rom.name, "Updated Test Game (USA, Europe).rom");
+        assert!(rom.romfile_id.is_some());
+        assert_eq!(rom.romfile_id.unwrap(), romfile.id);
 
         let game = games.remove(0);
         let rom = roms.remove(0);
         let romfile = romfiles.remove(0);
 
-        assert_eq!(game.name, "Test Game (USA, Europe)");
-        assert_eq!(rom.name, "Test Game (USA, Europe).bin");
+        assert_eq!(game.name, "Updated Test Game (Japan)");
+        assert_eq!(rom.name, "Test Game (Japan).rom");
         assert!(rom.romfile_id.is_some());
         assert_eq!(rom.romfile_id.unwrap(), romfile.id);
     }

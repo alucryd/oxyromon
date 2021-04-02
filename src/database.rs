@@ -371,7 +371,7 @@ pub async fn update_rom(
     .expect(&format!("Error while updating rom with id {}", id));
 }
 
-pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romfile_id: i64) {
+pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romfile_id: Option<i64>) {
     sqlx::query!(
         "
         UPDATE roms
@@ -766,13 +766,30 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     .expect(&format!("Error while deleting setting with id {}", id));
 }
 
+pub async fn delete_romfiles_without_rom<'a>(connection: &mut SqliteConnection) {
+    sqlx::query!(
+        "
+        DELETE
+        FROM romfiles
+        WHERE id NOT IN (
+            SELECT DISTINCT(romfile_id)
+            FROM roms 
+            WHERE romfile_id IS NOT NULL
+        )
+        "
+    )
+    .execute(connection)
+    .await
+    .expect(&format!("Error while finding romfiles without rom"));
+}
+
 pub async fn create_header(
     connection: &mut SqliteConnection,
     detector_xml: &DetectorXml,
     system_id: i64,
 ) -> i64 {
-    let start_byte = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
-    let size = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
+    let start_byte = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
+    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
         INSERT INTO headers (name, version, start_byte, size, hex_value, system_id)
@@ -797,8 +814,8 @@ pub async fn update_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) {
-    let start_byte = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
-    let size = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
+    let start_byte = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
+    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
         UPDATE headers
@@ -839,7 +856,7 @@ pub async fn find_header_by_system_id(
     ))
 }
 
-pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: &str) {
+pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: Option<String>) {
     sqlx::query!(
         "
         INSERT INTO settings (key, value)
@@ -853,7 +870,7 @@ pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value:
     .expect(&format!("Error while creating setting"));
 }
 
-pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: &str) {
+pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: Option<String>) {
     sqlx::query!(
         "
         UPDATE settings

@@ -46,16 +46,6 @@
       ]
     }
   },
-  "131b8065f348cdca113c13866cf7066448ae898b3ef4d3f916354b67c6feed7f": {
-    "query": "\n        UPDATE releases\n        SET name = ?, region = ?, game_id = ?\n        WHERE id = ?\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 4
-      },
-      "nullable": []
-    }
-  },
   "136c3dbb219af3eecb3695825ec3f4f5b2a58812031d7514c1b9ab61f4a9b89b": {
     "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND game_id IN (\n            SELECT id\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY name\n        ",
     "describe": {
@@ -169,42 +159,6 @@
         false,
         false,
         false,
-        false,
-        false,
-        false,
-        false
-      ]
-    }
-  },
-  "1eeffd9a376616690656bfc31c362262558171ca01dd6f908cf94e5985ca4114": {
-    "query": "\n        SELECT *\n        FROM releases\n        WHERE name = ?\n        AND region = ?\n        AND game_id = ?\n        ",
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "region",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "game_id",
-          "ordinal": 3,
-          "type_info": "Int64"
-        }
-      ],
-      "parameters": {
-        "Right": 3
-      },
-      "nullable": [
         false,
         false,
         false,
@@ -732,16 +686,6 @@
       "nullable": []
     }
   },
-  "99b650243290f2bb1292f9053011cea3df52c24b94565c0b2eabe07ceb14397a": {
-    "query": "\n        INSERT INTO releases (name, region, game_id)\n        VALUES (?, ?, ?)\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 3
-      },
-      "nullable": []
-    }
-  },
   "9a2ad65a97d75cc6a739b34989bae92403f87479788ee17f68acf09f96ea6183": {
     "query": "\n        SELECT *\n        FROM games\n        ORDER BY name\n        ",
     "describe": {
@@ -954,52 +898,6 @@
       ]
     }
   },
-  "a902ed5d3727350e28b6aaca921798294f7a7940323059496922de18ee388ae4": {
-    "query": "\n        DELETE FROM releases\n        WHERE name = ?\n        AND region = ?\n        AND game_id = ?\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 3
-      },
-      "nullable": []
-    }
-  },
-  "adb25afa7edfa40633dc635d907bca5f14fb7fbc000b189b4ffcec7cba823c69": {
-    "query": "\n        SELECT *\n        FROM releases\n        WHERE game_id = ?\n        ORDER BY name\n        ",
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "region",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "game_id",
-          "ordinal": 3,
-          "type_info": "Int64"
-        }
-      ],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ]
-    }
-  },
   "ae0a47996a2a7141e860dcdb03449db941214143d393272b78b8129dc9dfa2ef": {
     "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM roms\n            WHERE game_id IN (\n                SELECT id\n                FROM games\n                WHERE system_id = ?\n            )\n        )\n        ",
     "describe": {
@@ -1186,40 +1084,14 @@
       ]
     }
   },
-  "e0922f9c233a89f2f5407139930fd07a68ecb3e4a09b45f5a5ef07c98b3cc0ee": {
-    "query": "\n        SELECT *\n        FROM releases\n        ORDER BY name\n        ",
+  "e444b7c77a9470bc82db3a94251e0b198e7249bb27fa58d4c54b3e5e6d8801e8": {
+    "query": "\n        DELETE\n        FROM romfiles\n        WHERE id NOT IN (\n            SELECT DISTINCT(romfile_id)\n            FROM roms \n            WHERE romfile_id IS NOT NULL\n        )\n        ",
     "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "region",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "game_id",
-          "ordinal": 3,
-          "type_info": "Int64"
-        }
-      ],
+      "columns": [],
       "parameters": {
         "Right": 0
       },
-      "nullable": [
-        false,
-        false,
-        false,
-        false
-      ]
+      "nullable": []
     }
   },
   "e9b366d3e79caec0241f12c9ea624b6f9ee70f0976bb1948e0cd0f28312e8d2d": {

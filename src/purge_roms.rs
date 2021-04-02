@@ -9,12 +9,26 @@ use sqlx::SqliteConnection;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("purge-roms")
-        .about("Purges trashed and missing ROM files")
+        .about("Purges trashed, missing and orphan ROM files")
         .arg(
-            Arg::with_name("EMPTY_TRASH")
+            Arg::with_name("MISSING")
+                .short("m")
+                .long("missing")
+                .help("Deletes missing ROM files from the database")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("ORPHAN")
+                .short("o")
+                .long("orphan")
+                .help("Deletes ROM files without an associated ROM from the database")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("TRASH")
                 .short("t")
-                .long("empty-trash")
-                .help("Empties the ROM files trash directories")
+                .long("trash")
+                .help("Physically deletes ROM files from the trash directories")
                 .required(false),
         )
         .arg(
@@ -31,16 +45,19 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    if matches.is_present("EMPTY_TRASH") {
-        purge_trashed_roms(connection, matches, &progress_bar).await?;
+    if matches.is_present("MISSING") {
+        purge_missing_romfiles(connection, &progress_bar).await?;
     }
-
-    purge_missing_roms(connection, &progress_bar).await?;
-
+    if matches.is_present("TRASH") {
+        purge_trashed_romfiles(connection, matches, &progress_bar).await?;
+    }
+    if matches.is_present("ORPHAN") {
+        purge_orphan_romfiles(connection, &progress_bar).await?;
+    }
     Ok(())
 }
 
-async fn purge_missing_roms(
+async fn purge_missing_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
@@ -66,7 +83,7 @@ async fn purge_missing_roms(
     Ok(())
 }
 
-async fn purge_trashed_roms(
+async fn purge_trashed_romfiles(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
@@ -98,6 +115,15 @@ async fn purge_trashed_roms(
         }
     }
 
+    Ok(())
+}
+
+async fn purge_orphan_romfiles(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
+    progress_bar.println("Processing orphan ROM files");
+    delete_romfiles_without_rom(connection).await;
     Ok(())
 }
 
@@ -163,7 +189,7 @@ mod test {
             .unwrap();
 
         // when
-        purge_missing_roms(&mut connection, &progress_bar)
+        purge_missing_romfiles(&mut connection, &progress_bar)
             .await
             .unwrap();
 
@@ -226,6 +252,7 @@ mod test {
             &all_regions,
             &one_regions,
             &vec![],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -234,7 +261,7 @@ mod test {
         // when
         let matches = subcommand().get_matches_from(vec!["purge-roms", "-y"]);
 
-        purge_trashed_roms(&mut connection, &matches, &progress_bar)
+        purge_trashed_romfiles(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
