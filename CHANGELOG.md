@@ -1,12 +1,13 @@
 # 0.7.0
 * Use shiratsu_naming to parse No-Intro names
-* Delete obsolete roms and releases when importing updated dats and automatically reimport orphan romfiles
-* Move failed imports to the trash directories
 * Drop releases, we don't need them
+* Delete obsolete roms when importing updated dats and automatically reimport orphan romfiles
+* Move failed imports to the trash directories
 * Fix headered ROMs handling
 * Add a unique constraint to the settings::key column
 * Simplify discard settings, please refer to the new documentation
 * Remove the ability to delete a setting
+* Allow purge-roms to delete orphan romfiles
 
 **WARNING** The internal region format is now TOSEC's, all dats need to be reimported for this change to take effect.
 
