@@ -22,21 +22,10 @@ Available settings:
 [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
 - `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
 [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
-- `DISCARD_BETA`: Discard beta ROMs
-- `DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION`: Discard Castlevania Anniversary Collection ROMs
-- `DISCARD_CLASSIC_MINI`: Discard Classic Mini ROMs
-- `DISCARD_DEBUG`: Discard debug ROMs
-- `DISCARD_DEMO`: Discard demo ROMs
-- `DISCARD_GOG`: Discard GOG ROMs
-- `DISCARD_PROGRAM`: Discard program ROMs
-- `DISCARD_PROTO`: Discard prototype ROMs
-- `DISCARD_SAMPLE`: Discard sample ROMs
-- `DISCARD_SEGA_CHANNEL`: Discard Sega Channel ROMs
-- `DISCARD_SNES_MINI`: Discard SNES Mini ROMs
-- `DISCARD_SONIC_CLASSIC_COLLECTION`: Discard Sonic Classic Collection ROMs
-- `DISCARD_SWITCH_ONLINE`: Discard Switch Online ROMs
-- `DISCARD_VIRTUAL_CONSOLE`: Discard Virtual Console ROMs
-- `DISCARD_WII`: Discard Wii ROMs
+- `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
+- `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
+- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
+- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -97,9 +86,13 @@ The settings can be queried, modified and deleted from the command line.
         -V, --version    Prints version information
 
     OPTIONS:
-        -d, --delete <KEY>         Deletes a single setting
-        -g, --get <KEY>            Prints a single setting
-        -s, --set <KEY> <VALUE>    Configures a single setting
+        -a, --add <KEY> <VALUE>       Adds an entry to a list
+        -g, --get <KEY>               Prints a single setting
+        -r, --remove <KEY> <VALUE>    Removes an entry from a list
+        -s, --set <KEY> <VALUE>       Configures a single setting
+
+    EXAMPLE:
+        oxyromon config -a REGIONS_ONE US
 
 ## oxyromon-import-dats
 
@@ -165,11 +158,16 @@ Supported modes:
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
+Regions are set via the `REGIONS_ALL` setting, and can overriden via the CLI `-g` flag.
+
 In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
 precedence.
+Regions are set via the `REGIONS_ONE` setting, and can overriden via the CLI `-r` flag.
+
 In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
 directory.
-In every mode, discarded games are placed in the Trash subdirectory.
+
+In every mode, discarded games are placed in the `Trash` subdirectory.
 
 1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
 actually play, while keeping original Japanese games for translation patches and other hacks.
@@ -182,27 +180,13 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
     FLAGS:
         -a, --all                        Sorts all systems
         -m, --missing                    Shows missing games
-            --without-beta               Discards beta games
-            --without-debug              Discards debug games
-            --without-demo               Discards demo games
-            --without-program            Discards program games
-            --without-proto              Discards prototype games
-            --without-sample             Discards sample games
-            --with-beta                  Keeps beta games
-            --with-debug                 Keeps debug games
-            --with-demo                  Keeps demo games
-            --with-program               Keeps program games
-            --with-proto                 Keeps prototype games
-            --with-sample                Keeps sample games
-            --with-sega-channel          Keeps sega channel games
-            --with-virtual-console       Keeps virtual console games
         -y, --yes                        Automatically says yes to prompts
         -h, --help                       Prints help information
         -V, --version                    Prints version information
 
     OPTIONS:
-        -g, --1g1r <1G1R>...          Sets the 1G1R regions to keep (ordered)
-        -r, --regions <REGIONS>...    Sets the regions to keep (unordered)
+        -g, --1g1r <REGIONS_ONE>...      Sets the 1G1R regions to keep (ordered)
+        -r, --regions <REGIONS_ALL>...   Sets the regions to keep (unordered)
     
     EXAMPLE:
         oxyromon sort-roms -g US EU -r US EU JP
@@ -254,16 +238,18 @@ This will scan every ROM file in each specified system and move corrupt files to
 
 ## oxyromon-purge-roms 
 
-Purges trashed and missing ROM files
+Purges trashed, missing and orphan ROM files
 
-This will purge the database from every ROM file that has gone missing, as well as optionally delete all games in the
-Trash subdirectories.
+This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
+with a ROM, as well as physically delete all files in the `Trash` subdirectories.
 
     USAGE:
         oxyromon purge-roms [FLAGS]
 
     FLAGS:
-        -y, --yes            Automatically says yes to prompts
-        -t, --empty-trash    Empties the ROM files trash directories
-        -h, --help           Prints help information
-        -V, --version        Prints version information
+        -m, --missing    Deletes missing ROM files from the database
+        -o, --orphan     Deletes ROM files without an associated ROM from the database
+        -t, --trash      Physically deletes ROM files from the trash directories
+        -y, --yes        Automatically says yes to prompts
+        -h, --help       Prints help information
+        -V, --version    Prints version information

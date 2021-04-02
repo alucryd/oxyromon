@@ -1,0 +1,5 @@
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('REGIONS_ALL', NULL);
+
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('REGIONS_ONE', NULL);

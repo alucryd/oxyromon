@@ -12,7 +12,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
-use shiratsu_naming::naming::{FlagType, TokenizedName};
+use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
@@ -22,7 +22,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("sort-roms")
         .about("Sorts ROM files according to region and version preferences")
         .arg(
-            Arg::with_name("REGIONS")
+            Arg::with_name("REGIONS_ALL")
                 .short("r")
                 .long("regions")
                 .help("Sets the regions to keep (unordered)")
@@ -31,91 +31,13 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .multiple(true),
         )
         .arg(
-            Arg::with_name("1G1R")
+            Arg::with_name("REGIONS_ONE")
                 .short("g")
                 .long("1g1r")
                 .help("Sets the 1G1R regions to keep (ordered)")
                 .required(false)
                 .takes_value(true)
                 .multiple(true),
-        )
-        .arg(
-            Arg::with_name("WITH_BETA")
-                .long("with-beta")
-                .help("Keeps beta games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_BETA")
-                .long("without-beta")
-                .help("Discards beta games")
-                .required(false)
-                .conflicts_with("WITH_BETA"),
-        )
-        .arg(
-            Arg::with_name("WITH_DEBUG")
-                .long("with-debug")
-                .help("Keeps debug games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_DEBUG")
-                .long("without-debug")
-                .help("Discards debug games")
-                .required(false)
-                .conflicts_with("WITH_DEBUG"),
-        )
-        .arg(
-            Arg::with_name("WITH_DEMO")
-                .long("with-demo")
-                .help("Keeps demo games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_DEMO")
-                .long("without-demo")
-                .help("Discards demo games")
-                .required(false)
-                .conflicts_with("WITH_DEMO"),
-        )
-        .arg(
-            Arg::with_name("WITH_PROGRAM")
-                .long("with-program")
-                .help("Keeps program games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_PROGRAM")
-                .long("without-program")
-                .help("Discards program games")
-                .required(false)
-                .conflicts_with("WITH_PROGRAM"),
-        )
-        .arg(
-            Arg::with_name("WITH_PROTO")
-                .long("with-proto")
-                .help("Keeps prototype games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_PROTO")
-                .long("without-proto")
-                .help("Discards prototype games")
-                .required(false)
-                .conflicts_with("WITH_PROTO"),
-        )
-        .arg(
-            Arg::with_name("WITH_SAMPLE")
-                .long("with-sample")
-                .help("Keeps sample games")
-                .required(false),
-        )
-        .arg(
-            Arg::with_name("WITHOUT_SAMPLE")
-                .long("without-sample")
-                .help("Discards sample games")
-                .required(false)
-                .conflicts_with("WITH_SAMPLE"),
         )
         .arg(
             Arg::with_name("MISSING")
@@ -147,32 +69,10 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
 
-    // unordered regions to keep
-    let mut all_regions: Vec<Region> = Vec::new();
-    if matches.is_present("REGIONS") {
-        all_regions = matches
-            .values_of("REGIONS")
-            .unwrap()
-            .map(|r| Region::try_from_tosec_region(r).expect("Failed to parse region code"))
-            .flatten()
-            .collect();
-        all_regions.dedup();
-    }
-
-    // ordered regions to use for 1G1R
-    let mut one_regions: Vec<Region> = Vec::new();
-    if matches.is_present("1G1R") {
-        one_regions = matches
-            .values_of("1G1R")
-            .unwrap()
-            .map(|r| Region::try_from_tosec_region(r).expect("Failed to parse region code"))
-            .flatten()
-            .collect();
-        one_regions.dedup();
-    }
-
-    // unwanted tokens
-    let unwanted_tokens = compute_unwanted_tokens(connection, matches).await;
+    let all_regions = compute_regions(connection, matches, "REGIONS_ALL").await;
+    let one_regions = compute_regions(connection, matches, "REGIONS_ONE").await;
+    let unwanted_releases = get_list(connection, "DISCARD_RELEASES").await;
+    let unwanted_flags = get_list(connection, "DISCARD_FLAGS").await;
 
     for system in systems {
         sort_system(
@@ -181,7 +81,14 @@ pub async fn main(
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &unwanted_releases
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<&str>>(),
+            &unwanted_flags
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<&str>>(),
             &progress_bar,
         )
         .await?;
@@ -190,13 +97,33 @@ pub async fn main(
     Ok(())
 }
 
+pub async fn compute_regions(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches<'_>,
+    key: &str,
+) -> Vec<Region> {
+    let all_regions: Vec<String> = if matches.is_present(key) {
+        let mut regions: Vec<String> = matches.values_of(key).unwrap().map(String::from).collect();
+        regions.dedup();
+        regions
+    } else {
+        get_list(connection, key).await
+    };
+    all_regions
+        .into_iter()
+        .map(|r| Region::try_from_tosec_region(&r).expect("Failed to parse region code"))
+        .flatten()
+        .collect()
+}
+
 pub async fn sort_system<'a>(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     system: &System,
     all_regions: &[Region],
     one_regions: &[Region],
-    unwanted_tokens: &Vec<NoIntroToken<'a>>,
+    unwanted_releases: &[&str],
+    unwanted_flags: &[&str],
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing {}", system.name));
@@ -235,8 +162,9 @@ pub async fn sort_system<'a>(
             games.insert(0, parent);
 
             // trim unwanted games
-            if !unwanted_tokens.is_empty() {
-                let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
+            if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+                let (mut unwanted_games, regular_games) =
+                    trim_games(games, unwanted_releases, unwanted_flags);
                 trash_games.append(&mut unwanted_games);
                 games = regular_games;
             }
@@ -273,8 +201,9 @@ pub async fn sort_system<'a>(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        if !unwanted_tokens.is_empty() {
-            let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
+        if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+            let (mut unwanted_games, regular_games) =
+                trim_games(games, unwanted_releases, unwanted_flags);
             trash_games.append(&mut unwanted_games);
             games = regular_games;
         }
@@ -294,8 +223,9 @@ pub async fn sort_system<'a>(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim unwanted games
-        if !unwanted_tokens.is_empty() {
-            let (mut unwanted_games, regular_games) = trim_games(games, unwanted_tokens);
+        if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+            let (mut unwanted_games, regular_games) =
+                trim_games(games, unwanted_releases, unwanted_flags);
             trash_games.append(&mut unwanted_games);
             games = regular_games;
         }
@@ -421,7 +351,7 @@ async fn sort_games<'a>(
                 .map(|rom| {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let new_path = String::from(
-                        get_new_path(&game, &rom, &romfile, rom_count, &directory)
+                        compute_new_path(&game, &rom, &romfile, rom_count, &directory)
                             .as_os_str()
                             .to_str()
                             .unwrap(),
@@ -436,15 +366,25 @@ async fn sort_games<'a>(
     romfile_moves
 }
 
-fn trim_games<'a>(
+fn trim_games(
     games: Vec<Game>,
-    unwanted_tokens: &Vec<NoIntroToken<'a>>,
+    unwanted_releases: &[&str],
+    unwanted_flags: &[&str],
 ) -> (Vec<Game>, Vec<Game>) {
     games.into_par_iter().partition(|game| {
         if let Ok(name) = NoIntroName::try_parse(&game.name) {
             for token in name.iter() {
-                if unwanted_tokens.contains(token) {
-                    return true;
+                if let NoIntroToken::Release(release, _) = token {
+                    if unwanted_releases.contains(release) {
+                        return true;
+                    }
+                }
+                if let NoIntroToken::Flag(_, flags) = token {
+                    for flag in flags.split(", ") {
+                        if unwanted_flags.contains(&flag) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -452,161 +392,7 @@ fn trim_games<'a>(
     })
 }
 
-async fn do_discard(
-    connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
-    name: &str,
-) -> bool {
-    let flags = (
-        matches.is_present(&format!("WITH_{}", name)),
-        matches.is_present(&format!("WITHOUT_{}", name)),
-    );
-
-    if flags.0 ^ flags.1 {
-        flags.1
-    } else {
-        get_bool(connection, &format!("DISCARD_{}", name)).await
-    }
-}
-
-async fn compute_unwanted_tokens<'a>(
-    connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
-) -> Vec<NoIntroToken<'a>> {
-    let mut unwanted_tokens: Vec<NoIntroToken> = Vec::new();
-
-    if do_discard(connection, matches, "BETA").await {
-        unwanted_tokens.push(NoIntroToken::Release("Beta", None));
-        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("1")));
-        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("2")));
-        unwanted_tokens.push(NoIntroToken::Release("Beta", Some("3")));
-    }
-
-    if do_discard(connection, matches, "CASTLEVANIA_ANNIVERSARY_COLLECTION").await {
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Castlevania Anniversary Collection",
-        ));
-    }
-
-    if do_discard(connection, matches, "CLASSIC_MINI").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Classic Mini"));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Classic Mini, Switch Online",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Virtual Console, Classic Mini, Switch Online",
-        ));
-    }
-
-    if do_discard(connection, matches, "DEBUG").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Debug"));
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Debug Version"));
-    }
-
-    if do_discard(connection, matches, "DEMO").await {
-        unwanted_tokens.push(NoIntroToken::Release("Demo", None));
-    }
-
-    if do_discard(connection, matches, "GOG").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "GOG"));
-    }
-
-    if do_discard(connection, matches, "PROGRAM").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Program"));
-    }
-
-    if do_discard(connection, matches, "PROTO").await {
-        unwanted_tokens.push(NoIntroToken::Release("Proto", None));
-        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("1")));
-        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("2")));
-        unwanted_tokens.push(NoIntroToken::Release("Proto", Some("3")));
-    }
-
-    if do_discard(connection, matches, "SAMPLE").await {
-        unwanted_tokens.push(NoIntroToken::Release("Sample", None));
-        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("1")));
-        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("2")));
-        unwanted_tokens.push(NoIntroToken::Release("Sample", Some("3")));
-    }
-
-    if do_discard(connection, matches, "SEGA_CHANNEL").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Sega Channel"));
-    }
-
-    if do_discard(connection, matches, "SNES_MINI").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "SNES Mini"));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "SNES Mini, Switch Online",
-        ));
-    }
-
-    if do_discard(connection, matches, "SONIC_CLASSIC_COLLECTION").await {
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Sonic Classic Collection",
-        ));
-    }
-
-    if do_discard(connection, matches, "SWITCH_ONLINE").await {
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Classic Mini, Switch Online",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "SNES Mini, Switch Online",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Switch Online"));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Virtual Console, Switch Online",
-        ));
-    }
-
-    if do_discard(connection, matches, "VIRTUAL_CONSOLE").await {
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "3DS Virtual Console",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Virtual Console",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Virtual Console, Classic Mini, Switch Online",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Virtual Console, Switch Online",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Wii U Virtual Console",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Wii and Wii U Virtual Console",
-        ));
-        unwanted_tokens.push(NoIntroToken::Flag(
-            FlagType::Parenthesized,
-            "Wii Virtual Console",
-        ));
-    }
-
-    if do_discard(connection, matches, "WII").await {
-        unwanted_tokens.push(NoIntroToken::Flag(FlagType::Parenthesized, "Wii"));
-    }
-
-    unwanted_tokens.dedup();
-    unwanted_tokens
-}
-
-fn get_new_path(
+fn compute_new_path(
     game: &Game,
     rom: &Rom,
     romfile: &Romfile,
@@ -646,7 +432,6 @@ fn get_new_path(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::{set_bool, set_rom_directory, MUTEX};
     use super::super::database::*;
     use super::super::import_dats::import_dat;
     use super::super::import_roms::import_rom;
@@ -657,102 +442,84 @@ mod test {
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
-    async fn test_do_discard_with_flag_should_return_false() {
+    async fn test_compute_regions_all_should_get_from_matches() {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let matches = subcommand().get_matches_from(vec!["config", "--with-beta"]);
+        let key = "REGIONS_ALL";
+
+        add_to_list(&mut connection, key, "US").await;
+        let matches = subcommand().get_matches_from(vec!["sort-roms", "-y", "-r", "EU"]);
 
         // when
-        let result = do_discard(&mut connection, &matches, "BETA").await;
+        let all_regions = compute_regions(&mut connection, &matches, key).await;
 
         // then
-        assert_eq!(result, false);
+        assert_eq!(all_regions.len(), 1);
+        assert_eq!(all_regions.get(0).unwrap(), &Region::Europe);
     }
 
     #[async_std::test]
-    async fn test_do_discard_without_flag_should_return_true() {
+    async fn test_compute_regions_all_should_get_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let matches = subcommand().get_matches_from(vec!["config", "--without-beta"]);
+        let key = "REGIONS_ALL";
+
+        add_to_list(&mut connection, key, "US").await;
+        let matches = subcommand().get_matches_from(vec!["sort-roms", "-y"]);
 
         // when
-        let result = do_discard(&mut connection, &matches, "BETA").await;
+        let all_regions = compute_regions(&mut connection, &matches, key).await;
 
         // then
-        assert_eq!(result, true);
+        assert_eq!(all_regions.len(), 1);
+        assert_eq!(all_regions.get(0).unwrap(), &Region::UnitedStates);
     }
 
     #[async_std::test]
-    async fn test_do_discard_no_flag_should_return_false_from_db() {
+    async fn test_compute_regions_one_should_get_from_matches() {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let matches = subcommand().get_matches_from(vec!["config"]);
+        let key = "REGIONS_ONE";
+
+        add_to_list(&mut connection, key, "US").await;
+        let matches = subcommand().get_matches_from(vec!["sort-roms", "-y", "-g", "EU"]);
 
         // when
-        let result = do_discard(&mut connection, &matches, "BETA").await;
+        let all_regions = compute_regions(&mut connection, &matches, key).await;
 
         // then
-        assert_eq!(result, false);
+        assert_eq!(all_regions.len(), 1);
+        assert_eq!(all_regions.get(0).unwrap(), &Region::Europe);
     }
 
     #[async_std::test]
-    async fn test_do_discard_no_flag_should_return_true_from_db() {
+    async fn test_compute_regions_one_should_get_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let matches = subcommand().get_matches_from(vec!["config"]);
+        let key = "REGIONS_ONE";
+
+        add_to_list(&mut connection, key, "US").await;
+        let matches = subcommand().get_matches_from(vec!["sort-roms", "-y"]);
 
         // when
-        set_bool(&mut connection, "DISCARD_BETA", true).await;
-        set_bool(
-            &mut connection,
-            "DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION",
-            true,
-        )
-        .await;
-        let result = do_discard(&mut connection, &matches, "BETA").await;
+        let all_regions = compute_regions(&mut connection, &matches, key).await;
 
         // then
-        assert_eq!(result, true);
+        assert_eq!(all_regions.len(), 1);
+        assert_eq!(all_regions.get(0).unwrap(), &Region::UnitedStates);
     }
 
     #[async_std::test]
-    async fn test_trim_games_should_discard_everything() {
+    async fn test_trim_games_should_discard_unwanted_games() {
         // given
-        let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
-
-        let matches = subcommand().get_matches_from(vec!["config"]);
-
-        set_bool(&mut connection, "DISCARD_BETA", true).await;
-        set_bool(
-            &mut connection,
-            "DISCARD_CASTLEVANIA_ANNIVERSARY_COLLECTION",
-            true,
-        )
-        .await;
-        set_bool(&mut connection, "DISCARD_CLASSIC_MINI", true).await;
-        set_bool(&mut connection, "DISCARD_DEBUG", true).await;
-        set_bool(&mut connection, "DISCARD_DEMO", true).await;
-        set_bool(&mut connection, "DISCARD_GOG", true).await;
-        set_bool(&mut connection, "DISCARD_PROGRAM", true).await;
-        set_bool(&mut connection, "DISCARD_PROTO", true).await;
-        set_bool(&mut connection, "DISCARD_SAMPLE", true).await;
-        set_bool(&mut connection, "DISCARD_SEGA_CHANNEL", true).await;
-        set_bool(&mut connection, "DISCARD_SNES_MINI", true).await;
-        set_bool(&mut connection, "DISCARD_SONIC_CLASSIC_COLLECTION", true).await;
-        set_bool(&mut connection, "DISCARD_SWITCH_ONLINE", true).await;
-        set_bool(&mut connection, "DISCARD_VIRTUAL_CONSOLE", true).await;
-        set_bool(&mut connection, "DISCARD_WII", true).await;
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
-
         let games = vec![
             Game {
                 id: 1,
@@ -780,144 +547,29 @@ mod test {
             },
             Game {
                 id: 4,
-                name: String::from("Game (USA) (Castlevania Anniversary Collection)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 5,
-                name: String::from("Game (USA) (Classic Mini)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 6,
-                name: String::from("Game (USA) (Debug)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 7,
-                name: String::from("Game (USA) (Demo)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 8,
-                name: String::from("Game (USA) (GOG)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 9,
-                name: String::from("Game (USA) (Program)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 10,
-                name: String::from("Game (USA) (Proto)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 11,
-                name: String::from("Game (USA) (Proto 1)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 12,
-                name: String::from("Game (USA) (Sample)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 13,
-                name: String::from("Game (USA) (Sample 1)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 14,
-                name: String::from("Game (USA) (Sega Channel)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 15,
-                name: String::from("Game (USA) (SNES Mini)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 16,
-                name: String::from("Game (USA) (Sonic Classic Collection)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 17,
-                name: String::from("Game (USA) (Switch Online)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 18,
-                name: String::from("Game (USA) (Virtual Console)"),
-                description: String::from(""),
-                regions: String::from(""),
-                system_id: 1,
-                parent_id: None,
-            },
-            Game {
-                id: 19,
-                name: String::from("Game (USA) (Wii)"),
+                name: String::from("Game (USA) (Virtual Console, Switch Online)"),
                 description: String::from(""),
                 regions: String::from(""),
                 system_id: 1,
                 parent_id: None,
             },
         ];
+
+        let unwanted_releases = vec!["Beta"];
+        let unwanted_flags = vec!["Virtual Console"];
+
         // when
-        let (unwanted_games, regular_games) = trim_games(games, &unwanted_tokens);
+        let (unwanted_games, regular_games) =
+            trim_games(games, &unwanted_releases, &unwanted_flags);
 
         // then
-        assert_eq!(unwanted_games.len(), 18);
+        assert_eq!(unwanted_games.len(), 3);
         assert_eq!(regular_games.len(), 1);
         assert_eq!(regular_games.get(0).unwrap().name, "Game (USA)")
     }
 
     #[async_std::test]
-    async fn test_get_new_path_archive_single_file() {
+    async fn test_compute_new_path_archive_single_file() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -945,14 +597,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom.7z"));
     }
 
     #[async_std::test]
-    async fn test_get_new_path_archive_multiple_files() {
+    async fn test_compute_new_path_archive_multiple_files() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -980,14 +632,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("game name.7z"));
     }
 
     #[async_std::test]
-    async fn test_get_new_path_chd_single_file() {
+    async fn test_compute_new_path_chd_single_file() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -1015,14 +667,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("rom name.chd"));
     }
 
     #[async_std::test]
-    async fn test_get_new_path_chd_multiple_files() {
+    async fn test_compute_new_path_chd_multiple_files() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -1050,14 +702,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 3, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 3, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("game name.chd"));
     }
 
     #[async_std::test]
-    async fn test_get_new_path_cso() {
+    async fn test_compute_new_path_cso() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -1085,14 +737,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("rom name.cso"));
     }
 
     #[async_std::test]
-    async fn test_get_new_path_other() {
+    async fn test_compute_new_path_other() {
         // given
         let test_directory = Path::new("test");
         let game = Game {
@@ -1120,14 +772,14 @@ mod test {
         };
 
         // when
-        let path = get_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom"));
     }
 
     #[async_std::test]
-    async fn test_sort_roms_keep_all() {
+    async fn test_sort_system_keep_all() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1189,6 +841,7 @@ mod test {
             &all_regions,
             &one_regions,
             &vec![],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1215,7 +868,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_discard_beta() {
+    async fn test_sort_system_discard_beta() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1264,10 +917,9 @@ mod test {
             .unwrap();
         }
 
-        let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![];
         let one_regions = vec![];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1276,7 +928,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec!["Beta"],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1318,7 +971,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_discard_asia() {
+    async fn test_sort_system_discard_asia() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1370,7 +1023,6 @@ mod test {
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![Region::UnitedStates, Region::Europe, Region::Japan];
         let one_regions = vec![];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1379,7 +1031,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec![],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1421,7 +1074,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_discard_beta_and_asia() {
+    async fn test_sort_system_discard_beta_and_asia() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1470,10 +1123,9 @@ mod test {
             .unwrap();
         }
 
-        let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![Region::UnitedStates, Region::Europe, Region::Japan];
         let one_regions = vec![];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1482,7 +1134,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec!["Beta"],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1524,7 +1177,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_1g1r_with_parent_clone_information() {
+    async fn test_sort_system_1g1r_with_parent_clone_information() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1576,7 +1229,6 @@ mod test {
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![];
         let one_regions = vec![Region::UnitedStates, Region::Europe];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1585,7 +1237,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec![],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1628,7 +1281,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_1g1r_without_parent_clone_information() {
+    async fn test_sort_system_1g1r_without_parent_clone_information() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1680,7 +1333,6 @@ mod test {
         let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![];
         let one_regions = vec![Region::UnitedStates, Region::Europe];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1689,7 +1341,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec![],
+            &vec![],
             &progress_bar,
         )
         .await
@@ -1732,7 +1385,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_sort_roms_1g1r_with_parent_clone_information_without_asia_without_beta() {
+    async fn test_sort_system_1g1r_with_parent_clone_information_without_asia_without_beta() {
         // given
         let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
 
@@ -1781,10 +1434,9 @@ mod test {
             .unwrap();
         }
 
-        let matches = subcommand().get_matches_from(vec!["config", "-y", "--without-beta"]);
+        let matches = subcommand().get_matches_from(vec!["config", "-y"]);
         let all_regions = vec![Region::Japan];
         let one_regions = vec![Region::UnitedStates, Region::Europe];
-        let unwanted_tokens = compute_unwanted_tokens(&mut connection, &matches).await;
 
         // when
         sort_system(
@@ -1793,7 +1445,8 @@ mod test {
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_tokens,
+            &vec!["Beta"],
+            &vec![],
             &progress_bar,
         )
         .await
