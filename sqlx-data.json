@@ -33,6 +33,11 @@
           "name": "version",
           "ordinal": 3,
           "type_info": "Text"
+        },
+        {
+          "name": "url",
+          "ordinal": 4,
+          "type_info": "Text"
         }
       ],
       "parameters": {
@@ -42,7 +47,8 @@
         false,
         false,
         false,
-        false
+        false,
+        true
       ]
     }
   },
@@ -372,6 +378,16 @@
       ]
     }
   },
+  "5c36d377d16d5a8d5e7652f161a60f93b78c855d9b7624ba591b2811b1e88a2b": {
+    "query": "\n        UPDATE systems\n        SET name = ?, description = ?, version = ?, url = ?\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 5
+      },
+      "nullable": []
+    }
+  },
   "631aceb6dd0a49a5363f1460313b677113fbf66b35ea3904f41880510c288192": {
     "query": "\n        UPDATE games\n        SET name = ?, description = ?, regions = ?, system_id = ?, parent_id = ?\n        WHERE id = ?\n        ",
     "describe": {
@@ -676,16 +692,6 @@
       ]
     }
   },
-  "982dae142f659199400afbe7634b999e9d7cb7913a64901ebabf85fe94f08301": {
-    "query": "\n        UPDATE systems\n        SET name = ?, description = ?, version = ?\n        WHERE id = ?\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 4
-      },
-      "nullable": []
-    }
-  },
   "9a2ad65a97d75cc6a739b34989bae92403f87479788ee17f68acf09f96ea6183": {
     "query": "\n        SELECT *\n        FROM games\n        ORDER BY name\n        ",
     "describe": {
@@ -757,6 +763,11 @@
           "name": "version",
           "ordinal": 3,
           "type_info": "Text"
+        },
+        {
+          "name": "url",
+          "ordinal": 4,
+          "type_info": "Text"
         }
       ],
       "parameters": {
@@ -766,7 +777,8 @@
         false,
         false,
         false,
-        false
+        false,
+        true
       ]
     }
   },
@@ -798,16 +810,6 @@
         false,
         true
       ]
-    }
-  },
-  "a4029553caead26f6e1966703c972c3aba9401b00128724cfd926ba5756f4d59": {
-    "query": "\n        INSERT INTO systems (name, description, version)\n        VALUES (?, ?, ?)\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 3
-      },
-      "nullable": []
     }
   },
   "a65bce5fcf037c2c81f5dcf1b7dabb294b9ac459e5a13ba5b4ab8fb2731ec036": {
@@ -956,6 +958,16 @@
       ]
     }
   },
+  "c23d1ec20dc877aa01ecd048e068d90e113ed0d90812ae5b5b7e61193eca0b8c": {
+    "query": "\n        INSERT INTO systems (name, description, version, url)\n        VALUES (?, ?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 4
+      },
+      "nullable": []
+    }
+  },
   "c49459637186ff64b1c3ea188ff0f197430fde59e265ce8902a5d15eaa97990b": {
     "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ",
     "describe": {
@@ -1027,6 +1039,11 @@
           "name": "version",
           "ordinal": 3,
           "type_info": "Text"
+        },
+        {
+          "name": "url",
+          "ordinal": 4,
+          "type_info": "Text"
         }
       ],
       "parameters": {
@@ -1036,7 +1053,8 @@
         false,
         false,
         false,
-        false
+        false,
+        true
       ]
     }
   },

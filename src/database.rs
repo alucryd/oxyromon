@@ -48,12 +48,13 @@ pub async fn close_connection(connection: &mut SqliteConnection) {
 pub async fn create_system(connection: &mut SqliteConnection, system_xml: &SystemXml) -> i64 {
     sqlx::query!(
         "
-        INSERT INTO systems (name, description, version)
-        VALUES (?, ?, ?)
+        INSERT INTO systems (name, description, version, url)
+        VALUES (?, ?, ?, ?)
         ",
         system_xml.name,
         system_xml.description,
         system_xml.version,
+        system_xml.url,
     )
     .execute(connection)
     .await
@@ -65,12 +66,13 @@ pub async fn update_system(connection: &mut SqliteConnection, id: i64, system_xm
     sqlx::query!(
         "
         UPDATE systems
-        SET name = ?, description = ?, version = ?
+        SET name = ?, description = ?, version = ?, url = ?
         WHERE id = ?
         ",
         system_xml.name,
         system_xml.description,
         system_xml.version,
+        system_xml.url,
         id,
     )
     .execute(connection)
