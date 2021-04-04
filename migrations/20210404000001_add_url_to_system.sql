@@ -1,0 +1,2 @@
+ALTER TABLE systems
+ADD COLUMN url VARCHAR;

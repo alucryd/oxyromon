@@ -5,6 +5,7 @@ pub struct System {
     pub name: String,
     pub description: String,
     pub version: String,
+    pub url: Option<String>,
 }
 
 pub struct Header {
@@ -66,6 +67,7 @@ pub struct SystemXml {
     pub description: String,
     pub version: String,
     pub clrmamepro: Option<ClrMameProXml>,
+    pub url: Option<String>,
 }
 
 #[derive(Deserialize)]
