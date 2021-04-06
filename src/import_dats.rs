@@ -5,7 +5,7 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
+use async_std::path::Path;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use quick_xml::de;
@@ -42,11 +42,27 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let dats: Vec<String> = matches.values_of_lossy("DATS").unwrap();
-    let info = matches.is_present("INFO");
+    let re = Regex::new(r"\(.*\)").unwrap();
 
     for dat in dats {
         let dat_path = get_canonicalized_path(&dat).await?;
-        import_dat(connection, &dat_path, info, &progress_bar).await?;
+        let mut datfile_xml: DatfileXml =
+            de::from_reader(&mut get_reader_sync(&dat_path.as_path())?)
+                .expect("Failed to parse the datafile");
+
+        // strip the parentheses qualifiers from the system name
+        datfile_xml.system.name = re.replace(&datfile_xml.system.name, "").trim().to_owned();
+
+        // print information
+        progress_bar.println(format!("System: {}", datfile_xml.system.name));
+        progress_bar.println(format!("Version: {}", datfile_xml.system.version));
+        progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
+
+        if matches.is_present("INFO") {
+            return Ok(());
+        }
+
+        import_dat(connection, progress_bar, Path::new(""), &datfile_xml).await?;
     }
 
     Ok(())
@@ -54,28 +70,11 @@ pub async fn main(
 
 pub async fn import_dat(
     connection: &mut SqliteConnection,
-    dat_path: &PathBuf,
-    info: bool,
+    matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
+    dat_directory: &Path,
+    datfile_xml: &DatfileXml,
 ) -> SimpleResult<()> {
-    let f = open_file_sync(&dat_path.into())?;
-    let reader = io::BufReader::new(f);
-    let mut datafile_xml: DatfileXml =
-        de::from_reader(reader).expect("Failed to parse the datafile");
-
-    // strip the parentheses qualifiers from the system name
-    let re = Regex::new(r"\(.*\)").unwrap();
-    datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
-
-    // print information
-    progress_bar.println(format!("System: {}", datafile_xml.system.name));
-    progress_bar.println(format!("Version: {}", datafile_xml.system.version));
-    progress_bar.println(format!("Games: {}", datafile_xml.games.len()));
-
-    if info {
-        return Ok(());
-    }
-
     progress_bar.reset();
     progress_bar.set_style(get_count_progress_style());
     progress_bar.set_length(datafile_xml.games.len() as u64);
@@ -88,8 +87,8 @@ pub async fn import_dat(
     if datafile_xml.system.clrmamepro.is_some() {
         progress_bar.println("Processing header");
         let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
-        let header_file_path = dat_path.parent().unwrap().join(header_file_name);
-        let header_file = open_file_sync(&header_file_path.into())?;
+        let header_file_path = dat_directory.join(header_file_name);
+        let header_file = open_file_sync(&header_file_path.as_path())?;
         let reader = io::BufReader::new(header_file);
         let detector_xml: DetectorXml =
             de::from_reader(reader).expect("Failed to parse the header file");

@@ -15,6 +15,8 @@ extern crate sqlx;
 extern crate simple_error;
 extern crate rayon;
 extern crate tempfile;
+extern crate phf;
+extern crate surf;
 
 mod chdman;
 mod check_roms;
@@ -32,6 +34,7 @@ mod purge_roms;
 mod sevenzip;
 mod sort_roms;
 mod util;
+mod update_dats;
 
 use async_std::path::PathBuf;
 use clap::App;
@@ -52,6 +55,7 @@ async fn main() -> SimpleResult<()> {
         .subcommands(vec![
             config::subcommand(),
             import_dats::subcommand(),
+            update_dats::subcommand(),
             import_roms::subcommand(),
             sort_roms::subcommand(),
             convert_roms::subcommand(),
@@ -86,6 +90,14 @@ async fn main() -> SimpleResult<()> {
                 import_dats::main(
                     &mut connection,
                     &matches.subcommand_matches("import-dats").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("update-dats") => {
+                update_dats::main(
+                    &mut connection,
+                    &matches.subcommand_matches("update-dats").unwrap(),
                     &progress_bar,
                 )
                 .await?

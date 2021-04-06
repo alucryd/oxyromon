@@ -19,9 +19,14 @@ pub async fn open_file(path: &PathBuf) -> SimpleResult<fs::File> {
     Ok(file)
 }
 
-pub fn open_file_sync(path: &std::path::PathBuf) -> SimpleResult<std::fs::File> {
+pub fn open_file_sync(path: &Path) -> SimpleResult<std::fs::File> {
     let file = try_with!(std::fs::File::open(&path), "Failed to open {:?}", path);
     Ok(file)
+}
+
+pub fn get_reader_sync(path: &Path) -> SimpleResult<std::io::BufReader<std::fs::File>> {
+    let f = open_file_sync(path)?;
+    Ok(std::io::BufReader::new(f))
 }
 
 pub async fn create_file(path: &PathBuf) -> SimpleResult<fs::File> {
