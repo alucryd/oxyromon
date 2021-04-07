@@ -62,38 +62,48 @@ pub async fn prompt_for_systems(
 pub async fn prompt_for_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    system_index: Option<&str>,
 ) -> System {
+    let input_validation = Regex::new(r"[0-9]+").unwrap();
+
     let mut systems = find_systems(connection).await;
-    systems.sort_by(|a, b| a.name.cmp(&b.name));
 
     progress_bar.println("Please select a system:");
     for (i, system) in systems.iter().enumerate() {
         progress_bar.println(format!("[{}] {}", i, system.name));
     }
 
-    let mut system_index: usize = systems.len();
-    let mut input = String::new();
-    let input_validation = Regex::new(r"[0-9]+").unwrap();
-
-    while system_index >= systems.len() {
-        io::stdin()
-            .read_line(&mut input)
-            .await
-            .expect("Failed to get input");
-        input = input.trim().to_owned();
-
-        if !input_validation.is_match(&input) {
-            progress_bar.println("Please select a valid system:");
-            continue;
+    let system_index: String = match system_index {
+        Some(system_index) => {
+            if !input_validation.is_match(&system_index) {
+                progress_bar.println("Please select a valid system:");
+                panic!();
+            }
+            system_index.to_owned()
         }
+        None => {
+            let mut system_index = String::new();
+            loop {
+                io::stdin()
+                    .read_line(&mut system_index)
+                    .await
+                    .expect("Failed to get input");
+                system_index = system_index.trim().to_owned();
 
-        system_index = FromStr::from_str(&input).expect("Not a valid number");
-    }
+                if !input_validation.is_match(&system_index) {
+                    progress_bar.println("Please select a valid system:");
+                    continue;
+                }
+                break;
+            }
+            system_index
+        }
+    };
 
-    systems.remove(system_index)
+    systems.remove(FromStr::from_str(&system_index).expect("Not a valid number"))
 }
 
-pub async fn prompt_for_roms(roms: Vec<Rom>, all: bool, progress_bar: &ProgressBar) -> Vec<Rom> {
+pub async fn prompt_for_roms(progress_bar: &ProgressBar, all: bool, roms: Vec<Rom>) -> Vec<Rom> {
     progress_bar.println("Please select ROMs (space separated):");
     for (i, rom) in roms.iter().enumerate() {
         progress_bar.println(format!("[{}] {}", i, rom.name));
@@ -136,7 +146,7 @@ pub async fn prompt_for_roms(roms: Vec<Rom>, all: bool, progress_bar: &ProgressB
         .collect()
 }
 
-pub async fn prompt_for_rom(roms: &mut Vec<Rom>, progress_bar: &ProgressBar) -> Rom {
+pub async fn prompt_for_rom(progress_bar: &ProgressBar, roms: &mut Vec<Rom>) -> Rom {
     progress_bar.println("Please select a rom:");
     for (i, rom) in roms.iter().enumerate() {
         progress_bar.println(format!("[{}] {}", i, rom.name));

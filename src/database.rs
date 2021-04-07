@@ -373,7 +373,11 @@ pub async fn update_rom(
     .expect(&format!("Error while updating rom with id {}", id));
 }
 
-pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romfile_id: Option<i64>) {
+pub async fn update_rom_romfile(
+    connection: &mut SqliteConnection,
+    id: i64,
+    romfile_id: Option<i64>,
+) {
     sqlx::query!(
         "
         UPDATE roms

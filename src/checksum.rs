@@ -2,7 +2,7 @@ use super::model::Header;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::PathBuf;
+use async_std::path::Path;
 use crc32fast::Hasher;
 use digest::generic_array::typenum::{U4, U64};
 use digest::generic_array::GenericArray;
@@ -60,14 +60,14 @@ impl io::Write for Crc32 {
     }
 }
 
-pub async fn get_file_size_and_crc(
-    file_path: &PathBuf,
-    header: &Option<Header>,
+pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
+    file_path: &P,
+    header: &Option<Header>,
     position: usize,
     total: usize,
 ) -> SimpleResult<(u64, String)> {
-    let mut f = open_file_sync(&file_path.into())?;
+    let mut f = open_file_sync(file_path)?;
     let mut size = f.metadata().unwrap().len();
 
     // extract a potential header, revert if none is found

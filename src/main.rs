@@ -13,10 +13,10 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
-extern crate rayon;
-extern crate tempfile;
 extern crate phf;
+extern crate rayon;
 extern crate surf;
+extern crate tempfile;
 
 mod chdman;
 mod check_roms;
@@ -33,8 +33,8 @@ mod prompt;
 mod purge_roms;
 mod sevenzip;
 mod sort_roms;
-mod util;
 mod update_dats;
+mod util;
 
 use async_std::path::PathBuf;
 use clap::App;

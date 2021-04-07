@@ -15,7 +15,7 @@ use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
-use std::io;
+use std::{cmp::Ordering, io};
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
@@ -34,6 +34,20 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .help("Shows the DAT information and exit")
                 .required(false),
         )
+        .arg(
+            Arg::with_name("SKIP_HEADER")
+                .short("s")
+                .long("skip-header")
+                .help("Skips parsing the header even if the system has one")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("FORCE")
+                .short("f")
+                .long("force")
+                .help("Forces import of outdated DAT files")
+                .required(false),
+        )
 }
 
 pub async fn main(
@@ -42,58 +56,76 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let dats: Vec<String> = matches.values_of_lossy("DATS").unwrap();
-    let re = Regex::new(r"\(.*\)").unwrap();
 
     for dat in dats {
-        let dat_path = get_canonicalized_path(&dat).await?;
-        let mut datfile_xml: DatfileXml =
-            de::from_reader(&mut get_reader_sync(&dat_path.as_path())?)
-                .expect("Failed to parse the datafile");
-
-        // strip the parentheses qualifiers from the system name
-        datfile_xml.system.name = re.replace(&datfile_xml.system.name, "").trim().to_owned();
-
-        // print information
-        progress_bar.println(format!("System: {}", datfile_xml.system.name));
-        progress_bar.println(format!("Version: {}", datfile_xml.system.version));
-        progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
-
-        if matches.is_present("INFO") {
-            return Ok(());
-        }
-
-        import_dat(connection, progress_bar, Path::new(""), &datfile_xml).await?;
+        import_dat(
+            connection,
+            progress_bar,
+            &get_canonicalized_path(&dat).await?,
+            matches.is_present("INFO"),
+            matches.is_present("SKIP_HEADER"),
+            matches.is_present("FORCE"),
+        )
+        .await?;
     }
 
     Ok(())
 }
 
-pub async fn import_dat(
+pub async fn import_dat<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
-    dat_directory: &Path,
-    datfile_xml: &DatfileXml,
+    dat_path: &P,
+    info: bool,
+    skip_header: bool,
+    force: bool,
 ) -> SimpleResult<()> {
-    progress_bar.reset();
-    progress_bar.set_style(get_count_progress_style());
-    progress_bar.set_length(datafile_xml.games.len() as u64);
+    let mut datafile_xml: DatfileXml =
+        de::from_reader(&mut get_reader_sync(dat_path)?).expect("Failed to parse data file");
+
+    // strip the parentheses tokens from the system name
+    let re = Regex::new(r"\(.*\)").unwrap();
+    datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
+
+    // print information
+    progress_bar.println(format!("System: {}", datafile_xml.system.name));
+    progress_bar.println(format!("Version: {}", datafile_xml.system.version));
+    progress_bar.println(format!("Games: {}", datafile_xml.games.len()));
+
+    if info {
+        return Ok(());
+    }
 
     // persist system
     progress_bar.println("Processing system");
-    let system_id = create_or_update_system(connection, &datafile_xml.system).await;
+    let system_id = match create_or_update_system(
+        connection,
+        progress_bar,
+        &datafile_xml.system,
+        force,
+    )
+    .await
+    {
+        Some(system_id) => system_id,
+        None => return Ok(()),
+    };
 
-    // parse header file if needed
-    if datafile_xml.system.clrmamepro.is_some() {
-        progress_bar.println("Processing header");
-        let header_file_name = &datafile_xml.system.clrmamepro.unwrap().header;
-        let header_file_path = dat_directory.join(header_file_name);
-        let header_file = open_file_sync(&header_file_path.as_path())?;
-        let reader = io::BufReader::new(header_file);
-        let detector_xml: DetectorXml =
-            de::from_reader(reader).expect("Failed to parse the header file");
-        create_or_update_header(connection, &detector_xml, system_id).await;
-    }
+    // persist header
+    if !skip_header {
+        if let Some(clr_mame_pro_xml) = datafile_xml.system.clrmamepro {
+            progress_bar.println("Processing header");
+            let header_file_name = &clr_mame_pro_xml.header;
+            let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
+            let header_file = open_file_sync(&header_file_path.as_path())?;
+            let reader = io::BufReader::new(header_file);
+            let detector_xml = de::from_reader(reader).expect("Failed to parse header file");
+            create_or_update_header(connection, &detector_xml, system_id).await;
+        }
+    };
+
+    progress_bar.reset();
+    progress_bar.set_style(get_count_progress_style());
+    progress_bar.set_length(datafile_xml.games.len() as u64);
 
     // persist games
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
@@ -126,14 +158,27 @@ fn get_regions_from_game_name<'a>(name: &str) -> SimpleResult<String> {
     Ok(String::from(""))
 }
 
-async fn create_or_update_system(connection: &mut SqliteConnection, system_xml: &SystemXml) -> i64 {
+async fn create_or_update_system(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_xml: &SystemXml,
+    force: bool,
+) -> Option<i64> {
     let system = find_system_by_name(connection, &system_xml.name).await;
     match system {
         Some(system) => {
-            update_system(connection, system.id, system_xml).await;
-            system.id
+            if system_xml.version.cmp(&system.version) != Ordering::Greater && !force {
+                progress_bar.println(format!(
+                    "Version \"{}\" is not newer than \"{}\"",
+                    &system_xml.version, &system.version
+                ));
+                None
+            } else {
+                update_system(connection, system.id, system_xml).await;
+                Some(system.id)
+            }
         }
-        None => create_system(connection, system_xml).await,
+        None => Some(create_system(connection, system_xml).await),
     }
 }
 
@@ -337,11 +382,11 @@ async fn reimport_orphan_romfiles(
         delete_romfile_by_id(connection, romfile_id).await;
         import_rom(
             connection,
+            progress_bar,
             &system_directory,
             &system,
             &header,
-            &Path::new(&romfile.path).to_path_buf(),
-            progress_bar,
+            &Path::new(&romfile.path),
         )
         .await?;
     }
@@ -353,7 +398,7 @@ mod test {
     use super::super::database::*;
     use super::*;
     use async_std::fs;
-    use async_std::path::Path;
+    use async_std::path::PathBuf;
     use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
 
@@ -366,10 +411,10 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System 20200721.dat");
+        let dat_path = test_directory.join("Test System (20200721).dat");
 
         // when
-        import_dat(&mut connection, &dat_path, false, &progress_bar)
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
             .await
             .unwrap();
 
@@ -393,10 +438,10 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System 20200721 (Parent-Clone).dat");
+        let dat_path = test_directory.join("Test System (20200721) (Parent-Clone).dat");
 
         // when
-        import_dat(&mut connection, &dat_path, false, &progress_bar)
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
             .await
             .unwrap();
 
@@ -420,10 +465,10 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System 20210402 (Headered).dat");
+        let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
 
         // when
-        import_dat(&mut connection, &dat_path, false, &progress_bar)
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
             .await
             .unwrap();
 
@@ -433,6 +478,41 @@ mod test {
 
         let system = systems.remove(0);
         assert_eq!(system.name, "Test System");
+
+        assert!(find_header_by_system_id(&mut connection, system.id)
+            .await
+            .is_some());
+
+        assert_eq!(find_games(&mut connection).await.len(), 1);
+        assert_eq!(find_roms(&mut connection).await.len(), 1);
+    }
+
+    #[async_std::test]
+    async fn test_import_dat_headered_skip_header() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
+
+        // when
+        import_dat(&mut connection, &progress_bar, &dat_path, false, true, false)
+            .await
+            .unwrap();
+
+        // then
+        let mut systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.remove(0);
+        assert_eq!(system.name, "Test System");
+
+        assert!(find_header_by_system_id(&mut connection, system.id)
+            .await
+            .is_none());
 
         assert_eq!(find_games(&mut connection).await.len(), 1);
         assert_eq!(find_roms(&mut connection).await.len(), 1);
@@ -447,10 +527,10 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System 20200721.dat");
+        let dat_path = test_directory.join("Test System (20200721).dat");
 
         // when
-        import_dat(&mut connection, &dat_path, true, &progress_bar)
+        import_dat(&mut connection, &progress_bar, &dat_path, true, false, false)
             .await
             .unwrap();
 
@@ -473,17 +553,20 @@ mod test {
         let db_file = NamedTempFile::new().unwrap();
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
-        let dat_path = test_directory.join("Test System 20200721.dat");
-        import_dat(&mut connection, &dat_path, false, &progress_bar)
+        let dat_path = test_directory.join("Test System (20200721).dat");
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
             .await
             .unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        set_rom_directory(PathBuf::from(&tmp_directory.path()));
-        let tmp_path = set_tmp_directory(PathBuf::from(&tmp_directory.path()));
-        let system_path = &tmp_path.join("Test System");
-        create_directory(&system_path).await.unwrap();
-        create_directory(&system_path.join("Trash")).await.unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+        let system_directory = &rom_directory.join("Test System");
+        create_directory(&system_directory).await.unwrap();
+        create_directory(&system_directory.join("Trash"))
+            .await
+            .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -493,7 +576,7 @@ mod test {
             "Test Game (USA, Europe).rom",
         ];
         for romfile_name in romfile_names {
-            let romfile_path = tmp_path.join(romfile_name);
+            let romfile_path = tmp_directory.join(romfile_name);
             fs::copy(
                 test_directory.join(romfile_name),
                 &romfile_path.as_os_str().to_str().unwrap(),
@@ -502,20 +585,20 @@ mod test {
             .unwrap();
             import_rom(
                 &mut connection,
-                &system_path,
+                &progress_bar,
+                &system_directory,
                 &system,
                 &None,
                 &romfile_path,
-                &progress_bar,
             )
             .await
             .unwrap();
         }
 
-        let dat_path = test_directory.join("Test System 20210401.dat");
+        let dat_path = test_directory.join("Test System (20210401).dat");
 
         // when
-        import_dat(&mut connection, &dat_path, false, &progress_bar)
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
             .await
             .unwrap();
 
@@ -560,6 +643,70 @@ mod test {
         assert_eq!(rom.name, "Test Game (Japan).rom");
         assert!(rom.romfile_id.is_some());
         assert_eq!(rom.romfile_id.unwrap(), romfile.id);
+    }
+
+    #[async_std::test]
+    async fn test_import_outdated_dat_should_do_nothing() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System (20200721).dat");
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
+            .await
+            .unwrap();
+
+        let dat_path = test_directory.join("Test System (20000000).dat");
+
+        // when
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
+            .await
+            .unwrap();
+
+        // then
+        let mut systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.remove(0);
+        assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&mut connection).await.len(), 6);
+        assert_eq!(find_roms(&mut connection).await.len(), 8);
+    }
+
+    #[async_std::test]
+    async fn test_import_outdated_dat_forced_should_import() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let dat_path = test_directory.join("Test System (20200721).dat");
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
+            .await
+            .unwrap();
+
+        let dat_path = test_directory.join("Test System (20000000).dat");
+
+        // when
+        import_dat(&mut connection, &progress_bar, &dat_path, false, false, true)
+            .await
+            .unwrap();
+
+        // then
+        let mut systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.remove(0);
+        assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&mut connection).await.len(), 3);
+        assert_eq!(find_roms(&mut connection).await.len(), 3);
     }
 
     #[test]

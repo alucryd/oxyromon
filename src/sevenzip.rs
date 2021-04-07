@@ -20,9 +20,9 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
-pub fn parse_archive(
-    archive_path: &PathBuf,
+pub fn parse_archive<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
+    archive_path: &P,
 ) -> SimpleResult<Vec<ArchiveInfo>> {
     progress_bar.set_message("Parsing archive");
     progress_bar.set_style(get_none_progress_style());
@@ -30,7 +30,7 @@ pub fn parse_archive(
     let output = Command::new("7z")
         .arg("l")
         .arg("-slt")
-        .arg(&archive_path)
+        .arg(archive_path.as_ref())
         .output()
         .expect("Failed to parse archive");
 
@@ -62,18 +62,18 @@ pub fn parse_archive(
     Ok(sevenzip_infos)
 }
 
-pub fn rename_file_in_archive(
-    archive_path: &PathBuf,
+pub fn rename_file_in_archive<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    archive_path: &P,
     file_name: &str,
     new_file_name: &str,
-    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.set_message("Renaming file");
     progress_bar.set_style(get_none_progress_style());
 
     let output = Command::new("7z")
         .arg("rn")
-        .arg(archive_path)
+        .arg(archive_path.as_ref())
         .arg(file_name)
         .arg(new_file_name)
         .output()
@@ -86,11 +86,11 @@ pub fn rename_file_in_archive(
     Ok(())
 }
 
-pub fn extract_files_from_archive(
-    archive_path: &PathBuf,
-    file_names: &[&str],
-    directory: &Path,
+pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
+    archive_path: &P,
+    file_names: &[&str],
+    directory: &Q,
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
@@ -100,9 +100,9 @@ pub fn extract_files_from_archive(
 
     let output = Command::new("7z")
         .arg("x")
-        .arg(archive_path)
+        .arg(archive_path.as_ref())
         .args(file_names)
-        .current_dir(directory)
+        .current_dir(directory.as_ref())
         .output()
         .expect("Failed to extract archive");
 
@@ -112,15 +112,15 @@ pub fn extract_files_from_archive(
 
     Ok(file_names
         .iter()
-        .map(|file_name| directory.join(file_name))
+        .map(|file_name| directory.as_ref().join(file_name))
         .collect())
 }
 
-pub fn add_files_to_archive(
-    archive_path: &PathBuf,
-    file_names: &[&str],
-    directory: &Path,
+pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
+    archive_path: &P,
+    file_names: &[&str],
+    directory: &Q,
 ) -> SimpleResult<()> {
     progress_bar.set_message("Compressing files");
     progress_bar.set_style(get_none_progress_style());
@@ -130,10 +130,10 @@ pub fn add_files_to_archive(
 
     let output = Command::new("7z")
         .arg("a")
-        .arg(archive_path)
+        .arg(archive_path.as_ref())
         .args(file_names)
         .arg("-mx=9")
-        .current_dir(directory)
+        .current_dir(directory.as_ref())
         .output()
         .expect("Failed to create archive");
 
