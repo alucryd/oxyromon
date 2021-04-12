@@ -1,4 +1,3 @@
-use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::model::*;
@@ -8,6 +7,7 @@ use super::SimpleResult;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
+use once_cell::sync::OnceCell;
 use quick_xml::de;
 use rayon::prelude::*;
 use regex::Regex;
@@ -16,6 +16,8 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
 use std::{cmp::Ordering, io};
+
+static SYSTEM_NAME_REGEX: OnceCell<Regex> = OnceCell::new();
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
@@ -80,17 +82,13 @@ pub async fn import_dat<P: AsRef<Path>>(
     skip_header: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let mut datafile_xml: DatfileXml =
-        de::from_reader(&mut get_reader_sync(dat_path)?).expect("Failed to parse data file");
-
-    // strip the parentheses tokens from the system name
-    let re = Regex::new(r"\(.*\)").unwrap();
-    datafile_xml.system.name = re.replace(&datafile_xml.system.name, "").trim().to_owned();
+    let datfile_xml: DatfileXml =
+        de::from_reader(&mut get_reader_sync(dat_path)?).expect("Failed to parse DAT file");
 
     // print information
-    progress_bar.println(format!("System: {}", datafile_xml.system.name));
-    progress_bar.println(format!("Version: {}", datafile_xml.system.version));
-    progress_bar.println(format!("Games: {}", datafile_xml.games.len()));
+    progress_bar.println(format!("System: {}", datfile_xml.system.name));
+    progress_bar.println(format!("Version: {}", datfile_xml.system.version));
+    progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
 
     if info {
         return Ok(());
@@ -98,21 +96,15 @@ pub async fn import_dat<P: AsRef<Path>>(
 
     // persist system
     progress_bar.println("Processing system");
-    let system_id = match create_or_update_system(
-        connection,
-        progress_bar,
-        &datafile_xml.system,
-        force,
-    )
-    .await
-    {
-        Some(system_id) => system_id,
-        None => return Ok(()),
-    };
+    let system_id =
+        match create_or_update_system(connection, progress_bar, &datfile_xml.system, force).await {
+            Some(system_id) => system_id,
+            None => return Ok(()),
+        };
 
     // persist header
     if !skip_header {
-        if let Some(clr_mame_pro_xml) = datafile_xml.system.clrmamepro {
+        if let Some(clr_mame_pro_xml) = datfile_xml.system.clrmamepro {
             progress_bar.println("Processing header");
             let header_file_name = &clr_mame_pro_xml.header;
             let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
@@ -125,16 +117,16 @@ pub async fn import_dat<P: AsRef<Path>>(
 
     progress_bar.reset();
     progress_bar.set_style(get_count_progress_style());
-    progress_bar.set_length(datafile_xml.games.len() as u64);
+    progress_bar.set_length(datfile_xml.games.len() as u64);
 
     // persist games
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     progress_bar.println("Deleting old games");
     orphan_romfile_ids
-        .append(&mut delete_old_games(connection, &datafile_xml.games, system_id).await);
+        .append(&mut delete_old_games(connection, &datfile_xml.games, system_id).await);
     progress_bar.println("Processing games");
     orphan_romfile_ids.append(
-        &mut create_or_update_games(connection, &datafile_xml.games, system_id, &progress_bar)
+        &mut create_or_update_games(connection, &datfile_xml.games, system_id, &progress_bar)
             .await?,
     );
     if !orphan_romfile_ids.is_empty() {
@@ -143,6 +135,19 @@ pub async fn import_dat<P: AsRef<Path>>(
     }
 
     Ok(())
+}
+
+pub fn get_system_name_regex() -> &'static Regex {
+    match SYSTEM_NAME_REGEX.get() {
+        Some(re) => re,
+        None => {
+            let re = Regex::new(r"\(.*\)").unwrap();
+            SYSTEM_NAME_REGEX
+                .set(re)
+                .expect("Failed to set system name regex");
+            SYSTEM_NAME_REGEX.get().unwrap()
+        }
+    }
 }
 
 fn get_regions_from_game_name<'a>(name: &str) -> SimpleResult<String> {
@@ -164,19 +169,37 @@ async fn create_or_update_system(
     system_xml: &SystemXml,
     force: bool,
 ) -> Option<i64> {
-    let system = find_system_by_name(connection, &system_xml.name).await;
+    let mut system = find_system_by_name(connection, &system_xml.name).await;
+    // temporary workaround to replace the old truncated names with the full dat names
+    if system.is_none() {
+        let name = format!(
+            "{} (%",
+            get_system_name_regex().replace(&system_xml.name, "").trim()
+        );
+        system = find_system_by_name_like(connection, &name).await;
+    }
     match system {
         Some(system) => {
-            if system_xml.version.cmp(&system.version) != Ordering::Greater && !force {
-                progress_bar.println(format!(
-                    "Version \"{}\" is not newer than \"{}\"",
-                    &system_xml.version, &system.version
-                ));
-                None
-            } else {
-                update_system(connection, system.id, system_xml).await;
-                Some(system.id)
+            match system_xml.version.cmp(&system.version) {
+                Ordering::Less => {
+                    progress_bar.println(format!(
+                        "Version \"{}\" is older than \"{}\"",
+                        &system_xml.version, &system.version
+                    ));
+                    if !force {
+                        return None;
+                    }
+                }
+                Ordering::Equal => {
+                    progress_bar.println(format!("Already at version \"{}\"", &system.version));
+                    if !force {
+                        return None;
+                    }
+                }
+                Ordering::Greater => {}
             }
+            update_system(connection, system.id, system_xml).await;
+            Some(system.id)
         }
         None => Some(create_system(connection, system_xml).await),
     }
@@ -375,8 +398,7 @@ async fn reimport_orphan_romfiles(
 ) -> SimpleResult<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
-    let system_directory = get_rom_directory(connection).await.join(&system.name);
-    create_directory(&system_directory).await?;
+    let system_directory = get_system_directory(connection, &system).await?;
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id).await;
         delete_romfile_by_id(connection, romfile_id).await;
@@ -395,6 +417,7 @@ async fn reimport_orphan_romfiles(
 
 #[cfg(test)]
 mod test {
+    use super::super::config::*;
     use super::super::database::*;
     use super::*;
     use async_std::fs;
@@ -414,9 +437,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20200721).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -441,9 +471,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20200721) (Parent-Clone).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -468,9 +505,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -499,9 +543,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, true, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            true,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -530,9 +581,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20200721).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, true, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            true,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let systems = find_systems(&mut connection).await;
@@ -554,9 +612,16 @@ mod test {
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         let rom_directory = TempDir::new_in(&test_directory).unwrap();
         let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
@@ -598,9 +663,16 @@ mod test {
         let dat_path = test_directory.join("Test System (20210401).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -655,16 +727,30 @@ mod test {
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         let dat_path = test_directory.join("Test System (20000000).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;
@@ -687,16 +773,30 @@ mod test {
         let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, false)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
 
         let dat_path = test_directory.join("Test System (20000000).dat");
 
         // when
-        import_dat(&mut connection, &progress_bar, &dat_path, false, false, true)
-            .await
-            .unwrap();
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &dat_path,
+            false,
+            false,
+            true,
+        )
+        .await
+        .unwrap();
 
         // then
         let mut systems = find_systems(&mut connection).await;

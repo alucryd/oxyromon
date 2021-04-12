@@ -67,7 +67,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL"), &progress_bar).await;
+    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await?;
 
     let all_regions = compute_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = compute_regions(connection, matches, "REGIONS_ONE").await;
@@ -251,7 +251,7 @@ async fn sort_system<'a>(
     }
 
     // create necessary directories
-    let all_regions_directory = get_rom_directory(connection).await.join(&system.name);
+    let all_regions_directory = get_system_directory(connection, system).await?;
     let one_region_directory = all_regions_directory.join("1G1R");
     let trash_directory = all_regions_directory.join("Trash");
     for d in &[
@@ -299,7 +299,7 @@ async fn sort_system<'a>(
         }
 
         // prompt user for confirmation
-        if prompt_for_yes_no(matches, progress_bar).await {
+        if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
                 let old_path = Path::new(&romfile_move.0.path).to_path_buf();
                 let new_path = Path::new(&romfile_move.1).to_path_buf();
@@ -816,12 +816,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -903,12 +899,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1005,12 +997,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1107,12 +1095,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1211,12 +1195,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1314,12 +1294,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1419,12 +1395,8 @@ mod test {
             fs::copy(test_directory.join(romfile_name), &romfile_path)
                 .await
                 .unwrap();
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();

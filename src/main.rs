@@ -13,6 +13,7 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
+extern crate dialoguer;
 extern crate phf;
 extern crate rayon;
 extern crate surf;
@@ -24,6 +25,7 @@ mod checksum;
 mod config;
 mod convert_roms;
 mod database;
+mod download_dats;
 mod import_dats;
 mod import_roms;
 mod maxcso;
@@ -33,7 +35,6 @@ mod prompt;
 mod purge_roms;
 mod sevenzip;
 mod sort_roms;
-mod update_dats;
 mod util;
 
 use async_std::path::PathBuf;
@@ -55,7 +56,7 @@ async fn main() -> SimpleResult<()> {
         .subcommands(vec![
             config::subcommand(),
             import_dats::subcommand(),
-            update_dats::subcommand(),
+            download_dats::subcommand(),
             import_roms::subcommand(),
             sort_roms::subcommand(),
             convert_roms::subcommand(),
@@ -94,10 +95,10 @@ async fn main() -> SimpleResult<()> {
                 )
                 .await?
             }
-            Some("update-dats") => {
-                update_dats::main(
+            Some("download-dats") => {
+                download_dats::main(
                     &mut connection,
-                    &matches.subcommand_matches("update-dats").unwrap(),
+                    &matches.subcommand_matches("download-dats").unwrap(),
                     &progress_bar,
                 )
                 .await?

@@ -1,4 +1,6 @@
 use super::config::*;
+use super::import_dats::get_system_name_regex;
+use super::model::*;
 use super::SimpleResult;
 use async_std::fs;
 use async_std::path::{Path, PathBuf};
@@ -48,7 +50,10 @@ pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
     Ok(file)
 }
 
-pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(old_path: &P, new_path: &Q) -> SimpleResult<()> {
+pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
+    old_path: &P,
+    new_path: &Q,
+) -> SimpleResult<()> {
     try_with!(
         fs::rename(old_path, new_path).await,
         "Failed to rename {:?} to {:?}",
@@ -83,4 +88,26 @@ pub async fn create_tmp_directory(connection: &mut SqliteConnection) -> SimpleRe
         "Failed to create temp directory"
     );
     Ok(tmp_directory)
+}
+
+pub async fn get_system_directory(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let system_directory = get_rom_directory(connection)
+        .await
+        .join(get_system_name_regex().replace(&system.name, "").trim());
+    create_directory(&system_directory).await?;
+    Ok(system_directory)
+}
+
+pub async fn get_trash_directory(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let trash_directory = get_system_directory(connection, system)
+        .await?
+        .join("Trash");
+    create_directory(&trash_directory).await?;
+    Ok(trash_directory)
 }

@@ -1,6 +1,5 @@
 use super::chdman::*;
 use super::checksum::*;
-use super::config::*;
 use super::database::*;
 use super::maxcso::*;
 use super::model::*;
@@ -13,6 +12,7 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::ffi::OsString;
+use std::str::FromStr;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-roms")
@@ -40,12 +40,15 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let romfile_paths: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
-    let system = prompt_for_system(connection, &progress_bar, matches.value_of("SYSTEM")).await;
-
+    let system = prompt_for_system(
+        connection,
+        matches
+            .value_of("SYSTEM")
+            .map(|s| FromStr::from_str(s).expect("Failed to parse number")),
+    )
+    .await?;
     let header = find_header_by_system_id(connection, system.id).await;
-
-    let system_directory = get_rom_directory(connection).await.join(&system.name);
-    create_directory(&system_directory).await?;
+    let system_directory = get_system_directory(connection, &system).await?;
 
     for romfile_path in romfile_paths {
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
@@ -179,7 +182,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             crc = sevenzip_info.crc.clone();
         }
 
-        let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
+        let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
                 move_to_trash(connection, progress_bar, system_directory, romfile_path).await?;
@@ -229,7 +232,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                 crc = sevenzip_info.crc.clone();
             }
 
-            let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
+            let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
                 Some(rom) => rom,
                 None => {
                     remove_file(&extracted_path).await?;
@@ -277,7 +280,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     }
 
     let (size, crc) = get_file_size_and_crc(progress_bar, &cue_path, &header, 1, 1).await?;
-    let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
+    let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system_directory, &cue_path).await?;
@@ -345,7 +348,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
     remove_file(&iso_path).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
+    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system_directory, romfile_path).await?;
@@ -374,7 +377,7 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
 ) -> SimpleResult<()> {
     let (size, crc) = get_file_size_and_crc(progress_bar, romfile_path, &header, 1, 1).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await {
+    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system_directory, romfile_path).await?;
@@ -399,14 +402,14 @@ async fn find_rom(
     crc: &str,
     system: &System,
     progress_bar: &ProgressBar,
-) -> Option<Rom> {
+) -> SimpleResult<Option<Rom>> {
     let rom: Rom;
     let mut roms = find_roms_by_size_and_crc_and_system_id(connection, size, crc, system.id).await;
 
     // abort if no match
     if roms.is_empty() {
         progress_bar.println("No match");
-        return None;
+        return Ok(None);
     }
 
     // let user choose the rom if there are multiple matches
@@ -414,17 +417,17 @@ async fn find_rom(
         rom = roms.remove(0);
         progress_bar.println(&format!("Matches \"{}\"", rom.name));
     } else {
-        rom = prompt_for_rom(progress_bar, &mut roms).await;
+        rom = prompt_for_rom(&mut roms)?;
     }
 
     // abort if rom already has a file
     if rom.romfile_id.is_some() {
         let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
         progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
-        return None;
+        return Ok(None);
     }
 
-    Some(rom)
+    Ok(Some(rom))
 }
 
 async fn create_or_update_romfile<P: AsRef<Path>>(
@@ -477,6 +480,7 @@ async fn move_file<P: AsRef<Path>, Q: AsRef<Path>>(
 #[cfg(test)]
 mod test {
     use super::super::config::MUTEX;
+    use super::super::config::*;
     use super::super::database::*;
     use super::super::import_dats;
     use super::*;

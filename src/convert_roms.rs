@@ -49,7 +49,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL"), progress_bar).await;
+    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await?;
     let format = matches.value_of("FORMAT");
     let rom_name = matches.value_of("NAME");
 
@@ -61,7 +61,7 @@ pub async fn main(
                 let roms =
                     find_roms_with_romfile_by_system_id_and_name(connection, system.id, rom_name)
                         .await;
-                prompt_for_roms(progress_bar, matches.is_present("ALL"), roms).await
+                prompt_for_roms(roms, matches.is_present("ALL"))?
             }
             None => find_roms_with_romfile_by_system_id(connection, system.id).await,
         };
@@ -562,12 +562,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -645,12 +641,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -725,12 +717,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -804,12 +792,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -887,12 +871,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -969,12 +949,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -1051,12 +1027,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -1134,12 +1106,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -1225,12 +1193,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -1315,12 +1279,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -1417,12 +1377,8 @@ mod test {
         let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_path in romfile_paths {
-            let matches = import_roms::subcommand().get_matches_from(&[
-                "import-roms",
-                "-s",
-                "0",
-                &romfile_path.as_os_str().to_str().unwrap(),
-            ]);
+            let matches = import_roms::subcommand()
+                .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
             import_roms::main(&mut connection, &matches, &progress_bar)
                 .await
                 .unwrap();
@@ -1527,12 +1483,8 @@ mod test {
 
         let system = find_systems(&mut connection).await.remove(0);
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();

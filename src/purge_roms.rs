@@ -99,7 +99,7 @@ async fn purge_trashed_romfiles(
             progress_bar.println(&romfile.path);
         }
 
-        if prompt_for_yes_no(matches, &progress_bar).await {
+        if matches.is_present("YES") || confirm(true)? {
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path).to_path_buf();
                 if romfile_path.is_file().await {
@@ -172,12 +172,8 @@ mod test {
         .await
         .unwrap();
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
@@ -233,12 +229,8 @@ mod test {
         .await
         .unwrap();
 
-        let matches = import_roms::subcommand().get_matches_from(&[
-            "import-roms",
-            "-s",
-            "0",
-            &romfile_path.as_os_str().to_str().unwrap(),
-        ]);
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
