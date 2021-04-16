@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyromon 0.7.0
+# oxyromon 0.8.0-beta
 
 ### Rusty ROM OrgaNizer
 
@@ -48,9 +48,9 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Support RVZ (when dolphin adds it to its CLI)
-- Iron out dat upgrades and their effect on existing romfiles
+- Support compressing ISO to CHD now that PCSX2 supports it
 - Find a way to automatically update dats, or at least check if updates are available
+- Support RVZ when dolphin adds it to its CLI
 
 ## oxyromon
 
@@ -65,6 +65,7 @@ These should be in your `${PATH}` for extra features.
         help            Prints this message or the help of the given subcommand(s)
         config          Queries and modifies the oxyromon settings
         import-dats     Parses and imports No-Intro and Redump DAT files into oxyromon
+        download-dats   Downloads No-Intro and Redump DAT files and imports them into oxyromon
         import-roms     Validates and imports ROM files into oxyromon
         sort-roms       Sorts ROM files according to region and version preferences
         convert-roms    Converts ROM files between common formats
@@ -116,6 +117,27 @@ Note: Some systems require a header definition to be placed alongside the DAT fi
 
     ARGS:
         <DATS>...    Sets the DAT files to import
+
+## oxyromon-download-dats 
+
+Downloads No-Intro and Redump DAT files and imports them into oxyromon
+
+Supported DAT providers:
+* Redump
+
+TODO:
+* No-Intro
+
+    USAGE:
+        oxyromon download-dats [FLAGS] --nointro --redump
+
+    FLAGS:
+        -a, --all        Imports all systems
+        -f, --force      Forces import of outdated DAT files
+        -n, --nointro    Downloads No-Intro DAT files
+        -r, --redump     Downloads Redump DAT files
+        -h, --help       Prints help information
+        -V, --version    Prints version information
 
 ## oxyromon-import-roms
 

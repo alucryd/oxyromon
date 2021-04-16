@@ -4,8 +4,8 @@
 	<header>
 		<name>Test System (Parent-Clone)</name>
 		<description>Test System (Parent-Clone)</description>
-		<version>20200721</version>
-		<date>20200721</date>
+		<version>20210402</version>
+		<date>20210402</date>
 		<author>Maxime Gauduin</author>
 		<clrmamepro header="header.xml"/>
 	</header>
