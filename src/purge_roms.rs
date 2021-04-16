@@ -101,7 +101,7 @@ async fn purge_trashed_romfiles(
 
         if matches.is_present("YES") || confirm(true)? {
             for romfile in &romfiles {
-                let romfile_path = Path::new(&romfile.path).to_path_buf();
+                let romfile_path = Path::new(&romfile.path);
                 if romfile_path.is_file().await {
                     remove_file(&romfile_path).await?;
                     delete_romfile_by_id(connection, romfile.id).await;
