@@ -214,6 +214,7 @@ mod test {
     use async_std::fs;
     use async_std::io::prelude::*;
     use async_std::path::{Path, PathBuf};
+    use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
     use wiremock::matchers::{method, path, path_regex};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -254,6 +255,8 @@ mod test {
     #[async_std::test]
     async fn test_download_redump_dat() {
         // given
+        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
 

@@ -301,9 +301,7 @@ async fn sort_system<'a>(
         // prompt user for confirmation
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
-                let old_path = Path::new(&romfile_move.0.path).to_path_buf();
-                let new_path = Path::new(&romfile_move.1).to_path_buf();
-                rename_file(&old_path, &new_path).await?;
+                rename_file(&romfile_move.0.path, &romfile_move.1).await?;
                 update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
             }
         }
@@ -399,7 +397,7 @@ fn compute_new_path<P: AsRef<Path>>(
     rom_count: usize,
     directory: &P,
 ) -> PathBuf {
-    let romfile_path = Path::new(&romfile.path).to_path_buf();
+    let romfile_path = Path::new(&romfile.path);
     let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
     let mut new_romfile_path: PathBuf;
 
@@ -597,7 +595,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom.7z"));
@@ -632,7 +630,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("game name.7z"));
@@ -667,7 +665,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("rom name.chd"));
@@ -702,7 +700,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 3, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 3, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("game name.chd"));
@@ -737,7 +735,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("rom name.cso"));
@@ -772,7 +770,7 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory.to_path_buf());
+        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom"));

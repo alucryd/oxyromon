@@ -120,9 +120,7 @@ async fn check_system(
         // prompt user for confirmation
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
-                let old_path = Path::new(&romfile_move.0.path).to_path_buf();
-                let new_path = Path::new(&romfile_move.1).to_path_buf();
-                rename_file(&old_path, &new_path).await?;
+                rename_file(&romfile_move.0.path, &romfile_move.1).await?;
                 update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
             }
         }

@@ -13,18 +13,18 @@ pub static BIN_EXTENSION: &str = "bin";
 
 pub fn create_chd<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
-    cue_path: &P,
+    romfile_path: &P,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
 
-    let mut chd_path = cue_path.as_ref().to_path_buf();
+    let mut chd_path = romfile_path.as_ref().to_path_buf();
     chd_path.set_extension(CHD_EXTENSION);
 
     let output = Command::new("chdman")
         .arg("createcd")
         .arg("-i")
-        .arg(cue_path.as_ref())
+        .arg(romfile_path.as_ref())
         .arg("-o")
         .arg(&chd_path)
         .output()
