@@ -1,3 +1,7 @@
+# 0.8.0
+* Add a new download-dats subcommand (Redump only)
+* Use dialoguer for prompts
+
 # 0.7.0
 * Use shiratsu_naming to parse No-Intro names
 * Drop releases, we don't need them
