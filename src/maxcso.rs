@@ -14,11 +14,14 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CSO");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
 
     let mut cso_path = directory
         .as_ref()
         .join(iso_path.as_ref().file_name().unwrap());
     cso_path.set_extension(CSO_EXTENSION);
+
+    progress_bar.println(format!("Creating {:?}", cso_path.file_name().unwrap()));
 
     let output = Command::new("maxcso")
         .arg(iso_path.as_ref())
@@ -31,6 +34,8 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.disable_steady_tick();
+
     Ok(cso_path)
 }
 
@@ -41,6 +46,12 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting CSO");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+
+    progress_bar.println(format!(
+        "Extracting {:?}",
+        cso_path.as_ref().file_name().unwrap()
+    ));
 
     let mut iso_path = directory
         .as_ref()
@@ -58,6 +69,8 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
+
+    progress_bar.disable_steady_tick();
 
     Ok(iso_path)
 }

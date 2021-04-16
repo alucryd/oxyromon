@@ -17,9 +17,12 @@ pub fn create_chd<P: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(200);
 
     let mut chd_path = romfile_path.as_ref().to_path_buf();
     chd_path.set_extension(CHD_EXTENSION);
+
+    progress_bar.println(format!("Creating {:?}", chd_path.file_name().unwrap()));
 
     let output = Command::new("chdman")
         .arg("createcd")
@@ -34,6 +37,8 @@ pub fn create_chd<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.disable_steady_tick();
+
     Ok(chd_path)
 }
 
@@ -45,6 +50,12 @@ pub async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(200);
+
+    progress_bar.println(format!(
+        "Extracting {:?}",
+        chd_path.as_ref().file_name().unwrap()
+    ));
 
     let mut bin_path = directory
         .as_ref()
@@ -100,6 +111,8 @@ pub async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     }
 
     remove_file(&bin_path).await?;
+
+    progress_bar.disable_steady_tick();
 
     Ok(bin_paths)
 }

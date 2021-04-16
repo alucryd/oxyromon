@@ -82,7 +82,8 @@ pub async fn create_directory<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
     if !path.as_ref().is_dir().await {
         try_with!(
             fs::create_dir_all(path).await,
-            format!("Failed to create {:?}", path.as_ref())
+            "Failed to create {:?}",
+            path.as_ref()
         );
     }
     Ok(())

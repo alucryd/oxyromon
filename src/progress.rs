@@ -1,7 +1,7 @@
 use indicatif::{ProgressBar, ProgressStyle};
 
 const PROGRESS_CHARS: &str = "#-";
-const NONE_TEMPLATE: &str = "{wide_msg}";
+const NONE_TEMPLATE: &str = "{spinner} {wide_msg}";
 const COUNT_TEMPLATE: &str =
     "{spinner} {wide_msg} {pos}/{len} {per_sec} {elapsed_precise} ({eta_precise}) [{bar:80}]";
 const BYTES_TEMPLATE: &str =

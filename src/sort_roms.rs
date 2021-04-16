@@ -126,7 +126,7 @@ async fn sort_system<'a>(
     unwanted_releases: &[&str],
     unwanted_flags: &[&str],
 ) -> SimpleResult<()> {
-    progress_bar.println(&format!("Processing {}", system.name));
+    progress_bar.println(&format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = Vec::new();
