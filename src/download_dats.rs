@@ -4,20 +4,17 @@ use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use dialoguer::MultiSelect;
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
-use rayon::iter::IntoParallelIterator;
 use sqlx::SqliteConnection;
 use std::io::Cursor;
 use surf;
 use zip::read::ZipArchive;
 
-static NOINTRO_PROFILE_URL: &'static str = "https://datomatic.no-intro.org/profile.xml";
-
-static NOINTRO_SYSTEM_URL: &'static str = "www.no-intro.org/";
-static REDUMP_SYSTEM_URL: &'static str = "http://redump.org/";
+static NOINTRO_BASE_URL: &'static str = "https://datomatic.no-intro.org";
+static NOINTRO_PROFILE_URL: &'static str = "/profile.xml";
+static REDUMP_BASE_URL: &'static str = "http://redump.org";
 
 static REDUMP_SYSTEMS_CODES: phf::Map<&'static str, &'static str> = phf_map! {
     "Apple - Macintosh" => "mac",
@@ -92,6 +89,13 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required_unless("NOINTRO"),
         )
         .arg(
+            Arg::with_name("ALL")
+                .short("a")
+                .long("all")
+                .help("Imports all DAT files")
+                .required(false),
+        )
+        .arg(
             Arg::with_name("FORCE")
                 .short("f")
                 .long("force")
@@ -106,9 +110,25 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("NOINTRO") {
-        download_nointro_dats(connection, progress_bar, matches.is_present("FORCE")).await?
+        progress_bar.println("Not supported");
+        return Ok(());
+        download_nointro_dats(
+            connection,
+            progress_bar,
+            NOINTRO_BASE_URL,
+            matches.is_present("ALL"),
+            matches.is_present("FORCE"),
+        )
+        .await?
     } else if matches.is_present("REDUMP") {
-        download_redump_dats(connection, progress_bar, matches.is_present("FORCE")).await?
+        download_redump_dats(
+            connection,
+            progress_bar,
+            REDUMP_BASE_URL,
+            matches.is_present("ALL"),
+            matches.is_present("FORCE"),
+        )
+        .await?
     }
     Ok(())
 }
@@ -116,40 +136,46 @@ pub async fn main(
 async fn download_nointro_dats(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    base_url: &str,
+    all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let response = surf::get(NOINTRO_PROFILE_URL)
+    let response = surf::get(format!("{}{}", base_url, NOINTRO_PROFILE_URL))
         .recv_string()
         .await
         .expect("Failed to download No-Intro profiles");
     let profile: ProfileXml = de::from_str(&response).expect("Failed to parse profile");
-    let mut items: Vec<String> = profile
+    let mut items: Vec<&str> = profile
         .systems
-        .into_iter()
-        .map(|system| system.name)
+        .iter()
+        .map(|system| system.name.as_str())
         .collect();
     items.sort();
-    let indices: Vec<usize> = try_with!(
-        MultiSelect::new().paged(true).items(&items).interact(),
-        "Failed to prompt for system(s)"
-    );
+    let indices: Vec<usize> = if all {
+        (0..items.len()).collect()
+    } else {
+        multiselect(&items, None)?
+    };
     Ok(())
 }
 
 async fn download_redump_dats(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    base_url: &str,
+    all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let mut items: Vec<&&str> = REDUMP_SYSTEMS_CODES.keys().collect();
+    let mut items: Vec<&str> = REDUMP_SYSTEMS_CODES.keys().map(|s| *s).collect();
     items.sort();
-    let indices: Vec<usize> = try_with!(
-        MultiSelect::new().paged(true).items(&items).interact(),
-        "Failed to prompt for system(s)"
-    );
+    let indices: Vec<usize> = if all {
+        (0..items.len()).collect()
+    } else {
+        multiselect(&items, None)?
+    };
     for i in indices {
         let code = *REDUMP_SYSTEMS_CODES.get(*items.get(i).unwrap()).unwrap();
-        let zip_url = format!("{}datfile/{}/", REDUMP_SYSTEM_URL, code);
+        let zip_url = format!("{}/datfile/{}/", base_url, code);
         let response = surf::get(zip_url)
             .recv_bytes()
             .await
@@ -181,10 +207,97 @@ async fn download_redump_dats(
 
 #[cfg(test)]
 mod test {
+    use super::super::config::*;
     use super::super::database::*;
+    use super::super::util::*;
     use super::*;
     use async_std::fs;
-    use async_std::path::Path;
-    use async_std::sync::Mutex;
+    use async_std::io::prelude::*;
+    use async_std::path::{Path, PathBuf};
     use tempfile::{NamedTempFile, TempDir};
+    use wiremock::matchers::{method, path, path_regex};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[async_std::test]
+    async fn test_download_nointro_dat() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let profile_xml_path = test_directory.join("profile.xml");
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/profile.xml"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_string(fs::read_to_string(&profile_xml_path).await.unwrap()),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // when
+        download_nointro_dats(
+            &mut connection,
+            &progress_bar,
+            &mock_server.uri(),
+            true,
+            false,
+        )
+        .await
+        .unwrap();
+    }
+
+    #[async_std::test]
+    async fn test_download_redump_dat() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
+        let zip_path = test_directory.join("Test System (20200721).zip");
+        let mut zip_data = Vec::new();
+        open_file(&zip_path)
+            .await
+            .unwrap()
+            .read_to_end(&mut zip_data)
+            .await
+            .unwrap();
+
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/datfile/[a-z0-9-]+/$"))
+            .respond_with(ResponseTemplate::new(200).set_body_bytes(zip_data))
+            .mount(&mock_server)
+            .await;
+
+        // when
+        download_redump_dats(
+            &mut connection,
+            &progress_bar,
+            &mock_server.uri(),
+            true,
+            false,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let mut systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.remove(0);
+        assert_eq!(system.name, "Test System");
+
+        assert_eq!(find_games(&mut connection).await.len(), 6);
+        assert_eq!(find_roms(&mut connection).await.len(), 8);
+    }
 }

@@ -19,6 +19,9 @@ extern crate rayon;
 extern crate surf;
 extern crate tempfile;
 
+#[cfg(test)]
+extern crate wiremock;
+
 mod chdman;
 mod check_roms;
 mod checksum;

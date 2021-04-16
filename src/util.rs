@@ -3,6 +3,7 @@ use super::import_dats::get_system_name_regex;
 use super::model::*;
 use super::SimpleResult;
 use async_std::fs;
+use async_std::io;
 use async_std::path::{Path, PathBuf};
 use sqlx::SqliteConnection;
 use tempfile::TempDir;
@@ -32,6 +33,11 @@ pub fn open_file_sync<P: AsRef<Path>>(path: &P) -> SimpleResult<std::fs::File> {
         path.as_ref()
     );
     Ok(file)
+}
+
+pub async fn get_reader<P: AsRef<Path>>(path: &P) -> SimpleResult<io::BufReader<fs::File>> {
+    let f = open_file(path).await?;
+    Ok(io::BufReader::new(f))
 }
 
 pub fn get_reader_sync<P: AsRef<Path>>(

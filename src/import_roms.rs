@@ -479,7 +479,6 @@ async fn move_file<P: AsRef<Path>, Q: AsRef<Path>>(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::MUTEX;
     use super::super::config::*;
     use super::super::database::*;
     use super::super::import_dats;

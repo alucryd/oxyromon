@@ -17,6 +17,7 @@ pub async fn prompt_for_systems(
             .iter()
             .map(|system| system.name.as_str())
             .collect::<Vec<&str>>(),
+            None,
     )?;
     Ok(systems
         .into_iter()
@@ -56,6 +57,7 @@ pub fn prompt_for_roms(roms: Vec<Rom>, all: bool) -> SimpleResult<Vec<Rom>> {
             .iter()
             .map(|rom| rom.name.as_str())
             .collect::<Vec<&str>>(),
+            None,
     )?;
     Ok(roms
         .into_iter()
@@ -95,9 +97,14 @@ pub fn select(items: &[&str], default: Option<usize>) -> SimpleResult<usize> {
     Ok(try_with!(select.interact(), "Failed to get user input"))
 }
 
-pub fn multiselect(items: &[&str]) -> SimpleResult<Vec<usize>> {
+pub fn multiselect(items: &[&str], defaults: Option<&[bool]>) -> SimpleResult<Vec<usize>> {
+    let mut multiselect = MultiSelect::new();
+    multiselect.paged(true).items(&items);
+    if let Some(defaults) = defaults {
+        multiselect.defaults(defaults);
+    }
     Ok(try_with!(
-        MultiSelect::new().paged(true).items(&items).interact(),
+        multiselect.interact(),
         "Failed to get user input"
     ))
 }
