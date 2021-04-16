@@ -468,10 +468,7 @@ async fn move_file<P: AsRef<Path>, Q: AsRef<Path>>(
     new_path: &Q,
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
-        progress_bar.println(&format!(
-            "Moving to {}",
-            new_path.as_ref().to_string_lossy()
-        ));
+        progress_bar.println(&format!("Moving to {:?}", new_path.as_ref()));
         rename_file(old_path, new_path).await?;
     }
     Ok(())

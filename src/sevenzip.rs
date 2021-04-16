@@ -26,6 +26,7 @@ pub fn parse_archive<P: AsRef<Path>>(
 ) -> SimpleResult<Vec<ArchiveInfo>> {
     progress_bar.set_message("Parsing archive");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
 
     let output = Command::new("7z")
         .arg("l")
@@ -59,6 +60,8 @@ pub fn parse_archive<P: AsRef<Path>>(
         sevenzip_infos.push(sevenzip_info);
     }
 
+    progress_bar.disable_steady_tick();
+
     Ok(sevenzip_infos)
 }
 
@@ -70,6 +73,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     progress_bar.set_message("Renaming file");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
 
     let output = Command::new("7z")
         .arg("rn")
@@ -83,6 +87,8 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
 
+    progress_bar.disable_steady_tick();
+
     Ok(())
 }
 
@@ -94,6 +100,8 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+
     for &file_name in file_names {
         progress_bar.println(format!("Extracting {}", file_name));
     }
@@ -110,6 +118,8 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.disable_steady_tick();
+
     Ok(file_names
         .iter()
         .map(|file_name| directory.as_ref().join(file_name))
@@ -124,6 +134,8 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     progress_bar.set_message("Compressing files");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+
     for &file_name in file_names {
         progress_bar.println(format!("Compressing {}", file_name));
     }
@@ -140,6 +152,8 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
+
+    progress_bar.disable_steady_tick();
 
     Ok(())
 }
