@@ -69,7 +69,7 @@ static REDUMP_SYSTEMS_CODES: phf::Map<&'static str, &'static str> = phf_map! {
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("download-dats")
-        .about("Updates No-Intro and Redump DAT files")
+        .about("Downloads No-Intro and Redump DAT files and imports them into oxyromon")
         .arg(
             Arg::with_name("NOINTRO")
                 .short("n")
@@ -92,7 +92,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
             Arg::with_name("ALL")
                 .short("a")
                 .long("all")
-                .help("Imports all DAT files")
+                .help("Imports all systems")
                 .required(false),
         )
         .arg(
