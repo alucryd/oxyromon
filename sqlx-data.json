@@ -306,6 +306,48 @@
       ]
     }
   },
+  "51e99197eb918ba9849f524b9ab79c683bb202ec97d1aba98fd68a1c18027e5f": {
+    "query": "\n        SELECT *\n        FROM systems\n        WHERE name LIKE ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "url",
+          "ordinal": 4,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
   "59a4f91f7e56ed6cb5980b9857a32a0ec8f97ba3c5c1b035546db25bbfae0841": {
     "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NOT NULL\n        ",
     "describe": {
@@ -1154,6 +1196,48 @@
         "Right": 2
       },
       "nullable": []
+    }
+  },
+  "f521c348ebaa723ca9c1480c7f9bdccf1157ce92d7f6c07dca2c462d18d204d4": {
+    "query": "\n        SELECT *\n        FROM systems\n        WHERE url = ?\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "version",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "url",
+          "ordinal": 4,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
     }
   },
   "f912258534fc9febb111b7572c6b25b52ed9ff39cddabcd1d73f2ee00845f187": {

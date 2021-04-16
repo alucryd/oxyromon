@@ -54,6 +54,12 @@ pub struct Setting {
 }
 
 #[derive(Deserialize)]
+pub struct ProfileXml {
+    #[serde(rename = "datfile")]
+    pub systems: Vec<SystemXml>,
+}
+
+#[derive(Deserialize)]
 pub struct DatfileXml {
     #[serde(rename = "header")]
     pub system: SystemXml,

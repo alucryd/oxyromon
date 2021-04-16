@@ -4,8 +4,8 @@
 	<header>
 		<name>Test System</name>
 		<description>Test System</description>
-		<version>20200721</version>
-		<date>20200721</date>
+		<version>20210401</version>
+		<date>20210401</date>
 		<author>Maxime Gauduin</author>
 	</header>
 	<game name="Test Game (USA, Europe)">

@@ -1,7 +1,7 @@
 use super::database::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::PathBuf;
+use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use once_cell::sync::OnceCell;
 use sqlx::SqliteConnection;
@@ -244,9 +244,13 @@ pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Opti
     }
 }
 
-pub async fn set_directory(connection: &mut SqliteConnection, key: &str, value: &PathBuf) {
+pub async fn set_directory<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: &P,
+) {
     let setting = find_setting_by_key(connection, key).await;
-    let value = value.as_os_str().to_str().unwrap().to_owned();
+    let value = value.as_ref().as_os_str().to_str().unwrap().to_owned();
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value)).await,
         None => create_setting(connection, key, Some(value)).await,
@@ -255,7 +259,7 @@ pub async fn set_directory(connection: &mut SqliteConnection, key: &str, value: 
 
 cfg_if::cfg_if! {
     if #[cfg(test)] {
-        pub async fn get_rom_directory(_connection: &mut SqliteConnection) -> &'static PathBuf {
+        pub async fn get_rom_directory(_: &mut SqliteConnection) -> &'static PathBuf {
             unsafe {
                 ROM_DIRECTORY.as_ref().unwrap()
             }
@@ -268,7 +272,7 @@ cfg_if::cfg_if! {
             }
         }
 
-        pub async fn get_tmp_directory(_connection: &mut SqliteConnection) -> &'static PathBuf {
+        pub async fn get_tmp_directory(_: &mut SqliteConnection) -> &'static PathBuf {
             unsafe {
                 TMP_DIRECTORY.as_ref().unwrap()
             }

@@ -46,12 +46,13 @@ pub async fn close_connection(connection: &mut SqliteConnection) {
 }
 
 pub async fn create_system(connection: &mut SqliteConnection, system_xml: &SystemXml) -> i64 {
+    let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
         INSERT INTO systems (name, description, version, url)
         VALUES (?, ?, ?, ?)
         ",
-        system_xml.name,
+        name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -63,13 +64,14 @@ pub async fn create_system(connection: &mut SqliteConnection, system_xml: &Syste
 }
 
 pub async fn update_system(connection: &mut SqliteConnection, id: i64, system_xml: &SystemXml) {
+    let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
         UPDATE systems
         SET name = ?, description = ?, version = ?, url = ?
         WHERE id = ?
         ",
-        system_xml.name,
+        name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -94,6 +96,22 @@ pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     .expect("Error while finding systems")
 }
 
+pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -> Vec<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE url = ?
+        ORDER BY name
+        ",
+        url,
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding system names")
+}
+
 pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
     sqlx::query_as!(
         System,
@@ -110,12 +128,31 @@ pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> Sy
 }
 
 pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) -> Option<System> {
+    let name = name.replace(" (Parent-Clone)", "");
     sqlx::query_as!(
         System,
         "
         SELECT *
         FROM systems
         WHERE name = ?
+        ",
+        name,
+    )
+    .fetch_optional(connection)
+    .await
+    .expect(&format!("Error while finding system with name {}", name))
+}
+
+pub async fn find_system_by_name_like(
+    connection: &mut SqliteConnection,
+    name: &str,
+) -> Option<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE name LIKE ?
         ",
         name,
     )
@@ -373,7 +410,11 @@ pub async fn update_rom(
     .expect(&format!("Error while updating rom with id {}", id));
 }
 
-pub async fn update_rom_romfile(connection: &mut SqliteConnection, id: i64, romfile_id: Option<i64>) {
+pub async fn update_rom_romfile(
+    connection: &mut SqliteConnection,
+    id: i64,
+    romfile_id: Option<i64>,
+) {
     sqlx::query!(
         "
         UPDATE roms
