@@ -48,8 +48,7 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Support compressing ISO to CHD now that PCSX2 supports it
-- Find a way to automatically update dats, or at least check if updates are available
+- Find a way to automatically download No-Intro DAT files
 - Support RVZ when dolphin adds it to its CLI
 
 ## oxyromon
@@ -153,7 +152,7 @@ Supported ROM formats:
 * CHD (Compressed Hunks of Data)
 * CSO (Compressed ISO)
 
-Note: Importing a CHD requires the matching CUE file from Redump.
+Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
     USAGE:
         oxyromon import-roms <ROMS>...
@@ -227,6 +226,7 @@ Supported ROM formats:
 
 * All No-Intro and Redump supported formats <-> 7Z and ZIP archives
 * CUE/BIN <-> CHD (Compressed Hunks of Data)
+* ISO <-> CHD (Compressed Hunks of Data)
 * ISO <-> CSO (Compressed ISO)
 
 Note: CHD will be extracted to their original split CUE/BIN when applicable.

@@ -6,6 +6,7 @@ use async_std::path::{Path, PathBuf};
 use async_std::prelude::*;
 use indicatif::ProgressBar;
 use std::process::Command;
+use tempfile::NamedTempFile;
 
 pub static CHD_EXTENSION: &str = "chd";
 pub static CUE_EXTENSION: &str = "cue";
@@ -42,7 +43,7 @@ pub fn create_chd<P: AsRef<Path>>(
     Ok(chd_path)
 }
 
-pub async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     chd_path: &P,
     directory: &Q,
@@ -115,4 +116,42 @@ pub async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.disable_steady_tick();
 
     Ok(bin_paths)
+}
+
+pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    chd_path: &P,
+    directory: &Q,
+) -> SimpleResult<PathBuf> {
+    progress_bar.set_message("Extracting CHD");
+    progress_bar.set_style(get_none_progress_style());
+
+    let mut bin_path = directory
+        .as_ref()
+        .join(chd_path.as_ref().file_name().unwrap());
+    bin_path.set_extension(BIN_EXTENSION);
+
+    let mut cue_name = bin_path.file_name().unwrap().to_os_string();
+    cue_name.push(".");
+    cue_name.push(CUE_EXTENSION);
+    let cue_path = directory.as_ref().join(cue_name);
+
+    let output = Command::new("chdman")
+        .arg("extractcd")
+        .arg("-i")
+        .arg(chd_path.as_ref())
+        .arg("-o")
+        .arg(&cue_path)
+        .arg("-ob")
+        .arg(&bin_path)
+        .output()
+        .expect("Failed to spawn chdman process");
+
+    remove_file(&cue_path).await?;
+
+    if !output.status.success() {
+        bail!(String::from_utf8(output.stderr).unwrap().as_str());
+    }
+
+    Ok(bin_path)
 }
