@@ -185,11 +185,12 @@ async fn sort_system<'a>(
             // go through the remaining games
             while !games.is_empty() {
                 let game = games.remove(0);
-                if all_regions.iter().any(|region| {
+                let region_in_all_regions = all_regions.iter().any(|region| {
                     Region::try_from_tosec_region(&game.regions)
                         .unwrap()
                         .contains(region)
-                }) {
+                });
+                if region_in_all_regions {
                     all_regions_games.push(game);
                 } else {
                     trash_games.push(game);
@@ -209,16 +210,17 @@ async fn sort_system<'a>(
         }
 
         for game in games {
-            if all_regions.iter().any(|region| {
+            let region_in_all_regions = all_regions.iter().any(|region| {
                 Region::try_from_tosec_region(&game.regions)
                     .unwrap()
                     .contains(region)
-            }) {
+            });
+            if region_in_all_regions {
                 all_regions_games.push(game);
             } else {
                 trash_games.push(game);
             }
-        }
+        };
     } else {
         games = find_games_by_system_id(connection, system.id).await;
 
@@ -345,7 +347,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
         let rom_count = roms.len();
         romfile_moves.append(
             &mut roms
-                .into_iter()
+                .iter()
                 .map(|rom| {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let new_path = String::from(

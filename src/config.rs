@@ -22,14 +22,14 @@ cfg_if::cfg_if! {
     }
 }
 
-const BOOLEANS: &'static [&'static str] = &[];
-const LISTS: &'static [&'static str] = &[
+const BOOLEANS: &'static [&str] = &[];
+const LISTS: &'static [&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];
-const PATHS: &'static [&'static str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
+const PATHS: &'static [&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("config")
@@ -186,7 +186,7 @@ async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
 pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<String> {
     match find_setting_by_key(connection, key).await {
         Some(setting) => match setting.value {
-            Some(value) => value.split(",").map(|s| s.to_owned()).collect(),
+            Some(value) => value.split(',').map(|s| s.to_owned()).collect(),
             None => Vec::new(),
         },
         None => Vec::new(),

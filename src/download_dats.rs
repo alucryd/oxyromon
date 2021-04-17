@@ -9,14 +9,13 @@ use phf::phf_map;
 use quick_xml::de;
 use sqlx::SqliteConnection;
 use std::io::Cursor;
-use surf;
 use zip::read::ZipArchive;
 
-static NOINTRO_BASE_URL: &'static str = "https://datomatic.no-intro.org";
-static NOINTRO_PROFILE_URL: &'static str = "/profile.xml";
-static REDUMP_BASE_URL: &'static str = "http://redump.org";
+const NOINTRO_BASE_URL: &str = "https://datomatic.no-intro.org";
+const NOINTRO_PROFILE_URL: &str = "/profile.xml";
+const REDUMP_BASE_URL: &str = "http://redump.org";
 
-static REDUMP_SYSTEMS_CODES: phf::Map<&'static str, &'static str> = phf_map! {
+static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! {
     "Apple - Macintosh" => "mac",
     "Arcade - Konami - e-Amusement" => "kea",
     "Arcade - Konami - FireBeat" => "kfb",
@@ -150,7 +149,7 @@ async fn download_nointro_dats(
         .iter()
         .map(|system| system.name.as_str())
         .collect();
-    items.sort();
+    items.sort_unstable();
     let indices: Vec<usize> = if all {
         (0..items.len()).collect()
     } else {
@@ -166,8 +165,8 @@ async fn download_redump_dats(
     all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let mut items: Vec<&str> = REDUMP_SYSTEMS_CODES.keys().map(|s| *s).collect();
-    items.sort();
+    let mut items: Vec<&str> = REDUMP_SYSTEMS_CODES.keys().copied().collect();
+    items.sort_unstable();
     let indices: Vec<usize> = if all {
         (0..items.len()).collect()
     } else {
