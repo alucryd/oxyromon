@@ -1,6 +1,8 @@
 # 0.8.0
 * Add a new download-dats subcommand (Redump only)
 * Use dialoguer for prompts
+* Support importing ISO compressed as CHD
+* Support converting between ISO and CHD
 
 # 0.7.0
 * Use shiratsu_naming to parse No-Intro names
