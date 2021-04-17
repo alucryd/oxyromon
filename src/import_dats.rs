@@ -150,7 +150,7 @@ pub fn get_system_name_regex() -> &'static Regex {
     }
 }
 
-fn get_regions_from_game_name<'a>(name: &str) -> SimpleResult<String> {
+fn get_regions_from_game_name(name: &str) -> SimpleResult<String> {
     let name = try_with!(
         NoIntroName::try_parse(name),
         "Failed to parse no-intro name"

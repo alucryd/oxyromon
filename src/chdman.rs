@@ -6,7 +6,6 @@ use async_std::path::{Path, PathBuf};
 use async_std::prelude::*;
 use indicatif::ProgressBar;
 use std::process::Command;
-use tempfile::NamedTempFile;
 
 pub static CHD_EXTENSION: &str = "chd";
 pub static CUE_EXTENSION: &str = "cue";
