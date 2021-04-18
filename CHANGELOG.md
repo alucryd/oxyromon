@@ -3,6 +3,8 @@
 * Use dialoguer for prompts
 * Support importing ISO compressed as CHD
 * Support converting between ISO and CHD
+* Support converting between CSO and CHD
+* Optionally print statistics after each conversion
 
 # 0.7.0
 * Use shiratsu_naming to parse No-Intro names

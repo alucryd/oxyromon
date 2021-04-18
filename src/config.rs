@@ -22,14 +22,14 @@ cfg_if::cfg_if! {
     }
 }
 
-const BOOLEANS: &'static [&str] = &[];
-const LISTS: &'static [&str] = &[
+const BOOLEANS: &[&str] = &[];
+const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];
-const PATHS: &'static [&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
+const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("config")

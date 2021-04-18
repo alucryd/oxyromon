@@ -48,8 +48,10 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Find a way to automatically download No-Intro DAT files
+- Add an optional check of the ROMs after conversion
 - Support RVZ when dolphin adds it to its CLI
+- Find a way to automatically download No-Intro DAT files
+- Add a API and web interface
 
 ## oxyromon
 
