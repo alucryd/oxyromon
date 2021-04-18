@@ -965,6 +965,9 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        assert_eq!(sevenzip_infos.len(), 1);
     }
 
     #[async_std::test]
@@ -1041,6 +1044,9 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        assert_eq!(sevenzip_infos.len(), 1);
     }
 
     #[async_std::test]
@@ -1118,6 +1124,7 @@ mod test {
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
     }
+
     #[async_std::test]
     async fn test_original_to_sevenzip() {
         // given
@@ -1195,6 +1202,9 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        assert_eq!(sevenzip_infos.len(), 1);
     }
 
     #[async_std::test]
@@ -1274,6 +1284,9 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        assert_eq!(sevenzip_infos.len(), 1);
     }
 
     #[async_std::test]
@@ -1348,13 +1361,6 @@ mod test {
         let mut romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
-        let rom = roms.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
-        let rom = roms.remove(0);
-        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
-
         let romfile = romfiles.remove(0);
         assert_eq!(
             romfile.path,
@@ -1365,7 +1371,19 @@ mod test {
                 .unwrap(),
         );
         assert!(Path::new(&romfile.path).is_file().await);
+
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
         assert_eq!(rom.romfile_id, Some(romfile.id));
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+        let rom = roms.remove(0);
+        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        assert_eq!(sevenzip_infos.len(), 3);
     }
 
     #[async_std::test]
