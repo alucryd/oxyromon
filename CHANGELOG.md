@@ -3,7 +3,7 @@
 * Use dialoguer for prompts
 * Support importing ISO compressed as CHD
 * Support converting between ISO and CHD
-* Support converting between directly between supported formats (as opposed to having to revert to original beforehand)
+* Support converting directly between supported formats (as opposed to having to revert to original beforehand)
 * Optionally print statistics after each conversion
 
 # 0.7.0
