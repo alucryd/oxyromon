@@ -296,7 +296,11 @@ async fn sort_system(
 
         progress_bar.println("Summary:");
         for romfile_move in &romfile_moves {
-            progress_bar.println(&format!("{} -> {}", romfile_move.0.path, romfile_move.1));
+            progress_bar.println(&format!(
+                "{:?} -> \"{}\"",
+                Path::new(&romfile_move.0.path).file_name().unwrap(),
+                romfile_move.1
+            ));
         }
 
         // prompt user for confirmation
