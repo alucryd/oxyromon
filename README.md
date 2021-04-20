@@ -48,8 +48,10 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Find a way to automatically download No-Intro DAT files
+- Add an optional check of the ROMs after conversion
 - Support RVZ when dolphin adds it to its CLI
+- Find a way to automatically download No-Intro DAT files
+- Add a API and web interface
 
 ## oxyromon
 
@@ -121,11 +123,14 @@ Note: Some systems require a header definition to be placed alongside the DAT fi
 
 Downloads No-Intro and Redump DAT files and imports them into oxyromon
 
-Supported DAT providers:
-* Redump
+Redump ofers direct downloads, but no summary, whereas No-Intro offers a summary
+but no direct downloads. For now the No-intro counterpart will only tell you if
+an update is available, but the Redump one is able to download brand new dats
+and update those you've already imported.
 
-TODO:
-* No-Intro
+Supported DAT providers:
+* Redump (Download and update)
+* No-Intro (Update check only)
 
     USAGE:
         oxyromon download-dats [FLAGS] --nointro --redump
@@ -135,6 +140,7 @@ TODO:
         -f, --force      Forces import of outdated DAT files
         -n, --nointro    Downloads No-Intro DAT files
         -r, --redump     Downloads Redump DAT files
+        -u, --update     Checks for system updates
         -h, --help       Prints help information
         -V, --version    Prints version information
 

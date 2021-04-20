@@ -52,6 +52,54 @@
       ]
     }
   },
+  "0ff86fd646cafebe132398b5be88b22131495acd2c3fd42095825bdef12c5108": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
   "136c3dbb219af3eecb3695825ec3f4f5b2a58812031d7514c1b9ab61f4a9b89b": {
     "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND game_id IN (\n            SELECT id\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY name\n        ",
     "describe": {
@@ -169,6 +217,54 @@
         false,
         false,
         false
+      ]
+    }
+  },
+  "217db4a45cefc581a724adbf83cd6eab9a9361a5b2cecad8e9e8f94995062aaa": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
       ]
     }
   },
@@ -340,54 +436,6 @@
         "Right": 1
       },
       "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true
-      ]
-    }
-  },
-  "59a4f91f7e56ed6cb5980b9857a32a0ec8f97ba3c5c1b035546db25bbfae0841": {
-    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NOT NULL\n        ",
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "regions",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "system_id",
-          "ordinal": 4,
-          "type_info": "Int64"
-        },
-        {
-          "name": "parent_id",
-          "ordinal": 5,
-          "type_info": "Int64"
-        }
-      ],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": [
-        false,
         false,
         false,
         false,
@@ -587,6 +635,54 @@
         false,
         false,
         true,
+        false,
+        true
+      ]
+    }
+  },
+  "7a47ea842ef3cb2ee7aa7a88808bfa6d0b3493a1571cb5575e0bc940c7f45728": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NOT NULL\n        ORDER BY name\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "regions",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "system_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
         false,
         true
       ]
@@ -894,54 +990,6 @@
       ]
     }
   },
-  "a75cd7388d4cdb67e7a51270797a75f377ef96e5c5ee2b659f935b9f39ccdf19": {
-    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        ",
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "regions",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "system_id",
-          "ordinal": 4,
-          "type_info": "Int64"
-        },
-        {
-          "name": "parent_id",
-          "ordinal": 5,
-          "type_info": "Int64"
-        }
-      ],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true
-      ]
-    }
-  },
   "ae0a47996a2a7141e860dcdb03449db941214143d393272b78b8129dc9dfa2ef": {
     "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM roms\n            WHERE game_id IN (\n                SELECT id\n                FROM games\n                WHERE system_id = ?\n            )\n        )\n        ",
     "describe": {
@@ -1010,8 +1058,8 @@
       "nullable": []
     }
   },
-  "c49459637186ff64b1c3ea188ff0f197430fde59e265ce8902a5d15eaa97990b": {
-    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ",
+  "c44b8ede315fcea5a2d38811078380e623b809152cf9a09bde99423d555b8c9d": {
+    "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ORDER BY name\n        ",
     "describe": {
       "columns": [
         {

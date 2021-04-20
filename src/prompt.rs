@@ -6,18 +6,24 @@ use sqlx::SqliteConnection;
 
 pub async fn prompt_for_systems(
     connection: &mut SqliteConnection,
+    url: Option<&str>,
     all: bool,
 ) -> SimpleResult<Vec<System>> {
-    let systems = find_systems(connection).await;
-    if all {
+    let systems = match url {
+        Some(url) => find_systems_by_url(connection, url).await,
+        None => find_systems(connection).await,
+    };
+
+    if all || systems.is_empty() {
         return Ok(systems);
     }
+
     let indices = multiselect(
         &systems
             .iter()
             .map(|system| system.name.as_str())
             .collect::<Vec<&str>>(),
-            None,
+        None,
     )?;
     Ok(systems
         .into_iter()
@@ -49,15 +55,16 @@ pub async fn prompt_for_system(
 }
 
 pub fn prompt_for_roms(roms: Vec<Rom>, all: bool) -> SimpleResult<Vec<Rom>> {
-    if all {
+    if all || roms.is_empty() {
         return Ok(roms);
     }
+
     let indices = multiselect(
         &roms
             .iter()
             .map(|rom| rom.name.as_str())
             .collect::<Vec<&str>>(),
-            None,
+        None,
     )?;
     Ok(roms
         .into_iter()

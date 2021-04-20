@@ -11,15 +11,18 @@ pub static CHD_EXTENSION: &str = "chd";
 pub static CUE_EXTENSION: &str = "cue";
 pub static BIN_EXTENSION: &str = "bin";
 
-pub fn create_chd<P: AsRef<Path>>(
+pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,
+    directory: &Q,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(200);
 
-    let mut chd_path = romfile_path.as_ref().to_path_buf();
+    let mut chd_path = directory
+        .as_ref()
+        .join(romfile_path.as_ref().file_name().unwrap());
     chd_path.set_extension(CHD_EXTENSION);
 
     progress_bar.println(format!("Creating {:?}", chd_path.file_name().unwrap()));
@@ -57,15 +60,15 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         chd_path.as_ref().file_name().unwrap()
     ));
 
+    let cue_path = directory.as_ref().join(format!(
+        "{}.{}",
+        chd_path.as_ref().file_name().unwrap().to_str().unwrap(),
+        CUE_EXTENSION
+    ));
     let mut bin_path = directory
         .as_ref()
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
-
-    let mut cue_name = bin_path.file_name().unwrap().to_os_string();
-    cue_name.push(".");
-    cue_name.push(CUE_EXTENSION);
-    let cue_path = directory.as_ref().join(cue_name);
 
     let output = Command::new("chdman")
         .arg("extractcd")
@@ -125,15 +128,15 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
 
+    let cue_path = directory.as_ref().join(format!(
+        "{}.{}",
+        chd_path.as_ref().file_name().unwrap().to_str().unwrap(),
+        CUE_EXTENSION
+    ));
     let mut bin_path = directory
         .as_ref()
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
-
-    let mut cue_name = bin_path.file_name().unwrap().to_os_string();
-    cue_name.push(".");
-    cue_name.push(CUE_EXTENSION);
-    let cue_path = directory.as_ref().join(cue_name);
 
     let output = Command::new("chdman")
         .arg("extractcd")
