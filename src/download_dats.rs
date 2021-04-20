@@ -10,7 +10,7 @@ use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
 use rayon::prelude::*;
-use sqlx::SqliteConnection;
+use sqlx::sqlite::SqlitePool;
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::time::Duration;
@@ -119,14 +119,14 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn main(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("NOINTRO") {
         if matches.is_present("UPDATE") {
             update_nointro_dats(
-                connection,
+                pool,
                 progress_bar,
                 NOINTRO_BASE_URL,
                 matches.is_present("ALL"),
@@ -138,7 +138,7 @@ pub async fn main(
     } else if matches.is_present("REDUMP") {
         if matches.is_present("UPDATE") {
             update_redump_dats(
-                connection,
+                pool,
                 progress_bar,
                 REDUMP_BASE_URL,
                 matches.is_present("ALL"),
@@ -147,7 +147,7 @@ pub async fn main(
             .await?
         } else {
             download_redump_dats(
-                connection,
+                pool,
                 progress_bar,
                 REDUMP_BASE_URL,
                 matches.is_present("ALL"),
@@ -159,7 +159,7 @@ pub async fn main(
 }
 
 async fn update_nointro_dats(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
@@ -169,7 +169,7 @@ async fn update_nointro_dats(
         .await
         .expect("Failed to download No-Intro profiles");
     let profile: ProfileXml = try_with!(de::from_str(&response), "Failed to parse profile");
-    let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), all).await?;
+    let systems = prompt_for_systems(pool, Some(NOINTRO_SYSTEM_URL), all).await?;
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", &system.name));
         let system_xml = profile
@@ -188,12 +188,12 @@ async fn update_nointro_dats(
 }
 
 async fn download_redump_dats(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
 ) -> SimpleResult<()> {
-    let system_names: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
+    let system_names: HashSet<String> = find_systems_by_url(pool, REDUMP_SYSTEM_URL)
         .await
         .into_par_iter()
         .map(|system| system.name)
@@ -210,34 +210,27 @@ async fn download_redump_dats(
         multiselect(&items, None)?
     };
     for i in indices {
-        download_redump_dat(
-            connection,
-            progress_bar,
-            base_url,
-            items.get(i).unwrap(),
-            false,
-        )
-        .await?;
+        download_redump_dat(pool, progress_bar, base_url, items.get(i).unwrap(), false).await?;
     }
     Ok(())
 }
 
 async fn update_redump_dats(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), all).await?;
+    let systems = prompt_for_systems(pool, Some(REDUMP_SYSTEM_URL), all).await?;
     for system in systems {
-        download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
+        download_redump_dat(pool, progress_bar, base_url, &system.name, force).await?;
     }
     Ok(())
 }
 
 async fn download_redump_dat(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     base_url: &str,
     system_name: &str,
@@ -250,7 +243,7 @@ async fn download_redump_dat(
         .recv_bytes()
         .await
         .expect("Failed to download ZIP");
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
     let mut zip_archive = try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read ZIP");
     match zip_archive.len() {
         0 => progress_bar.println("Update ZIP is empty"),
@@ -263,7 +256,7 @@ async fn download_redump_dat(
                     .join(zip_archive.file_names().next().unwrap()),
                 true,
             )?;
-            import_dat(connection, progress_bar, &datfile_xml, &detector_xml, force).await?;
+            import_dat(pool, progress_bar, &datfile_xml, &detector_xml, force).await?;
         }
         _ => progress_bar.println("Update ZIP contains too many files"),
     }
@@ -293,7 +286,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let profile_xml_path = test_directory.join("profile.xml");
 
@@ -308,7 +301,7 @@ mod test {
             .await;
 
         // when
-        update_nointro_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
+        update_nointro_dats(&pool, &progress_bar, &mock_server.uri(), true)
             .await
             .unwrap();
 
@@ -325,7 +318,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
         set_tmp_directory(PathBuf::from(tmp_directory.path()));
@@ -347,18 +340,18 @@ mod test {
             .await;
 
         // when
-        download_redump_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
+        download_redump_dats(&pool, &progress_bar, &mock_server.uri(), true)
             .await
             .unwrap();
 
         // then
-        let systems = find_systems(&mut connection).await;
+        let systems = find_systems(&pool).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&mut connection).await.len(), 6);
-        assert_eq!(find_roms(&mut connection).await.len(), 8);
+        assert_eq!(find_games(&pool).await.len(), 6);
+        assert_eq!(find_roms(&pool).await.len(), 8);
     }
 }

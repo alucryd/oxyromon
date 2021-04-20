@@ -11,7 +11,7 @@ use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
-use sqlx::SqliteConnection;
+use sqlx::sqlite::SqlitePool;
 use std::collections::HashSet;
 use std::str::FromStr;
 
@@ -36,25 +36,25 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn main(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let romfile_paths: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
     let system = prompt_for_system(
-        connection,
+        pool,
         matches
             .value_of("SYSTEM")
             .map(|s| FromStr::from_str(s).expect("Failed to parse number")),
     )
     .await?;
-    let header = find_header_by_system_id(connection, system.id).await;
-    let system_directory = get_system_directory(connection, &system).await?;
+    let header = find_header_by_system_id(pool, system.id).await;
+    let system_directory = get_system_directory(pool, &system).await?;
 
     for romfile_path in romfile_paths {
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
         import_rom(
-            connection,
+            pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -68,7 +68,7 @@ pub async fn main(
 }
 
 pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system_directory: &Q,
     system: &System,
@@ -81,12 +81,9 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
     ));
 
     // abort if the romfile is already in the database
-    if find_romfile_by_path(
-        connection,
-        romfile_path.as_ref().as_os_str().to_str().unwrap(),
-    )
-    .await
-    .is_some()
+    if find_romfile_by_path(pool, romfile_path.as_ref().as_os_str().to_str().unwrap())
+        .await
+        .is_some()
     {
         progress_bar.println("Already in database");
         return Ok(());
@@ -102,7 +99,7 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         import_archive(
-            connection,
+            pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -113,7 +110,7 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
     } else if CHD_EXTENSION == romfile_extension {
         import_chd(
-            connection,
+            pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -123,7 +120,7 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
     } else if CSO_EXTENSION == romfile_extension {
         import_cso(
-            connection,
+            pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -133,7 +130,7 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
     } else {
         import_other(
-            connection,
+            pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -147,7 +144,7 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
 }
 
 async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system_directory: &Q,
     system: &System,
@@ -155,13 +152,13 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
     romfile_extension: &str,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
     let sevenzip_infos = parse_archive(progress_bar, romfile_path)?;
 
-    let mut roms_sevenzip_infos: Vec<(Rom, ArchiveInfo, Option<PathBuf>)> = Vec::new();
+    let mut roms_sevenzip_infos: Vec<(Rom, &ArchiveInfo, Option<PathBuf>)> = Vec::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
-    for sevenzip_info in sevenzip_infos {
+    for sevenzip_info in &sevenzip_infos {
         let size: u64;
         let crc: String;
         let mut extracted_path = None;
@@ -193,24 +190,27 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             crc = sevenzip_info.crc.clone();
         }
 
-        match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        match find_rom(pool, size, &crc, &system, &progress_bar).await? {
             Some(rom) => {
                 game_ids.insert(rom.game_id);
                 roms_sevenzip_infos.push((rom, sevenzip_info, extracted_path));
             }
             None => {
-                move_to_trash(
-                    connection,
-                    progress_bar,
-                    system,
-                    extracted_path.as_ref().unwrap(),
-                )
-                .await?;
-                delete_files_from_archive(
-                    progress_bar,
-                    romfile_path,
-                    &vec![sevenzip_info.path.as_str()],
-                )?;
+                if sevenzip_infos.len() == 1 {
+                    if let Some(extracted_path) = extracted_path {
+                        remove_file(&extracted_path).await?;
+                    }
+                    move_to_trash(pool, progress_bar, system, romfile_path).await?;
+                } else {
+                    if let Some(extracted_path) = extracted_path {
+                        move_to_trash(pool, progress_bar, system, &extracted_path).await?;
+                    }
+                    delete_files_from_archive(
+                        progress_bar,
+                        romfile_path,
+                        &vec![sevenzip_info.path.as_str()],
+                    )?;
+                }
             }
         }
     }
@@ -232,14 +232,14 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         move_file(progress_bar, romfile_path, &new_path).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_path, &vec![rom]).await;
+        create_or_update_romfile(pool, &new_path, &vec![rom]).await;
 
     // archive contains multiple valid files
-    } else {
+    } else if roms_sevenzip_infos.len() > 1 {
         // archive contains a full single game
         if game_ids.len() == 1 {
             let game_id = game_ids.drain().last().unwrap();
-            let rom_ids: HashSet<i64> = find_roms_by_game_id(connection, game_id)
+            let rom_ids: HashSet<i64> = find_roms_by_game_id(pool, game_id)
                 .await
                 .into_par_iter()
                 .map(|rom| rom.id)
@@ -256,7 +256,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                 .len()
                 == 0
             {
-                let game = find_game_by_id(connection, game_id).await;
+                let game = find_game_by_id(pool, game_id).await;
                 for (rom, sevenzip_info, _) in &roms_sevenzip_infos {
                     if &sevenzip_info.path != &rom.name {
                         rename_file_in_archive(
@@ -277,7 +277,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 
                 // persist in database
                 create_or_update_romfile(
-                    connection,
+                    pool,
                     &new_path,
                     &roms_sevenzip_infos
                         .into_iter()
@@ -309,7 +309,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             move_file(progress_bar, &extracted_path, &new_path).await?;
 
             // persist in database
-            create_or_update_romfile(connection, &new_path, &vec![rom]).await;
+            create_or_update_romfile(pool, &new_path, &vec![rom]).await;
         }
 
         // delete archive
@@ -320,14 +320,14 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 }
 
 async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system_directory: &Q,
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
 
     let mut cue_path = romfile_path.as_ref().to_path_buf();
     cue_path.set_extension(CUE_EXTENSION);
@@ -335,15 +335,15 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     if cue_path.is_file().await {
         progress_bar.println("CUE file found, using multiple tracks mode");
         let (size, crc) = get_file_size_and_crc(progress_bar, &cue_path, &header, 1, 1).await?;
-        let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        let cue_rom = match find_rom(pool, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
-                move_to_trash(connection, progress_bar, system, &cue_path).await?;
+                move_to_trash(pool, progress_bar, system, &cue_path).await?;
                 return Ok(());
             }
         };
 
-        let roms: Vec<Rom> = find_roms_by_game_id(connection, cue_rom.game_id)
+        let roms: Vec<Rom> = find_roms_by_game_id(pool, cue_rom.game_id)
             .await
             .into_iter()
             .filter(|rom| rom.id != cue_rom.id)
@@ -370,7 +370,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
         if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
             progress_bar.println("CRC mismatch");
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            move_to_trash(pool, progress_bar, system, romfile_path).await?;
             return Ok(());
         }
 
@@ -383,8 +383,8 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         move_file(progress_bar, romfile_path, &new_chd_path).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_cue_path, &vec![cue_rom]).await;
-        create_or_update_romfile(connection, &new_chd_path, &roms).await;
+        create_or_update_romfile(pool, &new_cue_path, &vec![cue_rom]).await;
+        create_or_update_romfile(pool, &new_chd_path, &roms).await;
 
         Ok(())
     } else {
@@ -393,10 +393,10 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
         let (size, crc) = get_file_size_and_crc(progress_bar, &bin_path, &header, 1, 1).await?;
         remove_file(&bin_path).await?;
-        let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        let rom = match find_rom(pool, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
-                move_to_trash(connection, progress_bar, system, romfile_path).await?;
+                move_to_trash(pool, progress_bar, system, romfile_path).await?;
                 return Ok(());
             }
         };
@@ -408,28 +408,28 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         move_file(progress_bar, romfile_path, &new_chd_path).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_chd_path, &vec![rom]).await;
+        create_or_update_romfile(pool, &new_chd_path, &vec![rom]).await;
 
         Ok(())
     }
 }
 
 async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system_directory: &Q,
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
     remove_file(&iso_path).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+    let rom = match find_rom(pool, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            move_to_trash(pool, progress_bar, system, romfile_path).await?;
             return Ok(());
         }
     };
@@ -441,13 +441,13 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     move_file(progress_bar, romfile_path, &new_cso_path).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_cso_path, &vec![rom]).await;
+    create_or_update_romfile(pool, &new_cso_path, &vec![rom]).await;
 
     Ok(())
 }
 
 async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system_directory: &Q,
     system: &System,
@@ -455,10 +455,10 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
 ) -> SimpleResult<()> {
     let (size, crc) = get_file_size_and_crc(progress_bar, romfile_path, &header, 1, 1).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+    let rom = match find_rom(pool, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            move_to_trash(pool, progress_bar, system, romfile_path).await?;
             return Ok(());
         }
     };
@@ -469,20 +469,20 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     move_file(progress_bar, romfile_path, &new_path).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_path, &vec![rom]).await;
+    create_or_update_romfile(pool, &new_path, &vec![rom]).await;
 
     Ok(())
 }
 
 async fn find_rom(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     size: u64,
     crc: &str,
     system: &System,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Option<Rom>> {
     let rom: Rom;
-    let mut roms = find_roms_by_size_and_crc_and_system_id(connection, size, crc, system.id).await;
+    let mut roms = find_roms_by_size_and_crc_and_system_id(pool, size, crc, system.id).await;
 
     // abort if no match
     if roms.is_empty() {
@@ -500,7 +500,7 @@ async fn find_rom(
 
     // abort if rom already has a file
     if rom.romfile_id.is_some() {
-        let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
+        let romfile = find_romfile_by_id(pool, rom.romfile_id.unwrap()).await;
         progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
         return Ok(None);
     }
@@ -508,36 +508,32 @@ async fn find_rom(
     Ok(Some(rom))
 }
 
-async fn create_or_update_romfile<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
-    path: &P,
-    roms: &[Rom],
-) {
+async fn create_or_update_romfile<P: AsRef<Path>>(pool: &SqlitePool, path: &P, roms: &[Rom]) {
     let romfile_path = path.as_ref().as_os_str().to_str().unwrap();
-    let romfile = find_romfile_by_path(connection, romfile_path).await;
+    let romfile = find_romfile_by_path(pool, romfile_path).await;
     let romfile_id = match romfile {
         Some(romfile) => {
-            update_romfile(connection, romfile.id, romfile_path).await;
+            update_romfile(pool, romfile.id, romfile_path).await;
             romfile.id
         }
-        None => create_romfile(connection, romfile_path).await,
+        None => create_romfile(pool, romfile_path).await,
     };
     for rom in roms {
-        update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
+        update_rom_romfile(pool, rom.id, Some(romfile_id)).await;
     }
 }
 
 async fn move_to_trash<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     system: &System,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, system)
+    let new_path = get_trash_directory(pool, system)
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     move_file(progress_bar, romfile_path, &new_path).await?;
-    create_romfile(connection, new_path.as_os_str().to_str().unwrap()).await;
+    create_romfile(pool, new_path.as_os_str().to_str().unwrap()).await;
     Ok(())
 }
 
@@ -573,11 +569,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -595,11 +591,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -611,12 +607,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -656,11 +652,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -678,12 +674,12 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
-        let header = find_header_by_system_id(&mut connection, system.id).await;
+        let system = find_systems(&pool).await.remove(0);
+        let header = find_header_by_system_id(&pool, system.id).await;
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -695,12 +691,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -747,11 +743,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -769,11 +765,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -785,12 +781,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 3);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -840,11 +836,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -862,11 +858,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -878,12 +874,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 2);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 2);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -939,11 +935,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -961,11 +957,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -977,12 +973,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 2);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 2);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1042,11 +1038,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1064,12 +1060,12 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
-        let header = find_header_by_system_id(&mut connection, system.id).await;
+        let system = find_systems(&pool).await.remove(0);
+        let header = find_header_by_system_id(&pool, system.id).await;
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1081,12 +1077,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 2);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1136,11 +1132,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1158,11 +1154,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_archive(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1174,12 +1170,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1219,11 +1215,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1241,11 +1237,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_chd(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1256,12 +1252,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1301,11 +1297,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1330,11 +1326,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_chd(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1345,12 +1341,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 3);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 2);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1410,11 +1406,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1432,11 +1428,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_chd(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1447,7 +1443,7 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert!(roms.is_empty());
     }
 
@@ -1468,11 +1464,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1490,11 +1486,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_cso(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1505,12 +1501,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1550,11 +1546,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1572,11 +1568,11 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         // when
         import_other(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1587,12 +1583,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)
@@ -1632,11 +1628,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1654,12 +1650,12 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
-        let header = find_header_by_system_id(&mut connection, system.id).await;
+        let system = find_systems(&pool).await.remove(0);
+        let header = find_header_by_system_id(&pool, system.id).await;
 
         // when
         import_other(
-            &mut connection,
+            &pool,
             &progress_bar,
             &system_directory,
             &system,
@@ -1670,12 +1666,12 @@ mod test {
         .unwrap();
 
         // then
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&pool, system.id).await;
         assert_eq!(roms.len(), 1);
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
         let games = find_games_by_ids(
-            &mut connection,
+            &pool,
             &roms
                 .iter()
                 .map(|rom| rom.game_id)

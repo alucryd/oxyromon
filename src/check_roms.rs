@@ -10,7 +10,7 @@ use super::SimpleResult;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
-use sqlx::SqliteConnection;
+use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -34,32 +34,32 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn main(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(pool, None, matches.is_present("ALL")).await?;
 
     for system in systems {
-        check_system(connection, matches, &system, &progress_bar).await?;
+        check_system(pool, matches, &system, &progress_bar).await?;
     }
 
     Ok(())
 }
 
 async fn check_system(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     system: &System,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
-    let trash_directory = get_trash_directory(connection, system).await?;
+    let trash_directory = get_trash_directory(pool, system).await?;
 
-    let header = find_header_by_system_id(connection, system.id).await;
-    let roms = find_roms_with_romfile_by_system_id(connection, system.id).await;
-    let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+    let header = find_header_by_system_id(pool, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(pool, system.id).await;
+    let romfiles = find_romfiles_by_system_id(pool, system.id).await;
     let mut roms_by_romfile_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
         let group = roms_by_romfile_id
@@ -81,12 +81,12 @@ async fn check_system(
 
         let ok: bool;
         if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
-            ok = check_archive(connection, &header, &romfile_path, roms, &progress_bar).await?;
+            ok = check_archive(pool, &header, &romfile_path, roms, &progress_bar).await?;
         } else if CHD_EXTENSION == romfile_extension {
-            ok = check_chd(connection, progress_bar, &header, &romfile_path, roms).await?;
+            ok = check_chd(pool, progress_bar, &header, &romfile_path, roms).await?;
         } else if CSO_EXTENSION == romfile_extension {
             ok = check_cso(
-                connection,
+                pool,
                 &progress_bar,
                 &header,
                 &romfile_path,
@@ -121,7 +121,7 @@ async fn check_system(
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
                 rename_file(&romfile_move.0.path, &romfile_move.1).await?;
-                update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
+                update_romfile(pool, romfile_move.0.id, &romfile_move.1).await;
             }
         }
     } else {
@@ -134,7 +134,7 @@ async fn check_system(
 }
 
 async fn check_archive<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     header: &Option<Header>,
     romfile_path: &P,
     mut roms: Vec<Rom>,
@@ -150,7 +150,7 @@ async fn check_archive<P: AsRef<Path>>(
         let size: u64;
         let crc: String;
         if header.is_some() || sevenzip_info.crc.is_empty() {
-            let tmp_directory = create_tmp_directory(connection).await?;
+            let tmp_directory = create_tmp_directory(pool).await?;
             let extracted_path = extract_files_from_archive(
                 progress_bar,
                 romfile_path,
@@ -181,13 +181,13 @@ async fn check_archive<P: AsRef<Path>>(
 }
 
 async fn check_chd<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile_path: &P,
     roms: Vec<Rom>,
 ) -> SimpleResult<bool> {
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
 
     let names_sizes: Vec<(&str, u64)> = roms
         .iter()
@@ -216,13 +216,13 @@ async fn check_chd<P: AsRef<Path>>(
 }
 
 async fn check_cso<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile_path: &P,
     rom: &Rom,
 ) -> SimpleResult<bool> {
-    let tmp_directory = create_tmp_directory(connection).await?;
+    let tmp_directory = create_tmp_directory(pool).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
     remove_file(&iso_path).await?;
@@ -261,11 +261,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -283,23 +283,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -316,11 +316,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -338,23 +338,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -371,11 +371,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -393,23 +393,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -426,11 +426,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -448,23 +448,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -481,11 +481,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -510,23 +510,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 2);
 
         for romfile in romfiles {
@@ -552,11 +552,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -574,23 +574,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -607,11 +607,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -629,23 +629,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -662,11 +662,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -684,23 +684,23 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -717,11 +717,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -739,15 +739,15 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let romfile = find_romfiles(&mut connection).await.remove(0);
+        let romfile = find_romfiles(&pool).await.remove(0);
         let file = fs::OpenOptions::new()
             .write(true)
             .open(&romfile.path)
@@ -758,12 +758,12 @@ mod test {
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
@@ -780,11 +780,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -802,15 +802,15 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let romfile = find_romfiles(&mut connection).await.remove(0);
+        let romfile = find_romfiles(&pool).await.remove(0);
         let mut file = fs::OpenOptions::new()
             .write(true)
             .open(&romfile.path)
@@ -822,12 +822,12 @@ mod test {
         // when
         let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
 
-        check_system(&mut connection, &matches, &system, &progress_bar)
+        check_system(&pool, &matches, &system, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let mut romfiles = find_romfiles(&pool).await;
         assert_eq!(romfiles.len(), 1);
 
         let romfile = romfiles.remove(0);
