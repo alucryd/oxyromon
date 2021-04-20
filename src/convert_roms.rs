@@ -12,7 +12,6 @@ use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
-use std::ffi::OsString;
 use std::mem::drop;
 
 const FORMATS: &[&str] = &["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"];
@@ -58,7 +57,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
     let rom_name = matches.value_of("NAME");
     let format = match matches.value_of("FORMAT") {
         Some(format) => format,
@@ -884,14 +883,13 @@ mod test {
     use super::super::import_roms;
     use super::*;
     use async_std::fs;
-    use async_std::sync::Mutex;
     use std::env;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
     async fn test_original_to_zip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -946,15 +944,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -973,7 +971,7 @@ mod test {
     #[async_std::test]
     async fn test_original_to_zip_with_correct_name() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1025,15 +1023,15 @@ mod test {
             .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1052,7 +1050,7 @@ mod test {
     #[async_std::test]
     async fn test_original_to_zip_with_incorrect_name() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1104,15 +1102,15 @@ mod test {
             .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1128,7 +1126,7 @@ mod test {
     #[async_std::test]
     async fn test_original_to_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1183,15 +1181,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1210,7 +1208,7 @@ mod test {
     #[async_std::test]
     async fn test_single_track_chd_to_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1265,15 +1263,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1292,7 +1290,7 @@ mod test {
     #[async_std::test]
     async fn test_multiple_tracks_chd_to_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1356,12 +1354,12 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 3);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1372,13 +1370,13 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
         assert_eq!(rom.romfile_id, Some(romfile.id));
-        let rom = roms.remove(0);
+        let rom = roms.get(1).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
         assert_eq!(rom.romfile_id, Some(romfile.id));
-        let rom = roms.remove(0);
+        let rom = roms.get(2).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).cue");
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
@@ -1389,7 +1387,7 @@ mod test {
     #[async_std::test]
     async fn test_cso_to_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1444,15 +1442,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1468,7 +1466,7 @@ mod test {
     #[async_std::test]
     async fn test_sevenzip_to_original() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1522,15 +1520,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1546,7 +1544,7 @@ mod test {
     #[async_std::test]
     async fn test_zip_to_original() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1600,15 +1598,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1624,7 +1622,7 @@ mod test {
     #[async_std::test]
     async fn test_sevenzip_to_zip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1679,15 +1677,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1703,7 +1701,7 @@ mod test {
     #[async_std::test]
     async fn test_zip_to_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1758,15 +1756,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1782,7 +1780,7 @@ mod test {
     #[async_std::test]
     async fn test_iso_to_cso() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -1845,15 +1843,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1869,7 +1867,7 @@ mod test {
     #[async_std::test]
     async fn test_single_track_chd_to_cso() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -1932,15 +1930,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -1956,7 +1954,7 @@ mod test {
     #[async_std::test]
     async fn test_multiple_tracks_chd_to_cso_should_do_nothing() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -2028,12 +2026,12 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 3);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 2);
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2044,7 +2042,7 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(1).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2059,7 +2057,7 @@ mod test {
     #[async_std::test]
     async fn test_cso_to_iso() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -2121,15 +2119,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2145,7 +2143,7 @@ mod test {
     #[async_std::test]
     async fn test_cso_to_chd() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -2208,15 +2206,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2232,7 +2230,7 @@ mod test {
     #[async_std::test]
     async fn test_cue_bin_to_chd() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -2310,12 +2308,12 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 3);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 2);
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2326,17 +2324,17 @@ mod test {
         );
         assert!(Path::new(&romfile.path).is_file().await);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
         assert_eq!(rom.romfile_id, Some(romfile.id));
-        let rom = roms.remove(0);
+        let rom = roms.get(1).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
-        let rom = roms.remove(0);
+        let rom = roms.get(2).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).cue");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(1).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2352,7 +2350,7 @@ mod test {
     #[async_std::test]
     async fn test_chd_to_cue_bin() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -2415,15 +2413,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 3);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 3);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2435,10 +2433,10 @@ mod test {
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
-        let rom = roms.remove(0);
+        let rom = roms.get(1).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(1).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2450,10 +2448,10 @@ mod test {
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
-        let rom = roms.remove(0);
+        let rom = roms.get(2).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).cue");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(2).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2469,7 +2467,7 @@ mod test {
     #[async_std::test]
     async fn test_iso_to_chd() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -2532,15 +2530,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory
@@ -2556,7 +2554,7 @@ mod test {
     #[async_std::test]
     async fn test_chd_to_iso() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -2612,15 +2610,15 @@ mod test {
         .unwrap();
 
         // then
-        let mut roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         assert_eq!(roms.len(), 1);
-        let mut romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&mut connection).await;
         assert_eq!(romfiles.len(), 1);
 
-        let rom = roms.remove(0);
+        let rom = roms.get(0).unwrap();
         assert_eq!(rom.name, "Test Game (USA, Europe).iso");
 
-        let romfile = romfiles.remove(0);
+        let romfile = romfiles.get(0).unwrap();
         assert_eq!(
             romfile.path,
             system_directory

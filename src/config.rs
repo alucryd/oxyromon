@@ -3,7 +3,6 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
-use once_cell::sync::OnceCell;
 use sqlx::SqliteConnection;
 use std::str::FromStr;
 
@@ -13,8 +12,12 @@ cfg_if::cfg_if! {
 
         static mut ROM_DIRECTORY: Option<PathBuf> = None;
         static mut TMP_DIRECTORY: Option<PathBuf> = None;
-        pub static MUTEX: OnceCell<Mutex<i32>> = OnceCell::new();
+
+        lazy_static! {
+            pub static ref MUTEX: Mutex<i32> = Mutex::new(0);
+        }
     } else {
+        use once_cell::sync::OnceCell;
         use std::env;
 
         static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
@@ -332,7 +335,6 @@ mod test {
     use super::*;
     use async_std::fs;
     use async_std::path::{Path, PathBuf};
-    use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -472,7 +474,7 @@ mod test {
     #[async_std::test]
     async fn test_set_new_directory_when_old_is_missing() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
 

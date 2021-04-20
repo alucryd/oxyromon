@@ -1,11 +1,13 @@
 use super::config::*;
-use super::import_dats::get_system_name_regex;
+use super::import_dats::SYSTEM_NAME_REGEX;
 use super::model::*;
 use super::SimpleResult;
 use async_std::fs;
 use async_std::io;
 use async_std::path::{Path, PathBuf};
+use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
+use std::cmp::Ordering;
 use tempfile::TempDir;
 
 pub async fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
@@ -103,7 +105,7 @@ pub async fn get_system_directory(
 ) -> SimpleResult<PathBuf> {
     let system_directory = get_rom_directory(connection)
         .await
-        .join(get_system_name_regex().replace(&system.name, "").trim());
+        .join(SYSTEM_NAME_REGEX.replace(&system.name, "").trim());
     create_directory(&system_directory).await?;
     Ok(system_directory)
 }
@@ -117,4 +119,27 @@ pub async fn get_trash_directory(
         .join("Trash");
     create_directory(&trash_directory).await?;
     Ok(trash_directory)
+}
+
+pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {
+    match new_version.cmp(old_version) {
+        Ordering::Less => {
+            progress_bar.println(format!(
+                "Version \"{}\" is older than \"{}\"",
+                old_version, new_version
+            ));
+            false
+        }
+        Ordering::Equal => {
+            progress_bar.println(format!("Already at version \"{}\"", new_version));
+            false
+        }
+        Ordering::Greater => {
+            progress_bar.println(format!(
+                "Version \"{}\" is newer than \"{}\"",
+                new_version, old_version
+            ));
+            true
+        }
+    }
 }

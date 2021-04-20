@@ -60,15 +60,15 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         chd_path.as_ref().file_name().unwrap()
     ));
 
+    let cue_path = directory.as_ref().join(format!(
+        "{}.{}",
+        chd_path.as_ref().file_name().unwrap().to_str().unwrap(),
+        CUE_EXTENSION
+    ));
     let mut bin_path = directory
         .as_ref()
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
-
-    let mut cue_name = bin_path.file_name().unwrap().to_os_string();
-    cue_name.push(".");
-    cue_name.push(CUE_EXTENSION);
-    let cue_path = directory.as_ref().join(cue_name);
 
     let output = Command::new("chdman")
         .arg("extractcd")
@@ -128,15 +128,15 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
 
+    let cue_path = directory.as_ref().join(format!(
+        "{}.{}",
+        chd_path.as_ref().file_name().unwrap().to_str().unwrap(),
+        CUE_EXTENSION
+    ));
     let mut bin_path = directory
         .as_ref()
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
-
-    let mut cue_name = bin_path.file_name().unwrap().to_os_string();
-    cue_name.push(".");
-    cue_name.push(CUE_EXTENSION);
-    let cue_path = directory.as_ref().join(cue_name);
 
     let output = Command::new("chdman")
         .arg("extractcd")

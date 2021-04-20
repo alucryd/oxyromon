@@ -138,13 +138,12 @@ mod test {
     use async_std::fs;
     use async_std::path::PathBuf;
     use async_std::prelude::*;
-    use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
     async fn test_purge_missing_roms() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -201,7 +200,7 @@ mod test {
     #[async_std::test]
     async fn test_purge_trashed_roms() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();

@@ -6,6 +6,8 @@ extern crate digest;
 extern crate dirs;
 extern crate dotenv;
 extern crate indicatif;
+#[macro_use]
+extern crate lazy_static;
 extern crate once_cell;
 extern crate quick_xml;
 extern crate regex;

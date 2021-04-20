@@ -1529,6 +1529,7 @@ dependencies = [
  "dirs",
  "dotenv",
  "indicatif",
+ "lazy_static",
  "native-tls",
  "once_cell",
  "phf",
