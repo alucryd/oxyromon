@@ -1532,7 +1532,7 @@ dependencies = [
 
 [[package]]
 name = "oxyromon"
-version = "0.8.1-beta"
+version = "0.8.1"
 dependencies = [
  "async-std",
  "cfg-if",

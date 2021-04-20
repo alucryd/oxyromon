@@ -80,21 +80,21 @@ async fn main() -> SimpleResult<()> {
         if !db_file.is_file().await {
             create_file(&db_file).await?;
         }
-        let mut connection = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
         match matches.subcommand_name() {
             Some("config") => {
                 config::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("config").unwrap(),
                 )
                 .await?
             }
             Some("import-dats") => {
                 import_dats::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("import-dats").unwrap(),
                     &progress_bar,
                 )
@@ -102,7 +102,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("download-dats") => {
                 download_dats::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("download-dats").unwrap(),
                     &progress_bar,
                 )
@@ -110,7 +110,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("import-roms") => {
                 import_roms::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("import-roms").unwrap(),
                     &progress_bar,
                 )
@@ -118,7 +118,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("sort-roms") => {
                 sort_roms::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("sort-roms").unwrap(),
                     &progress_bar,
                 )
@@ -126,7 +126,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("convert-roms") => {
                 convert_roms::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("convert-roms").unwrap(),
                     &progress_bar,
                 )
@@ -134,7 +134,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("check-roms") => {
                 check_roms::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("check-roms").unwrap(),
                     &progress_bar,
                 )
@@ -142,7 +142,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("purge-roms") => {
                 purge_roms::main(
-                    &mut connection,
+                    &pool,
                     &matches.subcommand_matches("purge-roms").unwrap(),
                     &progress_bar,
                 )
@@ -151,7 +151,7 @@ async fn main() -> SimpleResult<()> {
             _ => (),
         }
 
-        close_connection(&mut connection).await;
+        close_connection(&pool).await;
     }
 
     Ok(())

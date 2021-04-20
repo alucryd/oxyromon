@@ -5,7 +5,7 @@ use super::SimpleResult;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
-use sqlx::SqliteConnection;
+use sqlx::sqlite::SqlitePool;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("purge-roms")
@@ -41,34 +41,31 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn main(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("MISSING") {
-        purge_missing_romfiles(connection, &progress_bar).await?;
+        purge_missing_romfiles(pool, &progress_bar).await?;
     }
     if matches.is_present("TRASH") {
-        purge_trashed_romfiles(connection, matches, &progress_bar).await?;
+        purge_trashed_romfiles(pool, matches, &progress_bar).await?;
     }
     if matches.is_present("ORPHAN") {
-        purge_orphan_romfiles(connection, &progress_bar).await?;
+        purge_orphan_romfiles(pool, &progress_bar).await?;
     }
     Ok(())
 }
 
-async fn purge_missing_romfiles(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+async fn purge_missing_romfiles(pool: &SqlitePool, progress_bar: &ProgressBar) -> SimpleResult<()> {
     progress_bar.println("Processing missing ROM files");
 
-    let romfiles = find_romfiles(connection).await;
+    let romfiles = find_romfiles(pool).await;
     let mut count = 0;
 
     for romfile in romfiles {
         if !Path::new(&romfile.path).is_file().await {
-            delete_romfile_by_id(connection, romfile.id).await;
+            delete_romfile_by_id(pool, romfile.id).await;
             count += 1;
         }
     }
@@ -84,13 +81,13 @@ async fn purge_missing_romfiles(
 }
 
 async fn purge_trashed_romfiles(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing trashed ROM files");
 
-    let romfiles = find_romfiles_in_trash(connection).await;
+    let romfiles = find_romfiles_in_trash(pool).await;
     let mut count = 0;
 
     if !romfiles.is_empty() {
@@ -104,7 +101,7 @@ async fn purge_trashed_romfiles(
                 let romfile_path = Path::new(&romfile.path);
                 if romfile_path.is_file().await {
                     remove_file(&romfile_path).await?;
-                    delete_romfile_by_id(connection, romfile.id).await;
+                    delete_romfile_by_id(pool, romfile.id).await;
                     count += 1;
                 }
             }
@@ -118,12 +115,9 @@ async fn purge_trashed_romfiles(
     Ok(())
 }
 
-async fn purge_orphan_romfiles(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+async fn purge_orphan_romfiles(pool: &SqlitePool, progress_bar: &ProgressBar) -> SimpleResult<()> {
     progress_bar.println("Processing orphan ROM files");
-    delete_romfiles_without_rom(connection).await;
+    delete_romfiles_without_rom(pool).await;
     Ok(())
 }
 
@@ -149,11 +143,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -173,20 +167,18 @@ mod test {
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         remove_file(&Path::new(&romfiles[0].path)).await.unwrap();
 
         // when
-        purge_missing_romfiles(&mut connection, &progress_bar)
-            .await
-            .unwrap();
+        purge_missing_romfiles(&pool, &progress_bar).await.unwrap();
 
         // then
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert!(romfiles.is_empty());
         assert!(&system_directory
             .read_dir()
@@ -206,11 +198,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -230,25 +222,25 @@ mod test {
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
+        import_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         let matches =
             sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-g", "JP"]);
-        sort_roms::main(&mut connection, &matches, &progress_bar)
+        sort_roms::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // when
         let matches = subcommand().get_matches_from(&["purge-roms", "-y"]);
 
-        purge_trashed_romfiles(&mut connection, &matches, &progress_bar)
+        purge_trashed_romfiles(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
         // then
-        let romfiles = find_romfiles(&mut connection).await;
+        let romfiles = find_romfiles(&pool).await;
         assert!(romfiles.is_empty());
         assert!(&system_directory
             .join("Trash")

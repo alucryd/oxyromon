@@ -14,7 +14,7 @@ use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
-use sqlx::SqliteConnection;
+use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
@@ -62,20 +62,20 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 }
 
 pub async fn main(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(pool, None, matches.is_present("ALL")).await?;
 
-    let all_regions = compute_regions(connection, matches, "REGIONS_ALL").await;
-    let one_regions = compute_regions(connection, matches, "REGIONS_ONE").await;
-    let unwanted_releases = get_list(connection, "DISCARD_RELEASES").await;
-    let unwanted_flags = get_list(connection, "DISCARD_FLAGS").await;
+    let all_regions = compute_regions(pool, matches, "REGIONS_ALL").await;
+    let one_regions = compute_regions(pool, matches, "REGIONS_ONE").await;
+    let unwanted_releases = get_list(pool, "DISCARD_RELEASES").await;
+    let unwanted_flags = get_list(pool, "DISCARD_FLAGS").await;
 
     for system in systems {
         sort_system(
-            connection,
+            pool,
             matches,
             &progress_bar,
             &system,
@@ -97,7 +97,7 @@ pub async fn main(
 }
 
 pub async fn compute_regions(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     key: &str,
 ) -> Vec<Region> {
@@ -106,7 +106,7 @@ pub async fn compute_regions(
         regions.dedup();
         regions
     } else {
-        get_list(connection, key).await
+        get_list(pool, key).await
     };
     all_regions
         .into_iter()
@@ -116,7 +116,7 @@ pub async fn compute_regions(
 }
 
 async fn sort_system(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
     system: &System,
@@ -133,7 +133,7 @@ async fn sort_system(
     let mut trash_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
-    let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+    let romfiles = find_romfiles_by_system_id(pool, system.id).await;
     let romfiles_by_id: HashMap<i64, Romfile> = romfiles
         .into_iter()
         .map(|romfile| (romfile.id, romfile))
@@ -141,8 +141,8 @@ async fn sort_system(
 
     // 1G1R mode
     if !one_regions.is_empty() {
-        let parent_games = find_parent_games_by_system_id(connection, system.id).await;
-        let clone_games = find_clone_games_by_system_id(connection, system.id).await;
+        let parent_games = find_parent_games_by_system_id(pool, system.id).await;
+        let clone_games = find_clone_games_by_system_id(pool, system.id).await;
 
         let mut clone_games_by_parent_id: HashMap<i64, Vec<Game>> = HashMap::new();
         clone_games.into_iter().for_each(|game| {
@@ -198,7 +198,7 @@ async fn sort_system(
         }
     // Regions mode
     } else if !all_regions.is_empty() {
-        games = find_games_by_system_id(connection, system.id).await;
+        games = find_games_by_system_id(pool, system.id).await;
 
         // trim unwanted games
         if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
@@ -221,7 +221,7 @@ async fn sort_system(
             }
         }
     } else {
-        games = find_games_by_system_id(connection, system.id).await;
+        games = find_games_by_system_id(pool, system.id).await;
 
         // trim unwanted games
         if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
@@ -238,8 +238,7 @@ async fn sort_system(
         let mut game_ids: Vec<i64> = Vec::new();
         game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
         game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
-        let missing_roms: Vec<Rom> =
-            find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
+        let missing_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(pool, &game_ids).await;
 
         if !missing_roms.is_empty() {
             progress_bar.println("Missing:");
@@ -252,7 +251,7 @@ async fn sort_system(
     }
 
     // create necessary directories
-    let all_regions_directory = get_system_directory(connection, system).await?;
+    let all_regions_directory = get_system_directory(pool, system).await?;
     let one_region_directory = all_regions_directory.join("1G1R");
     let trash_directory = all_regions_directory.join("Trash");
     for d in &[
@@ -266,7 +265,7 @@ async fn sort_system(
     // process all_region_games
     romfile_moves.append(
         &mut sort_games(
-            connection,
+            pool,
             all_regions_games,
             &all_regions_directory,
             &romfiles_by_id,
@@ -277,7 +276,7 @@ async fn sort_system(
     // process one_region_games
     romfile_moves.append(
         &mut sort_games(
-            connection,
+            pool,
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
@@ -287,7 +286,7 @@ async fn sort_system(
 
     // process trash_games
     romfile_moves
-        .append(&mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await);
+        .append(&mut sort_games(pool, trash_games, &trash_directory, &romfiles_by_id).await);
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
@@ -307,7 +306,7 @@ async fn sort_system(
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
                 rename_file(&romfile_move.0.path, &romfile_move.1).await?;
-                update_romfile(connection, romfile_move.0.id, &romfile_move.1).await;
+                update_romfile(pool, romfile_move.0.id, &romfile_move.1).await;
             }
         }
     } else {
@@ -320,7 +319,7 @@ async fn sort_system(
 }
 
 async fn sort_games<'a, P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    pool: &SqlitePool,
     games: Vec<Game>,
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
@@ -328,7 +327,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let roms = find_roms_with_romfile_by_game_ids(
-        connection,
+        pool,
         &games
             .iter()
             .map(|game| game.id)
@@ -445,15 +444,15 @@ mod test {
     async fn test_compute_regions_all_should_get_from_matches() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let key = "REGIONS_ALL";
 
-        add_to_list(&mut connection, key, "US").await;
+        add_to_list(&pool, key, "US").await;
         let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-r", "EU"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = compute_regions(&pool, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -464,15 +463,15 @@ mod test {
     async fn test_compute_regions_all_should_get_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let key = "REGIONS_ALL";
 
-        add_to_list(&mut connection, key, "US").await;
+        add_to_list(&pool, key, "US").await;
         let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = compute_regions(&pool, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -483,15 +482,15 @@ mod test {
     async fn test_compute_regions_one_should_get_from_matches() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let key = "REGIONS_ONE";
 
-        add_to_list(&mut connection, key, "US").await;
+        add_to_list(&pool, key, "US").await;
         let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-g", "EU"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = compute_regions(&pool, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -502,15 +501,15 @@ mod test {
     async fn test_compute_regions_one_should_get_from_db() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let key = "REGIONS_ONE";
 
-        add_to_list(&mut connection, key, "US").await;
+        add_to_list(&pool, key, "US").await;
         let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = compute_regions(&pool, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -787,11 +786,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -809,7 +808,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -818,7 +817,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -829,7 +828,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -842,7 +841,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let all_regions_indices = vec![0, 1, 2, 3];
@@ -870,11 +869,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -892,7 +891,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -901,7 +900,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -912,7 +911,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -925,7 +924,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let all_regions_indices = vec![0, 1, 2];
@@ -968,11 +967,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -990,7 +989,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -999,7 +998,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -1010,7 +1009,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -1023,7 +1022,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let all_regions_indices = vec![1, 2, 3];
@@ -1066,11 +1065,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1088,7 +1087,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1097,7 +1096,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -1108,7 +1107,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -1121,7 +1120,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let all_regions_indices = vec![1, 2];
@@ -1164,13 +1163,13 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand().get_matches_from(&[
             "import-dats",
             "test/Test System (20200721) (Parent-Clone).dat",
         ]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1188,7 +1187,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1197,7 +1196,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -1208,7 +1207,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -1221,7 +1220,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let one_regions_indices = vec![2];
@@ -1265,11 +1264,11 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1287,7 +1286,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1296,7 +1295,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -1307,7 +1306,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -1320,7 +1319,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let one_regions_indices = vec![2, 3];
@@ -1364,13 +1363,13 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
 
         let matches = import_dats::subcommand().get_matches_from(&[
             "import-dats",
             "test/Test System (20200721) (Parent-Clone).dat",
         ]);
-        import_dats::main(&mut connection, &matches, &progress_bar)
+        import_dats::main(&pool, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -1388,7 +1387,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
+        let system = find_systems(&pool).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1397,7 +1396,7 @@ mod test {
                 .unwrap();
             let matches = import_roms::subcommand()
                 .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-            import_roms::main(&mut connection, &matches, &progress_bar)
+            import_roms::main(&pool, &matches, &progress_bar)
                 .await
                 .unwrap();
         }
@@ -1408,7 +1407,7 @@ mod test {
 
         // when
         sort_system(
-            &mut connection,
+            &pool,
             &matches,
             &progress_bar,
             &system,
@@ -1421,7 +1420,7 @@ mod test {
         .unwrap();
 
         // then
-        let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+        let romfiles = find_romfiles_by_system_id(&pool, system.id).await;
         assert_eq!(4, romfiles.len());
 
         let all_regions_indices = vec![1];

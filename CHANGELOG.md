@@ -1,3 +1,7 @@
+# 0.8.1
+* Use a database connection pool
+* Fix importing archives with invalid files
+
 # 0.8.0
 * Add a new download-dats subcommand
 * Use dialoguer for prompts
