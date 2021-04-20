@@ -570,6 +570,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -591,7 +592,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
@@ -653,6 +654,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
@@ -674,7 +676,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
         let header = find_header_by_system_id(&pool, system.id).await;
 
         // when
@@ -744,6 +746,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -765,7 +768,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
@@ -837,6 +840,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -858,7 +862,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
@@ -936,6 +940,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -957,7 +962,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
@@ -1039,6 +1044,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
@@ -1060,7 +1066,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
         let header = find_header_by_system_id(&pool, system.id).await;
 
         // when
@@ -1133,6 +1139,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1154,7 +1161,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_archive(
@@ -1216,6 +1223,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1237,7 +1245,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_chd(
@@ -1298,6 +1306,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1326,7 +1335,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_chd(
@@ -1407,6 +1416,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1428,7 +1438,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_chd(
@@ -1465,6 +1475,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1486,7 +1497,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_cso(
@@ -1547,6 +1558,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1568,7 +1580,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
         import_other(
@@ -1629,6 +1641,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
@@ -1650,7 +1663,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
         let header = find_header_by_system_id(&pool, system.id).await;
 
         // when

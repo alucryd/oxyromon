@@ -2,7 +2,7 @@ use super::model::*;
 use rayon::prelude::*;
 use sqlx::migrate::Migrator;
 use sqlx::prelude::*;
-use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
+use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
 use std::convert::TryFrom;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
@@ -86,7 +86,7 @@ pub async fn update_system(pool: &SqlitePool, id: i64, system_xml: &SystemXml) {
     .unwrap_or_else(|_| panic!("Error while updating system with id {}", id));
 }
 
-pub async fn find_systems(pool: &SqlitePool) -> Vec<System> {
+pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
         "
@@ -95,7 +95,7 @@ pub async fn find_systems(pool: &SqlitePool) -> Vec<System> {
         ORDER BY name
         ",
     )
-    .fetch_all(pool)
+    .fetch_all(connection)
     .await
     .expect("Error while finding systems")
 }

@@ -445,6 +445,7 @@ mod test {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "REGIONS_ALL";
 
@@ -464,6 +465,7 @@ mod test {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "REGIONS_ALL";
 
@@ -483,6 +485,7 @@ mod test {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "REGIONS_ONE";
 
@@ -502,6 +505,7 @@ mod test {
         // given
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "REGIONS_ONE";
 
@@ -787,6 +791,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -808,7 +813,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -870,6 +875,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -891,7 +897,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -968,6 +974,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -989,7 +996,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1066,6 +1073,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1087,7 +1095,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1164,6 +1172,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand().get_matches_from(&[
             "import-dats",
@@ -1187,7 +1196,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1265,6 +1274,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -1286,7 +1296,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);
@@ -1364,6 +1374,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand().get_matches_from(&[
             "import-dats",
@@ -1387,7 +1398,7 @@ mod test {
         let system_directory = &rom_directory.join("Test System");
         create_directory(&system_directory).await.unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         for romfile_name in &romfile_names {
             let romfile_path = tmp_directory.join(romfile_name);

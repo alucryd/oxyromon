@@ -11,7 +11,7 @@ pub async fn prompt_for_systems(
 ) -> SimpleResult<Vec<System>> {
     let systems = match url {
         Some(url) => find_systems_by_url(pool, url).await,
-        None => find_systems(pool).await,
+        None => find_systems(&mut pool.acquire().await.unwrap()).await,
     };
 
     if all || systems.is_empty() {
@@ -34,7 +34,7 @@ pub async fn prompt_for_systems(
 }
 
 pub async fn prompt_for_system(pool: &SqlitePool, default: Option<usize>) -> SimpleResult<System> {
-    let mut systems = find_systems(pool).await;
+    let mut systems = find_systems(&mut pool.acquire().await.unwrap()).await;
     match systems.len() {
         0 => bail!("No available system"),
         1 => Ok(systems.remove(0)),

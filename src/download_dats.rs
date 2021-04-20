@@ -287,6 +287,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let profile_xml_path = test_directory.join("profile.xml");
 
@@ -319,6 +320,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
         set_tmp_directory(PathBuf::from(tmp_directory.path()));
@@ -345,7 +347,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();

@@ -396,6 +396,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -406,7 +407,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -424,6 +425,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721) (Parent-Clone).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -434,7 +436,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -452,6 +454,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -462,7 +465,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -482,6 +485,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, true).unwrap();
@@ -492,7 +496,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -514,6 +518,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -532,7 +537,7 @@ mod test {
             .await
             .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let romfile_names = vec![
             "Test Game (Asia).rom",
@@ -568,7 +573,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -618,6 +623,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -635,7 +641,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
@@ -653,6 +659,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
@@ -670,7 +677,7 @@ mod test {
             .unwrap();
 
         // then
-        let systems = find_systems(&pool).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();

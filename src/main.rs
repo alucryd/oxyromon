@@ -38,6 +38,7 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
+mod server;
 mod sevenzip;
 mod sort_roms;
 mod util;
@@ -67,6 +68,7 @@ async fn main() -> SimpleResult<()> {
             convert_roms::subcommand(),
             check_roms::subcommand(),
             purge_roms::subcommand(),
+            server::subcommand(),
         ])
         .get_matches();
 
@@ -86,11 +88,7 @@ async fn main() -> SimpleResult<()> {
 
         match matches.subcommand_name() {
             Some("config") => {
-                config::main(
-                    &pool,
-                    &matches.subcommand_matches("config").unwrap(),
-                )
-                .await?
+                config::main(&pool, &matches.subcommand_matches("config").unwrap()).await?
             }
             Some("import-dats") => {
                 import_dats::main(
@@ -147,6 +145,9 @@ async fn main() -> SimpleResult<()> {
                     &progress_bar,
                 )
                 .await?
+            }
+            Some("server") => {
+                server::main(&pool, &matches.subcommand_matches("server").unwrap()).await?
             }
             _ => (),
         }

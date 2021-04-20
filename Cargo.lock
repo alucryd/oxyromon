@@ -1557,6 +1557,7 @@ dependencies = [
  "surf",
  "tempfile",
  "tide",
+ "tide-sqlx",
  "wiremock",
  "zip",
 ]
@@ -2484,6 +2485,17 @@ dependencies = [
  "route-recognizer",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "tide-sqlx"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecbab281229d36a84c83c2b69f7abf54f2cecc041c4f45928834ef099a4a335a"
+dependencies = [
+ "async-std",
+ "sqlx",
+ "tide",
 ]
 
 [[package]]

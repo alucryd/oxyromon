@@ -262,6 +262,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -283,7 +284,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -317,6 +318,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
@@ -338,7 +340,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -372,6 +374,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -393,7 +396,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -427,6 +430,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -448,7 +452,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -482,6 +486,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -510,7 +515,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -553,6 +558,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -574,7 +580,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -608,6 +614,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -629,7 +636,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -663,6 +670,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
@@ -684,7 +692,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -718,6 +726,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -739,7 +748,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -781,6 +790,7 @@ mod test {
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
@@ -802,7 +812,7 @@ mod test {
         .await
         .unwrap();
 
-        let system = find_systems(&pool).await.remove(0);
+        let system = find_systems(&mut connection).await.remove(0);
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
