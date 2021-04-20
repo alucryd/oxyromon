@@ -161,7 +161,7 @@ pub async fn find_system_by_name_like(
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
-pub async fn create_game<'a>(
+pub async fn create_game(
     connection: &mut SqliteConnection,
     game_xml: &GameXml,
     regions: &str,
@@ -235,6 +235,7 @@ pub async fn find_games_by_system_id(
         SELECT *
         FROM games
         WHERE system_id = ?
+        ORDER BY name
         ",
         system_id,
     )
@@ -243,12 +244,13 @@ pub async fn find_games_by_system_id(
     .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
 }
 
-pub async fn find_games_by_ids<'a>(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
+pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
     let sql = format!(
         "
         SELECT *
         FROM games
         WHERE id IN ({})
+        ORDER BY name
         ",
         ids.par_iter()
             .map(ToString::to_string)
@@ -272,6 +274,7 @@ pub async fn find_parent_games_by_system_id(
         FROM games
         WHERE system_id = ?
         AND parent_id IS NULL
+        ORDER BY name
         ",
         system_id,
     )
@@ -296,6 +299,7 @@ pub async fn find_clone_games_by_system_id(
         FROM games
         WHERE system_id = ?
         AND parent_id IS NOT NULL
+        ORDER BY name
         ",
         system_id,
     )
@@ -307,6 +311,21 @@ pub async fn find_clone_games_by_system_id(
             system_id
         )
     })
+}
+
+pub async fn find_game_by_id(connection: &mut SqliteConnection, id: i64) -> Game {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding game with id {}", id))
 }
 
 pub async fn find_game_by_name_and_system_id(
@@ -359,11 +378,7 @@ pub async fn delete_game_by_name_and_system_id(
     });
 }
 
-pub async fn create_rom<'a>(
-    connection: &mut SqliteConnection,
-    rom_xml: &RomXml,
-    game_id: i64,
-) -> i64 {
+pub async fn create_rom(connection: &mut SqliteConnection, rom_xml: &RomXml, game_id: i64) -> i64 {
     let crc = rom_xml.crc.to_lowercase();
     let md5 = rom_xml.md5.to_lowercase();
     let sha1 = rom_xml.sha1.to_lowercase();
@@ -448,7 +463,7 @@ pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     .expect("Error while finding roms")
 }
 
-pub async fn find_roms_by_game_id<'a>(connection: &mut SqliteConnection, game_id: i64) -> Vec<Rom> {
+pub async fn find_roms_by_game_id(connection: &mut SqliteConnection, game_id: i64) -> Vec<Rom> {
     sqlx::query_as!(
         Rom,
         "
@@ -488,7 +503,7 @@ pub async fn find_roms_without_romfile_by_system_id(
     .expect("Error while finding roms without romfile")
 }
 
-pub async fn find_roms_without_romfile_by_game_ids<'a>(
+pub async fn find_roms_without_romfile_by_game_ids(
     connection: &mut SqliteConnection,
     game_ids: &[i64],
 ) -> Vec<Rom> {
@@ -512,7 +527,7 @@ pub async fn find_roms_without_romfile_by_game_ids<'a>(
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_system_id<'a>(
+pub async fn find_roms_with_romfile_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Rom> {
@@ -536,7 +551,7 @@ pub async fn find_roms_with_romfile_by_system_id<'a>(
     .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_system_id_and_name<'a>(
+pub async fn find_roms_with_romfile_by_system_id_and_name(
     connection: &mut SqliteConnection,
     system_id: i64,
     name: &str,
@@ -562,7 +577,7 @@ pub async fn find_roms_with_romfile_by_system_id_and_name<'a>(
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_game_ids<'a>(
+pub async fn find_roms_with_romfile_by_game_ids(
     connection: &mut SqliteConnection,
     game_ids: &[i64],
 ) -> Vec<Rom> {
@@ -586,7 +601,7 @@ pub async fn find_roms_with_romfile_by_game_ids<'a>(
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_rom_by_name_and_game_id<'a>(
+pub async fn find_rom_by_name_and_game_id(
     connection: &mut SqliteConnection,
     name: &str,
     game_id: i64,
@@ -712,10 +727,7 @@ pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
     .expect("Error while finding romfiles")
 }
 
-pub async fn find_romfiles_by_ids<'a>(
-    connection: &mut SqliteConnection,
-    ids: &[i64],
-) -> Vec<Romfile> {
+pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {
     let sql = format!(
         "
     SELECT *
@@ -733,7 +745,7 @@ pub async fn find_romfiles_by_ids<'a>(
         .expect("Error while finding romfiles")
 }
 
-pub async fn find_romfiles_by_system_id<'a>(
+pub async fn find_romfiles_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Romfile> {
@@ -759,7 +771,7 @@ pub async fn find_romfiles_by_system_id<'a>(
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_romfiles_in_trash<'a>(connection: &mut SqliteConnection) -> Vec<Romfile> {
+pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Romfile> {
     sqlx::query_as!(
         Romfile,
         "
@@ -774,7 +786,7 @@ pub async fn find_romfiles_in_trash<'a>(connection: &mut SqliteConnection) -> Ve
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_romfile_by_path<'a>(
+pub async fn find_romfile_by_path(
     connection: &mut SqliteConnection,
     path: &str,
 ) -> Option<Romfile> {
@@ -820,7 +832,7 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     .unwrap_or_else(|_| panic!("Error while deleting setting with id {}", id));
 }
 
-pub async fn delete_romfiles_without_rom<'a>(connection: &mut SqliteConnection) {
+pub async fn delete_romfiles_without_rom(connection: &mut SqliteConnection) {
     sqlx::query!(
         "
         DELETE

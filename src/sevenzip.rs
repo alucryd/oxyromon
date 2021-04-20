@@ -71,9 +71,13 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
     file_name: &str,
     new_file_name: &str,
 ) -> SimpleResult<()> {
-    progress_bar.set_message("Renaming file");
+    progress_bar.set_message("Renaming file in archive");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(100);
+    progress_bar.println(format!(
+        "Renaming \"{}\" to \"{}\"",
+        file_name, new_file_name
+    ));
 
     let output = Command::new("7z")
         .arg("rn")
@@ -103,7 +107,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(100);
 
     for &file_name in file_names {
-        progress_bar.println(format!("Extracting {}", file_name));
+        progress_bar.println(format!("Extracting \"{}\"", file_name));
     }
 
     let output = Command::new("7z")
@@ -137,7 +141,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(100);
 
     for &file_name in file_names {
-        progress_bar.println(format!("Compressing {}", file_name));
+        progress_bar.println(format!("Compressing \"{}\"", file_name));
     }
 
     let output = Command::new("7z")
@@ -146,6 +150,35 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         .args(file_names)
         .arg("-mx=9")
         .current_dir(directory.as_ref())
+        .output()
+        .expect("Failed to create archive");
+
+    if !output.status.success() {
+        bail!(String::from_utf8(output.stderr).unwrap().as_str())
+    }
+
+    progress_bar.disable_steady_tick();
+
+    Ok(())
+}
+
+pub fn delete_files_from_archive<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    archive_path: &P,
+    file_names: &[&str],
+) -> SimpleResult<()> {
+    progress_bar.set_message("Deleting files from archive");
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+
+    for &file_name in file_names {
+        progress_bar.println(format!("Deleting \"{}\"", file_name));
+    }
+
+    let output = Command::new("7z")
+        .arg("d")
+        .arg(archive_path.as_ref())
+        .args(file_names)
         .output()
         .expect("Failed to create archive");
 

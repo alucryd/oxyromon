@@ -1,19 +1,27 @@
-use super::import_dats::import_dat;
+use super::database::*;
+use super::import_dats::{import_dat, parse_dat};
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
+use async_std::task;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
+use rayon::prelude::*;
 use sqlx::SqliteConnection;
+use std::collections::HashSet;
 use std::io::Cursor;
+use std::time::Duration;
 use zip::read::ZipArchive;
 
 const NOINTRO_BASE_URL: &str = "https://datomatic.no-intro.org";
 const NOINTRO_PROFILE_URL: &str = "/profile.xml";
 const REDUMP_BASE_URL: &str = "http://redump.org";
+
+const NOINTRO_SYSTEM_URL: &str = "www.no-intro.org";
+const REDUMP_SYSTEM_URL: &str = "http://redump.org/";
 
 static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! {
     "Apple - Macintosh" => "mac",
@@ -88,6 +96,13 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required_unless("NOINTRO"),
         )
         .arg(
+            Arg::with_name("UPDATE")
+                .short("u")
+                .long("update")
+                .help("Checks for system updates")
+                .required(false),
+        )
+        .arg(
             Arg::with_name("ALL")
                 .short("a")
                 .long("all")
@@ -109,52 +124,66 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("NOINTRO") {
-        progress_bar.println("Not supported");
-        return Ok(());
-        download_nointro_dats(
-            connection,
-            progress_bar,
-            NOINTRO_BASE_URL,
-            matches.is_present("ALL"),
-            matches.is_present("FORCE"),
-        )
-        .await?
+        if matches.is_present("UPDATE") {
+            update_nointro_dats(
+                connection,
+                progress_bar,
+                NOINTRO_BASE_URL,
+                matches.is_present("ALL"),
+            )
+            .await?
+        } else {
+            progress_bar.println("Not supported");
+        }
     } else if matches.is_present("REDUMP") {
-        download_redump_dats(
-            connection,
-            progress_bar,
-            REDUMP_BASE_URL,
-            matches.is_present("ALL"),
-            matches.is_present("FORCE"),
-        )
-        .await?
+        if matches.is_present("UPDATE") {
+            update_redump_dats(
+                connection,
+                progress_bar,
+                REDUMP_BASE_URL,
+                matches.is_present("ALL"),
+                matches.is_present("FORCE"),
+            )
+            .await?
+        } else {
+            download_redump_dats(
+                connection,
+                progress_bar,
+                REDUMP_BASE_URL,
+                matches.is_present("ALL"),
+            )
+            .await?
+        }
     }
     Ok(())
 }
 
-async fn download_nointro_dats(
+async fn update_nointro_dats(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
-    force: bool,
 ) -> SimpleResult<()> {
     let response = surf::get(format!("{}{}", base_url, NOINTRO_PROFILE_URL))
         .recv_string()
         .await
         .expect("Failed to download No-Intro profiles");
-    let profile: ProfileXml = de::from_str(&response).expect("Failed to parse profile");
-    let mut items: Vec<&str> = profile
-        .systems
-        .iter()
-        .map(|system| system.name.as_str())
-        .collect();
-    items.sort_unstable();
-    let indices: Vec<usize> = if all {
-        (0..items.len()).collect()
-    } else {
-        multiselect(&items, None)?
-    };
+    let profile: ProfileXml = try_with!(de::from_str(&response), "Failed to parse profile");
+    let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), all).await?;
+    for system in systems {
+        progress_bar.println(format!("Processing \"{}\"", &system.name));
+        let system_xml = profile
+            .systems
+            .par_iter()
+            .find_first(|system_xml| system_xml.name == system.name);
+        match system_xml {
+            Some(system_xml) => {
+                is_update(progress_bar, &system.version, &system_xml.version);
+            }
+            None => progress_bar.println("System is no longer available"),
+        }
+        progress_bar.println("");
+    }
     Ok(())
 }
 
@@ -163,9 +192,17 @@ async fn download_redump_dats(
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
-    force: bool,
 ) -> SimpleResult<()> {
-    let mut items: Vec<&str> = REDUMP_SYSTEMS_CODES.keys().copied().collect();
+    let system_names: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
+        .await
+        .into_par_iter()
+        .map(|system| system.name)
+        .collect();
+    let mut items: Vec<&str> = REDUMP_SYSTEMS_CODES
+        .keys()
+        .copied()
+        .filter(|&system_name| !system_names.contains(system_name))
+        .collect();
     items.sort_unstable();
     let indices: Vec<usize> = if all {
         (0..items.len()).collect()
@@ -173,34 +210,66 @@ async fn download_redump_dats(
         multiselect(&items, None)?
     };
     for i in indices {
-        let code = *REDUMP_SYSTEMS_CODES.get(*items.get(i).unwrap()).unwrap();
-        let zip_url = format!("{}/datfile/{}/", base_url, code);
-        let response = surf::get(zip_url)
-            .recv_bytes()
-            .await
-            .expect("Failed to download ZIP");
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut zip_archive =
-            try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read ZIP");
-        match zip_archive.len() {
-            0 => progress_bar.println("Update ZIP is empty"),
-            1 => {
-                try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
-                import_dat(
-                    connection,
-                    progress_bar,
-                    &tmp_directory
-                        .path()
-                        .join(zip_archive.file_names().next().unwrap()),
-                    false,
-                    true,
-                    force,
-                )
-                .await?;
-            }
-            _ => progress_bar.println("Update ZIP contains too many files"),
-        }
+        download_redump_dat(
+            connection,
+            progress_bar,
+            base_url,
+            items.get(i).unwrap(),
+            false,
+        )
+        .await?;
     }
+    Ok(())
+}
+
+async fn update_redump_dats(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    base_url: &str,
+    all: bool,
+    force: bool,
+) -> SimpleResult<()> {
+    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), all).await?;
+    for system in systems {
+        download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
+    }
+    Ok(())
+}
+
+async fn download_redump_dat(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    base_url: &str,
+    system_name: &str,
+    force: bool,
+) -> SimpleResult<()> {
+    progress_bar.println(format!("Processing \"{}\"", system_name));
+    let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
+    let zip_url = format!("{}/datfile/{}/", base_url, code);
+    let response = surf::get(zip_url)
+        .recv_bytes()
+        .await
+        .expect("Failed to download ZIP");
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let mut zip_archive = try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read ZIP");
+    match zip_archive.len() {
+        0 => progress_bar.println("Update ZIP is empty"),
+        1 => {
+            try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+            let (datfile_xml, detector_xml) = parse_dat(
+                progress_bar,
+                &tmp_directory
+                    .path()
+                    .join(zip_archive.file_names().next().unwrap()),
+                true,
+            )?;
+            import_dat(connection, progress_bar, &datfile_xml, &detector_xml, force).await?;
+        }
+        _ => progress_bar.println("Update ZIP contains too many files"),
+    }
+    // rate limit
+    task::sleep(Duration::from_secs(1)).await;
+    progress_bar.println("");
     Ok(())
 }
 
@@ -213,7 +282,6 @@ mod test {
     use async_std::fs;
     use async_std::io::prelude::*;
     use async_std::path::{Path, PathBuf};
-    use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
     use wiremock::matchers::{method, path, path_regex};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -240,21 +308,18 @@ mod test {
             .await;
 
         // when
-        download_nointro_dats(
-            &mut connection,
-            &progress_bar,
-            &mock_server.uri(),
-            true,
-            false,
-        )
-        .await
-        .unwrap();
+        update_nointro_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
+            .await
+            .unwrap();
+
+        // then
+        //do nothing
     }
 
     #[async_std::test]
     async fn test_download_redump_dat() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -282,21 +347,15 @@ mod test {
             .await;
 
         // when
-        download_redump_dats(
-            &mut connection,
-            &progress_bar,
-            &mock_server.uri(),
-            true,
-            false,
-        )
-        .await
-        .unwrap();
+        download_redump_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
+            .await
+            .unwrap();
 
         // then
-        let mut systems = find_systems(&mut connection).await;
+        let systems = find_systems(&mut connection).await;
         assert_eq!(systems.len(), 1);
 
-        let system = systems.remove(0);
+        let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
         assert_eq!(find_games(&mut connection).await.len(), 6);

@@ -38,7 +38,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
 
     for system in systems {
         check_system(connection, matches, &system, &progress_bar).await?;
@@ -127,6 +127,8 @@ async fn check_system(
     } else {
         progress_bar.println("Nothing to do");
     }
+
+    progress_bar.println("");
 
     Ok(())
 }
@@ -247,14 +249,13 @@ mod test {
     use async_std::fs;
     use async_std::path::PathBuf;
     use async_std::prelude::*;
-    use async_std::sync::Mutex;
     use std::env;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
     async fn test_check_sevenzip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -307,9 +308,64 @@ mod test {
     }
 
     #[async_std::test]
+    async fn test_check_sevenzip_with_header() {
+        // given
+        let _guard = MUTEX.lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let matches = import_dats::subcommand()
+            .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
+        import_dats::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+        let system_directory = &rom_directory.join("Test System");
+        create_directory(&system_directory).await.unwrap();
+        let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Headered).rom.7z");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe) (Headered).rom.7z"),
+            &romfile_path,
+        )
+        .await
+        .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        // when
+        let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
+
+        check_system(&mut connection, &matches, &system, &progress_bar)
+            .await
+            .unwrap();
+
+        // then
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+
+        let romfile = romfiles.remove(0);
+        assert!(!romfile.path.contains("/Trash/"));
+        assert!(Path::new(&romfile.path).is_file().await);
+    }
+
+    #[async_std::test]
     async fn test_check_zip() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -364,7 +420,7 @@ mod test {
     #[async_std::test]
     async fn test_check_chd_single_track() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -419,7 +475,7 @@ mod test {
     #[async_std::test]
     async fn test_check_chd_multiple_tracks() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -482,7 +538,7 @@ mod test {
     #[async_std::test]
     async fn test_check_cso() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         env::set_var(
@@ -545,7 +601,7 @@ mod test {
     #[async_std::test]
     async fn test_check_other() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -598,9 +654,64 @@ mod test {
     }
 
     #[async_std::test]
+    async fn test_check_other_header() {
+        // given
+        let _guard = MUTEX.lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let mut connection = establish_connection(db_file.path().to_str().unwrap()).await;
+
+        let matches = import_dats::subcommand()
+            .get_matches_from(&["import-dats", "test/Test System (20210402) (Headered).dat"]);
+        import_dats::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+        let system_directory = &rom_directory.join("Test System");
+        create_directory(&system_directory).await.unwrap();
+        let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Headered).rom");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe) (Headered).rom"),
+            &romfile_path,
+        )
+        .await
+        .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        // when
+        let matches = subcommand().get_matches_from(&["check-roms", "-y"]);
+
+        check_system(&mut connection, &matches, &system, &progress_bar)
+            .await
+            .unwrap();
+
+        // then
+        let mut romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+
+        let romfile = romfiles.remove(0);
+        assert!(!romfile.path.contains("/Trash/"));
+        assert!(Path::new(&romfile.path).is_file().await);
+    }
+
+    #[async_std::test]
     async fn test_check_other_size_mismatch() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -663,7 +774,7 @@ mod test {
     #[async_std::test]
     async fn test_check_other_crc_mismatch() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();

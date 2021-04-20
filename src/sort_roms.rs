@@ -16,7 +16,6 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::SqliteConnection;
 use std::collections::HashMap;
-use std::ffi::OsString;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("sort-roms")
@@ -67,7 +66,7 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
 
     let all_regions = compute_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = compute_regions(connection, matches, "REGIONS_ONE").await;
@@ -116,7 +115,7 @@ pub async fn compute_regions(
         .collect()
 }
 
-async fn sort_system<'a>(
+async fn sort_system(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
@@ -220,7 +219,7 @@ async fn sort_system<'a>(
             } else {
                 trash_games.push(game);
             }
-        };
+        }
     } else {
         games = find_games_by_system_id(connection, system.id).await;
 
@@ -310,6 +309,8 @@ async fn sort_system<'a>(
     } else {
         progress_bar.println("Nothing to do");
     }
+
+    progress_bar.println("");
 
     Ok(())
 }
@@ -404,22 +405,18 @@ fn compute_new_path<P: AsRef<Path>>(
     let mut new_romfile_path: PathBuf;
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
-        let mut romfile_name = match rom_count {
-            1 => OsString::from(&rom.name),
-            _ => OsString::from(&game.name),
-        };
-        romfile_name.push(".");
-        romfile_name.push(&romfile_extension);
-        new_romfile_path = directory.as_ref().join(romfile_name);
+        new_romfile_path = directory.as_ref().join(match rom_count {
+            1 => format!("{}.{}", &rom.name, &romfile_extension),
+            _ => format!("{}.{}", &game.name, &romfile_extension),
+        });
     } else if romfile_extension == CHD_EXTENSION {
         if rom_count == 2 {
             new_romfile_path = directory.as_ref().join(&rom.name);
             new_romfile_path.set_extension(&romfile_extension);
         } else {
-            let mut romfile_name = OsString::from(&game.name);
-            romfile_name.push(".");
-            romfile_name.push(&romfile_extension);
-            new_romfile_path = directory.as_ref().join(romfile_name);
+            new_romfile_path = directory
+                .as_ref()
+                .join(format!("{}.{}", &game.name, &romfile_extension));
         }
     } else if romfile_extension == CSO_EXTENSION {
         new_romfile_path = directory.as_ref().join(&rom.name);
@@ -438,7 +435,6 @@ mod test {
     use super::super::util::*;
     use super::*;
     use async_std::fs;
-    use async_std::sync::Mutex;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -781,7 +777,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_keep_all() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -864,7 +860,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_discard_beta() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -962,7 +958,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_discard_asia() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1060,7 +1056,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_discard_beta_and_asia() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1158,7 +1154,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_1g1r_with_parent_clone_information() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1259,7 +1255,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_1g1r_without_parent_clone_information() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
@@ -1358,7 +1354,7 @@ mod test {
     #[async_std::test]
     async fn test_sort_system_1g1r_with_parent_clone_information_without_asia_without_beta() {
         // given
-        let _guard = MUTEX.get_or_init(|| Mutex::new(0)).lock().await;
+        let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
         let progress_bar = ProgressBar::hidden();
