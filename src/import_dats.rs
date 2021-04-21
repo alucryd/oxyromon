@@ -413,7 +413,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&pool).await.len(), 6);
+        assert_eq!(find_games(&mut connection).await.len(), 6);
         assert_eq!(find_roms(&pool).await.len(), 8);
     }
 
@@ -442,7 +442,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&pool).await.len(), 4);
+        assert_eq!(find_games(&mut connection).await.len(), 4);
         assert_eq!(find_roms(&pool).await.len(), 4);
     }
 
@@ -473,7 +473,7 @@ mod test {
 
         assert!(find_header_by_system_id(&pool, system.id).await.is_some());
 
-        assert_eq!(find_games(&pool).await.len(), 1);
+        assert_eq!(find_games(&mut connection).await.len(), 1);
         assert_eq!(find_roms(&pool).await.len(), 1);
     }
 
@@ -504,7 +504,7 @@ mod test {
 
         assert!(find_header_by_system_id(&pool, system.id).await.is_none());
 
-        assert_eq!(find_games(&pool).await.len(), 1);
+        assert_eq!(find_games(&mut connection).await.len(), 1);
         assert_eq!(find_roms(&pool).await.len(), 1);
     }
 
@@ -579,7 +579,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        let games = find_games(&pool).await;
+        let games = find_games(&mut connection).await;
         let roms = find_roms(&pool).await;
         let romfiles = find_romfiles(&pool).await;
 
@@ -647,7 +647,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&pool).await.len(), 6);
+        assert_eq!(find_games(&mut connection).await.len(), 6);
         assert_eq!(find_roms(&pool).await.len(), 8);
     }
 
@@ -683,7 +683,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&pool).await.len(), 3);
+        assert_eq!(find_games(&mut connection).await.len(), 3);
         assert_eq!(find_roms(&pool).await.len(), 3);
     }
 

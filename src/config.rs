@@ -2,11 +2,12 @@ use super::database::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
+use cfg_if::cfg_if;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use sqlx::sqlite::SqlitePool;
 use std::str::FromStr;
 
-cfg_if::cfg_if! {
+cfg_if! {
     if #[cfg(test)] {
         use async_std::sync::Mutex;
 

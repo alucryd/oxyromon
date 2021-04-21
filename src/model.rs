@@ -1,5 +1,8 @@
+#[cfg(feature = "server")]
+use async_graphql::SimpleObject;
 use serde::Deserialize;
 
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct System {
     pub id: i64,
     pub name: String,
@@ -19,6 +22,7 @@ pub struct Header {
 }
 
 #[derive(sqlx::FromRow)]
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct Game {
     pub id: i64,
     pub name: String,

@@ -212,7 +212,7 @@ pub async fn update_game(
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn find_games(pool: &SqlitePool) -> Vec<Game> {
+pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
         "
@@ -221,7 +221,7 @@ pub async fn find_games(pool: &SqlitePool) -> Vec<Game> {
         ORDER BY name
         ",
     )
-    .fetch_all(pool)
+    .fetch_all(connection)
     .await
     .expect("Error while finding games")
 }

@@ -15,11 +15,21 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
+#[cfg(feature = "server")]
+extern crate async_ctrlc;
+#[cfg(feature = "server")]
+extern crate async_graphql;
+#[cfg(feature = "server")]
+extern crate async_graphql_tide;
+#[cfg(feature = "server")]
+extern crate async_trait;
 extern crate dialoguer;
 extern crate phf;
 extern crate rayon;
 extern crate surf;
 extern crate tempfile;
+#[cfg(feature = "server")]
+extern crate tide;
 
 #[cfg(test)]
 extern crate wiremock;
@@ -38,12 +48,14 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
+#[cfg(feature = "server")]
 mod server;
 mod sevenzip;
 mod sort_roms;
 mod util;
 
 use async_std::path::PathBuf;
+use cfg_if::cfg_if;
 use clap::App;
 use database::*;
 use dotenv::dotenv;
@@ -55,21 +67,26 @@ type SimpleResult<T> = Result<T, SimpleError>;
 
 #[async_std::main]
 async fn main() -> SimpleResult<()> {
+    let mut subcommands = vec![
+        config::subcommand(),
+        import_dats::subcommand(),
+        download_dats::subcommand(),
+        import_roms::subcommand(),
+        sort_roms::subcommand(),
+        convert_roms::subcommand(),
+        check_roms::subcommand(),
+        purge_roms::subcommand(),
+    ];
+    cfg_if! {
+        if #[cfg(feature = "server")] {
+            subcommands.push(server::subcommand());
+        }
+    }
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .author(env!("CARGO_PKG_AUTHORS"))
-        .subcommands(vec![
-            config::subcommand(),
-            import_dats::subcommand(),
-            download_dats::subcommand(),
-            import_roms::subcommand(),
-            sort_roms::subcommand(),
-            convert_roms::subcommand(),
-            check_roms::subcommand(),
-            purge_roms::subcommand(),
-            server::subcommand(),
-        ])
+        .subcommands(subcommands)
         .get_matches();
 
     if matches.subcommand.is_some() {
@@ -147,12 +164,19 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("server") => {
-                server::main(&pool, &matches.subcommand_matches("server").unwrap()).await?
+                cfg_if! {
+                    if #[cfg(feature = "server")] {
+                        server::main(pool, &matches.subcommand_matches("server").unwrap()).await?
+                    }
+                }
             }
             _ => (),
         }
-
-        close_connection(&pool).await;
+        cfg_if! {
+            if #[cfg(not(feature = "server"))] {
+                close_connection(&pool).await;
+            }
+        }
     }
 
     Ok(())

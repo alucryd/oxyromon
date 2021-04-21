@@ -353,7 +353,7 @@ mod test {
         let system = systems.get(0).unwrap();
         assert_eq!(system.name, "Test System");
 
-        assert_eq!(find_games(&pool).await.len(), 6);
+        assert_eq!(find_games(&mut connection).await.len(), 6);
         assert_eq!(find_roms(&pool).await.len(), 8);
     }
 }
