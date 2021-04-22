@@ -10,7 +10,7 @@ use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
-use sqlx::sqlite::SqlitePool;
+use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::mem::drop;
 
@@ -52,12 +52,8 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(
-    pool: &SqlitePool,
-    matches: &ArgMatches<'_>,
-    progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
-    let systems = prompt_for_systems(pool, None, matches.is_present("ALL")).await?;
+pub async fn main(matches: &ArgMatches<'_>, progress_bar: &ProgressBar) -> SimpleResult<()> {
+    let systems = prompt_for_systems(POOL.get().unwrap(), None, matches.is_present("ALL")).await?;
     let rom_name = matches.value_of("NAME");
     let format = match matches.value_of("FORMAT") {
         Some(format) => format,
@@ -70,11 +66,15 @@ pub async fn main(
 
         let roms = match rom_name {
             Some(rom_name) => {
-                let roms =
-                    find_roms_with_romfile_by_system_id_and_name(pool, system.id, rom_name).await;
+                let roms = find_roms_with_romfile_by_system_id_and_name(
+                    POOL.get().unwrap(),
+                    system.id,
+                    rom_name,
+                )
+                .await;
                 prompt_for_roms(roms, matches.is_present("ALL"))?
             }
-            None => find_roms_with_romfile_by_system_id(pool, system.id).await,
+            None => find_roms_with_romfile_by_system_id(POOL.get().unwrap(), system.id).await,
         };
 
         if roms.is_empty() {
@@ -85,7 +85,7 @@ pub async fn main(
         }
 
         let romfiles = find_romfiles_by_ids(
-            pool,
+            POOL.get().unwrap(),
             &roms
                 .iter()
                 .map(|rom| rom.romfile_id.unwrap())
@@ -107,7 +107,6 @@ pub async fn main(
         match format {
             "7Z" => {
                 to_archive(
-                    pool,
                     progress_bar,
                     ArchiveType::SEVENZIP,
                     roms_by_game_id,
@@ -115,30 +114,11 @@ pub async fn main(
                 )
                 .await?
             }
-            "CHD" => {
-                to_chd(
-                    pool,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    statistics,
-                )
-                .await?
-            }
-            "CSO" => {
-                to_cso(
-                    pool,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    statistics,
-                )
-                .await?
-            }
-            "ORIGINAL" => to_original(pool, progress_bar, roms_by_game_id, romfiles_by_id).await?,
+            "CHD" => to_chd(progress_bar, roms_by_game_id, romfiles_by_id, statistics).await?,
+            "CSO" => to_cso(progress_bar, roms_by_game_id, romfiles_by_id, statistics).await?,
+            "ORIGINAL" => to_original(progress_bar, roms_by_game_id, romfiles_by_id).await?,
             "ZIP" => {
                 to_archive(
-                    pool,
                     progress_bar,
                     ArchiveType::ZIP,
                     roms_by_game_id,
@@ -154,13 +134,12 @@ pub async fn main(
 }
 
 async fn to_archive(
-    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     archive_type: ArchiveType,
     mut roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(pool).await?;
+    let tmp_directory = create_tmp_directory().await?;
 
     // remove same type archives
     roms_by_game_id.retain(|_, roms| {
@@ -214,6 +193,8 @@ async fn to_archive(
 
     // convert CHDs
     for roms in chds.values() {
+        let mut transaction = begin_transaction().await;
+
         if roms.len() == 1 {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -234,7 +215,12 @@ async fn to_archive(
                 &[&bin_path.file_name().unwrap().to_str().unwrap()],
                 &tmp_directory.path(),
             )?;
-            update_romfile(pool, romfile.id, archive_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                archive_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&bin_path).await?;
             remove_file(&romfile.path).await?;
         } else {
@@ -282,13 +268,13 @@ async fn to_archive(
                 &tmp_directory.path(),
             )?;
             update_romfile(
-                pool,
+                connection,
                 chd_romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
             )
             .await;
-            update_rom_romfile(pool, cue_rom.id, Some(chd_romfile.id)).await;
-            delete_romfile_by_id(pool, cue_romfile.id).await;
+            update_rom_romfile(connection, cue_rom.id, Some(chd_romfile.id)).await;
+            delete_romfile_by_id(connection, cue_romfile.id).await;
 
             for bin_path in bin_paths {
                 remove_file(&bin_path).await?;
@@ -296,10 +282,14 @@ async fn to_archive(
             remove_file(&cue_romfile.path).await?;
             remove_file(&chd_romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     // convert CSOs
     for roms in csos.values() {
+        let mut transaction = begin_transaction().await;
+
         let rom = roms.get(0).unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         let iso_path = extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
@@ -318,13 +308,22 @@ async fn to_archive(
             &[&iso_path.file_name().unwrap().to_str().unwrap()],
             &tmp_directory.path(),
         )?;
-        update_romfile(pool, romfile.id, archive_path.as_os_str().to_str().unwrap()).await;
+        update_romfile(
+            connection,
+            romfile.id,
+            archive_path.as_os_str().to_str().unwrap(),
+        )
+        .await;
         remove_file(&iso_path).await?;
         remove_file(&romfile.path).await?;
+
+        commit_transaction(transaction).await;
     }
 
     // convert archives
     for roms in archives.values() {
+        let mut transaction = begin_transaction().await;
+
         if roms.len() == 1 {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -347,7 +346,12 @@ async fn to_archive(
                 &[&rom.name],
                 &tmp_directory.path(),
             )?;
-            update_romfile(pool, romfile.id, archive_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                archive_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&tmp_directory.path().join(&rom.name)).await?;
         } else {
             let mut romfiles: Vec<&Romfile> = roms
@@ -382,21 +386,30 @@ async fn to_archive(
                 &tmp_directory.path(),
             )?;
             for rom_name in rom_names {
-                update_romfile(pool, romfile.id, archive_path.as_os_str().to_str().unwrap()).await;
+                update_romfile(
+                    connection,
+                    romfile.id,
+                    archive_path.as_os_str().to_str().unwrap(),
+                )
+                .await;
                 remove_file(&tmp_directory.path().join(rom_name)).await?;
             }
         }
+
+        commit_transaction(transaction).await;
     }
 
     // convert others
     let games = find_games_by_ids(
-        pool,
+        POOL.get().unwrap(),
         &others.keys().copied().collect::<Vec<i64>>().as_slice(),
     )
     .await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
 
     for (game_id, roms) in others {
+        let mut transaction = begin_transaction().await;
+
         if roms.len() == 1 {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -411,7 +424,12 @@ async fn to_archive(
             ));
 
             add_files_to_archive(progress_bar, &archive_path, &[&rom.name], &directory)?;
-            update_romfile(pool, romfile.id, archive_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                archive_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&romfile.path).await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
@@ -435,28 +453,29 @@ async fn to_archive(
 
             add_files_to_archive(progress_bar, &archive_path, &rom_names, &directory)?;
             let archive_romfile_id =
-                create_romfile(pool, archive_path.as_os_str().to_str().unwrap()).await;
+                create_romfile(connection, archive_path.as_os_str().to_str().unwrap()).await;
             for rom in &roms {
-                delete_romfile_by_id(pool, rom.romfile_id.unwrap()).await;
-                update_rom_romfile(pool, rom.id, Some(archive_romfile_id)).await;
+                delete_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
+                update_rom_romfile(connection, rom.id, Some(archive_romfile_id)).await;
             }
             for rom_name in rom_names {
                 remove_file(&directory.join(rom_name)).await?;
             }
         }
+
+        commit_transaction(transaction).await;
     }
 
     Ok(())
 }
 
 async fn to_chd(
-    pool: &SqlitePool,
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     statistics: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(pool).await?;
+    let tmp_directory = create_tmp_directory().await?;
 
     // partition CUE/BINs
     let (cue_bins, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -505,6 +524,8 @@ async fn to_chd(
 
     // convert CUE/BIN
     for roms in cue_bins.values() {
+        let mut transaction = begin_transaction().await;
+
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .into_par_iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
@@ -532,17 +553,22 @@ async fn to_chd(
             romfile_paths.push(&cue_romfile.path);
             print_statistics(progress_bar, &roms, &romfile_paths, &[&chd_path]).await?;
         }
-        let chd_romfile_id = create_romfile(pool, chd_path.as_os_str().to_str().unwrap()).await;
+        let chd_romfile_id =
+            create_romfile(connection, chd_path.as_os_str().to_str().unwrap()).await;
         for bin_rom in bin_roms {
             let bin_romfile = romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap();
-            update_rom_romfile(pool, bin_rom.id, Some(chd_romfile_id)).await;
-            delete_romfile_by_id(pool, bin_romfile.id).await;
+            update_rom_romfile(connection, bin_rom.id, Some(chd_romfile_id)).await;
+            delete_romfile_by_id(connection, bin_romfile.id).await;
             remove_file(&bin_romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     // convert ISOs
     for roms in isos.values() {
+        let mut transaction = begin_transaction().await;
+
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let chd_path = create_chd(
@@ -553,13 +579,22 @@ async fn to_chd(
             if statistics {
                 print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&chd_path]).await?;
             }
-            update_romfile(pool, romfile.id, chd_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                chd_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     // convert CSOs
     for roms in csos.values() {
+        let mut transaction = begin_transaction().await;
+
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let iso_path = extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
@@ -571,23 +606,30 @@ async fn to_chd(
             if statistics {
                 print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&chd_path]).await?;
             }
-            update_romfile(pool, romfile.id, chd_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                chd_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&iso_path).await?;
             remove_file(&romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     Ok(())
 }
 
 async fn to_cso(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     statistics: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(pool).await?;
+    let tmp_directory = create_tmp_directory().await?;
 
     // partition ISOs
     let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -619,6 +661,8 @@ async fn to_cso(
 
     // process ISOs
     for roms in isos.values() {
+        let mut transaction = begin_transaction().await;
+
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let cso_path = create_cso(
@@ -629,13 +673,21 @@ async fn to_cso(
             if statistics {
                 print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
             }
-            update_romfile(pool, romfile.id, cso_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                &mut connection,
+                romfile.id,
+                cso_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     // process CHDs
     for roms in chds.values() {
+        let mut transaction = begin_transaction().await;
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let iso_path =
@@ -649,17 +701,24 @@ async fn to_cso(
             if statistics {
                 print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
             }
-            update_romfile(pool, romfile.id, cso_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                &mut connection,
+                romfile.id,
+                cso_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&iso_path).await?;
             remove_file(&romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     Ok(())
 }
 
 async fn to_original(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
@@ -702,6 +761,8 @@ async fn to_original(
 
     // convert archives
     for roms in archives.values() {
+        let mut transaction = begin_transaction().await;
+
         let mut romfiles: Vec<&Romfile> = roms
             .par_iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
@@ -725,16 +786,23 @@ async fn to_original(
             roms.into_iter().zip(extracted_paths).collect();
 
         for (rom, extracted_path) in roms_extracted_paths {
-            let romfile_id =
-                create_romfile(pool, extracted_path.as_os_str().to_str().unwrap()).await;
-            update_rom_romfile(pool, rom.id, Some(romfile_id)).await;
+            let romfile_id = create_romfile(
+                &mut connection,
+                extracted_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
+            update_rom_romfile(&mut connection, rom.id, Some(romfile_id)).await;
         }
-        delete_romfile_by_id(pool, romfile.id).await;
+        delete_romfile_by_id(&mut connection, romfile.id).await;
         remove_file(&romfile.path).await?;
+
+        commit_transaction(transaction).await;
     }
 
     // convert CHDs
     for (_, mut roms) in chds {
+        let mut transaction = begin_transaction().await;
+
         // we don't need the cue sheet
         roms.retain(|rom| rom.name.ends_with(BIN_EXTENSION) || rom.name.ends_with(ISO_EXTENSION));
 
@@ -760,18 +828,22 @@ async fn to_original(
 
         for rom in roms {
             let romfile_id = create_romfile(
-                pool,
+                &mut connection,
                 directory.join(&rom.name).as_os_str().to_str().unwrap(),
             )
             .await;
-            update_rom_romfile(pool, rom.id, Some(romfile_id)).await;
+            update_rom_romfile(&mut connection, rom.id, Some(romfile_id)).await;
         }
-        delete_romfile_by_id(pool, romfile.id).await;
+        delete_romfile_by_id(&mut connection, romfile.id).await;
         remove_file(&romfile.path).await?;
+
+        commit_transaction(transaction).await;
     }
 
     // convert CSOs
     for roms in csos.values() {
+        let mut transaction = begin_transaction().await;
+
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let iso_path = extract_cso(
@@ -779,9 +851,16 @@ async fn to_original(
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
-            update_romfile(pool, romfile.id, iso_path.as_os_str().to_str().unwrap()).await;
+            update_romfile(
+                &mut connection,
+                romfile.id,
+                iso_path.as_os_str().to_str().unwrap(),
+            )
+            .await;
             remove_file(&romfile.path).await?;
         }
+
+        commit_transaction(transaction).await;
     }
 
     Ok(())
@@ -841,7 +920,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -924,7 +1003,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1002,7 +1081,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1077,7 +1156,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1160,7 +1239,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1243,7 +1322,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1341,7 +1420,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1421,7 +1500,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1495,7 +1574,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1569,7 +1648,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1649,7 +1728,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1737,7 +1816,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1819,7 +1898,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1901,7 +1980,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -1999,7 +2078,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -2081,7 +2160,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -2155,7 +2234,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -2270,7 +2349,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -2391,7 +2470,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -2465,7 +2544,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()

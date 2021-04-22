@@ -2,21 +2,16 @@ use super::database::*;
 use super::model::*;
 use async_ctrlc::CtrlC;
 use async_graphql::dataloader::{DataLoader, Loader};
+use async_graphql::futures_util::TryStreamExt;
 use async_graphql::{
-    Context, EmptyMutation, EmptySubscription, FieldError, Object, Result, Schema,
+    ComplexObject, Context, EmptyMutation, EmptySubscription, FieldError, Object, Result, Schema,
 };
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use lazy_static::lazy_static;
-use once_cell::sync::OnceCell;
+use itertools::Itertools;
 use simple_error::SimpleResult;
-use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
-
-lazy_static! {
-    static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
-}
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("server")
@@ -48,14 +43,20 @@ impl Loader<i64> for SystemLoader {
     type Value = System;
     type Error = FieldError;
 
-    async fn load(&self, _: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        Ok(
-            find_systems(&mut POOL.get().unwrap().acquire().await.unwrap())
-                .await
-                .into_iter()
-                .map(|system| (system.id, system))
-                .collect(),
-        )
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM systems
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(POOL.get().unwrap())
+            .map_ok(|system: System| (system.id, system))
+            .try_collect()
+            .await?)
     }
 }
 
@@ -66,22 +67,97 @@ impl Loader<i64> for GameLoader {
     type Value = Game;
     type Error = FieldError;
 
-    async fn load(&self, _: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        Ok(
-            find_games(&mut POOL.get().unwrap().acquire().await.unwrap())
-                .await
-                .into_iter()
-                .map(|game| (game.id, game))
-                .collect(),
-        )
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM games
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(POOL.get().unwrap())
+            .map_ok(|game: Game| (game.id, game))
+            .try_collect()
+            .await?)
     }
 }
+
+#[ComplexObject]
+impl Game {
+    async fn system(&self, ctx: &Context<'_>) -> Result<Option<System>> {
+        Ok(ctx
+            .data_unchecked::<DataLoader<SystemLoader>>()
+            .load_one(self.system_id)
+            .await?)
+    }
+}
+
+pub struct RomLoader;
+
+#[async_trait]
+impl Loader<i64> for RomLoader {
+    type Value = Rom;
+    type Error = FieldError;
+
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM roms
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(POOL.get().unwrap())
+            .map_ok(|rom: Rom| (rom.id, rom))
+            .try_collect()
+            .await?)
+    }
+}
+
+#[ComplexObject]
+impl Rom {
+    async fn game(&self, ctx: &Context<'_>) -> Result<Option<Game>> {
+        Ok(ctx
+            .data_unchecked::<DataLoader<GameLoader>>()
+            .load_one(self.game_id)
+            .await?)
+    }
+}
+
+pub struct RomfileLoader;
+
+#[async_trait]
+impl Loader<i64> for RomfileLoader {
+    type Value = Romfile;
+    type Error = FieldError;
+
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM romfiles
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(POOL.get().unwrap())
+            .map_ok(|romfile: Romfile| (romfile.id, romfile))
+            .try_collect()
+            .await?)
+    }
+}
+
 struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
     async fn systems(&self) -> Result<Vec<System>> {
-        Ok(find_systems(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
+        Ok(find_systems(POOL.get().unwrap()).await)
     }
 
     async fn system(&self, ctx: &Context<'_>, id: i64) -> Result<Option<System>> {
@@ -91,8 +167,8 @@ impl QueryRoot {
             .await?)
     }
 
-    async fn games(&self) -> Result<Vec<Game>> {
-        Ok(find_games(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
+    async fn games(&self, system_id: i64) -> Result<Vec<Game>> {
+        Ok(find_games_by_system_id(POOL.get().unwrap(), system_id).await)
     }
 
     async fn game(&self, ctx: &Context<'_>, id: i64) -> Result<Option<Game>> {
@@ -108,9 +184,7 @@ struct AppState {
     schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
 }
 
-pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()> {
-    POOL.set(pool)
-        .expect("Failed to set database connection pool");
+pub async fn main(matches: &ArgMatches<'_>) -> SimpleResult<()> {
     let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(DataLoader::new(SystemLoader))
@@ -127,6 +201,5 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
                 .expect("Failed to run server");
         })
         .await;
-    close_connection(&POOL.get().unwrap()).await;
     Ok(())
 }

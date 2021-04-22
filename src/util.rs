@@ -91,26 +91,28 @@ pub async fn create_directory<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
     Ok(())
 }
 
-pub async fn create_tmp_directory(pool: &SqlitePool) -> SimpleResult<TempDir> {
+pub async fn create_tmp_directory() -> SimpleResult<TempDir> {
     let tmp_directory = try_with!(
-        TempDir::new_in(get_tmp_directory(pool).await),
+        TempDir::new_in(get_tmp_directory().await),
         "Failed to create temp directory"
     );
     Ok(tmp_directory)
 }
 
-pub async fn get_system_directory(pool: &SqlitePool, system: &System) -> SimpleResult<PathBuf> {
-    let system_directory = get_rom_directory(pool)
+pub async fn get_system_directory(
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let system_directory = get_rom_directory()
         .await
         .join(SYSTEM_NAME_REGEX.replace(&system.name, "").trim());
     create_directory(&system_directory).await?;
     Ok(system_directory)
 }
 
-pub async fn get_trash_directory(pool: &SqlitePool, system: &System) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(pool, system)
-        .await?
-        .join("Trash");
+pub async fn get_trash_directory(
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let trash_directory = get_system_directory(system).await?.join("Trash");
     create_directory(&trash_directory).await?;
     Ok(trash_directory)
 }

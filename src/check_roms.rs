@@ -10,7 +10,7 @@ use super::SimpleResult;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
-use sqlx::sqlite::SqlitePool;
+use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
@@ -33,33 +33,30 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(
-    pool: &SqlitePool,
-    matches: &ArgMatches<'_>,
-    progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
-    let systems = prompt_for_systems(pool, None, matches.is_present("ALL")).await?;
+pub async fn main(matches: &ArgMatches<'_>, progress_bar: &ProgressBar) -> SimpleResult<()> {
+    let systems = prompt_for_systems(POOL.get().unwrap(), None, matches.is_present("ALL")).await?;
 
     for system in systems {
-        check_system(pool, matches, &system, &progress_bar).await?;
+        check_system(matches, &system, &progress_bar).await?;
     }
 
     Ok(())
 }
 
 async fn check_system(
-    pool: &SqlitePool,
     matches: &ArgMatches<'_>,
     system: &System,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
-    let trash_directory = get_trash_directory(pool, system).await?;
+    let mut transaction = begin_transaction().await;
 
-    let header = find_header_by_system_id(pool, system.id).await;
-    let roms = find_roms_with_romfile_by_system_id(pool, system.id).await;
-    let romfiles = find_romfiles_by_system_id(pool, system.id).await;
+    let trash_directory = get_trash_directory(&mut connection, system).await?;
+
+    let header = find_header_by_system_id(&mut connection, system.id).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
     let mut roms_by_romfile_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
         let group = roms_by_romfile_id
@@ -81,12 +78,13 @@ async fn check_system(
 
         let ok: bool;
         if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
-            ok = check_archive(pool, &header, &romfile_path, roms, &progress_bar).await?;
+            ok =
+                check_archive(&mut connection, &header, &romfile_path, roms, &progress_bar).await?;
         } else if CHD_EXTENSION == romfile_extension {
-            ok = check_chd(pool, progress_bar, &header, &romfile_path, roms).await?;
+            ok = check_chd(&mut connection, progress_bar, &header, &romfile_path, roms).await?;
         } else if CSO_EXTENSION == romfile_extension {
             ok = check_cso(
-                pool,
+                &mut connection,
                 &progress_bar,
                 &header,
                 &romfile_path,
@@ -121,12 +119,14 @@ async fn check_system(
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
                 rename_file(&romfile_move.0.path, &romfile_move.1).await?;
-                update_romfile(pool, romfile_move.0.id, &romfile_move.1).await;
+                update_romfile(&mut connection, romfile_move.0.id, &romfile_move.1).await;
             }
         }
     } else {
         progress_bar.println("Nothing to do");
     }
+
+    commit_transaction();
 
     progress_bar.println("");
 
@@ -134,7 +134,7 @@ async fn check_system(
 }
 
 async fn check_archive<P: AsRef<Path>>(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     header: &Option<Header>,
     romfile_path: &P,
     mut roms: Vec<Rom>,
@@ -150,7 +150,7 @@ async fn check_archive<P: AsRef<Path>>(
         let size: u64;
         let crc: String;
         if header.is_some() || sevenzip_info.crc.is_empty() {
-            let tmp_directory = create_tmp_directory(pool).await?;
+            let tmp_directory = create_tmp_directory().await?;
             let extracted_path = extract_files_from_archive(
                 progress_bar,
                 romfile_path,
@@ -181,13 +181,13 @@ async fn check_archive<P: AsRef<Path>>(
 }
 
 async fn check_chd<P: AsRef<Path>>(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile_path: &P,
     roms: Vec<Rom>,
 ) -> SimpleResult<bool> {
-    let tmp_directory = create_tmp_directory(pool).await?;
+    let tmp_directory = create_tmp_directory().await?;
 
     let names_sizes: Vec<(&str, u64)> = roms
         .iter()
@@ -216,13 +216,13 @@ async fn check_chd<P: AsRef<Path>>(
 }
 
 async fn check_cso<P: AsRef<Path>>(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile_path: &P,
     rom: &Rom,
 ) -> SimpleResult<bool> {
-    let tmp_directory = create_tmp_directory(pool).await?;
+    let tmp_directory = create_tmp_directory().await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
     remove_file(&iso_path).await?;
@@ -261,7 +261,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -317,7 +317,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -373,7 +373,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -429,7 +429,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -485,7 +485,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -557,7 +557,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -613,7 +613,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -669,7 +669,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -725,7 +725,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
@@ -789,7 +789,7 @@ mod test {
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
         let matches = import_dats::subcommand()
