@@ -1,35 +1,48 @@
 use super::model::*;
-use once_cell::sync::OnceCell;
+use cfg_if::cfg_if;
 use rayon::prelude::*;
 use sqlx::migrate::Migrator;
-use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
-use sqlx::{Executor, Sqlite, Transaction};
+use sqlx::prelude::*;
+use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
+use sqlx::{Acquire, Sqlite, Transaction};
 use std::convert::TryFrom;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
-lazy_static! {
-    pub static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
-}
+pub async fn establish_connection(url: &str) -> SqlitePool {
+    let max_connections: u32;
+    let locking_mode: &str;
+    cfg_if! {
+        if #[cfg(feature = "server")] {
+            max_connections = 5;
+            locking_mode = "NORMAL";
+        } else {
+            max_connections = 1;
+            locking_mode = "EXCLUSIVE";
+        }
+    }
 
-pub async fn establish_connection(url: &str) {
     let pool = SqlitePoolOptions::new()
         .min_connections(1)
-        .max_connections(5)
+        .max_connections(max_connections)
         .connect(url)
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", url));
 
     pool.execute(
-        "
+        format!(
+            "
             PRAGMA foreign_keys = ON;
-            PRAGMA locking_mode = NORMAL;
+            PRAGMA locking_mode = {};
             PRAGMA journal_mode = WAL;
             PRAGMA synchronous = NORMAL;
             PRAGMA temp_store = MEMORY;
             PRAGMA mmap_size = 30000000000;
             PRAGMA auto_vacuum = INCREMENTAL;
         ",
+            locking_mode
+        )
+        .as_str(),
     )
     .await
     .expect("Failed to setup the database");
@@ -39,13 +52,13 @@ pub async fn establish_connection(url: &str) {
         .await
         .expect("Failed to run database migrations");
 
-    POOL.set(pool).expect("Failed to set database pool");
+    pool
 }
 
-pub async fn begin_transaction<'a>() -> Transaction<'a, Sqlite> {
-    POOL.get()
-        .unwrap()
-        .begin()
+pub async fn begin_transaction<'a>(
+    connection: &'a mut SqliteConnection,
+) -> Transaction<'a, Sqlite> {
+    Acquire::begin(connection)
         .await
         .expect("Failed to begin transaction")
 }
@@ -57,24 +70,19 @@ pub async fn commit_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
         .expect("Failed to commit transaction");
 }
 
-pub async fn close_connection() {
-    POOL.get()
-        .unwrap()
-        .execute(
-            "
+pub async fn close_connection(pool: SqlitePool) {
+    pool.execute(
+        "
             PRAGMA incremental_vacuum;
             PRAGMA optimize;
             PRAGMA wal_checkpoint(truncate);
         ",
-        )
-        .await
-        .expect("Failed to optimize the database");
+    )
+    .await
+    .expect("Failed to optimize the database");
 }
 
-pub async fn create_system<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    system_xml: &SystemXml,
-) -> i64 {
+pub async fn create_system(connection: &mut SqliteConnection, system_xml: &SystemXml) -> i64 {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
@@ -92,11 +100,7 @@ pub async fn create_system<'a, E: Executor<'a, Database = Sqlite>>(
     .last_insert_rowid()
 }
 
-pub async fn update_system<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-    system_xml: &SystemXml,
-) {
+pub async fn update_system(connection: &mut SqliteConnection, id: i64, system_xml: &SystemXml) {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
@@ -115,7 +119,7 @@ pub async fn update_system<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating system with id {}", id));
 }
 
-pub async fn find_systems<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -> Vec<System> {
+pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
         "
@@ -129,10 +133,7 @@ pub async fn find_systems<'a, E: Executor<'a, Database = Sqlite>>(connection: E)
     .expect("Error while finding systems")
 }
 
-pub async fn find_systems_by_url<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    url: &str,
-) -> Vec<System> {
+pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -> Vec<System> {
     sqlx::query_as!(
         System,
         "
@@ -148,10 +149,7 @@ pub async fn find_systems_by_url<'a, E: Executor<'a, Database = Sqlite>>(
     .expect("Error while finding system names")
 }
 
-pub async fn find_system_by_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-) -> System {
+pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
     sqlx::query_as!(
         System,
         "
@@ -166,10 +164,7 @@ pub async fn find_system_by_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding system with id {}", id))
 }
 
-pub async fn find_system_by_name<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: &mut E,
-    name: &str,
-) -> Option<System> {
+pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) -> Option<System> {
     let name = name.replace(" (Parent-Clone)", "");
     sqlx::query_as!(
         System,
@@ -185,8 +180,8 @@ pub async fn find_system_by_name<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
-pub async fn find_system_by_name_like<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_system_by_name_like(
+    connection: &mut SqliteConnection,
     name: &str,
 ) -> Option<System> {
     sqlx::query_as!(
@@ -203,8 +198,8 @@ pub async fn find_system_by_name_like<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
-pub async fn create_game<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn create_game(
+    connection: &mut SqliteConnection,
     game_xml: &GameXml,
     regions: &str,
     system_id: i64,
@@ -227,8 +222,8 @@ pub async fn create_game<'a, E: Executor<'a, Database = Sqlite>>(
     .last_insert_rowid()
 }
 
-pub async fn update_game<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn update_game(
+    connection: &mut SqliteConnection,
     id: i64,
     game_xml: &GameXml,
     regions: &str,
@@ -253,7 +248,7 @@ pub async fn update_game<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn find_games<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -> Vec<Game> {
+pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
         "
@@ -267,8 +262,8 @@ pub async fn find_games<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -
     .expect("Error while finding games")
 }
 
-pub async fn find_games_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_games_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Game> {
     sqlx::query_as!(
@@ -286,10 +281,7 @@ pub async fn find_games_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
 }
 
-pub async fn find_games_by_ids<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    ids: &[i64],
-) -> Vec<Game> {
+pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
     let sql = format!(
         "
         SELECT *
@@ -308,8 +300,8 @@ pub async fn find_games_by_ids<'a, E: Executor<'a, Database = Sqlite>>(
         .expect("Error while finding games")
 }
 
-pub async fn find_parent_games_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_parent_games_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Game> {
     sqlx::query_as!(
@@ -333,8 +325,8 @@ pub async fn find_parent_games_by_system_id<'a, E: Executor<'a, Database = Sqlit
     })
 }
 
-pub async fn find_clone_games_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_clone_games_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Game> {
     sqlx::query_as!(
@@ -358,10 +350,7 @@ pub async fn find_clone_games_by_system_id<'a, E: Executor<'a, Database = Sqlite
     })
 }
 
-pub async fn find_game_by_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-) -> Game {
+pub async fn find_game_by_id(connection: &mut SqliteConnection, id: i64) -> Game {
     sqlx::query_as!(
         Game,
         "
@@ -376,8 +365,8 @@ pub async fn find_game_by_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding game with id {}", id))
 }
 
-pub async fn find_game_by_name_and_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_game_by_name_and_system_id(
+    connection: &mut SqliteConnection,
     name: &str,
     system_id: i64,
 ) -> Option<Game> {
@@ -402,8 +391,8 @@ pub async fn find_game_by_name_and_system_id<'a, E: Executor<'a, Database = Sqli
     })
 }
 
-pub async fn delete_game_by_name_and_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn delete_game_by_name_and_system_id(
+    connection: &mut SqliteConnection,
     name: &str,
     system_id: i64,
 ) {
@@ -426,11 +415,7 @@ pub async fn delete_game_by_name_and_system_id<'a, E: Executor<'a, Database = Sq
     });
 }
 
-pub async fn create_rom<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    rom_xml: &RomXml,
-    game_id: i64,
-) -> i64 {
+pub async fn create_rom(connection: &mut SqliteConnection, rom_xml: &RomXml, game_id: i64) -> i64 {
     let crc = rom_xml.crc.to_lowercase();
     let md5 = rom_xml.md5.to_lowercase();
     let sha1 = rom_xml.sha1.to_lowercase();
@@ -453,8 +438,8 @@ pub async fn create_rom<'a, E: Executor<'a, Database = Sqlite>>(
     .last_insert_rowid()
 }
 
-pub async fn update_rom<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn update_rom(
+    connection: &mut SqliteConnection,
     id: i64,
     rom_xml: &RomXml,
     game_id: i64,
@@ -482,8 +467,8 @@ pub async fn update_rom<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
 }
 
-pub async fn update_rom_romfile<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn update_rom_romfile(
+    connection: &mut SqliteConnection,
     id: i64,
     romfile_id: Option<i64>,
 ) {
@@ -501,7 +486,7 @@ pub async fn update_rom_romfile<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
 }
 
-pub async fn find_roms<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -> Vec<Rom> {
+pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     sqlx::query_as!(
         Rom,
         "
@@ -515,10 +500,7 @@ pub async fn find_roms<'a, E: Executor<'a, Database = Sqlite>>(connection: E) ->
     .expect("Error while finding roms")
 }
 
-pub async fn find_roms_by_game_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    game_id: i64,
-) -> Vec<Rom> {
+pub async fn find_roms_by_game_id(connection: &mut SqliteConnection, game_id: i64) -> Vec<Rom> {
     sqlx::query_as!(
         Rom,
         "
@@ -534,8 +516,8 @@ pub async fn find_roms_by_game_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding rom with game id {}", game_id))
 }
 
-pub async fn find_roms_without_romfile_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_roms_without_romfile_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Rom> {
     sqlx::query_as!(
@@ -558,8 +540,8 @@ pub async fn find_roms_without_romfile_by_system_id<'a, E: Executor<'a, Database
     .expect("Error while finding roms without romfile")
 }
 
-pub async fn find_roms_without_romfile_by_game_ids<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_roms_without_romfile_by_game_ids(
+    connection: &mut SqliteConnection,
     game_ids: &[i64],
 ) -> Vec<Rom> {
     let sql = format!(
@@ -582,8 +564,8 @@ pub async fn find_roms_without_romfile_by_game_ids<'a, E: Executor<'a, Database 
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_roms_with_romfile_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Rom> {
     sqlx::query_as!(
@@ -606,11 +588,8 @@ pub async fn find_roms_with_romfile_by_system_id<'a, E: Executor<'a, Database = 
     .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_system_id_and_name<
-    'a,
-    E: Executor<'a, Database = Sqlite>,
->(
-    connection: E,
+pub async fn find_roms_with_romfile_by_system_id_and_name(
+    connection: &mut SqliteConnection,
     system_id: i64,
     name: &str,
 ) -> Vec<Rom> {
@@ -635,8 +614,8 @@ pub async fn find_roms_with_romfile_by_system_id_and_name<
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_game_ids<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_roms_with_romfile_by_game_ids(
+    connection: &mut SqliteConnection,
     game_ids: &[i64],
 ) -> Vec<Rom> {
     let sql = format!(
@@ -659,8 +638,8 @@ pub async fn find_roms_with_romfile_by_game_ids<'a, E: Executor<'a, Database = S
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_rom_by_name_and_game_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_rom_by_name_and_game_id(
+    connection: &mut SqliteConnection,
     name: &str,
     game_id: i64,
 ) -> Option<Rom> {
@@ -685,8 +664,8 @@ pub async fn find_rom_by_name_and_game_id<'a, E: Executor<'a, Database = Sqlite>
     })
 }
 
-pub async fn find_roms_by_size_and_crc_and_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_roms_by_size_and_crc_and_system_id(
+    connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
     system_id: i64,
@@ -718,8 +697,8 @@ pub async fn find_roms_by_size_and_crc_and_system_id<'a, E: Executor<'a, Databas
     })
 }
 
-pub async fn delete_rom_by_name_and_game_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn delete_rom_by_name_and_game_id(
+    connection: &mut SqliteConnection,
     name: &str,
     game_id: i64,
 ) {
@@ -742,10 +721,7 @@ pub async fn delete_rom_by_name_and_game_id<'a, E: Executor<'a, Database = Sqlit
     });
 }
 
-pub async fn create_romfile<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    path: &str,
-) -> i64 {
+pub async fn create_romfile(connection: &mut SqliteConnection, path: &str) -> i64 {
     sqlx::query!(
         "
         INSERT INTO romfiles (path)
@@ -759,11 +735,7 @@ pub async fn create_romfile<'a, E: Executor<'a, Database = Sqlite>>(
     .last_insert_rowid()
 }
 
-pub async fn update_romfile<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-    path: &str,
-) {
+pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &str) {
     sqlx::query!(
         "
         UPDATE romfiles 
@@ -778,7 +750,7 @@ pub async fn update_romfile<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating romfile with id {}", id));
 }
 
-pub async fn find_romfiles<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -> Vec<Romfile> {
+pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
     sqlx::query_as!(
         Romfile,
         "
@@ -792,10 +764,7 @@ pub async fn find_romfiles<'a, E: Executor<'a, Database = Sqlite>>(connection: E
     .expect("Error while finding romfiles")
 }
 
-pub async fn find_romfiles_by_ids<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    ids: &[i64],
-) -> Vec<Romfile> {
+pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {
     let sql = format!(
         "
     SELECT *
@@ -813,8 +782,8 @@ pub async fn find_romfiles_by_ids<'a, E: Executor<'a, Database = Sqlite>>(
         .expect("Error while finding romfiles")
 }
 
-pub async fn find_romfiles_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_romfiles_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Romfile> {
     sqlx::query_as!(
@@ -839,9 +808,7 @@ pub async fn find_romfiles_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_romfiles_in_trash<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-) -> Vec<Romfile> {
+pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Romfile> {
     sqlx::query_as!(
         Romfile,
         "
@@ -856,8 +823,8 @@ pub async fn find_romfiles_in_trash<'a, E: Executor<'a, Database = Sqlite>>(
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_romfile_by_path<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_romfile_by_path(
+    connection: &mut SqliteConnection,
     path: &str,
 ) -> Option<Romfile> {
     sqlx::query_as!(
@@ -874,10 +841,7 @@ pub async fn find_romfile_by_path<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding romfile with path {}", path))
 }
 
-pub async fn find_romfile_by_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-) -> Romfile {
+pub async fn find_romfile_by_id(connection: &mut SqliteConnection, id: i64) -> Romfile {
     sqlx::query_as!(
         Romfile,
         "
@@ -892,7 +856,7 @@ pub async fn find_romfile_by_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding romfile with id {}", id))
 }
 
-pub async fn delete_romfile_by_id<'a, E: Executor<'a, Database = Sqlite>>(connection: E, id: i64) {
+pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     sqlx::query!(
         "
         DELETE FROM romfiles
@@ -905,7 +869,7 @@ pub async fn delete_romfile_by_id<'a, E: Executor<'a, Database = Sqlite>>(connec
     .unwrap_or_else(|_| panic!("Error while deleting setting with id {}", id));
 }
 
-pub async fn delete_romfiles_without_rom<'a, E: Executor<'a, Database = Sqlite>>(connection: E) {
+pub async fn delete_romfiles_without_rom(connection: &mut SqliteConnection) {
     sqlx::query!(
         "
         DELETE
@@ -922,8 +886,8 @@ pub async fn delete_romfiles_without_rom<'a, E: Executor<'a, Database = Sqlite>>
     .expect("Error while finding romfiles without rom");
 }
 
-pub async fn create_header<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn create_header(
+    connection: &mut SqliteConnection,
     detector_xml: &DetectorXml,
     system_id: i64,
 ) -> i64 {
@@ -947,8 +911,8 @@ pub async fn create_header<'a, E: Executor<'a, Database = Sqlite>>(
     .last_insert_rowid()
 }
 
-pub async fn update_header<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn update_header(
+    connection: &mut SqliteConnection,
     id: i64,
     detector_xml: &DetectorXml,
     system_id: i64,
@@ -974,8 +938,8 @@ pub async fn update_header<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating header with id {}", id));
 }
 
-pub async fn find_header_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
+pub async fn find_header_by_system_id(
+    connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Option<Header> {
     sqlx::query_as!(
@@ -992,11 +956,7 @@ pub async fn find_header_by_system_id<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding header with system id {}", system_id))
 }
 
-pub async fn create_setting<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    key: &str,
-    value: Option<String>,
-) {
+pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: Option<String>) {
     sqlx::query!(
         "
         INSERT INTO settings (key, value)
@@ -1010,11 +970,7 @@ pub async fn create_setting<'a, E: Executor<'a, Database = Sqlite>>(
     .expect("Error while creating setting");
 }
 
-pub async fn update_setting<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    id: i64,
-    value: Option<String>,
-) {
+pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: Option<String>) {
     sqlx::query!(
         "
         UPDATE settings
@@ -1029,7 +985,7 @@ pub async fn update_setting<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while updating setting with id {}", id));
 }
 
-pub async fn find_settings<'a, E: Executor<'a, Database = Sqlite>>(connection: E) -> Vec<Setting> {
+pub async fn find_settings(connection: &mut SqliteConnection) -> Vec<Setting> {
     sqlx::query_as!(
         Setting,
         "
@@ -1043,10 +999,7 @@ pub async fn find_settings<'a, E: Executor<'a, Database = Sqlite>>(connection: E
     .expect("Error while finding settings")
 }
 
-pub async fn find_setting_by_key<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    key: &str,
-) -> Option<Setting> {
+pub async fn find_setting_by_key(connection: &mut SqliteConnection, key: &str) -> Option<Setting> {
     sqlx::query_as!(
         Setting,
         "
@@ -1061,10 +1014,7 @@ pub async fn find_setting_by_key<'a, E: Executor<'a, Database = Sqlite>>(
     .unwrap_or_else(|_| panic!("Error while finding setting with key {}", key))
 }
 
-pub async fn delete_setting_by_key<'a, E: Executor<'a, Database = Sqlite>>(
-    connection: E,
-    key: &str,
-) {
+pub async fn delete_setting_by_key(connection: &mut SqliteConnection, key: &str) {
     sqlx::query!(
         "
         DELETE FROM settings

@@ -4,6 +4,7 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
 
 cfg_if! {
@@ -89,56 +90,75 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(matches: &ArgMatches<'_>) -> SimpleResult<()> {
+pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     // make sure rom and tmp directories are initialized
-    get_rom_directory().await;
-    get_tmp_directory().await;
+    get_rom_directory(connection).await;
+    get_tmp_directory(connection).await;
 
     if matches.is_present("LIST") {
-        list_settings().await;
+        list_settings(connection).await;
     };
 
     if matches.is_present("GET") {
-        get_setting(matches.value_of("GET").unwrap()).await;
+        get_setting(connection, matches.value_of("GET").unwrap()).await;
     }
 
     if matches.is_present("SET") {
         let key_value: Vec<&str> = matches.values_of("SET").unwrap().collect();
-        set_setting(key_value.get(0).unwrap(), key_value.get(1).unwrap()).await?;
+        set_setting(
+            connection,
+            key_value.get(0).unwrap(),
+            key_value.get(1).unwrap(),
+        )
+        .await?;
     }
 
     if matches.is_present("ADD") {
         let key_value: Vec<&str> = matches.values_of("ADD").unwrap().collect();
-        add_to_list(key_value.get(0).unwrap(), key_value.get(1).unwrap()).await;
+        add_to_list(
+            connection,
+            key_value.get(0).unwrap(),
+            key_value.get(1).unwrap(),
+        )
+        .await;
     }
 
     if matches.is_present("REMOVE") {
         let key_value: Vec<&str> = matches.values_of("REMOVE").unwrap().collect();
-        remove_from_list(key_value.get(0).unwrap(), key_value.get(1).unwrap()).await;
+        remove_from_list(
+            connection,
+            key_value.get(0).unwrap(),
+            key_value.get(1).unwrap(),
+        )
+        .await;
     }
 
     Ok(())
 }
 
-async fn list_settings() {
-    for setting in find_settings(POOL.get().unwrap()).await {
+async fn list_settings(connection: &mut SqliteConnection) {
+    for setting in find_settings(connection).await {
         println!("{} = {}", setting.key, setting.value.unwrap_or_default());
     }
 }
 
-async fn get_setting(key: &str) {
-    let setting = find_setting_by_key(POOL.get().unwrap(), key).await.unwrap();
+async fn get_setting(connection: &mut SqliteConnection, key: &str) {
+    let setting = find_setting_by_key(connection, key).await.unwrap();
     println!("{} = {}", setting.key, setting.value.unwrap_or_default());
 }
 
-async fn set_setting(key: &str, value: &str) -> SimpleResult<()> {
+async fn set_setting(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: &str,
+) -> SimpleResult<()> {
     if PATHS.contains(&key) {
         let p = get_canonicalized_path(value).await?;
         create_directory(&p).await?;
-        set_directory(key, &p).await;
+        set_directory(connection, key, &p).await;
     } else if BOOLEANS.contains(&key) {
         let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
-        set_bool(key, b).await;
+        set_bool(connection, key, b).await;
     } else if LISTS.contains(&key) {
         println!("Lists can't be set directly, please use ADD or REMOVE instead");
     } else {
@@ -147,9 +167,9 @@ async fn set_setting(key: &str, value: &str) -> SimpleResult<()> {
     Ok(())
 }
 
-async fn get_bool(key: &str) -> bool {
+async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
     FromStr::from_str(
-        &find_setting_by_key(POOL.get().unwrap(), key)
+        &find_setting_by_key(connection, key)
             .await
             .unwrap()
             .value
@@ -158,17 +178,17 @@ async fn get_bool(key: &str) -> bool {
     .unwrap()
 }
 
-async fn set_bool(key: &str, value: bool) {
-    let setting = find_setting_by_key(POOL.get().unwrap(), key).await;
+async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
+    let setting = find_setting_by_key(connection, key).await;
     let value = value.to_string();
     match setting {
-        Some(setting) => update_setting(POOL.get().unwrap(), setting.id, Some(value)).await,
-        None => create_setting(POOL.get().unwrap(), key, Some(value)).await,
+        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
+        None => create_setting(connection, key, Some(value)).await,
     };
 }
 
-pub async fn get_list(key: &str) -> Vec<String> {
-    match find_setting_by_key(POOL.get().unwrap(), key).await {
+pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<String> {
+    match find_setting_by_key(connection, key).await {
         Some(setting) => match setting.value {
             Some(value) => value.split(',').map(|s| s.to_owned()).collect(),
             None => Vec::new(),
@@ -177,12 +197,12 @@ pub async fn get_list(key: &str) -> Vec<String> {
     }
 }
 
-pub async fn add_to_list(key: &str, value: &str) {
+pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &str) {
     if LISTS.contains(&key) {
-        let mut list = get_list(key).await;
+        let mut list = get_list(connection, key).await;
         if !list.contains(&String::from(value)) {
             list.push(value.to_owned());
-            set_list(key, &list).await;
+            set_list(connection, key, &list).await;
         } else {
             println!("Value already in list");
         }
@@ -191,12 +211,12 @@ pub async fn add_to_list(key: &str, value: &str) {
     }
 }
 
-pub async fn remove_from_list(key: &str, value: &str) {
+pub async fn remove_from_list(connection: &mut SqliteConnection, key: &str, value: &str) {
     if LISTS.contains(&key) {
-        let mut list = get_list(key).await;
+        let mut list = get_list(connection, key).await;
         if list.contains(&String::from(value)) {
             list.remove(list.iter().position(|v| v == value).unwrap());
-            set_list(key, &list).await;
+            set_list(connection, key, &list).await;
         } else {
             println!("Value not in list");
         }
@@ -205,21 +225,21 @@ pub async fn remove_from_list(key: &str, value: &str) {
     }
 }
 
-async fn set_list(key: &str, value: &[String]) {
-    let setting = find_setting_by_key(POOL.get().unwrap(), key).await;
+async fn set_list(connection: &mut SqliteConnection, key: &str, value: &[String]) {
+    let setting = find_setting_by_key(connection, key).await;
     let value = if value.is_empty() {
         None
     } else {
         Some(value.join(","))
     };
     match setting {
-        Some(setting) => update_setting(POOL.get().unwrap(), setting.id, value).await,
-        None => create_setting(POOL.get().unwrap(), key, value).await,
+        Some(setting) => update_setting(connection, setting.id, value).await,
+        None => create_setting(connection, key, value).await,
     };
 }
 
-pub async fn get_directory(key: &str) -> Option<PathBuf> {
-    match find_setting_by_key(POOL.get().unwrap(), key).await {
+pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Option<PathBuf> {
+    match find_setting_by_key(connection, key).await {
         Some(p) => match get_canonicalized_path(&p.value.unwrap()).await {
             Ok(path) => Some(path),
             Err(_) => None,
@@ -228,18 +248,22 @@ pub async fn get_directory(key: &str) -> Option<PathBuf> {
     }
 }
 
-pub async fn set_directory<P: AsRef<Path>>(key: &str, value: &P) {
-    let setting = find_setting_by_key(POOL.get().unwrap(), key).await;
+pub async fn set_directory<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: &P,
+) {
+    let setting = find_setting_by_key(connection, key).await;
     let value = value.as_ref().as_os_str().to_str().unwrap().to_owned();
     match setting {
-        Some(setting) => update_setting(POOL.get().unwrap(), setting.id, Some(value)).await,
-        None => create_setting(POOL.get().unwrap(), key, Some(value)).await,
+        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
+        None => create_setting(connection, key, Some(value)).await,
     };
 }
 
 cfg_if::cfg_if! {
     if #[cfg(test)] {
-        pub async fn get_rom_directory() -> &'static PathBuf {
+        pub async fn get_rom_directory(_: &mut SqliteConnection) -> &'static PathBuf {
             unsafe {
                 ROM_DIRECTORY.as_ref().unwrap()
             }
@@ -252,7 +276,7 @@ cfg_if::cfg_if! {
             }
         }
 
-        pub async fn get_tmp_directory() -> &'static PathBuf {
+        pub async fn get_tmp_directory(_: &mut SqliteConnection) -> &'static PathBuf {
             unsafe {
                 TMP_DIRECTORY.as_ref().unwrap()
             }
@@ -265,15 +289,15 @@ cfg_if::cfg_if! {
             }
         }
     } else {
-        pub async fn get_rom_directory() -> &'static PathBuf {
+        pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
             match ROM_DIRECTORY.get() {
                 Some(rom_directory) => rom_directory,
                 None => {
-                    let rom_directory = match get_directory("ROM_DIRECTORY").await {
+                    let rom_directory = match get_directory(connection, "ROM_DIRECTORY").await {
                         Some(rom_directory) => rom_directory,
                         None => {
                             let rom_directory = PathBuf::from(dirs::home_dir().unwrap()).join("Emulation");
-                            set_directory("ROM_DIRECTORY", &rom_directory).await;
+                            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
                             rom_directory
                         }
                     };
@@ -285,15 +309,15 @@ cfg_if::cfg_if! {
             }
         }
 
-        pub async fn get_tmp_directory() -> &'static PathBuf {
+        pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
             match TMP_DIRECTORY.get() {
                 Some(tmp_directory) => tmp_directory,
                 None => {
-                    let tmp_directory = match get_directory("TMP_DIRECTORY").await {
+                    let tmp_directory = match get_directory(connection, "TMP_DIRECTORY").await {
                         Some(tmp_directory) => tmp_directory,
                         None => {
                             let tmp_directory = PathBuf::from(env::temp_dir());
-                            set_directory("TMP_DIRECTORY", &tmp_directory).await;
+                            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
                             tmp_directory
                         }
                     };
@@ -318,13 +342,14 @@ mod test {
     async fn test_bool() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "TEST_BOOLEAN";
 
         // when
-        set_bool(key, true).await;
-        let bool = get_bool(key).await;
+        set_bool(&mut connection, key, true).await;
+        let bool = get_bool(&mut connection, key).await;
 
         // then
         assert_eq!(bool, true);
@@ -334,14 +359,20 @@ mod test {
     async fn test_list() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "DISCARD_FLAGS";
 
         // when
-        set_list(key, &[String::from("item1"), String::from("item2")]).await;
+        set_list(
+            &mut connection,
+            key,
+            &[String::from("item1"), String::from("item2")],
+        )
+        .await;
 
-        let list = get_list(key).await;
+        let list = get_list(&mut connection, key).await;
 
         // then
         assert_eq!(list.len(), 2);
@@ -353,15 +384,16 @@ mod test {
     async fn test_add_to_list() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "DISCARD_FLAGS";
 
-        set_list(key, &[String::from("item1")]).await;
+        set_list(&mut connection, key, &[String::from("item1")]).await;
 
         // when
-        add_to_list(key, "item2").await;
-        let list = get_list(key).await;
+        add_to_list(&mut connection, key, "item2").await;
+        let list = get_list(&mut connection, key).await;
 
         // then
         assert_eq!(list.len(), 2);
@@ -373,15 +405,16 @@ mod test {
     async fn test_add_to_list_already_exists() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "DISCARD_FLAGS";
 
-        set_list(key, &[String::from("item1")]).await;
+        set_list(&mut connection, key, &[String::from("item1")]).await;
 
         // when
-        add_to_list(key, "item1").await;
-        let list = get_list(key).await;
+        add_to_list(&mut connection, key, "item1").await;
+        let list = get_list(&mut connection, key).await;
 
         // then
         assert_eq!(list.len(), 1);
@@ -392,15 +425,16 @@ mod test {
     async fn test_remove_from_list() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "DISCARD_FLAGS";
 
-        set_list(key, &[String::from("item1")]).await;
+        set_list(&mut connection, key, &[String::from("item1")]).await;
 
         // when
-        remove_from_list(key, "item1").await;
-        let list = get_list(key).await;
+        remove_from_list(&mut connection, key, "item1").await;
+        let list = get_list(&mut connection, key).await;
 
         // then
         assert_eq!(list.len(), 0);
@@ -410,15 +444,16 @@ mod test {
     async fn test_remove_from_list_does_not_exist() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let key = "DISCARD_FLAGS";
 
-        set_list(key, &[String::from("item1")]).await;
+        set_list(&mut connection, key, &[String::from("item1")]).await;
 
         // when
-        remove_from_list(key, "item2").await;
-        let list = get_list(key).await;
+        remove_from_list(&mut connection, key, "item2").await;
+        let list = get_list(&mut connection, key).await;
 
         // then
         assert_eq!(list.len(), 1);
@@ -429,15 +464,16 @@ mod test {
     async fn test_directory() {
         // given
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let test_directory = get_canonicalized_path("test").await.unwrap();
         let key = "TEST_DIRECTORY";
 
         // when
-        set_directory(key, &test_directory).await;
+        set_directory(&mut connection, key, &test_directory).await;
 
-        let directory = get_directory(key).await.unwrap();
+        let directory = get_directory(&mut connection, key).await.unwrap();
 
         // then
         assert_eq!(directory, test_directory);
@@ -451,22 +487,23 @@ mod test {
         let test_directory = Path::new("test");
 
         let db_file = NamedTempFile::new().unwrap();
-        establish_connection(db_file.path().to_str().unwrap()).await;
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
         let old_directory = PathBuf::from(&tmp_directory.path()).join("old");
         create_directory(&old_directory).await.unwrap();
-        set_directory("TEST_DIRECTORY", &old_directory).await;
+        set_directory(&mut connection, "TEST_DIRECTORY", &old_directory).await;
         fs::remove_dir_all(&old_directory).await.unwrap();
 
         // when
-        get_directory("TEST_DIRECTORY").await;
+        get_directory(&mut connection, "TEST_DIRECTORY").await;
         let new_directory = PathBuf::from(&tmp_directory.path()).join("new");
         create_directory(&new_directory).await.unwrap();
-        set_directory("TEST_DIRECTORY", &new_directory).await;
+        set_directory(&mut connection, "TEST_DIRECTORY", &new_directory).await;
 
         // then
-        let directory = get_directory("TEST_DIRECTORY").await;
+        let directory = get_directory(&mut connection, "TEST_DIRECTORY").await;
         assert!(directory.is_some());
         assert!(&directory.unwrap().as_os_str() == &new_directory.as_os_str());
     }

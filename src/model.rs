@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 #[derive(sqlx::FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(feature = "server", graphql(complex))]
 pub struct System {
     pub id: i64,
     pub name: String,
@@ -37,6 +38,7 @@ pub struct Game {
 
 #[derive(sqlx::FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(feature = "server", graphql(complex))]
 pub struct Rom {
     pub id: i64,
     pub name: String,
