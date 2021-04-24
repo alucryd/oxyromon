@@ -1,3 +1,7 @@
+# 0.9.0
+* Use transactions for increased performance
+* Add an optional GraphQL API
+
 # 0.8.1
 * Use a database connection pool
 * Fix importing archives with invalid files
