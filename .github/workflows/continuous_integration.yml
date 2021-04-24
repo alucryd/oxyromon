@@ -40,6 +40,8 @@ jobs:
           args: --release --all-features
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: --all-features
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
         with:
