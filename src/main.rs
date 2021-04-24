@@ -26,6 +26,9 @@ extern crate async_trait;
 extern crate dialoguer;
 extern crate phf;
 extern crate rayon;
+#[cfg(test)]
+#[cfg(feature = "server")]
+extern crate serde_json;
 extern crate surf;
 extern crate tempfile;
 #[cfg(feature = "server")]
@@ -106,7 +109,11 @@ async fn main() -> SimpleResult<()> {
 
         match matches.subcommand_name() {
             Some("config") => {
-                config::main(&mut pool.acquire().await.unwrap(), &matches.subcommand_matches("config").unwrap()).await?
+                config::main(
+                    &mut pool.acquire().await.unwrap(),
+                    &matches.subcommand_matches("config").unwrap(),
+                )
+                .await?
             }
             Some("import-dats") => {
                 import_dats::main(

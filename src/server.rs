@@ -4,8 +4,9 @@ use async_ctrlc::CtrlC;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::{
-    ComplexObject, Context, EmptyMutation, EmptySubscription, FieldError, Object, Result, Schema,
+    ComplexObject, Context, EmptyMutation, EmptySubscription, Error, Object, Result, Schema,
 };
+use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
@@ -39,32 +40,8 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .help("Specifies the server port")
                 .required(false)
                 .takes_value(true)
-                .default_value("8080"),
+                .default_value("8000"),
         )
-}
-
-pub struct SystemLoader;
-
-#[async_trait]
-impl Loader<i64> for SystemLoader {
-    type Value = System;
-    type Error = FieldError;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM systems
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|system: System| (system.id, system))
-            .try_collect()
-            .await?)
-    }
 }
 
 #[ComplexObject]
@@ -76,32 +53,20 @@ impl System {
         )
     }
 
-    async fn games(&self) -> Result<Vec<Game>> {
-        games_by_system_id(Some(self.id)).await
-    }
-}
-
-pub struct GameLoader;
-
-#[async_trait]
-impl Loader<i64> for GameLoader {
-    type Value = Game;
-    type Error = FieldError;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM games
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|game: Game| (game.id, game))
-            .try_collect()
-            .await?)
+    async fn games(&self, ctx: &Context<'_>) -> Result<Vec<Game>> {
+        if ctx
+            .path_node
+            .unwrap()
+            .to_string_vec()
+            .contains(&String::from("systems"))
+        {
+            Err(Error::new("games is forbidden when querying all systems"))
+        } else {
+            Ok(
+                find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id)
+                    .await,
+            )
+        }
     }
 }
 
@@ -116,38 +81,6 @@ impl Game {
 
     async fn roms(&self) -> Result<Vec<Rom>> {
         Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id).await)
-    }
-}
-
-async fn games_by_system_id(system_id: Option<i64>) -> Result<Vec<Game>> {
-    let mut connection = &mut POOL.get().unwrap().acquire().await.unwrap();
-    Ok(match system_id {
-        Some(system_id) => find_games_by_system_id(&mut connection, system_id).await,
-        None => find_games(&mut connection).await,
-    })
-}
-
-pub struct RomLoader;
-
-#[async_trait]
-impl Loader<i64> for RomLoader {
-    type Value = Rom;
-    type Error = FieldError;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM roms
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|rom: Rom| (rom.id, rom))
-            .try_collect()
-            .await?)
     }
 }
 
@@ -172,12 +105,91 @@ impl Rom {
     }
 }
 
+#[ComplexObject]
+impl Romfile {
+    async fn size(&self) -> Result<u64> {
+        Ok(Path::new(&self.path).metadata().await?.len())
+    }
+}
+
+pub struct SystemLoader;
+
+#[async_trait]
+impl Loader<i64> for SystemLoader {
+    type Value = System;
+    type Error = Error;
+
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM systems
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .map_ok(|system: System| (system.id, system))
+            .try_collect()
+            .await?)
+    }
+}
+
+pub struct RomLoader;
+
+#[async_trait]
+impl Loader<i64> for RomLoader {
+    type Value = Rom;
+    type Error = Error;
+
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM roms
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .map_ok(|rom: Rom| (rom.id, rom))
+            .try_collect()
+            .await?)
+    }
+}
+
+pub struct GameLoader;
+
+#[async_trait]
+impl Loader<i64> for GameLoader {
+    type Value = Game;
+    type Error = Error;
+
+    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
+        let query = format!(
+            "
+        SELECT *
+        FROM games
+        WHERE id in ({})
+        ",
+            ids.iter().join(",")
+        );
+        Ok(sqlx::query_as(&query)
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .map_ok(|game: Game| (game.id, game))
+            .try_collect()
+            .await?)
+    }
+}
+
 pub struct RomfileLoader;
 
 #[async_trait]
 impl Loader<i64> for RomfileLoader {
     type Value = Romfile;
-    type Error = FieldError;
+    type Error = Error;
 
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let query = format!(
@@ -210,17 +222,6 @@ impl QueryRoot {
             .load_one(id)
             .await?)
     }
-
-    async fn games(&self, system_id: Option<i64>) -> Result<Vec<Game>> {
-        games_by_system_id(system_id).await
-    }
-
-    async fn game(&self, ctx: &Context<'_>, id: i64) -> Result<Option<Game>> {
-        Ok(ctx
-            .data_unchecked::<DataLoader<GameLoader>>()
-            .load_one(id)
-            .await?)
-    }
 }
 
 #[derive(Clone)]
@@ -250,4 +251,184 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
         })
         .await;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
+    use super::super::database::*;
+    use super::super::import_dats;
+    use super::super::import_roms;
+    use super::super::util::*;
+    use super::*;
+    use async_std::fs;
+    use async_std::path::PathBuf;
+    use async_std::task;
+    use indicatif::ProgressBar;
+    use serde_json::{json, Value};
+    use std::time::Duration;
+    use tempfile::{NamedTempFile, TempDir};
+    use tide::Body;
+
+    #[async_std::test]
+    async fn test_server() -> Result<()> {
+        // given
+        let _guard = MUTEX.lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
+
+        let matches = import_dats::subcommand()
+            .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
+        import_dats::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+        let system_directory = &rom_directory.join("Test System");
+        create_directory(&system_directory).await.unwrap();
+        let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).rom"),
+            &romfile_path,
+        )
+        .await
+        .unwrap();
+
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let matches = subcommand().get_matches_from(&["server"]);
+
+        // when
+        task::block_on(async {
+            let server: task::JoinHandle<Result<()>> = task::spawn(async move {
+                main(pool, &matches).await?;
+                Ok(())
+            });
+
+            let client: task::JoinHandle<Result<()>> = task::spawn(async move {
+                task::sleep(Duration::from_millis(1000)).await;
+
+                let string = surf::post("http://127.0.0.1:8000/graphql")
+                    .body(Body::from(r#"{"query":"{ systems { name } }"}"#))
+                    .header("Content-Type", "application/json")
+                    .recv_string()
+                    .await?;
+
+                let v: Value = serde_json::from_str(&string)?;
+                assert_eq!(
+                    v["data"]["systems"],
+                    json!(
+                        [
+                          {
+                            "name": "Test System"
+                          }
+                        ]
+                    )
+                );
+
+                let string = surf::post("http://127.0.0.1:8000/graphql")
+                    .body(Body::from(r#"{"query":"{ system(id: 1) { name, games { name, roms { name, romfile { path, size } } } } }"}"#))
+                    .header("Content-Type", "application/json")
+                    .recv_string()
+                    .await?;
+
+                let v: Value = serde_json::from_str(&string)?;
+                assert_eq!(
+                    v["data"]["system"],
+                    json!(
+                          {
+                            "games": [
+                              {
+                                "name": "Test Game (Asia)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (Asia).rom",
+                                    "romfile": null
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Test Game (Japan)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (Japan).rom",
+                                    "romfile": null
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Test Game (USA, Europe)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (USA, Europe).rom",
+                                    "romfile": {
+                                      "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                      "size": 256
+                                    }
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Test Game (USA, Europe) (Beta)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (USA, Europe) (Beta).rom",
+                                    "romfile": null
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Test Game (USA, Europe) (CUE BIN)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (USA, Europe) (Track 01).bin",
+                                    "romfile": null
+                                  },
+                                  {
+                                    "name": "Test Game (USA, Europe) (Track 02).bin",
+                                    "romfile": null
+                                  },
+                                  {
+                                    "name": "Test Game (USA, Europe).cue",
+                                    "romfile": null
+                                  }
+                                ]
+                              },
+                              {
+                                "name": "Test Game (USA, Europe) (ISO)",
+                                "roms": [
+                                  {
+                                    "name": "Test Game (USA, Europe).iso",
+                                    "romfile": null
+                                  }
+                                ]
+                              }
+                            ],
+                            "name": "Test System"
+                          }
+                    )
+                );
+
+                Ok(())
+            });
+
+            server.race(client).await?;
+
+            Ok(())
+        })
+    }
 }

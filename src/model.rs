@@ -53,6 +53,7 @@ pub struct Rom {
 
 #[derive(sqlx::FromRow, PartialEq)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(feature = "server", graphql(complex))]
 pub struct Romfile {
     pub id: i64,
     pub path: String,
