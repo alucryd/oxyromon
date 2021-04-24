@@ -15,11 +15,24 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
+#[cfg(feature = "server")]
+extern crate async_ctrlc;
+#[cfg(feature = "server")]
+extern crate async_graphql;
+#[cfg(feature = "server")]
+extern crate async_graphql_tide;
+#[cfg(feature = "server")]
+extern crate async_trait;
 extern crate dialoguer;
 extern crate phf;
 extern crate rayon;
+#[cfg(test)]
+#[cfg(feature = "server")]
+extern crate serde_json;
 extern crate surf;
 extern crate tempfile;
+#[cfg(feature = "server")]
+extern crate tide;
 
 #[cfg(test)]
 extern crate wiremock;
@@ -38,11 +51,14 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
+#[cfg(feature = "server")]
+mod server;
 mod sevenzip;
 mod sort_roms;
 mod util;
 
 use async_std::path::PathBuf;
+use cfg_if::cfg_if;
 use clap::App;
 use database::*;
 use dotenv::dotenv;
@@ -53,21 +69,28 @@ use util::*;
 type SimpleResult<T> = Result<T, SimpleError>;
 
 #[async_std::main]
+#[allow(unused_mut)]
 async fn main() -> SimpleResult<()> {
+    let mut subcommands = vec![
+        config::subcommand(),
+        import_dats::subcommand(),
+        download_dats::subcommand(),
+        import_roms::subcommand(),
+        sort_roms::subcommand(),
+        convert_roms::subcommand(),
+        check_roms::subcommand(),
+        purge_roms::subcommand(),
+    ];
+    cfg_if! {
+        if #[cfg(feature = "server")] {
+            subcommands.push(server::subcommand());
+        }
+    }
     let matches = App::new(env!("CARGO_BIN_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .author(env!("CARGO_PKG_AUTHORS"))
-        .subcommands(vec![
-            config::subcommand(),
-            import_dats::subcommand(),
-            download_dats::subcommand(),
-            import_roms::subcommand(),
-            sort_roms::subcommand(),
-            convert_roms::subcommand(),
-            check_roms::subcommand(),
-            purge_roms::subcommand(),
-        ])
+        .subcommands(subcommands)
         .get_matches();
 
     if matches.subcommand.is_some() {
@@ -87,14 +110,14 @@ async fn main() -> SimpleResult<()> {
         match matches.subcommand_name() {
             Some("config") => {
                 config::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("config").unwrap(),
                 )
                 .await?
             }
             Some("import-dats") => {
                 import_dats::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("import-dats").unwrap(),
                     &progress_bar,
                 )
@@ -102,7 +125,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("download-dats") => {
                 download_dats::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("download-dats").unwrap(),
                     &progress_bar,
                 )
@@ -110,7 +133,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("import-roms") => {
                 import_roms::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("import-roms").unwrap(),
                     &progress_bar,
                 )
@@ -118,7 +141,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("sort-roms") => {
                 sort_roms::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("sort-roms").unwrap(),
                     &progress_bar,
                 )
@@ -126,7 +149,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("convert-roms") => {
                 convert_roms::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("convert-roms").unwrap(),
                     &progress_bar,
                 )
@@ -134,7 +157,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("check-roms") => {
                 check_roms::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("check-roms").unwrap(),
                     &progress_bar,
                 )
@@ -142,16 +165,26 @@ async fn main() -> SimpleResult<()> {
             }
             Some("purge-roms") => {
                 purge_roms::main(
-                    &pool,
+                    &mut pool.acquire().await.unwrap(),
                     &matches.subcommand_matches("purge-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
             }
+            Some("server") => {
+                cfg_if! {
+                    if #[cfg(feature = "server")] {
+                        server::main(pool, &matches.subcommand_matches("server").unwrap()).await?
+                    }
+                }
+            }
             _ => (),
         }
-
-        close_connection(&pool).await;
+        cfg_if! {
+            if #[cfg(not(feature = "server"))] {
+                close_connection(pool).await;
+            }
+        }
     }
 
     Ok(())

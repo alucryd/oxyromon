@@ -2,16 +2,16 @@ use super::database::*;
 use super::model::*;
 use dialoguer::{Confirm, MultiSelect, Select};
 use simple_error::SimpleResult;
-use sqlx::sqlite::SqlitePool;
+use sqlx::sqlite::SqliteConnection;
 
 pub async fn prompt_for_systems(
-    pool: &SqlitePool,
+    connection: &mut SqliteConnection,
     url: Option<&str>,
     all: bool,
 ) -> SimpleResult<Vec<System>> {
     let systems = match url {
-        Some(url) => find_systems_by_url(pool, url).await,
-        None => find_systems(pool).await,
+        Some(url) => find_systems_by_url(connection, url).await,
+        None => find_systems(connection).await,
     };
 
     if all || systems.is_empty() {
@@ -33,8 +33,11 @@ pub async fn prompt_for_systems(
         .collect())
 }
 
-pub async fn prompt_for_system(pool: &SqlitePool, default: Option<usize>) -> SimpleResult<System> {
-    let mut systems = find_systems(pool).await;
+pub async fn prompt_for_system(
+    connection: &mut SqliteConnection,
+    default: Option<usize>,
+) -> SimpleResult<System> {
+    let mut systems = find_systems(connection).await;
     match systems.len() {
         0 => bail!("No available system"),
         1 => Ok(systems.remove(0)),

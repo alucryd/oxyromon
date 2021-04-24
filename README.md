@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyromon 0.8.1
+# oxyromon 0.9.0
 
 ### Rusty ROM OrgaNizer
 
@@ -72,6 +72,7 @@ These should be in your `${PATH}` for extra features.
         convert-roms    Converts ROM files between common formats
         check-roms      Checks ROM files integrity
         purge-roms      Purges deleted or moved ROM files
+        server          Launches the backend server
 
 ## oxyromon-config
 
@@ -281,3 +282,20 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
         -y, --yes        Automatically says yes to prompts
         -h, --help       Prints help information
         -V, --version    Prints version information
+
+## oxyromon-server 
+
+Launches the backend server
+
+The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI will be coming soon.
+
+    USAGE:
+        oxyromon server [OPTIONS]
+
+    FLAGS:
+        -h, --help       Prints help information
+        -V, --version    Prints version information
+
+    OPTIONS:
+        -a, --address <ADDRESS>    Specifies the server address [default: 127.0.0.1]
+        -p, --port <PORT>          Specifies the server port [default: 8080]
