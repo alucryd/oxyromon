@@ -1864,6 +1864,7 @@ dependencies = [
  "digest 0.9.0",
  "dirs",
  "dotenv",
+ "http-types",
  "indicatif",
  "itertools",
  "lazy_static",
