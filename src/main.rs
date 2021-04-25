@@ -182,7 +182,7 @@ async fn main() -> SimpleResult<()> {
         }
         cfg_if! {
             if #[cfg(not(feature = "server"))] {
-                close_connection(pool).await;
+                close_connection(&pool).await;
             }
         }
     }
