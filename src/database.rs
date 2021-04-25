@@ -70,7 +70,7 @@ pub async fn commit_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
         .expect("Failed to commit transaction");
 }
 
-pub async fn close_connection(pool: SqlitePool) {
+pub async fn close_connection(pool: &SqlitePool) {
     pool.execute(
         "
             PRAGMA incremental_vacuum;

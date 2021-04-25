@@ -52,22 +52,6 @@ impl System {
                 .await,
         )
     }
-
-    async fn games(&self, ctx: &Context<'_>) -> Result<Vec<Game>> {
-        if ctx
-            .path_node
-            .unwrap()
-            .to_string_vec()
-            .contains(&String::from("systems"))
-        {
-            Err(Error::new("games is forbidden when querying all systems"))
-        } else {
-            Ok(
-                find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id)
-                    .await,
-            )
-        }
-    }
 }
 
 #[ComplexObject]
@@ -77,10 +61,6 @@ impl Game {
             .data_unchecked::<DataLoader<SystemLoader>>()
             .load_one(self.system_id)
             .await?)
-    }
-
-    async fn roms(&self) -> Result<Vec<Rom>> {
-        Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id).await)
     }
 }
 
@@ -216,11 +196,15 @@ impl QueryRoot {
         Ok(find_systems(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
     }
 
-    async fn system(&self, ctx: &Context<'_>, id: i64) -> Result<Option<System>> {
-        Ok(ctx
-            .data_unchecked::<DataLoader<SystemLoader>>()
-            .load_one(id)
-            .await?)
+    async fn games(&self, system_id: i64) -> Result<Vec<Game>> {
+        Ok(
+            find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), system_id)
+                .await,
+        )
+    }
+
+    async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
+        Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
     }
 }
 
@@ -250,6 +234,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
                 .expect("Failed to run server");
         })
         .await;
+    close_connection(POOL.get().unwrap()).await;
     Ok(())
 }
 
@@ -323,7 +308,7 @@ mod tests {
                 task::sleep(Duration::from_millis(1000)).await;
 
                 let string = surf::post("http://127.0.0.1:8000/graphql")
-                    .body(Body::from(r#"{"query":"{ systems { name } }"}"#))
+                    .body(Body::from(r#"{"query":"{ systems { id, name } }"}"#))
                     .header("Content-Type", "application/json")
                     .recv_string()
                     .await?;
@@ -333,93 +318,86 @@ mod tests {
                     v["data"]["systems"],
                     json!(
                         [
-                          {
-                            "name": "Test System"
-                          }
+                            {
+                                "id": 1,
+                                "name": "Test System"
+                            }
                         ]
                     )
                 );
 
                 let string = surf::post("http://127.0.0.1:8000/graphql")
-                    .body(Body::from(r#"{"query":"{ system(id: 1) { name, games { name, roms { name, romfile { path, size } } } } }"}"#))
+                    .body(Body::from(
+                        r#"{"query":"{ games(systemId: 1) { id, name } }"}"#,
+                    ))
                     .header("Content-Type", "application/json")
                     .recv_string()
                     .await?;
 
                 let v: Value = serde_json::from_str(&string)?;
                 assert_eq!(
-                    v["data"]["system"],
+                    v["data"]["games"],
                     json!(
-                          {
-                            "games": [
-                              {
-                                "name": "Test Game (Asia)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (Asia).rom",
-                                    "romfile": null
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Test Game (Japan)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (Japan).rom",
-                                    "romfile": null
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Test Game (USA, Europe)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (USA, Europe).rom",
-                                    "romfile": {
-                                      "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
-                                      "size": 256
+                        [
+                            {
+                                "id": 5,
+                                "name": "Test Game (Asia)"
+                            },
+                            {
+                                "id": 4,
+                                "name": "Test Game (Japan)"
+                            },
+                            {
+                                "id": 1,
+                                "name": "Test Game (USA, Europe)"
+                            },
+                            {
+                                "id": 6,
+                                "name": "Test Game (USA, Europe) (Beta)"
+                            },
+                            {
+                                "id": 3,
+                                "name": "Test Game (USA, Europe) (CUE BIN)"
+                            },
+                            {
+                                "id": 2,
+                                "name": "Test Game (USA, Europe) (ISO)"
+                            }
+                        ]
+                    )
+                );
+
+                let string = surf::post("http://127.0.0.1:8000/graphql")
+                    .body(Body::from(
+                        r#"{"query":"{ roms(gameId: 1) { id, name, romfile { id, path, size }, game { id, name, system { id, name } } } }"}"#,
+                    ))
+                    .header("Content-Type", "application/json")
+                    .recv_string()
+                    .await?;
+
+                let v: Value = serde_json::from_str(&string)?;
+                assert_eq!(
+                    v["data"]["roms"],
+                    json!(
+                        [
+                            {
+                                "id": 1,
+                                "name": "Test Game (USA, Europe).rom",
+                                "romfile": {
+                                    "id": 1,
+                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                    "size": 256
+                                },
+                                "game": {
+                                    "id": 1,
+                                    "name": "Test Game (USA, Europe)",
+                                    "system": {
+                                        "id": 1,
+                                        "name": "Test System"
                                     }
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Test Game (USA, Europe) (Beta)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (USA, Europe) (Beta).rom",
-                                    "romfile": null
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Test Game (USA, Europe) (CUE BIN)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (USA, Europe) (Track 01).bin",
-                                    "romfile": null
-                                  },
-                                  {
-                                    "name": "Test Game (USA, Europe) (Track 02).bin",
-                                    "romfile": null
-                                  },
-                                  {
-                                    "name": "Test Game (USA, Europe).cue",
-                                    "romfile": null
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "Test Game (USA, Europe) (ISO)",
-                                "roms": [
-                                  {
-                                    "name": "Test Game (USA, Europe).iso",
-                                    "romfile": null
-                                  }
-                                ]
-                              }
-                            ],
-                            "name": "Test System"
-                          }
+                                },
+                            }
+                        ]
                     )
                 );
 
