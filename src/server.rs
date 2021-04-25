@@ -1,3 +1,10 @@
+extern crate async_ctrlc;
+extern crate async_graphql;
+extern crate async_graphql_tide;
+extern crate async_trait;
+extern crate http_types;
+extern crate tide;
+
 use super::database::*;
 use super::model::*;
 use async_ctrlc::CtrlC;
@@ -10,12 +17,14 @@ use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use http_types::headers::HeaderValue;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
+use tide::security::{CorsMiddleware, Origin};
 
 lazy_static! {
     static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
@@ -41,6 +50,14 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required(false)
                 .takes_value(true)
                 .default_value("8000"),
+        )
+        .arg(
+            Arg::with_name("CORS")
+                .short("c")
+                .long("cors")
+                .help("Specifies the allowed origins")
+                .required(false)
+                .takes_value(true),
         )
 }
 
@@ -215,18 +232,30 @@ struct AppState {
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
-    let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
+
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(DataLoader::new(SystemLoader))
         .data(DataLoader::new(GameLoader))
         .data(DataLoader::new(RomLoader))
         .data(DataLoader::new(RomfileLoader))
         .finish();
+
+    let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
     ctrlc
         .race(async {
             let mut app = tide::new();
+
+            if let Some(cors) = matches.value_of("CORS") {
+                let cors = CorsMiddleware::new()
+                    .allow_methods("POST".parse::<HeaderValue>().unwrap())
+                    .allow_origin(Origin::from(cors))
+                    .allow_credentials(false);
+                app.with(cors);
+            }
+
             app.at("/graphql")
                 .post(async_graphql_tide::endpoint(schema));
+
             let address = matches.value_of("ADDRESS").unwrap();
             let port = matches.value_of("PORT").unwrap();
             app.listen(format!("{}:{}", address, port))
@@ -240,6 +269,8 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
 
 #[cfg(test)]
 mod tests {
+    extern crate serde_json;
+
     use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
     use super::super::database::*;
     use super::super::import_dats;
