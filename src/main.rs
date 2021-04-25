@@ -2,6 +2,7 @@ extern crate async_std;
 extern crate cfg_if;
 extern crate clap;
 extern crate crc32fast;
+extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
@@ -15,27 +16,10 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
-#[cfg(feature = "server")]
-extern crate async_ctrlc;
-#[cfg(feature = "server")]
-extern crate async_graphql;
-#[cfg(feature = "server")]
-extern crate async_graphql_tide;
-#[cfg(feature = "server")]
-extern crate async_trait;
-extern crate dialoguer;
 extern crate phf;
 extern crate rayon;
-#[cfg(test)]
-#[cfg(feature = "server")]
-extern crate serde_json;
 extern crate surf;
 extern crate tempfile;
-#[cfg(feature = "server")]
-extern crate tide;
-
-#[cfg(test)]
-extern crate wiremock;
 
 mod chdman;
 mod check_roms;

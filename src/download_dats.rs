@@ -284,6 +284,8 @@ async fn download_redump_dat(
 
 #[cfg(test)]
 mod test {
+    extern crate wiremock;
+
     use super::super::config::*;
     use super::super::database::*;
     use super::super::util::*;

@@ -1,3 +1,4 @@
+# rust
 build/
 .env
 *.rs.bk
@@ -5,3 +6,8 @@ target/
 .vscode
 *.db
 lcov.info
+
+# javascript
+node_modules/
+public/build/
+.DS_Store
