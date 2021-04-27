@@ -106,6 +106,17 @@ async fn check_system(
                     .unwrap()
                     .to_owned(),
             ));
+        } else {
+            // TODO: temporary workaround to add size to previously imported romfiles, remove later
+            if romfile.size == 0 {
+                update_romfile(
+                    connection,
+                    romfile.id,
+                    &romfile.path,
+                    romfile_path.metadata().await.unwrap().len(),
+                )
+                .await
+            }
         }
     }
 
@@ -121,7 +132,13 @@ async fn check_system(
             let mut transaction = begin_transaction(connection).await;
             for romfile_move in romfile_moves {
                 rename_file(&romfile_move.0.path, &romfile_move.1).await?;
-                update_romfile(&mut transaction, romfile_move.0.id, &romfile_move.1).await;
+                update_romfile(
+                    &mut transaction,
+                    romfile_move.0.id,
+                    &romfile_move.1,
+                    romfile_move.0.size as u64,
+                )
+                .await;
             }
             commit_transaction(transaction).await;
         }

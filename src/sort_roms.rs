@@ -68,10 +68,10 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
 
-    let all_regions = compute_regions(connection, matches, "REGIONS_ALL").await;
-    let one_regions = compute_regions(connection, matches, "REGIONS_ONE").await;
-    let unwanted_releases = get_list(connection, "DISCARD_RELEASES").await;
-    let unwanted_flags = get_list(connection, "DISCARD_FLAGS").await;
+    let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
+    let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
+    let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
+    let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
 
     for system in systems {
         sort_system(
@@ -81,11 +81,11 @@ pub async fn main(
             &system,
             &all_regions,
             &one_regions,
-            &unwanted_releases
+            &ignored_releases
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
-            &unwanted_flags
+            &ignored_flags
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
@@ -97,7 +97,7 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn compute_regions(
+pub async fn get_regions(
     connection: &mut SqliteConnection,
     matches: &ArgMatches<'_>,
     key: &str,
@@ -123,15 +123,15 @@ async fn sort_system(
     system: &System,
     all_regions: &[Region],
     one_regions: &[Region],
-    unwanted_releases: &[&str],
-    unwanted_flags: &[&str],
+    ignored_releases: &[&str],
+    ignored_flags: &[&str],
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = Vec::new();
     let mut one_region_games: Vec<Game> = Vec::new();
-    let mut trash_games: Vec<Game> = Vec::new();
+    let mut ignored_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
@@ -153,19 +153,19 @@ async fn sort_system(
             group.push(game);
         });
 
-        for parent in parent_games {
-            if clone_games_by_parent_id.contains_key(&parent.id) {
-                games = clone_games_by_parent_id.remove(&parent.id).unwrap();
+        for parent_game in parent_games {
+            if clone_games_by_parent_id.contains_key(&parent_game.id) {
+                games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
             } else {
                 games = Vec::new();
             }
-            games.insert(0, parent);
+            games.insert(0, parent_game);
 
-            // trim unwanted games
-            if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+            // trim ignored games
+            if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
                 let (mut unwanted_games, regular_games) =
-                    trim_games(games, unwanted_releases, unwanted_flags);
-                trash_games.append(&mut unwanted_games);
+                    trim_games(games, ignored_releases, ignored_flags);
+                ignored_games.append(&mut unwanted_games);
                 games = regular_games;
             }
 
@@ -193,7 +193,7 @@ async fn sort_system(
                 if region_in_all_regions {
                     all_regions_games.push(game);
                 } else {
-                    trash_games.push(game);
+                    ignored_games.push(game);
                 }
             }
         }
@@ -201,11 +201,11 @@ async fn sort_system(
     } else if !all_regions.is_empty() {
         games = find_games_by_system_id(connection, system.id).await;
 
-        // trim unwanted games
-        if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+        // trim ignored games
+        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
             let (mut unwanted_games, regular_games) =
-                trim_games(games, unwanted_releases, unwanted_flags);
-            trash_games.append(&mut unwanted_games);
+                trim_games(games, ignored_releases, ignored_flags);
+            ignored_games.append(&mut unwanted_games);
             games = regular_games;
         }
 
@@ -218,17 +218,17 @@ async fn sort_system(
             if region_in_all_regions {
                 all_regions_games.push(game);
             } else {
-                trash_games.push(game);
+                ignored_games.push(game);
             }
         }
     } else {
         games = find_games_by_system_id(connection, system.id).await;
 
-        // trim unwanted games
-        if !unwanted_releases.is_empty() || !unwanted_flags.is_empty() {
+        // trim ignored games
+        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
             let (mut unwanted_games, regular_games) =
-                trim_games(games, unwanted_releases, unwanted_flags);
-            trash_games.append(&mut unwanted_games);
+                trim_games(games, ignored_releases, ignored_flags);
+            ignored_games.append(&mut unwanted_games);
             games = regular_games;
         }
 
@@ -264,10 +264,21 @@ async fn sort_system(
         create_directory(&d).await?;
     }
 
+    let mut transaction = begin_transaction(connection).await;
+
     // process all_region_games
+    update_games_sorting(
+        &mut transaction,
+        &all_regions_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::AllRegions,
+    )
+    .await;
     romfile_moves.append(
         &mut sort_games(
-            connection,
+            &mut transaction,
             all_regions_games,
             &all_regions_directory,
             &romfiles_by_id,
@@ -276,9 +287,18 @@ async fn sort_system(
     );
 
     // process one_region_games
+    update_games_sorting(
+        &mut transaction,
+        &one_region_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::OneRegion,
+    )
+    .await;
     romfile_moves.append(
         &mut sort_games(
-            connection,
+            &mut transaction,
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
@@ -287,8 +307,24 @@ async fn sort_system(
     );
 
     // process trash_games
-    romfile_moves
-        .append(&mut sort_games(connection, trash_games, &trash_directory, &romfiles_by_id).await);
+    update_games_sorting(
+        &mut transaction,
+        &ignored_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::Ignored,
+    )
+    .await;
+    romfile_moves.append(
+        &mut sort_games(
+            &mut transaction,
+            ignored_games,
+            &trash_directory,
+            &romfiles_by_id,
+        )
+        .await,
+    );
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
@@ -306,12 +342,19 @@ async fn sort_system(
 
         // prompt user for confirmation
         if matches.is_present("YES") || confirm(true)? {
-            let mut transaction = begin_transaction(connection).await;
             for romfile_move in romfile_moves {
                 rename_file(&romfile_move.0.path, &romfile_move.1).await?;
-                update_romfile(&mut transaction, romfile_move.0.id, &romfile_move.1).await;
+                update_romfile(
+                    &mut transaction,
+                    romfile_move.0.id,
+                    &romfile_move.1,
+                    romfile_move.0.size as u64,
+                )
+                .await;
             }
             commit_transaction(transaction).await;
+        } else {
+            rollback_transaction(transaction).await;
         }
     } else {
         progress_bar.println("Nothing to do");
@@ -376,20 +419,21 @@ async fn sort_games<'a, P: AsRef<Path>>(
 
 fn trim_games(
     games: Vec<Game>,
-    unwanted_releases: &[&str],
-    unwanted_flags: &[&str],
+    ignored_releases: &[&str],
+    ignored_flags: &[&str],
 ) -> (Vec<Game>, Vec<Game>) {
+    // TODO: use drain_filter when it hits stable
     games.into_par_iter().partition(|game| {
         if let Ok(name) = NoIntroName::try_parse(&game.name) {
             for token in name.iter() {
                 if let NoIntroToken::Release(release, _) = token {
-                    if unwanted_releases.contains(release) {
+                    if ignored_releases.contains(release) {
                         return true;
                     }
                 }
                 if let NoIntroToken::Flag(_, flags) = token {
                     for flag in flags.split(", ") {
-                        if unwanted_flags.contains(&flag) {
+                        if ignored_flags.contains(&flag) {
                             return true;
                         }
                     }
@@ -457,7 +501,7 @@ mod test {
         let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-r", "EU"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = get_regions(&mut connection, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -477,7 +521,7 @@ mod test {
         let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = get_regions(&mut connection, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -497,7 +541,7 @@ mod test {
         let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-g", "EU"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = get_regions(&mut connection, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -517,7 +561,7 @@ mod test {
         let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
 
         // when
-        let all_regions = compute_regions(&mut connection, &matches, key).await;
+        let all_regions = get_regions(&mut connection, &matches, key).await;
 
         // then
         assert_eq!(all_regions.len(), 1);
@@ -525,7 +569,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_trim_games_should_discard_unwanted_games() {
+    async fn test_trim_games_should_discard_ignored_games() {
         // given
         let games = vec![
             Game {
@@ -533,6 +577,8 @@ mod test {
                 name: String::from("Game (USA)"),
                 description: String::from(""),
                 regions: String::from(""),
+                sorting: Sorting::AllRegions,
+                complete: false,
                 system_id: 1,
                 parent_id: None,
             },
@@ -541,6 +587,8 @@ mod test {
                 name: String::from("Game (USA) (Beta)"),
                 description: String::from(""),
                 regions: String::from(""),
+                sorting: Sorting::AllRegions,
+                complete: false,
                 system_id: 1,
                 parent_id: None,
             },
@@ -549,6 +597,8 @@ mod test {
                 name: String::from("Game (USA) (Beta 1)"),
                 description: String::from(""),
                 regions: String::from(""),
+                sorting: Sorting::AllRegions,
+                complete: false,
                 system_id: 1,
                 parent_id: None,
             },
@@ -557,20 +607,21 @@ mod test {
                 name: String::from("Game (USA) (Virtual Console, Switch Online)"),
                 description: String::from(""),
                 regions: String::from(""),
+                sorting: Sorting::AllRegions,
+                complete: false,
                 system_id: 1,
                 parent_id: None,
             },
         ];
 
-        let unwanted_releases = vec!["Beta"];
-        let unwanted_flags = vec!["Virtual Console"];
+        let ignored_releases = vec!["Beta"];
+        let ignored_flags = vec!["Virtual Console"];
 
         // when
-        let (unwanted_games, regular_games) =
-            trim_games(games, &unwanted_releases, &unwanted_flags);
+        let (ignored_games, regular_games) = trim_games(games, &ignored_releases, &ignored_flags);
 
         // then
-        assert_eq!(unwanted_games.len(), 3);
+        assert_eq!(ignored_games.len(), 3);
         assert_eq!(regular_games.len(), 1);
         assert_eq!(regular_games.get(0).unwrap().name, "Game (USA)")
     }
@@ -584,6 +635,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -601,6 +654,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.7z"),
+            size: 0,
         };
 
         // when
@@ -619,6 +673,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -636,6 +692,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.7z"),
+            size: 0,
         };
 
         // when
@@ -654,6 +711,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -671,6 +730,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.chd"),
+            size: 0,
         };
 
         // when
@@ -689,6 +749,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -706,6 +768,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.chd"),
+            size: 0,
         };
 
         // when
@@ -724,6 +787,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -741,6 +806,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.cso"),
+            size: 0,
         };
 
         // when
@@ -759,6 +825,8 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: false,
             system_id: 1,
             parent_id: None,
         };
@@ -776,6 +844,7 @@ mod test {
         let romfile = Romfile {
             id: 1,
             path: String::from("romfile.rom"),
+            size: 0,
         };
 
         // when

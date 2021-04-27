@@ -1,6 +1,6 @@
 use super::model::*;
 use cfg_if::cfg_if;
-use rayon::prelude::*;
+use itertools::Itertools;
 use sqlx::migrate::Migrator;
 use sqlx::prelude::*;
 use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
@@ -70,6 +70,13 @@ pub async fn commit_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
         .expect("Failed to commit transaction");
 }
 
+pub async fn rollback_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
+    transaction
+        .rollback()
+        .await
+        .expect("Failed to rollback transaction");
+}
+
 pub async fn close_connection(pool: &SqlitePool) {
     pool.execute(
         "
@@ -117,6 +124,48 @@ pub async fn update_system(connection: &mut SqliteConnection, id: i64, system_xm
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while updating system with id {}", id));
+}
+
+pub async fn update_system_mark_complete(connection: &mut SqliteConnection, id: i64) {
+    sqlx::query!(
+        "
+        UPDATE systems
+        SET complete = true
+        WHERE id = ?
+        AND NOT EXISTS (
+            SELECT g.id
+            FROM games g
+            WHERE g.system_id = systems.id
+            AND g.complete = false
+            AND g.sorting != 2
+        )
+        ",
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking system as complete"));
+}
+
+pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id: i64) {
+    sqlx::query!(
+        "
+        UPDATE systems
+        SET complete = false
+        WHERE id = ?
+        AND EXISTS (
+            SELECT g.id
+            FROM games g
+            WHERE g.system_id = systems.id
+            AND g.complete = false
+            AND g.sorting != 2
+        )
+        ",
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking system as incomplete"));
 }
 
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
@@ -248,11 +297,71 @@ pub async fn update_game(
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
+pub async fn update_games_mark_complete(connection: &mut SqliteConnection, system_id: i64) {
+    sqlx::query!(
+        "
+        UPDATE games
+        SET complete = true
+        WHERE system_id = ?
+        AND NOT EXISTS (
+            SELECT r.id
+            FROM roms r
+            WHERE r.game_id = games.id
+            AND r.romfile_id IS null
+        )
+        ",
+        system_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking games as complete"));
+}
+
+pub async fn update_games_mark_incomplete(connection: &mut SqliteConnection, system_id: i64) {
+    sqlx::query!(
+        "
+        UPDATE games
+        SET complete = false
+        WHERE system_id = ?
+        AND EXISTS (
+            SELECT r.id
+            FROM roms r
+            WHERE r.game_id = games.id
+            AND r.romfile_id IS null
+        )
+        ",
+        system_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
+}
+
+pub async fn update_games_sorting(
+    connection: &mut SqliteConnection,
+    ids: &[i64],
+    sorting: Sorting,
+) {
+    let sql = format!(
+        "
+        UPDATE games
+        SET sorting = {}
+        WHERE id IN ({})
+        ",
+        sorting as i8,
+        ids.iter().join(",")
+    );
+    sqlx::query(&sql)
+        .execute(connection)
+        .await
+        .unwrap_or_else(|_| panic!("Error while updating games ignored status"));
+}
+
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         ORDER BY name
         ",
@@ -269,7 +378,7 @@ pub async fn find_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         WHERE system_id = ?
         ORDER BY name
@@ -289,10 +398,7 @@ pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -
         WHERE id IN ({})
         ORDER BY name
         ",
-        ids.par_iter()
-            .map(ToString::to_string)
-            .collect::<Vec<String>>()
-            .join(", ")
+        ids.iter().join(",")
     );
     sqlx::query_as::<_, Game>(&sql)
         .fetch_all(connection)
@@ -307,7 +413,7 @@ pub async fn find_parent_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         WHERE system_id = ?
         AND parent_id IS NULL
@@ -332,7 +438,7 @@ pub async fn find_clone_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         WHERE system_id = ?
         AND parent_id IS NOT NULL
@@ -354,7 +460,7 @@ pub async fn find_game_by_id(connection: &mut SqliteConnection, id: i64) -> Game
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         WHERE id = ?
         ",
@@ -373,7 +479,7 @@ pub async fn find_game_by_name_and_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT *
+        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id
         FROM games
         WHERE name = ?
         AND system_id = ?
@@ -552,11 +658,7 @@ pub async fn find_roms_without_romfile_by_game_ids(
     AND game_id IN ({})
     ORDER BY name
     ",
-        game_ids
-            .par_iter()
-            .map(ToString::to_string)
-            .collect::<Vec<String>>()
-            .join(", ")
+        game_ids.iter().join(", ")
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -626,11 +728,7 @@ pub async fn find_roms_with_romfile_by_game_ids(
     AND game_id IN ({})
     ORDER BY name
     ",
-        game_ids
-            .par_iter()
-            .map(ToString::to_string)
-            .collect::<Vec<String>>()
-            .join(", ")
+        game_ids.iter().join(",")
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -721,13 +819,15 @@ pub async fn delete_rom_by_name_and_game_id(
     });
 }
 
-pub async fn create_romfile(connection: &mut SqliteConnection, path: &str) -> i64 {
+pub async fn create_romfile(connection: &mut SqliteConnection, path: &str, size: u64) -> i64 {
+    let size = i64::try_from(size).unwrap();
     sqlx::query!(
         "
-        INSERT INTO romfiles (path)
-        VALUES (?)
+        INSERT INTO romfiles (path, size)
+        VALUES (?, ?)
         ",
         path,
+        size,
     )
     .execute(connection)
     .await
@@ -735,14 +835,16 @@ pub async fn create_romfile(connection: &mut SqliteConnection, path: &str) -> i6
     .last_insert_rowid()
 }
 
-pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &str) {
+pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &str, size: u64) {
+    let size = i64::try_from(size).unwrap();
     sqlx::query!(
         "
         UPDATE romfiles 
-        SET path = ?
+        SET path = ?, size = ?
         WHERE id = ?
         ",
         path,
+        size,
         id,
     )
     .execute(connection)
@@ -771,10 +873,7 @@ pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]
     FROM romfiles
     WHERE id IN ({})
     ",
-        ids.par_iter()
-            .map(ToString::to_string)
-            .collect::<Vec<String>>()
-            .join(", ")
+        ids.iter().join(",")
     );
     sqlx::query_as::<_, Romfile>(&sql)
         .fetch_all(connection)

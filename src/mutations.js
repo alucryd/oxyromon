@@ -2,7 +2,7 @@ import { get } from "svelte/store";
 import { GraphQLClient, gql } from "graphql-request";
 import { systems, systemsView, systemsPage, systemsTotalPages, games, gamesView, gamesPage, gamesTotalPages, roms, romsView, romsPage, romsTotalPages, pageSize } from "./stores.js";
 
-const endpoint = "http://localhost:8000/graphql";
+const endpoint = "/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {

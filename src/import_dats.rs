@@ -192,7 +192,7 @@ async fn create_or_update_system(
     force: bool,
 ) -> Option<i64> {
     let mut system = find_system_by_name(connection, &system_xml.name).await;
-    // temporary workaround to replace the old truncated names with the full dat names
+    // TODO: temporary workaround to replace the old truncated names with the full dat names, remove later
     if system.is_none() {
         system = find_system_by_name_like(
             connection,

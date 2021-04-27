@@ -146,6 +146,8 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
     }
 
+    update_games
+
     commit_transaction(transaction).await;
 
     Ok(())
@@ -518,17 +520,33 @@ async fn find_rom(
 
 async fn create_or_update_romfile<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
-    path: &P,
+    romfile_path: &P,
     roms: &[Rom],
 ) {
-    let romfile_path = path.as_ref().as_os_str().to_str().unwrap();
-    let romfile = find_romfile_by_path(connection, romfile_path).await;
+    let romfile = find_romfile_by_path(
+        connection,
+        romfile_path.as_ref().as_os_str().to_str().unwrap(),
+    )
+    .await;
     let romfile_id = match romfile {
         Some(romfile) => {
-            update_romfile(connection, romfile.id, romfile_path).await;
+            update_romfile(
+                connection,
+                romfile.id,
+                &romfile.path,
+                romfile_path.as_ref().metadata().await.unwrap().len(),
+            )
+            .await;
             romfile.id
         }
-        None => create_romfile(connection, romfile_path).await,
+        None => {
+            create_romfile(
+                connection,
+                romfile_path.as_ref().as_os_str().to_str().unwrap(),
+                romfile_path.as_ref().metadata().await.unwrap().len(),
+            )
+            .await
+        }
     };
     for rom in roms {
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
@@ -545,7 +563,7 @@ async fn move_to_trash<P: AsRef<Path>>(
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     move_file(progress_bar, romfile_path, &new_path).await?;
-    create_romfile(connection, new_path.as_os_str().to_str().unwrap()).await;
+    create_romfile(connection, new_path.as_os_str().to_str().unwrap(), new_path.metadata().await.unwrap().len()).await;
     Ok(())
 }
 

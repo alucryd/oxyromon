@@ -3,6 +3,7 @@ extern crate async_graphql;
 extern crate async_graphql_tide;
 extern crate async_trait;
 extern crate http_types;
+extern crate rust_embed;
 extern crate tide;
 
 use super::database::*;
@@ -18,9 +19,12 @@ use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use http_types::headers::HeaderValue;
+use http_types::mime::BYTE_STREAM;
+use http_types::{Mime, StatusCode};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
+use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
@@ -29,6 +33,10 @@ use tide::security::{CorsMiddleware, Origin};
 lazy_static! {
     static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
 }
+
+#[derive(RustEmbed)]
+#[folder = "public/"]
+struct Assets;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("server")
@@ -99,13 +107,6 @@ impl Rom {
             }
             None => None,
         })
-    }
-}
-
-#[ComplexObject]
-impl Romfile {
-    async fn size(&self) -> Result<u64> {
-        Ok(Path::new(&self.path).metadata().await?.len())
     }
 }
 
@@ -230,6 +231,30 @@ struct AppState {
     schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
 }
 
+async fn serve_asset(req: tide::Request<()>) -> tide::Result {
+    let file_path = match req.param("path") {
+        Ok(path) => path,
+        Err(_) => "index.html",
+    };
+    match Assets::get(file_path) {
+        Some(bytes) => {
+            let mime = Mime::sniff(bytes.as_ref())
+                .or_else(|err| {
+                    Mime::from_extension(
+                        Path::new(file_path).extension().unwrap().to_str().unwrap(),
+                    )
+                    .ok_or(err)
+                })
+                .unwrap_or(BYTE_STREAM);
+            Ok(tide::Response::builder(StatusCode::Ok)
+                .body(tide::Body::from_bytes(bytes.to_vec()))
+                .content_type(mime)
+                .build())
+        }
+        None => Ok(tide::Response::new(StatusCode::NotFound)),
+    }
+}
+
 pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
@@ -252,6 +277,9 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
                     .allow_credentials(false);
                 app.with(cors);
             }
+
+            app.at("/").get(serve_asset);
+            app.at("/*path").get(serve_asset);
 
             app.at("/graphql")
                 .post(async_graphql_tide::endpoint(schema));

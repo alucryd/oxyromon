@@ -1,8 +1,9 @@
 #[cfg(feature = "server")]
-use async_graphql::SimpleObject;
+use async_graphql::{Enum, SimpleObject};
 use serde::Deserialize;
+use sqlx::{FromRow, Type};
 
-#[derive(sqlx::FromRow)]
+#[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
 pub struct System {
@@ -11,6 +12,7 @@ pub struct System {
     pub description: String,
     pub version: String,
     pub url: Option<String>,
+    pub complete: bool,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
@@ -24,7 +26,16 @@ pub struct Header {
     pub system_id: i64,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(Copy, Clone, PartialEq, Type)]
+#[cfg_attr(feature = "server", derive(Enum, Eq))]
+#[repr(i8)]
+pub enum Sorting {
+    AllRegions = 0i8,
+    OneRegion = 1i8,
+    Ignored = 2i8,
+}
+
+#[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
 pub struct Game {
@@ -32,11 +43,13 @@ pub struct Game {
     pub name: String,
     pub description: String,
     pub regions: String,
+    pub sorting: Sorting,
+    pub complete: bool,
     pub system_id: i64,
     pub parent_id: Option<i64>,
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
 pub struct Rom {
@@ -51,12 +64,12 @@ pub struct Rom {
     pub romfile_id: Option<i64>,
 }
 
-#[derive(sqlx::FromRow, PartialEq)]
+#[derive(FromRow, PartialEq)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
-#[cfg_attr(feature = "server", graphql(complex))]
 pub struct Romfile {
     pub id: i64,
     pub path: String,
+    pub size: i64,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
