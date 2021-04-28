@@ -49,11 +49,7 @@ pub fn get_reader_sync<P: AsRef<Path>>(
     Ok(std::io::BufReader::new(f))
 }
 
-pub async fn create_file<P: AsRef<Path>>(
-    progress_bar: &ProgressBar,
-    path: &P,
-) -> SimpleResult<fs::File> {
-    progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
+pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
     let file = try_with!(
         fs::File::create(path).await,
         "Failed to create {:?}",
@@ -79,8 +75,7 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-pub async fn remove_file<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleResult<()> {
-    progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
+pub async fn remove_file<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
     try_with!(
         fs::remove_file(path).await,
         "Failed to delete {:?}",

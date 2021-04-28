@@ -105,7 +105,7 @@ async fn purge_trashed_romfiles(
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path);
                 if romfile_path.is_file().await {
-                    remove_file(progress_bar, &romfile_path).await?;
+                    remove_file(&romfile_path).await?;
                     delete_romfile_by_id(connection, romfile.id).await;
                     count += 1;
                 }
@@ -181,9 +181,7 @@ mod test {
             .unwrap();
 
         let romfiles = find_romfiles(&mut connection).await;
-        remove_file(&progress_bar, &Path::new(&romfiles[0].path))
-            .await
-            .unwrap();
+        remove_file(&Path::new(&romfiles[0].path)).await.unwrap();
 
         // when
         purge_missing_romfiles(&mut connection, &progress_bar)

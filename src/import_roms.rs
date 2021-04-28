@@ -210,7 +210,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             None => {
                 if sevenzip_infos.len() == 1 {
                     if let Some(extracted_path) = extracted_path {
-                        remove_file(progress_bar, &extracted_path).await?;
+                        remove_file(&extracted_path).await?;
                     }
                     move_to_trash(connection, progress_bar, system, romfile_path).await?;
                 } else {
@@ -325,7 +325,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         }
 
         // delete archive
-        remove_file(progress_bar, romfile_path).await?;
+        remove_file(romfile_path).await?;
     }
 
     Ok(())
@@ -377,7 +377,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             let (_, crc) =
                 get_file_size_and_crc(progress_bar, &bin_path, &header, i, bin_paths.len()).await?;
             crcs.push(crc);
-            remove_file(progress_bar, &bin_path).await?;
+            remove_file(&bin_path).await?;
         }
 
         if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
@@ -404,7 +404,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         let bin_path =
             extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
         let (size, crc) = get_file_size_and_crc(progress_bar, &bin_path, &header, 1, 1).await?;
-        remove_file(progress_bar, &bin_path).await?;
+        remove_file(&bin_path).await?;
         let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
@@ -437,7 +437,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
-    remove_file(progress_bar, &iso_path).await?;
+    remove_file(&iso_path).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
@@ -565,7 +565,12 @@ async fn move_to_trash<P: AsRef<Path>>(
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path).await?;
-    create_romfile(connection, new_path.as_os_str().to_str().unwrap(), new_path.metadata().await.unwrap().len()).await;
+    create_romfile(
+        connection,
+        new_path.as_os_str().to_str().unwrap(),
+        new_path.metadata().await.unwrap().len(),
+    )
+    .await;
     Ok(())
 }
 

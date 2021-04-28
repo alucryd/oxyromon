@@ -88,7 +88,7 @@ async fn main() -> SimpleResult<()> {
 
         let db_file = data_directory.join("oxyromon.db");
         if !db_file.is_file().await {
-            create_file(&progress_bar, &db_file).await?;
+            create_file(&db_file).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
 

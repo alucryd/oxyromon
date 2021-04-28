@@ -81,7 +81,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .output()
         .expect("Failed to spawn chdman process");
 
-    remove_file(progress_bar, &cue_path).await?;
+    remove_file(&cue_path).await?;
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
@@ -102,7 +102,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.set_length(*size);
 
         let split_bin_path = directory.as_ref().join(bin_name);
-        let mut split_bin_file = create_file(progress_bar, &split_bin_path).await?;
+        let mut split_bin_file = create_file(&split_bin_path).await?;
 
         let mut handle = (&bin_file).take(*size);
 
@@ -113,7 +113,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         bin_paths.push(split_bin_path);
     }
 
-    remove_file(progress_bar, &bin_path).await?;
+    remove_file(&bin_path).await?;
 
     progress_bar.disable_steady_tick();
 
@@ -149,7 +149,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .output()
         .expect("Failed to spawn chdman process");
 
-    remove_file(progress_bar, &cue_path).await?;
+    remove_file(&cue_path).await?;
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());

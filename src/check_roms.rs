@@ -147,7 +147,7 @@ async fn check_archive<P: AsRef<Path>>(
             .remove(0);
             let size_crc =
                 get_file_size_and_crc(progress_bar, &extracted_path, &header, 1, 1).await?;
-            remove_file(progress_bar, &extracted_path).await?;
+            remove_file(&extracted_path).await?;
             size = size_crc.0;
             crc = size_crc.1;
         } else {
@@ -192,7 +192,7 @@ async fn check_chd<P: AsRef<Path>>(
         let (_, crc) =
             get_file_size_and_crc(progress_bar, &bin_path, &header, i, bin_paths.len()).await?;
         crcs.push(crc);
-        remove_file(progress_bar, &bin_path).await?;
+        remove_file(&bin_path).await?;
     }
 
     if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
@@ -212,7 +212,7 @@ async fn check_cso<P: AsRef<Path>>(
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
-    remove_file(progress_bar, &iso_path).await?;
+    remove_file(&iso_path).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
         bail!("CRC or size mismatch");
     };
