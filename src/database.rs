@@ -6,6 +6,7 @@ use sqlx::prelude::*;
 use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
 use sqlx::{Acquire, Sqlite, Transaction};
 use std::convert::TryFrom;
+use std::time::Duration;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -25,6 +26,7 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     let pool = SqlitePoolOptions::new()
         .min_connections(1)
         .max_connections(max_connections)
+        .connect_timeout(Duration::from_secs(5))
         .connect(url)
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", url));
@@ -132,6 +134,7 @@ pub async fn update_system_mark_complete(connection: &mut SqliteConnection, id: 
         UPDATE systems
         SET complete = true
         WHERE id = ?
+        AND complete = false
         AND NOT EXISTS (
             SELECT g.id
             FROM games g
@@ -144,7 +147,7 @@ pub async fn update_system_mark_complete(connection: &mut SqliteConnection, id: 
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while marking system as complete"));
+    .unwrap_or_else(|_| panic!("Error while marking system with id {} as complete", id));
 }
 
 pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id: i64) {
@@ -153,6 +156,7 @@ pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id
         UPDATE systems
         SET complete = false
         WHERE id = ?
+        AND complete = true
         AND EXISTS (
             SELECT g.id
             FROM games g
@@ -165,7 +169,27 @@ pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while marking system as incomplete"));
+    .unwrap_or_else(|_| panic!("Error while marking system with id {} as incomplete", id));
+}
+
+pub async fn update_systems_mark_incomplete(connection: &mut SqliteConnection) {
+    sqlx::query!(
+        "
+        UPDATE systems
+        SET complete = false
+        WHERE complete = true
+        AND EXISTS (
+            SELECT g.id
+            FROM games g
+            WHERE g.system_id = systems.id
+            AND g.complete = false
+            AND g.sorting != 2
+        )
+        ",
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking systems as incomplete"));
 }
 
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
@@ -297,12 +321,16 @@ pub async fn update_game(
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn update_games_mark_complete(connection: &mut SqliteConnection, system_id: i64) {
+pub async fn update_games_by_system_id_mark_complete(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) {
     sqlx::query!(
         "
         UPDATE games
         SET complete = true
         WHERE system_id = ?
+        AND complete = false
         AND NOT EXISTS (
             SELECT r.id
             FROM roms r
@@ -317,12 +345,16 @@ pub async fn update_games_mark_complete(connection: &mut SqliteConnection, syste
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-pub async fn update_games_mark_incomplete(connection: &mut SqliteConnection, system_id: i64) {
+pub async fn update_games_by_system_id_mark_incomplete(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) {
     sqlx::query!(
         "
         UPDATE games
         SET complete = false
         WHERE system_id = ?
+        AND complete = true
         AND EXISTS (
             SELECT r.id
             FROM roms r
@@ -331,6 +363,25 @@ pub async fn update_games_mark_incomplete(connection: &mut SqliteConnection, sys
         )
         ",
         system_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
+}
+
+pub async fn update_games_mark_incomplete(connection: &mut SqliteConnection) {
+    sqlx::query!(
+        "
+        UPDATE games
+        SET complete = false
+        WHERE complete = true
+        AND EXISTS (
+            SELECT r.id
+            FROM roms r
+            WHERE r.game_id = games.id
+            AND r.romfile_id IS null
+        )
+        ",
     )
     .execute(connection)
     .await
@@ -354,7 +405,7 @@ pub async fn update_games_sorting(
     sqlx::query(&sql)
         .execute(connection)
         .await
-        .unwrap_or_else(|_| panic!("Error while updating games ignored status"));
+        .unwrap_or_else(|_| panic!("Error while updating games sorting"));
 }
 
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {

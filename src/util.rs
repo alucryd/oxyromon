@@ -49,7 +49,11 @@ pub fn get_reader_sync<P: AsRef<Path>>(
     Ok(std::io::BufReader::new(f))
 }
 
-pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
+pub async fn create_file<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    path: &P,
+) -> SimpleResult<fs::File> {
+    progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
     let file = try_with!(
         fs::File::create(path).await,
         "Failed to create {:?}",
@@ -59,19 +63,24 @@ pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
 }
 
 pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
     old_path: &P,
     new_path: &Q,
 ) -> SimpleResult<()> {
-    try_with!(
-        fs::rename(old_path, new_path).await,
-        "Failed to rename {:?} to {:?}",
-        old_path.as_ref(),
-        new_path.as_ref()
-    );
+    if old_path.as_ref() != new_path.as_ref() {
+        progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
+        try_with!(
+            fs::rename(old_path, new_path).await,
+            "Failed to rename {:?} to {:?}",
+            old_path.as_ref().as_os_str(),
+            new_path.as_ref().as_os_str()
+        );
+    }
     Ok(())
 }
 
-pub async fn remove_file<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
+pub async fn remove_file<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleResult<()> {
+    progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
     try_with!(
         fs::remove_file(path).await,
         "Failed to delete {:?}",

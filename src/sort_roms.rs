@@ -66,6 +66,8 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    progress_bar.enable_steady_tick(100);
+
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
@@ -91,6 +93,15 @@ pub async fn main(
                 .collect::<Vec<&str>>(),
         )
         .await?;
+
+        // update games completion
+        update_games_by_system_id_mark_complete(connection, system.id).await;
+        update_games_by_system_id_mark_incomplete(connection, system.id).await;
+
+        // update system completion
+        update_system_mark_complete(connection, system.id).await;
+        update_system_mark_incomplete(connection, system.id).await;
+
         progress_bar.println("");
     }
 
@@ -343,7 +354,7 @@ async fn sort_system(
         // prompt user for confirmation
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
-                rename_file(&romfile_move.0.path, &romfile_move.1).await?;
+                rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1).await?;
                 update_romfile(
                     &mut transaction,
                     romfile_move.0.id,
@@ -357,10 +368,8 @@ async fn sort_system(
             rollback_transaction(transaction).await;
         }
     } else {
-        progress_bar.println("Nothing to do");
+        commit_transaction(transaction).await;
     }
-
-    progress_bar.println("");
 
     Ok(())
 }

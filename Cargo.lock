@@ -1916,6 +1916,7 @@ dependencies = [
  "digest 0.9.0",
  "dirs",
  "dotenv",
+ "futures",
  "http-types",
  "indicatif",
  "itertools",

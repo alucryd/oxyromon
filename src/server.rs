@@ -10,7 +10,6 @@ use super::database::*;
 use super::model::*;
 use async_ctrlc::CtrlC;
 use async_graphql::dataloader::{DataLoader, Loader};
-use async_graphql::futures_util::TryStreamExt;
 use async_graphql::{
     ComplexObject, Context, EmptyMutation, EmptySubscription, Error, Object, Result, Schema,
 };
@@ -18,6 +17,7 @@ use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use futures::stream::TryStreamExt;
 use http_types::headers::HeaderValue;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
@@ -223,6 +223,76 @@ impl QueryRoot {
 
     async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
         Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
+    }
+
+    async fn total_original_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(r.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                AND g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn one_region_original_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(r.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                AND g.sorting = 1
+                AND g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn total_actual_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(rf.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                JOIN romfiles rf ON r.romfile_id = rf.id
+                WHERE g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn one_region_actual_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(rf.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                JOIN romfiles rf ON r.romfile_id = rf.id
+                WHERE g.sorting = 1
+                AND g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
     }
 }
 

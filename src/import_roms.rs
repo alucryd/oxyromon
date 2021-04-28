@@ -146,7 +146,9 @@ pub async fn import_rom<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
     }
 
-    update_games
+    // mark games and system as complete if they are
+    update_games_by_system_id_mark_complete(&mut transaction, system.id).await;
+    update_system_mark_complete(&mut transaction, system.id).await;
 
     commit_transaction(transaction).await;
 
@@ -208,7 +210,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             None => {
                 if sevenzip_infos.len() == 1 {
                     if let Some(extracted_path) = extracted_path {
-                        remove_file(&extracted_path).await?;
+                        remove_file(progress_bar, &extracted_path).await?;
                     }
                     move_to_trash(connection, progress_bar, system, romfile_path).await?;
                 } else {
@@ -239,7 +241,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         }
 
         // move archive if needed
-        move_file(progress_bar, romfile_path, &new_path).await?;
+        rename_file(progress_bar, romfile_path, &new_path).await?;
 
         // persist in database
         create_or_update_romfile(connection, &new_path, &vec![rom]).await;
@@ -283,7 +285,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                     .join(format!("{}.{}", &game.name, &romfile_extension));
 
                 // move file
-                move_file(progress_bar, romfile_path, &new_path).await?;
+                rename_file(progress_bar, romfile_path, &new_path).await?;
 
                 // persist in database
                 create_or_update_romfile(
@@ -316,14 +318,14 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             let new_path = system_directory.as_ref().join(&rom.name);
 
             // move file
-            move_file(progress_bar, &extracted_path, &new_path).await?;
+            rename_file(progress_bar, &extracted_path, &new_path).await?;
 
             // persist in database
             create_or_update_romfile(connection, &new_path, &vec![rom]).await;
         }
 
         // delete archive
-        remove_file(romfile_path).await?;
+        remove_file(progress_bar, romfile_path).await?;
     }
 
     Ok(())
@@ -375,7 +377,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             let (_, crc) =
                 get_file_size_and_crc(progress_bar, &bin_path, &header, i, bin_paths.len()).await?;
             crcs.push(crc);
-            remove_file(&bin_path).await?;
+            remove_file(progress_bar, &bin_path).await?;
         }
 
         if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
@@ -389,8 +391,8 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         new_chd_path.set_extension(CHD_EXTENSION);
 
         // move cue and chd if needed
-        move_file(progress_bar, &cue_path, &new_cue_path).await?;
-        move_file(progress_bar, romfile_path, &new_chd_path).await?;
+        rename_file(progress_bar, &cue_path, &new_cue_path).await?;
+        rename_file(progress_bar, romfile_path, &new_chd_path).await?;
 
         // persist in database
         create_or_update_romfile(connection, &new_cue_path, &vec![cue_rom]).await;
@@ -402,7 +404,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         let bin_path =
             extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
         let (size, crc) = get_file_size_and_crc(progress_bar, &bin_path, &header, 1, 1).await?;
-        remove_file(&bin_path).await?;
+        remove_file(progress_bar, &bin_path).await?;
         let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
@@ -415,7 +417,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         new_chd_path.set_extension(CHD_EXTENSION);
 
         // move CHD if needed
-        move_file(progress_bar, romfile_path, &new_chd_path).await?;
+        rename_file(progress_bar, romfile_path, &new_chd_path).await?;
 
         // persist in database
         create_or_update_romfile(connection, &new_chd_path, &vec![rom]).await;
@@ -435,7 +437,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
-    remove_file(&iso_path).await?;
+    remove_file(progress_bar, &iso_path).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {
@@ -448,7 +450,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     new_cso_path.set_extension(CSO_EXTENSION);
 
     // move CSO if needed
-    move_file(progress_bar, romfile_path, &new_cso_path).await?;
+    rename_file(progress_bar, romfile_path, &new_cso_path).await?;
 
     // persist in database
     create_or_update_romfile(connection, &new_cso_path, &vec![rom]).await;
@@ -476,7 +478,7 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     let new_path = system_directory.as_ref().join(&rom.name);
 
     // move file if needed
-    move_file(progress_bar, romfile_path, &new_path).await?;
+    rename_file(progress_bar, romfile_path, &new_path).await?;
 
     // persist in database
     create_or_update_romfile(connection, &new_path, &vec![rom]).await;
@@ -562,20 +564,8 @@ async fn move_to_trash<P: AsRef<Path>>(
     let new_path = get_trash_directory(connection, system)
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
-    move_file(progress_bar, romfile_path, &new_path).await?;
+    rename_file(progress_bar, romfile_path, &new_path).await?;
     create_romfile(connection, new_path.as_os_str().to_str().unwrap(), new_path.metadata().await.unwrap().len()).await;
-    Ok(())
-}
-
-async fn move_file<P: AsRef<Path>, Q: AsRef<Path>>(
-    progress_bar: &ProgressBar,
-    old_path: &P,
-    new_path: &Q,
-) -> SimpleResult<()> {
-    if old_path.as_ref() != new_path.as_ref() {
-        progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
-        rename_file(old_path, new_path).await?;
-    }
     Ok(())
 }
 

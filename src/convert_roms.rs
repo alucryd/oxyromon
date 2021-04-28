@@ -248,8 +248,8 @@ async fn to_archive(
                 archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&bin_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &bin_path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .into_par_iter()
@@ -305,10 +305,10 @@ async fn to_archive(
             delete_romfile_by_id(&mut transaction, cue_romfile.id).await;
 
             for bin_path in bin_paths {
-                remove_file(&bin_path).await?;
+                remove_file(progress_bar, &bin_path).await?;
             }
-            remove_file(&cue_romfile.path).await?;
-            remove_file(&chd_romfile.path).await?;
+            remove_file(progress_bar, &cue_romfile.path).await?;
+            remove_file(progress_bar, &chd_romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -343,8 +343,8 @@ async fn to_archive(
             archive_path.metadata().await.unwrap().len(),
         )
         .await;
-        remove_file(&iso_path).await?;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &iso_path).await?;
+        remove_file(progress_bar, &romfile.path).await?;
 
         commit_transaction(transaction).await;
     }
@@ -364,7 +364,7 @@ async fn to_archive(
                 &[&rom.name],
                 &tmp_directory.path(),
             )?;
-            remove_file(&archive_path).await?;
+            remove_file(progress_bar, &archive_path).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
@@ -382,7 +382,7 @@ async fn to_archive(
                 archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&tmp_directory.path().join(&rom.name)).await?;
+            remove_file(progress_bar, &tmp_directory.path().join(&rom.name)).await?;
         } else {
             let mut romfiles: Vec<&Romfile> = roms
                 .par_iter()
@@ -404,7 +404,7 @@ async fn to_archive(
                 &rom_names,
                 &tmp_directory.path(),
             )?;
-            remove_file(&archive_path).await?;
+            remove_file(progress_bar, &archive_path).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
@@ -423,7 +423,7 @@ async fn to_archive(
                     archive_path.metadata().await.unwrap().len(),
                 )
                 .await;
-                remove_file(&tmp_directory.path().join(rom_name)).await?;
+                remove_file(progress_bar, &tmp_directory.path().join(rom_name)).await?;
             }
         }
 
@@ -462,7 +462,7 @@ async fn to_archive(
                 archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
             let rom_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
@@ -495,7 +495,7 @@ async fn to_archive(
                 update_rom_romfile(&mut transaction, rom.id, Some(archive_romfile_id)).await;
             }
             for rom_name in rom_names {
-                remove_file(&directory.join(rom_name)).await?;
+                remove_file(progress_bar, &directory.join(rom_name)).await?;
             }
         }
 
@@ -600,7 +600,7 @@ async fn to_chd(
             let bin_romfile = romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap();
             update_rom_romfile(&mut transaction, bin_rom.id, Some(chd_romfile_id)).await;
             delete_romfile_by_id(&mut transaction, bin_romfile.id).await;
-            remove_file(&bin_romfile.path).await?;
+            remove_file(progress_bar, &bin_romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -627,7 +627,7 @@ async fn to_chd(
                 chd_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -655,8 +655,8 @@ async fn to_chd(
                 chd_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&iso_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &iso_path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -723,7 +723,7 @@ async fn to_cso(
                 cso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -752,8 +752,8 @@ async fn to_cso(
                 cso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&iso_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &iso_path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         }
 
         commit_transaction(transaction).await;
@@ -840,7 +840,7 @@ async fn to_original(
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
         }
         delete_romfile_by_id(&mut transaction, romfile.id).await;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &romfile.path).await?;
 
         commit_transaction(transaction).await;
     }
@@ -883,7 +883,7 @@ async fn to_original(
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
         }
         delete_romfile_by_id(&mut transaction, romfile.id).await;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &romfile.path).await?;
 
         commit_transaction(transaction).await;
     }
@@ -906,7 +906,7 @@ async fn to_original(
                 iso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path).await?;
         }
 
         commit_transaction(transaction).await;

@@ -26,13 +26,13 @@ pub struct Header {
     pub system_id: i64,
 }
 
-#[derive(Copy, Clone, PartialEq, Type)]
-#[cfg_attr(feature = "server", derive(Enum, Eq))]
+#[derive(Type)]
+#[cfg_attr(feature = "server", derive(Clone, Copy, Enum, Eq, PartialEq))]
 #[repr(i8)]
 pub enum Sorting {
-    AllRegions = 0i8,
-    OneRegion = 1i8,
-    Ignored = 2i8,
+    AllRegions = 0,
+    OneRegion = 1,
+    Ignored = 2,
 }
 
 #[derive(FromRow)]

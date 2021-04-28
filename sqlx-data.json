@@ -10,22 +10,22 @@
       "nullable": []
     }
   },
+  "01b7b42a05c4eda9333b35f7af8bdb8dddf2be7ea9683d496ad162788c07ddf7": {
+    "query": "\n        UPDATE systems\n        SET complete = true\n        WHERE id = ?\n        AND complete = false\n        AND NOT EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
   "05ba1abbfdb9dfe30b3cdbb6ec17f4c1b68e40db4cc214aba2d8c2e3ec6153f3": {
     "query": "\n        INSERT INTO headers (name, version, start_byte, size, hex_value, system_id)\n        VALUES (?, ?, ?, ?, ?, ?)\n        ",
     "describe": {
       "columns": [],
       "parameters": {
         "Right": 6
-      },
-      "nullable": []
-    }
-  },
-  "0ace09495a4da2fecbad1c5bbacbddb0a1c996693d75f5b493e94e38376c5ce7": {
-    "query": "\n        UPDATE systems\n        SET complete = true\n        WHERE id = ?\n        AND NOT EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 1
       },
       "nullable": []
     }
@@ -268,6 +268,16 @@
       "nullable": []
     }
   },
+  "368c2af584485ace59a700d758024645e832822a54198dacd35e6e19c1220d54": {
+    "query": "\n        UPDATE games\n        SET complete = false\n        WHERE complete = true\n        AND EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS null\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": []
+    }
+  },
   "3a0c278261ef31ef89809d78b5a55d165615ce7dd93c2bc3107d18f9dcc2b823": {
     "query": "\n        SELECT *\n        FROM roms\n        WHERE name = ?\n        AND game_id = ?\n        ",
     "describe": {
@@ -334,16 +344,6 @@
       ]
     }
   },
-  "3f534d10a1385dd20d8287ec4222ed538c70547355fec9945c73d97e06f3d43b": {
-    "query": "\n        UPDATE systems\n        SET complete = false\n        WHERE id = ?\n        AND EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": []
-    }
-  },
   "3f59eb9a488223419478da7b65b1e22432aefbdf4238c80e0ec2f1b833adf93d": {
     "query": "\n        SELECT id, name, description, regions, sorting as \"sorting: _\", complete, system_id, parent_id\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ORDER BY name\n        ",
     "describe": {
@@ -404,6 +404,16 @@
       ]
     }
   },
+  "48681e2611fd28551d84a2ff67869c29c11582409e0c36d07e9e2cf8047ff700": {
+    "query": "\n        UPDATE games\n        SET complete = false\n        WHERE system_id = ?\n        AND complete = true\n        AND EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS null\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
   "51e99197eb918ba9849f524b9ab79c683bb202ec97d1aba98fd68a1c18027e5f": {
     "query": "\n        SELECT *\n        FROM systems\n        WHERE name LIKE ?\n        ",
     "describe": {
@@ -450,6 +460,16 @@
         true,
         false
       ]
+    }
+  },
+  "5582f59f4057aa716a10a7daff0755ad2a2e6b8d9c12b409813d4db4363ee115": {
+    "query": "\n        UPDATE systems\n        SET complete = false\n        WHERE id = ?\n        AND complete = true\n        AND EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
     }
   },
   "5b3d774d597a94d1550f998dd0e5a9ea76296034cb75ac31c9bd7fbfbfbd6590": {
@@ -1044,6 +1064,26 @@
       ]
     }
   },
+  "a253731d16ba253159111e5f9d21c7edaecb908ffa9d187c70d3f9581d956cfc": {
+    "query": "\n        UPDATE systems\n        SET complete = false\n        WHERE complete = true\n        AND EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 0
+      },
+      "nullable": []
+    }
+  },
+  "a5835a0debcb7fec43d724f6abdf178b028c092f258dbf25f975259bf9b10544": {
+    "query": "\n        UPDATE games\n        SET complete = true\n        WHERE system_id = ?\n        AND complete = false\n        AND NOT EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS null\n        )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
   "a65bce5fcf037c2c81f5dcf1b7dabb294b9ac459e5a13ba5b4ab8fb2731ec036": {
     "query": "\n        UPDATE roms\n        SET name = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?\n        WHERE id = ?\n        ",
     "describe": {
@@ -1082,16 +1122,6 @@
         false,
         true
       ]
-    }
-  },
-  "ac27b31f614cf4d3353780bd512c1f0a72d405410338109c3e48711d23b14488": {
-    "query": "\n        UPDATE games\n        SET complete = true\n        WHERE system_id = ?\n        AND NOT EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS null\n        )\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": []
     }
   },
   "ae0a47996a2a7141e860dcdb03449db941214143d393272b78b8129dc9dfa2ef": {
@@ -1340,16 +1370,6 @@
         false,
         false
       ]
-    }
-  },
-  "de0db45b8642ec2860e8cca5bfb3d13208093c6c387d2484b518ab0eb49a6d30": {
-    "query": "\n        UPDATE games\n        SET complete = false\n        WHERE system_id = ?\n        AND EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS null\n        )\n        ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": []
     }
   },
   "e444b7c77a9470bc82db3a94251e0b198e7249bb27fa58d4c54b3e5e6d8801e8": {
