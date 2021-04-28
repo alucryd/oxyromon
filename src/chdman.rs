@@ -40,6 +40,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(chd_path)
@@ -115,6 +116,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
 
     remove_file(&bin_path).await?;
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(bin_paths)
@@ -127,6 +129,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
 
     let cue_path = directory.as_ref().join(format!(
         "{}.{}",
@@ -154,6 +157,9 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
+
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
 
     Ok(bin_path)
 }

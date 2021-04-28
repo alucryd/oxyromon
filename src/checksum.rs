@@ -105,5 +105,9 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
         "Failed to copy data"
     );
     let crc = format!("{:08x}", digest.finalize()).to_lowercase();
+
+    progress_bar.set_message("");
+    progress_bar.set_style(get_none_progress_style());
+
     Ok((size, crc))
 }

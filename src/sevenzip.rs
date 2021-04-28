@@ -60,6 +60,7 @@ pub fn parse_archive<P: AsRef<Path>>(
         sevenzip_infos.push(sevenzip_info);
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(sevenzip_infos)
@@ -91,6 +92,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(())
@@ -122,6 +124,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(file_names
@@ -157,6 +160,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(())
@@ -186,6 +190,7 @@ pub fn delete_files_from_archive<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(())

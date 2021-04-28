@@ -66,9 +66,9 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.enable_steady_tick(100);
-
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
+
+    progress_bar.enable_steady_tick(100);
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
