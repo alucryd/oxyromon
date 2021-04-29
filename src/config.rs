@@ -4,6 +4,7 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::{App, Arg, ArgMatches, SubCommand};
+use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
 
@@ -90,7 +91,11 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
         )
 }
 
-pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -> SimpleResult<()> {
+pub async fn main(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    matches: &ArgMatches<'_>,
+) -> SimpleResult<()> {
     // make sure rom and tmp directories are initialized
     get_rom_directory(connection).await;
     get_tmp_directory(connection).await;
@@ -107,6 +112,7 @@ pub async fn main(connection: &mut SqliteConnection, matches: &ArgMatches<'_>) -
         let key_value: Vec<&str> = matches.values_of("SET").unwrap().collect();
         set_setting(
             connection,
+            progress_bar,
             key_value.get(0).unwrap(),
             key_value.get(1).unwrap(),
         )
@@ -149,12 +155,13 @@ async fn get_setting(connection: &mut SqliteConnection, key: &str) {
 
 async fn set_setting(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     key: &str,
     value: &str,
 ) -> SimpleResult<()> {
     if PATHS.contains(&key) {
         let p = get_canonicalized_path(value).await?;
-        create_directory(&p).await?;
+        create_directory(progress_bar, &p, false).await?;
         set_directory(connection, key, &p).await;
     } else if BOOLEANS.contains(&key) {
         let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
@@ -485,6 +492,7 @@ mod test {
         let _guard = MUTEX.lock().await;
 
         let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
@@ -492,14 +500,18 @@ mod test {
 
         let tmp_directory = TempDir::new_in(&test_directory).unwrap();
         let old_directory = PathBuf::from(&tmp_directory.path()).join("old");
-        create_directory(&old_directory).await.unwrap();
+        create_directory(&progress_bar, &old_directory, true)
+            .await
+            .unwrap();
         set_directory(&mut connection, "TEST_DIRECTORY", &old_directory).await;
         fs::remove_dir_all(&old_directory).await.unwrap();
 
         // when
         get_directory(&mut connection, "TEST_DIRECTORY").await;
         let new_directory = PathBuf::from(&tmp_directory.path()).join("new");
-        create_directory(&new_directory).await.unwrap();
+        create_directory(&progress_bar, &new_directory, true)
+            .await
+            .unwrap();
         set_directory(&mut connection, "TEST_DIRECTORY", &new_directory).await;
 
         // then

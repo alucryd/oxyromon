@@ -105,7 +105,7 @@ async fn purge_trashed_romfiles(
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path);
                 if romfile_path.is_file().await {
-                    remove_file(&romfile_path).await?;
+                    remove_file(progress_bar, &romfile_path, false).await?;
                     delete_romfile_by_id(connection, romfile.id).await;
                     count += 1;
                 }
@@ -140,6 +140,7 @@ mod test {
     use async_std::fs;
     use async_std::path::PathBuf;
     use async_std::prelude::*;
+    use futures::stream::TryStreamExt;
     use tempfile::{NamedTempFile, TempDir};
 
     #[async_std::test]
@@ -154,18 +155,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -181,7 +181,14 @@ mod test {
             .unwrap();
 
         let romfiles = find_romfiles(&mut connection).await;
-        remove_file(&Path::new(&romfiles[0].path)).await.unwrap();
+        remove_file(&progress_bar, &Path::new(&romfiles[0].path), false)
+            .await
+            .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         // when
         purge_missing_romfiles(&mut connection, &progress_bar)
@@ -191,13 +198,21 @@ mod test {
         // then
         let romfiles = find_romfiles(&mut connection).await;
         assert!(romfiles.is_empty());
-        assert!(&system_directory
+        let entries: Vec<fs::DirEntry> = system_directory
             .read_dir()
             .await
             .unwrap()
-            .next()
+            .map_ok(|entry| entry)
+            .try_collect()
             .await
-            .is_none());
+            .unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(
+            entries.get(0).unwrap().path(),
+            get_trash_directory(&mut connection, &progress_bar, &system)
+                .await
+                .unwrap()
+        );
     }
 
     #[async_std::test]
@@ -212,18 +227,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -241,6 +255,11 @@ mod test {
         let matches =
             sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-g", "JP"]);
         sort_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
             .await
             .unwrap();
 

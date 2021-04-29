@@ -58,12 +58,13 @@ pub async fn main(
     matches: &ArgMatches<'_>,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let dats: Vec<String> = matches.values_of_lossy("DATS").unwrap();
+    let dat_paths: Vec<String> = matches.values_of_lossy("DATS").unwrap();
 
-    for dat in dats {
+    for dat_path in dat_paths {
+        progress_bar.println(&format!("Processing \"{}\"", &dat_path));
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
-            &get_canonicalized_path(&dat).await?,
+            &get_canonicalized_path(&dat_path).await?,
             matches.is_present("SKIP_HEADER"),
         )?;
         if !matches.is_present("INFO") {
@@ -160,12 +161,17 @@ pub async fn import_dat(
         progress_bar.println("Processing orphan romfiles");
         reimport_orphan_romfiles(
             &mut transaction,
+            progress_bar,
             system_id,
             orphan_romfile_ids,
-            progress_bar,
         )
         .await?;
     }
+
+    // create necessary directories
+    let system = find_system_by_id(&mut transaction, system_id).await;
+    get_system_directory(&mut transaction, progress_bar, &system).await?;
+    get_trash_directory(&mut transaction, progress_bar, &system).await?;
 
     commit_transaction(transaction).await;
 
@@ -400,20 +406,18 @@ async fn delete_old_roms(
 
 async fn reimport_orphan_romfiles(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     system_id: i64,
     orphan_romfile_ids: Vec<i64>,
-    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
-    let system_directory = get_system_directory(connection, &system).await?;
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id).await;
         delete_romfile_by_id(connection, romfile_id).await;
         import_rom(
             connection,
             progress_bar,
-            &system_directory,
             &system,
             &header,
             &Path::new(&romfile.path),
@@ -595,6 +599,11 @@ mod test {
         let dat_path = test_directory.join("Test System (20200721).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         import_dat(
             &mut connection,
             &progress_bar,
@@ -604,16 +613,6 @@ mod test {
         )
         .await
         .unwrap();
-
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
-        create_directory(&system_directory.join("Trash"))
-            .await
-            .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
 
@@ -633,7 +632,6 @@ mod test {
             import_rom(
                 &mut connection,
                 &progress_bar,
-                &system_directory,
                 &system,
                 &None,
                 &romfile_path,

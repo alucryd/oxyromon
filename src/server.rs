@@ -18,7 +18,6 @@ use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use futures::stream::TryStreamExt;
-use http_types::headers::HeaderValue;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
 use itertools::Itertools;
@@ -28,7 +27,6 @@ use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
-use tide::security::{CorsMiddleware, Origin};
 
 lazy_static! {
     static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
@@ -58,14 +56,6 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required(false)
                 .takes_value(true)
                 .default_value("8000"),
-        )
-        .arg(
-            Arg::with_name("CORS")
-                .short("c")
-                .long("cors")
-                .help("Specifies the allowed origins")
-                .required(false)
-                .takes_value(true),
         )
 }
 
@@ -264,10 +254,13 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
-                FROM roms r
-                JOIN games g ON r.game_id = g.id
-                JOIN romfiles rf ON r.romfile_id = rf.id
-                WHERE g.system_id = {};
+                FROM romfiles rf
+                WHERE rf.id IN (
+                    SELECT DISTINCT(r.romfile_id) FROM roms r
+                    JOIN games g ON r.game_id = g.id
+                    WHERE r.romfile_id IS NOT NULL
+                    AND g.system_id = {}
+                );
             ",
             system_id
         );
@@ -281,11 +274,14 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
-                FROM roms r
-                JOIN games g ON r.game_id = g.id
-                JOIN romfiles rf ON r.romfile_id = rf.id
-                WHERE g.sorting = 1
-                AND g.system_id = {};
+                FROM romfiles rf
+                WHERE rf.id IN (
+                    SELECT DISTINCT(r.romfile_id) FROM roms r
+                    JOIN games g ON r.game_id = g.id
+                    WHERE r.romfile_id IS NOT NULL
+                    AND g.sorting = 1
+                    AND g.system_id = {}
+                );
             ",
             system_id
         );
@@ -340,14 +336,6 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
         .race(async {
             let mut app = tide::new();
 
-            if let Some(cors) = matches.value_of("CORS") {
-                let cors = CorsMiddleware::new()
-                    .allow_methods("POST".parse::<HeaderValue>().unwrap())
-                    .allow_origin(Origin::from(cors))
-                    .allow_credentials(false);
-                app.with(cors);
-            }
-
             app.at("/").get(serve_asset);
             app.at("/*path").get(serve_asset);
 
@@ -396,20 +384,17 @@ mod tests {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
-
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -424,9 +409,10 @@ mod tests {
             .await
             .unwrap();
 
-        let matches = subcommand().get_matches_from(&["server"]);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
+        let matches = subcommand().get_matches_from(&["server"]);
         task::block_on(async {
             let server: task::JoinHandle<Result<()>> = task::spawn(async move {
                 main(pool, &matches).await?;
@@ -514,7 +500,7 @@ mod tests {
                                 "name": "Test Game (USA, Europe).rom",
                                 "romfile": {
                                     "id": 1,
-                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &progress_bar, &system).await.unwrap().as_os_str().to_str().unwrap()),
                                     "size": 256
                                 },
                                 "game": {

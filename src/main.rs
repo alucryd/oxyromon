@@ -84,11 +84,11 @@ async fn main() -> SimpleResult<()> {
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
         let data_directory = PathBuf::from(dirs::data_dir().unwrap()).join("oxyromon");
-        create_directory(&data_directory).await?;
+        create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");
         if !db_file.is_file().await {
-            create_file(&db_file).await?;
+            create_file(&progress_bar, &db_file, true).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
 
@@ -96,6 +96,7 @@ async fn main() -> SimpleResult<()> {
             Some("config") => {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
+                    &progress_bar,
                     &matches.subcommand_matches("config").unwrap(),
                 )
                 .await?

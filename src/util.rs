@@ -3,7 +3,6 @@ use super::import_dats::SYSTEM_NAME_REGEX;
 use super::model::*;
 use super::SimpleResult;
 use async_std::fs;
-use async_std::io;
 use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -37,11 +36,6 @@ pub fn open_file_sync<P: AsRef<Path>>(path: &P) -> SimpleResult<std::fs::File> {
     Ok(file)
 }
 
-pub async fn get_reader<P: AsRef<Path>>(path: &P) -> SimpleResult<io::BufReader<fs::File>> {
-    let f = open_file(path).await?;
-    Ok(io::BufReader::new(f))
-}
-
 pub fn get_reader_sync<P: AsRef<Path>>(
     path: &P,
 ) -> SimpleResult<std::io::BufReader<std::fs::File>> {
@@ -49,7 +43,14 @@ pub fn get_reader_sync<P: AsRef<Path>>(
     Ok(std::io::BufReader::new(f))
 }
 
-pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
+pub async fn create_file<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    path: &P,
+    quiet: bool,
+) -> SimpleResult<fs::File> {
+    if !quiet {
+        progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
+    }
     let file = try_with!(
         fs::File::create(path).await,
         "Failed to create {:?}",
@@ -58,13 +59,36 @@ pub async fn create_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
     Ok(file)
 }
 
+pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    old_path: &P,
+    new_path: &Q,
+    quiet: bool,
+) -> SimpleResult<()> {
+    if old_path.as_ref() != new_path.as_ref() {
+        if !quiet {
+            progress_bar.println(&format!("Copying to {:?}", new_path.as_ref().as_os_str()));
+        }
+        try_with!(
+            fs::copy(old_path, new_path).await,
+            "Failed to copy {:?} to {:?}",
+            old_path.as_ref().as_os_str(),
+            new_path.as_ref().as_os_str()
+        );
+    }
+    Ok(())
+}
+
 pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     old_path: &P,
     new_path: &Q,
+    quiet: bool,
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
-        progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
+        if !quiet {
+            progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
+        }
         try_with!(
             fs::rename(old_path, new_path).await,
             "Failed to rename {:?} to {:?}",
@@ -75,7 +99,14 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-pub async fn remove_file<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
+pub async fn remove_file<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    path: &P,
+    quiet: bool,
+) -> SimpleResult<()> {
+    if !quiet {
+        progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
+    }
     try_with!(
         fs::remove_file(path).await,
         "Failed to delete {:?}",
@@ -84,7 +115,14 @@ pub async fn remove_file<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
     Ok(())
 }
 
-pub async fn create_directory<P: AsRef<Path>>(path: &P) -> SimpleResult<()> {
+pub async fn create_directory<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    path: &P,
+    quiet: bool,
+) -> SimpleResult<()> {
+    if !quiet {
+        progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
+    }
     if !path.as_ref().is_dir().await {
         try_with!(
             fs::create_dir_all(path).await,
@@ -105,23 +143,37 @@ pub async fn create_tmp_directory(connection: &mut SqliteConnection) -> SimpleRe
 
 pub async fn get_system_directory(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<PathBuf> {
     let system_directory = get_rom_directory(connection)
         .await
         .join(SYSTEM_NAME_REGEX.replace(&system.name, "").trim());
-    create_directory(&system_directory).await?;
+    create_directory(progress_bar, &system_directory, true).await?;
     Ok(system_directory)
+}
+
+pub async fn get_one_region_directory(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let trash_directory = get_system_directory(connection, progress_bar, system)
+        .await?
+        .join("1G1R");
+    create_directory(progress_bar, &trash_directory, true).await?;
+    Ok(trash_directory)
 }
 
 pub async fn get_trash_directory(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(connection, system)
+    let trash_directory = get_system_directory(connection, progress_bar, system)
         .await?
         .join("Trash");
-    create_directory(&trash_directory).await?;
+    create_directory(progress_bar, &trash_directory, true).await?;
     Ok(trash_directory)
 }
 

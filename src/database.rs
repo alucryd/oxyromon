@@ -392,7 +392,7 @@ pub async fn update_games_sorting(
     connection: &mut SqliteConnection,
     ids: &[i64],
     sorting: Sorting,
-) {
+) -> u64 {
     let sql = format!(
         "
         UPDATE games
@@ -405,7 +405,8 @@ pub async fn update_games_sorting(
     sqlx::query(&sql)
         .execute(connection)
         .await
-        .unwrap_or_else(|_| panic!("Error while updating games sorting"));
+        .unwrap_or_else(|_| panic!("Error while updating games sorting"))
+        .rows_affected()
 }
 
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
@@ -671,30 +672,6 @@ pub async fn find_roms_by_game_id(connection: &mut SqliteConnection, game_id: i6
     .fetch_all(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding rom with game id {}", game_id))
-}
-
-pub async fn find_roms_without_romfile_by_system_id(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-) -> Vec<Rom> {
-    sqlx::query_as!(
-        Rom,
-        "
-        SELECT *
-        FROM roms
-        WHERE romfile_id IS NULL
-        AND game_id IN (
-            SELECT id
-            FROM games
-            WHERE system_id = ?
-        )
-        ORDER BY name
-        ",
-        system_id,
-    )
-    .fetch_all(connection)
-    .await
-    .expect("Error while finding roms without romfile")
 }
 
 pub async fn find_roms_without_romfile_by_game_ids(
