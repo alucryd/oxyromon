@@ -124,19 +124,39 @@
             await updateRoms();
         });
         completeFilter.subscribe(async (_) => {
-            gamesPage.set(1);
+            if ($gamesPage != 1) {
+                gamesPage.set(1);
+            } else {
+                await updateGames();
+            }
         });
         oneRegionFilter.subscribe(async (_) => {
-            gamesPage.set(1);
+            if ($gamesPage != 1) {
+                gamesPage.set(1);
+            } else {
+                await updateGames();
+            }
         });
         incompleteFilter.subscribe(async (_) => {
-            gamesPage.set(1);
+            if ($gamesPage != 1) {
+                gamesPage.set(1);
+            } else {
+                await updateGames();
+            }
         });
         ignoredFilter.subscribe(async (_) => {
-            gamesPage.set(1);
+            if ($gamesPage != 1) {
+                gamesPage.set(1);
+            } else {
+                await updateGames();
+            }
         });
         nameFilter.subscribe(async (_) => {
-            gamesPage.set(1);
+            if ($gamesPage != 1) {
+                gamesPage.set(1);
+            } else {
+                await updateGames();
+            }
         });
         await getSystems();
     });
@@ -335,7 +355,8 @@
                             Roms: {$unfilteredRoms.length}
                         </Col>
                         <Col>
-                            Romfiles: {uniq($unfilteredRoms.map((rom) => rom.romfile.path)).length}
+                            Romfiles: {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path))
+                                .length}
                         </Col>
                     </Row>
                     <Row class="p-1">
