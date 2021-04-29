@@ -48,10 +48,11 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
+- Add actions to the web UI
+- Figure out how Atari 7800 header files work
 - Add an optional check of the ROMs after conversion
 - Support RVZ when dolphin adds it to its CLI
 - Find a way to automatically download No-Intro DAT files
-- Add a API and web interface
 
 ## oxyromon
 
@@ -287,7 +288,7 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
 
 Launches the backend server
 
-The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI will be coming soon.
+The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI is also exposed at `/`.
 
     USAGE:
         oxyromon server [OPTIONS]

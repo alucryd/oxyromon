@@ -245,10 +245,10 @@ async fn to_archive(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&bin_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .into_par_iter()
@@ -274,6 +274,7 @@ async fn to_archive(
                 &chd_romfile.path,
                 &tmp_directory.path(),
                 &bin_names_sizes,
+                true,
             )
             .await?;
 
@@ -297,16 +298,14 @@ async fn to_archive(
                 &mut transaction,
                 chd_romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
             )
             .await;
             update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
             delete_romfile_by_id(&mut transaction, cue_romfile.id).await;
 
-            for bin_path in bin_paths {
-                remove_file(&bin_path).await?;
-            }
-            remove_file(&cue_romfile.path).await?;
-            remove_file(&chd_romfile.path).await?;
+            remove_file(progress_bar, &cue_romfile.path, false).await?;
+            remove_file(progress_bar, &chd_romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -338,10 +337,10 @@ async fn to_archive(
             &mut transaction,
             romfile.id,
             archive_path.as_os_str().to_str().unwrap(),
+            archive_path.metadata().await.unwrap().len(),
         )
         .await;
-        remove_file(&iso_path).await?;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &romfile.path, false).await?;
 
         commit_transaction(transaction).await;
     }
@@ -361,7 +360,7 @@ async fn to_archive(
                 &[&rom.name],
                 &tmp_directory.path(),
             )?;
-            remove_file(&archive_path).await?;
+            remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
@@ -376,9 +375,9 @@ async fn to_archive(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&tmp_directory.path().join(&rom.name)).await?;
         } else {
             let mut romfiles: Vec<&Romfile> = roms
                 .par_iter()
@@ -400,7 +399,7 @@ async fn to_archive(
                 &rom_names,
                 &tmp_directory.path(),
             )?;
-            remove_file(&archive_path).await?;
+            remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
                 ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                 ArchiveType::ZIP => ZIP_EXTENSION,
@@ -411,15 +410,13 @@ async fn to_archive(
                 &rom_names,
                 &tmp_directory.path(),
             )?;
-            for rom_name in rom_names {
-                update_romfile(
-                    &mut transaction,
-                    romfile.id,
-                    archive_path.as_os_str().to_str().unwrap(),
-                )
-                .await;
-                remove_file(&tmp_directory.path().join(rom_name)).await?;
-            }
+            update_romfile(
+                &mut transaction,
+                romfile.id,
+                archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
+            )
+            .await;
         }
 
         commit_transaction(transaction).await;
@@ -454,9 +451,10 @@ async fn to_archive(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
             let rom_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
@@ -478,14 +476,18 @@ async fn to_archive(
             ));
 
             add_files_to_archive(progress_bar, &archive_path, &rom_names, &directory)?;
-            let archive_romfile_id =
-                create_romfile(&mut transaction, archive_path.as_os_str().to_str().unwrap()).await;
+            let archive_romfile_id = create_romfile(
+                &mut transaction,
+                archive_path.as_os_str().to_str().unwrap(),
+                archive_path.metadata().await.unwrap().len(),
+            )
+            .await;
             for rom in &roms {
                 delete_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
                 update_rom_romfile(&mut transaction, rom.id, Some(archive_romfile_id)).await;
             }
             for rom_name in rom_names {
-                remove_file(&directory.join(rom_name)).await?;
+                remove_file(progress_bar, &directory.join(rom_name), false).await?;
             }
         }
 
@@ -504,9 +506,18 @@ async fn to_chd(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
+    // partition archives
+    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
     // partition CUE/BINs
     let (cue_bins, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
+        others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
                     .get(&rom.romfile_id.unwrap())
@@ -549,6 +560,113 @@ async fn to_chd(
     // drop others
     drop(others);
 
+    // convert archives
+    for roms in archives.values() {
+        let mut transaction = begin_transaction(connection).await;
+
+        let mut romfiles: Vec<&Romfile> = roms
+            .par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+
+        let romfile = romfiles.get(0).unwrap();
+        let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
+
+        // skip if not ISO or CUE/BIN
+        if file_names.len() == 1 {
+            if !file_names.get(0).unwrap().ends_with(ISO_EXTENSION) {
+                continue;
+            }
+        } else {
+            if file_names.par_iter().any(|file_name| {
+                !file_name.ends_with(CUE_EXTENSION) && !file_name.ends_with(BIN_EXTENSION)
+            }) {
+                continue;
+            }
+        }
+
+        let extracted_paths = extract_files_from_archive(
+            progress_bar,
+            &romfile.path,
+            &file_names,
+            &tmp_directory.path(),
+        )?;
+        let (cue_paths, extracted_paths): (Vec<PathBuf>, Vec<PathBuf>) =
+            extracted_paths.into_par_iter().partition(|path| {
+                path.file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .ends_with(CUE_EXTENSION)
+            });
+
+        let chd_path = match cue_paths.get(0) {
+            Some(cue_path) => create_chd(
+                progress_bar,
+                cue_path,
+                &Path::new(&romfile.path).parent().unwrap(),
+            )?,
+            None => create_chd(
+                progress_bar,
+                extracted_paths.get(0).unwrap(),
+                &Path::new(&romfile.path).parent().unwrap(),
+            )?,
+        };
+
+        if statistics {
+            let mut new_paths = vec![&chd_path];
+            if let Some(cue_path) = cue_paths.get(0) {
+                new_paths.push(cue_path)
+            }
+            print_statistics(
+                progress_bar,
+                &roms.iter().collect::<Vec<&Rom>>(),
+                &[&romfile.path],
+                &new_paths,
+            )
+            .await?;
+        }
+
+        if let Some(cue_path) = cue_paths.get(0) {
+            let new_cue_path = Path::new(&romfile.path)
+                .parent()
+                .unwrap()
+                .join(cue_path.file_name().unwrap());
+            copy_file(progress_bar, cue_path, &new_cue_path, false).await?;
+            let cue_romfile_id = create_romfile(
+                &mut transaction,
+                new_cue_path.as_os_str().to_str().unwrap(),
+                new_cue_path.metadata().await.unwrap().len(),
+            )
+            .await;
+            update_rom_romfile(
+                &mut transaction,
+                roms.par_iter()
+                    .find_first(|rom| rom.name.ends_with(CUE_EXTENSION))
+                    .unwrap()
+                    .id,
+                Some(cue_romfile_id),
+            )
+            .await;
+        }
+
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            chd_path.as_os_str().to_str().unwrap(),
+            chd_path.metadata().await.unwrap().len(),
+        )
+        .await;
+        remove_file(progress_bar, &romfile.path, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
     // convert CUE/BIN
     for roms in cue_bins.values() {
         let mut transaction = begin_transaction(connection).await;
@@ -580,13 +698,17 @@ async fn to_chd(
             romfile_paths.push(&cue_romfile.path);
             print_statistics(progress_bar, &roms, &romfile_paths, &[&chd_path]).await?;
         }
-        let chd_romfile_id =
-            create_romfile(&mut transaction, chd_path.as_os_str().to_str().unwrap()).await;
+        let chd_romfile_id = create_romfile(
+            &mut transaction,
+            chd_path.as_os_str().to_str().unwrap(),
+            chd_path.metadata().await.unwrap().len(),
+        )
+        .await;
         for bin_rom in bin_roms {
             let bin_romfile = romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap();
             update_rom_romfile(&mut transaction, bin_rom.id, Some(chd_romfile_id)).await;
             delete_romfile_by_id(&mut transaction, bin_romfile.id).await;
-            remove_file(&bin_romfile.path).await?;
+            remove_file(progress_bar, &bin_romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -610,9 +732,10 @@ async fn to_chd(
                 &mut transaction,
                 romfile.id,
                 chd_path.as_os_str().to_str().unwrap(),
+                chd_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -637,10 +760,10 @@ async fn to_chd(
                 &mut transaction,
                 romfile.id,
                 chd_path.as_os_str().to_str().unwrap(),
+                chd_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&iso_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -658,9 +781,18 @@ async fn to_cso(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
+    // partition archives
+    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
     // partition ISOs
     let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
+        others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
                     .get(&rom.romfile_id.unwrap())
@@ -686,7 +818,59 @@ async fn to_cso(
     // drop others
     drop(others);
 
-    // process ISOs
+    // convert archives
+    for roms in archives.values() {
+        let mut transaction = begin_transaction(connection).await;
+
+        let mut romfiles: Vec<&Romfile> = roms
+            .par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+
+        if roms.len() > 1 || !roms.get(0).unwrap().name.ends_with(ISO_EXTENSION) {
+            continue;
+        }
+
+        let rom = roms.get(0).unwrap();
+        let romfile = romfiles.get(0).unwrap();
+        let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
+
+        let extracted_paths = extract_files_from_archive(
+            progress_bar,
+            &romfile.path,
+            &file_names,
+            &tmp_directory.path(),
+        )?;
+        let extracted_path = extracted_paths.get(0).unwrap();
+
+        let cso_path = create_cso(
+            progress_bar,
+            &extracted_path,
+            &Path::new(&romfile.path).parent().unwrap(),
+        )?;
+
+        if statistics {
+            print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
+        }
+
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            cso_path.as_os_str().to_str().unwrap(),
+            cso_path.metadata().await.unwrap().len(),
+        )
+        .await;
+        remove_file(progress_bar, &romfile.path, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert ISOs
     for roms in isos.values() {
         let mut transaction = begin_transaction(connection).await;
 
@@ -704,15 +888,16 @@ async fn to_cso(
                 &mut transaction,
                 romfile.id,
                 cso_path.as_os_str().to_str().unwrap(),
+                cso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
     }
 
-    // process CHDs
+    // convert CHDs
     for roms in chds.values() {
         let mut transaction = begin_transaction(connection).await;
         for rom in roms {
@@ -732,10 +917,10 @@ async fn to_cso(
                 &mut transaction,
                 romfile.id,
                 cso_path.as_os_str().to_str().unwrap(),
+                cso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&iso_path).await?;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -755,7 +940,7 @@ async fn to_original(
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(".zip") || romfile.path.ends_with(".7z")
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
             })
         });
 
@@ -779,7 +964,7 @@ async fn to_original(
                     .get(&rom.romfile_id.unwrap())
                     .unwrap()
                     .path
-                    .ends_with(".cso")
+                    .ends_with(CSO_EXTENSION)
             })
         });
 
@@ -816,12 +1001,13 @@ async fn to_original(
             let romfile_id = create_romfile(
                 &mut transaction,
                 extracted_path.as_os_str().to_str().unwrap(),
+                extracted_path.metadata().await.unwrap().len(),
             )
             .await;
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
         }
         delete_romfile_by_id(&mut transaction, romfile.id).await;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &romfile.path, false).await?;
 
         commit_transaction(transaction).await;
     }
@@ -850,19 +1036,27 @@ async fn to_original(
             .map(|rom| (rom.name.as_str(), rom.size as u64))
             .collect();
 
-        extract_chd_to_multiple_tracks(progress_bar, &romfile.path, &directory, &bin_names_sizes)
-            .await?;
+        extract_chd_to_multiple_tracks(
+            progress_bar,
+            &romfile.path,
+            &directory,
+            &bin_names_sizes,
+            false,
+        )
+        .await?;
 
         for rom in roms {
+            let bin_path = directory.join(&rom.name);
             let romfile_id = create_romfile(
                 &mut transaction,
-                directory.join(&rom.name).as_os_str().to_str().unwrap(),
+                bin_path.as_os_str().to_str().unwrap(),
+                bin_path.metadata().await.unwrap().len(),
             )
             .await;
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
         }
         delete_romfile_by_id(&mut transaction, romfile.id).await;
-        remove_file(&romfile.path).await?;
+        remove_file(progress_bar, &romfile.path, false).await?;
 
         commit_transaction(transaction).await;
     }
@@ -882,9 +1076,10 @@ async fn to_original(
                 &mut transaction,
                 romfile.id,
                 iso_path.as_os_str().to_str().unwrap(),
+                iso_path.metadata().await.unwrap().len(),
             )
             .await;
-            remove_file(&romfile.path).await?;
+            remove_file(progress_bar, &romfile.path, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -950,18 +1145,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -971,6 +1165,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1033,18 +1230,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -1054,6 +1250,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1113,18 +1312,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -1134,6 +1332,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1190,18 +1391,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -1211,6 +1411,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1273,18 +1476,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).chd");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Single Track).chd"),
@@ -1294,6 +1496,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1356,18 +1561,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
@@ -1384,6 +1588,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1454,18 +1661,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).cso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cso"),
@@ -1475,6 +1681,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1534,18 +1743,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.7z");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.7z"),
@@ -1555,6 +1763,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1613,18 +1824,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.zip");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.zip"),
@@ -1634,6 +1844,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1692,18 +1905,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.7z");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.7z"),
@@ -1713,6 +1925,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1772,18 +1987,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.zip");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom.zip"),
@@ -1793,6 +2007,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1860,18 +2077,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).iso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).iso"),
@@ -1881,6 +2097,99 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
+
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+        let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+        roms_by_game_id.insert(roms[0].game_id, roms);
+        let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+        romfiles_by_id.insert(romfile.id, romfile);
+
+        // when
+        to_cso(
+            &mut connection,
+            &progress_bar,
+            roms_by_game_id,
+            romfiles_by_id,
+            true,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 1);
+        let romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 1);
+
+        let rom = roms.get(0).unwrap();
+        assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+
+        let romfile = romfiles.get(0).unwrap();
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .join("Test Game (USA, Europe).cso")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+    }
+
+    #[async_std::test]
+    async fn test_sevenzip_iso_to_cso() {
+        // given
+        let _guard = MUTEX.lock().await;
+
+        let test_directory = Path::new("test");
+        env::set_var(
+            "PATH",
+            format!(
+                "{}:{}",
+                test_directory.as_os_str().to_str().unwrap(),
+                env::var("PATH").unwrap()
+            ),
+        );
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
+
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
+        let matches = import_dats::subcommand()
+            .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
+        import_dats::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let romfile_path = tmp_directory.join("Test Game (USA, Europe).iso.7z");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe).iso.7z"),
+            &romfile_path,
+        )
+        .await
+        .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -1948,18 +2257,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).chd");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Single Track).chd"),
@@ -1969,6 +2277,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2036,18 +2347,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
@@ -2064,6 +2374,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2140,18 +2453,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).cso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cso"),
@@ -2161,6 +2473,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2227,18 +2542,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).cso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).cso"),
@@ -2248,6 +2562,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2307,18 +2624,16 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
-
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
 
         let mut romfile_paths: Vec<PathBuf> = Vec::new();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
@@ -2347,6 +2662,9 @@ mod test {
         romfile_paths.push(romfile_path);
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         for romfile_path in romfile_paths {
             let matches = import_roms::subcommand()
@@ -2355,6 +2673,108 @@ mod test {
                 .await
                 .unwrap();
         }
+
+        let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+        let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        for rom in &roms {
+            let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
+            romfiles_by_id.insert(romfile.id, romfile);
+        }
+        roms_by_game_id.insert(roms[0].game_id, roms);
+
+        // when
+        to_chd(
+            &mut connection,
+            &progress_bar,
+            roms_by_game_id,
+            romfiles_by_id,
+            true,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        assert_eq!(roms.len(), 3);
+        let romfiles = find_romfiles(&mut connection).await;
+        assert_eq!(romfiles.len(), 2);
+
+        let romfile = romfiles.get(0).unwrap();
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .join("Test Game (USA, Europe).chd")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file().await);
+
+        let rom = roms.get(0).unwrap();
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+        let rom = roms.get(1).unwrap();
+        assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+
+        let rom = roms.get(2).unwrap();
+        assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+
+        let romfile = romfiles.get(1).unwrap();
+        assert_eq!(
+            romfile.path,
+            system_directory
+                .join("Test Game (USA, Europe).cue")
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        assert!(Path::new(&romfile.path).is_file().await);
+        assert_eq!(rom.romfile_id, Some(romfile.id));
+    }
+
+    #[async_std::test]
+    async fn test_sevenzip_cue_bin_to_chd() {
+        // given
+        let _guard = MUTEX.lock().await;
+
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
+
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
+        let matches = import_dats::subcommand()
+            .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
+        import_dats::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Full).7z");
+        fs::copy(
+            test_directory.join("Test Game (USA, Europe) (Full).7z"),
+            &romfile_path,
+        )
+        .await
+        .unwrap();
+
+        let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
+
+        let matches = import_roms::subcommand()
+            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
 
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -2428,18 +2848,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
@@ -2456,6 +2875,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2554,18 +2976,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).iso");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).iso"),
@@ -2575,6 +2996,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
@@ -2634,18 +3058,17 @@ mod test {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).chd");
         fs::copy(
             test_directory.join("Test Game (USA, Europe) (Single Track).chd"),
@@ -2655,6 +3078,9 @@ mod test {
         .unwrap();
 
         let system = find_systems(&mut connection).await.remove(0);
+        let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+            .await
+            .unwrap();
 
         let matches = import_roms::subcommand()
             .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);

@@ -3,13 +3,13 @@ extern crate async_graphql;
 extern crate async_graphql_tide;
 extern crate async_trait;
 extern crate http_types;
+extern crate rust_embed;
 extern crate tide;
 
 use super::database::*;
 use super::model::*;
 use async_ctrlc::CtrlC;
 use async_graphql::dataloader::{DataLoader, Loader};
-use async_graphql::futures_util::TryStreamExt;
 use async_graphql::{
     ComplexObject, Context, EmptyMutation, EmptySubscription, Error, Object, Result, Schema,
 };
@@ -17,18 +17,24 @@ use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
 use clap::{App, Arg, ArgMatches, SubCommand};
-use http_types::headers::HeaderValue;
+use futures::stream::TryStreamExt;
+use http_types::mime::BYTE_STREAM;
+use http_types::{Mime, StatusCode};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
+use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
-use tide::security::{CorsMiddleware, Origin};
 
 lazy_static! {
     static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
 }
+
+#[derive(RustEmbed)]
+#[folder = "public/"]
+struct Assets;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("server")
@@ -50,14 +56,6 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .required(false)
                 .takes_value(true)
                 .default_value("8000"),
-        )
-        .arg(
-            Arg::with_name("CORS")
-                .short("c")
-                .long("cors")
-                .help("Specifies the allowed origins")
-                .required(false)
-                .takes_value(true),
         )
 }
 
@@ -99,13 +97,6 @@ impl Rom {
             }
             None => None,
         })
-    }
-}
-
-#[ComplexObject]
-impl Romfile {
-    async fn size(&self) -> Result<u64> {
-        Ok(Path::new(&self.path).metadata().await?.len())
     }
 }
 
@@ -223,11 +214,111 @@ impl QueryRoot {
     async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
         Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
     }
+
+    async fn total_original_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(r.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                AND g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn one_region_original_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(r.size), 0)
+                FROM roms r
+                JOIN games g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                AND g.sorting = 1
+                AND g.system_id = {};
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn total_actual_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(rf.size), 0)
+                FROM romfiles rf
+                WHERE rf.id IN (
+                    SELECT DISTINCT(r.romfile_id) FROM roms r
+                    JOIN games g ON r.game_id = g.id
+                    WHERE r.romfile_id IS NOT NULL
+                    AND g.system_id = {}
+                );
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
+
+    async fn one_region_actual_size(&self, system_id: i64) -> Result<i64> {
+        let sql = format!(
+            "
+                SELECT COALESCE(SUM(rf.size), 0)
+                FROM romfiles rf
+                WHERE rf.id IN (
+                    SELECT DISTINCT(r.romfile_id) FROM roms r
+                    JOIN games g ON r.game_id = g.id
+                    WHERE r.romfile_id IS NOT NULL
+                    AND g.sorting = 1
+                    AND g.system_id = {}
+                );
+            ",
+            system_id
+        );
+        let row: (i64,) = sqlx::query_as(&sql)
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .await?;
+        Ok(row.0)
+    }
 }
 
 #[derive(Clone)]
 struct AppState {
     schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
+}
+
+async fn serve_asset(req: tide::Request<()>) -> tide::Result {
+    let file_path = match req.param("path") {
+        Ok(path) => path,
+        Err(_) => "index.html",
+    };
+    match Assets::get(file_path) {
+        Some(bytes) => {
+            let mime = Mime::sniff(bytes.as_ref())
+                .or_else(|err| {
+                    Mime::from_extension(
+                        Path::new(file_path).extension().unwrap().to_str().unwrap(),
+                    )
+                    .ok_or(err)
+                })
+                .unwrap_or(BYTE_STREAM);
+            Ok(tide::Response::builder(StatusCode::Ok)
+                .body(tide::Body::from_bytes(bytes.to_vec()))
+                .content_type(mime)
+                .build())
+        }
+        None => Ok(tide::Response::new(StatusCode::NotFound)),
+    }
 }
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()> {
@@ -245,13 +336,8 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
         .race(async {
             let mut app = tide::new();
 
-            if let Some(cors) = matches.value_of("CORS") {
-                let cors = CorsMiddleware::new()
-                    .allow_methods("POST".parse::<HeaderValue>().unwrap())
-                    .allow_origin(Origin::from(cors))
-                    .allow_credentials(false);
-                app.with(cors);
-            }
+            app.at("/").get(serve_asset);
+            app.at("/*path").get(serve_asset);
 
             app.at("/graphql")
                 .post(async_graphql_tide::endpoint(schema));
@@ -298,20 +384,17 @@ mod tests {
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
+        let rom_directory = TempDir::new_in(&test_directory).unwrap();
+        set_rom_directory(PathBuf::from(rom_directory.path()));
+        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
         let matches = import_dats::subcommand()
             .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
-        let system = find_systems(&mut connection).await.remove(0);
-
-        let rom_directory = TempDir::new_in(&test_directory).unwrap();
-        let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
-        let system_directory = &rom_directory.join("Test System");
-        create_directory(&system_directory).await.unwrap();
         let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
         fs::copy(
             test_directory.join("Test Game (USA, Europe).rom"),
@@ -326,9 +409,10 @@ mod tests {
             .await
             .unwrap();
 
-        let matches = subcommand().get_matches_from(&["server"]);
+        let system = find_systems(&mut connection).await.remove(0);
 
         // when
+        let matches = subcommand().get_matches_from(&["server"]);
         task::block_on(async {
             let server: task::JoinHandle<Result<()>> = task::spawn(async move {
                 main(pool, &matches).await?;
@@ -416,7 +500,7 @@ mod tests {
                                 "name": "Test Game (USA, Europe).rom",
                                 "romfile": {
                                     "id": 1,
-                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &progress_bar, &system).await.unwrap().as_os_str().to_str().unwrap()),
                                     "size": 256
                                 },
                                 "game": {

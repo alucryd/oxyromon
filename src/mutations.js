@@ -1,8 +1,34 @@
 import { get } from "svelte/store";
 import { GraphQLClient, gql } from "graphql-request";
-import { systems, systemsView, systemsPage, systemsTotalPages, games, gamesView, gamesPage, gamesTotalPages, roms, romsView, romsPage, romsTotalPages, pageSize } from "./stores.js";
+import {
+    systems,
+    unfilteredSystems,
+    systemsPage,
+    systemsTotalPages,
+    games,
+    unfilteredGames,
+    filteredGames,
+    gamesPage,
+    gamesTotalPages,
+    roms,
+    unfilteredRoms,
+    romsPage,
+    romsTotalPages,
+    pageSize,
+    completeFilter,
+    oneRegionFilter,
+    incompleteFilter,
+    ignoredFilter,
+    nameFilter,
+    totalOriginalSize,
+    oneRegionOriginalSize,
+    totalActualSize,
+    oneRegionActualSize,
+} from "./stores.js";
 
-const endpoint = "http://localhost:8000/graphql";
+import { reject } from "lodash-es";
+
+const endpoint = "/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {
@@ -17,18 +43,19 @@ export async function getSystems() {
             systems {
                 id
                 name
+                complete
             }
         }
     `;
 
     const data = await graphQLClient.request(query);
-    systems.set(data.systems);
-    await updateSystemsView();
+    unfilteredSystems.set(data.systems);
+    await updateSystems();
 }
 
-export async function updateSystemsView() {
-    systemsTotalPages.set(Math.max(Math.ceil(get(systems).length / get(pageSize)), 1));
-    systemsView.set(paginate(get(systems), get(systemsPage), get(pageSize)));
+export async function updateSystems() {
+    systemsTotalPages.set(Math.max(Math.ceil(get(unfilteredSystems).length / get(pageSize)), 1));
+    systems.set(paginate(get(unfilteredSystems), get(systemsPage), get(pageSize)));
 }
 
 export async function getGamesBySystemId(systemId) {
@@ -37,18 +64,44 @@ export async function getGamesBySystemId(systemId) {
             games(systemId: ${systemId}) {
                 id
                 name
+                complete
+                sorting
             }
         }
     `;
 
     const data = await graphQLClient.request(query);
-    games.set(data.games);
-    await updateGamesView();
+    unfilteredGames.set(data.games);
+    await updateGames();
 }
 
-export async function updateGamesView() {
-    gamesTotalPages.set(Math.max(Math.ceil(get(games).length / get(pageSize)), 1));
-    gamesView.set(paginate(get(games), get(gamesPage), get(pageSize)));
+function filterGames(games) {
+    if (!get(completeFilter)) {
+        games = reject(games, (game) => game.complete && game.sorting != "ONE_REGION");
+    }
+    if (!get(incompleteFilter)) {
+        games = reject(games, (game) => !game.complete && game.sorting != "IGNORED");
+    }
+    if (!get(ignoredFilter)) {
+        games = reject(games, (game) => game.sorting == "IGNORED");
+    }
+    if (!get(oneRegionFilter)) {
+        games = reject(games, (game) => game.sorting == "ONE_REGION");
+    }
+    if (get(nameFilter).length) {
+        games = reject(
+            games,
+            (game) =>
+                !game.name.normalize("NFC").toLowerCase().includes(get(nameFilter).normalize("NFC").toLocaleLowerCase())
+        );
+    }
+    return games;
+}
+
+export async function updateGames() {
+    filteredGames.set(filterGames(get(unfilteredGames)));
+    gamesTotalPages.set(Math.max(Math.ceil(get(filteredGames).length / get(pageSize)), 1));
+    games.set(paginate(get(filteredGames), get(gamesPage), get(pageSize)));
 }
 
 export async function getRomsByGameId(gameId) {
@@ -56,16 +109,61 @@ export async function getRomsByGameId(gameId) {
         {
             roms(gameId: ${gameId}) {
                 name
+                size
+                romfile {
+                    path
+                    size
+                }
             }
         }
     `;
 
     const data = await graphQLClient.request(query);
-    roms.set(data.roms);
-    await updateRomsView();
+    unfilteredRoms.set(data.roms);
+    await updateRoms();
 }
 
-export async function updateRomsView() {
-    romsTotalPages.set(Math.max(Math.ceil(get(roms).length / get(pageSize)), 1));
-    romsView.set(paginate(get(roms), get(romsPage), get(pageSize)));
+export async function updateRoms() {
+    romsTotalPages.set(Math.max(Math.ceil(get(unfilteredRoms).length / get(pageSize)), 1));
+    roms.set(paginate(get(unfilteredRoms), get(romsPage), get(pageSize)));
+}
+
+export async function getTotalOriginalSizeBySystemId(systemId) {
+    const query = gql`
+        {
+            totalOriginalSize(systemId: ${systemId})
+        }
+    `;
+    const data = await graphQLClient.request(query);
+    totalOriginalSize.set(data.totalOriginalSize);
+}
+
+export async function getOneRegionOriginalSizeBySystemId(systemId) {
+    const query = gql`
+        {
+            oneRegionOriginalSize(systemId: ${systemId})
+        }
+    `;
+    const data = await graphQLClient.request(query);
+    oneRegionOriginalSize.set(data.oneRegionOriginalSize);
+}
+
+export async function getTotalActualSizeBySystemId(systemId) {
+    const query = gql`
+        {
+            totalActualSize(systemId: ${systemId})
+        }
+    `;
+    const data = await graphQLClient.request(query);
+    totalActualSize.set(data.totalActualSize);
+}
+
+export async function getOneRegionActualSizeBySystemId(systemId) {
+    const query = gql`
+        {
+            oneRegionActualSize(systemId: ${systemId})
+        }
+    `;
+    const data = await graphQLClient.request(query);
+    oneRegionActualSize.set(data.oneRegionActualSize);
 }

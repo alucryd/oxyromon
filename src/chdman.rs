@@ -18,7 +18,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(200);
+    progress_bar.enable_steady_tick(100);
 
     let mut chd_path = directory
         .as_ref()
@@ -40,6 +40,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(chd_path)
@@ -50,10 +51,11 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     chd_path: &P,
     directory: &Q,
     bin_names_sizes: &[(&str, u64)],
+    quiet: bool,
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(200);
+    progress_bar.enable_steady_tick(100);
 
     progress_bar.println(format!(
         "Extracting {:?}",
@@ -81,7 +83,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .output()
         .expect("Failed to spawn chdman process");
 
-    remove_file(&cue_path).await?;
+    remove_file(progress_bar, &cue_path, true).await?;
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
@@ -90,7 +92,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     if bin_names_sizes.len() == 1 {
         let new_bin_path = directory.as_ref().join(bin_names_sizes.get(0).unwrap().0);
         if bin_path != new_bin_path {
-            rename_file(&bin_path, &new_bin_path).await?;
+            rename_file(progress_bar, &bin_path, &new_bin_path, quiet).await?;
         }
         return Ok(vec![new_bin_path]);
     }
@@ -102,7 +104,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.set_length(*size);
 
         let split_bin_path = directory.as_ref().join(bin_name);
-        let mut split_bin_file = create_file(&split_bin_path).await?;
+        let mut split_bin_file = create_file(progress_bar, &split_bin_path, quiet).await?;
 
         let mut handle = (&bin_file).take(*size);
 
@@ -113,8 +115,9 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         bin_paths.push(split_bin_path);
     }
 
-    remove_file(&bin_path).await?;
+    remove_file(progress_bar, &bin_path, quiet).await?;
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(bin_paths)
@@ -127,6 +130,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
 
     let cue_path = directory.as_ref().join(format!(
         "{}.{}",
@@ -149,11 +153,14 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .output()
         .expect("Failed to spawn chdman process");
 
-    remove_file(&cue_path).await?;
+    remove_file(progress_bar, &cue_path, true).await?;
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
+
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
 
     Ok(bin_path)
 }

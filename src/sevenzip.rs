@@ -60,6 +60,7 @@ pub fn parse_archive<P: AsRef<Path>>(
         sevenzip_infos.push(sevenzip_info);
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(sevenzip_infos)
@@ -91,6 +92,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(())
@@ -122,6 +124,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(file_names
@@ -157,35 +160,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
-    progress_bar.disable_steady_tick();
-
-    Ok(())
-}
-
-pub fn delete_files_from_archive<P: AsRef<Path>>(
-    progress_bar: &ProgressBar,
-    archive_path: &P,
-    file_names: &[&str],
-) -> SimpleResult<()> {
-    progress_bar.set_message("Deleting files from archive");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
-
-    for &file_name in file_names {
-        progress_bar.println(format!("Deleting \"{}\"", file_name));
-    }
-
-    let output = Command::new("7z")
-        .arg("d")
-        .arg(archive_path.as_ref())
-        .args(file_names)
-        .output()
-        .expect("Failed to create archive");
-
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str())
-    }
-
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(())

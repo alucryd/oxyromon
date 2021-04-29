@@ -34,6 +34,7 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(cso_path)
@@ -70,6 +71,7 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
+    progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
     Ok(iso_path)
