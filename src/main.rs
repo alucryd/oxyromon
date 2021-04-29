@@ -6,6 +6,7 @@ extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
+extern crate futures;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
@@ -80,21 +81,22 @@ async fn main() -> SimpleResult<()> {
     if matches.subcommand.is_some() {
         dotenv().ok();
 
+        let progress_bar = get_progress_bar(0, get_none_progress_style());
+
         let data_directory = PathBuf::from(dirs::data_dir().unwrap()).join("oxyromon");
-        create_directory(&data_directory).await?;
+        create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");
         if !db_file.is_file().await {
-            create_file(&db_file).await?;
+            create_file(&progress_bar, &db_file, true).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
-
-        let progress_bar = get_progress_bar(0, get_none_progress_style());
 
         match matches.subcommand_name() {
             Some("config") => {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
+                    &progress_bar,
                     &matches.subcommand_matches("config").unwrap(),
                 )
                 .await?

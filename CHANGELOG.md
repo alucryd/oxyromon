@@ -1,7 +1,6 @@
 # 0.9.0
 * Use transactions for increased performance
 * Add an optional GraphQL API
-* Support CORS
 * Add a basic web UI
 
 # 0.8.1
