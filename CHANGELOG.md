@@ -1,7 +1,9 @@
 # 0.9.0
-* Use transactions for increased performance
-* Add an optional GraphQL API
-* Add a basic web UI
+* Use transactions for increased database performance
+* Add an optional GraphQL API and a basic web UI, behind the `server` feature
+* Store ROM files' actual size in database
+* Store system and game completion status in database
+* Store game sorting in database (all regions, one region, ignored)
 
 # 0.8.1
 * Use a database connection pool

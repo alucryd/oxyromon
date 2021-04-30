@@ -256,12 +256,14 @@ Note: CHD will be extracted to their original split CUE/BIN when applicable.
 Checks ROM files integrity
 
 This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
+File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
 
     USAGE:
         oxyromon check-roms [FLAGS]
 
     FLAGS:
         -a, --all        Checks all systems
+        -s, --size       Recalculates ROM file sizes
         -y, --yes        Automatically says yes to prompts
         -h, --help       Prints help information
         -V, --version    Prints version information

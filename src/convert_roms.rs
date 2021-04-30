@@ -582,12 +582,10 @@ async fn to_chd(
             if !file_names.get(0).unwrap().ends_with(ISO_EXTENSION) {
                 continue;
             }
-        } else {
-            if file_names.par_iter().any(|file_name| {
-                !file_name.ends_with(CUE_EXTENSION) && !file_name.ends_with(BIN_EXTENSION)
-            }) {
-                continue;
-            }
+        } else if file_names.par_iter().any(|file_name| {
+            !file_name.ends_with(CUE_EXTENSION) && !file_name.ends_with(BIN_EXTENSION)
+        }) {
+            continue;
         }
 
         let extracted_paths = extract_files_from_archive(
@@ -686,13 +684,7 @@ async fn to_chd(
             let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
             let mut romfile_paths = romfiles_by_id
                 .iter()
-                .filter(|(k, _)| {
-                    bin_roms
-                        .iter()
-                        .map(|r| r.romfile_id.unwrap())
-                        .collect::<Vec<i64>>()
-                        .contains(k)
-                })
+                .filter(|(&k, _)| bin_roms.iter().any(|&r| r.romfile_id.unwrap() == k))
                 .map(|(_, v)| &v.path)
                 .collect::<Vec<&String>>();
             romfile_paths.push(&cue_romfile.path);
@@ -994,8 +986,7 @@ async fn to_original(
             &file_names,
             &Path::new(&romfile.path).parent().unwrap(),
         )?;
-        let roms_extracted_paths: Vec<(&Rom, PathBuf)> =
-            roms.into_iter().zip(extracted_paths).collect();
+        let roms_extracted_paths: Vec<(&Rom, PathBuf)> = roms.iter().zip(extracted_paths).collect();
 
         for (rom, extracted_path) in roms_extracted_paths {
             let romfile_id = create_romfile(
