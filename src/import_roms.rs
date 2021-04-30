@@ -215,13 +215,12 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                     .map(|(rom, _)| rom.id)
                     .collect(),
             )
-            .collect::<Vec<&i64>>()
-            .len()
+            .count()
             == 0
         {
             let game = find_game_by_id(connection, game_id).await;
             for (rom, sevenzip_info) in &roms_sevenzip_infos {
-                if &sevenzip_info.path != &rom.name {
+                if sevenzip_info.path != rom.name {
                     rename_file_in_archive(
                         progress_bar,
                         romfile_path,
@@ -275,7 +274,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         copy_file(progress_bar, &extracted_path, &new_path, false).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_path, &vec![rom]).await;
+        create_or_update_romfile(connection, &new_path, &[rom]).await;
     }
 
     Ok(())
@@ -346,7 +345,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         rename_file(progress_bar, romfile_path, &new_chd_path, false).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_cue_path, &vec![cue_rom]).await;
+        create_or_update_romfile(connection, &new_cue_path, &[cue_rom]).await;
         create_or_update_romfile(connection, &new_chd_path, &roms).await;
 
         Ok(())
@@ -371,7 +370,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         rename_file(progress_bar, romfile_path, &new_chd_path, false).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_chd_path, &vec![rom]).await;
+        create_or_update_romfile(connection, &new_chd_path, &[rom]).await;
 
         Ok(())
     }
@@ -404,7 +403,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     rename_file(progress_bar, romfile_path, &new_cso_path, false).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_cso_path, &vec![rom]).await;
+    create_or_update_romfile(connection, &new_cso_path, &[rom]).await;
 
     Ok(())
 }
@@ -432,7 +431,7 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
 
     // persist in database
-    create_or_update_romfile(connection, &new_path, &vec![rom]).await;
+    create_or_update_romfile(connection, &new_path, &[rom]).await;
 
     Ok(())
 }

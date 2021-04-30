@@ -57,22 +57,22 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     pool
 }
 
-pub async fn begin_transaction<'a>(
-    connection: &'a mut SqliteConnection,
-) -> Transaction<'a, Sqlite> {
+pub async fn begin_transaction(
+    connection: &mut SqliteConnection,
+) -> Transaction<'_, Sqlite> {
     Acquire::begin(connection)
         .await
         .expect("Failed to begin transaction")
 }
 
-pub async fn commit_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
+pub async fn commit_transaction(transaction: Transaction<'_, Sqlite>) {
     transaction
         .commit()
         .await
         .expect("Failed to commit transaction");
 }
 
-pub async fn rollback_transaction<'a>(transaction: Transaction<'a, Sqlite>) {
+pub async fn rollback_transaction(transaction: Transaction<'_, Sqlite>) {
     transaction
         .rollback()
         .await

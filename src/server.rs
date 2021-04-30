@@ -274,10 +274,7 @@ struct AppState {
 }
 
 async fn serve_asset(req: tide::Request<()>) -> tide::Result {
-    let file_path = match req.param("path") {
-        Ok(path) => path,
-        Err(_) => "index.html",
-    };
+    let file_path = req.param("path").unwrap_or("index.html");
     match Assets::get(file_path) {
         Some(bytes) => {
             let mime = Mime::sniff(bytes.as_ref())
