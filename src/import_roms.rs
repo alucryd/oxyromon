@@ -3,6 +3,7 @@ use super::checksum::*;
 use super::database::*;
 use super::maxcso::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
@@ -58,6 +59,9 @@ pub async fn main(
     }
 
     // mark games and system as complete if they are
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+    progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
     update_system_mark_complete(connection, system.id).await;
 

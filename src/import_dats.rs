@@ -173,6 +173,15 @@ pub async fn import_dat(
     get_system_directory(&mut transaction, progress_bar, &system).await?;
     get_trash_directory(&mut transaction, progress_bar, &system).await?;
 
+    // update games and systems completion
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+    progress_bar.set_message("Computing system completion");
+    update_games_by_system_id_mark_complete(&mut transaction, system.id).await;
+    update_games_by_system_id_mark_incomplete(&mut transaction, system.id).await;
+    update_system_mark_complete(&mut transaction, system.id).await;
+    update_system_mark_incomplete(&mut transaction, system.id).await;
+
     commit_transaction(transaction).await;
 
     Ok(())

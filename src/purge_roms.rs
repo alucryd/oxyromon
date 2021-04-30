@@ -1,4 +1,5 @@
 use super::database::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -54,6 +55,9 @@ pub async fn main(
     if matches.is_present("ORPHAN") {
         purge_orphan_romfiles(connection, progress_bar).await?;
     }
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+    progress_bar.set_message("Computing system completion");
     update_games_mark_incomplete(connection).await;
     update_systems_mark_incomplete(connection).await;
     Ok(())
