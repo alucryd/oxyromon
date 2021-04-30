@@ -11,6 +11,18 @@ Like most ROM managers, it checks ROM files against known good databases.
 It is designed with archiving in mind, as such it only supports original and lossless ROM formats.
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 
+### Compilation
+
+The CLI has no specific requirement, you can just:
+
+    cargo build --release
+
+For the web UI, you will also need yarn:
+
+    yarn install
+    yarn run build
+    cargo build --release --all-features
+
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
@@ -18,14 +30,15 @@ The database itself is stored in `${data_dir}/oxyromon` as defined in the
 [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 
 Available settings:
-- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
-[dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
-- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
-[temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
-- `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
-- `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
-- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
-- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
+
+-   `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
+    [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
+-   `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
+    [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+-   `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
+-   `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
+-   `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
+-   `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -42,17 +55,17 @@ Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those bi
 
 These should be in your `${PATH}` for extra features.
 
-- 7z: 7Z and ZIP support
-- chdman: CHD support
-- maxcso: CSO support
+-   7z: 7Z and ZIP support
+-   chdman: CHD support
+-   maxcso: CSO support
 
 ### TODO
 
-- Add actions to the web UI
-- Figure out how Atari 7800 header files work
-- Add an optional check of the ROMs after conversion
-- Support RVZ when dolphin adds it to its CLI
-- Find a way to automatically download No-Intro DAT files
+-   Add actions to the web UI
+-   Figure out how Atari 7800 header files work
+-   Add an optional check of the ROMs after conversion
+-   Support RVZ when dolphin adds it to its CLI
+-   Find a way to automatically download No-Intro DAT files
 
 ## oxyromon
 
@@ -105,8 +118,9 @@ Parses and imports No-Intro and Redump DAT files into oxyromon
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
 
 Supported DAT providers:
-* No-Intro
-* Redump
+
+-   No-Intro
+-   Redump
 
 Note: Some systems require a header definition to be placed alongside the DAT file.
 
@@ -121,7 +135,7 @@ Note: Some systems require a header definition to be placed alongside the DAT fi
     ARGS:
         <DATS>...    Sets the DAT files to import
 
-## oxyromon-download-dats 
+## oxyromon-download-dats
 
 Downloads No-Intro and Redump DAT files and imports them into oxyromon
 
@@ -131,34 +145,36 @@ an update is available, but the Redump one is able to download brand new dats
 and update those you've already imported.
 
 Supported DAT providers:
-* Redump (Download and update)
-* No-Intro (Update check only)
+
+-   Redump (Download and update)
+-   No-Intro (Update check only)
 
     USAGE:
-        oxyromon download-dats [FLAGS] --nointro --redump
+    oxyromon download-dats [FLAGS] --nointro --redump
 
     FLAGS:
-        -a, --all        Imports all systems
-        -f, --force      Forces import of outdated DAT files
-        -n, --nointro    Downloads No-Intro DAT files
-        -r, --redump     Downloads Redump DAT files
-        -u, --update     Checks for system updates
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+    -a, --all Imports all systems
+    -f, --force Forces import of outdated DAT files
+    -n, --nointro Downloads No-Intro DAT files
+    -r, --redump Downloads Redump DAT files
+    -u, --update Checks for system updates
+    -h, --help Prints help information
+    -V, --version Prints version information
 
 ## oxyromon-import-roms
 
 Validates and imports ROM files into oxyromon
 
-ROM files that match against the database will be placed in the base directory of the system they belong to. 
+ROM files that match against the database will be placed in the base directory of the system they belong to.
 You will be prompted for the system you want to check your ROMs against.
 Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported ROM formats:
-* All No-Intro and Redump supported formats
-* 7Z and ZIP archives
-* CHD (Compressed Hunks of Data)
-* CSO (Compressed ISO)
+
+-   All No-Intro and Redump supported formats
+-   7Z and ZIP archives
+-   CHD (Compressed Hunks of Data)
+-   CSO (Compressed ISO)
 
 Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
@@ -172,7 +188,7 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
     ARGS:
         <ROMS>...    Sets the rom files to import
 
-## oxyromon-sort-roms 
+## oxyromon-sort-roms
 
 Sorts ROM files according to region and version preferences
 
@@ -181,9 +197,10 @@ You can also choose to discard certain types of games.
 Optionally you can print a list of games you may be missing, you hoarder, you.
 
 Supported modes:
-- Regions mode
-- 1G1R mode
-- Hybrid mode
+
+-   Regions mode
+-   1G1R mode
+-   Hybrid mode
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
@@ -216,7 +233,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
     OPTIONS:
         -g, --1g1r <REGIONS_ONE>...      Sets the 1G1R regions to keep (ordered)
         -r, --regions <REGIONS_ALL>...   Sets the regions to keep (unordered)
-    
+
     EXAMPLE:
         oxyromon sort-roms -g US EU -r US EU JP
 
@@ -232,10 +249,10 @@ name.
 
 Supported ROM formats:
 
-* All No-Intro and Redump supported formats <-> 7Z and ZIP archives
-* CUE/BIN <-> CHD (Compressed Hunks of Data)
-* ISO <-> CHD (Compressed Hunks of Data)
-* ISO <-> CSO (Compressed ISO)
+-   All No-Intro and Redump supported formats <-> 7Z and ZIP archives
+-   CUE/BIN <-> CHD (Compressed Hunks of Data)
+-   ISO <-> CHD (Compressed Hunks of Data)
+-   ISO <-> CSO (Compressed ISO)
 
 Note: CHD will be extracted to their original split CUE/BIN when applicable.
 
@@ -268,7 +285,7 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
         -h, --help       Prints help information
         -V, --version    Prints version information
 
-## oxyromon-purge-roms 
+## oxyromon-purge-roms
 
 Purges trashed, missing and orphan ROM files
 
@@ -286,7 +303,7 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
         -h, --help       Prints help information
         -V, --version    Prints version information
 
-## oxyromon-server 
+## oxyromon-server
 
 Launches the backend server
 
