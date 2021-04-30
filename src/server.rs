@@ -124,30 +124,6 @@ impl Loader<i64> for SystemLoader {
     }
 }
 
-pub struct RomLoader;
-
-#[async_trait]
-impl Loader<i64> for RomLoader {
-    type Value = Rom;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM roms
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|rom: Rom| (rom.id, rom))
-            .try_collect()
-            .await?)
-    }
-}
-
 pub struct GameLoader;
 
 #[async_trait]
@@ -327,7 +303,6 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
         .data(DataLoader::new(SystemLoader))
         .data(DataLoader::new(GameLoader))
-        .data(DataLoader::new(RomLoader))
         .data(DataLoader::new(RomfileLoader))
         .finish();
 
@@ -361,6 +336,7 @@ mod tests {
     use super::super::database::*;
     use super::super::import_dats;
     use super::super::import_roms;
+    use super::super::sort_roms;
     use super::super::util::*;
     use super::*;
     use async_std::fs;
@@ -395,17 +371,35 @@ mod tests {
             .await
             .unwrap();
 
-        let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
-        fs::copy(
-            test_directory.join("Test Game (USA, Europe).rom"),
-            &romfile_path,
-        )
-        .await
-        .unwrap();
+        let romfile_names = vec!["Test Game (USA, Europe).rom", "Test Game (Japan).rom"];
+        let mut romfile_paths = vec![];
+        for romfile_name in romfile_names {
+            let romfile_path = tmp_directory.join(romfile_name);
+            fs::copy(test_directory.join(romfile_name), &romfile_path)
+                .await
+                .unwrap();
+            romfile_paths.push(romfile_path);
+        }
 
-        let matches = import_roms::subcommand()
-            .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        let matches = import_roms::subcommand().get_matches_from(&[
+            "import-roms",
+            romfile_paths.get(0).unwrap().as_os_str().to_str().unwrap(),
+            romfile_paths.get(1).unwrap().as_os_str().to_str().unwrap(),
+        ]);
         import_roms::main(&mut connection, &matches, &progress_bar)
+            .await
+            .unwrap();
+
+        let matches = sort_roms::subcommand().get_matches_from(&[
+            "sort-roms",
+            "-a",
+            "-y",
+            "-g",
+            "US",
+            "-r",
+            "JP",
+        ]);
+        sort_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
 
@@ -423,7 +417,9 @@ mod tests {
                 task::sleep(Duration::from_millis(1000)).await;
 
                 let string = surf::post("http://127.0.0.1:8000/graphql")
-                    .body(Body::from(r#"{"query":"{ systems { id, name } }"}"#))
+                    .body(Body::from(
+                        r#"{"query":"{ systems { id, name, header { id, name } } }"}"#,
+                    ))
                     .header("Content-Type", "application/json")
                     .recv_string()
                     .await?;
@@ -435,7 +431,8 @@ mod tests {
                         [
                             {
                                 "id": 1,
-                                "name": "Test System"
+                                "name": "Test System",
+                                "header": null
                             }
                         ]
                     )
@@ -500,7 +497,7 @@ mod tests {
                                 "name": "Test Game (USA, Europe).rom",
                                 "romfile": {
                                     "id": 1,
-                                    "path": format!("{}/Test Game (USA, Europe).rom", get_system_directory(&mut connection, &progress_bar, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                    "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &progress_bar, &system).await.unwrap().as_os_str().to_str().unwrap()),
                                     "size": 256
                                 },
                                 "game": {
@@ -513,6 +510,27 @@ mod tests {
                                 },
                             }
                         ]
+                    )
+                );
+
+                let string = surf::post("http://127.0.0.1:8000/graphql")
+                    .body(Body::from(
+                        r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1) }"}"#,
+                    ))
+                    .header("Content-Type", "application/json")
+                    .recv_string()
+                    .await?;
+
+                let v: Value = serde_json::from_str(&string)?;
+                assert_eq!(
+                    v["data"],
+                    json!(
+                        {
+                            "totalOriginalSize": 512,
+                            "oneRegionOriginalSize": 256,
+                            "totalActualSize": 512,
+                            "oneRegionActualSize": 256,
+                        }
                     )
                 );
 

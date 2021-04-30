@@ -128,42 +128,18 @@ export async function updateRoms() {
     roms.set(paginate(get(unfilteredRoms), get(romsPage), get(pageSize)));
 }
 
-export async function getTotalOriginalSizeBySystemId(systemId) {
+export async function getSizesBySystemId(systemId) {
     const query = gql`
         {
             totalOriginalSize(systemId: ${systemId})
-        }
-    `;
-    const data = await graphQLClient.request(query);
-    totalOriginalSize.set(data.totalOriginalSize);
-}
-
-export async function getOneRegionOriginalSizeBySystemId(systemId) {
-    const query = gql`
-        {
             oneRegionOriginalSize(systemId: ${systemId})
-        }
-    `;
-    const data = await graphQLClient.request(query);
-    oneRegionOriginalSize.set(data.oneRegionOriginalSize);
-}
-
-export async function getTotalActualSizeBySystemId(systemId) {
-    const query = gql`
-        {
             totalActualSize(systemId: ${systemId})
-        }
-    `;
-    const data = await graphQLClient.request(query);
-    totalActualSize.set(data.totalActualSize);
-}
-
-export async function getOneRegionActualSizeBySystemId(systemId) {
-    const query = gql`
-        {
             oneRegionActualSize(systemId: ${systemId})
         }
     `;
     const data = await graphQLClient.request(query);
+    totalOriginalSize.set(data.totalOriginalSize);
+    oneRegionOriginalSize.set(data.oneRegionOriginalSize);
+    totalActualSize.set(data.totalActualSize);
     oneRegionActualSize.set(data.oneRegionActualSize);
 }

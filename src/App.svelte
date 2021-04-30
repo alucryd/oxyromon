@@ -58,10 +58,7 @@
         updateGames,
         getRomsByGameId,
         updateRoms,
-        getTotalOriginalSizeBySystemId,
-        getOneRegionOriginalSizeBySystemId,
-        getTotalActualSizeBySystemId,
-        getOneRegionActualSizeBySystemId,
+        getSizesBySystemId,
     } from "./mutations.js";
 
     import prettyBytes from "pretty-bytes";
@@ -104,10 +101,7 @@
         });
         systemId.subscribe(async (systemId) => {
             await getGamesBySystemId(systemId);
-            await getTotalOriginalSizeBySystemId(systemId);
-            await getOneRegionOriginalSizeBySystemId(systemId);
-            await getTotalActualSizeBySystemId(systemId);
-            await getOneRegionActualSizeBySystemId(systemId);
+            await getSizesBySystemId(systemId);
         });
         gamesPage.subscribe(async (_) => {
             await updateGames();

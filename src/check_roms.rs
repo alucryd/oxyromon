@@ -636,7 +636,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, true)
             .await
             .unwrap();
 

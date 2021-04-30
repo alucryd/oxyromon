@@ -5,6 +5,7 @@ use super::maxcso::*;
 use super::model::*;
 use super::prompt::*;
 use super::sevenzip::*;
+use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
@@ -359,6 +360,9 @@ async fn sort_system(
 
     // update games and systems completion
     if changes > 0 {
+        progress_bar.set_style(get_none_progress_style());
+        progress_bar.enable_steady_tick(100);
+        progress_bar.set_message("Computing system completion");
         update_games_by_system_id_mark_complete(connection, system.id).await;
         update_games_by_system_id_mark_incomplete(connection, system.id).await;
         update_system_mark_complete(connection, system.id).await;
