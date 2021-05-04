@@ -57,9 +57,7 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     pool
 }
 
-pub async fn begin_transaction(
-    connection: &mut SqliteConnection,
-) -> Transaction<'_, Sqlite> {
+pub async fn begin_transaction(connection: &mut SqliteConnection) -> Transaction<'_, Sqlite> {
     Acquire::begin(connection)
         .await
         .expect("Failed to begin transaction")
@@ -398,9 +396,11 @@ pub async fn update_games_sorting(
         UPDATE games
         SET sorting = {}
         WHERE id IN ({})
+        AND sorting != {}
         ",
         sorting as i8,
-        ids.iter().join(",")
+        ids.iter().join(","),
+        sorting as i8,
     );
     sqlx::query(&sql)
         .execute(connection)

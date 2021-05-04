@@ -11,11 +11,13 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
+use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
-use std::{cmp::Ordering, collections::HashMap};
+use std::cmp::Ordering;
+use std::collections::HashMap;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("sort-roms")
@@ -135,6 +137,7 @@ async fn sort_system(
     let mut all_regions_games: Vec<Game> = Vec::new();
     let mut one_region_games: Vec<Game> = Vec::new();
     let mut ignored_games: Vec<Game> = Vec::new();
+    let mut missing_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
@@ -166,20 +169,21 @@ async fn sort_system(
             }
             games.insert(0, parent_game);
 
-            // trim ignored and incomplete games
+            // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-                let (mut unwanted_games, regular_games) =
-                    trim_games(games, ignored_releases, ignored_flags);
-                ignored_games.append(&mut unwanted_games);
-                games = regular_games;
+                let (mut left_games, right_games) =
+                    trim_ignored_games(games, ignored_releases, ignored_flags);
+                ignored_games.append(&mut left_games);
+                games = right_games;
             }
 
             // find the one game we want to keep, if any
             for region in one_regions {
                 let i = games.iter().position(|game| {
-                    Region::try_from_tosec_region(&game.regions)
-                        .unwrap()
-                        .contains(region)
+                    game.complete
+                        && Region::try_from_tosec_region(&game.regions)
+                            .unwrap()
+                            .contains(region)
                 });
                 if i.is_some() {
                     one_region_games.push(games.remove(i.unwrap()));
@@ -196,7 +200,11 @@ async fn sort_system(
                         .contains(region)
                 });
                 if region_in_all_regions {
-                    all_regions_games.push(game);
+                    if game.complete {
+                        all_regions_games.push(game);
+                    } else {
+                        missing_games.push(game);
+                    }
                 } else {
                     ignored_games.push(game);
                 }
@@ -208,10 +216,10 @@ async fn sort_system(
 
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut unwanted_games, regular_games) =
-                trim_games(games, ignored_releases, ignored_flags);
-            ignored_games.append(&mut unwanted_games);
-            games = regular_games;
+            let (mut left_games, right_games) =
+                trim_ignored_games(games, ignored_releases, ignored_flags);
+            ignored_games.append(&mut left_games);
+            games = right_games;
         }
 
         for game in games {
@@ -221,7 +229,11 @@ async fn sort_system(
                     .contains(region)
             });
             if region_in_all_regions {
-                all_regions_games.push(game);
+                if game.complete {
+                    all_regions_games.push(game);
+                } else {
+                    missing_games.push(game);
+                }
             } else {
                 ignored_games.push(game);
             }
@@ -231,21 +243,30 @@ async fn sort_system(
 
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut unwanted_games, regular_games) =
-                trim_games(games, ignored_releases, ignored_flags);
-            ignored_games.append(&mut unwanted_games);
-            games = regular_games;
+            let (mut left_games, right_games) =
+                trim_ignored_games(games, ignored_releases, ignored_flags);
+            ignored_games.append(&mut left_games);
+            games = right_games;
         }
 
-        all_regions_games.append(&mut games);
+        for game in games {
+            if game.complete {
+                all_regions_games.push(game);
+            } else {
+                missing_games.push(game)
+            }
+        }
     }
 
     if matches.is_present("MISSING") {
-        let mut game_ids: Vec<i64> = Vec::new();
-        game_ids.append(&mut all_regions_games.iter().map(|game| game.id).collect());
-        game_ids.append(&mut one_region_games.iter().map(|game| game.id).collect());
-        let missing_roms: Vec<Rom> =
-            find_roms_without_romfile_by_game_ids(connection, &game_ids).await;
+        let missing_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
+            connection,
+            &missing_games
+                .par_iter()
+                .map(|game| game.id)
+                .collect::<Vec<i64>>(),
+        )
+        .await;
 
         if !missing_roms.is_empty() {
             progress_bar.println("Missing:");
@@ -265,7 +286,7 @@ async fn sort_system(
 
     let mut changes = 0;
 
-    // process all_region_games
+    // process all region games
     changes += update_games_sorting(
         &mut transaction,
         &all_regions_games
@@ -285,7 +306,7 @@ async fn sort_system(
         .await,
     );
 
-    // process one_region_games
+    // process one region games
     changes += update_games_sorting(
         &mut transaction,
         &one_region_games
@@ -305,7 +326,7 @@ async fn sort_system(
         .await,
     );
 
-    // process trash_games
+    // process ignored games
     changes += update_games_sorting(
         &mut transaction,
         &ignored_games
@@ -324,6 +345,17 @@ async fn sort_system(
         )
         .await,
     );
+
+    // process missing games
+    changes += update_games_sorting(
+        &mut transaction,
+        &missing_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::AllRegions,
+    )
+    .await;
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
@@ -364,7 +396,6 @@ async fn sort_system(
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(100);
         progress_bar.set_message("Computing system completion");
-        update_games_by_system_id_mark_complete(connection, system.id).await;
         update_games_by_system_id_mark_incomplete(connection, system.id).await;
         update_system_mark_complete(connection, system.id).await;
         update_system_mark_incomplete(connection, system.id).await;
@@ -425,16 +456,13 @@ async fn sort_games<'a, P: AsRef<Path>>(
     romfile_moves
 }
 
-fn trim_games(
+fn trim_ignored_games(
     games: Vec<Game>,
     ignored_releases: &[&str],
     ignored_flags: &[&str],
 ) -> (Vec<Game>, Vec<Game>) {
     // TODO: use drain_filter when it hits stable
     games.into_iter().partition(|game| {
-        if !game.complete {
-            return true;
-        }
         if let Ok(name) = NoIntroName::try_parse(&game.name) {
             for token in name.iter() {
                 if let NoIntroToken::Release(release, _) = token {
@@ -609,7 +637,7 @@ mod test {
     }
 
     #[async_std::test]
-    async fn test_trim_games_should_discard_ignored_games() {
+    async fn test_trim_ignored_games_should_discard_ignored_games() {
         // given
         let games = vec![
             Game {
@@ -658,7 +686,8 @@ mod test {
         let ignored_flags = vec!["Virtual Console"];
 
         // when
-        let (ignored_games, regular_games) = trim_games(games, &ignored_releases, &ignored_flags);
+        let (ignored_games, regular_games) =
+            trim_ignored_games(games, &ignored_releases, &ignored_flags);
 
         // then
         assert_eq!(ignored_games.len(), 3);
