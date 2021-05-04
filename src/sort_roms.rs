@@ -3,20 +3,19 @@ use super::config::*;
 use super::database::*;
 use super::maxcso::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
-use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use indicatif::ProgressBar;
-use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("sort-roms")
@@ -160,12 +159,14 @@ async fn sort_system(
         for parent_game in parent_games {
             if clone_games_by_parent_id.contains_key(&parent_game.id) {
                 games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
+                // put newer releases first
+                games.sort_by(|a, b| sort_games_by_version_or_name_desc(a, b));
             } else {
                 games = Vec::new();
             }
             games.insert(0, parent_game);
 
-            // trim ignored games
+            // trim ignored and incomplete games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
                 let (mut unwanted_games, regular_games) =
                     trim_games(games, ignored_releases, ignored_flags);
@@ -430,7 +431,10 @@ fn trim_games(
     ignored_flags: &[&str],
 ) -> (Vec<Game>, Vec<Game>) {
     // TODO: use drain_filter when it hits stable
-    games.into_par_iter().partition(|game| {
+    games.into_iter().partition(|game| {
+        if !game.complete {
+            return true;
+        }
         if let Ok(name) = NoIntroName::try_parse(&game.name) {
             for token in name.iter() {
                 if let NoIntroToken::Release(release, _) = token {
@@ -449,6 +453,35 @@ fn trim_games(
         }
         false
     })
+}
+
+fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering {
+    let mut version_a = None;
+    let mut version_b = None;
+    if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
+        for token in name.iter() {
+            if let NoIntroToken::Version(version) = token {
+                version_a = Some(version.to_owned());
+            }
+        }
+    }
+    if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
+        for token in name.iter() {
+            if let NoIntroToken::Version(version) = token {
+                version_b = Some(version.to_owned());
+            }
+        }
+    }
+    if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
+        return version_b.partial_cmp(&version_a).unwrap();
+    }
+    if version_a.is_some() {
+        return Ordering::Less;
+    }
+    if version_b.is_some() {
+        return Ordering::Greater;
+    }
+    game_b.name.partial_cmp(&game_a.name).unwrap()
 }
 
 fn compute_new_path<P: AsRef<Path>>(
@@ -585,7 +618,7 @@ mod test {
                 description: String::from(""),
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
-                complete: false,
+                complete: true,
                 system_id: 1,
                 parent_id: None,
             },
@@ -595,7 +628,7 @@ mod test {
                 description: String::from(""),
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
-                complete: false,
+                complete: true,
                 system_id: 1,
                 parent_id: None,
             },
@@ -605,7 +638,7 @@ mod test {
                 description: String::from(""),
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
-                complete: false,
+                complete: true,
                 system_id: 1,
                 parent_id: None,
             },
@@ -615,7 +648,7 @@ mod test {
                 description: String::from(""),
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
-                complete: false,
+                complete: true,
                 system_id: 1,
                 parent_id: None,
             },
@@ -631,6 +664,99 @@ mod test {
         assert_eq!(ignored_games.len(), 3);
         assert_eq!(regular_games.len(), 1);
         assert_eq!(regular_games.get(0).unwrap().name, "Game (USA)")
+    }
+
+    #[async_std::test]
+    async fn test_sort_games_by_version_or_name_between_two_revisions() {
+        // given
+        let game_a = Game {
+            id: 1,
+            name: String::from("Game (USA) (Rev 1)"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+        let game_b = Game {
+            id: 1,
+            name: String::from("Game (USA) (Rev 2)"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+
+        // when
+        let ordering = sort_games_by_version_or_name_desc(&game_a, &game_b);
+
+        // then
+        assert_eq!(ordering, Ordering::Greater);
+    }
+
+    #[async_std::test]
+    async fn test_sort_games_by_version_or_name_between_vanilla_and_revision() {
+        // given
+        let game_a = Game {
+            id: 1,
+            name: String::from("Game (USA)"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+        let game_b = Game {
+            id: 1,
+            name: String::from("Game (USA) (Rev 2)"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+
+        // when
+        let ordering = sort_games_by_version_or_name_desc(&game_a, &game_b);
+
+        // then
+        assert_eq!(ordering, Ordering::Greater);
+    }
+
+    #[async_std::test]
+    async fn test_sort_games_by_version_or_name_between_revision_and_vanilla() {
+        // given
+        let game_a = Game {
+            id: 1,
+            name: String::from("Game (USA) (Rev 2"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+        let game_b = Game {
+            id: 1,
+            name: String::from("Game (USA)"),
+            description: String::from(""),
+            regions: String::from(""),
+            sorting: Sorting::AllRegions,
+            complete: true,
+            system_id: 1,
+            parent_id: None,
+        };
+
+        // when
+        let ordering = sort_games_by_version_or_name_desc(&game_a, &game_b);
+
+        // then
+        assert_eq!(ordering, Ordering::Less);
     }
 
     #[async_std::test]

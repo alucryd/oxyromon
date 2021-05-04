@@ -94,7 +94,7 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     }
 
     progress_bar.reset();
-    progress_bar.set_message(&format!("Computing CRC ({}/{})", position, total));
+    progress_bar.set_message(format!("Computing CRC ({}/{})", position, total));
     progress_bar.set_style(get_bytes_progress_style());
     progress_bar.set_length(size);
 
