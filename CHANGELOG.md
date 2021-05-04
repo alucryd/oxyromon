@@ -1,3 +1,8 @@
+# 0.10.0
+* Fix version sorting in 1G1R when parent is missing or unwanted
+* Treat the first elligible clone as parent in 1G1R when parent is missing
+* Greatly improve completion calculation in sort-roms
+
 # 0.9.0
 * Use transactions for increased database performance
 * Add an optional GraphQL API and a basic web UI, behind the `server` feature
