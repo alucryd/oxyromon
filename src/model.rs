@@ -20,7 +20,7 @@ pub struct Header {
     pub id: i64,
     pub name: String,
     pub version: String,
-    pub operation: Option<String>,
+    pub size: i64,
     pub system_id: i64,
 }
 
@@ -28,7 +28,6 @@ pub struct Header {
 pub struct Rule {
     pub id: i64,
     pub start_byte: i64,
-    pub size: i64,
     pub hex_value: String,
     pub header_id: i64,
 }
@@ -143,8 +142,6 @@ pub struct DetectorXml {
 #[derive(Deserialize)]
 pub struct RuleXml {
     pub start_offset: String,
-    pub end_offset: Option<String>,
-    pub operation: Option<String>,
     pub data: Vec<DataXml>,
 }
 

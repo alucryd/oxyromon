@@ -243,7 +243,7 @@ async fn create_or_update_header(
         None => create_header(connection, detector_xml, system_id).await,
     };
     for data_xml in &detector_xml.rule.data {
-        create_rule(connection, &detector_xml.rule, data_xml, header_id).await;
+        create_rule(connection, data_xml, header_id).await;
     }
 }
 
