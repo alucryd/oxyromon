@@ -61,11 +61,12 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
+-   Automatically create m3u files for multi-discs games
 -   Add actions to the web UI
 -   Figure out how Atari 7800 header files work
 -   Add an optional check of the ROMs after conversion
--   Support RVZ when dolphin adds it to its CLI
--   Find a way to automatically download No-Intro DAT files
+-   Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
+-   Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 
 ## oxyromon
 

@@ -97,7 +97,7 @@ pub fn confirm(default: bool) -> SimpleResult<bool> {
 
 pub fn select(items: &[&str], default: Option<usize>) -> SimpleResult<usize> {
     let mut select = Select::new();
-    select.paged(true).items(&items);
+    select.items(&items);
     if let Some(default) = default {
         select.default(default);
     }
@@ -106,7 +106,7 @@ pub fn select(items: &[&str], default: Option<usize>) -> SimpleResult<usize> {
 
 pub fn multiselect(items: &[&str], defaults: Option<&[bool]>) -> SimpleResult<Vec<usize>> {
     let mut multiselect = MultiSelect::new();
-    multiselect.paged(true).items(&items);
+    multiselect.items(&items);
     if let Some(defaults) = defaults {
         multiselect.defaults(defaults);
     }
