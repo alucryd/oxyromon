@@ -76,28 +76,28 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     // extract a potential header, revert if none is found
     if header.is_some() {
         let header = header.as_ref().unwrap();
-        let operation = header.operation.as_ref();
         let rules = find_rules_by_header_id(connection, header.id).await;
+        let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
+        try_with!(
+            (&mut f).take(header.size as u64).read_to_end(&mut buffer),
+            "Failed to read into buffer"
+        );
 
+        let mut matches: Vec<bool> = Vec::new();
         for rule in rules {
-            let mut buffer: Vec<u8> = Vec::with_capacity(rule.size as usize);
-            try_with!(
-                (&mut f).take(rule.size as u64).read_to_end(&mut buffer),
-                "Failed to read into buffer"
-            );
             let start_byte = rule.start_byte as usize;
             let hex_values: Vec<String> = buffer[start_byte..]
                 .iter()
                 .map(|b| format!("{:x}", b))
                 .collect();
             let hex_value = hex_values.join("").to_lowercase();
-            if hex_value.starts_with(&rule.hex_value.to_lowercase())
-                && (operation.is_none() || operation.unwrap() != "none")
-            {
-                size -= rule.size as u64;
-            } else {
-                try_with!(f.seek(std::io::SeekFrom::Start(0)), "Failed to seek file");
-            }
+            matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
+        }
+
+        if matches.iter().all(|&m| m) {
+            size -= header.size as u64;
+        } else {
+            try_with!(f.seek(std::io::SeekFrom::Start(0)), "Failed to seek file");
         }
     }
 

@@ -1019,13 +1019,15 @@ pub async fn create_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) -> i64 {
+    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
-        INSERT INTO headers (name, version, system_id)
-        VALUES (?, ?, ?)
+        INSERT INTO headers (name, version, size, system_id)
+        VALUES (?, ?, ?, ?)
         ",
         detector_xml.name,
         detector_xml.version,
+        size,
         system_id,
     )
     .execute(connection)
@@ -1040,14 +1042,16 @@ pub async fn update_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) {
+    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
         UPDATE headers
-        SET name = ?, version = ?, system_id = ?
+        SET name = ?, version = ?, size = ?, system_id = ?
         WHERE id = ?
         ",
         detector_xml.name,
         detector_xml.version,
+        size,
         system_id,
         id,
     )
@@ -1076,19 +1080,16 @@ pub async fn find_header_by_system_id(
 
 pub async fn create_rule(
     connection: &mut SqliteConnection,
-    rule_xml: &RuleXml,
     data_xml: &DataXml,
     header_id: i64,
 ) -> i64 {
     let start_byte = i64::from_str_radix(&data_xml.offset, 16).unwrap();
-    let size = i64::from_str_radix(&rule_xml.start_offset, 16).unwrap();
     sqlx::query!(
         "
-        INSERT INTO rules (start_byte, size, hex_value, header_id)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO rules (start_byte, hex_value, header_id)
+        VALUES (?, ?, ?)
         ",
         start_byte,
-        size,
         data_xml.value,
         header_id,
     )
