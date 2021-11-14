@@ -1019,18 +1019,13 @@ pub async fn create_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) -> i64 {
-    let start_byte = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
-    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
-        INSERT INTO headers (name, version, start_byte, size, hex_value, system_id)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO headers (name, version, system_id)
+        VALUES (?, ?, ?)
         ",
         detector_xml.name,
         detector_xml.version,
-        start_byte,
-        size,
-        detector_xml.rule.data.value,
         system_id,
     )
     .execute(connection)
@@ -1045,19 +1040,14 @@ pub async fn update_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) {
-    let start_byte = i64::from_str_radix(&detector_xml.rule.data.offset, 16).unwrap();
-    let size = i64::from_str_radix(&detector_xml.rule.start_offset, 16).unwrap();
     sqlx::query!(
         "
         UPDATE headers
-        SET name = ?, version = ?, start_byte = ?, size = ?, hex_value = ?, system_id = ?
+        SET name = ?, version = ?, system_id = ?
         WHERE id = ?
         ",
         detector_xml.name,
         detector_xml.version,
-        start_byte,
-        size,
-        detector_xml.rule.data.value,
         system_id,
         id,
     )
@@ -1082,6 +1072,61 @@ pub async fn find_header_by_system_id(
     .fetch_optional(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding header with system id {}", system_id))
+}
+
+pub async fn create_rule(
+    connection: &mut SqliteConnection,
+    rule_xml: &RuleXml,
+    data_xml: &DataXml,
+    header_id: i64,
+) -> i64 {
+    let start_byte = i64::from_str_radix(&data_xml.offset, 16).unwrap();
+    let size = i64::from_str_radix(&rule_xml.start_offset, 16).unwrap();
+    sqlx::query!(
+        "
+        INSERT INTO rules (start_byte, size, hex_value, header_id)
+        VALUES (?, ?, ?, ?)
+        ",
+        start_byte,
+        size,
+        data_xml.value,
+        header_id,
+    )
+    .execute(connection)
+    .await
+    .expect("Error while creating rule")
+    .last_insert_rowid()
+}
+
+pub async fn find_rules_by_header_id(
+    connection: &mut SqliteConnection,
+    header_id: i64,
+) -> Vec<Rule> {
+    sqlx::query_as!(
+        Rule,
+        "
+        SELECT *
+        FROM rules
+        WHERE header_id = ?
+        ",
+        header_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding rules with header id {}", header_id))
+}
+
+pub async fn delete_rules_by_header_id(connection: &mut SqliteConnection, header_id: i64) {
+    sqlx::query!(
+        "
+        DELETE FROM rules
+        WHERE header_id = ?
+        ",
+        header_id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while deleting rules with header_id {}", header_id));
 }
 
 pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: Option<String>) {

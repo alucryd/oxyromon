@@ -234,13 +234,17 @@ async fn create_or_update_header(
     system_id: i64,
 ) {
     let header = find_header_by_system_id(connection, system_id).await;
-    match header {
+    let header_id = match header {
         Some(header) => {
             update_header(connection, header.id, detector_xml, system_id).await;
+            delete_rules_by_header_id(connection, header.id).await;
             header.id
         }
         None => create_header(connection, detector_xml, system_id).await,
     };
+    for data_xml in &detector_xml.rule.data {
+        create_rule(connection, &detector_xml.rule, data_xml, header_id).await;
+    }
 }
 
 async fn create_or_update_games(

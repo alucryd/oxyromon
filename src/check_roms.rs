@@ -98,7 +98,14 @@ async fn check_system(
             )
             .await;
         } else {
-            result = check_other(progress_bar, &header, &romfile_path, roms.get(0).unwrap()).await;
+            result = check_other(
+                &mut transaction,
+                progress_bar,
+                &header,
+                &romfile_path,
+                roms.get(0).unwrap(),
+            )
+            .await;
         }
 
         if result.is_err() {
@@ -145,7 +152,8 @@ async fn check_archive<P: AsRef<Path>>(
             )?
             .remove(0);
             let size_crc =
-                get_file_size_and_crc(progress_bar, &extracted_path, &header, 1, 1).await?;
+                get_file_size_and_crc(connection, progress_bar, &extracted_path, &header, 1, 1)
+                    .await?;
             size = size_crc.0;
             crc = size_crc.1;
         } else {
@@ -188,8 +196,15 @@ async fn check_chd<P: AsRef<Path>>(
     .await?;
     let mut crcs: Vec<String> = Vec::new();
     for (i, bin_path) in bin_paths.iter().enumerate() {
-        let (_, crc) =
-            get_file_size_and_crc(progress_bar, &bin_path, &header, i, bin_paths.len()).await?;
+        let (_, crc) = get_file_size_and_crc(
+            connection,
+            progress_bar,
+            &bin_path,
+            &header,
+            i,
+            bin_paths.len(),
+        )
+        .await?;
         crcs.push(crc);
     }
 
@@ -209,7 +224,8 @@ async fn check_cso<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
-    let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, &iso_path, &header, 1, 1).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
         bail!("CRC or size mismatch");
     };
@@ -217,12 +233,14 @@ async fn check_cso<P: AsRef<Path>>(
 }
 
 async fn check_other<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile_path: &P,
     rom: &Rom,
 ) -> SimpleResult<()> {
-    let (size, crc) = get_file_size_and_crc(progress_bar, romfile_path, &header, 1, 1).await?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, romfile_path, &header, 1, 1).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
         bail!("CRC or size mismatch");
     };
