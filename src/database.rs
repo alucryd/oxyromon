@@ -391,6 +391,7 @@ pub async fn update_games_sorting(
     ids: &[i64],
     sorting: Sorting,
 ) -> u64 {
+    let sorting = sorting as i8;
     let sql = format!(
         "
         UPDATE games
@@ -398,9 +399,9 @@ pub async fn update_games_sorting(
         WHERE id IN ({})
         AND sorting != {}
         ",
-        sorting as i8,
+        sorting,
         ids.iter().join(","),
-        sorting as i8,
+        sorting,
     );
     sqlx::query(&sql)
         .execute(connection)

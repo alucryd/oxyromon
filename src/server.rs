@@ -276,8 +276,8 @@ struct AppState {
 async fn serve_asset(req: tide::Request<()>) -> tide::Result {
     let file_path = req.param("path").unwrap_or("index.html");
     match Assets::get(file_path) {
-        Some(bytes) => {
-            let mime = Mime::sniff(bytes.as_ref())
+        Some(file) => {
+            let mime = Mime::sniff(file.data.as_ref())
                 .or_else(|err| {
                     Mime::from_extension(
                         Path::new(file_path).extension().unwrap().to_str().unwrap(),
@@ -286,7 +286,7 @@ async fn serve_asset(req: tide::Request<()>) -> tide::Result {
                 })
                 .unwrap_or(BYTE_STREAM);
             Ok(tide::Response::builder(StatusCode::Ok)
-                .body(tide::Body::from_bytes(bytes.to_vec()))
+                .body(tide::Body::from_bytes(file.data.to_vec()))
                 .content_type(mime)
                 .build())
         }
