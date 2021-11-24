@@ -2,6 +2,8 @@
 * Fix version sorting in 1G1R when parent is missing or unwanted
 * Treat the first elligible clone as parent in 1G1R when parent is missing
 * Greatly improve completion calculation in sort-roms
+* Add support for the Atari 7800 header definition
+* Embed some no-intro header definitions and use them as fallback if they are not found alongside their dat file
 
 # 0.9.0
 * Use transactions for increased database performance
