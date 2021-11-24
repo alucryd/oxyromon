@@ -312,7 +312,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
             app.at("/*path").get(serve_asset);
 
             app.at("/graphql")
-                .post(async_graphql_tide::endpoint(schema));
+                .post(async_graphql_tide::graphql(schema));
 
             let address = matches.value_of("ADDRESS").unwrap();
             let port = matches.value_of("PORT").unwrap();
