@@ -10,15 +10,21 @@ use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
 use regex::Regex;
+use rust_embed::RustEmbed;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
+use std::str;
 
 lazy_static! {
     pub static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r"\(.*\)").unwrap();
 }
+
+#[derive(RustEmbed)]
+#[folder = "data/"]
+struct Assets;
 
 pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("import-dats")
@@ -66,7 +72,8 @@ pub async fn main(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
             matches.is_present("SKIP_HEADER"),
-        )?;
+        )
+        .await?;
         if !matches.is_present("INFO") {
             import_dat(
                 connection,
@@ -83,7 +90,7 @@ pub async fn main(
     Ok(())
 }
 
-pub fn parse_dat<P: AsRef<Path>>(
+pub async fn parse_dat<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     dat_path: &P,
     skip_header: bool,
@@ -104,9 +111,15 @@ pub fn parse_dat<P: AsRef<Path>>(
             progress_bar.println("Processing header");
             let header_file_name = &clr_mame_pro_xml.header;
             let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
-            let header_file = open_file_sync(&header_file_path.as_path())?;
-            let reader = io::BufReader::new(header_file);
-            detector_xml = de::from_reader(reader).expect("Failed to parse header file");
+            if header_file_path.is_file().await {
+                let header_file = open_file_sync(&header_file_path.as_path())?;
+                let reader = io::BufReader::new(header_file);
+                detector_xml = de::from_reader(reader).expect("Failed to parse header file");
+            } else {
+                let header_file = Assets::get(header_file_name).unwrap();
+                detector_xml = de::from_str(str::from_utf8(header_file.data.as_ref()).unwrap())
+                    .expect("Failed to parse header file");
+            }
         }
     };
 
@@ -460,7 +473,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
@@ -495,7 +508,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721) (Parent-Clone).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
@@ -530,7 +543,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
@@ -548,7 +561,7 @@ mod test {
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
-        assert_eq!(system.name, "Test System");
+        assert_eq!(system.name, "Test System (Headered)");
 
         assert!(find_header_by_system_id(&mut connection, system.id)
             .await
@@ -569,7 +582,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, true).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, true).await.unwrap();
 
         // when
         import_dat(
@@ -587,11 +600,50 @@ mod test {
         assert_eq!(systems.len(), 1);
 
         let system = systems.get(0).unwrap();
-        assert_eq!(system.name, "Test System");
+        assert_eq!(system.name, "Test System (Headered)");
 
         assert!(find_header_by_system_id(&mut connection, system.id)
             .await
             .is_none());
+
+        assert_eq!(find_games(&mut connection).await.len(), 1);
+        assert_eq!(find_roms(&mut connection).await.len(), 1);
+    }
+
+    #[async_std::test]
+    async fn test_import_dat_headered_embedded() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
+
+        let dat_path = test_directory.join("Test System (20211124) (Headered) (Embedded).dat");
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+
+        // when
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &datfile_xml,
+            &detector_xml,
+            false,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.get(0).unwrap();
+        assert_eq!(system.name, "Test System (Headered) (Embedded)");
+
+        assert!(find_header_by_system_id(&mut connection, system.id)
+            .await
+            .is_some());
 
         assert_eq!(find_games(&mut connection).await.len(), 1);
         assert_eq!(find_roms(&mut connection).await.len(), 1);
@@ -610,7 +662,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         let rom_directory = TempDir::new_in(&test_directory).unwrap();
         set_rom_directory(PathBuf::from(rom_directory.path()));
@@ -654,7 +706,7 @@ mod test {
         }
 
         let dat_path = test_directory.join("Test System (20210401).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
@@ -721,7 +773,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         import_dat(
             &mut connection,
@@ -734,7 +786,7 @@ mod test {
         .unwrap();
 
         let dat_path = test_directory.join("Test System (20000000).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
@@ -769,7 +821,7 @@ mod test {
         let mut connection = pool.acquire().await.unwrap();
 
         let dat_path = test_directory.join("Test System (20200721).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         import_dat(
             &mut connection,
@@ -782,7 +834,7 @@ mod test {
         .unwrap();
 
         let dat_path = test_directory.join("Test System (20000000).dat");
-        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).unwrap();
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
         import_dat(
