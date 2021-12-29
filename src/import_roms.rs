@@ -178,7 +178,8 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             )?
             .remove(0);
             let size_crc =
-                get_file_size_and_crc(progress_bar, &extracted_path, &header, 1, 1).await?;
+                get_file_size_and_crc(connection, progress_bar, &extracted_path, &header, 1, 1)
+                    .await?;
             remove_file(progress_bar, &extracted_path, true).await?;
             size = size_crc.0;
             crc = size_crc.1;
@@ -295,7 +296,8 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     if cue_path.is_file().await {
         progress_bar.println("CUE file found, using multiple tracks mode");
-        let (size, crc) = get_file_size_and_crc(progress_bar, &cue_path, &header, 1, 1).await?;
+        let (size, crc) =
+            get_file_size_and_crc(connection, progress_bar, &cue_path, &header, 1, 1).await?;
         let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
             None => {
@@ -324,8 +326,15 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .await?;
         let mut crcs: Vec<String> = Vec::new();
         for (i, bin_path) in bin_paths.iter().enumerate() {
-            let (_, crc) =
-                get_file_size_and_crc(progress_bar, &bin_path, &header, i, bin_paths.len()).await?;
+            let (_, crc) = get_file_size_and_crc(
+                connection,
+                progress_bar,
+                &bin_path,
+                &header,
+                i,
+                bin_paths.len(),
+            )
+            .await?;
             crcs.push(crc);
             remove_file(progress_bar, &bin_path, true).await?;
         }
@@ -353,7 +362,8 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.println("CUE file not found, using single track mode");
         let bin_path =
             extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
-        let (size, crc) = get_file_size_and_crc(progress_bar, &bin_path, &header, 1, 1).await?;
+        let (size, crc) =
+            get_file_size_and_crc(connection, progress_bar, &bin_path, &header, 1, 1).await?;
         remove_file(progress_bar, &bin_path, true).await?;
         let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
             Some(rom) => rom,
@@ -386,7 +396,8 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
-    let (size, crc) = get_file_size_and_crc(progress_bar, &iso_path, &header, 1, 1).await?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, &iso_path, &header, 1, 1).await?;
     remove_file(progress_bar, &iso_path, true).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
@@ -416,7 +427,8 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let (size, crc) = get_file_size_and_crc(progress_bar, romfile_path, &header, 1, 1).await?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, romfile_path, &header, 1, 1).await?;
     let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
         Some(rom) => rom,
         None => {

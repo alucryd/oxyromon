@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <detector>
-  <name>Test Header</name>
-  <author>Maxime Gauduin</author>
-  <version>20210402</version>
+  <name>No-Intro NES Dat iNES Header Skipper</name>
+  <author>Yakushi~Kabuto</author>
+  <version>20070321</version>
   <rule start_offset="10">
     <data offset="0" value="4E4553" />
   </rule>

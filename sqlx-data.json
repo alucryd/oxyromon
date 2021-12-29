@@ -20,12 +20,12 @@
       "nullable": []
     }
   },
-  "05ba1abbfdb9dfe30b3cdbb6ec17f4c1b68e40db4cc214aba2d8c2e3ec6153f3": {
-    "query": "\n        INSERT INTO headers (name, version, start_byte, size, hex_value, system_id)\n        VALUES (?, ?, ?, ?, ?, ?)\n        ",
+  "0b1ea5a5b61f9db176368b014ecbb4fd5a90f1aad5af2d466066e86fcd74d3d3": {
+    "query": "\n        UPDATE headers\n        SET name = ?, version = ?, size = ?, system_id = ?\n        WHERE id = ?\n        ",
     "describe": {
       "columns": [],
       "parameters": {
-        "Right": 6
+        "Right": 5
       },
       "nullable": []
     }
@@ -204,6 +204,16 @@
       ]
     }
   },
+  "1607b9dda6da9070bc3061bbd4fb7d8d32ab8be699656c3f02686014da4ed4d4": {
+    "query": "\n        INSERT INTO headers (name, version, size, system_id)\n        VALUES (?, ?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 4
+      },
+      "nullable": []
+    }
+  },
   "17f260b51d34301c1deda20ac17fd20423e04d070e6c4cde92eaa12a8968e69b": {
     "query": "\n        SELECT *\n        FROM headers\n        WHERE system_id = ?\n        ",
     "describe": {
@@ -224,23 +234,13 @@
           "type_info": "Text"
         },
         {
-          "name": "start_byte",
+          "name": "size",
           "ordinal": 3,
           "type_info": "Int64"
         },
         {
-          "name": "size",
-          "ordinal": 4,
-          "type_info": "Int64"
-        },
-        {
-          "name": "hex_value",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
           "name": "system_id",
-          "ordinal": 6,
+          "ordinal": 4,
           "type_info": "Int64"
         }
       ],
@@ -248,8 +248,6 @@
         "Right": 1
       },
       "nullable": [
-        false,
-        false,
         false,
         false,
         false,
@@ -410,6 +408,16 @@
       "columns": [],
       "parameters": {
         "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "514044d4c704946e4112327977ab9b4b2882ebd5d61a51285612a645f6bdfaca": {
+    "query": "\n        INSERT INTO rules (start_byte, hex_value, header_id)\n        VALUES (?, ?, ?)\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 3
       },
       "nullable": []
     }
@@ -580,72 +588,6 @@
         "Right": 6
       },
       "nullable": []
-    }
-  },
-  "65a1f48ac5d7564d5e5966a1fdd2df7db93835cc776e60fa4296e72abc590146": {
-    "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NULL\n        AND game_id IN (\n            SELECT id\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY name\n        ",
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "size",
-          "ordinal": 2,
-          "type_info": "Int64"
-        },
-        {
-          "name": "crc",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "md5",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "sha1",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "rom_status",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "game_id",
-          "ordinal": 7,
-          "type_info": "Int64"
-        },
-        {
-          "name": "romfile_id",
-          "ordinal": 8,
-          "type_info": "Int64"
-        }
-      ],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        true
-      ]
     }
   },
   "676e3a49139bd0dff86c6d937acbe11aaa48beebe69579365a1fcbcce62925ea": {
@@ -1154,12 +1096,12 @@
       ]
     }
   },
-  "af8b226131f3e2e776c6a114ce603bcba6c3b6a7f31e0014418a046569d545e7": {
-    "query": "\n        UPDATE headers\n        SET name = ?, version = ?, start_byte = ?, size = ?, hex_value = ?, system_id = ?\n        WHERE id = ?\n        ",
+  "b1090241765e28b64975666d9766f6a70fe800b03b144fb526e2035270391e79": {
+    "query": "\n        DELETE FROM rules\n        WHERE header_id = ?\n        ",
     "describe": {
       "columns": [],
       "parameters": {
-        "Right": 7
+        "Right": 1
       },
       "nullable": []
     }
@@ -1390,6 +1332,42 @@
         "Right": 2
       },
       "nullable": []
+    }
+  },
+  "f1815a970cccf278f9223741b0848ac656b5bf4eddd74da1ecf6dd0e41bce30e": {
+    "query": "\n        SELECT *\n        FROM rules\n        WHERE header_id = ?\n        ",
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "start_byte",
+          "ordinal": 1,
+          "type_info": "Int64"
+        },
+        {
+          "name": "hex_value",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "header_id",
+          "ordinal": 3,
+          "type_info": "Int64"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
     }
   },
   "f3ff1aa3dee226609e68186b45580ca6972aced2158b2f9204b9626bb8d3b968": {

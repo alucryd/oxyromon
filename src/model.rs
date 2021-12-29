@@ -20,10 +20,16 @@ pub struct Header {
     pub id: i64,
     pub name: String,
     pub version: String,
-    pub start_byte: i64,
     pub size: i64,
-    pub hex_value: String,
     pub system_id: i64,
+}
+
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+pub struct Rule {
+    pub id: i64,
+    pub start_byte: i64,
+    pub hex_value: String,
+    pub header_id: i64,
 }
 
 #[derive(Type)]
@@ -136,7 +142,7 @@ pub struct DetectorXml {
 #[derive(Deserialize)]
 pub struct RuleXml {
     pub start_offset: String,
-    pub data: DataXml,
+    pub data: Vec<DataXml>,
 }
 
 #[derive(Deserialize)]
