@@ -5,7 +5,7 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -26,33 +26,34 @@ lazy_static! {
 #[folder = "data/"]
 struct Assets;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("import-dats")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("import-dats")
         .about("Parses and imports No-Intro and Redump DAT files into oxyromon")
         .arg(
-            Arg::with_name("DATS")
+            Arg::new("DATS")
                 .help("Sets the DAT files to import")
                 .required(true)
-                .multiple(true)
-                .index(1),
+                .multiple_values(true)
+                .index(1)
+                .allow_invalid_utf8(true),
         )
         .arg(
-            Arg::with_name("INFO")
-                .short("i")
+            Arg::new("INFO")
+                .short('i')
                 .long("info")
                 .help("Shows the DAT information and exit")
                 .required(false),
         )
         .arg(
-            Arg::with_name("SKIP_HEADER")
-                .short("s")
+            Arg::new("SKIP_HEADER")
+                .short('s')
                 .long("skip-header")
                 .help("Skips parsing the header even if the system has one")
                 .required(false),
         )
         .arg(
-            Arg::with_name("FORCE")
-                .short("f")
+            Arg::new("FORCE")
+                .short('f')
                 .long("force")
                 .help("Forces import of outdated DAT files")
                 .required(false),
@@ -61,7 +62,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let dat_paths: Vec<String> = matches.values_of_lossy("DATS").unwrap();

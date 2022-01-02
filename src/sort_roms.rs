@@ -9,7 +9,7 @@ use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
@@ -19,44 +19,44 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("sort-roms")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("sort-roms")
         .about("Sorts ROM files according to region and version preferences")
         .arg(
-            Arg::with_name("REGIONS_ALL")
-                .short("r")
+            Arg::new("REGIONS_ALL")
+                .short('r')
                 .long("regions")
                 .help("Sets the regions to keep (unordered)")
                 .required(false)
                 .takes_value(true)
-                .multiple(true),
+                .multiple_values(true),
         )
         .arg(
-            Arg::with_name("REGIONS_ONE")
-                .short("g")
+            Arg::new("REGIONS_ONE")
+                .short('g')
                 .long("1g1r")
                 .help("Sets the 1G1R regions to keep (ordered)")
                 .required(false)
                 .takes_value(true)
-                .multiple(true),
+                .multiple_values(true),
         )
         .arg(
-            Arg::with_name("MISSING")
-                .short("m")
+            Arg::new("MISSING")
+                .short('m')
                 .long("missing")
                 .help("Shows missing games")
                 .required(false),
         )
         .arg(
-            Arg::with_name("ALL")
-                .short("a")
+            Arg::new("ALL")
+                .short('a')
                 .long("all")
                 .help("Sorts all systems")
                 .required(false),
         )
         .arg(
-            Arg::with_name("YES")
-                .short("y")
+            Arg::new("YES")
+                .short('y')
                 .long("yes")
                 .help("Automatically says yes to prompts")
                 .required(false),
@@ -65,7 +65,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
@@ -104,7 +104,7 @@ pub async fn main(
 
 pub async fn get_regions(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     key: &str,
 ) -> Vec<Region> {
     let all_regions: Vec<String> = if matches.is_present(key) {
@@ -123,7 +123,7 @@ pub async fn get_regions(
 
 async fn sort_system(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
     system: &System,
     all_regions: &[Region],

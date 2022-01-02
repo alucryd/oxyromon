@@ -9,26 +9,27 @@ use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::str::FromStr;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("import-roms")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("import-roms")
         .about("Validates and imports ROM files into oxyromon")
         .arg(
-            Arg::with_name("ROMS")
+            Arg::new("ROMS")
                 .help("Sets the ROM files to import")
                 .required(true)
-                .multiple(true)
-                .index(1),
+                .multiple_values(true)
+                .index(1)
+                .allow_invalid_utf8(true),
         )
         .arg(
-            Arg::with_name("SYSTEM")
-                .short("s")
+            Arg::new("SYSTEM")
+                .short('s')
                 .long("system")
                 .help("Sets the system number to use")
                 .required(false)
@@ -38,7 +39,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let romfile_paths: Vec<String> = matches.values_of_lossy("ROMS").unwrap();

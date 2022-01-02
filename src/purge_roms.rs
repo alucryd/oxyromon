@@ -4,37 +4,37 @@ use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("purge-roms")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("purge-roms")
         .about("Purges trashed, missing and orphan ROM files")
         .arg(
-            Arg::with_name("MISSING")
-                .short("m")
+            Arg::new("MISSING")
+                .short('m')
                 .long("missing")
                 .help("Deletes missing ROM files from the database")
                 .required(false),
         )
         .arg(
-            Arg::with_name("ORPHAN")
-                .short("o")
+            Arg::new("ORPHAN")
+                .short('o')
                 .long("orphan")
                 .help("Deletes ROM files without an associated ROM from the database")
                 .required(false),
         )
         .arg(
-            Arg::with_name("TRASH")
-                .short("t")
+            Arg::new("TRASH")
+                .short('t')
                 .long("trash")
                 .help("Physically deletes ROM files from the trash directories")
                 .required(false),
         )
         .arg(
-            Arg::with_name("YES")
-                .short("y")
+            Arg::new("YES")
+                .short('y')
                 .long("yes")
                 .help("Automatically says yes to prompts")
                 .required(false),
@@ -43,7 +43,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("MISSING") {
@@ -91,7 +91,7 @@ async fn purge_missing_romfiles(
 
 async fn purge_trashed_romfiles(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing trashed ROM files");

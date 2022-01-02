@@ -5,10 +5,11 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
 use crc32fast::Hasher;
-use digest::generic_array::typenum::{U4, U64};
+use digest::generic_array::typenum::U4;
 use digest::generic_array::GenericArray;
 use digest::Digest;
-use digest::{BlockInput, FixedOutputDirty, Reset, Update};
+use digest::OutputSizeUser;
+use digest::{FixedOutput, HashMarker, Reset, Update};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
@@ -27,21 +28,21 @@ impl Crc32 {
     }
 }
 
-impl FixedOutputDirty for Crc32 {
-    type OutputSize = U4;
+impl HashMarker for Crc32 {}
 
-    fn finalize_into_dirty(&mut self, out: &mut GenericArray<u8, U4>) {
+impl OutputSizeUser for Crc32 {
+    type OutputSize = U4;
+}
+
+impl FixedOutput for Crc32 {
+    fn finalize_into(self, out: &mut GenericArray<u8, U4>) {
         out.copy_from_slice(&self.hasher.to_owned().finalize().to_be_bytes());
     }
 }
 
-impl BlockInput for Crc32 {
-    type BlockSize = U64;
-}
-
 impl Update for Crc32 {
-    fn update(&mut self, input: impl AsRef<[u8]>) {
-        self.hasher.update(input.as_ref());
+    fn update(&mut self, data: &[u8]) {
+        self.hasher.update(data);
     }
 }
 

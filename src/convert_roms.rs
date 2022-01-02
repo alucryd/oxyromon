@@ -7,7 +7,7 @@ use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
@@ -16,12 +16,12 @@ use std::mem::drop;
 
 const FORMATS: &[&str] = &["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"];
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("convert-roms")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("convert-roms")
         .about("Converts ROM files between common formats")
         .arg(
-            Arg::with_name("FORMAT")
-                .short("f")
+            Arg::new("FORMAT")
+                .short('f')
                 .long("format")
                 .help("Sets the destination format")
                 .required(false)
@@ -29,23 +29,23 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .possible_values(FORMATS),
         )
         .arg(
-            Arg::with_name("NAME")
-                .short("n")
+            Arg::new("NAME")
+                .short('n')
                 .long("name")
                 .help("Selects ROMs by name")
                 .required(false)
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("ALL")
-                .short("a")
+            Arg::new("ALL")
+                .short('a')
                 .long("all")
                 .help("Converts all systems/all ROMs")
                 .required(false),
         )
         .arg(
-            Arg::with_name("STATISTICS")
-                .short("s")
+            Arg::new("STATISTICS")
+                .short('s')
                 .long("statistics")
                 .help("Prints statistics for each conversion")
                 .required(false),
@@ -54,7 +54,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;

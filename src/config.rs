@@ -3,7 +3,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
@@ -36,20 +36,20 @@ const LISTS: &[&str] = &[
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("config")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("config")
         .about("Queries and modifies the oxyromon settings")
         .arg(
-            Arg::with_name("LIST")
-                .short("l")
+            Arg::new("LIST")
+                .short('l')
                 .long("list")
                 .help("Prints the whole configuration")
                 .required(false)
                 .conflicts_with_all(&["GET", "SET"]),
         )
         .arg(
-            Arg::with_name("GET")
-                .short("g")
+            Arg::new("GET")
+                .short('g')
                 .long("get")
                 .help("Prints a single setting")
                 .required(false)
@@ -57,35 +57,35 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .value_name("KEY"),
         )
         .arg(
-            Arg::with_name("SET")
-                .short("s")
+            Arg::new("SET")
+                .short('s')
                 .long("set")
                 .help("Configures a single setting")
                 .required(false)
                 .takes_value(true)
-                .multiple(true)
+                .multiple_values(true)
                 .number_of_values(2)
                 .value_names(&["KEY", "VALUE"]),
         )
         .arg(
-            Arg::with_name("ADD")
-                .short("a")
+            Arg::new("ADD")
+                .short('a')
                 .long("add")
                 .help("Adds an entry to a list")
                 .required(false)
                 .takes_value(true)
-                .multiple(true)
+                .multiple_values(true)
                 .number_of_values(2)
                 .value_names(&["KEY", "VALUE"]),
         )
         .arg(
-            Arg::with_name("REMOVE")
-                .short("r")
+            Arg::new("REMOVE")
+                .short('r')
                 .long("remove")
                 .help("Removes an entry from a list")
                 .required(false)
                 .takes_value(true)
-                .multiple(true)
+                .multiple_values(true)
                 .number_of_values(2)
                 .value_names(&["KEY", "VALUE"]),
         )
@@ -94,7 +94,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 pub async fn main(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
 ) -> SimpleResult<()> {
     // make sure rom and tmp directories are initialized
     get_rom_directory(connection).await;
