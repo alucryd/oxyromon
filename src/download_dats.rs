@@ -6,7 +6,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::task;
 use cfg_if::cfg_if;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
@@ -83,44 +83,44 @@ cfg_if! {
     }
 }
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("download-dats")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("download-dats")
         .about("Downloads No-Intro and Redump DAT files and imports them into oxyromon")
         .arg(
-            Arg::with_name("NOINTRO")
-                .short("n")
+            Arg::new("NOINTRO")
+                .short('n')
                 .long("nointro")
                 .help("Downloads No-Intro DAT files")
                 .required(false)
                 .conflicts_with("REDUMP")
-                .required_unless("REDUMP"),
+                .required_unless_present("REDUMP"),
         )
         .arg(
-            Arg::with_name("REDUMP")
-                .short("r")
+            Arg::new("REDUMP")
+                .short('r')
                 .long("redump")
                 .help("Downloads Redump DAT files")
                 .required(false)
                 .conflicts_with("NOINTRO")
-                .required_unless("NOINTRO"),
+                .required_unless_present("NOINTRO"),
         )
         .arg(
-            Arg::with_name("UPDATE")
-                .short("u")
+            Arg::new("UPDATE")
+                .short('u')
                 .long("update")
                 .help("Checks for system updates")
                 .required(false),
         )
         .arg(
-            Arg::with_name("ALL")
-                .short("a")
+            Arg::new("ALL")
+                .short('a')
                 .long("all")
                 .help("Imports all systems")
                 .required(false),
         )
         .arg(
-            Arg::with_name("FORCE")
-                .short("f")
+            Arg::new("FORCE")
+                .short('f')
                 .long("force")
                 .help("Forces import of outdated DAT files")
                 .required(false),
@@ -129,7 +129,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.is_present("NOINTRO") {

@@ -78,7 +78,7 @@ async fn main() -> SimpleResult<()> {
         .subcommands(subcommands)
         .get_matches();
 
-    if matches.subcommand.is_some() {
+    if matches.subcommand().is_some() {
         dotenv().ok();
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());

@@ -16,7 +16,7 @@ use async_graphql::{
 use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use futures::stream::TryStreamExt;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
@@ -36,12 +36,12 @@ lazy_static! {
 #[folder = "public/"]
 struct Assets;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("server")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("server")
         .about("Launches the backend server")
         .arg(
-            Arg::with_name("ADDRESS")
-                .short("a")
+            Arg::new("ADDRESS")
+                .short('a')
                 .long("address")
                 .help("Specifies the server address")
                 .required(false)
@@ -49,8 +49,8 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
                 .default_value("127.0.0.1"),
         )
         .arg(
-            Arg::with_name("PORT")
-                .short("p")
+            Arg::new("PORT")
+                .short('p')
                 .long("port")
                 .help("Specifies the server port")
                 .required(false)
@@ -268,11 +268,6 @@ impl QueryRoot {
     }
 }
 
-#[derive(Clone)]
-struct AppState {
-    schema: Schema<QueryRoot, EmptyMutation, EmptySubscription>,
-}
-
 async fn serve_asset(req: tide::Request<()>) -> tide::Result {
     let file_path = req.param("path").unwrap_or("index.html");
     match Assets::get(file_path) {
@@ -294,13 +289,13 @@ async fn serve_asset(req: tide::Request<()>) -> tide::Result {
     }
 }
 
-pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()> {
+pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
     let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
-        .data(DataLoader::new(SystemLoader))
-        .data(DataLoader::new(GameLoader))
-        .data(DataLoader::new(RomfileLoader))
+        .data(DataLoader::new(SystemLoader, async_std::task::spawn))
+        .data(DataLoader::new(GameLoader, async_std::task::spawn))
+        .data(DataLoader::new(RomfileLoader, async_std::task::spawn))
         .finish();
 
     let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
@@ -311,8 +306,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches<'_>) -> SimpleResult<()
             app.at("/").get(serve_asset);
             app.at("/*path").get(serve_asset);
 
-            app.at("/graphql")
-                .post(async_graphql_tide::graphql(schema));
+            app.at("/graphql").post(async_graphql_tide::graphql(schema));
 
             let address = matches.value_of("ADDRESS").unwrap();
             let port = matches.value_of("PORT").unwrap();

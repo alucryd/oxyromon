@@ -7,26 +7,26 @@ use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("check-roms")
+pub fn subcommand<'a>() -> App<'a> {
+    App::new("check-roms")
         .about("Checks ROM files integrity")
         .arg(
-            Arg::with_name("ALL")
-                .short("a")
+            Arg::new("ALL")
+                .short('a')
                 .long("all")
                 .help("Checks all systems")
                 .required(false),
         )
         .arg(
-            Arg::with_name("SIZE")
-                .short("s")
+            Arg::new("SIZE")
+                .short('s')
                 .long("size")
                 .help("Recalculates ROM file sizes")
                 .required(false),
@@ -35,7 +35,7 @@ pub fn subcommand<'a, 'b>() -> App<'a, 'b> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
