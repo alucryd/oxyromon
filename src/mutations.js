@@ -64,6 +64,7 @@ export async function getGamesBySystemId(systemId) {
             games(systemId: ${systemId}) {
                 id
                 name
+                description
                 complete
                 sorting
             }

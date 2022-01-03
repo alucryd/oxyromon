@@ -1,0 +1,2 @@
+ALTER TABLE roms
+ADD COLUMN merge_name VARCHAR;

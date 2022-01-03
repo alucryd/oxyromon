@@ -74,15 +74,16 @@ pub fn prompt_for_roms(roms: Vec<Rom>, all: bool) -> SimpleResult<Vec<Rom>> {
         .collect())
 }
 
-pub fn prompt_for_rom(roms: &mut Vec<Rom>) -> SimpleResult<Rom> {
+pub fn prompt_for_rom(roms_games: &mut Vec<(Rom, Game)>) -> SimpleResult<Rom> {
+    let items: Vec<String> = roms_games
+        .iter()
+        .map(|(rom, game)| format!("{} ({})", &rom.name, &game.name))
+        .collect();
     let index = select(
-        &roms
-            .iter()
-            .map(|rom| rom.name.as_str())
-            .collect::<Vec<&str>>(),
+        &items.iter().map(|item| &**item).collect::<Vec<&str>>(),
         None,
     )?;
-    Ok(roms.remove(index))
+    Ok(roms_games.remove(index).0)
 }
 
 pub fn confirm(default: bool) -> SimpleResult<bool> {

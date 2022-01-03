@@ -272,7 +272,7 @@ async fn download_redump_dat(
                     .join(zip_archive.file_names().next().unwrap()),
                 true,
             ).await?;
-            import_dat(connection, progress_bar, &datfile_xml, &detector_xml, force).await?;
+            import_dat(connection, progress_bar, &datfile_xml, &detector_xml, false, force).await?;
         }
         _ => progress_bar.println("Update ZIP contains too many files"),
     }

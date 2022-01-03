@@ -4,6 +4,7 @@
 * Greatly improve completion calculation in sort-roms
 * Add support for the Atari 7800 header definition
 * Embed some no-intro header definitions and use them as fallback if they are not found alongside their dat file
+* Add initial support for arcade systems
 
 # 0.9.0
 * Use transactions for increased database performance

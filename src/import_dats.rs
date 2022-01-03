@@ -58,6 +58,13 @@ pub fn subcommand<'a>() -> App<'a> {
                 .help("Forces import of outdated DAT files")
                 .required(false),
         )
+        .arg(
+            Arg::new("ARCADE")
+                .short('a')
+                .long("arcade")
+                .help("Toggles arcade mode")
+                .required(false),
+        )
 }
 
 pub async fn main(
@@ -81,6 +88,7 @@ pub async fn main(
                 progress_bar,
                 &datfile_xml,
                 &detector_xml,
+                matches.is_present("ARCADE"),
                 matches.is_present("FORCE"),
             )
             .await?;
@@ -110,16 +118,17 @@ pub async fn parse_dat<P: AsRef<Path>>(
     if !skip_header {
         if let Some(clr_mame_pro_xml) = &datfile_xml.system.clrmamepro {
             progress_bar.println("Processing header");
-            let header_file_name = &clr_mame_pro_xml.header;
-            let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
-            if header_file_path.is_file().await {
-                let header_file = open_file_sync(&header_file_path.as_path())?;
-                let reader = io::BufReader::new(header_file);
-                detector_xml = de::from_reader(reader).expect("Failed to parse header file");
-            } else {
-                let header_file = Assets::get(header_file_name).unwrap();
-                detector_xml = de::from_str(str::from_utf8(header_file.data.as_ref()).unwrap())
-                    .expect("Failed to parse header file");
+            if let Some(header_file_name) = &clr_mame_pro_xml.header {
+                let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
+                if header_file_path.is_file().await {
+                    let header_file = open_file_sync(&header_file_path.as_path())?;
+                    let reader = io::BufReader::new(header_file);
+                    detector_xml = de::from_reader(reader).expect("Failed to parse header file");
+                } else {
+                    let header_file = Assets::get(header_file_name).unwrap();
+                    detector_xml = de::from_str(str::from_utf8(header_file.data.as_ref()).unwrap())
+                        .expect("Failed to parse header file");
+                }
             }
         }
     };
@@ -132,6 +141,7 @@ pub async fn import_dat(
     progress_bar: &ProgressBar,
     datfile_xml: &DatfileXml,
     detector_xml: &Option<DetectorXml>,
+    arcade: bool,
     force: bool,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing system");
@@ -139,13 +149,18 @@ pub async fn import_dat(
     let mut transaction = begin_transaction(connection).await;
 
     // persist system
-    let system_id =
-        match create_or_update_system(&mut transaction, progress_bar, &datfile_xml.system, force)
-            .await
-        {
-            Some(system_id) => system_id,
-            None => return Ok(()),
-        };
+    let system_id = match create_or_update_system(
+        &mut transaction,
+        progress_bar,
+        &datfile_xml.system,
+        arcade,
+        force,
+    )
+    .await
+    {
+        Some(system_id) => system_id,
+        None => return Ok(()),
+    };
 
     // persist header
     if let Some(detector_xml) = detector_xml {
@@ -167,6 +182,7 @@ pub async fn import_dat(
             &mut transaction,
             &datfile_xml.games,
             system_id,
+            arcade,
             &progress_bar,
         )
         .await?,
@@ -218,6 +234,7 @@ async fn create_or_update_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system_xml: &SystemXml,
+    arcade: bool,
     force: bool,
 ) -> Option<i64> {
     let mut system = find_system_by_name(connection, &system_xml.name).await;
@@ -232,13 +249,13 @@ async fn create_or_update_system(
     match system {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                update_system(connection, system.id, system_xml).await;
+                update_system(connection, system.id, system_xml, arcade).await;
                 Some(system.id)
             } else {
                 None
             }
         }
-        None => Some(create_system(connection, system_xml).await),
+        None => Some(create_system(connection, system_xml, arcade).await),
     }
 }
 
@@ -265,6 +282,7 @@ async fn create_or_update_games(
     connection: &mut SqliteConnection,
     games_xml: &[GameXml],
     system_id: i64,
+    arcade: bool,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<i64>> {
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
@@ -279,29 +297,24 @@ async fn create_or_update_games(
     for parent_game_xml in parent_games_xml {
         let game =
             find_game_by_name_and_system_id(connection, &parent_game_xml.name, system_id).await;
+        let regions = match arcade {
+            false => get_regions_from_game_name(&parent_game_xml.name).unwrap(),
+            true => String::new(),
+        };
         let game_id = match game {
             Some(game) => {
                 update_game(
                     connection,
                     game.id,
                     parent_game_xml,
-                    &get_regions_from_game_name(&parent_game_xml.name).unwrap(),
+                    &regions,
                     system_id,
                     None,
                 )
                 .await;
                 game.id
             }
-            None => {
-                create_game(
-                    connection,
-                    parent_game_xml,
-                    &get_regions_from_game_name(&parent_game_xml.name).unwrap(),
-                    system_id,
-                    None,
-                )
-                .await
-            }
+            None => create_game(connection, parent_game_xml, &regions, system_id, None).await,
         };
         if !parent_game_xml.roms.is_empty() {
             orphan_romfile_ids.append(
@@ -322,13 +335,17 @@ async fn create_or_update_games(
         )
         .await
         .unwrap();
+        let regions = match arcade {
+            false => get_regions_from_game_name(&child_game_xml.name).unwrap(),
+            true => String::new(),
+        };
         let game_id = match game {
             Some(game) => {
                 update_game(
                     connection,
                     game.id,
                     child_game_xml,
-                    &get_regions_from_game_name(&child_game_xml.name).unwrap(),
+                    &regions,
                     system_id,
                     Some(parent_game.id),
                 )
@@ -339,7 +356,7 @@ async fn create_or_update_games(
                 create_game(
                     connection,
                     child_game_xml,
-                    &get_regions_from_game_name(&child_game_xml.name).unwrap(),
+                    &regions,
                     system_id,
                     Some(parent_game.id),
                 )
@@ -365,11 +382,15 @@ async fn create_or_update_roms(
 ) -> Vec<i64> {
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     for rom_xml in roms_xml {
+        // skip nodump roms
+        if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
+            continue;
+        }
         let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await;
         match rom {
             Some(rom) => {
                 update_rom(connection, rom.id, &rom_xml, game_id).await;
-                if rom_xml.size != rom.size || rom_xml.crc != rom.crc {
+                if rom_xml.size != rom.size || rom_xml.crc.as_ref().unwrap() != &rom.crc {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);
                         update_rom_romfile(connection, rom.id, None).await;
@@ -397,7 +418,7 @@ async fn delete_old_games(
         .collect();
     for game in games {
         orphan_romfile_ids.extend(
-            find_roms_by_game_id(connection, game.id)
+            find_roms_by_game_id_skip_parents(connection, game.id)
                 .await
                 .into_iter()
                 .filter_map(|rom| rom.romfile_id),
@@ -414,7 +435,7 @@ async fn delete_old_roms(
 ) -> Vec<i64> {
     let rom_names_xml: Vec<&String> = roms_xml.iter().map(|rom_xml| &rom_xml.name).collect();
     let rom_names_romfile_ids: Vec<(String, Option<i64>)> =
-        find_roms_by_game_id(connection, game_id)
+        find_roms_by_game_id_skip_parents(connection, game_id)
             .await
             .into_par_iter()
             .map(|rom| (rom.name, rom.romfile_id))
@@ -483,6 +504,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -518,6 +540,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -552,6 +575,7 @@ mod test {
             &progress_bar,
             &datfile_xml,
             &detector_xml,
+            false,
             false,
         )
         .await
@@ -592,6 +616,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -630,6 +655,7 @@ mod test {
             &progress_bar,
             &datfile_xml,
             &detector_xml,
+            false,
             false,
         )
         .await
@@ -676,6 +702,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -715,6 +742,7 @@ mod test {
             &progress_bar,
             &datfile_xml,
             &detector_xml,
+            false,
             false,
         )
         .await
@@ -782,6 +810,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -795,6 +824,7 @@ mod test {
             &progress_bar,
             &datfile_xml,
             &detector_xml,
+            false,
             false,
         )
         .await
@@ -830,6 +860,7 @@ mod test {
             &datfile_xml,
             &detector_xml,
             false,
+            false,
         )
         .await
         .unwrap();
@@ -843,6 +874,7 @@ mod test {
             &progress_bar,
             &datfile_xml,
             &detector_xml,
+            false,
             true,
         )
         .await

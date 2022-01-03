@@ -1,0 +1,12 @@
+ALTER TABLE roms
+RENAME COLUMN sha1 TO sha1_old;
+
+ALTER TABLE roms
+ADD COLUMN sha1 VARCHAR(40);
+
+INSERT INTO roms (sha1)
+SELECT sha1_old
+FROM roms;
+
+ALTER TABLE roms
+DROP COLUMN sha1_old;
