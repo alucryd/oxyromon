@@ -9,6 +9,7 @@ use super::util::*;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
+use rayon::prelude::*;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
@@ -31,6 +32,13 @@ pub fn subcommand<'a>() -> App<'a> {
                 .help("Recalculates ROM file sizes")
                 .required(false),
         )
+        .arg(
+            Arg::new("REPAIR")
+                .short('r')
+                .long("repair")
+                .help("Repairs arcade ROM files when possible")
+                .required(false),
+        )
 }
 
 pub async fn main(
@@ -46,6 +54,7 @@ pub async fn main(
             progress_bar,
             &system,
             matches.is_present("SIZE"),
+            matches.is_present("REPAIR"),
         )
         .await?;
         progress_bar.println("");
@@ -58,6 +67,7 @@ async fn check_system(
     progress_bar: &ProgressBar,
     system: &System,
     size: bool,
+    repair: bool,
 ) -> SimpleResult<()> {
     let header = find_header_by_system_id(connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(connection, system.id).await;
@@ -122,6 +132,63 @@ async fn check_system(
     }
 
     commit_transaction(transaction).await;
+
+    if system.arcade && repair {
+        let games = find_incomplete_games_by_system_id(connection, system.id).await;
+        let roms = find_roms_without_romfile_by_game_ids(
+            connection,
+            &games.par_iter().map(|game| game.id).collect::<Vec<i64>>(),
+        )
+        .await;
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
+        for rom in roms {
+            let mut transaction = begin_transaction(connection).await;
+            let mut existing_roms = find_roms_with_romfile_by_size_and_crc_and_system_id(
+                &mut transaction,
+                rom.size,
+                &rom.crc,
+                system.id,
+            )
+            .await;
+            if !existing_roms.is_empty() {
+                let existing_rom = existing_roms.remove(0);
+                let existing_romfile =
+                    find_romfile_by_id(&mut transaction, existing_rom.romfile_id.unwrap()).await;
+                let game = games_by_id.get(&rom.game_id).unwrap();
+                let directory = get_system_directory(&mut transaction, progress_bar, system)
+                    .await?
+                    .join(&game.name);
+                create_directory(progress_bar, &directory, false).await?;
+                let romfile_path = directory.join(rom.name);
+                if existing_romfile.path.ends_with(ZIP_EXTENSION) {
+                    extract_files_from_archive(
+                        progress_bar,
+                        &existing_romfile.path,
+                        &vec![existing_rom.name.as_str()],
+                        &directory,
+                    )?;
+                    rename_file(
+                        progress_bar,
+                        &directory.join(&existing_rom.name),
+                        &romfile_path,
+                        false,
+                    )
+                    .await?;
+                } else {
+                    copy_file(progress_bar, &existing_romfile.path, &romfile_path, false).await?;
+                }
+                let romfile_id = create_romfile(
+                    &mut transaction,
+                    romfile_path.as_os_str().to_str().unwrap(),
+                    romfile_path.metadata().await.unwrap().len(),
+                )
+                .await;
+                update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
+            }
+            commit_transaction(transaction).await;
+        }
+    }
 
     Ok(())
 }
@@ -320,7 +387,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -373,7 +440,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -426,7 +493,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -479,7 +546,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -539,7 +606,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -601,7 +668,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -654,7 +721,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, true)
+        check_system(&mut connection, &progress_bar, &system, true, false)
             .await
             .unwrap();
 
@@ -707,7 +774,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -768,7 +835,7 @@ mod test {
         file.set_len(512).await.unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 
@@ -830,7 +897,7 @@ mod test {
         file.sync_all().await.unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false)
+        check_system(&mut connection, &progress_bar, &system, false, false)
             .await
             .unwrap();
 

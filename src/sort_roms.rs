@@ -18,6 +18,7 @@ use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::ffi::OsString;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("sort-roms")
@@ -147,7 +148,7 @@ async fn sort_system(
         .collect();
 
     // 1G1R mode
-    if !one_regions.is_empty() {
+    if !system.arcade && !one_regions.is_empty() {
         let parent_games = find_parent_games_by_system_id(connection, system.id).await;
         let clone_games = find_clone_games_by_system_id(connection, system.id).await;
 
@@ -172,7 +173,7 @@ async fn sort_system(
             // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
                 let (mut left_games, right_games) =
-                    trim_ignored_games(games, ignored_releases, ignored_flags);
+                    trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
                 ignored_games.append(&mut left_games);
                 games = right_games;
             }
@@ -182,7 +183,7 @@ async fn sort_system(
                 let i = games.iter().position(|game| {
                     game.complete
                         && Region::try_from_tosec_region(&game.regions)
-                            .unwrap()
+                            .unwrap_or(vec![])
                             .contains(region)
                 });
                 if i.is_some() {
@@ -196,7 +197,7 @@ async fn sort_system(
                 let game = games.remove(0);
                 let region_in_all_regions = all_regions.iter().any(|region| {
                     Region::try_from_tosec_region(&game.regions)
-                        .unwrap()
+                        .unwrap_or(vec![])
                         .contains(region)
                 });
                 if region_in_all_regions {
@@ -211,13 +212,13 @@ async fn sort_system(
             }
         }
     // Regions mode
-    } else if !all_regions.is_empty() {
+    } else if !system.arcade && !all_regions.is_empty() {
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
             let (mut left_games, right_games) =
-                trim_ignored_games(games, ignored_releases, ignored_flags);
+                trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
             ignored_games.append(&mut left_games);
             games = right_games;
         }
@@ -225,7 +226,7 @@ async fn sort_system(
         for game in games {
             let region_in_all_regions = all_regions.iter().any(|region| {
                 Region::try_from_tosec_region(&game.regions)
-                    .unwrap()
+                    .unwrap_or(vec![])
                     .contains(region)
             });
             if region_in_all_regions {
@@ -244,7 +245,7 @@ async fn sort_system(
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
             let (mut left_games, right_games) =
-                trim_ignored_games(games, ignored_releases, ignored_flags);
+                trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
             ignored_games.append(&mut left_games);
             games = right_games;
         }
@@ -271,7 +272,11 @@ async fn sort_system(
         if !missing_roms.is_empty() {
             progress_bar.println("Missing:");
             for rom in missing_roms {
-                progress_bar.println(&format!("{} [{}]", rom.name, rom.crc));
+                let game = missing_games
+                    .iter()
+                    .find(|&game| game.id == rom.game_id)
+                    .unwrap();
+                progress_bar.println(&format!("{} ({}) [{}]", rom.name, game.name, rom.crc));
             }
         } else {
             progress_bar.println("No missing ROMs");
@@ -299,11 +304,13 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
+            progress_bar,
+            system,
             all_regions_games,
             &system_directory,
             &romfiles_by_id,
         )
-        .await,
+        .await?,
     );
 
     // process one region games
@@ -319,11 +326,35 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
+            progress_bar,
+            system,
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
         )
-        .await,
+        .await?,
+    );
+
+    // process missing games
+    changes += update_games_sorting(
+        &mut transaction,
+        &missing_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::AllRegions,
+    )
+    .await;
+    romfile_moves.append(
+        &mut sort_games(
+            &mut transaction,
+            progress_bar,
+            system,
+            missing_games,
+            &system_directory,
+            &romfiles_by_id,
+        )
+        .await?,
     );
 
     // process ignored games
@@ -339,23 +370,14 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
+            progress_bar,
+            system,
             ignored_games,
             &trash_directory,
             &romfiles_by_id,
         )
-        .await,
+        .await?,
     );
-
-    // process missing games
-    changes += update_games_sorting(
-        &mut transaction,
-        &missing_games
-            .iter()
-            .map(|game| game.id)
-            .collect::<Vec<i64>>(),
-        Sorting::AllRegions,
-    )
-    .await;
 
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
@@ -406,10 +428,12 @@ async fn sort_system(
 
 async fn sort_games<'a, P: AsRef<Path>>(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
     games: Vec<Game>,
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
-) -> Vec<(&'a Romfile, String)> {
+) -> SimpleResult<Vec<(&'a Romfile, String)>> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let roms = find_roms_with_romfile_by_game_ids(
@@ -435,52 +459,73 @@ async fn sort_games<'a, P: AsRef<Path>>(
             None => continue,
         };
         let rom_count = roms.len();
-        romfile_moves.append(
-            &mut roms
-                .iter()
-                .map(|rom| {
-                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let new_path = String::from(
-                        compute_new_path(&game, &rom, &romfile, rom_count, directory)
-                            .as_os_str()
-                            .to_str()
-                            .unwrap(),
-                    );
-                    (romfile, new_path)
-                })
-                .filter(|(romfile, new_path)| &romfile.path != new_path)
-                .collect(),
-        );
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let new_path = String::from(
+                compute_new_path(
+                    progress_bar,
+                    system,
+                    &game,
+                    &rom,
+                    &romfile,
+                    rom_count,
+                    directory,
+                )
+                .await?
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+            );
+            if romfile.path != new_path {
+                romfile_moves.push((romfile, new_path))
+            }
+        }
     }
 
-    romfile_moves
+    Ok(romfile_moves)
 }
 
 fn trim_ignored_games(
     games: Vec<Game>,
     ignored_releases: &[&str],
     ignored_flags: &[&str],
+    arcade: bool,
 ) -> (Vec<Game>, Vec<Game>) {
     // TODO: use drain_filter when it hits stable
-    games.into_iter().partition(|game| {
-        if let Ok(name) = NoIntroName::try_parse(&game.name) {
-            for token in name.iter() {
-                if let NoIntroToken::Release(release, _) = token {
-                    if ignored_releases.contains(release) {
-                        return true;
-                    }
+    if arcade {
+        games.into_iter().partition(|game| {
+            let comment = match game.comment.as_ref() {
+                Some(comment) => comment,
+                None => "",
+            };
+            for ignored_release in ignored_releases {
+                if comment.contains(ignored_release) {
+                    return true;
                 }
-                if let NoIntroToken::Flag(_, flags) = token {
-                    for flag in flags.split(", ") {
-                        if ignored_flags.contains(&flag) {
+            }
+            false
+        })
+    } else {
+        games.into_iter().partition(|game| {
+            if let Ok(name) = NoIntroName::try_parse(&game.name) {
+                for token in name.iter() {
+                    if let NoIntroToken::Release(release, _) = token {
+                        if ignored_releases.contains(release) {
                             return true;
+                        }
+                    }
+                    if let NoIntroToken::Flag(_, flags) = token {
+                        for flag in flags.split(", ") {
+                            if ignored_flags.contains(&flag) {
+                                return true;
+                            }
                         }
                     }
                 }
             }
-        }
-        false
-    })
+            false
+        })
+    }
 }
 
 fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering {
@@ -512,20 +557,33 @@ fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering 
     game_b.name.partial_cmp(&game_a.name).unwrap()
 }
 
-fn compute_new_path<P: AsRef<Path>>(
+async fn compute_new_path<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    system: &System,
     game: &Game,
     rom: &Rom,
     romfile: &Romfile,
     rom_count: usize,
     directory: &P,
-) -> PathBuf {
+) -> SimpleResult<PathBuf> {
     let romfile_path = Path::new(&romfile.path);
-    let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
+    let romfile_extension = romfile_path
+        .extension()
+        .unwrap_or(&OsString::new())
+        .to_str()
+        .unwrap()
+        .to_lowercase();
     let mut new_romfile_path: PathBuf;
 
-    if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
+    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         new_romfile_path = directory.as_ref().join(match rom_count {
-            1 => format!("{}.{}", &rom.name, &romfile_extension),
+            1 => {
+                if system.arcade {
+                    format!("{}.{}", &game.name, &romfile_extension)
+                } else {
+                    format!("{}.{}", &rom.name, &romfile_extension)
+                }
+            }
             _ => format!("{}.{}", &game.name, &romfile_extension),
         });
     } else if romfile_extension == CHD_EXTENSION {
@@ -541,9 +599,15 @@ fn compute_new_path<P: AsRef<Path>>(
         new_romfile_path = directory.as_ref().join(&rom.name);
         new_romfile_path.set_extension(&romfile_extension);
     } else {
-        new_romfile_path = directory.as_ref().join(&rom.name);
+        new_romfile_path = match system.arcade {
+            true => {
+                create_directory(&progress_bar, &directory.as_ref().join(&game.name), true).await?;
+                directory.as_ref().join(&game.name).join(&rom.name)
+            }
+            false => directory.as_ref().join(&rom.name),
+        };
     }
-    new_romfile_path
+    Ok(new_romfile_path)
 }
 
 #[cfg(test)]
@@ -644,6 +708,8 @@ mod test {
                 id: 1,
                 name: String::from("Game (USA)"),
                 description: String::from(""),
+                comment: None,
+                bios: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
                 complete: true,
@@ -654,6 +720,8 @@ mod test {
                 id: 2,
                 name: String::from("Game (USA) (Beta)"),
                 description: String::from(""),
+                comment: None,
+                bios: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
                 complete: true,
@@ -664,6 +732,8 @@ mod test {
                 id: 3,
                 name: String::from("Game (USA) (Beta 1)"),
                 description: String::from(""),
+                comment: None,
+                bios: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
                 complete: true,
@@ -674,6 +744,8 @@ mod test {
                 id: 4,
                 name: String::from("Game (USA) (Virtual Console, Switch Online)"),
                 description: String::from(""),
+                comment: None,
+                bios: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions,
                 complete: true,
@@ -687,7 +759,7 @@ mod test {
 
         // when
         let (ignored_games, regular_games) =
-            trim_ignored_games(games, &ignored_releases, &ignored_flags);
+            trim_ignored_games(games, &ignored_releases, &ignored_flags, false);
 
         // then
         assert_eq!(ignored_games.len(), 3);
@@ -702,6 +774,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA) (Rev 1)"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -712,6 +786,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA) (Rev 2)"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -733,6 +809,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA)"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -743,6 +821,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA) (Rev 2)"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -764,6 +844,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA) (Rev 2"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -774,6 +856,8 @@ mod test {
             id: 1,
             name: String::from("Game (USA)"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: true,
@@ -791,11 +875,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_single_file() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -805,10 +901,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -820,7 +917,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            1,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom.7z"));
@@ -829,11 +936,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_multiple_files() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -843,10 +962,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -858,7 +978,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            2,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("game name.7z"));
@@ -867,11 +997,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_single_file() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -881,10 +1023,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.bin"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -896,7 +1039,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 2, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            2,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.chd"));
@@ -905,11 +1058,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_multiple_files() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -919,10 +1084,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.bin"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -934,7 +1100,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 3, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            3,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("game name.chd"));
@@ -943,11 +1119,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_cso() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -957,10 +1145,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.iso"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -972,7 +1161,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            1,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.cso"));
@@ -981,11 +1180,23 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_other() {
         // given
+        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
+        let system = System {
+            id: 1,
+            name: String::from("Test System"),
+            description: String::from(""),
+            version: String::from(""),
+            url: Some(String::from("")),
+            arcade: false,
+            complete: false,
+        };
         let game = Game {
             id: 1,
             name: String::from("game name"),
             description: String::from(""),
+            comment: None,
+            bios: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions,
             complete: false,
@@ -995,10 +1206,11 @@ mod test {
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
+            merge_name: None,
             size: 1,
             crc: String::from(""),
-            md5: String::from(""),
-            sha1: String::from(""),
+            md5: Some(String::from("")),
+            sha1: Some(String::from("")),
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
@@ -1010,7 +1222,17 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(&game, &rom, &romfile, 1, &test_directory);
+        let path = compute_new_path(
+            &progress_bar,
+            &system,
+            &game,
+            &rom,
+            &romfile,
+            1,
+            &test_directory,
+        )
+        .await
+        .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom"));

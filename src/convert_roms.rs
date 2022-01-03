@@ -14,7 +14,8 @@ use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::mem::drop;
 
-const FORMATS: &[&str] = &["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"];
+const ALL_FORMATS: &[&str] = &["7Z", "CHD", "CSO", "ORIGINAL", "ZIP"];
+const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("convert-roms")
@@ -26,7 +27,7 @@ pub fn subcommand<'a>() -> App<'a> {
                 .help("Sets the destination format")
                 .required(false)
                 .takes_value(true)
-                .possible_values(FORMATS),
+                .possible_values(ALL_FORMATS),
         )
         .arg(
             Arg::new("NAME")
@@ -61,12 +62,22 @@ pub async fn main(
     let rom_name = matches.value_of("NAME");
     let format = match matches.value_of("FORMAT") {
         Some(format) => format,
-        None => FORMATS.get(select(FORMATS, None)?).unwrap(),
+        None => ALL_FORMATS.get(select(ALL_FORMATS, None)?).unwrap(),
     };
     let statistics = matches.is_present("STATISTICS");
 
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
+
+        if system.arcade {
+            if !ARCADE_FORMATS.contains(&format) {
+                progress_bar.println(&format!(
+                    "Only {:?} are supported for arcade systems",
+                    ARCADE_FORMATS
+                ));
+                continue;
+            }
+        }
 
         let roms = match rom_name {
             Some(rom_name) => {
@@ -111,6 +122,7 @@ pub async fn main(
                     connection,
                     progress_bar,
                     ArchiveType::SEVENZIP,
+                    &system,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -137,13 +149,21 @@ pub async fn main(
                 .await?
             }
             "ORIGINAL" => {
-                to_original(connection, progress_bar, roms_by_game_id, romfiles_by_id).await?
+                to_original(
+                    connection,
+                    progress_bar,
+                    &system,
+                    roms_by_game_id,
+                    romfiles_by_id,
+                )
+                .await?
             }
             "ZIP" => {
                 to_archive(
                     connection,
                     progress_bar,
                     ArchiveType::ZIP,
+                    &system,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -162,6 +182,7 @@ async fn to_archive(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     archive_type: ArchiveType,
+    system: &System,
     mut roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -430,10 +451,10 @@ async fn to_archive(
     .await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
 
-    for (game_id, roms) in others {
+    for (game_id, mut roms) in others {
         let mut transaction = begin_transaction(connection).await;
 
-        if roms.len() == 1 {
+        if roms.len() == 1 && !system.arcade {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let directory = Path::new(&romfile.path).parent().unwrap();
@@ -457,6 +478,16 @@ async fn to_archive(
             remove_file(progress_bar, &romfile.path, false).await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
+            roms = roms
+                .into_par_iter()
+                .filter(|rom| {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    !(romfile.path.ends_with(match archive_type {
+                        ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
+                        ArchiveType::ZIP => ZIP_EXTENSION,
+                    }))
+                })
+                .collect();
             let rom_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
             let directory = Path::new(
                 &romfiles_by_id
@@ -466,28 +497,46 @@ async fn to_archive(
             )
             .parent()
             .unwrap();
-            let archive_path = directory.join(format!(
+            let archive_name = format!(
                 "{}.{}",
                 &game.name,
                 match archive_type {
                     ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
                     ArchiveType::ZIP => ZIP_EXTENSION,
                 }
-            ));
+            );
+            let archive_path = match system.arcade {
+                true => directory.parent().unwrap().join(&archive_name),
+                false => directory.join(&archive_name),
+            };
 
             add_files_to_archive(progress_bar, &archive_path, &rom_names, &directory)?;
-            let archive_romfile_id = create_romfile(
+            let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
-                archive_path.as_os_str().to_str().unwrap(),
-                archive_path.metadata().await.unwrap().len(),
+                &archive_path.as_os_str().to_str().unwrap(),
             )
-            .await;
+            .await
+            {
+                Some(romfile) => romfile.id,
+                None => {
+                    create_romfile(
+                        &mut transaction,
+                        archive_path.as_os_str().to_str().unwrap(),
+                        archive_path.metadata().await.unwrap().len(),
+                    )
+                    .await
+                }
+            };
             for rom in &roms {
                 delete_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
                 update_rom_romfile(&mut transaction, rom.id, Some(archive_romfile_id)).await;
             }
-            for rom_name in rom_names {
-                remove_file(progress_bar, &directory.join(rom_name), false).await?;
+            if system.arcade {
+                remove_directory(progress_bar, &directory, false).await?;
+            } else {
+                for rom_name in rom_names {
+                    remove_file(progress_bar, &directory.join(rom_name), false).await?;
+                }
             }
         }
 
@@ -924,6 +973,7 @@ async fn to_cso(
 async fn to_original(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    system: &System,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -980,12 +1030,21 @@ async fn to_original(
         let romfile = romfiles.get(0).unwrap();
         let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
 
-        let extracted_paths = extract_files_from_archive(
-            progress_bar,
-            &romfile.path,
-            &file_names,
-            &Path::new(&romfile.path).parent().unwrap(),
-        )?;
+        let directory = match system.arcade {
+            true => {
+                let romfile_path = Path::new(&romfile.path);
+                let directory = romfile_path
+                    .parent()
+                    .unwrap()
+                    .join(romfile_path.file_stem().unwrap());
+                create_directory(progress_bar, &directory, false).await?;
+                directory
+            }
+            false => Path::new(&romfile.path).parent().unwrap().to_path_buf(),
+        };
+
+        let extracted_paths =
+            extract_files_from_archive(progress_bar, &romfile.path, &file_names, &directory)?;
         let roms_extracted_paths: Vec<(&Rom, PathBuf)> = roms.iter().zip(extracted_paths).collect();
 
         for (rom, extracted_path) in roms_extracted_paths {
@@ -1178,6 +1237,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::ZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1424,6 +1484,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::SEVENZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1509,6 +1570,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::SEVENZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1603,6 +1665,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::SEVENZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1694,6 +1757,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::SEVENZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1775,6 +1839,7 @@ mod test {
         to_original(
             &mut connection,
             &progress_bar,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1856,6 +1921,7 @@ mod test {
         to_original(
             &mut connection,
             &progress_bar,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -1938,6 +2004,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::ZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -2020,6 +2087,7 @@ mod test {
             &mut connection,
             &progress_bar,
             ArchiveType::SEVENZIP,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -2485,6 +2553,7 @@ mod test {
         to_original(
             &mut connection,
             &progress_bar,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -2889,6 +2958,7 @@ mod test {
         to_original(
             &mut connection,
             &progress_bar,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )
@@ -3182,6 +3252,7 @@ mod test {
         to_original(
             &mut connection,
             &progress_bar,
+            &system,
             roms_by_game_id,
             romfiles_by_id,
         )

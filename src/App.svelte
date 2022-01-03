@@ -23,6 +23,7 @@
         ButtonToolbar,
         ButtonGroup,
         Button,
+        Tooltip,
     } from "sveltestrap";
 
     import {
@@ -93,6 +94,10 @@
             }
             return "list-group-item-danger";
         }
+    }
+
+    function computeRomColor(rom) {
+        return rom.romfile ? "list-group-item-success" : "list-group-item-danger";
     }
 
     onMount(async () => {
@@ -254,8 +259,9 @@
                     </CardHeader>
                     <CardBody class="p-0">
                         <ListGroup flush>
-                            {#each $games as game}
+                            {#each $games as game, i}
                                 <ListGroupItem
+                                    id="lgi-game-{i}"
                                     tag="button"
                                     action
                                     class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)}"
@@ -265,6 +271,7 @@
                                 >
                                     {game.name}
                                 </ListGroupItem>
+                                <Tooltip target="lgi-game-{i}" placement="bottom">{game.description}</Tooltip>
                             {/each}
                         </ListGroup>
                     </CardBody>
@@ -299,10 +306,8 @@
                     <CardBody class="p-0">
                         <ListGroup flush>
                             {#each $roms as rom}
-                                <ListGroupItem class="text-truncate">
-                                    <span>
-                                        {rom.name}
-                                    </span>
+                                <ListGroupItem class="text-truncate {computeRomColor(rom)}">
+                                    {rom.name}
                                 </ListGroupItem>
                             {/each}
                         </ListGroup>

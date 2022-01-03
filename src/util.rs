@@ -141,6 +141,22 @@ pub async fn create_tmp_directory(connection: &mut SqliteConnection) -> SimpleRe
     Ok(tmp_directory)
 }
 
+pub async fn remove_directory<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    path: &P,
+    quiet: bool,
+) -> SimpleResult<()> {
+    if !quiet {
+        progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
+    }
+    try_with!(
+        fs::remove_dir_all(path).await,
+        "Failed to delete {:?}",
+        path.as_ref()
+    );
+    Ok(())
+}
+
 pub async fn get_system_directory(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,

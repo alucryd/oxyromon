@@ -66,27 +66,28 @@ These should be in your `${PATH}` for extra features.
 -   Add an optional check of the ROMs after conversion
 -   Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
 -   Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
+-   Support all merge options for arcade systems
 
 ## oxyromon
 
     USAGE:
         oxyromon [SUBCOMMAND]
 
-    FLAGS:
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+    OPTIONS:
+        -h, --help       Print help information
+        -V, --version    Print version information
 
     SUBCOMMANDS:
-        help            Prints this message or the help of the given subcommand(s)
-        config          Queries and modifies the oxyromon settings
-        import-dats     Parses and imports No-Intro and Redump DAT files into oxyromon
-        download-dats   Downloads No-Intro and Redump DAT files and imports them into oxyromon
-        import-roms     Validates and imports ROM files into oxyromon
-        sort-roms       Sorts ROM files according to region and version preferences
-        convert-roms    Converts ROM files between common formats
-        check-roms      Checks ROM files integrity
-        purge-roms      Purges deleted or moved ROM files
-        server          Launches the backend server
+        help             Print this message or the help of the given subcommand(s)
+        config           Queries and modifies the oxyromon settings
+        import-dats      Parses and imports No-Intro and Redump DAT files into oxyromon
+        download-dats    Downloads No-Intro and Redump DAT files and imports them into oxyromon
+        import-roms      Validates and imports ROM files into oxyromon
+        sort-roms        Sorts ROM files according to region and version preferences
+        convert-roms     Converts ROM files between common formats
+        check-roms       Checks ROM files integrity
+        purge-roms       Purges trashed, missing and orphan ROM files
+        server           Launches the backend server
 
 ## oxyromon-config
 
@@ -95,21 +96,15 @@ Queries and configures the oxyromon settings
 The settings can be queried, modified and deleted from the command line.
 
     USAGE:
-        oxyromon config [FLAGS] [OPTIONS]
-
-    FLAGS:
-        -l, --list       Prints the whole configuration
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+        oxyromon config [OPTIONS]
 
     OPTIONS:
         -a, --add <KEY> <VALUE>       Adds an entry to a list
         -g, --get <KEY>               Prints a single setting
+        -h, --help                    Print help information
+        -l, --list                    Prints the whole configuration
         -r, --remove <KEY> <VALUE>    Removes an entry from a list
         -s, --set <KEY> <VALUE>       Configures a single setting
-
-    EXAMPLE:
-        oxyromon config -a REGIONS_ONE US
 
 ## oxyromon-import-dats
 
@@ -125,15 +120,17 @@ Supported DAT providers:
 Note: Some systems require a header definition to be placed alongside the DAT file.
 
     USAGE:
-        oxyromon import-dats [FLAGS] <DATS>...
-
-    FLAGS:
-        -i, --info       Shows the DAT information and exit
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+        oxyromon import-dats [OPTIONS] <DATS>...
 
     ARGS:
         <DATS>...    Sets the DAT files to import
+
+    OPTIONS:
+        -a, --arcade         Toggles arcade mode
+        -f, --force          Forces import of outdated DAT files
+        -h, --help           Print help information
+        -i, --info           Shows the DAT information and exit
+        -s, --skip-header    Skips parsing the header even if the system has one
 
 ## oxyromon-download-dats
 
@@ -150,16 +147,15 @@ Supported DAT providers:
 -   No-Intro (Update check only)
 
     USAGE:
-    oxyromon download-dats [FLAGS] --nointro --redump
+        oxyromon download-dats [OPTIONS]
 
-    FLAGS:
-    -a, --all Imports all systems
-    -f, --force Forces import of outdated DAT files
-    -n, --nointro Downloads No-Intro DAT files
-    -r, --redump Downloads Redump DAT files
-    -u, --update Checks for system updates
-    -h, --help Prints help information
-    -V, --version Prints version information
+    OPTIONS:
+        -a, --all        Imports all systems
+        -f, --force      Forces import of outdated DAT files
+        -h, --help       Print help information
+        -n, --nointro    Downloads No-Intro DAT files
+        -r, --redump     Downloads Redump DAT files
+        -u, --update     Checks for system updates
 
 ## oxyromon-import-roms
 
@@ -179,14 +175,14 @@ Supported ROM formats:
 Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
     USAGE:
-        oxyromon import-roms <ROMS>...
-
-    FLAGS:
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+        oxyromon import-roms [OPTIONS] <ROMS>...
 
     ARGS:
-        <ROMS>...    Sets the rom files to import
+        <ROMS>...    Sets the ROM files to import
+
+    OPTIONS:
+        -h, --help               Print help information
+        -s, --system <SYSTEM>    Sets the system number to use
 
 ## oxyromon-sort-roms
 
@@ -221,18 +217,15 @@ actually play, while keeping original Japanese games for translation patches and
 The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention).
 
     USAGE:
-        oxyromon sort-roms [FLAGS] [OPTIONS]
-
-    FLAGS:
-        -a, --all                        Sorts all systems
-        -m, --missing                    Shows missing games
-        -y, --yes                        Automatically says yes to prompts
-        -h, --help                       Prints help information
-        -V, --version                    Prints version information
+        oxyromon sort-roms [OPTIONS]
 
     OPTIONS:
-        -g, --1g1r <REGIONS_ONE>...      Sets the 1G1R regions to keep (ordered)
-        -r, --regions <REGIONS_ALL>...   Sets the regions to keep (unordered)
+        -a, --all                         Sorts all systems
+        -g, --1g1r <REGIONS_ONE>...       Sets the 1G1R regions to keep (ordered)
+        -h, --help                        Print help information
+        -m, --missing                     Shows missing games
+        -r, --regions <REGIONS_ALL>...    Sets the regions to keep (unordered)
+        -y, --yes                         Automatically says yes to prompts
 
     EXAMPLE:
         oxyromon sort-roms -g US EU -r US EU JP
@@ -257,16 +250,15 @@ Supported ROM formats:
 Note: CHD will be extracted to their original split CUE/BIN when applicable.
 
     USAGE:
-        oxyromon convert-roms [FLAGS] [OPTIONS]
-
-    FLAGS:
-        -a, --all        Converts all systems/all ROMs
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+        oxyromon convert-roms [OPTIONS]
 
     OPTIONS:
-        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
+        -a, --all                Converts all systems/all ROMs
+        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL,
+                                ZIP]
+        -h, --help               Print help information
         -n, --name <NAME>        Selects ROMs by name
+        -s, --statistics         Prints statistics for each conversion
 
 ## oxyromon-check-roms
 
@@ -276,14 +268,13 @@ This will scan every ROM file in each specified system and move corrupt files to
 File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
 
     USAGE:
-        oxyromon check-roms [FLAGS]
+        oxyromon check-roms [OPTIONS]
 
-    FLAGS:
-        -a, --all        Checks all systems
-        -s, --size       Recalculates ROM file sizes
-        -y, --yes        Automatically says yes to prompts
-        -h, --help       Prints help information
-        -V, --version    Prints version information
+    OPTIONS:
+        -a, --all       Checks all systems
+        -h, --help      Print help information
+        -r, --repair    Repairs arcade ROM files when possible
+        -s, --size      Recalculates ROM file sizes
 
 ## oxyromon-purge-roms
 
@@ -293,15 +284,14 @@ This will optionally purge the database from every ROM file that has gone missin
 with a ROM, as well as physically delete all files in the `Trash` subdirectories.
 
     USAGE:
-        oxyromon purge-roms [FLAGS]
+        oxyromon purge-roms [OPTIONS]
 
-    FLAGS:
+    OPTIONS:
+        -h, --help       Print help information
         -m, --missing    Deletes missing ROM files from the database
         -o, --orphan     Deletes ROM files without an associated ROM from the database
         -t, --trash      Physically deletes ROM files from the trash directories
         -y, --yes        Automatically says yes to prompts
-        -h, --help       Prints help information
-        -V, --version    Prints version information
 
 ## oxyromon-server
 
@@ -312,10 +302,7 @@ The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js
     USAGE:
         oxyromon server [OPTIONS]
 
-    FLAGS:
-        -h, --help       Prints help information
-        -V, --version    Prints version information
-
     OPTIONS:
         -a, --address <ADDRESS>    Specifies the server address [default: 127.0.0.1]
-        -p, --port <PORT>          Specifies the server port [default: 8080]
+        -h, --help                 Print help information
+        -p, --port <PORT>          Specifies the server port [default: 8000]

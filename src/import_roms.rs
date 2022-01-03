@@ -14,6 +14,7 @@ use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
+use std::ffi::OsString;
 use std::str::FromStr;
 
 pub fn subcommand<'a>() -> App<'a> {
@@ -93,7 +94,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     let romfile_extension = romfile_path
         .as_ref()
         .extension()
-        .unwrap()
+        .unwrap_or(&OsString::new())
         .to_str()
         .unwrap()
         .to_lowercase();
@@ -205,7 +206,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     // archive contains a single full game with no invalid file
     if roms_sevenzip_infos.len() == sevenzip_infos.len() && game_ids.len() == 1 {
         let game_id = game_ids.drain().last().unwrap();
-        let rom_ids: HashSet<i64> = find_roms_by_game_id(connection, game_id)
+        let rom_ids: HashSet<i64> = find_roms_by_game_id_skip_parents(connection, game_id)
             .await
             .into_par_iter()
             .map(|rom| rom.id)
@@ -270,7 +271,21 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         )?
         .remove(0);
 
-        let new_path = system_directory.as_ref().join(&rom.name);
+        let game = find_game_by_id(connection, rom.game_id).await;
+
+        // put arcade roms in subdirectories as their names aren't unique
+        let new_path = match system.arcade {
+            true => {
+                create_directory(
+                    &progress_bar,
+                    &system_directory.as_ref().join(&game.name),
+                    true,
+                )
+                .await?;
+                system_directory.as_ref().join(&game.name).join(&rom.name)
+            }
+            false => system_directory.as_ref().join(&rom.name),
+        };
 
         // move file
         copy_file(progress_bar, &extracted_path, &new_path, false).await?;
@@ -307,7 +322,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             }
         };
 
-        let roms: Vec<Rom> = find_roms_by_game_id(connection, cue_rom.game_id)
+        let roms: Vec<Rom> = find_roms_by_game_id_skip_parents(connection, cue_rom.game_id)
             .await
             .into_iter()
             .filter(|rom| rom.id != cue_rom.id)
@@ -470,7 +485,13 @@ async fn find_rom(
         rom = roms.remove(0);
         progress_bar.println(&format!("Matches \"{}\"", rom.name));
     } else {
-        rom = prompt_for_rom(&mut roms)?;
+        let mut roms_games: Vec<(Rom, Game)> = vec![];
+        for rom in roms {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            roms_games.push((rom, game));
+        }
+        progress_bar.println("Please select the correct ROM:");
+        rom = prompt_for_rom(&mut roms_games)?;
     }
 
     // abort if rom already has a file

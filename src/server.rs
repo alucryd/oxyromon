@@ -188,7 +188,7 @@ impl QueryRoot {
     }
 
     async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
-        Ok(find_roms_by_game_id(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
+        Ok(find_roms_by_game_id_skip_parents(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
     }
 
     async fn total_original_size(&self, system_id: i64) -> Result<i64> {

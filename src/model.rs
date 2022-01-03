@@ -13,6 +13,7 @@ pub struct System {
     pub version: String,
     pub url: Option<String>,
     pub complete: bool,
+    pub arcade: bool,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
@@ -48,6 +49,8 @@ pub struct Game {
     pub id: i64,
     pub name: String,
     pub description: String,
+    pub comment: Option<String>,
+    pub bios: bool,
     pub regions: String,
     pub sorting: Sorting,
     pub complete: bool,
@@ -61,10 +64,11 @@ pub struct Game {
 pub struct Rom {
     pub id: i64,
     pub name: String,
+    pub merge_name: Option<String>,
     pub size: i64,
     pub crc: String,
-    pub md5: String,
-    pub sha1: String,
+    pub md5: Option<String>,
+    pub sha1: Option<String>,
     pub rom_status: Option<String>,
     pub game_id: i64,
     pub romfile_id: Option<i64>,
@@ -110,14 +114,16 @@ pub struct SystemXml {
 
 #[derive(Deserialize)]
 pub struct ClrMameProXml {
-    pub header: String,
+    pub header: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct GameXml {
     pub name: String,
     pub description: String,
+    pub comment: Option<String>,
     pub cloneof: Option<String>,
+    pub isbios: Option<String>,
     #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
 }
@@ -125,10 +131,11 @@ pub struct GameXml {
 #[derive(Deserialize)]
 pub struct RomXml {
     pub name: String,
+    pub merge: Option<String>,
     pub size: i64,
-    pub crc: String,
-    pub md5: String,
-    pub sha1: String,
+    pub crc: Option<String>,
+    pub md5: Option<String>,
+    pub sha1: Option<String>,
     pub status: Option<String>,
 }
 
