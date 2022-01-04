@@ -235,7 +235,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 
             let new_path = system_directory.as_ref().join(format!(
                 "{}.{}",
-                if roms_sevenzip_infos.len() == 1 {
+                if roms_sevenzip_infos.len() == 1 && !system.arcade {
                     &roms_sevenzip_infos.get(0).unwrap().0.name
                 } else {
                     &game.name

@@ -1,13 +1,17 @@
-# rust
-build/
+# common
+.DS_Store
 .env
-*.rs.bk
-target/
+.env.*
+!.env.example
 .vscode
+
+# rust
+*.rs.bk
+/target
 *.db
 lcov.info
 
 # javascript
-node_modules/
-public/build/
-.DS_Store
+/build
+node_modules
+/.svelte-kit

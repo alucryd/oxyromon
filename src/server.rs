@@ -33,7 +33,7 @@ lazy_static! {
 }
 
 #[derive(RustEmbed)]
-#[folder = "public/"]
+#[folder = "build/"]
 struct Assets;
 
 pub fn subcommand<'a>() -> App<'a> {

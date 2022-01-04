@@ -1,0 +1,7 @@
+build
+target
+.github
+.gitignore
+.svelte-kit
+.vscode
+sqlx-data.json
