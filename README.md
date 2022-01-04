@@ -31,14 +31,14 @@ The database itself is stored in `${data_dir}/oxyromon` as defined in the
 
 Available settings:
 
--   `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
-    [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
--   `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
-    [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
--   `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
--   `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
--   `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
--   `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
+- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
+  [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
+- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
+  [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
+- `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
+- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
+- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -55,18 +55,18 @@ Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those bi
 
 These should be in your `${PATH}` for extra features.
 
--   7z: 7Z and ZIP support
--   chdman: CHD support
--   maxcso: CSO support
+- 7z: 7Z and ZIP support
+- chdman: CHD support
+- maxcso: CSO support
 
 ### TODO
 
--   Automatically create m3u files for multi-discs games
--   Add actions to the web UI
--   Add an optional check of the ROMs after conversion
--   Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
--   Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
--   Support all merge options for arcade systems
+- Automatically create m3u files for multi-discs games
+- Add actions to the web UI
+- Add an optional check of the ROMs after conversion
+- Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
+- Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
+- Support all merge options for arcade systems
 
 ## oxyromon
 
@@ -114,8 +114,8 @@ The standard Logiqx XML format is supported, this includes Parent-Clone DAT file
 
 Supported DAT providers:
 
--   No-Intro
--   Redump
+- No-Intro
+- Redump
 
 Note: Some systems require a header definition to be placed alongside the DAT file.
 
@@ -143,19 +143,19 @@ and update those you've already imported.
 
 Supported DAT providers:
 
--   Redump (Download and update)
--   No-Intro (Update check only)
+- Redump (Download and update)
+- No-Intro (Update check only)
 
-    USAGE:
-        oxyromon download-dats [OPTIONS]
+  USAGE:
+  oxyromon download-dats [OPTIONS]
 
-    OPTIONS:
-        -a, --all        Imports all systems
-        -f, --force      Forces import of outdated DAT files
-        -h, --help       Print help information
-        -n, --nointro    Downloads No-Intro DAT files
-        -r, --redump     Downloads Redump DAT files
-        -u, --update     Checks for system updates
+  OPTIONS:
+  -a, --all Imports all systems
+  -f, --force Forces import of outdated DAT files
+  -h, --help Print help information
+  -n, --nointro Downloads No-Intro DAT files
+  -r, --redump Downloads Redump DAT files
+  -u, --update Checks for system updates
 
 ## oxyromon-import-roms
 
@@ -167,10 +167,10 @@ Most files will be moved as-is, with the exception of archives containing multip
 
 Supported ROM formats:
 
--   All No-Intro and Redump supported formats
--   7Z and ZIP archives
--   CHD (Compressed Hunks of Data)
--   CSO (Compressed ISO)
+- All No-Intro and Redump supported formats
+- 7Z and ZIP archives
+- CHD (Compressed Hunks of Data)
+- CSO (Compressed ISO)
 
 Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
@@ -194,9 +194,9 @@ Optionally you can print a list of games you may be missing, you hoarder, you.
 
 Supported modes:
 
--   Regions mode
--   1G1R mode
--   Hybrid mode
+- Regions mode
+- 1G1R mode
+- Hybrid mode
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
@@ -242,10 +242,10 @@ name.
 
 Supported ROM formats:
 
--   All No-Intro and Redump supported formats <-> 7Z and ZIP archives
--   CUE/BIN <-> CHD (Compressed Hunks of Data)
--   ISO <-> CHD (Compressed Hunks of Data)
--   ISO <-> CSO (Compressed ISO)
+- All No-Intro and Redump supported formats <-> 7Z and ZIP archives
+- CUE/BIN <-> CHD (Compressed Hunks of Data)
+- ISO <-> CHD (Compressed Hunks of Data)
+- ISO <-> CSO (Compressed ISO)
 
 Note: CHD will be extracted to their original split CUE/BIN when applicable.
 

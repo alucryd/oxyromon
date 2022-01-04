@@ -11,10 +11,10 @@ export const unfilteredGames = writable([]);
 export const filteredGames = writable([]);
 export const unfilteredRoms = writable([]);
 
-export const totalOriginalSize = writable((0));
-export const oneRegionOriginalSize = writable((0));
-export const totalActualSize = writable((0));
-export const oneRegionActualSize = writable((0));
+export const totalOriginalSize = writable(0);
+export const oneRegionOriginalSize = writable(0);
+export const totalActualSize = writable(0);
+export const oneRegionActualSize = writable(0);
 
 export const systemsPage = writable(1);
 export const systemsTotalPages = writable(1);

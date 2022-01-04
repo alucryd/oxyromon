@@ -260,7 +260,7 @@ async fn sort_system(
     }
 
     if matches.is_present("MISSING") {
-        let missing_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
+        let mut missing_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
             connection,
             &missing_games
                 .par_iter()
@@ -271,6 +271,7 @@ async fn sort_system(
 
         if !missing_roms.is_empty() {
             progress_bar.println("Missing:");
+            missing_roms.sort_by_key(|rom| rom.game_id);
             for rom in missing_roms {
                 let game = missing_games
                     .iter()
