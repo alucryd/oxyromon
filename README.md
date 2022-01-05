@@ -2,14 +2,16 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyromon 0.10.0
+# oxyROMon 0.10.0
 
 ### Rusty ROM OrgaNizer
 
-OxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
+oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
 It is designed with archiving in mind, as such it only supports original and lossless ROM formats.
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
+Both console and arcade (WIP) systems are supported using Logiqx DAT files.
+The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
 
 ### Compilation
 
@@ -66,7 +68,8 @@ These should be in your `${PATH}` for extra features.
 - Add an optional check of the ROMs after conversion
 - Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
-- Support all merge options for arcade systems
+- Support merged sets for arcade systems
+- Craft some unit tests for arcade systems
 
 ## oxyromon
 
@@ -79,19 +82,20 @@ These should be in your `${PATH}` for extra features.
 
     SUBCOMMANDS:
         help             Print this message or the help of the given subcommand(s)
-        config           Queries and modifies the oxyromon settings
-        import-dats      Parses and imports No-Intro and Redump DAT files into oxyromon
-        download-dats    Downloads No-Intro and Redump DAT files and imports them into oxyromon
-        import-roms      Validates and imports ROM files into oxyromon
-        sort-roms        Sorts ROM files according to region and version preferences
-        convert-roms     Converts ROM files between common formats
-        check-roms       Checks ROM files integrity
-        purge-roms       Purges trashed, missing and orphan ROM files
+        config           Query and modify the oxyromon settings
+        import-dats      Parse and import Logiqx DAT files into oxyromon
+        download-dats    Download No-Intro and Redump DAT files and import them into oxyromon
+        import-roms      Validate and import ROM files into oxyromon
+        sort-roms        Sort ROM files according to region and version preferences
+        rebuild-roms     Rebuild arcade ROM sets according to the selected strategy
+        convert-roms     Convert ROM files between common formats
+        check-roms       Check ROM files integrity
+        purge-roms       Purge trashed, missing and orphan ROM files
         server           Launches the backend server
 
 ## oxyromon-config
 
-Queries and configures the oxyromon settings
+Query and modify the oxyromon settings
 
 The settings can be queried, modified and deleted from the command line.
 
@@ -99,42 +103,48 @@ The settings can be queried, modified and deleted from the command line.
         oxyromon config [OPTIONS]
 
     OPTIONS:
-        -a, --add <KEY> <VALUE>       Adds an entry to a list
-        -g, --get <KEY>               Prints a single setting
+        -a, --add <KEY> <VALUE>       Add an entry to a list
+        -g, --get <KEY>               Print a single setting
         -h, --help                    Print help information
-        -l, --list                    Prints the whole configuration
-        -r, --remove <KEY> <VALUE>    Removes an entry from a list
-        -s, --set <KEY> <VALUE>       Configures a single setting
+        -l, --list                    Print the whole configuration
+        -r, --remove <KEY> <VALUE>    Remove an entry from a list
+        -s, --set <KEY> <VALUE>       Configure a single setting
 
 ## oxyromon-import-dats
 
-Parses and imports No-Intro and Redump DAT files into oxyromon
+Parse and import Logiqx DAT files into oxyromon
 
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
 
-Supported DAT providers:
+Supported console DAT providers:
 
 - No-Intro
 - Redump
 
+Supported arcade DAT providers:
+
+- MAME
+- FBNeo
+
 Note: Some systems require a header definition to be placed alongside the DAT file.
+If not provided, oxyromon will use its own fallback header definition.
 
     USAGE:
         oxyromon import-dats [OPTIONS] <DATS>...
 
     ARGS:
-        <DATS>...    Sets the DAT files to import
+        <DATS>...    Set the DAT files to import
 
     OPTIONS:
-        -a, --arcade         Toggles arcade mode
-        -f, --force          Forces import of outdated DAT files
+        -a, --arcade         Enable arcade mode
+        -f, --force          Force import of outdated DAT files
         -h, --help           Print help information
-        -i, --info           Shows the DAT information and exit
-        -s, --skip-header    Skips parsing the header even if the system has one
+        -i, --info           Show the DAT information and exit
+        -s, --skip-header    Skip parsing the header even if the system has one
 
 ## oxyromon-download-dats
 
-Downloads No-Intro and Redump DAT files and imports them into oxyromon
+Download No-Intro and Redump DAT files and import them into oxyromon
 
 Redump ofers direct downloads, but no summary, whereas No-Intro offers a summary
 but no direct downloads. For now the No-intro counterpart will only tell you if
@@ -150,27 +160,32 @@ Supported DAT providers:
   oxyromon download-dats [OPTIONS]
 
   OPTIONS:
-  -a, --all Imports all systems
-  -f, --force Forces import of outdated DAT files
+  -a, --all Import all systems
+  -f, --force Force import of outdated DAT files
   -h, --help Print help information
-  -n, --nointro Downloads No-Intro DAT files
-  -r, --redump Downloads Redump DAT files
-  -u, --update Checks for system updates
+  -n, --nointro Download No-Intro DAT files
+  -r, --redump Download Redump DAT files
+  -u, --update Check for system updates
 
 ## oxyromon-import-roms
 
-Validates and imports ROM files into oxyromon
+Validate and import ROM files into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
 You will be prompted for the system you want to check your ROMs against.
 Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
 
-Supported ROM formats:
+Supported console ROM formats:
 
 - All No-Intro and Redump supported formats
 - 7Z and ZIP archives
 - CHD (Compressed Hunks of Data)
 - CSO (Compressed ISO)
+
+Supported arcade ROM formats:
+
+- ZIP archives
+- Uncompressed folders
 
 Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
@@ -178,25 +193,29 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         oxyromon import-roms [OPTIONS] <ROMS>...
 
     ARGS:
-        <ROMS>...    Sets the ROM files to import
+        <ROMS>...    Set the ROM files to import
 
     OPTIONS:
         -h, --help               Print help information
-        -s, --system <SYSTEM>    Sets the system number to use
+        -s, --system <SYSTEM>    Set the system number to use
 
 ## oxyromon-sort-roms
 
-Sorts ROM files according to region and version preferences
+Sort ROM files according to region and version preferences
 
 Sorting can be done using several strategies.
 You can also choose to discard certain types of games.
 Optionally you can print a list of games you may be missing, you hoarder, you.
 
-Supported modes:
+Supported console modes:
 
 - Regions mode
 - 1G1R mode
 - Hybrid mode
+
+Supported arcade modes:
+
+- None (yet?)
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
@@ -230,15 +249,35 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
     EXAMPLE:
         oxyromon sort-roms -g US EU -r US EU JP
 
+## oxyromon-rebuild-roms
+
+Rebuild arcade ROM sets according to the selected strategy
+
+ROM sets can be rebuild using the popular mesging strategies.
+
+Supported merging strategies:
+
+- Split (each parent and clone set contains only its own ROM files)
+- Non-Merged (each parent and clone set contains its ROM files and its parent's files)
+- Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
+- Merged (parent and clones are stored together, alongside the required BIOS files)
+
+    USAGE:
+        oxyromon rebuild-roms [OPTIONS]
+
+    OPTIONS:
+        -a, --all                  Rebuild all arcade systems
+        -h, --help                 Print help information
+        -m, --merging <MERGING>    Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+        -y, --yes                  Automatically say yes to prompts
+
 ## oxyromon-convert-roms
 
-Converts ROM files between common formats
+Convert ROM files between common formats
 
-ROMs can be converted back and forth at most one format away from their original format.
-That means you can convert an ISO to a CSO, but not a CSO to a 7Z archive.
+ROMs can be converted back and forth between common formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter ROMs by name, the matching string is not case sensitive and doesn't need to be the full ROM
-name.
+You may optionally filter games by name, the matching string is not case sensitive and doesn't need to be the full game name.
 
 Supported ROM formats:
 
@@ -247,22 +286,21 @@ Supported ROM formats:
 - ISO <-> CHD (Compressed Hunks of Data)
 - ISO <-> CSO (Compressed ISO)
 
-Note: CHD will be extracted to their original split CUE/BIN when applicable.
+Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
     USAGE:
         oxyromon convert-roms [OPTIONS]
 
     OPTIONS:
-        -a, --all                Converts all systems/all ROMs
-        -f, --format <FORMAT>    Sets the destination format [possible values: 7Z, CHD, CSO, ORIGINAL,
-                                ZIP]
+        -a, --all                Convert all systems/games
+        -f, --format <FORMAT>    Set the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
         -h, --help               Print help information
-        -n, --name <NAME>        Selects ROMs by name
-        -s, --statistics         Prints statistics for each conversion
+        -n, --name <NAME>        Select games by name
+        -s, --statistics         Print statistics for each conversion
 
 ## oxyromon-check-roms
 
-Checks ROM files integrity
+Check ROM files integrity
 
 This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
 File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
@@ -271,14 +309,13 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
         oxyromon check-roms [OPTIONS]
 
     OPTIONS:
-        -a, --all       Checks all systems
-        -h, --help      Print help information
-        -r, --repair    Repairs arcade ROM files when possible
-        -s, --size      Recalculates ROM file sizes
+        -a, --all     Check all systems
+        -h, --help    Print help information
+        -s, --size    Recalculate ROM file sizes
 
 ## oxyromon-purge-roms
 
-Purges trashed, missing and orphan ROM files
+Purge trashed, missing and orphan ROM files
 
 This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
 with a ROM, as well as physically delete all files in the `Trash` subdirectories.
@@ -288,14 +325,14 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
 
     OPTIONS:
         -h, --help       Print help information
-        -m, --missing    Deletes missing ROM files from the database
-        -o, --orphan     Deletes ROM files without an associated ROM from the database
-        -t, --trash      Physically deletes ROM files from the trash directories
-        -y, --yes        Automatically says yes to prompts
+        -m, --missing    Delete missing ROM files from the database
+        -o, --orphan     Delete ROM files without an associated ROM from the database
+        -t, --trash      Physically delete ROM files from the trash directories
+        -y, --yes        Automatically say yes to prompts
 
 ## oxyromon-server
 
-Launches the backend server
+Launch the backend server
 
 The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI is also exposed at `/`.
 
@@ -303,6 +340,6 @@ The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js
         oxyromon server [OPTIONS]
 
     OPTIONS:
-        -a, --address <ADDRESS>    Specifies the server address [default: 127.0.0.1]
+        -a, --address <ADDRESS>    Specify the server address [default: 127.0.0.1]
         -h, --help                 Print help information
-        -p, --port <PORT>          Specifies the server port [default: 8000]
+        -p, --port <PORT>          Specify the server port [default: 8000]

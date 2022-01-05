@@ -85,12 +85,12 @@ cfg_if! {
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("download-dats")
-        .about("Downloads No-Intro and Redump DAT files and imports them into oxyromon")
+        .about("Download No-Intro and Redump DAT files and import them into oxyromon")
         .arg(
             Arg::new("NOINTRO")
                 .short('n')
                 .long("nointro")
-                .help("Downloads No-Intro DAT files")
+                .help("Download No-Intro DAT files")
                 .required(false)
                 .conflicts_with("REDUMP")
                 .required_unless_present("REDUMP"),
@@ -99,7 +99,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("REDUMP")
                 .short('r')
                 .long("redump")
-                .help("Downloads Redump DAT files")
+                .help("Download Redump DAT files")
                 .required(false)
                 .conflicts_with("NOINTRO")
                 .required_unless_present("NOINTRO"),
@@ -108,21 +108,21 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("UPDATE")
                 .short('u')
                 .long("update")
-                .help("Checks for system updates")
+                .help("Check for system updates")
                 .required(false),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
-                .help("Imports all systems")
+                .help("Import all systems")
                 .required(false),
         )
         .arg(
             Arg::new("FORCE")
                 .short('f')
                 .long("force")
-                .help("Forces import of outdated DAT files")
+                .help("Force import of outdated DAT files")
                 .required(false),
         )
 }
@@ -178,7 +178,7 @@ async fn update_nointro_dats(
         .await
         .expect("Failed to download No-Intro profiles");
     let profile: ProfileXml = try_with!(de::from_str(&response), "Failed to parse profile");
-    let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), all).await?;
+    let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, all).await?;
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", &system.name));
         let system_xml = profile
@@ -238,7 +238,7 @@ async fn update_redump_dats(
     all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), all).await?;
+    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, all).await?;
     for system in systems {
         download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
     }
@@ -271,8 +271,17 @@ async fn download_redump_dat(
                     .path()
                     .join(zip_archive.file_names().next().unwrap()),
                 true,
-            ).await?;
-            import_dat(connection, progress_bar, &datfile_xml, &detector_xml, false, force).await?;
+            )
+            .await?;
+            import_dat(
+                connection,
+                progress_bar,
+                &datfile_xml,
+                &detector_xml,
+                false,
+                force,
+            )
+            .await?;
         }
         _ => progress_bar.println("Update ZIP contains too many files"),
     }

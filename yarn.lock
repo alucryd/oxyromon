@@ -306,10 +306,10 @@
   dependencies:
     tiny-glob "^0.2.9"
 
-"@sveltejs/kit@next":
-  version "1.0.0-next.215"
-  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-1.0.0-next.215.tgz#1054386d013a5818a10d569506ad54516bc52d57"
-  integrity sha512-3y6NFKacahEjgAuGNgs49t2Jf708syKEf6A7uf0dXoQXq3giF+/O1XDF4f+I2g/39iiOtkJMW10tyvIiRG22Hw==
+"@sveltejs/kit@1.0.0-next.216":
+  version "1.0.0-next.216"
+  resolved "https://registry.yarnpkg.com/@sveltejs/kit/-/kit-1.0.0-next.216.tgz#3324f3e47b2eb04ba42d386d2e09a448c276f650"
+  integrity sha512-FKg7PPlymsZ2aU8DteY1BH217M2dIAgfWzm8OVqazQn2uLbw25WbVqSJ5KdgW83mLYoxSWUNPrJX3TJNEG6jVg==
   dependencies:
     "@sveltejs/vite-plugin-svelte" "^1.0.0-next.32"
     sade "^1.7.4"

@@ -1,7 +1,18 @@
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
+use num_derive::FromPrimitive;
 use serde::Deserialize;
 use sqlx::{FromRow, Type};
+
+#[derive(Clone, Copy, FromPrimitive, Type, Eq, PartialEq)]
+#[cfg_attr(feature = "server", derive(Enum))]
+#[repr(i8)]
+pub enum Merging {
+    Split = 0,
+    NonMerged = 1,
+    FullNonMerged = 2,
+    Merged = 3,
+}
 
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
@@ -14,6 +25,7 @@ pub struct System {
     pub url: Option<String>,
     pub complete: bool,
     pub arcade: bool,
+    pub merging: i64,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
@@ -33,7 +45,7 @@ pub struct Rule {
     pub header_id: i64,
 }
 
-#[derive(Type)]
+#[derive(FromPrimitive, Type)]
 #[cfg_attr(feature = "server", derive(Clone, Copy, Enum, Eq, PartialEq))]
 #[repr(i8)]
 pub enum Sorting {
@@ -52,10 +64,11 @@ pub struct Game {
     pub comment: Option<String>,
     pub bios: bool,
     pub regions: String,
-    pub sorting: Sorting,
+    pub sorting: i64,
     pub complete: bool,
     pub system_id: i64,
     pub parent_id: Option<i64>,
+    pub bios_id: Option<i64>,
 }
 
 #[derive(FromRow)]
@@ -64,7 +77,7 @@ pub struct Game {
 pub struct Rom {
     pub id: i64,
     pub name: String,
-    pub merge_name: Option<String>,
+    pub bios: bool,
     pub size: i64,
     pub crc: String,
     pub md5: Option<String>,
@@ -72,6 +85,7 @@ pub struct Rom {
     pub rom_status: Option<String>,
     pub game_id: i64,
     pub romfile_id: Option<i64>,
+    pub parent_id: Option<i64>,
 }
 
 #[derive(FromRow, PartialEq)]
@@ -123,6 +137,7 @@ pub struct GameXml {
     pub description: String,
     pub comment: Option<String>,
     pub cloneof: Option<String>,
+    pub romof: Option<String>,
     pub isbios: Option<String>,
     #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,

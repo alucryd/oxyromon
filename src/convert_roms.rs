@@ -19,12 +19,12 @@ const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("convert-roms")
-        .about("Converts ROM files between common formats")
+        .about("Convert ROM files between common formats")
         .arg(
             Arg::new("FORMAT")
                 .short('f')
                 .long("format")
-                .help("Sets the destination format")
+                .help("Set the destination format")
                 .required(false)
                 .takes_value(true)
                 .possible_values(ALL_FORMATS),
@@ -33,7 +33,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("NAME")
                 .short('n')
                 .long("name")
-                .help("Selects ROMs by name")
+                .help("Select games by name")
                 .required(false)
                 .takes_value(true),
         )
@@ -41,14 +41,14 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("ALL")
                 .short('a')
                 .long("all")
-                .help("Converts all systems/all ROMs")
+                .help("Convert all systems/games")
                 .required(false),
         )
         .arg(
             Arg::new("STATISTICS")
                 .short('s')
                 .long("statistics")
-                .help("Prints statistics for each conversion")
+                .help("Print statistics for each conversion")
                 .required(false),
         )
 }
@@ -58,8 +58,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
-    let rom_name = matches.value_of("NAME");
+    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
+    let game_name = matches.value_of("NAME");
     let format = match matches.value_of("FORMAT") {
         Some(format) => format,
         None => ALL_FORMATS.get(select(ALL_FORMATS, None)?).unwrap(),
@@ -69,37 +69,42 @@ pub async fn main(
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
 
-        if system.arcade {
-            if !ARCADE_FORMATS.contains(&format) {
-                progress_bar.println(&format!(
-                    "Only {:?} are supported for arcade systems",
-                    ARCADE_FORMATS
-                ));
-                continue;
-            }
+        if system.arcade && !ARCADE_FORMATS.contains(&format) {
+            progress_bar.println(&format!(
+                "Only {:?} are supported for arcade systems",
+                ARCADE_FORMATS
+            ));
+            continue;
         }
 
-        let roms = match rom_name {
-            Some(rom_name) => {
-                let roms =
-                    find_roms_with_romfile_by_system_id_and_name(connection, system.id, rom_name)
-                        .await;
-                prompt_for_roms(roms, matches.is_present("ALL"))?
+        let games = match game_name {
+            Some(game_name) => {
+                let games = find_games_with_romfiles_by_name_and_system_id(
+                    connection,
+                    &format!("%{}%", game_name),
+                    system.id,
+                )
+                .await;
+                prompt_for_games(games, matches.is_present("ALL"))?
             }
-            None => find_roms_with_romfile_by_system_id(connection, system.id).await,
+            None => find_games_with_romfiles_by_system_id(connection, system.id).await,
         };
 
-        if roms.is_empty() {
+        if games.is_empty() {
             if matches.is_present("NAME") {
-                progress_bar.println(&format!("No ROM matching \"{}\"", rom_name.unwrap()));
+                progress_bar.println(&format!("No game matching \"{}\"", game_name.unwrap()));
             }
             continue;
         }
 
+        let roms = find_roms_with_romfile_by_game_ids(
+            connection,
+            &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
+        )
+        .await;
         let romfiles = find_romfiles_by_ids(
             connection,
-            &roms
-                .iter()
+            roms.iter()
                 .map(|rom| rom.romfile_id.unwrap())
                 .collect::<Vec<i64>>()
                 .as_slice(),
@@ -111,6 +116,8 @@ pub async fn main(
             let group = roms_by_game_id.entry(rom.game_id).or_insert(vec![]);
             group.push(rom);
         });
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let romfiles_by_id: HashMap<i64, Romfile> = romfiles
             .into_iter()
             .map(|romfile| (romfile.id, romfile))
@@ -121,9 +128,10 @@ pub async fn main(
                 to_archive(
                     connection,
                     progress_bar,
-                    ArchiveType::SEVENZIP,
+                    ArchiveType::Sevenzip,
                     &system,
                     roms_by_game_id,
+                    games_by_id,
                     romfiles_by_id,
                 )
                 .await?
@@ -162,9 +170,10 @@ pub async fn main(
                 to_archive(
                     connection,
                     progress_bar,
-                    ArchiveType::ZIP,
+                    ArchiveType::Zip,
                     &system,
                     roms_by_game_id,
+                    games_by_id,
                     romfiles_by_id,
                 )
                 .await?
@@ -184,6 +193,7 @@ async fn to_archive(
     archive_type: ArchiveType,
     system: &System,
     mut roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -193,8 +203,8 @@ async fn to_archive(
         roms.par_iter().any(|rom| {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             !(romfile.path.ends_with(match archive_type {
-                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                ArchiveType::ZIP => ZIP_EXTENSION,
+                ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                ArchiveType::Zip => ZIP_EXTENSION,
             }))
         })
     });
@@ -232,8 +242,8 @@ async fn to_archive(
                     .unwrap()
                     .path
                     .ends_with(match archive_type {
-                        ArchiveType::SEVENZIP => ZIP_EXTENSION,
-                        ArchiveType::ZIP => SEVENZIP_EXTENSION,
+                        ArchiveType::Sevenzip => ZIP_EXTENSION,
+                        ArchiveType::Zip => SEVENZIP_EXTENSION,
                     })
             })
         });
@@ -252,14 +262,14 @@ async fn to_archive(
                 "{}.{}",
                 &rom.name,
                 match archive_type {
-                    ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                    ArchiveType::ZIP => ZIP_EXTENSION,
+                    ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    ArchiveType::Zip => ZIP_EXTENSION,
                 }
             ));
             add_files_to_archive(
                 progress_bar,
                 &archive_path,
-                &[&bin_path.file_name().unwrap().to_str().unwrap()],
+                &[bin_path.file_name().unwrap().to_str().unwrap()],
                 &tmp_directory.path(),
             )?;
             update_romfile(
@@ -282,8 +292,8 @@ async fn to_archive(
 
             let mut archive_path = Path::new(&chd_romfile.path).to_path_buf();
             archive_path.set_extension(match archive_type {
-                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                ArchiveType::ZIP => ZIP_EXTENSION,
+                ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                ArchiveType::Zip => ZIP_EXTENSION,
             });
 
             let bin_names_sizes: Vec<(&str, u64)> = bin_roms
@@ -343,15 +353,15 @@ async fn to_archive(
             "{}.{}",
             &rom.name,
             match archive_type {
-                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                ArchiveType::ZIP => ZIP_EXTENSION,
+                ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                ArchiveType::Zip => ZIP_EXTENSION,
             }
         ));
 
         add_files_to_archive(
             progress_bar,
             &archive_path,
-            &[&iso_path.file_name().unwrap().to_str().unwrap()],
+            &[iso_path.file_name().unwrap().to_str().unwrap()],
             &tmp_directory.path(),
         )?;
         update_romfile(
@@ -383,8 +393,8 @@ async fn to_archive(
             )?;
             remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
-                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                ArchiveType::ZIP => ZIP_EXTENSION,
+                ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                ArchiveType::Zip => ZIP_EXTENSION,
             });
             add_files_to_archive(
                 progress_bar,
@@ -422,8 +432,8 @@ async fn to_archive(
             )?;
             remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
-                ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                ArchiveType::ZIP => ZIP_EXTENSION,
+                ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                ArchiveType::Zip => ZIP_EXTENSION,
             });
             add_files_to_archive(
                 progress_bar,
@@ -444,13 +454,6 @@ async fn to_archive(
     }
 
     // convert others
-    let games = find_games_by_ids(
-        connection,
-        &others.keys().copied().collect::<Vec<i64>>().as_slice(),
-    )
-    .await;
-    let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
-
     for (game_id, mut roms) in others {
         let mut transaction = begin_transaction(connection).await;
 
@@ -462,8 +465,8 @@ async fn to_archive(
                 "{}.{}",
                 &rom.name,
                 match archive_type {
-                    ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                    ArchiveType::ZIP => ZIP_EXTENSION,
+                    ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    ArchiveType::Zip => ZIP_EXTENSION,
                 }
             ));
 
@@ -483,8 +486,8 @@ async fn to_archive(
                 .filter(|rom| {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     !(romfile.path.ends_with(match archive_type {
-                        ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                        ArchiveType::ZIP => ZIP_EXTENSION,
+                        ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                        ArchiveType::Zip => ZIP_EXTENSION,
                     }))
                 })
                 .collect();
@@ -501,8 +504,8 @@ async fn to_archive(
                 "{}.{}",
                 &game.name,
                 match archive_type {
-                    ArchiveType::SEVENZIP => SEVENZIP_EXTENSION,
-                    ArchiveType::ZIP => ZIP_EXTENSION,
+                    ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    ArchiveType::Zip => ZIP_EXTENSION,
                 }
             );
             let archive_path = match system.arcade {
@@ -513,7 +516,7 @@ async fn to_archive(
             add_files_to_archive(progress_bar, &archive_path, &rom_names, &directory)?;
             let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
-                &archive_path.as_os_str().to_str().unwrap(),
+                archive_path.as_os_str().to_str().unwrap(),
             )
             .await
             {
@@ -767,7 +770,7 @@ async fn to_chd(
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
             if statistics {
-                print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&chd_path]).await?;
+                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -795,7 +798,7 @@ async fn to_chd(
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
             if statistics {
-                print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&chd_path]).await?;
+                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -896,7 +899,7 @@ async fn to_cso(
         )?;
 
         if statistics {
-            print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
+            print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
         }
 
         update_romfile(
@@ -923,7 +926,7 @@ async fn to_cso(
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
             if statistics {
-                print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
+                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -952,7 +955,7 @@ async fn to_cso(
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
             if statistics {
-                print_statistics(progress_bar, &[&rom], &[&romfile.path], &[&cso_path]).await?;
+                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -1225,10 +1228,15 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms =
+            find_roms_with_romfile_by_game_ids(&mut connection, &vec![games.get(0).unwrap().id])
+                .await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -1236,9 +1244,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::ZIP,
+            ArchiveType::Zip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -1472,10 +1481,13 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -1483,9 +1495,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::SEVENZIP,
+            ArchiveType::Sevenzip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -1558,10 +1571,13 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -1569,9 +1585,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::SEVENZIP,
+            ArchiveType::Sevenzip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -1651,22 +1668,26 @@ mod test {
             .await
             .unwrap();
 
-        let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
         for rom in &roms {
             let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
             romfiles_by_id.insert(romfile.id, romfile);
         }
+        let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
 
         // when
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::SEVENZIP,
+            ArchiveType::Sevenzip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -1745,10 +1766,13 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -1756,9 +1780,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::SEVENZIP,
+            ArchiveType::Sevenzip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -1992,10 +2017,13 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -2003,9 +2031,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::ZIP,
+            ArchiveType::Zip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await
@@ -2075,10 +2104,13 @@ mod test {
             .await
             .unwrap();
 
-        let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+        let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+        let roms = find_roms_with_romfile_by_game_ids(&mut connection, &vec![games[0].id]).await;
         let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms_by_game_id.insert(roms[0].game_id, roms);
+        let games_by_id: HashMap<i64, Game> =
+            games.into_iter().map(|game| (game.id, game)).collect();
         let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
         romfiles_by_id.insert(romfile.id, romfile);
 
@@ -2086,9 +2118,10 @@ mod test {
         to_archive(
             &mut connection,
             &progress_bar,
-            ArchiveType::SEVENZIP,
+            ArchiveType::Sevenzip,
             &system,
             roms_by_game_id,
+            games_by_id,
             romfiles_by_id,
         )
         .await

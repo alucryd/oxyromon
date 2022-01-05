@@ -19,10 +19,10 @@ use std::str::FromStr;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("import-roms")
-        .about("Validates and imports ROM files into oxyromon")
+        .about("Validate and import ROM files into oxyromon")
         .arg(
             Arg::new("ROMS")
-                .help("Sets the ROM files to import")
+                .help("Set the ROM files to import")
                 .required(true)
                 .multiple_values(true)
                 .index(1)
@@ -32,7 +32,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("SYSTEM")
                 .short('s')
                 .long("system")
-                .help("Sets the system number to use")
+                .help("Set the system number to use")
                 .required(false)
                 .takes_value(true),
         )
@@ -56,7 +56,7 @@ pub async fn main(
     for romfile_path in romfile_paths {
         progress_bar.println(&format!("Processing \"{}\"", &romfile_path));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
-        import_rom(connection, &progress_bar, &system, &header, &romfile_path).await?;
+        import_rom(connection, progress_bar, &system, &header, &romfile_path).await?;
         progress_bar.println("");
     }
 
@@ -99,15 +99,15 @@ pub async fn import_rom<P: AsRef<Path>>(
         .unwrap()
         .to_lowercase();
 
-    let system_directory = get_system_directory(&mut transaction, progress_bar, &system).await?;
+    let system_directory = get_system_directory(&mut transaction, progress_bar, system).await?;
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         import_archive(
             &mut transaction,
-            &progress_bar,
+            progress_bar,
             &system_directory,
-            &system,
-            &header,
+            system,
+            header,
             &romfile_path,
             &romfile_extension,
         )
@@ -115,30 +115,30 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if CHD_EXTENSION == romfile_extension {
         import_chd(
             &mut transaction,
-            &progress_bar,
+            progress_bar,
             &system_directory,
-            &system,
-            &header,
+            system,
+            header,
             &romfile_path,
         )
         .await?;
     } else if CSO_EXTENSION == romfile_extension {
         import_cso(
             &mut transaction,
-            &progress_bar,
+            progress_bar,
             &system_directory,
-            &system,
-            &header,
+            system,
+            header,
             &romfile_path,
         )
         .await?;
     } else {
         import_other(
             &mut transaction,
-            &progress_bar,
+            progress_bar,
             &system_directory,
-            &system,
-            &header,
+            system,
+            header,
             &romfile_path,
         )
         .await?;
@@ -180,7 +180,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             )?
             .remove(0);
             let size_crc =
-                get_file_size_and_crc(connection, progress_bar, &extracted_path, &header, 1, 1)
+                get_file_size_and_crc(connection, progress_bar, &extracted_path, header, 1, 1)
                     .await?;
             remove_file(progress_bar, &extracted_path, true).await?;
             size = size_crc.0;
@@ -190,7 +190,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             crc = sevenzip_info.crc.clone();
         }
 
-        match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        match find_rom(connection, size, &crc, system, progress_bar).await? {
             Some(rom) => {
                 game_ids.insert(rom.game_id);
                 roms_sevenzip_infos.push((rom, sevenzip_info));
@@ -206,7 +206,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     // archive contains a single full game with no invalid file
     if roms_sevenzip_infos.len() == sevenzip_infos.len() && game_ids.len() == 1 {
         let game_id = game_ids.drain().last().unwrap();
-        let rom_ids: HashSet<i64> = find_roms_by_game_id_skip_parents(connection, game_id)
+        let rom_ids: HashSet<i64> = find_roms_by_game_id_no_parents(connection, game_id)
             .await
             .into_par_iter()
             .map(|rom| rom.id)
@@ -264,20 +264,19 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     // all other cases
     for (rom, sevenzip_info) in roms_sevenzip_infos {
         let extracted_path = extract_files_from_archive(
-            &progress_bar,
+            progress_bar,
             romfile_path,
             &[&sevenzip_info.path],
             &tmp_directory.path(),
         )?
         .remove(0);
 
-        let game = find_game_by_id(connection, rom.game_id).await;
-
         // put arcade roms in subdirectories as their names aren't unique
         let new_path = match system.arcade {
             true => {
+                let game = find_game_by_id(connection, rom.game_id).await;
                 create_directory(
-                    &progress_bar,
+                    progress_bar,
                     &system_directory.as_ref().join(&game.name),
                     true,
                 )
@@ -313,8 +312,8 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     if cue_path.is_file().await {
         progress_bar.println("CUE file found, using multiple tracks mode");
         let (size, crc) =
-            get_file_size_and_crc(connection, progress_bar, &cue_path, &header, 1, 1).await?;
-        let cue_rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+            get_file_size_and_crc(connection, progress_bar, &cue_path, header, 1, 1).await?;
+        let cue_rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
             Some(rom) => rom,
             None => {
                 move_to_trash(connection, progress_bar, system, &cue_path).await?;
@@ -322,7 +321,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             }
         };
 
-        let roms: Vec<Rom> = find_roms_by_game_id_skip_parents(connection, cue_rom.game_id)
+        let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, cue_rom.game_id)
             .await
             .into_iter()
             .filter(|rom| rom.id != cue_rom.id)
@@ -346,7 +345,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
                 connection,
                 progress_bar,
                 &bin_path,
-                &header,
+                header,
                 i,
                 bin_paths.len(),
             )
@@ -379,9 +378,9 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         let bin_path =
             extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
         let (size, crc) =
-            get_file_size_and_crc(connection, progress_bar, &bin_path, &header, 1, 1).await?;
+            get_file_size_and_crc(connection, progress_bar, &bin_path, header, 1, 1).await?;
         remove_file(progress_bar, &bin_path, true).await?;
-        let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
             Some(rom) => rom,
             None => {
                 move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -413,9 +412,9 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, &iso_path, &header, 1, 1).await?;
+        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
     remove_file(progress_bar, &iso_path, true).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -444,8 +443,8 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
 ) -> SimpleResult<()> {
     let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, romfile_path, &header, 1, 1).await?;
-    let rom = match find_rom(connection, size, &crc, &system, &progress_bar).await? {
+        get_file_size_and_crc(connection, progress_bar, romfile_path, header, 1, 1).await?;
+    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -453,7 +452,20 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
         }
     };
 
-    let new_path = system_directory.as_ref().join(&rom.name);
+    // put arcade roms in subdirectories as their names aren't unique
+    let new_path = match system.arcade {
+        true => {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            create_directory(
+                progress_bar,
+                &system_directory.as_ref().join(&game.name),
+                true,
+            )
+            .await?;
+            system_directory.as_ref().join(&game.name).join(&rom.name)
+        }
+        false => system_directory.as_ref().join(&rom.name),
+    };
 
     // move file if needed
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
@@ -472,7 +484,9 @@ async fn find_rom(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Option<Rom>> {
     let rom: Rom;
-    let mut roms = find_roms_by_size_and_crc_and_system_id(connection, size, crc, system.id).await;
+    let mut roms =
+        find_roms_without_romfile_by_size_and_crc_and_system_id(connection, size, crc, system.id)
+            .await;
 
     // abort if no match
     if roms.is_empty() {

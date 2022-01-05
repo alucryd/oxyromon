@@ -17,10 +17,13 @@ extern crate serde;
 extern crate sqlx;
 #[macro_use]
 extern crate simple_error;
+extern crate num_derive;
+extern crate num_traits;
 extern crate phf;
 extern crate rayon;
 extern crate surf;
 extern crate tempfile;
+extern crate vec_drain_where;
 
 mod chdman;
 mod check_roms;
@@ -36,6 +39,7 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
+mod rebuild_roms;
 #[cfg(feature = "server")]
 mod server;
 mod sevenzip;
@@ -63,6 +67,7 @@ async fn main() -> SimpleResult<()> {
         import_roms::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
+        rebuild_roms::subcommand(),
         check_roms::subcommand(),
         purge_roms::subcommand(),
     ];
@@ -97,14 +102,14 @@ async fn main() -> SimpleResult<()> {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
                     &progress_bar,
-                    &matches.subcommand_matches("config").unwrap(),
+                    matches.subcommand_matches("config").unwrap(),
                 )
                 .await?
             }
             Some("import-dats") => {
                 import_dats::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("import-dats").unwrap(),
+                    matches.subcommand_matches("import-dats").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -112,7 +117,7 @@ async fn main() -> SimpleResult<()> {
             Some("download-dats") => {
                 download_dats::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("download-dats").unwrap(),
+                    matches.subcommand_matches("download-dats").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -120,7 +125,7 @@ async fn main() -> SimpleResult<()> {
             Some("import-roms") => {
                 import_roms::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("import-roms").unwrap(),
+                    matches.subcommand_matches("import-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -128,7 +133,7 @@ async fn main() -> SimpleResult<()> {
             Some("sort-roms") => {
                 sort_roms::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("sort-roms").unwrap(),
+                    matches.subcommand_matches("sort-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -136,7 +141,15 @@ async fn main() -> SimpleResult<()> {
             Some("convert-roms") => {
                 convert_roms::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("convert-roms").unwrap(),
+                    matches.subcommand_matches("convert-roms").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("rebuild-roms") => {
+                rebuild_roms::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("rebuild-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -144,7 +157,7 @@ async fn main() -> SimpleResult<()> {
             Some("check-roms") => {
                 check_roms::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("check-roms").unwrap(),
+                    matches.subcommand_matches("check-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -152,7 +165,7 @@ async fn main() -> SimpleResult<()> {
             Some("purge-roms") => {
                 purge_roms::main(
                     &mut pool.acquire().await.unwrap(),
-                    &matches.subcommand_matches("purge-roms").unwrap(),
+                    matches.subcommand_matches("purge-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -160,7 +173,7 @@ async fn main() -> SimpleResult<()> {
             Some("server") => {
                 cfg_if! {
                     if #[cfg(feature = "server")] {
-                        server::main(pool, &matches.subcommand_matches("server").unwrap()).await?
+                        server::main(pool, matches.subcommand_matches("server").unwrap()).await?
                     }
                 }
             }

@@ -10,8 +10,8 @@ pub static ZIP_EXTENSION: &str = "zip";
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 
 pub enum ArchiveType {
-    SEVENZIP,
-    ZIP,
+    Sevenzip,
+    Zip,
 }
 
 pub struct ArchiveInfo {
@@ -154,7 +154,37 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-mx=9")
         .current_dir(directory.as_ref())
         .output()
-        .expect("Failed to create archive");
+        .expect("Failed to add files to archive");
+
+    if !output.status.success() {
+        bail!(String::from_utf8(output.stderr).unwrap().as_str())
+    }
+
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+
+    Ok(())
+}
+
+pub fn remove_files_from_archive<P: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    archive_path: &P,
+    file_names: &[&str],
+) -> SimpleResult<()> {
+    progress_bar.set_message("Deleting files");
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(100);
+
+    for &file_name in file_names {
+        progress_bar.println(format!("Deleting \"{}\"", file_name));
+    }
+
+    let output = Command::new("7z")
+        .arg("d")
+        .arg(archive_path.as_ref())
+        .args(file_names)
+        .output()
+        .expect("Failed to remove files from archive");
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str())

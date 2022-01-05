@@ -30,7 +30,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fc95d1bdb8e6666b2b217308eeeb09f2d6728d104be3e31916cc74d15420331"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -188,9 +188,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql"
-version = "3.0.19"
+version = "3.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71944cb3fd7c09c08434274f7f65114d59eaa85f15efc8c59a0b95ba5fb7bbe5"
+checksum = "b7b72874e1b4bebe34cfd204a0d938225a7e25714315a5f714173842b6d16849"
 dependencies = [
  "async-graphql-derive",
  "async-graphql-parser",
@@ -221,9 +221,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-derive"
-version = "3.0.19"
+version = "3.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0005b2754d7487032144b70abeabfec47da525065d840f4f6d1148b1957b474a"
+checksum = "646536d653be53fa2ff831d7a4083367d2ea7e333e5710e540596721e598ecad"
 dependencies = [
  "Inflector",
  "async-graphql-parser",
@@ -237,9 +237,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-parser"
-version = "3.0.19"
+version = "3.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c2889ab764f07d93a03f3c8b5a20273bb7187159cbce0d7b645a7ea2ea508fd"
+checksum = "b47576aba6c1474888689c5d67a2a7b7f9f650d3122157e00fa14f0c01945f8a"
 dependencies = [
  "async-graphql-value",
  "pest",
@@ -250,9 +250,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-tide"
-version = "3.0.19"
+version = "3.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef66de52371dccdb14e66bb642477db03f2f71446b9877e5dcd52febfaa43ffa"
+checksum = "81c2fbf3263c001d005e84cf0919633a1793239bc27ea56b893d17598f5f5f7e"
 dependencies = [
  "async-graphql",
  "async-trait",
@@ -264,9 +264,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-value"
-version = "3.0.19"
+version = "3.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "362827a87a5729442d985793228cd86997a1f200c248049f82a3fcc77ea0e01c"
+checksum = "28a266653068d17107cc3b5d9d9eb245b1a49a43501b2317af4f1959624346d5"
 dependencies = [
  "bytes",
  "indexmap",
@@ -518,7 +518,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -527,7 +527,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1d36a02058e76b040de25a4464ba1c80935655595b661505c8b39b664828b95"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -604,14 +604,14 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12f8e7987cbd042a63249497f41aed09f8e65add917ea6566effbc56578d6801"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
 name = "clap"
-version = "3.0.0"
+version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d17bf219fcd37199b9a29e00ba65dfb8cd5b2688b7297ec14ff829c40ac50ca9"
+checksum = "d01c9347757e131122b19cd19a05c85805b68c2352a97b623efdc3c295290299"
 dependencies = [
  "atty",
  "bitflags",
@@ -659,9 +659,9 @@ dependencies = [
 
 [[package]]
 name = "const_fn"
-version = "0.4.8"
+version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f92cfa0fd5690b3cf8c1ef2cabbd9b7ef22fa53cf5e1f92b05103f6d5d1cf6e7"
+checksum = "fbdcdcb6d86f71c5e97409ad45898af11cbc995b4ee8112d59095a28d376c935"
 
 [[package]]
 name = "cookie"
@@ -795,7 +795,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d6b536309245c849479fba3da410962a43ed8e51c26b729208ec0ac2798d0"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -804,7 +804,7 @@ version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bff07008ec701e8028e2ceb8f83f0e4274ee62bd2dbdc4fefff2e9a91824081a"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
  "subtle",
 ]
 
@@ -923,7 +923,7 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -934,7 +934,7 @@ checksum = "b697d66081d42af4fba142d56918a3cb21dc8eb63372c6b85d14f44fb9c5979b"
 dependencies = [
  "block-buffer 0.10.0",
  "crypto-common",
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
 ]
 
 [[package]]
@@ -1210,9 +1210,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "0.14.4"
+version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "501466ecc8a30d1d3b7fc9229b122b2ce8ed6e9d9223f1138d4babb253e51817"
+checksum = "fd48d33ec7f05fbfa152300fdad764757cbded343c1aa1cff2fbaf4134851803"
 dependencies = [
  "typenum",
  "version_check",
@@ -1658,9 +1658,9 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.6.6"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ea2d928b485416e8908cff2d97d621db22b27f7b3b6729e438bcf42c671ba91"
+checksum = "274353858935c992b13c0ca408752e2121da852d07dec7ce5f108c77dfa14d1f"
 dependencies = [
  "hashbrown",
 ]
@@ -1827,6 +1827,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-derive"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1943,6 +1954,8 @@ dependencies = [
  "itertools",
  "lazy_static",
  "native-tls",
+ "num-derive",
+ "num-traits",
  "once_cell",
  "phf 0.10.1",
  "quick-xml",
@@ -1957,6 +1970,7 @@ dependencies = [
  "surf",
  "tempfile",
  "tide",
+ "vec-drain-where",
  "wiremock",
  "zip",
 ]
@@ -3242,7 +3256,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f214e8f697e925001e66ec2c6e37a4ef93f0f78c2eed7814394e10c62025b05"
 dependencies = [
- "generic-array 0.14.4",
+ "generic-array 0.14.5",
  "subtle",
 ]
 
@@ -3281,6 +3295,12 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "vec-drain-where"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a31e425b0dab548c1d00c0b1233646127a635fd2592135fc9c48ebd5646cf982"
 
 [[package]]
 name = "version_check"
@@ -3445,9 +3465,9 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "wiremock"
-version = "0.5.8"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c3fe7c6af90383100cd1486ef0467c2ebead0303ed7aa3dc6e51173ee3ff8ba"
+checksum = "8258886282e4e638166802e91fa2b09bac3a6409bf3a043e2ec7afc049f4d000"
 dependencies = [
  "async-trait",
  "deadpool",

@@ -38,12 +38,12 @@ struct Assets;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("server")
-        .about("Launches the backend server")
+        .about("Launch the backend server")
         .arg(
             Arg::new("ADDRESS")
                 .short('a')
                 .long("address")
-                .help("Specifies the server address")
+                .help("Specify the server address")
                 .required(false)
                 .takes_value(true)
                 .default_value("127.0.0.1"),
@@ -52,7 +52,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("PORT")
                 .short('p')
                 .long("port")
-                .help("Specifies the server port")
+                .help("Specify the server port")
                 .required(false)
                 .takes_value(true)
                 .default_value("8000"),
@@ -188,7 +188,13 @@ impl QueryRoot {
     }
 
     async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
-        Ok(find_roms_by_game_id_skip_parents(&mut POOL.get().unwrap().acquire().await.unwrap(), game_id).await)
+        Ok(
+            find_roms_by_game_id_parents(
+                &mut POOL.get().unwrap().acquire().await.unwrap(),
+                game_id,
+            )
+            .await,
+        )
     }
 
     async fn total_original_size(&self, system_id: i64) -> Result<i64> {

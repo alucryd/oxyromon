@@ -10,33 +10,33 @@ use sqlx::sqlite::SqliteConnection;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("purge-roms")
-        .about("Purges trashed, missing and orphan ROM files")
+        .about("Purge trashed, missing and orphan ROM files")
         .arg(
             Arg::new("MISSING")
                 .short('m')
                 .long("missing")
-                .help("Deletes missing ROM files from the database")
+                .help("Delete missing ROM files from the database")
                 .required(false),
         )
         .arg(
             Arg::new("ORPHAN")
                 .short('o')
                 .long("orphan")
-                .help("Deletes ROM files without an associated ROM from the database")
+                .help("Delete ROM files without an associated ROM from the database")
                 .required(false),
         )
         .arg(
             Arg::new("TRASH")
                 .short('t')
                 .long("trash")
-                .help("Physically deletes ROM files from the trash directories")
+                .help("Physically delete ROM files from the trash directories")
                 .required(false),
         )
         .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
-                .help("Automatically says yes to prompts")
+                .help("Automatically say yes to prompts")
                 .required(false),
         )
 }
