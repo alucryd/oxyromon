@@ -201,6 +201,22 @@ pub async fn update_systems_mark_incomplete(connection: &mut SqliteConnection) {
     .unwrap_or_else(|_| panic!("Error while marking systems as incomplete"));
 }
 
+pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, merging: Merging) {
+    let merging = merging as i8;
+    sqlx::query!(
+        "
+        UPDATE systems
+        SET merging = ?
+        WHERE id = ?
+        ",
+        merging,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating system with id {} merging", merging));
+}
+
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
@@ -213,6 +229,21 @@ pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     .fetch_all(connection)
     .await
     .expect("Error while finding systems")
+}
+
+pub async fn find_arcade_systems(connection: &mut SqliteConnection) -> Vec<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE arcade = true
+        ORDER BY name
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding arcade systems")
 }
 
 pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -> Vec<System> {
@@ -228,7 +259,7 @@ pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding system names")
+    .unwrap_or_else(|_| panic!("Error while finding systems with url {}", url))
 }
 
 pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
@@ -286,12 +317,13 @@ pub async fn create_game(
     regions: &str,
     system_id: i64,
     parent_id: Option<i64>,
+    bios_id: Option<i64>,
 ) -> i64 {
     let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
-        INSERT INTO games (name, description, comment, bios, regions, system_id, parent_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO games (name, description, comment, bios, regions, system_id, parent_id, bios_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ",
         game_xml.name,
         game_xml.description,
@@ -300,6 +332,7 @@ pub async fn create_game(
         regions,
         system_id,
         parent_id,
+        bios_id,
     )
     .execute(connection)
     .await
@@ -314,12 +347,13 @@ pub async fn update_game(
     regions: &str,
     system_id: i64,
     parent_id: Option<i64>,
+    bios_id: Option<i64>,
 ) {
     let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
         UPDATE games
-        SET name = ?, description = ?, comment = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?
+        SET name = ?, description = ?, comment = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
         WHERE id = ?
         ",
         game_xml.name,
@@ -329,6 +363,7 @@ pub async fn update_game(
         regions,
         system_id,
         parent_id,
+        bios_id,
         id,
     )
     .execute(connection)
@@ -351,7 +386,7 @@ pub async fn update_games_by_system_id_mark_complete(
             FROM roms r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
-            AND r.merge_name IS NULL
+            AND r.parent_id IS NULL
         )
         ",
         system_id,
@@ -376,6 +411,7 @@ pub async fn update_games_by_system_id_mark_incomplete(
             FROM roms r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
+            AND r.parent_id IS NULL
         )
         ",
         system_id,
@@ -395,8 +431,8 @@ pub async fn update_games_mark_incomplete(connection: &mut SqliteConnection) {
             SELECT r.id
             FROM roms r
             WHERE r.game_id = games.id
+            AND r.parent_id IS NULL
             AND r.romfile_id IS NULL
-            AND r.merge_name IS NULL
         )
         ",
     )
@@ -433,7 +469,7 @@ pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         ORDER BY name
         ",
@@ -450,7 +486,7 @@ pub async fn find_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE system_id = ?
         ORDER BY name
@@ -469,7 +505,7 @@ pub async fn find_incomplete_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE system_id = ?
         AND complete = false
@@ -480,7 +516,12 @@ pub async fn find_incomplete_games_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding incomplete games with system id {}", system_id))
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding incomplete games with system id {}",
+            system_id
+        )
+    })
 }
 
 pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
@@ -506,7 +547,7 @@ pub async fn find_parent_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE system_id = ?
         AND parent_id IS NULL
@@ -531,7 +572,7 @@ pub async fn find_clone_games_by_system_id(
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE system_id = ?
         AND parent_id IS NOT NULL
@@ -553,7 +594,7 @@ pub async fn find_game_by_id(connection: &mut SqliteConnection, id: i64) -> Game
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE id = ?
         ",
@@ -564,20 +605,23 @@ pub async fn find_game_by_id(connection: &mut SqliteConnection, id: i64) -> Game
     .unwrap_or_else(|_| panic!("Error while finding game with id {}", id))
 }
 
-pub async fn find_game_by_name_and_system_id(
+pub async fn find_game_by_name_and_bios_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
+    bios: bool,
     system_id: i64,
 ) -> Option<Game> {
     sqlx::query_as!(
         Game,
         "
-        SELECT id, name, description, comment, bios, regions, sorting as \"sorting: _\", complete, system_id, parent_id
+        SELECT *
         FROM games
         WHERE name = ?
+        AND bios = ?
         AND system_id = ?
         ",
         name,
+        bios,
         system_id,
     )
     .fetch_optional(connection)
@@ -588,6 +632,57 @@ pub async fn find_game_by_name_and_system_id(
             name, system_id
         )
     })
+}
+
+pub async fn find_games_with_romfiles_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE system_id = ?
+        AND id IN (
+            SELECT DISTINCT(game_id)
+            FROM roms
+            WHERE romfile_id IS NOT NULL
+        )
+        ORDER BY name
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding games with romfiles")
+}
+
+pub async fn find_games_with_romfiles_by_name_and_system_id(
+    connection: &mut SqliteConnection,
+    name: &str,
+    system_id: i64,
+) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE name LIKE ?
+        AND system_id = ?
+        AND id IN (
+            SELECT DISTINCT(game_id)
+            FROM roms
+            WHERE romfile_id IS NOT NULL
+        )
+        ORDER BY name
+        ",
+        name,
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding games with romfiles")
 }
 
 pub async fn delete_game_by_name_and_system_id(
@@ -614,23 +709,30 @@ pub async fn delete_game_by_name_and_system_id(
     });
 }
 
-pub async fn create_rom(connection: &mut SqliteConnection, rom_xml: &RomXml, game_id: i64) -> i64 {
+pub async fn create_rom(
+    connection: &mut SqliteConnection,
+    rom_xml: &RomXml,
+    bios: bool,
+    game_id: i64,
+    parent_id: Option<i64>,
+) -> i64 {
     let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
     sqlx::query!(
         "
-        INSERT INTO roms (name, merge_name, size, crc, md5, sha1, rom_status, game_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO roms (name, bios, size, crc, md5, sha1, rom_status, game_id, parent_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         rom_xml.name,
-        rom_xml.merge,
+        bios,
         rom_xml.size,
         crc,
         md5,
         sha1,
         rom_xml.status,
         game_id,
+        parent_id,
     )
     .execute(connection)
     .await
@@ -642,7 +744,9 @@ pub async fn update_rom(
     connection: &mut SqliteConnection,
     id: i64,
     rom_xml: &RomXml,
+    bios: bool,
     game_id: i64,
+    parent_id: Option<i64>,
 ) {
     let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
@@ -650,17 +754,18 @@ pub async fn update_rom(
     sqlx::query!(
         "
         UPDATE roms
-        SET name = ?, merge_name = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?
+        SET name = ?, bios = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?, parent_id = ?
         WHERE id = ?
         ",
         rom_xml.name,
-        rom_xml.merge,
+        bios,
         rom_xml.size,
         crc,
         md5,
         sha1,
         rom_xml.status,
         game_id,
+        parent_id,
         id,
     )
     .execute(connection)
@@ -701,7 +806,25 @@ pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     .expect("Error while finding roms")
 }
 
-pub async fn find_roms_by_game_id_skip_parents(
+pub async fn find_roms_by_romfile_id(
+    connection: &mut SqliteConnection,
+    romfile_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id = ?
+        ",
+        romfile_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with romfile id {}", romfile_id))
+}
+
+pub async fn find_roms_by_game_id_no_parents(
     connection: &mut SqliteConnection,
     game_id: i64,
 ) -> Vec<Rom> {
@@ -711,14 +834,100 @@ pub async fn find_roms_by_game_id_skip_parents(
         SELECT *
         FROM roms
         WHERE game_id = ?
-        AND merge_name IS NULL
+        AND parent_id IS NULL
         ORDER BY name
         ",
         game_id,
     )
     .fetch_all(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while finding rom with game id {}", game_id))
+    .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
+}
+
+pub async fn find_roms_by_game_id_parents_no_parent_bioses(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE game_id = ?
+        AND (
+            parent_id IS NULL
+            OR (
+                parent_id IS NOT NULL
+                AND bios = false
+            )
+        )
+        ORDER BY name
+        ",
+        game_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
+}
+
+pub async fn find_roms_by_game_id_parents(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE game_id = ?
+        ORDER BY name
+        ",
+        game_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
+}
+
+pub async fn find_roms_by_game_id_parents_only(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE game_id = ?
+        AND parent_id IS NOT NULL
+        ORDER BY name
+        ",
+        game_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
+}
+
+pub async fn find_roms_by_game_id_parent_bioses_only(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE game_id = ?
+        AND parent_id IS NOT NULL
+        AND bios = true
+        ORDER BY name
+        ",
+        game_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
 }
 
 pub async fn find_roms_without_romfile_by_game_ids(
@@ -730,7 +939,7 @@ pub async fn find_roms_without_romfile_by_game_ids(
         SELECT *
         FROM roms
         WHERE romfile_id IS NULL
-        AND merge_name IS NULL
+        AND parent_id IS NULL
         AND game_id IN ({})
         ORDER BY name
         ",
@@ -742,6 +951,47 @@ pub async fn find_roms_without_romfile_by_game_ids(
         .expect("Error while finding roms with romfile")
 }
 
+pub async fn find_roms_without_romfile_by_game_id_split(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NULL
+        AND parent_id IS NULL
+        AND game_id = ?
+        ORDER BY name
+        ",
+        game_id
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms with romfile")
+}
+
+pub async fn find_roms_without_romfile_by_game_id_non_merged(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NULL
+        AND game_id = ?
+        ORDER BY name
+        ",
+        game_id
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms with romfile")
+}
+
 pub async fn find_roms_with_romfile_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -749,49 +999,18 @@ pub async fn find_roms_with_romfile_by_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT *
-        FROM roms
-        WHERE romfile_id IS NOT NULL
-        AND merge_name IS NULL
-        AND game_id IN (
-            SELECT id
-            FROM games
-            WHERE system_id = ?
-        )
-        ORDER BY name
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND g.system_id = ?
+        ORDER BY r.name
         ",
         system_id,
     )
     .fetch_all(connection)
     .await
     .expect("Error while finding roms with romfile")
-}
-
-pub async fn find_roms_with_romfile_by_system_id_and_name(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-    name: &str,
-) -> Vec<Rom> {
-    let sql = format!(
-        "
-        SELECT *
-        FROM roms
-        WHERE romfile_id IS NOT NULL
-        AND merge_name IS NULL
-        AND game_id IN (
-            SELECT id
-            FROM games
-            WHERE system_id = {}
-            AND name LIKE '%{}%'
-        )
-        ORDER BY name
-    ",
-        system_id, name
-    );
-    sqlx::query_as::<_, Rom>(&sql)
-        .fetch_all(connection)
-        .await
-        .expect("Error while finding roms with romfile")
 }
 
 pub async fn find_roms_with_romfile_by_game_ids(
@@ -804,7 +1023,6 @@ pub async fn find_roms_with_romfile_by_game_ids(
     FROM roms
     WHERE romfile_id IS NOT NULL
     AND game_id IN ({})
-    AND merge_name IS NULL
     ORDER BY name
     ",
         game_ids.iter().join(",")
@@ -824,18 +1042,15 @@ pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT *
-        FROM roms
-        WHERE romfile_id IS NOT NULL
-        AND size = ?
-        AND crc = ?
-        AND merge_name IS NULL
-        AND game_id IN (
-            SELECT id
-            FROM games
-            WHERE system_id = ?
-        )
-        ORDER BY name
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.crc = ?
+        AND r.parent_id IS NULL
+        AND g.system_id = ?
+        ORDER BY r.name
         ",
         size,
         crc,
@@ -844,6 +1059,41 @@ pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
     .fetch_all(connection)
     .await
     .expect("Error while finding roms with romfile")
+}
+
+pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+    system_id: i64,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = ?
+        AND r.crc = ?
+        AND r.parent_id IS NULL
+        AND g.system_id = ?
+        ORDER BY r.name
+        ",
+        size,
+        crc,
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding rom with size {} and CRC {} and system id {}",
+            size, crc, system_id
+        )
+    })
 }
 
 pub async fn find_rom_by_name_and_game_id(
@@ -858,7 +1108,6 @@ pub async fn find_rom_by_name_and_game_id(
         FROM roms
         WHERE name = ?
         AND game_id = ?
-        AND merge_name IS NULL
         ",
         name,
         game_id,
@@ -873,36 +1122,32 @@ pub async fn find_rom_by_name_and_game_id(
     })
 }
 
-pub async fn find_roms_by_size_and_crc_and_system_id(
+pub async fn find_rom_by_size_and_crc_and_game_id(
     connection: &mut SqliteConnection,
-    size: u64,
+    size: i64,
     crc: &str,
-    system_id: i64,
-) -> Vec<Rom> {
-    let size = i64::try_from(size).unwrap();
+    game_id: i64,
+) -> Rom {
     let crc = crc.to_lowercase();
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.merge_name, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id
-        FROM roms AS r
-        JOIN games AS g ON r.game_id = g.id
-        WHERE r.size = ?
-        AND r.crc = ?
-        AND g.system_id = ?
-        AND r.merge_name IS NULL
-        ORDER BY r.name
+        SELECT *
+        FROM roms
+        WHERE size = ?
+        AND crc = ?
+        AND game_id = ?
         ",
         size,
         crc,
-        system_id,
+        game_id,
     )
-    .fetch_all(connection)
+    .fetch_one(connection)
     .await
     .unwrap_or_else(|_| {
         panic!(
-            "Error while finding rom with size {} and CRC {} and system id {}",
-            size, crc, system_id
+            "Error while finding rom with size {} and CRC {} and game id {}",
+            size, crc, game_id
         )
     })
 }
@@ -1003,7 +1248,7 @@ pub async fn find_romfiles_by_system_id(
         SELECT *
         FROM romfiles
         WHERE id IN (
-            SELECT romfile_id
+            SELECT DISTINCT(romfile_id)
             FROM roms
             WHERE game_id IN (
                 SELECT id
@@ -1269,17 +1514,4 @@ pub async fn find_setting_by_key(connection: &mut SqliteConnection, key: &str) -
     .fetch_optional(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding setting with key {}", key))
-}
-
-pub async fn delete_setting_by_key(connection: &mut SqliteConnection, key: &str) {
-    sqlx::query!(
-        "
-        DELETE FROM settings
-        WHERE key = ?
-        ",
-        key,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while deleting setting with key {}", key));
 }

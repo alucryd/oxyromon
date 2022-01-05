@@ -38,12 +38,12 @@ const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("config")
-        .about("Queries and modifies the oxyromon settings")
+        .about("Query and modify the oxyromon settings")
         .arg(
             Arg::new("LIST")
                 .short('l')
                 .long("list")
-                .help("Prints the whole configuration")
+                .help("Print the whole configuration")
                 .required(false)
                 .conflicts_with_all(&["GET", "SET"]),
         )
@@ -51,7 +51,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("GET")
                 .short('g')
                 .long("get")
-                .help("Prints a single setting")
+                .help("Print a single setting")
                 .required(false)
                 .takes_value(true)
                 .value_name("KEY"),
@@ -60,7 +60,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("SET")
                 .short('s')
                 .long("set")
-                .help("Configures a single setting")
+                .help("Configure a single setting")
                 .required(false)
                 .takes_value(true)
                 .multiple_values(true)
@@ -71,7 +71,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("ADD")
                 .short('a')
                 .long("add")
-                .help("Adds an entry to a list")
+                .help("Add an entry to a list")
                 .required(false)
                 .takes_value(true)
                 .multiple_values(true)
@@ -82,7 +82,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("REMOVE")
                 .short('r')
                 .long("remove")
-                .help("Removes an entry from a list")
+                .help("Remove an entry from a list")
                 .required(false)
                 .takes_value(true)
                 .multiple_values(true)

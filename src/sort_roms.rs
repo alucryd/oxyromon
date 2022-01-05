@@ -22,12 +22,12 @@ use std::ffi::OsString;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("sort-roms")
-        .about("Sorts ROM files according to region and version preferences")
+        .about("Sort ROM files according to region and version preferences")
         .arg(
             Arg::new("REGIONS_ALL")
                 .short('r')
                 .long("regions")
-                .help("Sets the regions to keep (unordered)")
+                .help("Set the regions to keep (unordered)")
                 .required(false)
                 .takes_value(true)
                 .multiple_values(true),
@@ -36,7 +36,7 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("REGIONS_ONE")
                 .short('g')
                 .long("1g1r")
-                .help("Sets the 1G1R regions to keep (ordered)")
+                .help("Set the 1G1R regions to keep (ordered)")
                 .required(false)
                 .takes_value(true)
                 .multiple_values(true),
@@ -45,21 +45,21 @@ pub fn subcommand<'a>() -> App<'a> {
             Arg::new("MISSING")
                 .short('m')
                 .long("missing")
-                .help("Shows missing games")
+                .help("Show missing games")
                 .required(false),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
-                .help("Sorts all systems")
+                .help("Sort all systems")
                 .required(false),
         )
         .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
-                .help("Automatically says yes to prompts")
+                .help("Automatically say yes to prompts")
                 .required(false),
         )
 }
@@ -69,7 +69,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
 
     progress_bar.enable_steady_tick(100);
 
@@ -82,7 +82,7 @@ pub async fn main(
         sort_system(
             connection,
             matches,
-            &progress_bar,
+            progress_bar,
             &system,
             &all_regions,
             &one_regions,
@@ -164,7 +164,7 @@ async fn sort_system(
             if clone_games_by_parent_id.contains_key(&parent_game.id) {
                 games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
                 // put newer releases first
-                games.sort_by(|a, b| sort_games_by_version_or_name_desc(a, b));
+                games.sort_by(sort_games_by_version_or_name_desc);
             } else {
                 games = Vec::new();
             }
@@ -183,7 +183,7 @@ async fn sort_system(
                 let i = games.iter().position(|game| {
                     game.complete
                         && Region::try_from_tosec_region(&game.regions)
-                            .unwrap_or(vec![])
+                            .unwrap_or_default()
                             .contains(region)
                 });
                 if i.is_some() {
@@ -197,7 +197,7 @@ async fn sort_system(
                 let game = games.remove(0);
                 let region_in_all_regions = all_regions.iter().any(|region| {
                     Region::try_from_tosec_region(&game.regions)
-                        .unwrap_or(vec![])
+                        .unwrap_or_default()
                         .contains(region)
                 });
                 if region_in_all_regions {
@@ -226,7 +226,7 @@ async fn sort_system(
         for game in games {
             let region_in_all_regions = all_regions.iter().any(|region| {
                 Region::try_from_tosec_region(&game.regions)
-                    .unwrap_or(vec![])
+                    .unwrap_or_default()
                     .contains(region)
             });
             if region_in_all_regions {
@@ -439,7 +439,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
 
     let roms = find_roms_with_romfile_by_game_ids(
         connection,
-        &games
+        games
             .iter()
             .map(|game| game.id)
             .collect::<Vec<i64>>()
@@ -467,8 +467,8 @@ async fn sort_games<'a, P: AsRef<Path>>(
                     progress_bar,
                     system,
                     &game,
-                    &rom,
-                    &romfile,
+                    rom,
+                    romfile,
                     rom_count,
                     directory,
                 )
@@ -547,7 +547,7 @@ fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering 
         }
     }
     if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
-        return version_b.partial_cmp(&version_a).unwrap();
+        return version_b.partial_cmp(version_a).unwrap();
     }
     if version_a.is_some() {
         return Ordering::Less;
@@ -602,7 +602,7 @@ async fn compute_new_path<P: AsRef<Path>>(
     } else {
         new_romfile_path = match system.arcade {
             true => {
-                create_directory(&progress_bar, &directory.as_ref().join(&game.name), true).await?;
+                create_directory(progress_bar, &directory.as_ref().join(&game.name), true).await?;
                 directory.as_ref().join(&game.name).join(&rom.name)
             }
             false => directory.as_ref().join(&rom.name),
@@ -712,10 +712,11 @@ mod test {
                 comment: None,
                 bios: false,
                 regions: String::from(""),
-                sorting: Sorting::AllRegions,
+                sorting: Sorting::AllRegions as i64,
                 complete: true,
                 system_id: 1,
                 parent_id: None,
+                bios_id: None,
             },
             Game {
                 id: 2,
@@ -724,10 +725,11 @@ mod test {
                 comment: None,
                 bios: false,
                 regions: String::from(""),
-                sorting: Sorting::AllRegions,
+                sorting: Sorting::AllRegions as i64,
                 complete: true,
                 system_id: 1,
                 parent_id: None,
+                bios_id: None,
             },
             Game {
                 id: 3,
@@ -736,10 +738,11 @@ mod test {
                 comment: None,
                 bios: false,
                 regions: String::from(""),
-                sorting: Sorting::AllRegions,
+                sorting: Sorting::AllRegions as i64,
                 complete: true,
                 system_id: 1,
                 parent_id: None,
+                bios_id: None,
             },
             Game {
                 id: 4,
@@ -748,10 +751,11 @@ mod test {
                 comment: None,
                 bios: false,
                 regions: String::from(""),
-                sorting: Sorting::AllRegions,
+                sorting: Sorting::AllRegions as i64,
                 complete: true,
                 system_id: 1,
                 parent_id: None,
+                bios_id: None,
             },
         ];
 
@@ -778,10 +782,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let game_b = Game {
             id: 1,
@@ -790,10 +795,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
 
         // when
@@ -813,10 +819,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let game_b = Game {
             id: 1,
@@ -825,10 +832,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
 
         // when
@@ -848,10 +856,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let game_b = Game {
             id: 1,
@@ -860,10 +869,11 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: true,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
 
         // when
@@ -885,6 +895,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -894,15 +905,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -910,6 +922,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,
@@ -946,6 +959,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -955,15 +969,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -971,6 +986,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,
@@ -1007,6 +1023,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -1016,15 +1033,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.bin"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -1032,6 +1050,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,
@@ -1068,6 +1087,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -1077,15 +1097,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.bin"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -1093,6 +1114,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,
@@ -1129,6 +1151,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -1138,15 +1161,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.iso"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -1154,6 +1178,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,
@@ -1190,6 +1215,7 @@ mod test {
             version: String::from(""),
             url: Some(String::from("")),
             arcade: false,
+            merging: Merging::Split as i64,
             complete: false,
         };
         let game = Game {
@@ -1199,15 +1225,16 @@ mod test {
             comment: None,
             bios: false,
             regions: String::from(""),
-            sorting: Sorting::AllRegions,
+            sorting: Sorting::AllRegions as i64,
             complete: false,
             system_id: 1,
             parent_id: None,
+            bios_id: None,
         };
         let rom = Rom {
             id: 1,
             name: String::from("rom name.rom"),
-            merge_name: None,
+            bios: false,
             size: 1,
             crc: String::from(""),
             md5: Some(String::from("")),
@@ -1215,6 +1242,7 @@ mod test {
             rom_status: None,
             game_id: 1,
             romfile_id: Some(1),
+            parent_id: None,
         };
         let romfile = Romfile {
             id: 1,

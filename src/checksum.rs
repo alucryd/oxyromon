@@ -36,7 +36,7 @@ impl OutputSizeUser for Crc32 {
 
 impl FixedOutput for Crc32 {
     fn finalize_into(self, out: &mut GenericArray<u8, U4>) {
-        out.copy_from_slice(&self.hasher.to_owned().finalize().to_be_bytes());
+        out.copy_from_slice(&self.hasher.finalize().to_be_bytes());
     }
 }
 

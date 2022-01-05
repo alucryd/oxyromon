@@ -4,8 +4,9 @@
 - Treat the first elligible clone as parent in 1G1R when parent is missing
 - Greatly improve completion calculation in sort-roms
 - Add support for the Atari 7800 header definition
-- Embed some no-intro header definitions and use them as fallback if they are not found alongside their dat file
+- Embed some no-intro header definitions and use them as fallback
 - Add initial support for arcade systems
+- Add a new rebuild-roms subcommand for arcade ROM sets
 
 # 0.9.0
 

@@ -9,6 +9,7 @@ use super::util::*;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
+use num_traits::FromPrimitive;
 use rayon::prelude::*;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
@@ -17,26 +18,19 @@ use std::convert::TryFrom;
 
 pub fn subcommand<'a>() -> App<'a> {
     App::new("check-roms")
-        .about("Checks ROM files integrity")
+        .about("Check ROM files integrity")
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
-                .help("Checks all systems")
+                .help("Check all systems")
                 .required(false),
         )
         .arg(
             Arg::new("SIZE")
                 .short('s')
                 .long("size")
-                .help("Recalculates ROM file sizes")
-                .required(false),
-        )
-        .arg(
-            Arg::new("REPAIR")
-                .short('r')
-                .long("repair")
-                .help("Repairs arcade ROM files when possible")
+                .help("Recalculate ROM file sizes")
                 .required(false),
         )
 }
@@ -46,7 +40,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
         check_system(
@@ -54,7 +48,7 @@ pub async fn main(
             progress_bar,
             &system,
             matches.is_present("SIZE"),
-            matches.is_present("REPAIR"),
+            matches.is_present("REBUILD"),
         )
         .await?;
         progress_bar.println("");
@@ -67,7 +61,7 @@ async fn check_system(
     progress_bar: &ProgressBar,
     system: &System,
     size: bool,
-    repair: bool,
+    rebuild: bool,
 ) -> SimpleResult<()> {
     let header = find_header_by_system_id(connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(connection, system.id).await;
@@ -133,63 +127,6 @@ async fn check_system(
 
     commit_transaction(transaction).await;
 
-    if system.arcade && repair {
-        let games = find_incomplete_games_by_system_id(connection, system.id).await;
-        let roms = find_roms_without_romfile_by_game_ids(
-            connection,
-            &games.par_iter().map(|game| game.id).collect::<Vec<i64>>(),
-        )
-        .await;
-        let games_by_id: HashMap<i64, Game> =
-            games.into_iter().map(|game| (game.id, game)).collect();
-        for rom in roms {
-            let mut transaction = begin_transaction(connection).await;
-            let mut existing_roms = find_roms_with_romfile_by_size_and_crc_and_system_id(
-                &mut transaction,
-                rom.size,
-                &rom.crc,
-                system.id,
-            )
-            .await;
-            if !existing_roms.is_empty() {
-                let existing_rom = existing_roms.remove(0);
-                let existing_romfile =
-                    find_romfile_by_id(&mut transaction, existing_rom.romfile_id.unwrap()).await;
-                let game = games_by_id.get(&rom.game_id).unwrap();
-                let directory = get_system_directory(&mut transaction, progress_bar, system)
-                    .await?
-                    .join(&game.name);
-                create_directory(progress_bar, &directory, false).await?;
-                let romfile_path = directory.join(rom.name);
-                if existing_romfile.path.ends_with(ZIP_EXTENSION) {
-                    extract_files_from_archive(
-                        progress_bar,
-                        &existing_romfile.path,
-                        &vec![existing_rom.name.as_str()],
-                        &directory,
-                    )?;
-                    rename_file(
-                        progress_bar,
-                        &directory.join(&existing_rom.name),
-                        &romfile_path,
-                        false,
-                    )
-                    .await?;
-                } else {
-                    copy_file(progress_bar, &existing_romfile.path, &romfile_path, false).await?;
-                }
-                let romfile_id = create_romfile(
-                    &mut transaction,
-                    romfile_path.as_os_str().to_str().unwrap(),
-                    romfile_path.metadata().await.unwrap().len(),
-                )
-                .await;
-                update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
-            }
-            commit_transaction(transaction).await;
-        }
-    }
-
     Ok(())
 }
 
@@ -219,7 +156,7 @@ async fn check_archive<P: AsRef<Path>>(
             )?
             .remove(0);
             let size_crc =
-                get_file_size_and_crc(connection, progress_bar, &extracted_path, &header, 1, 1)
+                get_file_size_and_crc(connection, progress_bar, &extracted_path, header, 1, 1)
                     .await?;
             size = size_crc.0;
             crc = size_crc.1;
@@ -267,7 +204,7 @@ async fn check_chd<P: AsRef<Path>>(
             connection,
             progress_bar,
             &bin_path,
-            &header,
+            header,
             i,
             bin_paths.len(),
         )
@@ -292,7 +229,7 @@ async fn check_cso<P: AsRef<Path>>(
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, &iso_path, &header, 1, 1).await?;
+        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
         bail!("CRC or size mismatch");
     };
@@ -307,7 +244,7 @@ async fn check_other<P: AsRef<Path>>(
     rom: &Rom,
 ) -> SimpleResult<()> {
     let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, romfile_path, &header, 1, 1).await?;
+        get_file_size_and_crc(connection, progress_bar, romfile_path, header, 1, 1).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
         bail!("CRC or size mismatch");
     };

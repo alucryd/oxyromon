@@ -7,11 +7,16 @@ use sqlx::sqlite::SqliteConnection;
 pub async fn prompt_for_systems(
     connection: &mut SqliteConnection,
     url: Option<&str>,
+    arcade_only: bool,
     all: bool,
 ) -> SimpleResult<Vec<System>> {
-    let systems = match url {
-        Some(url) => find_systems_by_url(connection, url).await,
-        None => find_systems(connection).await,
+    let systems = if arcade_only {
+        find_arcade_systems(connection).await
+    } else {
+        match url {
+            Some(url) => find_systems_by_url(connection, url).await,
+            None => find_systems(connection).await,
+        }
     };
 
     if all || systems.is_empty() {
@@ -54,23 +59,23 @@ pub async fn prompt_for_system(
     }
 }
 
-pub fn prompt_for_roms(roms: Vec<Rom>, all: bool) -> SimpleResult<Vec<Rom>> {
-    if all || roms.is_empty() {
-        return Ok(roms);
+pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> {
+    if all || games.is_empty() {
+        return Ok(games);
     }
 
     let indices = multiselect(
-        &roms
+        &games
             .iter()
-            .map(|rom| rom.name.as_str())
+            .map(|game| game.name.as_str())
             .collect::<Vec<&str>>(),
         None,
     )?;
-    Ok(roms
+    Ok(games
         .into_iter()
         .enumerate()
         .filter(|(i, _)| indices.contains(i))
-        .map(|(_, rom)| rom)
+        .map(|(_, game)| game)
         .collect())
 }
 
@@ -98,7 +103,7 @@ pub fn confirm(default: bool) -> SimpleResult<bool> {
 
 pub fn select(items: &[&str], default: Option<usize>) -> SimpleResult<usize> {
     let mut select = Select::new();
-    select.items(&items);
+    select.items(items);
     if let Some(default) = default {
         select.default(default);
     }
@@ -107,7 +112,7 @@ pub fn select(items: &[&str], default: Option<usize>) -> SimpleResult<usize> {
 
 pub fn multiselect(items: &[&str], defaults: Option<&[bool]>) -> SimpleResult<Vec<usize>> {
     let mut multiselect = MultiSelect::new();
-    multiselect.items(&items);
+    multiselect.items(items);
     if let Some(defaults) = defaults {
         multiselect.defaults(defaults);
     }
