@@ -9,8 +9,6 @@ use super::util::*;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
-use num_traits::FromPrimitive;
-use rayon::prelude::*;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
@@ -48,7 +46,6 @@ pub async fn main(
             progress_bar,
             &system,
             matches.is_present("SIZE"),
-            matches.is_present("REBUILD"),
         )
         .await?;
         progress_bar.println("");
@@ -61,7 +58,6 @@ async fn check_system(
     progress_bar: &ProgressBar,
     system: &System,
     size: bool,
-    rebuild: bool,
 ) -> SimpleResult<()> {
     let header = find_header_by_system_id(connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(connection, system.id).await;
@@ -324,7 +320,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -377,7 +373,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -430,7 +426,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -483,7 +479,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -543,7 +539,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -605,7 +601,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -658,7 +654,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, true, false)
+        check_system(&mut connection, &progress_bar, &system, true)
             .await
             .unwrap();
 
@@ -711,7 +707,7 @@ mod test {
             .unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -772,7 +768,7 @@ mod test {
         file.set_len(512).await.unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 
@@ -834,7 +830,7 @@ mod test {
         file.sync_all().await.unwrap();
 
         // when
-        check_system(&mut connection, &progress_bar, &system, false, false)
+        check_system(&mut connection, &progress_bar, &system, false)
             .await
             .unwrap();
 

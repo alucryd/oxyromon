@@ -1,7 +1,5 @@
-use super::chdman::*;
 use super::config::*;
 use super::database::*;
-use super::maxcso::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
@@ -12,11 +10,7 @@ use async_std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
-use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::ffi::OsString;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
 
@@ -202,7 +196,6 @@ async fn trim_game(
         remove_rom(
             &mut transaction,
             progress_bar,
-            system,
             rom,
             &archive_romfile,
         )
@@ -335,7 +328,6 @@ async fn add_rom(
 async fn remove_rom(
     transaction: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: &System,
     rom: &Rom,
     archive_romfile: &Romfile,
 ) -> SimpleResult<()> {
