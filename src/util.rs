@@ -194,13 +194,16 @@ pub async fn get_trash_directory(
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {
-    match new_version.cmp(old_version) {
+    match new_version
+        .replace('-', "")
+        .cmp(&old_version.replace('-', ""))
+    {
         Ordering::Less => {
             progress_bar.println(format!(
-                "Version \"{}\" is older than \"{}\"",
-                old_version, new_version
+                "Version \"{}\" is newer than \"{}\"",
+                new_version, old_version
             ));
-            false
+            true
         }
         Ordering::Equal => {
             progress_bar.println(format!("Already at version \"{}\"", new_version));
