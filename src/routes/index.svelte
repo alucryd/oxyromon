@@ -67,12 +67,12 @@
 
   function computeGameColor(game) {
     if (game.complete) {
-      if (game.sorting == "ONE_REGION") {
+      if (game.sorting == 1) {
         return "list-group-item-primary";
       }
       return "list-group-item-success";
     } else {
-      if (game.sorting == "IGNORED") {
+      if (game.sorting == 2) {
         return "list-group-item-secondary";
       }
       return "list-group-item-danger";

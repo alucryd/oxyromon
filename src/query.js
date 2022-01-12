@@ -79,16 +79,16 @@ export async function getGamesBySystemId(systemId) {
 
 function filterGames(games) {
   if (!get(completeFilter)) {
-    games = reject(games, (game) => game.complete && game.sorting != "ONE_REGION");
+    games = reject(games, (game) => game.complete && game.sorting != 1);
   }
   if (!get(incompleteFilter)) {
-    games = reject(games, (game) => !game.complete && game.sorting != "IGNORED");
+    games = reject(games, (game) => !game.complete && game.sorting != 2);
   }
   if (!get(ignoredFilter)) {
-    games = reject(games, (game) => game.sorting == "IGNORED");
+    games = reject(games, (game) => game.sorting == 2);
   }
   if (!get(oneRegionFilter)) {
-    games = reject(games, (game) => game.sorting == "ONE_REGION");
+    games = reject(games, (game) => game.sorting == 1);
   }
   if (get(nameFilter).length) {
     games = reject(
