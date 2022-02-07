@@ -153,7 +153,7 @@ async fn sort_system(
         clone_games.into_iter().for_each(|game| {
             let group = clone_games_by_parent_id
                 .entry(game.parent_id.unwrap())
-                .or_insert(vec![]);
+                .or_insert_with(Vec::new);
             group.push(game);
         });
 
@@ -446,7 +446,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
 
     let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
-        let group = roms_by_game_id.entry(rom.game_id).or_insert(vec![]);
+        let group = roms_by_game_id.entry(rom.game_id).or_insert_with(Vec::new);
         group.push(rom);
     });
 
@@ -593,10 +593,7 @@ async fn compute_new_path<P: AsRef<Path>>(
                 .as_ref()
                 .join(format!("{}.{}", &game.name, &romfile_extension));
         }
-    } else if romfile_extension == CSO_EXTENSION {
-        new_romfile_path = directory.as_ref().join(&rom.name);
-        new_romfile_path.set_extension(&romfile_extension);
-    } else if romfile_extension == RVZ_EXTENSION {
+    } else if romfile_extension == CSO_EXTENSION || romfile_extension == RVZ_EXTENSION {
         new_romfile_path = directory.as_ref().join(&rom.name);
         new_romfile_path.set_extension(&romfile_extension);
     } else {

@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.10.0
+# oxyROMon 0.11.0
 
 ### Rusty ROM OrgaNizer
 

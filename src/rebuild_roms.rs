@@ -193,13 +193,7 @@ async fn trim_game(
         _ => bail!("not possible"),
     };
     for rom in &roms {
-        remove_rom(
-            &mut transaction,
-            progress_bar,
-            rom,
-            &archive_romfile,
-        )
-        .await?;
+        remove_rom(&mut transaction, progress_bar, rom, &archive_romfile).await?;
     }
     update_romfile(
         &mut transaction,
@@ -289,34 +283,32 @@ async fn add_rom(
                     sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_romfile.path,
-                        &vec![rom.name.as_str()],
+                        &[rom.name.as_str()],
+                        tmp_directory,
+                    )?;
+                    remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
+                } else if existing_rom.name != rom.name {
+                    copy_file(
+                        progress_bar,
+                        &existing_romfile.path,
+                        &tmp_directory.join(&rom.name),
+                        true,
+                    )
+                    .await?;
+                    sevenzip::add_files_to_archive(
+                        progress_bar,
+                        &archive_romfile.path,
+                        &[rom.name.as_str()],
                         tmp_directory,
                     )?;
                     remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
                 } else {
-                    if existing_rom.name != rom.name {
-                        copy_file(
-                            progress_bar,
-                            &existing_romfile.path,
-                            &tmp_directory.join(&rom.name),
-                            true,
-                        )
-                        .await?;
-                        sevenzip::add_files_to_archive(
-                            progress_bar,
-                            &archive_romfile.path,
-                            &vec![rom.name.as_str()],
-                            tmp_directory,
-                        )?;
-                        remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
-                    } else {
-                        sevenzip::add_files_to_archive(
-                            progress_bar,
-                            &archive_romfile.path,
-                            &file_names,
-                            &Path::new(&existing_romfile.path).parent().unwrap(),
-                        )?;
-                    }
+                    sevenzip::add_files_to_archive(
+                        progress_bar,
+                        &archive_romfile.path,
+                        &file_names,
+                        &Path::new(&existing_romfile.path).parent().unwrap(),
+                    )?;
                 }
                 update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
             }
@@ -331,20 +323,17 @@ async fn remove_rom(
     rom: &Rom,
     archive_romfile: &Romfile,
 ) -> SimpleResult<()> {
-    match rom.romfile_id {
-        Some(romfile_id) => {
-            if romfile_id == archive_romfile.id {
-                let romfile = find_romfile_by_id(transaction, romfile_id).await;
-                let file_names = vec![rom.name.as_str()];
-                if romfile.path.ends_with(ZIP_EXTENSION) {
-                    sevenzip::remove_files_from_archive(progress_bar, &romfile.path, &file_names)?;
-                } else {
-                    remove_file(progress_bar, &romfile.path, false).await?;
-                }
-                update_rom_romfile(transaction, rom.id, None).await;
+    if let Some(romfile_id) = rom.romfile_id {
+        if romfile_id == archive_romfile.id {
+            let romfile = find_romfile_by_id(transaction, romfile_id).await;
+            let file_names = vec![rom.name.as_str()];
+            if romfile.path.ends_with(ZIP_EXTENSION) {
+                sevenzip::remove_files_from_archive(progress_bar, &romfile.path, &file_names)?;
+            } else {
+                remove_file(progress_bar, &romfile.path, false).await?;
             }
+            update_rom_romfile(transaction, rom.id, None).await;
         }
-        None => {}
     }
     Ok(())
 }

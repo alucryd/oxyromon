@@ -114,7 +114,7 @@ pub async fn main(
 
         let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
         roms.into_iter().for_each(|rom| {
-            let group = roms_by_game_id.entry(rom.game_id).or_insert(vec![]);
+            let group = roms_by_game_id.entry(rom.game_id).or_insert_with(Vec::new);
             group.push(rom);
         });
         let games_by_id: HashMap<i64, Game> =
