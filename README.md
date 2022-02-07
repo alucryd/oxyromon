@@ -69,6 +69,7 @@ These should be in your `${PATH}` for extra features.
 - Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
+- Infer arcade games based on the archive name for duplicate ROMs
 - Craft some unit tests for arcade systems
 
 ## oxyromon

@@ -1127,7 +1127,7 @@ pub async fn find_rom_by_size_and_crc_and_game_id(
     size: i64,
     crc: &str,
     game_id: i64,
-) -> Rom {
+) -> Option<Rom> {
     let crc = crc.to_lowercase();
     sqlx::query_as!(
         Rom,
@@ -1142,7 +1142,7 @@ pub async fn find_rom_by_size_and_crc_and_game_id(
         crc,
         game_id,
     )
-    .fetch_one(connection)
+    .fetch_optional(connection)
     .await
     .unwrap_or_else(|_| {
         panic!(

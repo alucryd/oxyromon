@@ -483,7 +483,7 @@ async fn find_rom(
     system: &System,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Option<Rom>> {
-    let rom: Rom;
+    let rom: Option<Rom>;
     let mut roms =
         find_roms_without_romfile_by_size_and_crc_and_system_id(connection, size, crc, system.id)
             .await;
@@ -496,8 +496,8 @@ async fn find_rom(
 
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 {
-        rom = roms.remove(0);
-        progress_bar.println(&format!("Matches \"{}\"", rom.name));
+        rom = Some(roms.remove(0));
+        progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
@@ -509,13 +509,14 @@ async fn find_rom(
     }
 
     // abort if rom already has a file
-    if rom.romfile_id.is_some() {
-        let romfile = find_romfile_by_id(connection, rom.romfile_id.unwrap()).await;
+    if rom.is_some() && rom.as_ref().unwrap().romfile_id.is_some() {
+        let romfile =
+            find_romfile_by_id(connection, rom.as_ref().unwrap().romfile_id.unwrap()).await;
         progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
         return Ok(None);
     }
 
-    Ok(Some(rom))
+    Ok(rom)
 }
 
 async fn create_or_update_romfile<P: AsRef<Path>>(

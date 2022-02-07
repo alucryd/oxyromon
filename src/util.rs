@@ -197,10 +197,10 @@ pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &st
     match new_version.cmp(old_version) {
         Ordering::Less => {
             progress_bar.println(format!(
-                "Version \"{}\" is newer than \"{}\"",
+                "Version \"{}\" is older than \"{}\"",
                 new_version, old_version
             ));
-            true
+            false
         }
         Ordering::Equal => {
             progress_bar.println(format!("Already at version \"{}\"", new_version));
