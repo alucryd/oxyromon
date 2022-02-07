@@ -1,11 +1,12 @@
-use super::chdman::*;
+use super::chdman;
 use super::checksum::*;
 use super::database::*;
-use super::maxcso::*;
+use super::dolphin;
+use super::maxcso;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip::*;
+use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
@@ -132,6 +133,16 @@ pub async fn import_rom<P: AsRef<Path>>(
             &romfile_path,
         )
         .await?;
+    } else if RVZ_EXTENSION == romfile_extension {
+        import_rvz(
+            &mut transaction,
+            progress_bar,
+            &system_directory,
+            system,
+            header,
+            &romfile_path,
+        )
+        .await?;
     } else {
         import_other(
             &mut transaction,
@@ -159,9 +170,9 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_extension: &str,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let sevenzip_infos = parse_archive(progress_bar, romfile_path)?;
+    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
 
-    let mut roms_sevenzip_infos: Vec<(Rom, &ArchiveInfo)> = Vec::new();
+    let mut roms_sevenzip_infos: Vec<(Rom, &sevenzip::ArchiveInfo)> = Vec::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     for sevenzip_info in &sevenzip_infos {
@@ -172,7 +183,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 
         // system has a header or crc is absent
         if header.is_some() || sevenzip_info.crc.is_empty() {
-            let extracted_path = extract_files_from_archive(
+            let extracted_path = sevenzip::extract_files_from_archive(
                 progress_bar,
                 romfile_path,
                 &[&sevenzip_info.path],
@@ -224,7 +235,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             let game = find_game_by_id(connection, game_id).await;
             for (rom, sevenzip_info) in &roms_sevenzip_infos {
                 if sevenzip_info.path != rom.name {
-                    rename_file_in_archive(
+                    sevenzip::rename_file_in_archive(
                         progress_bar,
                         romfile_path,
                         &sevenzip_info.path,
@@ -263,7 +274,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 
     // all other cases
     for (rom, sevenzip_info) in roms_sevenzip_infos {
-        let extracted_path = extract_files_from_archive(
+        let extracted_path = sevenzip::extract_files_from_archive(
             progress_bar,
             romfile_path,
             &[&sevenzip_info.path],
@@ -331,7 +342,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             .iter()
             .map(|rom| (rom.name.as_str(), rom.size as u64))
             .collect();
-        let bin_paths = extract_chd_to_multiple_tracks(
+        let bin_paths = chdman::extract_chd_to_multiple_tracks(
             progress_bar,
             romfile_path,
             &tmp_directory.path(),
@@ -376,7 +387,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     } else {
         progress_bar.println("CUE file not found, using single track mode");
         let bin_path =
-            extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
+            chdman::extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
         let (size, crc) =
             get_file_size_and_crc(connection, progress_bar, &bin_path, header, 1, 1).await?;
         remove_file(progress_bar, &bin_path, true).await?;
@@ -410,7 +421,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) =
         get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
     remove_file(progress_bar, &iso_path, true).await?;
@@ -430,6 +441,39 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 
     // persist in database
     create_or_update_romfile(connection, &new_cso_path, &[rom]).await;
+
+    Ok(())
+}
+
+async fn import_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_directory: &Q,
+    system: &System,
+    header: &Option<Header>,
+    romfile_path: &P,
+) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
+    remove_file(progress_bar, &iso_path, true).await?;
+    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+        Some(rom) => rom,
+        None => {
+            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            return Ok(());
+        }
+    };
+
+    let mut new_rvz_path = system_directory.as_ref().join(&rom.name);
+    new_rvz_path.set_extension(RVZ_EXTENSION);
+
+    // move RVZ if needed
+    rename_file(progress_bar, romfile_path, &new_rvz_path, false).await?;
+
+    // persist in database
+    create_or_update_romfile(connection, &new_rvz_path, &[rom]).await;
 
     Ok(())
 }
@@ -756,7 +800,7 @@ mod test {
         assert!(Path::new(&romfile.path).is_file().await);
         assert_eq!(rom.romfile_id, Some(romfile.id));
 
-        let sevenzip_infos = parse_archive(&progress_bar, &romfile.path).unwrap();
+        let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path).unwrap();
         assert_eq!(sevenzip_infos.len(), 1);
         assert_eq!(
             sevenzip_infos.get(0).unwrap().path,

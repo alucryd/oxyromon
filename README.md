@@ -59,6 +59,7 @@ These should be in your `${PATH}` for extra features.
 
 - 7z: 7Z and ZIP support
 - chdman: CHD support
+- dolphin-tool: RVZ support
 - maxcso: CSO support
 
 ### TODO
@@ -66,11 +67,11 @@ These should be in your `${PATH}` for extra features.
 - Automatically create m3u files for multi-discs games
 - Add actions to the web UI
 - Add an optional check of the ROMs after conversion
-- Support RVZ when dolphin adds it to its CLI (or NKit, whichever comes first)
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
 - Infer arcade games based on the archive name for duplicate ROMs
 - Craft some unit tests for arcade systems
+- Craft some unit tests for RVZ
 
 ## oxyromon
 
@@ -182,6 +183,7 @@ Supported console ROM formats:
 - 7Z and ZIP archives
 - CHD (Compressed Hunks of Data)
 - CSO (Compressed ISO)
+- RVZ (Modern Dolphin format)
 
 Supported arcade ROM formats:
 
@@ -261,7 +263,7 @@ Supported merging strategies:
 - Split (each parent and clone set contains only its own ROM files)
 - Non-Merged (each parent and clone set contains its ROM files and its parent's files)
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
-- Merged (parent and clones are stored together, alongside the required BIOS files)
+- ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
 
     USAGE:
         oxyromon rebuild-roms [OPTIONS]
@@ -286,6 +288,7 @@ Supported ROM formats:
 - CUE/BIN <-> CHD (Compressed Hunks of Data)
 - ISO <-> CHD (Compressed Hunks of Data)
 - ISO <-> CSO (Compressed ISO)
+- ISO <-> RVZ (Modern Dolphin format)
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 

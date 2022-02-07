@@ -7,6 +7,7 @@
 - Embed some no-intro header definitions and use them as fallback
 - Add initial support for arcade systems
 - Add a new rebuild-roms subcommand for arcade ROM sets
+- Add support for RVZ via dolphin-tool
 
 # 0.9.0
 

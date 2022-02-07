@@ -1,10 +1,11 @@
-use super::chdman::*;
+use super::chdman;
 use super::checksum::*;
 use super::database::*;
-use super::maxcso::*;
+use super::dolphin;
+use super::maxcso;
 use super::model::*;
 use super::prompt::*;
-use super::sevenzip::*;
+use super::sevenzip;
 use super::util::*;
 use async_std::path::Path;
 use clap::{App, Arg, ArgMatches};
@@ -97,6 +98,15 @@ async fn check_system(
                 roms.get(0).unwrap(),
             )
             .await;
+        } else if RVZ_EXTENSION == romfile_extension {
+            result = check_rvz(
+                &mut transaction,
+                progress_bar,
+                &header,
+                &romfile_path,
+                roms.get(0).unwrap(),
+            )
+            .await;
         } else {
             result = check_other(
                 &mut transaction,
@@ -133,7 +143,7 @@ async fn check_archive<P: AsRef<Path>>(
     romfile_path: &P,
     mut roms: Vec<Rom>,
 ) -> SimpleResult<()> {
-    let sevenzip_infos = parse_archive(progress_bar, romfile_path)?;
+    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
 
     if sevenzip_infos.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
@@ -144,7 +154,7 @@ async fn check_archive<P: AsRef<Path>>(
         let crc: String;
         if header.is_some() || sevenzip_info.crc.is_empty() {
             let tmp_directory = create_tmp_directory(connection).await?;
-            let extracted_path = extract_files_from_archive(
+            let extracted_path = sevenzip::extract_files_from_archive(
                 progress_bar,
                 romfile_path,
                 &[&sevenzip_info.path],
@@ -186,7 +196,7 @@ async fn check_chd<P: AsRef<Path>>(
         .iter()
         .map(|rom| (rom.name.as_str(), rom.size as u64))
         .collect();
-    let bin_paths = extract_chd_to_multiple_tracks(
+    let bin_paths = chdman::extract_chd_to_multiple_tracks(
         progress_bar,
         romfile_path,
         &tmp_directory.path(),
@@ -223,7 +233,24 @@ async fn check_cso<P: AsRef<Path>>(
     rom: &Rom,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
+    let (size, crc) =
+        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
+    if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
+        bail!("CRC or size mismatch");
+    };
+    Ok(())
+}
+
+async fn check_rvz<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    header: &Option<Header>,
+    romfile_path: &P,
+    rom: &Rom,
+) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
     let (size, crc) =
         get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
     if i64::try_from(size).unwrap() != rom.size || crc != rom.crc {
