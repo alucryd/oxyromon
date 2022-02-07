@@ -1,11 +1,8 @@
-use super::chdman::*;
 use super::config::*;
 use super::database::*;
-use super::maxcso::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
@@ -597,6 +594,9 @@ async fn compute_new_path<P: AsRef<Path>>(
                 .join(format!("{}.{}", &game.name, &romfile_extension));
         }
     } else if romfile_extension == CSO_EXTENSION {
+        new_romfile_path = directory.as_ref().join(&rom.name);
+        new_romfile_path.set_extension(&romfile_extension);
+    } else if romfile_extension == RVZ_EXTENSION {
         new_romfile_path = directory.as_ref().join(&rom.name);
         new_romfile_path.set_extension(&romfile_extension);
     } else {

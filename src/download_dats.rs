@@ -31,6 +31,7 @@ cfg_if! {
         };
     } else {
         static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! {
+            "Acorn - Archimedes" => "arch",
             "Apple - Macintosh" => "mac",
             "Arcade - Konami - e-Amusement" => "kea",
             "Arcade - Konami - FireBeat" => "kfb",
@@ -61,6 +62,7 @@ cfg_if! {
             "NEC - PC-98 series" => "pc-98",
             "NEC - PC-FX & PC-FXGA" => "pc-fx",
             "Nintendo - GameCube" => "gc",
+            "Nintendo - Wii" => "wii",
             "Palm" => "palm",
             "Panasonic - 3DO Interactive Multiplayer" => "3do",
             "Philips - CD-i" => "cdi",
@@ -73,6 +75,7 @@ cfg_if! {
             "SNK - Neo Geo CD" => "ngcd",
             "Sony - PlayStation" => "psx",
             "Sony - PlayStation 2" => "ps2",
+            "Sony - PlayStation 3" => "ps3",
             "Sony - PlayStation Portable" => "psp",
             "TAB-Austria - Quizard" => "quizard",
             "Tomy - Kiss-Site" => "ksite",

@@ -9,6 +9,17 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use tempfile::TempDir;
 
+pub static BIN_EXTENSION: &str = "bin";
+pub static CHD_EXTENSION: &str = "chd";
+pub static CSO_EXTENSION: &str = "cso";
+pub static CUE_EXTENSION: &str = "cue";
+pub static ISO_EXTENSION: &str = "iso";
+pub static RVZ_EXTENSION: &str = "rvz";
+pub static SEVENZIP_EXTENSION: &str = "7z";
+pub static ZIP_EXTENSION: &str = "zip";
+
+pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+
 pub async fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
         Path::new(path).canonicalize().await,

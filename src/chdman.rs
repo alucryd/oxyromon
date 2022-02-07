@@ -7,10 +7,6 @@ use async_std::prelude::*;
 use indicatif::ProgressBar;
 use std::process::Command;
 
-pub static CHD_EXTENSION: &str = "chd";
-pub static CUE_EXTENSION: &str = "cue";
-pub static BIN_EXTENSION: &str = "bin";
-
 pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,

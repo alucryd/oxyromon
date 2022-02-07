@@ -3,7 +3,7 @@ use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip::*;
+use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
@@ -226,13 +226,13 @@ async fn add_rom(
                 let romfile = find_romfile_by_id(transaction, romfile_id).await;
                 let file_names = vec![rom.name.as_str()];
                 if romfile.path.ends_with(ZIP_EXTENSION) {
-                    extract_files_from_archive(
+                    sevenzip::extract_files_from_archive(
                         progress_bar,
                         &romfile.path,
                         &file_names,
                         tmp_directory,
                     )?;
-                    add_files_to_archive(
+                    sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_romfile.path,
                         &file_names,
@@ -240,7 +240,7 @@ async fn add_rom(
                     )?;
                     remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
                 } else {
-                    add_files_to_archive(
+                    sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_romfile.path,
                         &file_names,
@@ -271,7 +271,7 @@ async fn add_rom(
                     find_romfile_by_id(transaction, existing_rom.romfile_id.unwrap()).await;
                 let file_names = vec![existing_rom.name.as_str()];
                 if existing_romfile.path.ends_with(ZIP_EXTENSION) {
-                    extract_files_from_archive(
+                    sevenzip::extract_files_from_archive(
                         progress_bar,
                         &existing_romfile.path,
                         &file_names,
@@ -286,7 +286,7 @@ async fn add_rom(
                         )
                         .await?;
                     }
-                    add_files_to_archive(
+                    sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_romfile.path,
                         &vec![rom.name.as_str()],
@@ -302,7 +302,7 @@ async fn add_rom(
                             true,
                         )
                         .await?;
-                        add_files_to_archive(
+                        sevenzip::add_files_to_archive(
                             progress_bar,
                             &archive_romfile.path,
                             &vec![rom.name.as_str()],
@@ -310,7 +310,7 @@ async fn add_rom(
                         )?;
                         remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
                     } else {
-                        add_files_to_archive(
+                        sevenzip::add_files_to_archive(
                             progress_bar,
                             &archive_romfile.path,
                             &file_names,
@@ -337,7 +337,7 @@ async fn remove_rom(
                 let romfile = find_romfile_by_id(transaction, romfile_id).await;
                 let file_names = vec![rom.name.as_str()];
                 if romfile.path.ends_with(ZIP_EXTENSION) {
-                    remove_files_from_archive(progress_bar, &romfile.path, &file_names)?;
+                    sevenzip::remove_files_from_archive(progress_bar, &romfile.path, &file_names)?;
                 } else {
                     remove_file(progress_bar, &romfile.path, false).await?;
                 }

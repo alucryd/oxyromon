@@ -31,6 +31,7 @@ mod checksum;
 mod config;
 mod convert_roms;
 mod database;
+mod dolphin;
 mod download_dats;
 mod import_dats;
 mod import_roms;
