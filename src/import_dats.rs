@@ -316,6 +316,7 @@ async fn create_or_update_games(
             orphan_romfile_ids.append(
                 &mut create_or_update_roms(
                     connection,
+                    progress_bar,
                     &game_xml.roms,
                     game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
                     game_id,
@@ -399,6 +400,7 @@ async fn create_or_update_games(
                 orphan_romfile_ids.append(
                     &mut create_or_update_roms(
                         connection,
+                        progress_bar,
                         &game_xml.roms,
                         game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
                         game_id,
@@ -416,6 +418,7 @@ async fn create_or_update_games(
 
 async fn create_or_update_roms(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     roms_xml: &[RomXml],
     mut bios: bool,
     game_id: i64,
@@ -430,15 +433,34 @@ async fn create_or_update_roms(
         let mut parent_id = None;
         if rom_xml.merge.is_some() {
             let game = find_game_by_id(connection, game_id).await;
-            let parent_rom = find_rom_by_size_and_crc_and_game_id(
+            // try cloneof first, or romof if there is no cloneof
+            let mut parent_rom = find_rom_by_size_and_crc_and_game_id(
                 connection,
                 rom_xml.size,
                 rom_xml.crc.as_ref().unwrap(),
                 game.parent_id.or(game.bios_id).unwrap(),
             )
             .await;
-            bios = parent_rom.bios;
-            parent_id = parent_rom.parent_id.or(Some(parent_rom.id));
+            // try romof next
+            if parent_rom.is_none() && game.bios_id.is_some() {
+                parent_rom = find_rom_by_size_and_crc_and_game_id(
+                    connection,
+                    rom_xml.size,
+                    rom_xml.crc.as_ref().unwrap(),
+                    game.bios_id.unwrap(),
+                )
+                .await;
+            }
+            if parent_rom.is_some() {
+                let parent_rom = parent_rom.unwrap();
+                bios = parent_rom.bios;
+                parent_id = parent_rom.parent_id.or(Some(parent_rom.id));
+            } else {
+                progress_bar.println(&format!(
+                    "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
+                    rom_xml.name, game.name
+                ));
+            }
         }
         let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await;
         match rom {
