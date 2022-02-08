@@ -1954,7 +1954,7 @@ dependencies = [
 
 [[package]]
 name = "oxyromon"
-version = "0.11.0-beta"
+version = "0.10.1"
 dependencies = [
  "async-ctrlc",
  "async-graphql",
