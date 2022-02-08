@@ -23,10 +23,15 @@ jobs:
           components: clippy
           override: true
       - name: Install dependencies
-        run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools
+        run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools yarn
+      - name: Install frontend dependencies
+        run: yarn install
+      - name: Build frontend
+        run: yarn build
       - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
+          args: --features server
           token: ${{secrets.GITHUB_TOKEN}}
       - name: Audit
         uses: actions-rs/audit-check@v1
@@ -36,9 +41,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release
+          args: --release --features server
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
+        with:
+          args: --features server
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
         with:
