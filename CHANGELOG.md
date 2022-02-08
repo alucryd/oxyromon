@@ -1,3 +1,7 @@
+# 0.10.1
+
+- Fix RVZ conversion
+
 # 0.10.0
 
 - Fix version sorting in 1G1R when parent is missing or unwanted

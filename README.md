@@ -22,8 +22,12 @@ The CLI has no specific requirement, you can just:
 For the web UI, you will also need yarn:
 
     yarn install
-    yarn run build
-    cargo build --release --all-features
+    yarn build
+    cargo build --release --features server
+
+The build uses native TLS by default, but you can also opt for rustls:
+
+    cargo build --no-default-features --features use-rustls
 
 ### Configuration
 
