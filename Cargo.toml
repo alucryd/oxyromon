@@ -13,7 +13,7 @@ repository = "https://github.com/alucryd/oxyromon"
 version = "0.11.0-beta"
 
 [features]
-default = ["server", "use-native-tls"]
+default = ["use-native-tls"]
 use-native-tls = ["sqlx/runtime-async-std-native-tls"]
 use-rustls = ["native-tls", "sqlx/runtime-async-std-rustls"]
 server = [
