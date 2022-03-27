@@ -1,0 +1,2 @@
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES('HASH_ALGORITHM', 'CRC');

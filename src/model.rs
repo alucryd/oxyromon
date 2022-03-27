@@ -3,6 +3,8 @@ use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
 use serde::Deserialize;
 use sqlx::{FromRow, Type};
+#[cfg(feature = "ird")]
+use std::collections::HashMap;
 
 #[derive(Clone, Copy, FromPrimitive, Type, Eq, PartialEq)]
 #[cfg_attr(feature = "server", derive(Enum))]
@@ -62,7 +64,9 @@ pub struct Game {
     pub name: String,
     pub description: String,
     pub comment: Option<String>,
+    pub external_id: Option<String>,
     pub bios: bool,
+    pub jbfolder: bool,
     pub regions: String,
     pub sorting: i64,
     pub complete: bool,
@@ -79,7 +83,7 @@ pub struct Rom {
     pub name: String,
     pub bios: bool,
     pub size: i64,
-    pub crc: String,
+    pub crc: Option<String>,
     pub md5: Option<String>,
     pub sha1: Option<String>,
     pub rom_status: Option<String>,
@@ -171,4 +175,18 @@ pub struct RuleXml {
 pub struct DataXml {
     pub offset: String,
     pub value: String,
+}
+
+#[cfg(feature = "ird")]
+pub struct Irdfile {
+    pub version: u8,
+    pub game_id: String,
+    pub game_name: String,
+    pub update_version: String,
+    pub game_version: String,
+    pub app_version: String,
+    pub regions_count: usize,
+    pub regions_hashes: Vec<String>,
+    pub files_count: usize,
+    pub files_hashes: HashMap<u64, String>,
 }

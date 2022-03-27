@@ -1,4 +1,12 @@
+#[cfg(feature = "server")]
+extern crate async_ctrlc;
+#[cfg(feature = "server")]
+extern crate async_graphql;
+#[cfg(feature = "server")]
+extern crate async_graphql_tide;
 extern crate async_std;
+#[cfg(feature = "server")]
+extern crate async_trait;
 extern crate cfg_if;
 extern crate clap;
 extern crate crc32fast;
@@ -7,34 +15,55 @@ extern crate digest;
 extern crate dirs;
 extern crate dotenv;
 extern crate futures;
+#[cfg(feature = "server")]
+extern crate http_types;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
-extern crate once_cell;
-extern crate quick_xml;
-extern crate regex;
-extern crate serde;
-extern crate sqlx;
-#[macro_use]
-extern crate simple_error;
+#[cfg(feature = "ird")]
+extern crate md5;
 extern crate num_derive;
 extern crate num_traits;
+extern crate once_cell;
 extern crate phf;
+extern crate quick_xml;
 extern crate rayon;
+extern crate regex;
+extern crate rust_embed;
+extern crate serde;
+extern crate sha1;
+#[macro_use]
+extern crate simple_error;
+extern crate sqlx;
+#[cfg(feature = "ird")]
+extern crate strsim;
 extern crate surf;
 extern crate tempfile;
+#[cfg(feature = "server")]
+extern crate tide;
 extern crate vec_drain_where;
+#[cfg(feature = "ird")]
+extern crate walkdir;
 
+#[cfg(feature = "benchmark")]
+mod benchmark;
+#[cfg(feature = "chd")]
 mod chdman;
 mod check_roms;
 mod checksum;
 mod config;
 mod convert_roms;
 mod database;
+#[cfg(feature = "rvz")]
 mod dolphin;
 mod download_dats;
 mod import_dats;
+#[cfg(feature = "ird")]
+mod import_irds;
 mod import_roms;
+#[cfg(feature = "ird")]
+mod isoinfo;
+#[cfg(feature = "cso")]
 mod maxcso;
 mod model;
 mod progress;
@@ -49,7 +78,7 @@ mod util;
 
 use async_std::path::PathBuf;
 use cfg_if::cfg_if;
-use clap::App;
+use clap::Command;
 use database::*;
 use dotenv::dotenv;
 use progress::*;
@@ -73,11 +102,21 @@ async fn main() -> SimpleResult<()> {
         purge_roms::subcommand(),
     ];
     cfg_if! {
+        if #[cfg(feature = "ird")] {
+            subcommands.push(import_irds::subcommand());
+        }
+    }
+    cfg_if! {
+        if #[cfg(feature = "benchmark")] {
+            subcommands.push(benchmark::subcommand());
+        }
+    }
+    cfg_if! {
         if #[cfg(feature = "server")] {
             subcommands.push(server::subcommand());
         }
     }
-    let matches = App::new(env!("CARGO_BIN_NAME"))
+    let matches = Command::new(env!("CARGO_BIN_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -102,8 +141,8 @@ async fn main() -> SimpleResult<()> {
             Some("config") => {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
-                    &progress_bar,
                     matches.subcommand_matches("config").unwrap(),
+                    &progress_bar,
                 )
                 .await?
             }
@@ -122,6 +161,17 @@ async fn main() -> SimpleResult<()> {
                     &progress_bar,
                 )
                 .await?
+            }
+            Some("import-irds") => {
+                cfg_if! {
+                    if #[cfg(feature = "ird")] {
+                        import_irds::main(
+                            &mut pool.acquire().await.unwrap(),
+                            matches.subcommand_matches("import-irds").unwrap(),
+                            &progress_bar,
+                        ).await?
+                    }
+                }
             }
             Some("import-roms") => {
                 import_roms::main(
@@ -170,6 +220,17 @@ async fn main() -> SimpleResult<()> {
                     &progress_bar,
                 )
                 .await?
+            }
+            Some("benchmark") => {
+                cfg_if! {
+                    if #[cfg(feature = "benchmark")] {
+                        benchmark::main(
+                            &mut pool.acquire().await.unwrap(),
+                            matches.subcommand_matches("benchmark").unwrap(),
+                            &progress_bar,
+                        ).await?
+                    }
+                }
             }
             Some("server") => {
                 cfg_if! {

@@ -1,11 +1,3 @@
-extern crate async_ctrlc;
-extern crate async_graphql;
-extern crate async_graphql_tide;
-extern crate async_trait;
-extern crate http_types;
-extern crate rust_embed;
-extern crate tide;
-
 use super::database::*;
 use super::model::*;
 use async_ctrlc::CtrlC;
@@ -16,7 +8,7 @@ use async_graphql::{
 use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 use futures::stream::TryStreamExt;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
@@ -36,8 +28,8 @@ lazy_static! {
 #[folder = "build/"]
 struct Assets;
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("server")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("server")
         .about("Launch the backend server")
         .arg(
             Arg::new("ADDRESS")

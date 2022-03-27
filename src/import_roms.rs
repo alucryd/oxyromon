@@ -1,7 +1,11 @@
+#[cfg(feature = "chd")]
 use super::chdman;
 use super::checksum::*;
+use super::config::*;
 use super::database::*;
+#[cfg(feature = "rvz")]
 use super::dolphin;
+#[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
 use super::progress::*;
@@ -10,20 +14,23 @@ use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches};
+use cfg_if::cfg_if;
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::str::FromStr;
+#[cfg(feature = "ird")]
+use walkdir::WalkDir;
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("import-roms")
-        .about("Validate and import ROM files into oxyromon")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("import-roms")
+        .about("Validate and import ROM files or directories into oxyromon")
         .arg(
             Arg::new("ROMS")
-                .help("Set the ROM files to import")
+                .help("Set the ROM files or directories to import")
                 .required(true)
                 .multiple_values(true)
                 .index(1)
@@ -36,6 +43,15 @@ pub fn subcommand<'a>() -> App<'a> {
                 .help("Set the system number to use")
                 .required(false)
                 .takes_value(true),
+        )
+        .arg(
+            Arg::new("HASH")
+                .short('h')
+                .long("hash")
+                .help("Set the hash algorithm")
+                .required(false)
+                .takes_value(true)
+                .possible_values(HASH_ALGORITHMS.iter()),
         )
 }
 
@@ -53,11 +69,75 @@ pub async fn main(
     )
     .await?;
     let header = find_header_by_system_id(connection, system.id).await;
+    let hash_algorithm = match matches.value_of("HASH") {
+        Some("CRC") => HashAlgorithm::Crc,
+        Some("MD5") => HashAlgorithm::Md5,
+        Some(&_) | None => {
+            match find_setting_by_key(connection, "HASH_ALGORITHM")
+                .await
+                .unwrap()
+                .value
+                .as_deref()
+            {
+                Some("CRC") => HashAlgorithm::Crc,
+                Some("MD5") => HashAlgorithm::Md5,
+                Some(&_) | None => bail!("Not possible"),
+            }
+        }
+    };
 
     for romfile_path in romfile_paths {
         progress_bar.println(&format!("Processing \"{}\"", &romfile_path));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
-        import_rom(connection, progress_bar, &system, &header, &romfile_path).await?;
+        if romfile_path.is_dir().await {
+            cfg_if! {
+                if #[cfg(feature = "ird")] {
+                    if romfile_path.join(PS3_DISC_SFB).is_file().await {
+                        import_jbfolder(connection, progress_bar, &system, &romfile_path).await?;
+                    } else {
+                        let walker = WalkDir::new(&romfile_path).into_iter();
+                        for entry in walker.filter_map(|e| e.ok()) {
+                            if entry.path().is_file() {
+                                import_rom(
+                                    connection,
+                                    progress_bar,
+                                    &system,
+                                    &header,
+                                    &entry.path(),
+                                    &hash_algorithm,
+                                )
+                                .await?;
+                            }
+                        }
+                    }
+                } else {
+                    let walker = WalkDir::new(&romfile_path).into_iter();
+                    for entry in walker.filter_map(|e| e.ok()) {
+                        if entry.path().is_file() {
+                            import_rom(
+                                connection,
+                                progress_bar,
+                                &system,
+                                &header,
+                                &entry.path(),
+                                &hash_algorithm,
+                            )
+                            .await?;
+                        }
+                    }
+                }
+            }
+        } else {
+            import_rom(
+                connection,
+                progress_bar,
+                &system,
+                &header,
+                &romfile_path,
+                &hash_algorithm,
+            )
+            .await?;
+        }
         progress_bar.println("");
     }
 
@@ -66,6 +146,11 @@ pub async fn main(
     progress_bar.enable_steady_tick(100);
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
+    cfg_if! {
+        if #[cfg(feature = "ird")] {
+            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
+        }
+    }
     update_system_mark_complete(connection, system.id).await;
 
     Ok(())
@@ -77,6 +162,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let mut transaction = begin_transaction(connection).await;
 
@@ -111,38 +197,60 @@ pub async fn import_rom<P: AsRef<Path>>(
             header,
             &romfile_path,
             &romfile_extension,
+            hash_algorithm,
         )
         .await?;
     } else if CHD_EXTENSION == romfile_extension {
-        import_chd(
-            &mut transaction,
-            progress_bar,
-            &system_directory,
-            system,
-            header,
-            &romfile_path,
-        )
-        .await?;
+        cfg_if! {
+            if #[cfg(feature = "chd")] {
+                import_chd(
+                    &mut transaction,
+                    progress_bar,
+                    &system_directory,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                )
+                .await?;
+            } else {
+                progress_bar.println("Please rebuild with the CHD feature enabled");
+            }
+        }
     } else if CSO_EXTENSION == romfile_extension {
-        import_cso(
-            &mut transaction,
-            progress_bar,
-            &system_directory,
-            system,
-            header,
-            &romfile_path,
-        )
-        .await?;
+        cfg_if! {
+            if #[cfg(feature = "cso")] {
+                import_cso(
+                    &mut transaction,
+                    progress_bar,
+                    &system_directory,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                )
+                .await?;
+            } else {
+                progress_bar.println("Please rebuild with the CSO feature enabled");
+            }
+        }
     } else if RVZ_EXTENSION == romfile_extension {
-        import_rvz(
-            &mut transaction,
-            progress_bar,
-            &system_directory,
-            system,
-            header,
-            &romfile_path,
-        )
-        .await?;
+        cfg_if! {
+            if #[cfg(feature = "rvz")] {
+                import_rvz(
+                    &mut transaction,
+                    progress_bar,
+                    &system_directory,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                )
+                .await?;
+            } else {
+                progress_bar.println("Please rebuild with the RVZ feature enabled");
+            }
+        }
     } else {
         import_other(
             &mut transaction,
@@ -151,8 +259,144 @@ pub async fn import_rom<P: AsRef<Path>>(
             system,
             header,
             &romfile_path,
+            &romfile_extension,
+            hash_algorithm,
         )
         .await?;
+    }
+
+    commit_transaction(transaction).await;
+
+    Ok(())
+}
+
+#[cfg(feature = "ird")]
+async fn import_jbfolder<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    folder_path: &P,
+) -> SimpleResult<()> {
+    let sfb_romfile_path = folder_path.as_ref().join(PS3_DISC_SFB);
+
+    // abort if the romfile is already in the database
+    if find_romfile_by_path(connection, sfb_romfile_path.as_os_str().to_str().unwrap())
+        .await
+        .is_some()
+    {
+        progress_bar.println("Already in database");
+        return Ok(());
+    }
+
+    let mut transaction = begin_transaction(connection).await;
+
+    // find the correct game
+    let (size, md5) = get_size_and_hash(
+        &mut transaction,
+        progress_bar,
+        &sfb_romfile_path,
+        &None,
+        1,
+        1,
+        &HashAlgorithm::Md5,
+    )
+    .await?;
+    let sfb_rom =
+        match find_sfb_rom_by_md5(&mut transaction, size, &md5, system, progress_bar).await? {
+            Some(rom) => rom,
+            None => {
+                move_to_trash(&mut transaction, progress_bar, system, &folder_path).await?;
+                return Ok(());
+            }
+        };
+    let game = find_game_by_id(&mut transaction, sfb_rom.game_id).await;
+
+    let system_directory = get_system_directory(&mut transaction, progress_bar, system).await?;
+
+    let walker = WalkDir::new(folder_path.as_ref()).into_iter();
+    for entry in walker.filter_map(|e| e.ok()) {
+        if entry.path().is_file() {
+            progress_bar.println(&format!(
+                "Processing \"{}\"",
+                &entry.path().as_os_str().to_str().unwrap()
+            ));
+            // force MD5 as IRD files only provide those
+            let (size, md5) = get_size_and_hash(
+                &mut transaction,
+                progress_bar,
+                &entry.path(),
+                &None,
+                1,
+                1,
+                &HashAlgorithm::Md5,
+            )
+            .await?;
+
+            let rom: Option<Rom>;
+            let mut roms = find_roms_without_romfile_by_size_and_md5_and_parent_id(
+                &mut transaction,
+                size,
+                &md5,
+                sfb_rom.parent_id.unwrap(),
+            )
+            .await;
+
+            // abort if no match
+            if roms.is_empty() {
+                progress_bar.println("No match");
+                continue;
+            }
+
+            // select the first rom if there is only one
+            if roms.len() == 1 {
+                rom = Some(roms.remove(0));
+                progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+            } else {
+                // select the first rom that matches the file name if there multiple matches
+                if let Some(rom_index) = roms.iter().position(|rom| {
+                    entry
+                        .path()
+                        .as_os_str()
+                        .to_str()
+                        .unwrap()
+                        .ends_with(&rom.name)
+                }) {
+                    rom = Some(roms.remove(rom_index));
+                } else {
+                    // let the user select the rom if all else fails
+                    rom = prompt_for_rom(&mut roms, None)?;
+                }
+            }
+
+            if let Some(rom) = rom {
+                // abort if rom already has a file
+                if rom.romfile_id.is_some() {
+                    let romfile =
+                        find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
+                    progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+                    continue;
+                }
+
+                // put arcade roms in subdirectories as their names aren't unique
+                let new_path = system_directory.join(&game.name).join(&rom.name);
+
+                // move file if needed
+                rename_file(progress_bar, &entry.path(), &new_path, false).await?;
+
+                // persist in database
+                create_or_update_romfile(&mut transaction, &new_path, &[rom]).await;
+
+                // remove directories if empty
+                let mut directory = entry.path().parent().unwrap();
+                while directory.read_dir().unwrap().next().is_none() {
+                    remove_directory(progress_bar, &directory, false).await?;
+                    if directory == entry.path() {
+                        break;
+                    }
+                    directory = directory.parent().unwrap();
+                }
+            }
+        }
     }
 
     commit_transaction(transaction).await;
@@ -168,6 +412,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     romfile_extension: &str,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
@@ -179,10 +424,11 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.println(&format!("Processing \"{}\"", &sevenzip_info.path));
 
         let size: u64;
-        let crc: String;
+        let hash: String;
 
         // system has a header or crc is absent
-        if header.is_some() || sevenzip_info.crc.is_empty() {
+        if header.is_some() || sevenzip_info.crc.is_empty() || hash_algorithm != &HashAlgorithm::Md5
+        {
             let extracted_path = sevenzip::extract_files_from_archive(
                 progress_bar,
                 romfile_path,
@@ -190,18 +436,34 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                 &tmp_directory.path(),
             )?
             .remove(0);
-            let size_crc =
-                get_file_size_and_crc(connection, progress_bar, &extracted_path, header, 1, 1)
-                    .await?;
+            let size_hash = get_size_and_hash(
+                connection,
+                progress_bar,
+                &extracted_path,
+                header,
+                1,
+                1,
+                hash_algorithm,
+            )
+            .await?;
             remove_file(progress_bar, &extracted_path, true).await?;
-            size = size_crc.0;
-            crc = size_crc.1;
+            size = size_hash.0;
+            hash = size_hash.1;
         } else {
             size = sevenzip_info.size;
-            crc = sevenzip_info.crc.clone();
+            hash = sevenzip_info.crc.clone();
         }
 
-        match find_rom(connection, size, &crc, system, progress_bar).await? {
+        match find_rom_by_hash(
+            connection,
+            progress_bar,
+            size,
+            &hash,
+            system,
+            hash_algorithm,
+        )
+        .await?
+        {
             Some(rom) => {
                 game_ids.insert(rom.game_id);
                 roms_sevenzip_infos.push((rom, sevenzip_info));
@@ -244,15 +506,29 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                 }
             }
 
-            let new_path = system_directory.as_ref().join(format!(
-                "{}.{}",
-                if roms_sevenzip_infos.len() == 1 && !system.arcade {
-                    &roms_sevenzip_infos.get(0).unwrap().0.name
-                } else {
-                    &game.name
-                },
-                &romfile_extension
-            ));
+            let new_path = match roms_sevenzip_infos.len() {
+                1 => {
+                    let rom = &roms_sevenzip_infos.get(0).unwrap().0;
+                    let rom_extension = Path::new(&rom.name)
+                        .extension()
+                        .unwrap_or(&OsString::new())
+                        .to_str()
+                        .unwrap()
+                        .to_lowercase();
+                    system_directory.as_ref().join(format!(
+                        "{}.{}",
+                        if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
+                            &game.name
+                        } else {
+                            &rom.name
+                        },
+                        &romfile_extension
+                    ))
+                }
+                _ => system_directory
+                    .as_ref()
+                    .join(format!("{}.{}", &game.name, &romfile_extension)),
+            };
 
             // move file
             rename_file(progress_bar, romfile_path, &new_path, false).await?;
@@ -282,20 +558,21 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         )?
         .remove(0);
 
-        // put arcade roms in subdirectories as their names aren't unique
-        let new_path = match system.arcade {
-            true => {
-                let game = find_game_by_id(connection, rom.game_id).await;
-                create_directory(
-                    progress_bar,
-                    &system_directory.as_ref().join(&game.name),
-                    true,
-                )
-                .await?;
-                system_directory.as_ref().join(&game.name).join(&rom.name)
-            }
-            false => system_directory.as_ref().join(&rom.name),
-        };
+        let game = find_game_by_id(connection, rom.game_id).await;
+
+        let new_path;
+        // put arcade roms and JB folders in subdirectories
+        if system.arcade || game.jbfolder {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            new_path = system_directory.as_ref().join(&game.name).join(&rom.name)
+        // use game name for PS3 updates and DLCs because rom name is usually gibberish
+        } else if PS3_EXTENSIONS.contains(&romfile_extension) {
+            new_path = system_directory
+                .as_ref()
+                .join(format!("{}.{}", &game.name, romfile_extension));
+        } else {
+            new_path = system_directory.as_ref().join(&rom.name);
+        }
 
         // move file
         copy_file(progress_bar, &extracted_path, &new_path, false).await?;
@@ -307,6 +584,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(feature = "chd")]
 async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -314,6 +592,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -322,9 +601,26 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     if cue_path.is_file().await {
         progress_bar.println("CUE file found, using multiple tracks mode");
-        let (size, crc) =
-            get_file_size_and_crc(connection, progress_bar, &cue_path, header, 1, 1).await?;
-        let cue_rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+        let (size, hash) = get_size_and_hash(
+            connection,
+            progress_bar,
+            &cue_path,
+            header,
+            1,
+            1,
+            hash_algorithm,
+        )
+        .await?;
+        let cue_rom = match find_rom_by_hash(
+            connection,
+            progress_bar,
+            size,
+            &hash,
+            system,
+            hash_algorithm,
+        )
+        .await?
+        {
             Some(rom) => rom,
             None => {
                 move_to_trash(connection, progress_bar, system, &cue_path).await?;
@@ -350,22 +646,27 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             true,
         )
         .await?;
-        let mut crcs: Vec<String> = Vec::new();
+        let mut hashes: Vec<String> = Vec::new();
         for (i, bin_path) in bin_paths.iter().enumerate() {
-            let (_, crc) = get_file_size_and_crc(
+            let (_, hash) = get_size_and_hash(
                 connection,
                 progress_bar,
                 &bin_path,
                 header,
                 i,
                 bin_paths.len(),
+                hash_algorithm,
             )
             .await?;
-            crcs.push(crc);
+            hashes.push(hash);
             remove_file(progress_bar, &bin_path, true).await?;
         }
 
-        if roms.iter().enumerate().any(|(i, rom)| crcs[i] != rom.crc) {
+        if roms
+            .iter()
+            .enumerate()
+            .any(|(i, rom)| &hashes[i] != rom.crc.as_ref().unwrap())
+        {
             progress_bar.println("CRC mismatch");
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
             return Ok(());
@@ -387,11 +688,29 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     } else {
         progress_bar.println("CUE file not found, using single track mode");
         let bin_path =
-            chdman::extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path()).await?;
-        let (size, crc) =
-            get_file_size_and_crc(connection, progress_bar, &bin_path, header, 1, 1).await?;
+            chdman::extract_chd_to_single_track(progress_bar, romfile_path, &tmp_directory.path())
+                .await?;
+        let (size, hash) = get_size_and_hash(
+            connection,
+            progress_bar,
+            &bin_path,
+            header,
+            1,
+            1,
+            hash_algorithm,
+        )
+        .await?;
         remove_file(progress_bar, &bin_path, true).await?;
-        let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+        let rom = match find_rom_by_hash(
+            connection,
+            progress_bar,
+            size,
+            &hash,
+            system,
+            hash_algorithm,
+        )
+        .await?
+        {
             Some(rom) => rom,
             None => {
                 move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -412,6 +731,7 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     }
 }
 
+#[cfg(feature = "cso")]
 async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -419,13 +739,31 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
-    let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &iso_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
     remove_file(progress_bar, &iso_path, true).await?;
-    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+    let rom = match find_rom_by_hash(
+        connection,
+        progress_bar,
+        size,
+        &hash,
+        system,
+        hash_algorithm,
+    )
+    .await?
+    {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -445,6 +783,7 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(feature = "rvz")]
 async fn import_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -452,13 +791,31 @@ async fn import_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
-    let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, &iso_path, header, 1, 1).await?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &iso_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
     remove_file(progress_bar, &iso_path, true).await?;
-    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+    let rom = match find_rom_by_hash(
+        connection,
+        progress_bar,
+        size,
+        &hash,
+        system,
+        hash_algorithm,
+    )
+    .await?
+    {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
@@ -485,31 +842,50 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     system: &System,
     header: &Option<Header>,
     romfile_path: &P,
+    romfile_extension: &str,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let (size, crc) =
-        get_file_size_and_crc(connection, progress_bar, romfile_path, header, 1, 1).await?;
-    let rom = match find_rom(connection, size, &crc, system, progress_bar).await? {
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        romfile_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
+    let rom = match find_rom_by_hash(
+        connection,
+        progress_bar,
+        size,
+        &hash,
+        system,
+        hash_algorithm,
+    )
+    .await?
+    {
         Some(rom) => rom,
         None => {
             move_to_trash(connection, progress_bar, system, romfile_path).await?;
             return Ok(());
         }
     };
+    let game = find_game_by_id(connection, rom.game_id).await;
 
-    // put arcade roms in subdirectories as their names aren't unique
-    let new_path = match system.arcade {
-        true => {
-            let game = find_game_by_id(connection, rom.game_id).await;
-            create_directory(
-                progress_bar,
-                &system_directory.as_ref().join(&game.name),
-                true,
-            )
-            .await?;
-            system_directory.as_ref().join(&game.name).join(&rom.name)
-        }
-        false => system_directory.as_ref().join(&rom.name),
-    };
+    let new_path;
+    // put arcade roms and JB folders in subdirectories
+    if system.arcade || game.jbfolder {
+        let game = find_game_by_id(connection, rom.game_id).await;
+        new_path = system_directory.as_ref().join(&game.name).join(&rom.name)
+    // use game name for PS3 updates and DLCs because rom name is usually gibberish
+    } else if PS3_EXTENSIONS.contains(&romfile_extension) {
+        new_path = system_directory
+            .as_ref()
+            .join(format!("{}.{}", &game.name, romfile_extension));
+    } else {
+        new_path = system_directory.as_ref().join(&rom.name);
+    }
 
     // move file if needed
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
@@ -520,17 +896,35 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-async fn find_rom(
+async fn find_rom_by_hash(
     connection: &mut SqliteConnection,
-    size: u64,
-    crc: &str,
-    system: &System,
     progress_bar: &ProgressBar,
+    size: u64,
+    hash: &str,
+    system: &System,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<Option<Rom>> {
     let rom: Option<Rom>;
-    let mut roms =
-        find_roms_without_romfile_by_size_and_crc_and_system_id(connection, size, crc, system.id)
-            .await;
+    let mut roms = match hash_algorithm {
+        HashAlgorithm::Crc => {
+            find_roms_without_romfile_by_size_and_crc_and_system_id(
+                connection, size, hash, system.id,
+            )
+            .await
+        }
+        HashAlgorithm::Md5 => {
+            find_roms_without_romfile_by_size_and_md5_and_system_id(
+                connection, size, hash, system.id,
+            )
+            .await
+        }
+        HashAlgorithm::Sha1 => {
+            find_roms_without_romfile_by_size_and_sha1_and_system_id(
+                connection, size, hash, system.id,
+            )
+            .await
+        }
+    };
 
     // abort if no match
     if roms.is_empty() {
@@ -548,8 +942,55 @@ async fn find_rom(
             let game = find_game_by_id(connection, rom.game_id).await;
             roms_games.push((rom, game));
         }
-        progress_bar.println("Please select the correct ROM:");
-        rom = prompt_for_rom(&mut roms_games)?;
+        rom = prompt_for_rom_game(&mut roms_games)?;
+    }
+
+    // abort if rom already has a file
+    if rom.is_some() && rom.as_ref().unwrap().romfile_id.is_some() {
+        let romfile =
+            find_romfile_by_id(connection, rom.as_ref().unwrap().romfile_id.unwrap()).await;
+        progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+        return Ok(None);
+    }
+
+    Ok(rom)
+}
+
+#[cfg(feature = "ird")]
+async fn find_sfb_rom_by_md5(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+    system: &System,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<Option<Rom>> {
+    let rom: Option<Rom>;
+    let mut roms = find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
+        connection,
+        PS3_DISC_SFB,
+        size,
+        md5,
+        system.id,
+    )
+    .await;
+
+    // abort if no match
+    if roms.is_empty() {
+        progress_bar.println("No match");
+        return Ok(None);
+    }
+
+    // let user choose the rom if there are multiple matches
+    if roms.len() == 1 {
+        rom = Some(roms.remove(0));
+        progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+    } else {
+        let mut roms_games: Vec<(Rom, Game)> = vec![];
+        for rom in roms {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            roms_games.push((rom, game));
+        }
+        rom = prompt_for_rom_game(&mut roms_games)?;
     }
 
     // abort if rom already has a file
@@ -619,7 +1060,6 @@ async fn move_to_trash<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod test {
-    use super::super::config::*;
     use super::super::database::*;
     use super::super::import_dats;
     use super::*;
@@ -673,6 +1113,7 @@ mod test {
             &None,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -760,6 +1201,7 @@ mod test {
             &header,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -853,6 +1295,7 @@ mod test {
             &None,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -949,6 +1392,7 @@ mod test {
             &None,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1051,6 +1495,7 @@ mod test {
             &None,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1158,6 +1603,7 @@ mod test {
             &header,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1244,6 +1690,7 @@ mod test {
             &None,
             &romfile_path,
             &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1285,6 +1732,7 @@ mod test {
         assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
+    #[cfg(feature = "chd")]
     #[async_std::test]
     async fn test_import_chd_single_track() {
         // given
@@ -1329,6 +1777,7 @@ mod test {
             &system,
             &None,
             &romfile_path,
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1370,6 +1819,7 @@ mod test {
         assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
+    #[cfg(feature = "chd")]
     #[async_std::test]
     async fn test_import_chd_multiple_tracks() {
         // given
@@ -1421,6 +1871,7 @@ mod test {
             &system,
             &None,
             &romfile_path,
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1482,6 +1933,7 @@ mod test {
         assert_eq!(rom.romfile_id, Some(romfile.id));
     }
 
+    #[cfg(feature = "chd")]
     #[async_std::test]
     async fn test_import_chd_multiple_tracks_without_cue_should_fail() {
         // given
@@ -1526,6 +1978,7 @@ mod test {
             &system,
             &None,
             &romfile_path,
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1535,6 +1988,7 @@ mod test {
         assert!(roms.is_empty());
     }
 
+    #[cfg(feature = "cso")]
     #[async_std::test]
     async fn test_import_cso() {
         // given
@@ -1587,6 +2041,7 @@ mod test {
             &system,
             &None,
             &romfile_path,
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1672,6 +2127,8 @@ mod test {
             &system,
             &None,
             &romfile_path,
+            &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();
@@ -1758,6 +2215,8 @@ mod test {
             &system,
             &header,
             &romfile_path,
+            &romfile_path.extension().unwrap().to_str().unwrap(),
+            &HashAlgorithm::Crc,
         )
         .await
         .unwrap();

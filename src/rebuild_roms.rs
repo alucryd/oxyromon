@@ -7,15 +7,15 @@ use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use sqlx::sqlite::SqliteConnection;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("rebuild-roms")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("rebuild-roms")
         .about("Rebuild arcade ROM sets according to the selected strategy")
         .arg(
             Arg::new("MERGING")
@@ -53,7 +53,13 @@ pub async fn main(
         Some("SPLIT") => Merging::Split,
         Some("NON_MERGED") => Merging::NonMerged,
         Some("FULL_NON_MERGED") => Merging::FullNonMerged,
-        Some(&_) | None => FromPrimitive::from_usize(select(MERGING_STRATEGIES, None)?).unwrap(),
+        Some(&_) | None => FromPrimitive::from_usize(select(
+            MERGING_STRATEGIES,
+            "Please select a merge strategy",
+            None,
+            None,
+        )?)
+        .unwrap(),
     };
 
     progress_bar.enable_steady_tick(100);
@@ -143,7 +149,7 @@ async fn expand_game(
             find_roms_by_game_id_parents_no_parent_bioses(&mut transaction, game.id).await
         }
         Merging::FullNonMerged => find_roms_by_game_id_parents(&mut transaction, game.id).await,
-        _ => bail!("not possible"),
+        _ => bail!("Not possible"),
     };
     for rom in &roms {
         add_rom(
@@ -190,7 +196,7 @@ async fn trim_game(
         Merging::NonMerged => {
             find_roms_by_game_id_parent_bioses_only(&mut transaction, game.id).await
         }
-        _ => bail!("not possible"),
+        _ => bail!("Not possible"),
     };
     for rom in &roms {
         remove_rom(&mut transaction, progress_bar, rom, &archive_romfile).await?;
@@ -255,7 +261,7 @@ async fn add_rom(
             let mut existing_roms = find_roms_with_romfile_by_size_and_crc_and_system_id(
                 transaction,
                 rom.size,
-                &rom.crc,
+                rom.crc.as_ref().unwrap(),
                 system.id,
             )
             .await;

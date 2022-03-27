@@ -11,9 +11,19 @@ use digest::Digest;
 use digest::OutputSizeUser;
 use digest::{FixedOutput, HashMarker, Reset, Update};
 use indicatif::ProgressBar;
+use md5::Md5;
+use sha1::Sha1;
 use sqlx::sqlite::SqliteConnection;
+use std::fs;
 use std::io;
 use std::io::prelude::*;
+
+#[derive(PartialEq)]
+pub enum HashAlgorithm {
+    Crc,
+    Md5,
+    Sha1,
+}
 
 #[derive(Clone, Default)]
 struct Crc32 {
@@ -63,7 +73,29 @@ impl io::Write for Crc32 {
     }
 }
 
-pub async fn get_file_size_and_crc<P: AsRef<Path>>(
+pub async fn get_size_and_hash<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    file_path: &P,
+    header: &Option<Header>,
+    position: usize,
+    total: usize,
+    hash_algorithm: &HashAlgorithm,
+) -> SimpleResult<(u64, String)> {
+    Ok(match hash_algorithm {
+        HashAlgorithm::Crc => {
+            get_size_and_crc(connection, progress_bar, file_path, header, position, total).await?
+        }
+        HashAlgorithm::Md5 => {
+            get_size_and_md5(connection, progress_bar, file_path, header, position, total).await?
+        }
+        HashAlgorithm::Sha1 => {
+            get_size_and_sha1(connection, progress_bar, file_path, header, position, total).await?
+        }
+    })
+}
+
+async fn get_size_and_crc<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     file_path: &P,
@@ -71,36 +103,7 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     position: usize,
     total: usize,
 ) -> SimpleResult<(u64, String)> {
-    let mut f = open_file_sync(file_path)?;
-    let mut size = f.metadata().unwrap().len();
-
-    // extract a potential header, revert if none is found
-    if header.is_some() {
-        let header = header.as_ref().unwrap();
-        let rules = find_rules_by_header_id(connection, header.id).await;
-        let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
-        try_with!(
-            (&mut f).take(header.size as u64).read_to_end(&mut buffer),
-            "Failed to read into buffer"
-        );
-
-        let mut matches: Vec<bool> = Vec::new();
-        for rule in rules {
-            let start_byte = rule.start_byte as usize;
-            let hex_values: Vec<String> = buffer[start_byte..]
-                .iter()
-                .map(|b| format!("{:x}", b))
-                .collect();
-            let hex_value = hex_values.join("").to_lowercase();
-            matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
-        }
-
-        if matches.iter().all(|&m| m) {
-            size -= header.size as u64;
-        } else {
-            try_with!(f.seek(std::io::SeekFrom::Start(0)), "Failed to seek file");
-        }
-    }
+    let (mut file, size) = get_file_and_size(connection, file_path, header).await?;
 
     progress_bar.reset();
     progress_bar.set_message(format!("Computing CRC ({}/{})", position, total));
@@ -110,7 +113,7 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     // compute the checksum
     let mut digest = Crc32::new();
     try_with!(
-        io::copy(&mut progress_bar.wrap_read(f), &mut digest),
+        io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
         "Failed to copy data"
     );
     let crc = format!("{:08x}", digest.finalize()).to_lowercase();
@@ -119,4 +122,101 @@ pub async fn get_file_size_and_crc<P: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
 
     Ok((size, crc))
+}
+
+async fn get_size_and_md5<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    file_path: &P,
+    header: &Option<Header>,
+    position: usize,
+    total: usize,
+) -> SimpleResult<(u64, String)> {
+    let (mut file, size) = get_file_and_size(connection, file_path, header).await?;
+
+    progress_bar.reset();
+    progress_bar.set_message(format!("Computing MD5 ({}/{})", position, total));
+    progress_bar.set_style(get_bytes_progress_style());
+    progress_bar.set_length(size);
+
+    let mut digest = Md5::new();
+    try_with!(
+        io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
+        "Failed to copy data"
+    );
+    let md5 = format!("{:032x}", digest.finalize()).to_lowercase();
+
+    progress_bar.set_message("");
+    progress_bar.set_style(get_none_progress_style());
+
+    Ok((size, md5))
+}
+
+async fn get_size_and_sha1<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    file_path: &P,
+    header: &Option<Header>,
+    position: usize,
+    total: usize,
+) -> SimpleResult<(u64, String)> {
+    let (mut file, size) = get_file_and_size(connection, file_path, header).await?;
+
+    progress_bar.reset();
+    progress_bar.set_message(format!("Computing SHA1 ({}/{})", position, total));
+    progress_bar.set_style(get_bytes_progress_style());
+    progress_bar.set_length(size);
+
+    let mut digest = Sha1::new();
+    try_with!(
+        io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
+        "Failed to copy data"
+    );
+    let md5 = format!("{:040x}", digest.finalize()).to_lowercase();
+
+    progress_bar.set_message("");
+    progress_bar.set_style(get_none_progress_style());
+
+    Ok((size, md5))
+}
+
+async fn get_file_and_size<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    file_path: &P,
+    header: &Option<Header>,
+) -> SimpleResult<(fs::File, u64)> {
+    let mut file = open_file_sync(file_path)?;
+    let mut size = file.metadata().unwrap().len();
+
+    // extract a potential header, revert if none is found
+    if header.is_some() {
+        let header = header.as_ref().unwrap();
+        let rules = find_rules_by_header_id(connection, header.id).await;
+        let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
+        try_with!(
+            (&mut file)
+                .take(header.size as u64)
+                .read_to_end(&mut buffer),
+            "Failed to read into buffer"
+        );
+
+        let mut matches: Vec<bool> = Vec::new();
+        for rule in rules {
+            let start_byte = rule.start_byte as usize;
+            let hex_values: Vec<String> = buffer[start_byte..]
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect();
+            let hex_value = hex_values.join("").to_lowercase();
+            matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
+        }
+
+        if matches.iter().all(|&m| m) {
+            size -= header.size as u64;
+        } else {
+            try_with!(file.seek(io::SeekFrom::Start(0)), "Failed to seek file");
+        }
+    }
+
+    Ok((file, size))
 }
