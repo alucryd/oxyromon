@@ -3,7 +3,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
@@ -36,8 +36,31 @@ const LISTS: &[&str] = &[
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("config")
+pub const HASH_ALGORITHMS: &[&str] = &["CRC", "MD5", "SHA1"];
+
+#[cfg(feature = "chd")]
+pub static BIN_EXTENSION: &str = "bin";
+pub static CHD_EXTENSION: &str = "chd";
+pub static CSO_EXTENSION: &str = "cso";
+#[cfg(feature = "chd")]
+pub static CUE_EXTENSION: &str = "cue";
+#[cfg(any(feature = "chd", feature = "cso"))]
+pub static ISO_EXTENSION: &str = "iso";
+pub static PKG_EXTENSION: &str = "pkg";
+pub static PUP_EXTENSION: &str = "pup";
+pub static RAP_EXTENSION: &str = "rap";
+pub static RVZ_EXTENSION: &str = "rvz";
+pub static SEVENZIP_EXTENSION: &str = "7z";
+pub static ZIP_EXTENSION: &str = "zip";
+
+pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
+
+#[cfg(feature = "ird")]
+pub static PS3_DISC_SFB: &str = "PS3_DISC.SFB";
+
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("config")
         .about("Query and modify the oxyromon settings")
         .arg(
             Arg::new("LIST")
@@ -93,8 +116,8 @@ pub fn subcommand<'a>() -> App<'a> {
 
 pub async fn main(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     matches: &ArgMatches,
+    progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     // make sure rom and tmp directories are initialized
     get_rom_directory(connection).await;
@@ -148,7 +171,7 @@ async fn list_settings(connection: &mut SqliteConnection) {
     }
 }
 
-async fn get_setting(connection: &mut SqliteConnection, key: &str) {
+pub async fn get_setting(connection: &mut SqliteConnection, key: &str) {
     let setting = find_setting_by_key(connection, key).await.unwrap();
     println!("{} = {}", setting.key, setting.value.unwrap_or_default());
 }
@@ -174,15 +197,15 @@ async fn set_setting(
     Ok(())
 }
 
+#[cfg(test)]
 async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
-    FromStr::from_str(
-        &find_setting_by_key(connection, key)
-            .await
-            .unwrap()
-            .value
-            .unwrap(),
-    )
-    .unwrap()
+    find_setting_by_key(connection, key)
+        .await
+        .unwrap()
+        .value
+        .unwrap()
+        .parse()
+        .unwrap()
 }
 
 async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {

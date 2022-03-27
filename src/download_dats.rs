@@ -6,7 +6,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::task;
 use cfg_if::cfg_if;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
@@ -86,8 +86,8 @@ cfg_if! {
     }
 }
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("download-dats")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("download-dats")
         .about("Download No-Intro and Redump DAT files and import them into oxyromon")
         .arg(
             Arg::new("NOINTRO")
@@ -219,7 +219,7 @@ async fn download_redump_dats(
     let indices: Vec<usize> = if all {
         (0..items.len()).collect()
     } else {
-        multiselect(&items, None)?
+        multiselect(&items, "Please select systems", None, None)?
     };
     for i in indices {
         download_redump_dat(

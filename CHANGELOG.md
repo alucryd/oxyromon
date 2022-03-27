@@ -1,3 +1,11 @@
+# 0.11.0
+
+- Put CHD, CSO and RVZ support behind features
+- Add support for PS3 IRD files, along with a new import-irds subcommand
+- Add support for PS3 updates and DLCs
+- Allow selecting the checksum algorithm in import-roms (useful for JB folders which only provide MD5)
+- Add a new benchmark subcommand (Linux only for now) to measure the performance of checksum algorithms
+
 # 0.10.1
 
 - Fix RVZ conversion

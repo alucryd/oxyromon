@@ -29,6 +29,17 @@ The build uses native TLS by default, but you can also opt for rustls:
 
     cargo build --no-default-features --features use-rustls
 
+### Features
+
+- use-native-tls: use the system OpenSSL library (default)
+- use-rustls: use rustls where possible, and fallback to a vendored OpenSSL
+- chd: CHD support (default)
+- cso: CSO support (default)
+- ird: IRD support (default)
+- rvz: RVZ support (default)
+- benchmark: build the benchmark subcommand
+- server: build the server subcommand
+
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
@@ -61,10 +72,11 @@ Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those bi
 
 These should be in your `${PATH}` for extra features.
 
-- 7z: 7Z and ZIP support
-- chdman: CHD support
-- dolphin-tool: RVZ support
-- maxcso: CSO support
+- [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
+- [chdman](https://www.mamedev.org/release.html): CHD support (optional)
+- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
+- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
+- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO support (optional)
 
 ### TODO
 
@@ -76,6 +88,8 @@ These should be in your `${PATH}` for extra features.
 - Infer arcade games based on the archive name for duplicate ROMs
 - Craft some unit tests for arcade systems
 - Craft some unit tests for RVZ
+- Craft some unit tests for IRD and PS3 in general
+- Support rebuilding PS3 ISOs using IRD files, if possible and requested
 
 ## oxyromon
 
@@ -91,13 +105,15 @@ These should be in your `${PATH}` for extra features.
         config           Query and modify the oxyromon settings
         import-dats      Parse and import Logiqx DAT files into oxyromon
         download-dats    Download No-Intro and Redump DAT files and import them into oxyromon
+        import-irds      Parse and import PlayStation 3 IRD files into oxyromon
         import-roms      Validate and import ROM files into oxyromon
         sort-roms        Sort ROM files according to region and version preferences
         rebuild-roms     Rebuild arcade ROM sets according to the selected strategy
         convert-roms     Convert ROM files between common formats
         check-roms       Check ROM files integrity
         purge-roms       Purge trashed, missing and orphan ROM files
-        server           Launches the backend server
+        server           Launch the backend server
+        benchmark        Benchmark oxyromon
 
 ## oxyromon-config
 
@@ -173,9 +189,29 @@ Supported DAT providers:
   -r, --redump Download Redump DAT files
   -u, --update Check for system updates
 
+## oxyromon-import-irds
+
+Parse and import PlayStation 3 IRD files into oxyromon
+
+IRD files allow validation of extracted PS3 ISOs, a.k.a. JB folders.
+Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE` directories.
+
+Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
+
+    USAGE:
+        oxyromon import-irds [OPTIONS] <IRDS>...
+
+    ARGS:
+        <IRDS>...    Set the IRD files to import
+
+    OPTIONS:
+        -f, --force    Force import of already imported IRD files
+        -h, --help     Print help information
+        -i, --info     Show the IRD information and exit
+
 ## oxyromon-import-roms
 
-Validate and import ROM files into oxyromon
+Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
 You will be prompted for the system you want to check your ROMs against.
@@ -188,6 +224,7 @@ Supported console ROM formats:
 - CHD (Compressed Hunks of Data)
 - CSO (Compressed ISO)
 - RVZ (Modern Dolphin format)
+- JB folders (Extracted PS3 ISO)
 
 Supported arcade ROM formats:
 
@@ -200,7 +237,7 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         oxyromon import-roms [OPTIONS] <ROMS>...
 
     ARGS:
-        <ROMS>...    Set the ROM files to import
+        <ROMS>...    Set the ROM files or directories to import
 
     OPTIONS:
         -h, --help               Print help information
@@ -269,14 +306,14 @@ Supported merging strategies:
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
 - ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
 
-    USAGE:
-        oxyromon rebuild-roms [OPTIONS]
+  USAGE:
+  oxyromon rebuild-roms [OPTIONS]
 
-    OPTIONS:
-        -a, --all                  Rebuild all arcade systems
-        -h, --help                 Print help information
-        -m, --merging <MERGING>    Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-        -y, --yes                  Automatically say yes to prompts
+  OPTIONS:
+  -a, --all Rebuild all arcade systems
+  -h, --help Print help information
+  -m, --merging <MERGING> Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+  -y, --yes Automatically say yes to prompts
 
 ## oxyromon-convert-roms
 
@@ -351,3 +388,19 @@ The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js
         -a, --address <ADDRESS>    Specify the server address [default: 127.0.0.1]
         -h, --help                 Print help information
         -p, --port <PORT>          Specify the server port [default: 8000]
+
+## oxyromon-benchmark
+
+Benchmark oxyromon
+
+Gives some idea about the various read/write performance of the ROM and TMP directories.
+It will also rank checksum algorithms, typically CRC should be the fastest, followed by SHA1, and then MD5.
+Your mileage may vary depending on your architecture.
+
+    USAGE:
+        oxyromon benchmark [OPTIONS]
+
+    OPTIONS:
+        -c, --chunk-size <CHUNK_SIZE>    Set the chunk size in KB for read and writes (Default: 256)
+                                        [default: 256]
+        -h, --help                       Print help information

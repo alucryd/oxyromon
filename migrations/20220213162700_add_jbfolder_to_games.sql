@@ -1,0 +1,3 @@
+ALTER TABLE games
+ADD COLUMN jbfolder BOOLEAN NOT NULL DEFAULT false;
+

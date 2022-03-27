@@ -4,12 +4,12 @@ use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("purge-roms")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("purge-roms")
         .about("Purge trashed, missing and orphan ROM files")
         .arg(
             Arg::new("MISSING")
@@ -106,14 +106,18 @@ async fn purge_trashed_romfiles(
         }
 
         if matches.is_present("YES") || confirm(true)? {
+            let mut transaction = begin_transaction(connection).await;
+
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path);
                 if romfile_path.is_file().await {
                     remove_file(progress_bar, &romfile_path, false).await?;
-                    delete_romfile_by_id(connection, romfile.id).await;
+                    delete_romfile_by_id(&mut transaction, romfile.id).await;
                     count += 1;
                 }
             }
+
+            commit_transaction(transaction).await;
 
             if count > 0 {
                 progress_bar.println(&format!("Deleted {} trashed ROM file(s)", count));

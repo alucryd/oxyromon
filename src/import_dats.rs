@@ -1,3 +1,4 @@
+use super::checksum::*;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::model::*;
@@ -5,7 +6,7 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -27,8 +28,8 @@ lazy_static! {
 #[folder = "data/"]
 struct Assets;
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("import-dats")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("import-dats")
         .about("Parse and import Logiqx DAT files into oxyromon")
         .arg(
             Arg::new("DATS")
@@ -195,6 +196,7 @@ pub async fn import_dat(
             progress_bar,
             system_id,
             orphan_romfile_ids,
+            &HashAlgorithm::Crc,
         )
         .await?;
     }
@@ -238,25 +240,16 @@ async fn create_or_update_system(
     arcade: bool,
     force: bool,
 ) -> Option<i64> {
-    let mut system = find_system_by_name(connection, &system_xml.name).await;
-    // TODO: temporary workaround to replace the old truncated names with the full dat names, remove later
-    if system.is_none() {
-        system = find_system_by_name_like(
-            connection,
-            SYSTEM_NAME_REGEX.replace(&system_xml.name, "").trim(),
-        )
-        .await;
-    }
-    match system {
+    match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                update_system(connection, system.id, system_xml, arcade).await;
+                update_system_from_xml(connection, system.id, system_xml, arcade).await;
                 Some(system.id)
             } else {
                 None
             }
         }
-        None => Some(create_system(connection, system_xml, arcade).await),
+        None => Some(create_system_from_xml(connection, system_xml, arcade).await),
     }
 }
 
@@ -265,17 +258,16 @@ async fn create_or_update_header(
     detector_xml: &DetectorXml,
     system_id: i64,
 ) {
-    let header = find_header_by_system_id(connection, system_id).await;
-    let header_id = match header {
+    let header_id = match find_header_by_system_id(connection, system_id).await {
         Some(header) => {
-            update_header(connection, header.id, detector_xml, system_id).await;
+            update_header_from_xml(connection, header.id, detector_xml, system_id).await;
             delete_rules_by_header_id(connection, header.id).await;
             header.id
         }
-        None => create_header(connection, detector_xml, system_id).await,
+        None => create_header_from_xml(connection, detector_xml, system_id).await,
     };
     for data_xml in &detector_xml.rule.data {
-        create_rule(connection, data_xml, header_id).await;
+        create_rule_from_xml(connection, data_xml, header_id).await;
     }
 }
 
@@ -304,13 +296,15 @@ async fn create_or_update_games(
         };
         let game_id = match game {
             Some(game) => {
-                update_game(
+                update_game_from_xml(
                     connection, game.id, game_xml, &regions, system_id, None, None,
                 )
                 .await;
                 game.id
             }
-            None => create_game(connection, game_xml, &regions, system_id, None, None).await,
+            None => {
+                create_game_from_xml(connection, game_xml, &regions, system_id, None, None).await
+            }
         };
         if !game_xml.roms.is_empty() {
             orphan_romfile_ids.append(
@@ -372,7 +366,7 @@ async fn create_or_update_games(
             };
             let game_id = match game {
                 Some(game) => {
-                    update_game(
+                    update_game_from_xml(
                         connection,
                         game.id,
                         game_xml,
@@ -385,7 +379,7 @@ async fn create_or_update_games(
                     game.id
                 }
                 None => {
-                    create_game(
+                    create_game_from_xml(
                         connection,
                         game_xml,
                         &regions,
@@ -462,11 +456,12 @@ async fn create_or_update_roms(
                 ));
             }
         }
-        let rom = find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await;
-        match rom {
+        match find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await {
             Some(rom) => {
-                update_rom(connection, rom.id, rom_xml, bios, game_id, parent_id).await;
-                if rom_xml.size != rom.size || rom_xml.crc.as_ref().unwrap() != &rom.crc {
+                update_rom_from_xml(connection, rom.id, rom_xml, bios, game_id, parent_id).await;
+                if rom_xml.size != rom.size
+                    || rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap()
+                {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);
                         update_rom_romfile(connection, rom.id, None).await;
@@ -474,7 +469,7 @@ async fn create_or_update_roms(
                 }
                 rom.id
             }
-            None => create_rom(connection, rom_xml, bios, game_id, parent_id).await,
+            None => create_rom_from_xml(connection, rom_xml, bios, game_id, parent_id).await,
         };
     }
     orphan_romfile_ids
@@ -527,11 +522,12 @@ async fn delete_old_roms(
     orphan_romfile_ids
 }
 
-async fn reimport_orphan_romfiles(
+pub async fn reimport_orphan_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system_id: i64,
     orphan_romfile_ids: Vec<i64>,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
@@ -544,6 +540,7 @@ async fn reimport_orphan_romfiles(
             &system,
             &header,
             &Path::new(&romfile.path),
+            hash_algorithm,
         )
         .await?;
     }
@@ -803,6 +800,7 @@ mod test {
                 &system,
                 &None,
                 &romfile_path,
+                &HashAlgorithm::Crc,
             )
             .await
             .unwrap();

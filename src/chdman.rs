@@ -1,3 +1,4 @@
+use super::config::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;

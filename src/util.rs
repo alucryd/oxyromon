@@ -7,18 +7,9 @@ use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
+#[cfg(any(feature = "ird", feature = "benchmark"))]
+use tempfile::NamedTempFile;
 use tempfile::TempDir;
-
-pub static BIN_EXTENSION: &str = "bin";
-pub static CHD_EXTENSION: &str = "chd";
-pub static CSO_EXTENSION: &str = "cso";
-pub static CUE_EXTENSION: &str = "cue";
-pub static ISO_EXTENSION: &str = "iso";
-pub static RVZ_EXTENSION: &str = "rvz";
-pub static SEVENZIP_EXTENSION: &str = "7z";
-pub static ZIP_EXTENSION: &str = "zip";
-
-pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 
 pub async fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
@@ -29,6 +20,7 @@ pub async fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
     Ok(canonicalized_path)
 }
 
+#[cfg(any(feature = "chd", feature = "cso", feature = "rvz"))]
 pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
     let file = try_with!(
         fs::File::open(path.as_ref()).await,
@@ -70,6 +62,15 @@ pub async fn create_file<P: AsRef<Path>>(
     Ok(file)
 }
 
+#[cfg(any(feature = "ird", feature = "benchmark"))]
+pub async fn create_tmp_file(connection: &mut SqliteConnection) -> SimpleResult<NamedTempFile> {
+    let tmp_file = try_with!(
+        NamedTempFile::new_in(get_tmp_directory(connection).await),
+        "Failed to create temp file"
+    );
+    Ok(tmp_file)
+}
+
 pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     old_path: &P,
@@ -77,6 +78,10 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
+        let new_directory = new_path.as_ref().parent().unwrap();
+        if !new_directory.is_dir().await {
+            create_directory(progress_bar, &new_directory, quiet).await?;
+        }
         if !quiet {
             progress_bar.println(&format!("Copying to {:?}", new_path.as_ref().as_os_str()));
         }
@@ -97,6 +102,10 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
+        let new_directory = new_path.as_ref().parent().unwrap();
+        if !new_directory.is_dir().await {
+            create_directory(progress_bar, &new_directory, quiet).await?;
+        }
         if !quiet {
             progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
         }

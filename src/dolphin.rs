@@ -1,5 +1,5 @@
+use super::config::*;
 use super::progress::*;
-use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;

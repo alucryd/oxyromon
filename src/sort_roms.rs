@@ -6,7 +6,9 @@ use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
-use clap::{App, Arg, ArgMatches};
+use async_std::stream::StreamExt;
+use cfg_if::cfg_if;
+use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
@@ -17,8 +19,8 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
 
-pub fn subcommand<'a>() -> App<'a> {
-    App::new("sort-roms")
+pub fn subcommand<'a>() -> Command<'a> {
+    Command::new("sort-roms")
         .about("Sort ROM files according to region and version preferences")
         .arg(
             Arg::new("REGIONS_ALL")
@@ -274,7 +276,12 @@ async fn sort_system(
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
-                progress_bar.println(&format!("{} ({}) [{}]", rom.name, game.name, rom.crc));
+                progress_bar.println(&format!(
+                    "{} ({}) [{}]",
+                    rom.name,
+                    game.name,
+                    rom.crc.as_ref().unwrap()
+                ));
             }
         } else {
             progress_bar.println("No missing ROMs");
@@ -302,7 +309,6 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
-            progress_bar,
             system,
             all_regions_games,
             &system_directory,
@@ -324,7 +330,6 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
-            progress_bar,
             system,
             one_region_games,
             &one_region_directory,
@@ -346,7 +351,6 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
-            progress_bar,
             system,
             missing_games,
             &system_directory,
@@ -368,7 +372,6 @@ async fn sort_system(
     romfile_moves.append(
         &mut sort_games(
             &mut transaction,
-            progress_bar,
             system,
             ignored_games,
             &trash_directory,
@@ -394,7 +397,7 @@ async fn sort_system(
         // prompt user for confirmation
         if matches.is_present("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
-                rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, false).await?;
+                rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, true).await?;
                 update_romfile(
                     &mut transaction,
                     romfile_move.0.id,
@@ -402,6 +405,16 @@ async fn sort_system(
                     romfile_move.0.size as u64,
                 )
                 .await;
+                // delete empty directories
+                let mut directory = Path::new(&romfile_move.0.path).parent().unwrap();
+                while directory.read_dir().await.unwrap().next().await.is_none() {
+                    if directory == system_directory {
+                        break;
+                    } else {
+                        remove_directory(progress_bar, &directory, true).await?;
+                        directory = directory.parent().unwrap();
+                    }
+                }
             }
             commit_transaction(transaction).await;
         } else {
@@ -417,6 +430,11 @@ async fn sort_system(
         progress_bar.enable_steady_tick(100);
         progress_bar.set_message("Computing system completion");
         update_games_by_system_id_mark_incomplete(connection, system.id).await;
+        cfg_if! {
+            if #[cfg(feature = "ird")] {
+                update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
+            }
+        }
         update_system_mark_complete(connection, system.id).await;
         update_system_mark_incomplete(connection, system.id).await;
     }
@@ -426,7 +444,6 @@ async fn sort_system(
 
 async fn sort_games<'a, P: AsRef<Path>>(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     system: &System,
     games: Vec<Game>,
     directory: &P,
@@ -460,19 +477,11 @@ async fn sort_games<'a, P: AsRef<Path>>(
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let new_path = String::from(
-                compute_new_path(
-                    progress_bar,
-                    system,
-                    &game,
-                    rom,
-                    romfile,
-                    rom_count,
-                    directory,
-                )
-                .await?
-                .as_os_str()
-                .to_str()
-                .unwrap(),
+                compute_new_path(system, &game, rom, romfile, rom_count, directory)
+                    .await?
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
             );
             if romfile.path != new_path {
                 romfile_moves.push((romfile, new_path))
@@ -556,7 +565,6 @@ fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering 
 }
 
 async fn compute_new_path<P: AsRef<Path>>(
-    progress_bar: &ProgressBar,
     system: &System,
     game: &Game,
     rom: &Rom,
@@ -576,7 +584,16 @@ async fn compute_new_path<P: AsRef<Path>>(
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
         new_romfile_path = directory.as_ref().join(match rom_count {
             1 => {
-                if system.arcade {
+                let rom_extension = Path::new(&rom.name)
+                    .extension()
+                    .unwrap_or(&OsString::new())
+                    .to_str()
+                    .unwrap()
+                    .to_lowercase();
+                if system.arcade
+                    || game.jbfolder
+                    || PS3_EXTENSIONS.contains(&rom_extension.as_str())
+                {
                     format!("{}.{}", &game.name, &romfile_extension)
                 } else {
                     format!("{}.{}", &rom.name, &romfile_extension)
@@ -596,14 +613,14 @@ async fn compute_new_path<P: AsRef<Path>>(
     } else if romfile_extension == CSO_EXTENSION || romfile_extension == RVZ_EXTENSION {
         new_romfile_path = directory.as_ref().join(&rom.name);
         new_romfile_path.set_extension(&romfile_extension);
+    } else if system.arcade || game.jbfolder {
+        new_romfile_path = directory.as_ref().join(&game.name).join(&rom.name);
+    } else if PS3_EXTENSIONS.contains(&romfile_extension.as_str()) {
+        new_romfile_path = directory
+            .as_ref()
+            .join(format!("{}.{}", &game.name, &romfile_extension));
     } else {
-        new_romfile_path = match system.arcade {
-            true => {
-                create_directory(progress_bar, &directory.as_ref().join(&game.name), true).await?;
-                directory.as_ref().join(&game.name).join(&rom.name)
-            }
-            false => directory.as_ref().join(&rom.name),
-        };
+        new_romfile_path = directory.as_ref().join(&rom.name);
     }
     Ok(new_romfile_path)
 }
@@ -707,7 +724,9 @@ mod test {
                 name: String::from("Game (USA)"),
                 description: String::from(""),
                 comment: None,
+                external_id: None,
                 bios: false,
+                jbfolder: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions as i64,
                 complete: true,
@@ -720,7 +739,9 @@ mod test {
                 name: String::from("Game (USA) (Beta)"),
                 description: String::from(""),
                 comment: None,
+                external_id: None,
                 bios: false,
+                jbfolder: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions as i64,
                 complete: true,
@@ -733,7 +754,9 @@ mod test {
                 name: String::from("Game (USA) (Beta 1)"),
                 description: String::from(""),
                 comment: None,
+                external_id: None,
                 bios: false,
+                jbfolder: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions as i64,
                 complete: true,
@@ -746,7 +769,9 @@ mod test {
                 name: String::from("Game (USA) (Virtual Console, Switch Online)"),
                 description: String::from(""),
                 comment: None,
+                external_id: None,
                 bios: false,
+                jbfolder: false,
                 regions: String::from(""),
                 sorting: Sorting::AllRegions as i64,
                 complete: true,
@@ -777,7 +802,9 @@ mod test {
             name: String::from("Game (USA) (Rev 1)"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -790,7 +817,9 @@ mod test {
             name: String::from("Game (USA) (Rev 2)"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -814,7 +843,9 @@ mod test {
             name: String::from("Game (USA)"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -827,7 +858,9 @@ mod test {
             name: String::from("Game (USA) (Rev 2)"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -851,7 +884,9 @@ mod test {
             name: String::from("Game (USA) (Rev 2"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -864,7 +899,9 @@ mod test {
             name: String::from("Game (USA)"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: true,
@@ -883,7 +920,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_single_file() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -900,7 +936,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -913,7 +951,7 @@ mod test {
             name: String::from("rom name.rom"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -928,17 +966,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            1,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 1, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom.7z"));
@@ -947,7 +977,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_multiple_files() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -964,7 +993,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -977,7 +1008,7 @@ mod test {
             name: String::from("rom name.rom"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -992,17 +1023,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            2,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 2, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("game name.7z"));
@@ -1011,7 +1034,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_single_file() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -1028,7 +1050,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -1041,7 +1065,7 @@ mod test {
             name: String::from("rom name.bin"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -1056,17 +1080,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            2,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 2, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.chd"));
@@ -1075,7 +1091,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_multiple_files() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -1092,7 +1107,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -1105,7 +1122,7 @@ mod test {
             name: String::from("rom name.bin"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -1120,17 +1137,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            3,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 3, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("game name.chd"));
@@ -1139,7 +1148,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_cso() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -1156,7 +1164,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -1169,7 +1179,7 @@ mod test {
             name: String::from("rom name.iso"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -1184,17 +1194,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            1,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 1, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.cso"));
@@ -1203,7 +1205,6 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_other() {
         // given
-        let progress_bar = ProgressBar::hidden();
         let test_directory = Path::new("test");
         let system = System {
             id: 1,
@@ -1220,7 +1221,9 @@ mod test {
             name: String::from("game name"),
             description: String::from(""),
             comment: None,
+            external_id: None,
             bios: false,
+            jbfolder: false,
             regions: String::from(""),
             sorting: Sorting::AllRegions as i64,
             complete: false,
@@ -1233,7 +1236,7 @@ mod test {
             name: String::from("rom name.rom"),
             bios: false,
             size: 1,
-            crc: String::from(""),
+            crc: Some(String::from("")),
             md5: Some(String::from("")),
             sha1: Some(String::from("")),
             rom_status: None,
@@ -1248,17 +1251,9 @@ mod test {
         };
 
         // when
-        let path = compute_new_path(
-            &progress_bar,
-            &system,
-            &game,
-            &rom,
-            &romfile,
-            1,
-            &test_directory,
-        )
-        .await
-        .unwrap();
+        let path = compute_new_path(&system, &game, &rom, &romfile, 1, &test_directory)
+            .await
+            .unwrap();
 
         // then
         assert_eq!(path, test_directory.join("rom name.rom"));
