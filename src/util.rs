@@ -109,12 +109,12 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
         if !quiet {
             progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
         }
-        try_with!(
-            fs::rename(old_path, new_path).await,
-            "Failed to rename {:?} to {:?}",
-            old_path.as_ref().as_os_str(),
-            new_path.as_ref().as_os_str()
-        );
+        let result = fs::rename(old_path, new_path).await;
+        // rename doesn't work across filesystems, use copy/remove as fallback
+        if result.is_err() {
+            copy_file(progress_bar, old_path, new_path, quiet).await?;
+            remove_file(progress_bar, old_path, quiet).await?;
+        }
     }
     Ok(())
 }
