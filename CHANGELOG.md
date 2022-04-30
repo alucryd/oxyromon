@@ -5,6 +5,8 @@
 - Add support for PS3 updates and DLCs
 - Allow selecting the checksum algorithm in import-roms (useful for JB folders which only provide MD5)
 - Add a new benchmark subcommand (Linux only for now) to measure the performance of checksum algorithms
+- Support moving files across different filesystems
+- Fix a parsing issue on DAT files with duplicate `clrmamepro` fields 
 
 # 0.10.1
 
