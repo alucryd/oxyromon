@@ -126,7 +126,8 @@ pub struct SystemXml {
     pub name: String,
     pub description: String,
     pub version: String,
-    pub clrmamepro: Option<ClrMameProXml>,
+    #[serde(rename = "clrmamepro", default)]
+    pub clrmamepros: Vec<ClrMameProXml>,
     pub url: Option<String>,
 }
 

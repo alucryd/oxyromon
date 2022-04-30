@@ -118,7 +118,12 @@ pub async fn parse_dat<P: AsRef<Path>>(
 
     let mut detector_xml = None;
     if !skip_header {
-        if let Some(clr_mame_pro_xml) = &datfile_xml.system.clrmamepro {
+        if let Some(clr_mame_pro_xml) = &datfile_xml
+            .system
+            .clrmamepros
+            .iter()
+            .find(|clrmamepro| clrmamepro.header.is_some())
+        {
             progress_bar.println("Processing header");
             if let Some(header_file_name) = &clr_mame_pro_xml.header {
                 let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
@@ -986,5 +991,45 @@ mod test {
 
         // then
         assert_eq!(regions, "FR-DE");
+    }
+
+    #[async_std::test]
+    async fn test_import_dat_headered_duplicate_clrmamepro() {
+        // given
+        let test_directory = Path::new("test");
+        let progress_bar = ProgressBar::hidden();
+
+        let db_file = NamedTempFile::new().unwrap();
+        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+        let mut connection = pool.acquire().await.unwrap();
+
+        let dat_path = test_directory.join("Test System (20220430) (Headered) (Duplicate Clrmamepro).dat");
+        let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+
+        // when
+        import_dat(
+            &mut connection,
+            &progress_bar,
+            &datfile_xml,
+            &detector_xml,
+            false,
+            false,
+        )
+        .await
+        .unwrap();
+
+        // then
+        let systems = find_systems(&mut connection).await;
+        assert_eq!(systems.len(), 1);
+
+        let system = systems.get(0).unwrap();
+        assert_eq!(system.name, "Test System (Headered)");
+
+        assert!(find_header_by_system_id(&mut connection, system.id)
+            .await
+            .is_some());
+
+        assert_eq!(find_games(&mut connection).await.len(), 1);
+        assert_eq!(find_roms(&mut connection).await.len(), 1);
     }
 }
