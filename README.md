@@ -90,6 +90,7 @@ These should be in your `${PATH}` for extra features.
 - Craft some unit tests for RVZ
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible and requested
+- Add a metadata scraper in the retroarch format
 
 ## oxyromon
 
