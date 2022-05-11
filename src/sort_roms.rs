@@ -919,7 +919,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_single_file() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -976,7 +976,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_archive_multiple_files() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -1033,7 +1033,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_single_file() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -1090,7 +1090,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_chd_multiple_files() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -1147,7 +1147,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_cso() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -1204,7 +1204,7 @@ mod test {
     #[async_std::test]
     async fn test_compute_new_path_other() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let system = System {
             id: 1,
             name: String::from("Test System"),
@@ -1263,7 +1263,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1347,7 +1347,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1446,7 +1446,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1545,7 +1545,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1644,7 +1644,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1746,7 +1746,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1846,7 +1846,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();

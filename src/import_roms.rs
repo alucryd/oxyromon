@@ -1073,7 +1073,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1160,7 +1160,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1255,7 +1255,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1352,7 +1352,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1455,7 +1455,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1562,7 +1562,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1650,7 +1650,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1738,7 +1738,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1825,7 +1825,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1939,7 +1939,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -1994,7 +1994,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         env::set_var(
             "PATH",
             format!(
@@ -2088,7 +2088,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -2175,7 +2175,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();

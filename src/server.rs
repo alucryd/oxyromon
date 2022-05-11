@@ -8,7 +8,7 @@ use async_graphql::{
 use async_std::path::Path;
 use async_std::prelude::FutureExt;
 use async_trait::async_trait;
-use clap::{Command, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use futures::stream::TryStreamExt;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
@@ -342,7 +342,7 @@ mod tests {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();

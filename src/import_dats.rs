@@ -564,7 +564,7 @@ mod test {
     #[async_std::test]
     async fn test_import_dat() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -600,7 +600,7 @@ mod test {
     #[async_std::test]
     async fn test_import_dat_parent_clone() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -636,7 +636,7 @@ mod test {
     #[async_std::test]
     async fn test_import_dat_headered() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -676,7 +676,7 @@ mod test {
     #[async_std::test]
     async fn test_import_dat_headered_skip_header() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -716,7 +716,7 @@ mod test {
     #[async_std::test]
     async fn test_import_dat_headered_embedded() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -758,7 +758,7 @@ mod test {
         // given
         let _guard = MUTEX.lock().await;
 
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -872,7 +872,7 @@ mod test {
     #[async_std::test]
     async fn test_import_outdated_dat_should_do_nothing() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -922,7 +922,7 @@ mod test {
     #[async_std::test]
     async fn test_import_outdated_dat_forced_should_import() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
@@ -996,14 +996,15 @@ mod test {
     #[async_std::test]
     async fn test_import_dat_headered_duplicate_clrmamepro() {
         // given
-        let test_directory = Path::new("test");
+        let test_directory = Path::new("tests");
         let progress_bar = ProgressBar::hidden();
 
         let db_file = NamedTempFile::new().unwrap();
         let pool = establish_connection(db_file.path().to_str().unwrap()).await;
         let mut connection = pool.acquire().await.unwrap();
 
-        let dat_path = test_directory.join("Test System (20220430) (Headered) (Duplicate Clrmamepro).dat");
+        let dat_path =
+            test_directory.join("Test System (20220430) (Headered) (Duplicate Clrmamepro).dat");
         let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
         // when
