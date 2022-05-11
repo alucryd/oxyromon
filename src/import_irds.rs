@@ -227,7 +227,7 @@ pub async fn import_ird(
     progress_bar: &ProgressBar,
     game: &Game,
     irdfile: &Irdfile,
-    header: &mut Vec<u8>,
+    header: &mut [u8],
 ) -> SimpleResult<()> {
     let mut header_file = create_tmp_file(connection).await?;
     header_file.write_all(header).unwrap();

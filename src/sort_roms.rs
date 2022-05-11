@@ -116,8 +116,7 @@ pub async fn get_regions(
     };
     all_regions
         .into_iter()
-        .map(|r| Region::try_from_tosec_region(&r).expect("Failed to parse region code"))
-        .flatten()
+        .flat_map(|r| Region::try_from_tosec_region(&r).expect("Failed to parse region code"))
         .collect()
 }
 
