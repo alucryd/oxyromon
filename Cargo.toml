@@ -13,9 +13,18 @@ repository = "https://github.com/alucryd/oxyromon"
 version = "0.11.0"
 
 [features]
-default = ["use-native-tls", "chd", "cso", "ird", "rvz", "benchmark"]
+default = [
+    "use-native-tls",
+    "enable-asm",
+    "chd",
+    "cso",
+    "ird",
+    "rvz",
+    "benchmark",
+]
 use-native-tls = ["sqlx/runtime-async-std-native-tls"]
 use-rustls = ["native-tls", "sqlx/runtime-async-std-rustls"]
+enable-asm = ["md-5/asm", "sha1/asm"]
 chd = []
 cso = []
 ird = ["flate2", "strsim", "walkdir"]
@@ -53,7 +62,7 @@ http-types = { version = "2.12.0", optional = true }
 indicatif = { version = "0.16.2", features = ["rayon"] }
 itertools = "0.10.3"
 lazy_static = "1.4.0"
-md-5 = { version = "0.10.1", features = ["asm"] }
+md-5 = "0.10.1"
 native-tls = { version = "0.2.10", features = ["vendored"], optional = true }
 num-derive = "0.3.3"
 num-traits = "0.2.15"
@@ -67,7 +76,7 @@ rust-embed = { version = "6.4.0", features = [
     "interpolate-folder-path",
 ] }
 serde = { version = "1.0.137", features = ["derive"] }
-sha1 = { version = "0.10.1", features = ["asm"] }
+sha1 = "0.10.1"
 shiratsu-naming = "0.1.5"
 simple-error = "0.2.3"
 sqlx = { version = "0.5.13", features = ["migrate", "offline", "sqlite"] }
