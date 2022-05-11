@@ -25,7 +25,7 @@ lazy_static! {
 }
 
 #[derive(RustEmbed)]
-#[folder = "build/"]
+#[folder = "$CARGO_MANIFEST_DIR/target/assets"]
 struct Assets;
 
 pub fn subcommand<'a>() -> Command<'a> {
@@ -355,7 +355,7 @@ mod tests {
         let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
 
         let matches = import_dats::subcommand()
-            .get_matches_from(&["import-dats", "test/Test System (20200721).dat"]);
+            .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
         import_dats::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();

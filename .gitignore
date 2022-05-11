@@ -7,11 +7,10 @@
 
 # rust
 *.rs.bk
-/target
+target
 *.db
 lcov.info
 
 # javascript
-/build
 node_modules
-/.svelte-kit
+.svelte-kit

@@ -6,7 +6,7 @@ const config = {
   preprocess: preprocess(),
 
   kit: {
-    adapter: adapter({ fallback: "index.html" }),
+    adapter: adapter({ pages: 'target/assets', fallback: "index.html" }),
     prerender: { enabled: false },
   },
 };

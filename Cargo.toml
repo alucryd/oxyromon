@@ -3,7 +3,7 @@ authors = ["Maxime Gauduin <alucryd@archlinux.org>"]
 categories = ["command-line-utilities", "games"]
 description = "Rusty ROM OrgaNizer"
 edition = "2021"
-exclude = ["test/"]
+exclude = [".github/", "tests/"]
 homepage = "https://github.com/alucryd/oxyromon"
 keywords = ["cli", "rom", "tool"]
 license = "GPL-3.0+"
@@ -62,7 +62,10 @@ phf = { version = "0.10.1", features = ["macros"] }
 quick-xml = { version = "0.22.0", features = ["serialize"] }
 rayon = "1.5.2"
 regex = "1.5.5"
-rust-embed = { version = "6.4.0", features = ["compression"] }
+rust-embed = { version = "6.4.0", features = [
+    "compression",
+    "interpolate-folder-path",
+] }
 serde = { version = "1.0.137", features = ["derive"] }
 sha1 = { version = "0.10.1", features = ["asm"] }
 shiratsu-naming = "0.1.5"
