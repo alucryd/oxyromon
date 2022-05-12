@@ -1,7 +1,5 @@
-use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
 use super::super::database::*;
 use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
 use async_std::fs;
 use async_std::path::PathBuf;
@@ -33,35 +31,62 @@ async fn test() {
     let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.zip");
     fs::copy(
         test_directory.join("Test Game (USA, Europe).rom.zip"),
-        &romfile_path,
+        &romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
-
-    let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
+    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
         .await
         .unwrap();
 
     // when
-    check_system(
+    import_archive(
         &mut connection,
         &progress_bar,
+        &system_directory,
         &system,
-        false,
+        &None,
+        &romfile_path,
+        romfile_path.extension().unwrap().to_str().unwrap(),
         &HashAlgorithm::Crc,
     )
     .await
     .unwrap();
 
     // then
-    let mut romfiles = find_romfiles(&mut connection).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    assert_eq!(roms.len(), 1);
+    let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
+    let games = find_games_by_ids(
+        &mut connection,
+        roms.iter()
+            .map(|rom| rom.game_id)
+            .collect::<Vec<i64>>()
+            .as_slice(),
+    )
+    .await;
+    assert_eq!(games.len(), 1);
 
-    let romfile = romfiles.remove(0);
-    assert!(!romfile.path.contains("/Trash/"));
+    let game = games.get(0).unwrap();
+    assert_eq!(game.name, "Test Game (USA, Europe)");
+    assert_eq!(game.system_id, system.id);
+
+    let rom = roms.get(0).unwrap();
+    assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+    assert_eq!(rom.game_id, game.id);
+
+    let romfile = romfiles.get(0).unwrap();
+    assert_eq!(
+        romfile.path,
+        system_directory
+            .join("Test Game (USA, Europe).rom.zip")
+            .as_os_str()
+            .to_str()
+            .unwrap(),
+    );
     assert!(Path::new(&romfile.path).is_file().await);
+    assert_eq!(rom.romfile_id, Some(romfile.id));
 }

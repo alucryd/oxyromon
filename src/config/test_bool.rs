@@ -15,5 +15,5 @@ async fn test() {
     let bool = get_bool(&mut connection, key).await;
 
     // then
-    assert_eq!(bool, true);
+    assert!(bool);
 }

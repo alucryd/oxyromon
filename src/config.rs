@@ -363,24 +363,17 @@ cfg_if::cfg_if! {
 
 #[cfg(test)]
 mod test_bool;
-
 #[cfg(test)]
 mod test_list;
-
 #[cfg(test)]
 mod test_add_to_list;
-
 #[cfg(test)]
 mod test_add_to_list_already_exists;
-
 #[cfg(test)]
 mod test_remove_from_list;
-
 #[cfg(test)]
 mod test_remove_from_list_does_not_exist;
-
 #[cfg(test)]
 mod test_directory;
-
 #[cfg(test)]
 mod test_set_new_directory_when_old_is_missing;

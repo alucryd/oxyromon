@@ -2,9 +2,11 @@ use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
+use super::super::sort_roms;
 use super::*;
 use async_std::fs;
 use async_std::path::PathBuf;
+use async_std::prelude::*;
 use tempfile::{NamedTempFile, TempDir};
 
 #[async_std::test]
@@ -30,38 +32,46 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).chd");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Single Track).chd"),
+        test_directory.join("Test Game (USA, Europe).rom"),
         &romfile_path,
     )
     .await
     .unwrap();
 
-    let system = find_systems(&mut connection).await.remove(0);
-
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
+    let matches = sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-g", "JP"]);
+    sort_roms::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+
+    let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+        .await
+        .unwrap();
+
     // when
-    check_system(
-        &mut connection,
-        &progress_bar,
-        &system,
-        false,
-        &HashAlgorithm::Crc,
-    )
-    .await
-    .unwrap();
+    let matches = subcommand().get_matches_from(&["purge-roms", "-y"]);
+
+    purge_trashed_romfiles(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     // then
-    let mut romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 1);
-
-    let romfile = romfiles.remove(0);
-    assert!(!romfile.path.contains("/Trash/"));
-    assert!(Path::new(&romfile.path).is_file().await);
+    let romfiles = find_romfiles(&mut connection).await;
+    assert!(romfiles.is_empty());
+    assert!(&system_directory
+        .join("Trash")
+        .read_dir()
+        .await
+        .unwrap()
+        .next()
+        .await
+        .is_none());
 }
