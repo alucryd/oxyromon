@@ -1,3 +1,5 @@
+# 0.12.0
+
 # 0.11.1
 
 - Fix import-roms CLI flags
