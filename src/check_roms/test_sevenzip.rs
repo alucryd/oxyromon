@@ -25,14 +25,14 @@ async fn test() {
     let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20210402) (Headered).dat"]);
+        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Headered).rom.7z");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.7z");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Headered).rom.7z"),
+        test_directory.join("Test Game (USA, Europe).rom.7z"),
         &romfile_path,
     )
     .await
@@ -41,7 +41,7 @@ async fn test() {
     let system = find_systems(&mut connection).await.remove(0);
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();

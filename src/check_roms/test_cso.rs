@@ -5,7 +5,7 @@ use super::super::import_roms;
 use super::*;
 use async_std::fs;
 use async_std::path::PathBuf;
-use async_std::prelude::*;
+use std::env;
 use tempfile::{NamedTempFile, TempDir};
 
 #[async_std::test]
@@ -14,6 +14,14 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
+    env::set_var(
+        "PATH",
+        format!(
+            "{}:{}",
+            test_directory.as_os_str().to_str().unwrap(),
+            env::var("PATH").unwrap()
+        ),
+    );
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -31,9 +39,9 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).cso");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
+        test_directory.join("Test Game (USA, Europe).cso"),
         &romfile_path,
     )
     .await
@@ -42,19 +50,10 @@ async fn test() {
     let system = find_systems(&mut connection).await.remove(0);
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
-
-    let romfile = find_romfiles(&mut connection).await.remove(0);
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .open(&romfile.path)
-        .await
-        .unwrap();
-    file.write_all(b"00000000").await.unwrap();
-    file.sync_all().await.unwrap();
 
     // when
     check_system(
@@ -72,6 +71,6 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let romfile = romfiles.remove(0);
-    assert!(romfile.path.contains("/Trash/"));
+    assert!(!romfile.path.contains("/Trash/"));
     assert!(Path::new(&romfile.path).is_file().await);
 }

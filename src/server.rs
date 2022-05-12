@@ -64,20 +64,20 @@ impl System {
 #[ComplexObject]
 impl Game {
     async fn system(&self, ctx: &Context<'_>) -> Result<Option<System>> {
-        Ok(ctx
+        ctx
             .data_unchecked::<DataLoader<SystemLoader>>()
             .load_one(self.system_id)
-            .await?)
+            .await
     }
 }
 
 #[ComplexObject]
 impl Rom {
     async fn game(&self, ctx: &Context<'_>) -> Result<Option<Game>> {
-        Ok(ctx
+        ctx
             .data_unchecked::<DataLoader<GameLoader>>()
             .load_one(self.game_id)
-            .await?)
+            .await
     }
 
     async fn romfile(&self, ctx: &Context<'_>) -> Result<Option<Romfile>> {

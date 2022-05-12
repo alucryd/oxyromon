@@ -4,7 +4,8 @@ use std::process::Command;
 
 fn main() {
     let skip_yarn = env::var("SKIP_YARN").unwrap_or_default() == "true";
-    let skip_yarn_cleanup = env::var("SKIP_YARN_CLEANUP").unwrap_or(String::from("true")) == "true";
+    let skip_yarn_cleanup =
+        env::var("SKIP_YARN_CLEANUP").unwrap_or_else(|_| String::from("true")) == "true";
     if !skip_yarn {
         Command::new("yarn")
             .arg("install")

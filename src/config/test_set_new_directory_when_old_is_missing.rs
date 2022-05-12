@@ -34,5 +34,5 @@ async fn test() {
     // then
     let directory = get_directory(&mut connection, "TEST_DIRECTORY").await;
     assert!(directory.is_some());
-    assert!(&directory.unwrap().as_os_str() == &new_directory.as_os_str());
+    assert_eq!(directory.unwrap().as_os_str(), new_directory.as_os_str());
 }

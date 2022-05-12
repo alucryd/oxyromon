@@ -166,7 +166,7 @@ async fn check_system(
                 }
             }
         } else {
-            result = check_other(
+            result = check_original(
                 &mut transaction,
                 progress_bar,
                 &header,
@@ -386,7 +386,7 @@ async fn check_rvz<P: AsRef<Path>>(
     Ok(())
 }
 
-async fn check_other<P: AsRef<Path>>(
+async fn check_original<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
@@ -457,32 +457,23 @@ async fn move_to_trash(
     Ok(())
 }
 
+#[cfg(test)]
+mod test_original;
+#[cfg(test)]
+mod test_original_with_header;
+#[cfg(test)]
+mod test_original_crc_mismatch;
+#[cfg(test)]
+mod test_original_size_mismatch;
+#[cfg(test)]
+mod test_sevenzip;
+#[cfg(test)]
+mod test_sevenzip_with_header;
+#[cfg(test)]
+mod test_zip;
 #[cfg(all(test, feature = "chd"))]
-mod test_check_chd_single_track;
-
+mod test_chd_single_track;
 #[cfg(all(test, feature = "chd"))]
-mod test_check_chd_multiple_tracks;
-
+mod test_chd_multiple_tracks;
 #[cfg(all(test, feature = "cso"))]
-mod test_check_cso;
-
-#[cfg(test)]
-mod test_check_other;
-
-#[cfg(test)]
-mod test_check_other_with_header;
-
-#[cfg(test)]
-mod test_check_other_crc_mismatch;
-
-#[cfg(test)]
-mod test_check_other_size_mismatch;
-
-#[cfg(test)]
-mod test_check_sevenzip;
-
-#[cfg(test)]
-mod test_check_sevenzip_with_header;
-
-#[cfg(test)]
-mod test_check_zip;
+mod test_cso;

@@ -4,7 +4,7 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
 use async_std::fs;
-use async_std::path::PathBuf;
+use std::env;
 use tempfile::{NamedTempFile, TempDir};
 
 #[async_std::test]
@@ -13,6 +13,14 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
+    env::set_var(
+        "PATH",
+        format!(
+            "{}:{}",
+            test_directory.as_os_str().to_str().unwrap(),
+            env::var("PATH").unwrap()
+        ),
+    );
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -30,38 +38,61 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).iso.7z");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom"),
+        test_directory.join("Test Game (USA, Europe).iso.7z"),
         &romfile_path,
     )
     .await
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+        .await
+        .unwrap();
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", &romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    roms_by_game_id.insert(roms[0].game_id, roms);
+    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+    romfiles_by_id.insert(romfile.id, romfile);
+
     // when
-    check_system(
+    to_cso(
         &mut connection,
         &progress_bar,
-        &system,
+        roms_by_game_id,
+        romfiles_by_id,
         true,
-        &HashAlgorithm::Crc,
     )
     .await
     .unwrap();
 
     // then
-    let mut romfiles = find_romfiles(&mut connection).await;
+    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
+    assert_eq!(roms.len(), 1);
+    let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
 
-    let romfile = romfiles.remove(0);
-    assert!(!romfile.path.contains("/Trash/"));
+    let rom = roms.get(0).unwrap();
+    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+
+    let romfile = romfiles.get(0).unwrap();
+    assert_eq!(
+        romfile.path,
+        system_directory
+            .join("Test Game (USA, Europe).cso")
+            .as_os_str()
+            .to_str()
+            .unwrap(),
+    );
     assert!(Path::new(&romfile.path).is_file().await);
+    assert_eq!(rom.romfile_id, Some(romfile.id));
 }
