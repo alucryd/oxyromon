@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.11.0
+# oxyROMon 0.12.0
 
 ### Rusty ROM OrgaNizer
 
@@ -31,14 +31,17 @@ The build uses native TLS by default, but you can also opt for rustls:
 
 ### Features
 
-- use-native-tls: use the system OpenSSL library (default)
-- use-rustls: use rustls where possible, and fallback to a vendored OpenSSL
-- chd: CHD support (default)
-- cso: CSO support (default)
-- ird: IRD support (default)
-- rvz: RVZ support (default)
-- benchmark: build the benchmark subcommand
-- server: build the server subcommand
+| feature        | description                                                   | default |
+| -------------- | ------------------------------------------------------------- | ------- |
+| use-native-tls | use the system OpenSSL library                                | x       |
+| use-rustls     | use rustls where possible, and fallback to a vendored OpenSSL |         |
+| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
+| chd            | CHD support                                                   | x       |
+| cso            | CSO support                                                   | x       |
+| ird            | IRD support                                                   | x       |
+| rvz            | RVZ support                                                   | x       |
+| benchmark      | build the benchmark subcommand                                |         |
+| server         | build the server subcommand                                   |         |
 
 ### Configuration
 
