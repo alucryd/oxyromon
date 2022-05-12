@@ -1,3 +1,8 @@
+# 0.11.1
+
+- Fix import-roms CLI flags
+- Fix import-roms 7Z CRC parsing
+
 # 0.11.0
 
 - Put CHD, CSO and RVZ support behind features

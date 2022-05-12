@@ -46,7 +46,7 @@ pub fn subcommand<'a>() -> Command<'a> {
         )
         .arg(
             Arg::new("HASH")
-                .short('h')
+                .short('a')
                 .long("hash")
                 .help("Set the hash algorithm")
                 .required(false)
@@ -426,8 +426,8 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         let size: u64;
         let hash: String;
 
-        // system has a header or crc is absent
-        if header.is_some() || sevenzip_info.crc.is_empty() || hash_algorithm != &HashAlgorithm::Md5
+        // system has a header, crc is absent, or selected checksum is not crc 
+        if header.is_some() || sevenzip_info.crc.is_empty() || hash_algorithm != &HashAlgorithm::Crc
         {
             let extracted_path = sevenzip::extract_files_from_archive(
                 progress_bar,
