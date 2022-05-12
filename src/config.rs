@@ -362,184 +362,25 @@ cfg_if::cfg_if! {
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
-    use async_std::fs;
-    use async_std::path::{Path, PathBuf};
-    use tempfile::{NamedTempFile, TempDir};
+mod test_bool;
 
-    #[async_std::test]
-    async fn test_bool() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
+#[cfg(test)]
+mod test_list;
 
-        let key = "TEST_BOOLEAN";
+#[cfg(test)]
+mod test_add_to_list;
 
-        // when
-        set_bool(&mut connection, key, true).await;
-        let bool = get_bool(&mut connection, key).await;
+#[cfg(test)]
+mod test_add_to_list_already_exists;
 
-        // then
-        assert_eq!(bool, true);
-    }
+#[cfg(test)]
+mod test_remove_from_list;
 
-    #[async_std::test]
-    async fn test_list() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
+#[cfg(test)]
+mod test_remove_from_list_does_not_exist;
 
-        let key = "DISCARD_FLAGS";
+#[cfg(test)]
+mod test_directory;
 
-        // when
-        set_list(
-            &mut connection,
-            key,
-            &[String::from("item1"), String::from("item2")],
-        )
-        .await;
-
-        let list = get_list(&mut connection, key).await;
-
-        // then
-        assert_eq!(list.len(), 2);
-        assert_eq!(list.get(0).unwrap(), "item1");
-        assert_eq!(list.get(1).unwrap(), "item2");
-    }
-
-    #[async_std::test]
-    async fn test_add_to_list() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let key = "DISCARD_FLAGS";
-
-        set_list(&mut connection, key, &[String::from("item1")]).await;
-
-        // when
-        add_to_list(&mut connection, key, "item2").await;
-        let list = get_list(&mut connection, key).await;
-
-        // then
-        assert_eq!(list.len(), 2);
-        assert_eq!(list.get(0).unwrap(), "item1");
-        assert_eq!(list.get(1).unwrap(), "item2");
-    }
-
-    #[async_std::test]
-    async fn test_add_to_list_already_exists() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let key = "DISCARD_FLAGS";
-
-        set_list(&mut connection, key, &[String::from("item1")]).await;
-
-        // when
-        add_to_list(&mut connection, key, "item1").await;
-        let list = get_list(&mut connection, key).await;
-
-        // then
-        assert_eq!(list.len(), 1);
-        assert_eq!(list.get(0).unwrap(), "item1");
-    }
-
-    #[async_std::test]
-    async fn test_remove_from_list() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let key = "DISCARD_FLAGS";
-
-        set_list(&mut connection, key, &[String::from("item1")]).await;
-
-        // when
-        remove_from_list(&mut connection, key, "item1").await;
-        let list = get_list(&mut connection, key).await;
-
-        // then
-        assert_eq!(list.len(), 0);
-    }
-
-    #[async_std::test]
-    async fn test_remove_from_list_does_not_exist() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let key = "DISCARD_FLAGS";
-
-        set_list(&mut connection, key, &[String::from("item1")]).await;
-
-        // when
-        remove_from_list(&mut connection, key, "item2").await;
-        let list = get_list(&mut connection, key).await;
-
-        // then
-        assert_eq!(list.len(), 1);
-        assert_eq!(list.get(0).unwrap(), "item1");
-    }
-
-    #[async_std::test]
-    async fn test_directory() {
-        // given
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let test_directory = get_canonicalized_path("tests").await.unwrap();
-        let key = "TEST_DIRECTORY";
-
-        // when
-        set_directory(&mut connection, key, &test_directory).await;
-
-        let directory = get_directory(&mut connection, key).await.unwrap();
-
-        // then
-        assert_eq!(directory, test_directory);
-    }
-
-    #[async_std::test]
-    async fn test_set_new_directory_when_old_is_missing() {
-        // given
-        let _guard = MUTEX.lock().await;
-
-        let test_directory = Path::new("tests");
-        let progress_bar = ProgressBar::hidden();
-
-        let db_file = NamedTempFile::new().unwrap();
-        let pool = establish_connection(db_file.path().to_str().unwrap()).await;
-        let mut connection = pool.acquire().await.unwrap();
-
-        let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-        let old_directory = PathBuf::from(&tmp_directory.path()).join("old");
-        create_directory(&progress_bar, &old_directory, true)
-            .await
-            .unwrap();
-        set_directory(&mut connection, "TEST_DIRECTORY", &old_directory).await;
-        fs::remove_dir_all(&old_directory).await.unwrap();
-
-        // when
-        get_directory(&mut connection, "TEST_DIRECTORY").await;
-        let new_directory = PathBuf::from(&tmp_directory.path()).join("new");
-        create_directory(&progress_bar, &new_directory, true)
-            .await
-            .unwrap();
-        set_directory(&mut connection, "TEST_DIRECTORY", &new_directory).await;
-
-        // then
-        let directory = get_directory(&mut connection, "TEST_DIRECTORY").await;
-        assert!(directory.is_some());
-        assert!(&directory.unwrap().as_os_str() == &new_directory.as_os_str());
-    }
-}
+#[cfg(test)]
+mod test_set_new_directory_when_old_is_missing;
