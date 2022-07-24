@@ -3,10 +3,7 @@ use std::fs;
 use std::process::Command;
 
 fn main() {
-    let skip_yarn = env::var("SKIP_YARN").unwrap_or_default() == "true";
-    let skip_yarn_cleanup =
-        env::var("SKIP_YARN_CLEANUP").unwrap_or_else(|_| String::from("true")) == "true";
-    if !skip_yarn {
+    if cfg!(feature = "server") && env::var("SKIP_YARN").unwrap_or_default() != "true" {
         Command::new("yarn")
             .arg("install")
             .arg("--frozen-lockfile")
@@ -16,9 +13,7 @@ fn main() {
             .arg("build")
             .output()
             .expect("failed to run yarn build");
-        if !skip_yarn_cleanup {
-            fs::remove_dir_all(".svelte-kit").expect("failed to delete .svelte-kit");
-            fs::remove_dir_all("node_modules").expect("failed to delete node_modules");
-        }
+        fs::remove_dir_all(".svelte-kit").expect("failed to delete .svelte-kit");
+        fs::remove_dir_all("node_modules").expect("failed to delete node_modules");
     }
 }
