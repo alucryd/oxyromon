@@ -181,17 +181,17 @@ Supported DAT providers:
 
 - Redump (Download and update)
 - No-Intro (Update check only)
+<!-- -->
+    USAGE:
+        oxyromon download-dats [OPTIONS]
 
-  USAGE:
-  oxyromon download-dats [OPTIONS]
-
-  OPTIONS:
-  -a, --all Import all systems
-  -f, --force Force import of outdated DAT files
-  -h, --help Print help information
-  -n, --nointro Download No-Intro DAT files
-  -r, --redump Download Redump DAT files
-  -u, --update Check for system updates
+    OPTIONS:
+        -a, --all Import all systems
+        -f, --force Force import of outdated DAT files
+        -h, --help Print help information
+        -n, --nointro Download No-Intro DAT files
+        -r, --redump Download Redump DAT files
+        -u, --update Check for system updates
 
 ## oxyromon-import-irds
 
@@ -309,15 +309,15 @@ Supported merging strategies:
 - Non-Merged (each parent and clone set contains its ROM files and its parent's files)
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
 - ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
+<!-- -->
+    USAGE:
+        oxyromon rebuild-roms [OPTIONS]
 
-  USAGE:
-  oxyromon rebuild-roms [OPTIONS]
-
-  OPTIONS:
-  -a, --all Rebuild all arcade systems
-  -h, --help Print help information
-  -m, --merging <MERGING> Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-  -y, --yes Automatically say yes to prompts
+    OPTIONS:
+        -a, --all Rebuild all arcade systems
+        -h, --help Print help information
+        -m, --merging <MERGING> Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+        -y, --yes Automatically say yes to prompts
 
 ## oxyromon-convert-roms
 
