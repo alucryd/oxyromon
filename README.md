@@ -298,7 +298,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
 
 Rebuild arcade ROM sets according to the selected strategy
 
-ROM sets can be rebuild using the popular mesging strategies.
+ROM sets can be rebuilt using the popular merging strategies.
 
 Supported merging strategies:
 
