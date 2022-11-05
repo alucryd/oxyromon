@@ -1925,7 +1925,7 @@ checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
 
 [[package]]
 name = "oxyromon"
-version = "0.12.0-beta"
+version = "0.12.0"
 dependencies = [
  "async-ctrlc",
  "async-graphql",
