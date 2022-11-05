@@ -88,7 +88,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     }
 
     if bin_names_sizes.len() == 1 {
-        let new_bin_path = directory.as_ref().join(bin_names_sizes.get(0).unwrap().0);
+        let new_bin_path = directory.as_ref().join(bin_names_sizes.first().unwrap().0);
         if bin_path != new_bin_path {
             rename_file(progress_bar, &bin_path, &new_bin_path, quiet).await?;
         }

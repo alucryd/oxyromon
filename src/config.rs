@@ -88,7 +88,7 @@ pub fn subcommand() -> Command {
                 .help("Configure a single setting")
                 .required(false)
                 .num_args(2)
-                .value_names(&["KEY", "VALUE"])
+                .value_names(["KEY", "VALUE"])
                 .exclusive(true),
         )
         .arg(
@@ -98,7 +98,7 @@ pub fn subcommand() -> Command {
                 .help("Add an entry to a list")
                 .required(false)
                 .num_args(2)
-                .value_names(&["KEY", "VALUE"])
+                .value_names(["KEY", "VALUE"])
                 .exclusive(true),
         )
         .arg(
@@ -108,7 +108,7 @@ pub fn subcommand() -> Command {
                 .help("Remove an entry from a list")
                 .required(false)
                 .num_args(2)
-                .value_names(&["KEY", "VALUE"])
+                .value_names(["KEY", "VALUE"])
                 .exclusive(true),
         )
 }

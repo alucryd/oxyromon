@@ -18,7 +18,7 @@ use std::fs;
 use std::io;
 use std::io::prelude::*;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum HashAlgorithm {
     Crc,
     Md5,
