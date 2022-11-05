@@ -7,14 +7,16 @@ use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
-use clap::{Arg, ArgMatches, Command};
+use clap::builder::PossibleValuesParser;
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use sqlx::sqlite::SqliteConnection;
+use std::time::Duration;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("rebuild-roms")
         .about("Rebuild arcade ROM sets according to the selected strategy")
         .arg(
@@ -23,22 +25,24 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("merging")
                 .help("Set the arcade merging strategy")
                 .required(false)
-                .takes_value(true)
-                .possible_values(MERGING_STRATEGIES),
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(MERGING_STRATEGIES)),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
                 .help("Rebuild all arcade systems")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
                 .help("Automatically say yes to prompts")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -47,9 +51,9 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, true, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, true, matches.get_flag("ALL")).await?;
 
-    let merging = match matches.value_of("STRATEGY") {
+    let merging = match matches.get_one::<String>("STRATEGY").map(String::as_str) {
         Some("SPLIT") => Merging::Split,
         Some("NON_MERGED") => Merging::NonMerged,
         Some("FULL_NON_MERGED") => Merging::FullNonMerged,
@@ -62,7 +66,7 @@ pub async fn main(
         .unwrap(),
     };
 
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     for system in systems {
         if system.merging == merging as i64 {
@@ -106,7 +110,7 @@ async fn rebuild_system(
 
     // mark games and system as complete if they are
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
     update_system_mark_complete(connection, system.id).await;

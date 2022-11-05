@@ -6,7 +6,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::task;
 use cfg_if::cfg_if;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
@@ -57,6 +57,7 @@ cfg_if! {
             "Mattel - HyperScan" => "hs",
             "Memorex - Visual Information System" => "vis",
             "Microsoft - Xbox" => "xbox",
+            "Microsoft - Xbox 360" => "xbox360",
             "NEC - PC Engine CD & TurboGrafx CD" => "pce",
             "NEC - PC-88 series" => "pc-88",
             "NEC - PC-98 series" => "pc-98",
@@ -86,7 +87,7 @@ cfg_if! {
     }
 }
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("download-dats")
         .about("Download No-Intro and Redump DAT files and import them into oxyromon")
         .arg(
@@ -95,6 +96,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("nointro")
                 .help("Download No-Intro DAT files")
                 .required(false)
+                .action(ArgAction::SetTrue)
                 .conflicts_with("REDUMP")
                 .required_unless_present("REDUMP"),
         )
@@ -104,6 +106,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("redump")
                 .help("Download Redump DAT files")
                 .required(false)
+                .action(ArgAction::SetTrue)
                 .conflicts_with("NOINTRO")
                 .required_unless_present("NOINTRO"),
         )
@@ -112,21 +115,24 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .short('u')
                 .long("update")
                 .help("Check for system updates")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
                 .help("Import all systems")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("FORCE")
                 .short('f')
                 .long("force")
                 .help("Force import of outdated DAT files")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -135,26 +141,26 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    if matches.is_present("NOINTRO") {
-        if matches.is_present("UPDATE") {
+    if matches.get_flag("NOINTRO") {
+        if matches.get_flag("UPDATE") {
             update_nointro_dats(
                 connection,
                 progress_bar,
                 NOINTRO_BASE_URL,
-                matches.is_present("ALL"),
+                matches.get_flag("ALL"),
             )
             .await?
         } else {
             progress_bar.println("Not supported");
         }
-    } else if matches.is_present("REDUMP") {
-        if matches.is_present("UPDATE") {
+    } else if matches.get_flag("REDUMP") {
+        if matches.get_flag("UPDATE") {
             update_redump_dats(
                 connection,
                 progress_bar,
                 REDUMP_BASE_URL,
-                matches.is_present("ALL"),
-                matches.is_present("FORCE"),
+                matches.get_flag("ALL"),
+                matches.get_flag("FORCE"),
             )
             .await?
         } else {
@@ -162,7 +168,7 @@ pub async fn main(
                 connection,
                 progress_bar,
                 REDUMP_BASE_URL,
-                matches.is_present("ALL"),
+                matches.get_flag("ALL"),
             )
             .await?
         }

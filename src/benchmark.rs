@@ -10,16 +10,17 @@ use async_std::path::Path;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::time::Duration;
 use std::time::Instant;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("benchmark").about("Benchmark oxyromon").arg(
         Arg::new("CHUNK_SIZE")
             .short('c')
             .long("chunk-size")
             .help("Set the chunk size in KB for read and writes (Default: 256)")
             .required(false)
-            .takes_value(true)
+            .num_args(1)
             .default_value("256"),
     )
 }
@@ -30,7 +31,7 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let rom_directory = find_setting_by_key(connection, "ROM_DIRECTORY")
         .await
@@ -49,7 +50,7 @@ pub async fn main(
     let mb_count = 1024;
     // TODO: make this into a setting
     let chunk_size = matches
-        .value_of("CHUNK_SIZE")
+        .get_one::<String>("CHUNK_SIZE")
         .unwrap()
         .parse::<usize>()
         .unwrap();

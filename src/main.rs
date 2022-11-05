@@ -8,6 +8,7 @@ extern crate async_std;
 #[cfg(feature = "server")]
 extern crate async_trait;
 extern crate cfg_if;
+#[macro_use]
 extern crate clap;
 extern crate crc32fast;
 extern crate dialoguer;
@@ -69,6 +70,7 @@ mod model;
 mod progress;
 mod prompt;
 mod purge_roms;
+mod purge_systems;
 mod rebuild_roms;
 #[cfg(feature = "server")]
 mod server;
@@ -100,6 +102,7 @@ async fn main() -> SimpleResult<()> {
         rebuild_roms::subcommand(),
         check_roms::subcommand(),
         purge_roms::subcommand(),
+        purge_systems::subcommand(),
     ];
     cfg_if! {
         if #[cfg(feature = "ird")] {
@@ -220,6 +223,9 @@ async fn main() -> SimpleResult<()> {
                     &progress_bar,
                 )
                 .await?
+            }
+            Some("purge-systems") => {
+                purge_systems::main(&mut pool.acquire().await.unwrap(), &progress_bar).await?
             }
             Some("benchmark") => {
                 cfg_if! {

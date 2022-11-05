@@ -11,11 +11,11 @@ use std::cmp::Ordering;
 use tempfile::NamedTempFile;
 use tempfile::TempDir;
 
-pub async fn get_canonicalized_path(path: &str) -> SimpleResult<PathBuf> {
+pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
-        Path::new(path).canonicalize().await,
-        "Failed to get canonicalized path for {}",
-        path
+        path.as_ref().canonicalize().await,
+        "Failed to get canonicalized path for {:?}",
+        path.as_ref()
     );
     Ok(canonicalized_path)
 }

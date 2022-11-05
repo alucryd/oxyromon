@@ -4,6 +4,7 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use std::process::Command;
+use std::time::Duration;
 
 pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
@@ -12,7 +13,7 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CSO");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let mut cso_path = directory
         .as_ref()
@@ -45,7 +46,7 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting CSO");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
         "Extracting {:?}",

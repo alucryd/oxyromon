@@ -4,11 +4,12 @@ use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::time::Duration;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("purge-roms")
         .about("Purge trashed, missing and orphan ROM files")
         .arg(
@@ -16,28 +17,32 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .short('m')
                 .long("missing")
                 .help("Delete missing ROM files from the database")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("ORPHAN")
                 .short('o')
                 .long("orphan")
                 .help("Delete ROM files without an associated ROM from the database")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("TRASH")
                 .short('t')
                 .long("trash")
                 .help("Physically delete ROM files from the trash directories")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
                 .help("Automatically say yes to prompts")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -46,17 +51,17 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    if matches.is_present("MISSING") {
+    if matches.get_flag("MISSING") {
         purge_missing_romfiles(connection, progress_bar).await?;
     }
-    if matches.is_present("TRASH") {
+    if matches.get_flag("TRASH") {
         purge_trashed_romfiles(connection, matches, progress_bar).await?;
     }
-    if matches.is_present("ORPHAN") {
+    if matches.get_flag("ORPHAN") {
         purge_orphan_romfiles(connection, progress_bar).await?;
     }
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_mark_incomplete(connection).await;
     update_systems_mark_incomplete(connection).await;
@@ -105,7 +110,7 @@ async fn purge_trashed_romfiles(
             progress_bar.println(&romfile.path);
         }
 
-        if matches.is_present("YES") || confirm(true)? {
+        if matches.get_flag("YES") || confirm(true)? {
             let mut transaction = begin_transaction(connection).await;
 
             for romfile in &romfiles {

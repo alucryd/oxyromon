@@ -1,4 +1,6 @@
 # 0.12.0
+- Change `--missing` to `--wanted` in `sort-roms` to avoid confusion with the same `purge-roms` flag
+- Add a `purge-systems` subcommand (WIP)
 
 # 0.11.1
 

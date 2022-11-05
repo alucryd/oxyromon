@@ -3,7 +3,7 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
@@ -59,7 +59,7 @@ pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENS
 #[cfg(feature = "ird")]
 pub static PS3_DISC_SFB: &str = "PS3_DISC.SFB";
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("config")
         .about("Query and modify the oxyromon settings")
         .arg(
@@ -68,7 +68,8 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("list")
                 .help("Print the whole configuration")
                 .required(false)
-                .conflicts_with_all(&["GET", "SET"]),
+                .action(ArgAction::SetTrue)
+                .exclusive(true),
         )
         .arg(
             Arg::new("GET")
@@ -76,8 +77,9 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("get")
                 .help("Print a single setting")
                 .required(false)
-                .takes_value(true)
-                .value_name("KEY"),
+                .num_args(1)
+                .value_name("KEY")
+                .exclusive(true),
         )
         .arg(
             Arg::new("SET")
@@ -85,10 +87,9 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("set")
                 .help("Configure a single setting")
                 .required(false)
-                .takes_value(true)
-                .multiple_values(true)
-                .number_of_values(2)
-                .value_names(&["KEY", "VALUE"]),
+                .num_args(2)
+                .value_names(&["KEY", "VALUE"])
+                .exclusive(true),
         )
         .arg(
             Arg::new("ADD")
@@ -96,10 +97,9 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("add")
                 .help("Add an entry to a list")
                 .required(false)
-                .takes_value(true)
-                .multiple_values(true)
-                .number_of_values(2)
-                .value_names(&["KEY", "VALUE"]),
+                .num_args(2)
+                .value_names(&["KEY", "VALUE"])
+                .exclusive(true),
         )
         .arg(
             Arg::new("REMOVE")
@@ -107,10 +107,9 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("remove")
                 .help("Remove an entry from a list")
                 .required(false)
-                .takes_value(true)
-                .multiple_values(true)
-                .number_of_values(2)
-                .value_names(&["KEY", "VALUE"]),
+                .num_args(2)
+                .value_names(&["KEY", "VALUE"])
+                .exclusive(true),
         )
 }
 
@@ -123,16 +122,16 @@ pub async fn main(
     get_rom_directory(connection).await;
     get_tmp_directory(connection).await;
 
-    if matches.is_present("LIST") {
+    if matches.get_flag("LIST") {
         list_settings(connection).await;
-    };
-
-    if matches.is_present("GET") {
-        get_setting(connection, matches.value_of("GET").unwrap()).await;
-    }
-
-    if matches.is_present("SET") {
-        let key_value: Vec<&str> = matches.values_of("SET").unwrap().collect();
+    } else if matches.contains_id("GET") {
+        get_setting(connection, matches.get_one::<String>("GET").unwrap()).await;
+    } else if matches.contains_id("SET") {
+        let key_value: Vec<&str> = matches
+            .get_many::<String>("SET")
+            .unwrap()
+            .map(String::as_str)
+            .collect();
         set_setting(
             connection,
             progress_bar,
@@ -140,20 +139,24 @@ pub async fn main(
             key_value.get(1).unwrap(),
         )
         .await?;
-    }
-
-    if matches.is_present("ADD") {
-        let key_value: Vec<&str> = matches.values_of("ADD").unwrap().collect();
+    } else if matches.contains_id("ADD") {
+        let key_value: Vec<&str> = matches
+            .get_many::<String>("ADD")
+            .unwrap()
+            .map(String::as_str)
+            .collect();
         add_to_list(
             connection,
             key_value.get(0).unwrap(),
             key_value.get(1).unwrap(),
         )
         .await;
-    }
-
-    if matches.is_present("REMOVE") {
-        let key_value: Vec<&str> = matches.values_of("REMOVE").unwrap().collect();
+    } else if matches.contains_id("REMOVE") {
+        let key_value: Vec<&str> = matches
+            .get_many::<String>("REMOVE")
+            .unwrap()
+            .map(String::as_str)
+            .collect();
         remove_from_list(
             connection,
             key_value.get(0).unwrap(),
@@ -183,7 +186,7 @@ async fn set_setting(
     value: &str,
 ) -> SimpleResult<()> {
     if PATHS.contains(&key) {
-        let p = get_canonicalized_path(value).await?;
+        let p = get_canonicalized_path(&value.to_owned()).await?;
         create_directory(progress_bar, &p, false).await?;
         set_directory(connection, key, &p).await;
     } else if BOOLEANS.contains(&key) {
@@ -362,18 +365,18 @@ cfg_if::cfg_if! {
 }
 
 #[cfg(test)]
-mod test_bool;
-#[cfg(test)]
-mod test_list;
-#[cfg(test)]
 mod test_add_to_list;
 #[cfg(test)]
 mod test_add_to_list_already_exists;
 #[cfg(test)]
+mod test_bool;
+#[cfg(test)]
+mod test_directory;
+#[cfg(test)]
+mod test_list;
+#[cfg(test)]
 mod test_remove_from_list;
 #[cfg(test)]
 mod test_remove_from_list_does_not_exist;
-#[cfg(test)]
-mod test_directory;
 #[cfg(test)]
 mod test_set_new_directory_when_old_is_missing;

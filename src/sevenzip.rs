@@ -4,6 +4,7 @@ use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use std::process::Command;
 use std::str::FromStr;
+use std::time::Duration;
 
 pub enum ArchiveType {
     Sevenzip,
@@ -22,7 +23,7 @@ pub fn parse_archive<P: AsRef<Path>>(
 ) -> SimpleResult<Vec<ArchiveInfo>> {
     progress_bar.set_message("Parsing archive");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let output = Command::new("7z")
         .arg("l")
@@ -70,7 +71,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     progress_bar.set_message("Renaming file in archive");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.println(format!(
         "Renaming \"{}\" to \"{}\"",
         file_name, new_file_name
@@ -102,7 +103,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     for &file_name in file_names {
         progress_bar.println(format!("Extracting \"{}\"", file_name));
@@ -137,7 +138,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     progress_bar.set_message("Compressing files");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     for &file_name in file_names {
         progress_bar.println(format!("Compressing \"{}\"", file_name));
@@ -169,7 +170,7 @@ pub fn remove_files_from_archive<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     progress_bar.set_message("Deleting files");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     for &file_name in file_names {
         progress_bar.println(format!("Deleting \"{}\"", file_name));

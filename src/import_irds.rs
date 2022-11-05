@@ -7,45 +7,49 @@ use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::str;
 use std::str::FromStr;
+use std::time::Duration;
 use strsim::jaro_winkler;
 
 const GZIP_MAGIC: &[u8] = &[31, 139];
 const IRD_MAGIC: &[u8] = &[51, 73, 82, 68];
 const IRD_VERSION: u8 = 9;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("import-irds")
         .about("Parse and import PlayStation 3 IRD files into oxyromon")
         .arg(
             Arg::new("IRDS")
                 .help("Set the IRD files to import")
                 .required(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .index(1)
-                .allow_invalid_utf8(true),
+                .value_parser(value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("INFO")
                 .short('i')
                 .long("info")
                 .help("Show the IRD information and exit")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("FORCE")
                 .short('f')
                 .long("force")
                 .help("Force import of already imported IRD files")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -54,11 +58,15 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let ird_paths: Vec<String> = matches.values_of_lossy("IRDS").unwrap();
+    let ird_paths: Vec<&str> = matches
+        .get_many::<String>("IRDS")
+        .unwrap()
+        .map(String::as_str)
+        .collect();
     let system = prompt_for_system_like(
         connection,
         matches
-            .value_of("SYSTEM")
+            .get_one::<String>("SYSTEM")
             .map(|s| FromStr::from_str(s).expect("Failed to parse number")),
         "%PlayStation 3%",
     )
@@ -92,14 +100,14 @@ pub async fn main(
             continue;
         }
 
-        if !matches.is_present("INFO") {
+        if !matches.get_flag("INFO") {
             games.sort_by(|a, b| {
                 jaro_winkler(&b.name, &irdfile.game_name)
                     .partial_cmp(&jaro_winkler(&a.name, &irdfile.game_name))
                     .unwrap()
             });
             if let Some(game) = prompt_for_game(&games)? {
-                if game.jbfolder && !matches.is_present("FORCE") {
+                if game.jbfolder && !matches.get_flag("FORCE") {
                     progress_bar.println("IRD already exists");
                     continue;
                 }
@@ -110,7 +118,7 @@ pub async fn main(
     }
 
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
     update_system_mark_complete(connection, system.id).await;

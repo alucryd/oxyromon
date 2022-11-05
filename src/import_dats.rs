@@ -6,7 +6,8 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use core::time::Duration;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -17,6 +18,7 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
+use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
 
@@ -28,44 +30,48 @@ lazy_static! {
 #[folder = "data/"]
 struct Assets;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("import-dats")
         .about("Parse and import Logiqx DAT files into oxyromon")
         .arg(
             Arg::new("DATS")
                 .help("Set the DAT files to import")
                 .required(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .index(1)
-                .allow_invalid_utf8(true),
+                .value_parser(value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("INFO")
                 .short('i')
                 .long("info")
                 .help("Show the DAT information and exit")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("SKIP_HEADER")
                 .short('s')
                 .long("skip-header")
                 .help("Skip parsing the header even if the system has one")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("FORCE")
                 .short('f')
                 .long("force")
                 .help("Force import of outdated DAT files")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("ARCADE")
                 .short('a')
                 .long("arcade")
                 .help("Enable arcade mode")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -74,24 +80,24 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let dat_paths: Vec<String> = matches.values_of_lossy("DATS").unwrap();
+    let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
 
     for dat_path in dat_paths {
-        progress_bar.println(&format!("Processing \"{}\"", &dat_path));
+        progress_bar.println(&format!("Processing \"{:?}\"", &dat_path));
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
-            matches.is_present("SKIP_HEADER"),
+            matches.get_flag("SKIP_HEADER"),
         )
         .await?;
-        if !matches.is_present("INFO") {
+        if !matches.get_flag("INFO") {
             import_dat(
                 connection,
                 progress_bar,
                 &datfile_xml,
                 &detector_xml,
-                matches.is_present("ARCADE"),
-                matches.is_present("FORCE"),
+                matches.get_flag("ARCADE"),
+                matches.get_flag("FORCE"),
             )
             .await?;
         }
@@ -174,11 +180,10 @@ pub async fn import_dat(
         create_or_update_header(&mut transaction, detector_xml, system_id).await;
     }
 
-    progress_bar.reset();
+    // persist games
     progress_bar.set_style(get_count_progress_style());
     progress_bar.set_length(datfile_xml.games.len() as u64);
 
-    // persist games
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     progress_bar.println("Deleting old games");
     orphan_romfile_ids
@@ -194,6 +199,11 @@ pub async fn import_dat(
         )
         .await?,
     );
+
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.reset();
+
+    // reimport orphan romfiles
     if !orphan_romfile_ids.is_empty() {
         progress_bar.println("Processing orphan romfiles");
         reimport_orphan_romfiles(
@@ -212,13 +222,14 @@ pub async fn import_dat(
     get_trash_directory(&mut transaction, progress_bar, &system).await?;
 
     // update games and systems completion
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(&mut transaction, system.id).await;
     update_games_by_system_id_mark_incomplete(&mut transaction, system.id).await;
     update_system_mark_complete(&mut transaction, system.id).await;
     update_system_mark_incomplete(&mut transaction, system.id).await;
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
 
     commit_transaction(transaction).await;
 
@@ -553,24 +564,24 @@ pub async fn reimport_orphan_romfiles(
 }
 
 #[cfg(test)]
-mod test_regions_world;
-#[cfg(test)]
-mod test_regions_france_germany;
-#[cfg(test)]
 mod test_dat;
-#[cfg(test)]
-mod test_dat_parent_clone;
 #[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
-mod test_dat_headered_embedded;
-#[cfg(test)]
 mod test_dat_headered_duplicate_clrmamepro;
+#[cfg(test)]
+mod test_dat_headered_embedded;
 #[cfg(test)]
 mod test_dat_headered_skipped_header;
 #[cfg(test)]
-mod test_dat_updated;
+mod test_dat_outdated_forced;
 #[cfg(test)]
 mod test_dat_outdated_should_do_nothing;
 #[cfg(test)]
-mod test_dat_outdated_forced;
+mod test_dat_parent_clone;
+#[cfg(test)]
+mod test_dat_updated;
+#[cfg(test)]
+mod test_regions_france_germany;
+#[cfg(test)]
+mod test_regions_world;

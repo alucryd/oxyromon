@@ -15,26 +15,29 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
 use cfg_if::cfg_if;
+use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::ffi::OsString;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::Duration;
 #[cfg(feature = "ird")]
 use walkdir::WalkDir;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("import-roms")
         .about("Validate and import ROM files or directories into oxyromon")
         .arg(
             Arg::new("ROMS")
                 .help("Set the ROM files or directories to import")
                 .required(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .index(1)
-                .allow_invalid_utf8(true),
+                .value_parser(value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("SYSTEM")
@@ -42,7 +45,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("system")
                 .help("Set the system number to use")
                 .required(false)
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
             Arg::new("HASH")
@@ -50,8 +53,8 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("hash")
                 .help("Set the hash algorithm")
                 .required(false)
-                .takes_value(true)
-                .possible_values(HASH_ALGORITHMS.iter()),
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(HASH_ALGORITHMS)),
         )
 }
 
@@ -60,16 +63,16 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let romfile_paths: Vec<String> = matches.values_of_lossy("ROMS").unwrap();
+    let romfile_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("ROMS").unwrap().collect();
     let system = prompt_for_system(
         connection,
         matches
-            .value_of("SYSTEM")
+            .get_one::<String>("SYSTEM")
             .map(|s| FromStr::from_str(s).expect("Failed to parse number")),
     )
     .await?;
     let header = find_header_by_system_id(connection, system.id).await;
-    let hash_algorithm = match matches.value_of("HASH") {
+    let hash_algorithm = match matches.get_one::<String>("HASH").map(String::as_str) {
         Some("CRC") => HashAlgorithm::Crc,
         Some("MD5") => HashAlgorithm::Md5,
         Some(&_) | None => {
@@ -87,7 +90,7 @@ pub async fn main(
     };
 
     for romfile_path in romfile_paths {
-        progress_bar.println(&format!("Processing \"{}\"", &romfile_path));
+        progress_bar.println(&format!("Processing \"{:?}\"", &romfile_path));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
         if romfile_path.is_dir().await {
             cfg_if! {
@@ -143,7 +146,7 @@ pub async fn main(
 
     // mark games and system as complete if they are
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
     cfg_if! {
@@ -1058,29 +1061,29 @@ async fn move_to_trash<P: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_multiple_tracks;
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_multiple_tracks_without_cue_should_fail;
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_single_track;
+#[cfg(all(test, feature = "cso"))]
+mod test_cso;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
 mod test_original_headered;
 #[cfg(test)]
-mod test_zip_single_file;
+mod test_sevenzip_multiple_files_full_game;
+#[cfg(test)]
+mod test_sevenzip_multiple_files_headered_mixed_games;
+#[cfg(test)]
+mod test_sevenzip_multiple_files_mixed_games;
+#[cfg(test)]
+mod test_sevenzip_multiple_files_partial_game;
 #[cfg(test)]
 mod test_sevenzip_single_file;
 #[cfg(test)]
 mod test_sevenzip_single_file_headered;
 #[cfg(test)]
-mod test_sevenzip_multiple_files_full_game;
-#[cfg(test)]
-mod test_sevenzip_multiple_files_partial_game;
-#[cfg(test)]
-mod test_sevenzip_multiple_files_mixed_games;
-#[cfg(test)]
-mod test_sevenzip_multiple_files_headered_mixed_games;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_single_track;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks_without_cue_should_fail;
-#[cfg(all(test, feature = "cso"))]
-mod test_cso;
+mod test_zip_single_file;

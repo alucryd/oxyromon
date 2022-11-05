@@ -12,17 +12,21 @@ pub fn get_progress_bar(length: u64, style: ProgressStyle) -> ProgressBar {
 }
 
 pub fn get_none_progress_style() -> ProgressStyle {
-    ProgressStyle::default_bar().template(NONE_TEMPLATE)
+    ProgressStyle::default_bar()
+        .template(NONE_TEMPLATE)
+        .expect("Failed to create progress bar")
 }
 
 pub fn get_count_progress_style() -> ProgressStyle {
     ProgressStyle::default_bar()
         .template(COUNT_TEMPLATE)
+        .expect("Failed to create progress bar")
         .progress_chars(PROGRESS_CHARS)
 }
 
 pub fn get_bytes_progress_style() -> ProgressStyle {
     ProgressStyle::default_bar()
         .template(BYTES_TEMPLATE)
+        .expect("Failed to create progress bar")
         .progress_chars(PROGRESS_CHARS)
 }
