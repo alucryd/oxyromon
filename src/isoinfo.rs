@@ -5,6 +5,7 @@ use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::process::Command;
+use std::time::Duration;
 
 lazy_static! {
     static ref DIRECTORY_RE: Regex = Regex::new(r"^Directory listing of /(.+)$").unwrap();
@@ -20,7 +21,7 @@ pub fn parse_iso<P: AsRef<Path>>(
 ) -> SimpleResult<Vec<(String, i64, u64)>> {
     progress_bar.set_message("Parsing ISO header");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let output = Command::new("isoinfo")
         .arg("-i")

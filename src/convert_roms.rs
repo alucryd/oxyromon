@@ -13,7 +13,8 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
-use clap::{Arg, ArgMatches, Command};
+use clap::builder::PossibleValuesParser;
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::{HumanBytes, ProgressBar};
 use lazy_static::lazy_static;
 use rayon::prelude::*;
@@ -44,7 +45,7 @@ lazy_static! {
 }
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("convert-roms")
         .about("Convert ROM files between common formats")
         .arg(
@@ -53,8 +54,8 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("format")
                 .help("Set the destination format")
                 .required(false)
-                .takes_value(true)
-                .possible_values(ALL_FORMATS.iter()),
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(ALL_FORMATS.iter())),
         )
         .arg(
             Arg::new("NAME")
@@ -62,21 +63,23 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("name")
                 .help("Select games by name")
                 .required(false)
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
                 .help("Convert all systems/games")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("STATISTICS")
                 .short('s')
                 .long("statistics")
                 .help("Print statistics for each conversion")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -85,20 +88,21 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
-    let game_name = matches.value_of("NAME");
-    let format = match matches.value_of("FORMAT") {
-        Some(format) => format,
+    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
+    let game_name = matches.get_one::<String>("NAME");
+    let format = match matches.get_one::<String>("FORMAT") {
+        Some(format) => format.as_str().to_owned(),
         None => ALL_FORMATS
             .get(select(&ALL_FORMATS, "Please select a format", None, None)?)
+            .map(|&s| s.to_owned())
             .unwrap(),
     };
-    let statistics = matches.is_present("STATISTICS");
+    let statistics = matches.get_flag("STATISTICS");
 
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
 
-        if system.arcade && !ARCADE_FORMATS.contains(&format) {
+        if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
             progress_bar.println(&format!(
                 "Only {:?} are supported for arcade systems",
                 ARCADE_FORMATS
@@ -114,13 +118,13 @@ pub async fn main(
                     system.id,
                 )
                 .await;
-                prompt_for_games(games, matches.is_present("ALL"))?
+                prompt_for_games(games, matches.get_flag("ALL"))?
             }
             None => find_games_with_romfiles_by_system_id(connection, system.id).await,
         };
 
         if games.is_empty() {
-            if matches.is_present("NAME") {
+            if matches.contains_id("NAME") {
                 progress_bar.println(&format!("No game matching \"{}\"", game_name.unwrap()));
             }
             continue;
@@ -152,7 +156,7 @@ pub async fn main(
             .map(|romfile| (romfile.id, romfile))
             .collect();
 
-        match format {
+        match format.as_str() {
             "ORIGINAL" => {
                 to_original(
                     connection,
@@ -1578,49 +1582,49 @@ async fn print_statistics<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_to_cue_bin;
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_to_iso;
+#[cfg(all(test, feature = "chd", feature = "cso"))]
+mod test_cso_to_chd;
+#[cfg(all(test, feature = "cso"))]
+mod test_cso_to_iso;
+#[cfg(all(test, feature = "cso"))]
+mod test_cso_to_sevenzip_iso;
+#[cfg(all(test, feature = "chd"))]
+mod test_cue_bin_to_chd;
+#[cfg(all(test, feature = "chd"))]
+mod test_iso_to_chd;
+#[cfg(all(test, feature = "cso"))]
+mod test_iso_to_cso;
+#[cfg(all(test, feature = "chd", feature = "cso"))]
+mod test_multiple_tracks_chd_to_cso_should_do_nothing;
+#[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
+#[cfg(test)]
+mod test_original_to_sevenzip;
 #[cfg(test)]
 mod test_original_to_zip;
 #[cfg(test)]
 mod test_original_to_zip_with_correct_name;
 #[cfg(test)]
 mod test_original_to_zip_with_incorrect_name;
-#[cfg(test)]
-mod test_zip_to_original;
-#[cfg(test)]
-mod test_original_to_sevenzip;
-#[cfg(test)]
-mod test_sevenzip_to_original;
-#[cfg(test)]
-mod test_zip_to_sevenzip;
-#[cfg(test)]
-mod test_sevenzip_to_zip;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_to_cue_bin;
-#[cfg(all(test, feature = "chd"))]
-mod test_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
-mod test_chd_to_iso;
-#[cfg(all(test, feature = "chd"))]
-mod test_iso_to_chd;
-#[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_iso_to_chd;
-#[cfg(all(test, feature = "chd"))]
-mod test_single_track_chd_to_sevenzip_iso;
-#[cfg(all(test, feature = "chd"))]
-mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
-#[cfg(all(test, feature = "cso"))]
-mod test_cso_to_iso;
-#[cfg(all(test, feature = "cso"))]
-mod test_iso_to_cso;
-#[cfg(all(test, feature = "cso"))]
-mod test_cso_to_sevenzip_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_sevenzip_iso_to_cso;
+#[cfg(test)]
+mod test_sevenzip_to_original;
+#[cfg(test)]
+mod test_sevenzip_to_zip;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_single_track_chd_to_cso;
-#[cfg(all(test, feature = "chd", feature = "cso"))]
-mod test_multiple_tracks_chd_to_cso_should_do_nothing;
-#[cfg(all(test, feature = "chd", feature = "cso"))]
-mod test_cso_to_chd;
+#[cfg(all(test, feature = "chd"))]
+mod test_single_track_chd_to_sevenzip_iso;
+#[cfg(test)]
+mod test_zip_to_original;
+#[cfg(test)]
+mod test_zip_to_sevenzip;

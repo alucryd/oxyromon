@@ -2,22 +2,11 @@ import adapter from "@sveltejs/adapter-static";
 import preprocess from "svelte-preprocess";
 
 /** @type {import('@sveltejs/kit').Config} */
-const config = {
+export default {
   preprocess: preprocess(),
 
   kit: {
-    adapter: adapter({ pages: 'target/assets', fallback: "index.html" }),
-    prerender: { enabled: false },
+    adapter: adapter({ pages: "target/assets", fallback: "index.html" }),
+    prerender: { entries: [] },
   },
 };
-
-/** @type {import('@sveltejs/kit').Handle} */
-export async function handle({ event, resolve }) {
-  const response = await resolve(event, {
-    ssr: false,
-  });
-
-  return response;
-}
-
-export default config;

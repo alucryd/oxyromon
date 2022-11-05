@@ -1,4 +1,3 @@
-use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;

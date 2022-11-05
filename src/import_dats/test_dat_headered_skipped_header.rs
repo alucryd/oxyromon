@@ -1,16 +1,25 @@
+use super::super::config::*;
 use super::super::database::*;
 use super::*;
-use tempfile::NamedTempFile;
+use async_std::path::PathBuf;
+use tempfile::{NamedTempFile, TempDir};
 
 #[async_std::test]
 async fn test() {
     // given
+    let _guard = MUTEX.lock().await;
+
     let test_directory = Path::new("tests");
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    set_rom_directory(PathBuf::from(rom_directory.path()));
+    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    set_tmp_directory(PathBuf::from(tmp_directory.path()));
 
     let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
     let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, true).await.unwrap();

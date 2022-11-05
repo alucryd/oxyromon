@@ -28,7 +28,7 @@ lazy_static! {
 #[folder = "$CARGO_MANIFEST_DIR/target/assets"]
 struct Assets;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("server")
         .about("Launch the backend server")
         .arg(
@@ -37,7 +37,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("address")
                 .help("Specify the server address")
                 .required(false)
-                .takes_value(true)
+                .num_args(1)
                 .default_value("127.0.0.1"),
         )
         .arg(
@@ -46,7 +46,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("port")
                 .help("Specify the server port")
                 .required(false)
-                .takes_value(true)
+                .num_args(1)
                 .default_value("8000"),
         )
 }
@@ -64,8 +64,7 @@ impl System {
 #[ComplexObject]
 impl Game {
     async fn system(&self, ctx: &Context<'_>) -> Result<Option<System>> {
-        ctx
-            .data_unchecked::<DataLoader<SystemLoader>>()
+        ctx.data_unchecked::<DataLoader<SystemLoader>>()
             .load_one(self.system_id)
             .await
     }
@@ -74,8 +73,7 @@ impl Game {
 #[ComplexObject]
 impl Rom {
     async fn game(&self, ctx: &Context<'_>) -> Result<Option<Game>> {
-        ctx
-            .data_unchecked::<DataLoader<GameLoader>>()
+        ctx.data_unchecked::<DataLoader<GameLoader>>()
             .load_one(self.game_id)
             .await
     }
@@ -306,8 +304,8 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
 
             app.at("/graphql").post(async_graphql_tide::graphql(schema));
 
-            let address = matches.value_of("ADDRESS").unwrap();
-            let port = matches.value_of("PORT").unwrap();
+            let address = matches.get_one::<String>("ADDRESS").unwrap();
+            let port = matches.get_one::<String>("PORT").unwrap();
             app.listen(format!("{}:{}", address, port))
                 .await
                 .expect("Failed to run server");

@@ -8,7 +8,7 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use async_std::stream::StreamExt;
 use cfg_if::cfg_if;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
@@ -18,8 +18,9 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::time::Duration;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("sort-roms")
         .about("Sort ROM files according to region and version preferences")
         .arg(
@@ -28,8 +29,7 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("regions")
                 .help("Set the regions to keep (unordered)")
                 .required(false)
-                .takes_value(true)
-                .multiple_values(true),
+                .num_args(1..),
         )
         .arg(
             Arg::new("REGIONS_ONE")
@@ -37,29 +37,31 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .long("1g1r")
                 .help("Set the 1G1R regions to keep (ordered)")
                 .required(false)
-                .takes_value(true)
-                .multiple_values(true),
+                .num_args(1..),
         )
         .arg(
-            Arg::new("MISSING")
-                .short('m')
-                .long("missing")
-                .help("Show missing games")
-                .required(false),
+            Arg::new("WANTED")
+                .short('w')
+                .long("wanted")
+                .help("Show wanted games")
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
                 .help("Sort all systems")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
                 .help("Automatically say yes to prompts")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -68,9 +70,9 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
 
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
@@ -107,8 +109,12 @@ pub async fn get_regions(
     matches: &ArgMatches,
     key: &str,
 ) -> Vec<Region> {
-    let all_regions: Vec<String> = if matches.is_present(key) {
-        let mut regions: Vec<String> = matches.values_of(key).unwrap().map(String::from).collect();
+    let all_regions: Vec<String> = if matches.contains_id(key) {
+        let mut regions: Vec<String> = matches
+            .get_many::<String>(key)
+            .unwrap()
+            .map(String::to_owned)
+            .collect();
         regions.dedup();
         regions
     } else {
@@ -136,7 +142,7 @@ async fn sort_system(
     let mut all_regions_games: Vec<Game> = Vec::new();
     let mut one_region_games: Vec<Game> = Vec::new();
     let mut ignored_games: Vec<Game> = Vec::new();
-    let mut missing_games: Vec<Game> = Vec::new();
+    let mut wanted_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
@@ -202,7 +208,7 @@ async fn sort_system(
                     if game.complete {
                         all_regions_games.push(game);
                     } else {
-                        missing_games.push(game);
+                        wanted_games.push(game);
                     }
                 } else {
                     ignored_games.push(game);
@@ -231,7 +237,7 @@ async fn sort_system(
                 if game.complete {
                     all_regions_games.push(game);
                 } else {
-                    missing_games.push(game);
+                    wanted_games.push(game);
                 }
             } else {
                 ignored_games.push(game);
@@ -252,26 +258,26 @@ async fn sort_system(
             if game.complete {
                 all_regions_games.push(game);
             } else {
-                missing_games.push(game)
+                wanted_games.push(game)
             }
         }
     }
 
-    if matches.is_present("MISSING") {
-        let mut missing_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
+    if matches.get_flag("WANTED") {
+        let mut wanted_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
             connection,
-            &missing_games
+            &wanted_games
                 .par_iter()
                 .map(|game| game.id)
                 .collect::<Vec<i64>>(),
         )
         .await;
 
-        if !missing_roms.is_empty() {
-            progress_bar.println("Missing:");
-            missing_roms.sort_by_key(|rom| rom.game_id);
-            for rom in missing_roms {
-                let game = missing_games
+        if !wanted_roms.is_empty() {
+            progress_bar.println("Wanted:");
+            wanted_roms.sort_by_key(|rom| rom.game_id);
+            for rom in wanted_roms {
+                let game = wanted_games
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
@@ -283,7 +289,7 @@ async fn sort_system(
                 ));
             }
         } else {
-            progress_bar.println("No missing ROMs");
+            progress_bar.println("No wanted ROMs");
         }
     }
 
@@ -337,10 +343,10 @@ async fn sort_system(
         .await?,
     );
 
-    // process missing games
+    // process wanted games
     changes += update_games_sorting(
         &mut transaction,
-        &missing_games
+        &wanted_games
             .iter()
             .map(|game| game.id)
             .collect::<Vec<i64>>(),
@@ -351,7 +357,7 @@ async fn sort_system(
         &mut sort_games(
             &mut transaction,
             system,
-            missing_games,
+            wanted_games,
             &system_directory,
             &romfiles_by_id,
         )
@@ -394,7 +400,7 @@ async fn sort_system(
         }
 
         // prompt user for confirmation
-        if matches.is_present("YES") || confirm(true)? {
+        if matches.get_flag("YES") || confirm(true)? {
             for romfile_move in romfile_moves {
                 rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, true).await?;
                 update_romfile(
@@ -426,7 +432,7 @@ async fn sort_system(
     // update games and systems completion
     if changes > 0 {
         progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(100);
+        progress_bar.enable_steady_tick(Duration::from_millis(100));
         progress_bar.set_message("Computing system completion");
         update_games_by_system_id_mark_incomplete(connection, system.id).await;
         cfg_if! {
@@ -436,6 +442,7 @@ async fn sort_system(
         }
         update_system_mark_complete(connection, system.id).await;
         update_system_mark_incomplete(connection, system.id).await;
+        progress_bar.set_message("");
     }
 
     Ok(())

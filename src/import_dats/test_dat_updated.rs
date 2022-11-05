@@ -17,13 +17,13 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let dat_path = test_directory.join("Test System (20200721).dat");
-    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
-
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
     set_rom_directory(PathBuf::from(rom_directory.path()));
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
     let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+
+    let dat_path = test_directory.join("Test System (20200721).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
     import_dat(
         &mut connection,

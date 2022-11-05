@@ -7,6 +7,7 @@ use async_std::path::{Path, PathBuf};
 use async_std::prelude::*;
 use indicatif::ProgressBar;
 use std::process::Command;
+use std::time::Duration;
 
 pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
@@ -15,7 +16,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating CHD");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let mut chd_path = directory
         .as_ref()
@@ -52,7 +53,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<Vec<PathBuf>> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
         "Extracting {:?}",
@@ -127,7 +128,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting CHD");
     progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(100);
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let cue_path = directory.as_ref().join(format!(
         "{}.{}",

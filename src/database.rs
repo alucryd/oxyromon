@@ -26,7 +26,7 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     let pool = SqlitePoolOptions::new()
         .min_connections(1)
         .max_connections(max_connections)
-        .connect_timeout(Duration::from_secs(5))
+        .acquire_timeout(Duration::from_secs(5))
         .connect(url)
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", url));
@@ -312,6 +312,19 @@ pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) 
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
+pub async fn delete_system_by_id(connection: &mut SqliteConnection, id: i64) {
+    sqlx::query!(
+        "
+        DELETE FROM systems
+        WHERE id = ?
+        ",
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while deleting system with id {}", id));
+}
+
 pub async fn create_game_from_xml(
     connection: &mut SqliteConnection,
     game_xml: &GameXml,
@@ -545,7 +558,6 @@ pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jb
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-#[cfg(test)]
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
@@ -923,7 +935,6 @@ pub async fn update_rom_romfile(
     .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
 }
 
-#[cfg(test)]
 pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     sqlx::query_as!(
         Rom,
@@ -1552,7 +1563,7 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     )
     .execute(connection)
     .await
-    .unwrap_or_else(|_| panic!("Error while deleting setting with id {}", id));
+    .unwrap_or_else(|_| panic!("Error while deleting romfile with id {}", id));
 }
 
 pub async fn delete_romfiles_without_rom(connection: &mut SqliteConnection) {

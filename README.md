@@ -13,6 +13,23 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 Both console and arcade (WIP) systems are supported using Logiqx DAT files.
 The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
 
+### Quick start
+
+To create and manage a new system, you need a Logiqx DAT file.
+Cartridge based consoles and computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
+CD based ones can be downloaded from [Redump](http://redump.org/).
+Alternatively the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
+Arcade DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
+
+Manually downloaded DATs are then imported using the `import-dats` subcommand.
+Once a system has been created, you can start importing ROMs using the `import-roms` subcommand.
+Imported ROMs that check out will be placed in the main folder of their respective system.
+They can then be sorted using the `sort-roms` subcommand according to your configuration.
+Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list beforehand.
+See configuration below.
+
+You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or find manually deleted ROMs.
+
 ### Compilation
 
 The CLI has no specific requirement, you can just:
@@ -62,6 +79,20 @@ Available settings:
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
+Example configuration:
+
+```
+oxyromon config -l
+
+DISCARD_FLAGS = Aftermarket,Debug
+DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
+HASH_ALGORITHM = CRC
+REGIONS_ALL = US,EU,JP
+REGIONS_ONE = US,EU
+ROM_DIRECTORY = /home/alucryd/Emulation
+TMP_DIRECTORY = /tmp
+```
+
 ### Directory Layout
 
     ${ROM_DIRECTORY}
@@ -83,6 +114,7 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
+- Remove the ROM original extension from archives, it makes RetroArch name saves differently between imported and non imported ROMs
 - Automatically create m3u files for multi-discs games
 - Add actions to the web UI
 - Add an optional check of the ROMs after conversion
@@ -97,27 +129,27 @@ These should be in your `${PATH}` for extra features.
 
 ## oxyromon
 
-    USAGE:
-        oxyromon [SUBCOMMAND]
+    Usage: oxyromon [COMMAND]
 
-    OPTIONS:
-        -h, --help       Print help information
-        -V, --version    Print version information
+    Commands:
+    config         Query and modify the oxyromon settings
+    import-dats    Parse and import Logiqx DAT files into oxyromon
+    download-dats  Download No-Intro and Redump DAT files and import them into oxyromon
+    import-roms    Validate and import ROM files or directories into oxyromon
+    sort-roms      Sort ROM files according to region and version preferences
+    convert-roms   Convert ROM files between common formats
+    rebuild-roms   Rebuild arcade ROM sets according to the selected strategy
+    check-roms     Check ROM files integrity
+    purge-roms     Purge trashed, missing and orphan ROM files
+    purge-systems  Purge systems
+    import-irds    Parse and import PlayStation 3 IRD files into oxyromon
+    benchmark      Benchmark oxyromon
+    server         Launch the backend server
+    help           Print this message or the help of the given subcommand(s)
 
-    SUBCOMMANDS:
-        help             Print this message or the help of the given subcommand(s)
-        config           Query and modify the oxyromon settings
-        import-dats      Parse and import Logiqx DAT files into oxyromon
-        download-dats    Download No-Intro and Redump DAT files and import them into oxyromon
-        import-irds      Parse and import PlayStation 3 IRD files into oxyromon
-        import-roms      Validate and import ROM files into oxyromon
-        sort-roms        Sort ROM files according to region and version preferences
-        rebuild-roms     Rebuild arcade ROM sets according to the selected strategy
-        convert-roms     Convert ROM files between common formats
-        check-roms       Check ROM files integrity
-        purge-roms       Purge trashed, missing and orphan ROM files
-        server           Launch the backend server
-        benchmark        Benchmark oxyromon
+    Options:
+    -h, --help     Print help information
+    -V, --version  Print version information
 
 ## oxyromon-config
 
@@ -125,16 +157,15 @@ Query and modify the oxyromon settings
 
 The settings can be queried, modified and deleted from the command line.
 
-    USAGE:
-        oxyromon config [OPTIONS]
+    Usage: oxyromon config [OPTIONS]
 
-    OPTIONS:
-        -a, --add <KEY> <VALUE>       Add an entry to a list
-        -g, --get <KEY>               Print a single setting
-        -h, --help                    Print help information
-        -l, --list                    Print the whole configuration
-        -r, --remove <KEY> <VALUE>    Remove an entry from a list
-        -s, --set <KEY> <VALUE>       Configure a single setting
+    Options:
+    -l, --list                  Print the whole configuration
+    -g, --get <KEY>             Print a single setting
+    -s, --set <KEY> <VALUE>     Configure a single setting
+    -a, --add <KEY> <VALUE>     Add an entry to a list
+    -r, --remove <KEY> <VALUE>  Remove an entry from a list
+    -h, --help                  Print help information
 
 ## oxyromon-import-dats
 
@@ -155,18 +186,17 @@ Supported arcade DAT providers:
 Note: Some systems require a header definition to be placed alongside the DAT file.
 If not provided, oxyromon will use its own fallback header definition.
 
-    USAGE:
-        oxyromon import-dats [OPTIONS] <DATS>...
+    Usage: oxyromon import-dats [OPTIONS] <DATS>...
 
-    ARGS:
-        <DATS>...    Set the DAT files to import
+    Arguments:
+    <DATS>...  Set the DAT files to import
 
-    OPTIONS:
-        -a, --arcade         Enable arcade mode
-        -f, --force          Force import of outdated DAT files
-        -h, --help           Print help information
-        -i, --info           Show the DAT information and exit
-        -s, --skip-header    Skip parsing the header even if the system has one
+    Options:
+    -i, --info         Show the DAT information and exit
+    -s, --skip-header  Skip parsing the header even if the system has one
+    -f, --force        Force import of outdated DAT files
+    -a, --arcade       Enable arcade mode
+    -h, --help         Print help information
 
 ## oxyromon-download-dats
 
@@ -182,16 +212,15 @@ Supported DAT providers:
 - Redump (Download and update)
 - No-Intro (Update check only)
 <!-- -->
-    USAGE:
-        oxyromon download-dats [OPTIONS]
+    Usage: oxyromon download-dats [OPTIONS]
 
-    OPTIONS:
-        -a, --all Import all systems
-        -f, --force Force import of outdated DAT files
-        -h, --help Print help information
-        -n, --nointro Download No-Intro DAT files
-        -r, --redump Download Redump DAT files
-        -u, --update Check for system updates
+    Options:
+    -n, --nointro  Download No-Intro DAT files
+    -r, --redump   Download Redump DAT files
+    -u, --update   Check for system updates
+    -a, --all      Import all systems
+    -f, --force    Force import of outdated DAT files
+    -h, --help     Print help information
 
 ## oxyromon-import-irds
 
@@ -202,16 +231,15 @@ Games will be considered complete, as far as oxyromon goes, even if you don't ha
 
 Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
 
-    USAGE:
-        oxyromon import-irds [OPTIONS] <IRDS>...
+    Usage: oxyromon import-irds [OPTIONS] <IRDS>...
 
-    ARGS:
-        <IRDS>...    Set the IRD files to import
+    Arguments:
+    <IRDS>...  Set the IRD files to import
 
-    OPTIONS:
-        -f, --force    Force import of already imported IRD files
-        -h, --help     Print help information
-        -i, --info     Show the IRD information and exit
+    Options:
+    -i, --info   Show the IRD information and exit
+    -f, --force  Force import of already imported IRD files
+    -h, --help   Print help information
 
 ## oxyromon-import-roms
 
@@ -237,15 +265,15 @@ Supported arcade ROM formats:
 
 Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
 
-    USAGE:
-        oxyromon import-roms [OPTIONS] <ROMS>...
+    Usage: oxyromon import-roms [OPTIONS] <ROMS>...
 
-    ARGS:
-        <ROMS>...    Set the ROM files or directories to import
+    Arguments:
+    <ROMS>...  Set the ROM files or directories to import
 
-    OPTIONS:
-        -h, --help               Print help information
-        -s, --system <SYSTEM>    Set the system number to use
+    Options:
+    -s, --system <SYSTEM>  Set the system number to use
+    -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
+    -h, --help             Print help information
 
 ## oxyromon-sort-roms
 
@@ -283,19 +311,17 @@ actually play, while keeping original Japanese games for translation patches and
 
 The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention).
 
-    USAGE:
-        oxyromon sort-roms [OPTIONS]
+    Usage: oxyromon sort-roms [OPTIONS]
 
-    OPTIONS:
-        -a, --all                         Sorts all systems
-        -g, --1g1r <REGIONS_ONE>...       Sets the 1G1R regions to keep (ordered)
-        -h, --help                        Print help information
-        -m, --missing                     Shows missing games
-        -r, --regions <REGIONS_ALL>...    Sets the regions to keep (unordered)
-        -y, --yes                         Automatically says yes to prompts
+    Options:
+    -r, --regions <REGIONS_ALL>...  Set the regions to keep (unordered)
+    -g, --1g1r <REGIONS_ONE>...     Set the 1G1R regions to keep (ordered)
+    -m, --missing                   Show missing games
+    -a, --all                       Sort all systems
+    -y, --yes                       Automatically say yes to prompts
+    -h, --help                      Print help information
 
-    EXAMPLE:
-        oxyromon sort-roms -g US EU -r US EU JP
+    Example: oxyromon sort-roms -g US EU -r US EU JP
 
 ## oxyromon-rebuild-roms
 
@@ -310,14 +336,13 @@ Supported merging strategies:
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
 - ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
 <!-- -->
-    USAGE:
-        oxyromon rebuild-roms [OPTIONS]
+    Usage: oxyromon rebuild-roms [OPTIONS]
 
-    OPTIONS:
-        -a, --all Rebuild all arcade systems
-        -h, --help Print help information
-        -m, --merging <MERGING> Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-        -y, --yes Automatically say yes to prompts
+    Options:
+    -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+    -a, --all                Rebuild all arcade systems
+    -y, --yes                Automatically say yes to prompts
+    -h, --help               Print help information
 
 ## oxyromon-convert-roms
 
@@ -337,15 +362,14 @@ Supported ROM formats:
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
-    USAGE:
-        oxyromon convert-roms [OPTIONS]
+    Usage: oxyromon convert-roms [OPTIONS]
 
-    OPTIONS:
-        -a, --all                Convert all systems/games
-        -f, --format <FORMAT>    Set the destination format [possible values: 7Z, CHD, CSO, ORIGINAL, ZIP]
-        -h, --help               Print help information
-        -n, --name <NAME>        Select games by name
-        -s, --statistics         Print statistics for each conversion
+    Options:
+    -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+    -n, --name <NAME>      Select games by name
+    -a, --all              Convert all systems/games
+    -s, --statistics       Print statistics for each conversion
+    -h, --help             Print help information
 
 ## oxyromon-check-roms
 
@@ -369,15 +393,25 @@ Purge trashed, missing and orphan ROM files
 This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
 with a ROM, as well as physically delete all files in the `Trash` subdirectories.
 
-    USAGE:
-        oxyromon purge-roms [OPTIONS]
+    Usage: oxyromon purge-roms [OPTIONS]
 
-    OPTIONS:
-        -h, --help       Print help information
-        -m, --missing    Delete missing ROM files from the database
-        -o, --orphan     Delete ROM files without an associated ROM from the database
-        -t, --trash      Physically delete ROM files from the trash directories
-        -y, --yes        Automatically say yes to prompts
+    Options:
+    -m, --missing  Delete missing ROM files from the database
+    -o, --orphan   Delete ROM files without an associated ROM from the database
+    -t, --trash    Physically delete ROM files from the trash directories
+    -y, --yes      Automatically say yes to prompts
+    -h, --help     Print help information
+
+## oxyromon-purge-systems
+
+Purge systems
+
+This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterwards.
+
+    Usage: oxyromon purge-systems
+
+    Options:
+    -h, --help  Print help information
 
 ## oxyromon-server
 
@@ -385,13 +419,12 @@ Launch the backend server
 
 The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI is also exposed at `/`.
 
-    USAGE:
-        oxyromon server [OPTIONS]
+    Usage: oxyromon server [OPTIONS]
 
-    OPTIONS:
-        -a, --address <ADDRESS>    Specify the server address [default: 127.0.0.1]
-        -h, --help                 Print help information
-        -p, --port <PORT>          Specify the server port [default: 8000]
+    Options:
+    -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
+    -p, --port <PORT>        Specify the server port [default: 8000]
+    -h, --help               Print help information
 
 ## oxyromon-benchmark
 
@@ -401,10 +434,8 @@ Gives some idea about the various read/write performance of the ROM and TMP dire
 It will also rank checksum algorithms, typically CRC should be the fastest, followed by SHA1, and then MD5.
 Your mileage may vary depending on your architecture.
 
-    USAGE:
-        oxyromon benchmark [OPTIONS]
+    Usage: oxyromon benchmark [OPTIONS]
 
-    OPTIONS:
-        -c, --chunk-size <CHUNK_SIZE>    Set the chunk size in KB for read and writes (Default: 256)
-                                        [default: 256]
-        -h, --help                       Print help information
+    Options:
+    -c, --chunk-size <CHUNK_SIZE>  Set the chunk size in KB for read and writes (Default: 256) [default: 256]
+    -h, --help                     Print help information

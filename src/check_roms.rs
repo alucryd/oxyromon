@@ -14,14 +14,15 @@ use super::sevenzip;
 use super::util::*;
 use async_std::path::Path;
 use cfg_if::cfg_if;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::time::Duration;
 
-pub fn subcommand<'a>() -> Command<'a> {
+pub fn subcommand() -> Command {
     Command::new("check-roms")
         .about("Check ROM files integrity")
         .arg(
@@ -29,14 +30,16 @@ pub fn subcommand<'a>() -> Command<'a> {
                 .short('a')
                 .long("all")
                 .help("Check all systems")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("SIZE")
                 .short('s')
                 .long("size")
                 .help("Recalculate ROM file sizes")
-                .required(false),
+                .required(false)
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -45,7 +48,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.is_present("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
     let hash_algorithm = match find_setting_by_key(connection, "HASH_ALGORITHM")
         .await
         .unwrap()
@@ -63,7 +66,7 @@ pub async fn main(
             connection,
             progress_bar,
             &system,
-            matches.is_present("SIZE"),
+            matches.get_flag("SIZE"),
             &hash_algorithm,
         )
         .await?;
@@ -196,7 +199,7 @@ async fn check_system(
     // update games and systems completion
     if errors > 0 {
         progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(100);
+        progress_bar.enable_steady_tick(Duration::from_millis(100));
         progress_bar.set_message("Computing system completion");
         update_games_by_system_id_mark_incomplete(connection, system.id).await;
         cfg_if! {
@@ -457,23 +460,23 @@ async fn move_to_trash(
     Ok(())
 }
 
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_multiple_tracks;
+#[cfg(all(test, feature = "chd"))]
+mod test_chd_single_track;
+#[cfg(all(test, feature = "cso"))]
+mod test_cso;
 #[cfg(test)]
 mod test_original;
-#[cfg(test)]
-mod test_original_with_header;
 #[cfg(test)]
 mod test_original_crc_mismatch;
 #[cfg(test)]
 mod test_original_size_mismatch;
+#[cfg(test)]
+mod test_original_with_header;
 #[cfg(test)]
 mod test_sevenzip;
 #[cfg(test)]
 mod test_sevenzip_with_header;
 #[cfg(test)]
 mod test_zip;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_single_track;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks;
-#[cfg(all(test, feature = "cso"))]
-mod test_cso;
