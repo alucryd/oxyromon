@@ -92,7 +92,7 @@ pub struct Rom {
     pub parent_id: Option<i64>,
 }
 
-#[derive(FromRow, PartialEq)]
+#[derive(FromRow, PartialEq, Eq)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct Romfile {
     pub id: i64,

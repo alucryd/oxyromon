@@ -839,7 +839,7 @@ async fn to_chd(
 
         // skip if not ISO or CUE/BIN
         if file_names.len() == 1 {
-            if !file_names.get(0).unwrap().ends_with(ISO_EXTENSION) {
+            if !file_names.first().unwrap().ends_with(ISO_EXTENSION) {
                 continue;
             }
         } else {
