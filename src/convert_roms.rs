@@ -348,14 +348,13 @@ async fn to_archive(
                         &tmp_directory.path(),
                     )
                     .await?;
-                    let archive_path = Path::new(&romfile.path).parent().unwrap().join(format!(
-                        "{}.{}",
-                        &rom.name,
+                    let mut archive_path = Path::new(&romfile.path).to_path_buf();
+                    archive_path.set_extension(
                         match archive_type {
                             sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                             sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                         }
-                    ));
+                    );
                     sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_path,
@@ -464,14 +463,13 @@ async fn to_archive(
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
-                let archive_path = Path::new(&romfile.path).parent().unwrap().join(format!(
-                    "{}.{}",
-                    &rom.name,
+                let mut archive_path = Path::new(&romfile.path).to_path_buf();
+                archive_path.set_extension(
                     match archive_type {
                         sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                         sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                     }
-                ));
+                );
 
                 sevenzip::add_files_to_archive(
                     progress_bar,
@@ -513,14 +511,13 @@ async fn to_archive(
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let iso_path = dolphin::extract_rvz(progress_bar, &romfile.path, &tmp_directory.path())?;
-                let archive_path = Path::new(&romfile.path).parent().unwrap().join(format!(
-                    "{}.{}",
-                    &rom.name,
+                let mut archive_path = Path::new(&romfile.path).to_path_buf();
+                archive_path.set_extension(
                     match archive_type {
                         sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                         sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                     }
-                ));
+                );
 
                 sevenzip::add_files_to_archive(
                     progress_bar,
@@ -637,17 +634,18 @@ async fn to_archive(
         if roms.len() == 1 && !system.arcade {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let directory = Path::new(&romfile.path).parent().unwrap();
-            let archive_path = directory.join(format!(
-                "{}.{}",
-                &rom.name,
-                match archive_type {
-                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                }
-            ));
+            let mut archive_path = Path::new(&romfile.path).to_path_buf();
+            archive_path.set_extension(match archive_type {
+                sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+            });
 
-            sevenzip::add_files_to_archive(progress_bar, &archive_path, &[&rom.name], &directory)?;
+            sevenzip::add_files_to_archive(
+                progress_bar,
+                &archive_path,
+                &[&rom.name],
+                &archive_path.parent().unwrap(),
+            )?;
             update_romfile(
                 &mut transaction,
                 romfile.id,

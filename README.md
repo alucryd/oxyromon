@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.12.0
+# oxyROMon 0.13.0
 
 ### Rusty ROM OrgaNizer
 
@@ -114,7 +114,6 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Remove the ROM original extension from archives, it makes RetroArch name saves differently between imported and non imported ROMs
 - Automatically create m3u files for multi-discs games
 - Add actions to the web UI
 - Add an optional check of the ROMs after conversion

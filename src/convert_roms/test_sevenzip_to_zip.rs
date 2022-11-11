@@ -83,7 +83,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).rom.zip")
+            .join("Test Game (USA, Europe).zip")
             .as_os_str()
             .to_str()
             .unwrap(),

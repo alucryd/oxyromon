@@ -518,15 +518,16 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                         .to_str()
                         .unwrap()
                         .to_lowercase();
-                    system_directory.as_ref().join(format!(
-                        "{}.{}",
-                        if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
-                            &game.name
-                        } else {
-                            &rom.name
-                        },
-                        &romfile_extension
-                    ))
+                    let mut archive_path;
+                    if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
+                        archive_path = system_directory
+                            .as_ref()
+                            .join(format!("{}.{}", &game.name, &romfile_extension));
+                    } else {
+                        archive_path = system_directory.as_ref().join(&rom.name);
+                        archive_path.set_extension(romfile_extension);
+                    }
+                    archive_path
                 }
                 _ => system_directory
                     .as_ref()
