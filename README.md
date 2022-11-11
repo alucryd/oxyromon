@@ -339,6 +339,7 @@ Supported merging strategies:
 
     Options:
     -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+    -s, --solid              Create solid 7z archives
     -a, --all                Rebuild all arcade systems
     -y, --yes                Automatically say yes to prompts
     -h, --help               Print help information
@@ -365,9 +366,10 @@ Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
     Options:
     -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+    -s, --solid            Create solid 7z archives
     -n, --name <NAME>      Select games by name
     -a, --all              Convert all systems/games
-    -s, --statistics       Print statistics for each conversion
+    -d, --diff             Print size differences
     -h, --help             Print help information
 
 ## oxyromon-check-roms

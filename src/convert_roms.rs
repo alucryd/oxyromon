@@ -58,6 +58,14 @@ pub fn subcommand() -> Command {
                 .value_parser(PossibleValuesParser::new(ALL_FORMATS.iter())),
         )
         .arg(
+            Arg::new("SOLID")
+                .short('s')
+                .long("solid")
+                .help("Create solid 7z archives")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("NAME")
                 .short('n')
                 .long("name")
@@ -74,10 +82,10 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("STATISTICS")
-                .short('s')
-                .long("statistics")
-                .help("Print statistics for each conversion")
+            Arg::new("DIFF")
+                .short('d')
+                .long("diff")
+                .help("Print size differences")
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
@@ -97,7 +105,7 @@ pub async fn main(
             .map(|&s| s.to_owned())
             .unwrap(),
     };
-    let statistics = matches.get_flag("STATISTICS");
+    let diff = matches.get_flag("DIFF");
 
     for system in systems {
         progress_bar.println(&format!("Processing \"{}\"", system.name));
@@ -176,7 +184,8 @@ pub async fn main(
                     roms_by_game_id,
                     games_by_id,
                     romfiles_by_id,
-                    statistics,
+                    diff,
+                    matches.get_flag("SOLID"),
                 )
                 .await?
             }
@@ -189,7 +198,8 @@ pub async fn main(
                     roms_by_game_id,
                     games_by_id,
                     romfiles_by_id,
-                    statistics,
+                    diff,
+                    false,
                 )
                 .await?
             }
@@ -201,7 +211,7 @@ pub async fn main(
                             progress_bar,
                             roms_by_game_id,
                             romfiles_by_id,
-                            statistics,
+                            diff,
                         )
                         .await?
                     }
@@ -215,7 +225,7 @@ pub async fn main(
                             progress_bar,
                             roms_by_game_id,
                             romfiles_by_id,
-                            statistics,
+                            diff,
                         )
                         .await?
                     }
@@ -229,7 +239,7 @@ pub async fn main(
                             progress_bar,
                             roms_by_game_id,
                             romfiles_by_id,
-                            statistics,
+                            diff,
                         )
                         .await?
                     }
@@ -252,7 +262,8 @@ async fn to_archive(
     mut roms_by_game_id: HashMap<i64, Vec<Rom>>,
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
-    statistics: bool,
+    diff: bool,
+    solid: bool,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -360,6 +371,7 @@ async fn to_archive(
                         &archive_path,
                         &[bin_path.file_name().unwrap().to_str().unwrap()],
                         &tmp_directory.path(),
+                        solid,
                     )?;
                     update_romfile(
                         &mut transaction,
@@ -369,8 +381,8 @@ async fn to_archive(
                     )
                     .await;
 
-                    if statistics {
-                        print_statistics(
+                    if diff {
+                        print_diff(
                             progress_bar,
                             &roms.iter().collect::<Vec<&Rom>>(),
                             &[&romfile.path],
@@ -414,6 +426,7 @@ async fn to_archive(
                         &archive_path,
                         &[&cue_rom.name],
                         &archive_path.parent().unwrap(),
+                        solid,
                     )?;
                     let bin_names: Vec<&str> = bin_paths
                         .iter()
@@ -424,6 +437,7 @@ async fn to_archive(
                         &archive_path,
                         &bin_names,
                         &tmp_directory.path(),
+                        solid,
                     )?;
                     update_romfile(
                         &mut transaction,
@@ -435,8 +449,8 @@ async fn to_archive(
                     update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
                     delete_romfile_by_id(&mut transaction, cue_romfile.id).await;
 
-                    if statistics {
-                        print_statistics(
+                    if diff {
+                        print_diff(
                             progress_bar,
                             &roms.iter().collect::<Vec<&Rom>>(),
                             &[&cue_romfile.path, &chd_romfile.path],
@@ -476,6 +490,7 @@ async fn to_archive(
                     &archive_path,
                     &[iso_path.file_name().unwrap().to_str().unwrap()],
                     &tmp_directory.path(),
+                    solid,
                 )?;
                 update_romfile(
                     &mut transaction,
@@ -485,8 +500,8 @@ async fn to_archive(
                 )
                 .await;
 
-                if statistics {
-                    print_statistics(
+                if diff {
+                    print_diff(
                         progress_bar,
                         &roms.iter().collect::<Vec<&Rom>>(),
                         &[&romfile.path],
@@ -524,6 +539,7 @@ async fn to_archive(
                     &archive_path,
                     &[iso_path.file_name().unwrap().to_str().unwrap()],
                     &tmp_directory.path(),
+                    solid,
                 )?;
                 update_romfile(
                     &mut transaction,
@@ -533,8 +549,8 @@ async fn to_archive(
                 )
                 .await;
 
-                if statistics {
-                    print_statistics(
+                if diff {
+                    print_diff(
                         progress_bar,
                         &roms.iter().collect::<Vec<&Rom>>(),
                         &[&romfile.path],
@@ -575,6 +591,7 @@ async fn to_archive(
                 &archive_path,
                 &[&rom.name],
                 &tmp_directory.path(),
+                solid,
             )?;
             update_romfile(
                 &mut transaction,
@@ -614,6 +631,7 @@ async fn to_archive(
                 &archive_path,
                 &rom_names,
                 &tmp_directory.path(),
+                solid,
             )?;
             update_romfile(
                 &mut transaction,
@@ -645,6 +663,7 @@ async fn to_archive(
                 &archive_path,
                 &[&rom.name],
                 &archive_path.parent().unwrap(),
+                solid,
             )?;
             update_romfile(
                 &mut transaction,
@@ -654,8 +673,8 @@ async fn to_archive(
             )
             .await;
 
-            if statistics {
-                print_statistics(
+            if diff {
+                print_diff(
                     progress_bar,
                     &roms.iter().collect::<Vec<&Rom>>(),
                     &[&romfile.path],
@@ -699,7 +718,13 @@ async fn to_archive(
                 false => directory.join(&archive_name),
             };
 
-            sevenzip::add_files_to_archive(progress_bar, &archive_path, &rom_names, &directory)?;
+            sevenzip::add_files_to_archive(
+                progress_bar,
+                &archive_path,
+                &rom_names,
+                &directory,
+                solid,
+            )?;
             let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
                 archive_path.as_os_str().to_str().unwrap(),
@@ -717,12 +742,12 @@ async fn to_archive(
                 }
             };
 
-            if statistics {
+            if diff {
                 let old_paths = rom_names
                     .iter()
                     .map(|&rom_name| directory.join(rom_name))
                     .collect::<Vec<PathBuf>>();
-                print_statistics(
+                print_diff(
                     progress_bar,
                     &roms.iter().collect::<Vec<&Rom>>(),
                     &old_paths.iter().collect::<Vec<&PathBuf>>(),
@@ -756,7 +781,7 @@ async fn to_chd(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-    statistics: bool,
+    diff: bool,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -877,12 +902,12 @@ async fn to_chd(
             )?,
         };
 
-        if statistics {
+        if diff {
             let mut new_paths = vec![&chd_path];
             if let Some(cue_path) = cue_paths.get(0) {
                 new_paths.push(cue_path)
             }
-            print_statistics(
+            print_diff(
                 progress_bar,
                 &roms.iter().collect::<Vec<&Rom>>(),
                 &[&romfile.path],
@@ -941,7 +966,7 @@ async fn to_chd(
             &cue_romfile.path,
             &Path::new(&cue_romfile.path).parent().unwrap(),
         )?;
-        if statistics {
+        if diff {
             let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
             let mut romfile_paths = romfiles_by_id
                 .iter()
@@ -949,7 +974,7 @@ async fn to_chd(
                 .map(|(_, v)| &v.path)
                 .collect::<Vec<&String>>();
             romfile_paths.push(&cue_romfile.path);
-            print_statistics(progress_bar, &roms, &romfile_paths, &[&chd_path]).await?;
+            print_diff(progress_bar, &roms, &romfile_paths, &[&chd_path]).await?;
         }
         let chd_romfile_id = create_romfile(
             &mut transaction,
@@ -978,8 +1003,8 @@ async fn to_chd(
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
-            if statistics {
-                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -1008,8 +1033,8 @@ async fn to_chd(
                         &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
                     )?;
-                    if statistics {
-                        print_statistics(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
+                    if diff {
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
                     }
                     update_romfile(
                         &mut transaction,
@@ -1035,7 +1060,7 @@ async fn to_cso(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-    statistics: bool,
+    diff: bool,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -1116,8 +1141,8 @@ async fn to_cso(
             &Path::new(&romfile.path).parent().unwrap(),
         )?;
 
-        if statistics {
-            print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+        if diff {
+            print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
         }
 
         update_romfile(
@@ -1143,8 +1168,8 @@ async fn to_cso(
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
-            if statistics {
-                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -1177,8 +1202,8 @@ async fn to_cso(
                         &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
                     )?;
-                    if statistics {
-                        print_statistics(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+                    if diff {
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
                     }
                     update_romfile(
                         &mut transaction,
@@ -1204,7 +1229,7 @@ async fn to_rvz(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-    statistics: bool,
+    diff: bool,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -1268,8 +1293,8 @@ async fn to_rvz(
             &Path::new(&romfile.path).parent().unwrap(),
         )?;
 
-        if statistics {
-            print_statistics(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
+        if diff {
+            print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
         }
 
         update_romfile(
@@ -1295,8 +1320,8 @@ async fn to_rvz(
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
             )?;
-            if statistics {
-                print_statistics(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
             }
             update_romfile(
                 &mut transaction,
@@ -1546,7 +1571,7 @@ async fn to_original(
     Ok(())
 }
 
-async fn print_statistics<P: AsRef<Path>, Q: AsRef<Path>>(
+async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     roms: &[&Rom],
     old_files: &[&P],
