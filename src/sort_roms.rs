@@ -591,7 +591,7 @@ async fn compute_new_path<P: AsRef<Path>>(
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str())
         || romfile_extension == CHD_EXTENSION
         || romfile_extension == CSO_EXTENSION
-        || PS3_EXTENSIONS.contains(&romfile_extension.as_str())
+        || PS3_EXTENSIONS.contains(&romfile_extension.as_str()) && !game.jbfolder
         || romfile_extension == RVZ_EXTENSION
     {
         new_romfile_path = directory
