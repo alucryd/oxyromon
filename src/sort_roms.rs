@@ -72,8 +72,6 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
 
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
@@ -136,6 +134,7 @@ async fn sort_system(
     ignored_releases: &[&str],
     ignored_flags: &[&str],
 ) -> SimpleResult<()> {
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
@@ -385,6 +384,8 @@ async fn sort_system(
         .await?,
     );
 
+    progress_bar.disable_steady_tick();
+
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
@@ -427,6 +428,7 @@ async fn sort_system(
         }
     } else {
         commit_transaction(transaction).await;
+        progress_bar.println("Nothing to do");
     }
 
     // update games and systems completion
@@ -443,6 +445,7 @@ async fn sort_system(
         update_system_mark_complete(connection, system.id).await;
         update_system_mark_incomplete(connection, system.id).await;
         progress_bar.set_message("");
+        progress_bar.disable_steady_tick();
     }
 
     Ok(())
