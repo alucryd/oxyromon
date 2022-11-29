@@ -1053,12 +1053,25 @@ async fn move_to_trash<P: AsRef<Path>>(
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
-    create_romfile(
-        connection,
-        new_path.as_os_str().to_str().unwrap(),
-        new_path.metadata().await.unwrap().len(),
-    )
-    .await;
+    match find_romfile_by_path(connection, &new_path.as_os_str().to_str().unwrap()).await {
+        Some(romfile) => {
+            update_romfile(
+                connection,
+                romfile.id,
+                new_path.as_os_str().to_str().unwrap(),
+                new_path.metadata().await.unwrap().len(),
+            )
+            .await;
+        }
+        None => {
+            create_romfile(
+                connection,
+                new_path.as_os_str().to_str().unwrap(),
+                new_path.metadata().await.unwrap().len(),
+            )
+            .await;
+        }
+    }
     Ok(())
 }
 

@@ -306,10 +306,17 @@ async fn create_or_update_games(
             system_id,
         )
         .await;
-        let regions = match arcade {
-            false => get_regions_from_game_name(&game_xml.name).unwrap(),
-            true => String::new(),
-        };
+        let mut regions = String::new();
+        if !arcade {
+            match get_regions_from_game_name(&game_xml.name) {
+                Ok(s) => regions.push_str(&s),
+                Err(err) => {
+                    progress_bar.println(err.as_str());
+                    progress_bar.inc(1);
+                    continue;
+                }
+            }
+        }
         let game_id = match game {
             Some(game) => {
                 update_game_from_xml(
@@ -376,10 +383,17 @@ async fn create_or_update_games(
                 }
                 None => None,
             };
-            let regions = match arcade {
-                false => get_regions_from_game_name(&game_xml.name).unwrap(),
-                true => String::new(),
-            };
+            let mut regions = String::new();
+            if !arcade {
+                match get_regions_from_game_name(&game_xml.name) {
+                    Ok(s) => regions.push_str(&s),
+                    Err(err) => {
+                        progress_bar.println(err.as_str());
+                        progress_bar.inc(1);
+                        continue;
+                    }
+                }
+            }
             let game_id = match game {
                 Some(game) => {
                     update_game_from_xml(

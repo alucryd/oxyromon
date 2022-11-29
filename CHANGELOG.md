@@ -2,6 +2,9 @@
 - Remove the ROM original extension from archives, it makes RetroArch name its saves differently between imported and non imported games
 - Fix the `sort-roms` prompt to proceed
 - Allow creating solid 7z archives
+- Skip games with unparseable names in `import-dats`
+- Fix successive import of invalid ROMs with the same name in `import-roms`
+- Greatly speed up `purge-systems`
 
 # 0.12.0
 - Change `--missing` to `--wanted` in `sort-roms` to avoid confusion with the same `purge-roms` flag
