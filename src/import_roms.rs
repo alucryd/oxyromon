@@ -518,15 +518,16 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
                         .to_str()
                         .unwrap()
                         .to_lowercase();
-                    system_directory.as_ref().join(format!(
-                        "{}.{}",
-                        if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
-                            &game.name
-                        } else {
-                            &rom.name
-                        },
-                        &romfile_extension
-                    ))
+                    let mut archive_path;
+                    if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
+                        archive_path = system_directory
+                            .as_ref()
+                            .join(format!("{}.{}", &game.name, &romfile_extension));
+                    } else {
+                        archive_path = system_directory.as_ref().join(&rom.name);
+                        archive_path.set_extension(romfile_extension);
+                    }
+                    archive_path
                 }
                 _ => system_directory
                     .as_ref()
@@ -1052,12 +1053,25 @@ async fn move_to_trash<P: AsRef<Path>>(
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
-    create_romfile(
-        connection,
-        new_path.as_os_str().to_str().unwrap(),
-        new_path.metadata().await.unwrap().len(),
-    )
-    .await;
+    match find_romfile_by_path(connection, &new_path.as_os_str().to_str().unwrap()).await {
+        Some(romfile) => {
+            update_romfile(
+                connection,
+                romfile.id,
+                new_path.as_os_str().to_str().unwrap(),
+                new_path.metadata().await.unwrap().len(),
+            )
+            .await;
+        }
+        None => {
+            create_romfile(
+                connection,
+                new_path.as_os_str().to_str().unwrap(),
+                new_path.metadata().await.unwrap().len(),
+            )
+            .await;
+        }
+    }
     Ok(())
 }
 

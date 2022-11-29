@@ -49,10 +49,10 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_path(&system, &game, &rom, &romfile, 1, &test_directory)
+    let path = compute_new_path(&system, &game, &rom, &romfile,  &test_directory)
         .await
         .unwrap();
 
     // then
-    assert_eq!(path, test_directory.join("rom name.rom.7z"));
+    assert_eq!(path, test_directory.join("game name.7z"));
 }

@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.12.0
+# oxyROMon 0.13.0
 
 ### Rusty ROM OrgaNizer
 
@@ -114,7 +114,6 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Remove the ROM original extension from archives, it makes RetroArch name saves differently between imported and non imported ROMs
 - Automatically create m3u files for multi-discs games
 - Add actions to the web UI
 - Add an optional check of the ROMs after conversion
@@ -340,6 +339,7 @@ Supported merging strategies:
 
     Options:
     -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+    -s, --solid              Create solid 7z archives
     -a, --all                Rebuild all arcade systems
     -y, --yes                Automatically say yes to prompts
     -h, --help               Print help information
@@ -366,9 +366,10 @@ Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
     Options:
     -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+    -s, --solid            Create solid 7z archives
     -n, --name <NAME>      Select games by name
     -a, --all              Convert all systems/games
-    -s, --statistics       Print statistics for each conversion
+    -d, --diff             Print size differences
     -h, --help             Print help information
 
 ## oxyromon-check-roms

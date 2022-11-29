@@ -72,8 +72,6 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
 
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
@@ -136,6 +134,7 @@ async fn sort_system(
     ignored_releases: &[&str],
     ignored_flags: &[&str],
 ) -> SimpleResult<()> {
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
@@ -385,6 +384,8 @@ async fn sort_system(
         .await?,
     );
 
+    progress_bar.disable_steady_tick();
+
     if !romfile_moves.is_empty() {
         // sort moves and print a summary
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
@@ -427,6 +428,7 @@ async fn sort_system(
         }
     } else {
         commit_transaction(transaction).await;
+        progress_bar.println("Nothing to do");
     }
 
     // update games and systems completion
@@ -443,6 +445,7 @@ async fn sort_system(
         update_system_mark_complete(connection, system.id).await;
         update_system_mark_incomplete(connection, system.id).await;
         progress_bar.set_message("");
+        progress_bar.disable_steady_tick();
     }
 
     Ok(())
@@ -479,11 +482,10 @@ async fn sort_games<'a, P: AsRef<Path>>(
             Some(roms) => roms,
             None => continue,
         };
-        let rom_count = roms.len();
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let new_path = String::from(
-                compute_new_path(system, &game, rom, romfile, rom_count, directory)
+                compute_new_path(system, &game, rom, romfile, directory)
                     .await?
                     .as_os_str()
                     .to_str()
@@ -575,7 +577,6 @@ async fn compute_new_path<P: AsRef<Path>>(
     game: &Game,
     rom: &Rom,
     romfile: &Romfile,
-    rom_count: usize,
     directory: &P,
 ) -> SimpleResult<PathBuf> {
     let romfile_path = Path::new(&romfile.path);
@@ -585,46 +586,19 @@ async fn compute_new_path<P: AsRef<Path>>(
         .to_str()
         .unwrap()
         .to_lowercase();
-    let mut new_romfile_path: PathBuf;
+    let new_romfile_path: PathBuf;
 
-    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
-        new_romfile_path = directory.as_ref().join(match rom_count {
-            1 => {
-                let rom_extension = Path::new(&rom.name)
-                    .extension()
-                    .unwrap_or(&OsString::new())
-                    .to_str()
-                    .unwrap()
-                    .to_lowercase();
-                if system.arcade
-                    || game.jbfolder
-                    || PS3_EXTENSIONS.contains(&rom_extension.as_str())
-                {
-                    format!("{}.{}", &game.name, &romfile_extension)
-                } else {
-                    format!("{}.{}", &rom.name, &romfile_extension)
-                }
-            }
-            _ => format!("{}.{}", &game.name, &romfile_extension),
-        });
-    } else if romfile_extension == CHD_EXTENSION {
-        if rom_count == 2 {
-            new_romfile_path = directory.as_ref().join(&rom.name);
-            new_romfile_path.set_extension(&romfile_extension);
-        } else {
-            new_romfile_path = directory
-                .as_ref()
-                .join(format!("{}.{}", &game.name, &romfile_extension));
-        }
-    } else if romfile_extension == CSO_EXTENSION || romfile_extension == RVZ_EXTENSION {
-        new_romfile_path = directory.as_ref().join(&rom.name);
-        new_romfile_path.set_extension(&romfile_extension);
-    } else if system.arcade || game.jbfolder {
-        new_romfile_path = directory.as_ref().join(&game.name).join(&rom.name);
-    } else if PS3_EXTENSIONS.contains(&romfile_extension.as_str()) {
+    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str())
+        || romfile_extension == CHD_EXTENSION
+        || romfile_extension == CSO_EXTENSION
+        || PS3_EXTENSIONS.contains(&romfile_extension.as_str()) && !game.jbfolder
+        || romfile_extension == RVZ_EXTENSION
+    {
         new_romfile_path = directory
             .as_ref()
             .join(format!("{}.{}", &game.name, &romfile_extension));
+    } else if system.arcade || game.jbfolder {
+        new_romfile_path = directory.as_ref().join(&game.name).join(&rom.name);
     } else {
         new_romfile_path = directory.as_ref().join(&rom.name);
     }

@@ -66,6 +66,7 @@ async fn test() {
         games_by_id,
         romfiles_by_id,
         false,
+        false,
     )
     .await
     .unwrap();
@@ -83,7 +84,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).rom.zip")
+            .join("Test Game (USA, Europe).zip")
             .as_os_str()
             .to_str()
             .unwrap(),

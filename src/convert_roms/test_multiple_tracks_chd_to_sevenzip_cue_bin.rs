@@ -75,6 +75,7 @@ async fn test() {
         games_by_id,
         romfiles_by_id,
         false,
+        false,
     )
     .await
     .unwrap();

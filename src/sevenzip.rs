@@ -6,6 +6,7 @@ use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
 
+#[derive(PartialEq, Eq)]
 pub enum ArchiveType {
     Sevenzip,
     Zip,
@@ -135,6 +136,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     archive_path: &P,
     file_names: &[&str],
     directory: &Q,
+    solid: bool,
 ) -> SimpleResult<()> {
     progress_bar.set_message("Compressing files");
     progress_bar.set_style(get_none_progress_style());
@@ -144,11 +146,15 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.println(format!("Compressing \"{}\"", file_name));
     }
 
+    let mut args = vec!["-mx=9"];
+    if solid {
+        args.push("-ms=on")
+    }
     let output = Command::new("7z")
         .arg("a")
         .arg(archive_path.as_ref())
         .args(file_names)
-        .arg("-mx=9")
+        .args(args)
         .current_dir(directory.as_ref())
         .output()
         .expect("Failed to add files to archive");
