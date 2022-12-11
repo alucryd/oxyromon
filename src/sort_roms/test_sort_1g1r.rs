@@ -68,6 +68,8 @@ async fn test() {
         &one_regions,
         &[],
         &[],
+        "NONE",
+        "NONE",
     )
     .await
     .unwrap();

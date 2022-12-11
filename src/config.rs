@@ -36,6 +36,9 @@ const LISTS: &[&str] = &[
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
+pub static SUBFOLDER_SCHEMES: [&str; 2] = ["NONE", "ALPHA"];
+const SUBFOLDERS: &[&str] = &["REGIONS_ALL_SUBFOLDERS", "REGIONS_ONE_SUBFOLDERS"];
+
 pub const HASH_ALGORITHMS: &[&str] = &["CRC", "MD5", "SHA1"];
 
 #[cfg(feature = "chd")]
@@ -194,6 +197,12 @@ async fn set_setting(
         set_bool(connection, key, b).await;
     } else if LISTS.contains(&key) {
         println!("Lists can't be set directly, please use ADD or REMOVE instead");
+    } else if SUBFOLDERS.contains(&key) {
+        if SUBFOLDER_SCHEMES.contains(&value) {
+            set_string(connection, key, value).await;
+        } else {
+            println!("Valid choices: {:?}", SUBFOLDER_SCHEMES);
+        }
     } else {
         println!("Unsupported setting");
     }
@@ -291,6 +300,22 @@ pub async fn set_directory<P: AsRef<Path>>(
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value)).await,
         None => create_setting(connection, key, Some(value)).await,
+    };
+}
+
+pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> String {
+    find_setting_by_key(connection, key)
+        .await
+        .unwrap()
+        .value
+        .unwrap()
+}
+
+async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
+    let setting = find_setting_by_key(connection, key).await;
+    match setting {
+        Some(setting) => update_setting(connection, setting.id, Some(value.to_string())).await,
+        None => create_setting(connection, key, Some(value.to_string())).await,
     };
 }
 

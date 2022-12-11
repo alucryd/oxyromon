@@ -8,6 +8,7 @@ use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use async_std::stream::StreamExt;
 use cfg_if::cfg_if;
+use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
@@ -32,12 +33,28 @@ pub fn subcommand() -> Command {
                 .num_args(1..),
         )
         .arg(
+            Arg::new("REGIONS_ALL_SUBFOLDERS")
+                .long("subfolders")
+                .help("Set the subfolders scheme for games")
+                .required(false)
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(SUBFOLDER_SCHEMES.iter())),
+        )
+        .arg(
             Arg::new("REGIONS_ONE")
                 .short('g')
                 .long("1g1r")
                 .help("Set the 1G1R regions to keep (ordered)")
                 .required(false)
                 .num_args(1..),
+        )
+        .arg(
+            Arg::new("REGIONS_ONE_SUBFOLDERS")
+                .long("1g1r-subfolders")
+                .help("Set the subfolders scheme for 1G1R games")
+                .required(false)
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(SUBFOLDER_SCHEMES.iter())),
         )
         .arg(
             Arg::new("WANTED")
@@ -76,6 +93,14 @@ pub async fn main(
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
+    let all_region_subfolders = matches
+        .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
+        .map(String::to_string)
+        .unwrap_or(get_string(connection, "REGIONS_ALL_SUBFOLDERS").await);
+    let one_region_subfolders = matches
+        .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
+        .map(String::to_string)
+        .unwrap_or(get_string(connection, "REGIONS_ONE_SUBFOLDERS").await);
 
     for system in systems {
         sort_system(
@@ -93,6 +118,8 @@ pub async fn main(
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
+            &all_region_subfolders,
+            &one_region_subfolders,
         )
         .await?;
 
@@ -133,6 +160,8 @@ async fn sort_system(
     one_regions: &[Region],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
+    all_regions_subfolders: &str,
+    one_regions_subfolders: &str,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.println(&format!("Processing \"{}\"", system.name));
@@ -141,7 +170,7 @@ async fn sort_system(
     let mut all_regions_games: Vec<Game> = Vec::new();
     let mut one_region_games: Vec<Game> = Vec::new();
     let mut ignored_games: Vec<Game> = Vec::new();
-    let mut wanted_games: Vec<Game> = Vec::new();
+    let mut incomplete_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
@@ -207,7 +236,7 @@ async fn sort_system(
                     if game.complete {
                         all_regions_games.push(game);
                     } else {
-                        wanted_games.push(game);
+                        incomplete_games.push(game);
                     }
                 } else {
                     ignored_games.push(game);
@@ -236,7 +265,7 @@ async fn sort_system(
                 if game.complete {
                     all_regions_games.push(game);
                 } else {
-                    wanted_games.push(game);
+                    incomplete_games.push(game);
                 }
             } else {
                 ignored_games.push(game);
@@ -257,7 +286,7 @@ async fn sort_system(
             if game.complete {
                 all_regions_games.push(game);
             } else {
-                wanted_games.push(game)
+                incomplete_games.push(game)
             }
         }
     }
@@ -265,7 +294,7 @@ async fn sort_system(
     if matches.get_flag("WANTED") {
         let mut wanted_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
             connection,
-            &wanted_games
+            &incomplete_games
                 .par_iter()
                 .map(|game| game.id)
                 .collect::<Vec<i64>>(),
@@ -276,7 +305,7 @@ async fn sort_system(
             progress_bar.println("Wanted:");
             wanted_roms.sort_by_key(|rom| rom.game_id);
             for rom in wanted_roms {
-                let game = wanted_games
+                let game = incomplete_games
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
@@ -317,6 +346,7 @@ async fn sort_system(
             all_regions_games,
             &system_directory,
             &romfiles_by_id,
+            all_regions_subfolders,
         )
         .await?,
     );
@@ -338,14 +368,15 @@ async fn sort_system(
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
+            one_regions_subfolders,
         )
         .await?,
     );
 
-    // process wanted games
+    // process incomplete games
     changes += update_games_sorting(
         &mut transaction,
-        &wanted_games
+        &incomplete_games
             .iter()
             .map(|game| game.id)
             .collect::<Vec<i64>>(),
@@ -356,9 +387,10 @@ async fn sort_system(
         &mut sort_games(
             &mut transaction,
             system,
-            wanted_games,
+            incomplete_games,
             &system_directory,
             &romfiles_by_id,
+            all_regions_subfolders,
         )
         .await?,
     );
@@ -380,6 +412,7 @@ async fn sort_system(
             ignored_games,
             &trash_directory,
             &romfiles_by_id,
+            "NONE",
         )
         .await?,
     );
@@ -457,6 +490,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
     games: Vec<Game>,
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
+    subfolders: &str,
 ) -> SimpleResult<Vec<(&'a Romfile, String)>> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
@@ -485,7 +519,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let new_path = String::from(
-                compute_new_path(system, &game, rom, romfile, directory)
+                compute_new_path(system, &game, rom, romfile, directory, subfolders)
                     .await?
                     .as_os_str()
                     .to_str()
@@ -578,6 +612,7 @@ async fn compute_new_path<P: AsRef<Path>>(
     rom: &Rom,
     romfile: &Romfile,
     directory: &P,
+    subfolders: &str,
 ) -> SimpleResult<PathBuf> {
     let romfile_path = Path::new(&romfile.path);
     let romfile_extension = romfile_path
@@ -586,7 +621,7 @@ async fn compute_new_path<P: AsRef<Path>>(
         .to_str()
         .unwrap()
         .to_lowercase();
-    let new_romfile_path: PathBuf;
+    let mut new_romfile_path: PathBuf;
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str())
         || romfile_extension == CHD_EXTENSION
@@ -594,15 +629,34 @@ async fn compute_new_path<P: AsRef<Path>>(
         || PS3_EXTENSIONS.contains(&romfile_extension.as_str()) && !game.jbfolder
         || romfile_extension == RVZ_EXTENSION
     {
-        new_romfile_path = directory
-            .as_ref()
-            .join(format!("{}.{}", &game.name, &romfile_extension));
+        new_romfile_path = directory.as_ref().to_path_buf();
+        if subfolders == "ALPHA" {
+            new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
+        }
+        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, &romfile_extension));
     } else if system.arcade || game.jbfolder {
-        new_romfile_path = directory.as_ref().join(&game.name).join(&rom.name);
+        new_romfile_path = directory.as_ref().to_path_buf();
+        if subfolders == "ALPHA" {
+            new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
+        }
+        new_romfile_path = new_romfile_path.join(&game.name).join(&rom.name);
     } else {
-        new_romfile_path = directory.as_ref().join(&rom.name);
+        new_romfile_path = directory.as_ref().to_path_buf();
+        if subfolders == "ALPHA" {
+            new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
+        }
+        new_romfile_path = new_romfile_path.join(&rom.name);
     }
     Ok(new_romfile_path)
+}
+
+fn compute_alpha_subfolder(name: &str) -> String {
+    let first_char = name.chars().next().unwrap();
+    if first_char.is_ascii_alphabetic() {
+        first_char.to_ascii_uppercase().to_string()
+    } else {
+        String::from("#")
+    }
 }
 
 #[cfg(test)]
@@ -632,11 +686,17 @@ mod test_path_cso;
 #[cfg(test)]
 mod test_path_original;
 #[cfg(test)]
+mod test_path_subfolder_alpha_letter;
+#[cfg(test)]
+mod test_path_subfolder_alpha_other;
+#[cfg(test)]
 mod test_sort;
 #[cfg(test)]
 mod test_sort_1g1r;
 #[cfg(test)]
 mod test_sort_1g1r_discard_asia_and_beta;
+#[cfg(test)]
+mod test_sort_1g1r_subfolders_alpha;
 #[cfg(test)]
 mod test_sort_1g1r_without_parent_clone;
 #[cfg(test)]

@@ -191,9 +191,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql"
-version = "5.0.1"
+version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc060e5d5d1efd9c61d789da60b540f6ffc304d1a23342e5ec12048ce14562ff"
+checksum = "42bb92ffef089e5b61e90bcc004c9689554dfb5a150d88e81c7f6fef9e76eeae"
 dependencies = [
  "async-graphql-derive",
  "async-graphql-parser",
@@ -224,9 +224,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-derive"
-version = "5.0.1"
+version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b551916d8ae6ec439be5a6fe37df87eb1f3fb070cb40cbaebedf429f5b96c6f"
+checksum = "4fa579c7cea32030600994d579554b257e10d5ad87705f3d150b49ee08bd629d"
 dependencies = [
  "Inflector",
  "async-graphql-parser",
@@ -240,9 +240,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-parser"
-version = "5.0.1"
+version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1e6141d18e3e4a07a86061f100fe7dbf31ad93e23dfb31b4fa985a7a8408bd6"
+checksum = "3b67a5bea60997ca72908854655ae87f7970dc7d786d9a42fd1d17069fa42ebc"
 dependencies = [
  "async-graphql-value",
  "pest",
@@ -252,9 +252,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-tide"
-version = "5.0.1"
+version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c96001f9877ab0e42c8669305eb9198d205c2301feb7199f4d829b5d3fc4fde"
+checksum = "e52a835520f0feb1cf21a9bd157cc2e0f35d4eb1df99f2a7f40bb0a8b38fbf1b"
 dependencies = [
  "async-graphql",
  "async-trait",
@@ -266,9 +266,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-value"
-version = "5.0.1"
+version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dcfc59c317f0ef8fa8aa0ea3d0f9ef9f9561560b8a65f51750672061e8a338a"
+checksum = "79c2721eb88245ca055e148a3f03cb11a88535c206ac5a7c59e9edb22816320a"
 dependencies = [
  "bytes",
  "indexmap",
@@ -1972,7 +1972,7 @@ checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
 
 [[package]]
 name = "oxyromon"
-version = "0.13.0"
+version = "0.14.0-beta"
 dependencies = [
  "async-ctrlc",
  "async-graphql",
@@ -2310,11 +2310,10 @@ dependencies = [
 
 [[package]]
 name = "rayon"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e060280438193c554f654141c9ea9417886713b7acd75974c85b18a69a88e0b"
+checksum = "6db3a213adf02b3bcfd2d3846bb41cb22857d131789e01df434fb7e7bc0759b7"
 dependencies = [
- "crossbeam-deque",
  "either",
  "rayon-core",
 ]
@@ -2571,18 +2570,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.148"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e53f64bb4ba0191d6d0676e1b141ca55047d83b74f5607e6d8eb88126c52c2dc"
+checksum = "256b9932320c590e707b94576e3cc1f7c9024d0ee6612dfbcf1cb106cbe8e055"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.148"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a55492425aa53521babf6137309e7d34c20bbfbbfcfe2c7f3a047fd1f6b92c0c"
+checksum = "b4eae9b04cbffdfd550eb462ed33bc6a1b68c935127d008b27444d08380f94e4"
 dependencies = [
  "proc-macro2",
  "quote",

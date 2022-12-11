@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.13.0
+# oxyROMon 0.14.0
 
 ### Rusty ROM OrgaNizer
 
@@ -76,6 +76,8 @@ Available settings:
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
 - `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
+- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `NONE`, `ALPHA`
+- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `NONE`, `ALPHA`
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -88,7 +90,9 @@ DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 HASH_ALGORITHM = CRC
 REGIONS_ALL = US,EU,JP
+REGIONS_ALL_SUBFOLDERS = NONE
 REGIONS_ONE = US,EU
+REGIONS_ONE_SUBFOLDERS = NONE
 ROM_DIRECTORY = /home/alucryd/Emulation
 TMP_DIRECTORY = /tmp
 ```
@@ -131,24 +135,24 @@ These should be in your `${PATH}` for extra features.
     Usage: oxyromon [COMMAND]
 
     Commands:
-    config         Query and modify the oxyromon settings
-    import-dats    Parse and import Logiqx DAT files into oxyromon
-    download-dats  Download No-Intro and Redump DAT files and import them into oxyromon
-    import-roms    Validate and import ROM files or directories into oxyromon
-    sort-roms      Sort ROM files according to region and version preferences
-    convert-roms   Convert ROM files between common formats
-    rebuild-roms   Rebuild arcade ROM sets according to the selected strategy
-    check-roms     Check ROM files integrity
-    purge-roms     Purge trashed, missing and orphan ROM files
-    purge-systems  Purge systems
-    import-irds    Parse and import PlayStation 3 IRD files into oxyromon
-    benchmark      Benchmark oxyromon
-    server         Launch the backend server
-    help           Print this message or the help of the given subcommand(s)
+        config         Query and modify the oxyromon settings
+        import-dats    Parse and import Logiqx DAT files into oxyromon
+        download-dats  Download No-Intro and Redump DAT files and import them into oxyromon
+        import-roms    Validate and import ROM files or directories into oxyromon
+        sort-roms      Sort ROM files according to region and version preferences
+        convert-roms   Convert ROM files between common formats
+        rebuild-roms   Rebuild arcade ROM sets according to the selected strategy
+        check-roms     Check ROM files integrity
+        purge-roms     Purge trashed, missing and orphan ROM files
+        purge-systems  Purge systems
+        import-irds    Parse and import PlayStation 3 IRD files into oxyromon
+        benchmark      Benchmark oxyromon
+        server         Launch the backend server
+        help           Print this message or the help of the given subcommand(s)
 
     Options:
-    -h, --help     Print help information
-    -V, --version  Print version information
+        -h, --help     Print help information
+        -V, --version  Print version information
 
 ## oxyromon-config
 
@@ -159,12 +163,12 @@ The settings can be queried, modified and deleted from the command line.
     Usage: oxyromon config [OPTIONS]
 
     Options:
-    -l, --list                  Print the whole configuration
-    -g, --get <KEY>             Print a single setting
-    -s, --set <KEY> <VALUE>     Configure a single setting
-    -a, --add <KEY> <VALUE>     Add an entry to a list
-    -r, --remove <KEY> <VALUE>  Remove an entry from a list
-    -h, --help                  Print help information
+        -l, --list                  Print the whole configuration
+        -g, --get <KEY>             Print a single setting
+        -s, --set <KEY> <VALUE>     Configure a single setting
+        -a, --add <KEY> <VALUE>     Add an entry to a list
+        -r, --remove <KEY> <VALUE>  Remove an entry from a list
+        -h, --help                  Print help information
 
 ## oxyromon-import-dats
 
@@ -188,14 +192,14 @@ If not provided, oxyromon will use its own fallback header definition.
     Usage: oxyromon import-dats [OPTIONS] <DATS>...
 
     Arguments:
-    <DATS>...  Set the DAT files to import
+        <DATS>...  Set the DAT files to import
 
     Options:
-    -i, --info         Show the DAT information and exit
-    -s, --skip-header  Skip parsing the header even if the system has one
-    -f, --force        Force import of outdated DAT files
-    -a, --arcade       Enable arcade mode
-    -h, --help         Print help information
+        -i, --info         Show the DAT information and exit
+        -s, --skip-header  Skip parsing the header even if the system has one
+        -f, --force        Force import of outdated DAT files
+        -a, --arcade       Enable arcade mode
+        -h, --help         Print help information
 
 ## oxyromon-download-dats
 
@@ -214,12 +218,12 @@ Supported DAT providers:
     Usage: oxyromon download-dats [OPTIONS]
 
     Options:
-    -n, --nointro  Download No-Intro DAT files
-    -r, --redump   Download Redump DAT files
-    -u, --update   Check for system updates
-    -a, --all      Import all systems
-    -f, --force    Force import of outdated DAT files
-    -h, --help     Print help information
+        -n, --nointro  Download No-Intro DAT files
+        -r, --redump   Download Redump DAT files
+        -u, --update   Check for system updates
+        -a, --all      Import all systems
+        -f, --force    Force import of outdated DAT files
+        -h, --help     Print help information
 
 ## oxyromon-import-irds
 
@@ -233,12 +237,12 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
     Usage: oxyromon import-irds [OPTIONS] <IRDS>...
 
     Arguments:
-    <IRDS>...  Set the IRD files to import
+        <IRDS>...  Set the IRD files to import
 
     Options:
-    -i, --info   Show the IRD information and exit
-    -f, --force  Force import of already imported IRD files
-    -h, --help   Print help information
+        -i, --info   Show the IRD information and exit
+        -f, --force  Force import of already imported IRD files
+        -h, --help   Print help information
 
 ## oxyromon-import-roms
 
@@ -267,12 +271,12 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
     Usage: oxyromon import-roms [OPTIONS] <ROMS>...
 
     Arguments:
-    <ROMS>...  Set the ROM files or directories to import
+        <ROMS>...  Set the ROM files or directories to import
 
     Options:
-    -s, --system <SYSTEM>  Set the system number to use
-    -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
-    -h, --help             Print help information
+        -s, --system <SYSTEM>  Set the system number to use
+        -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
+        -h, --help             Print help information
 
 ## oxyromon-sort-roms
 
@@ -313,14 +317,22 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
     Usage: oxyromon sort-roms [OPTIONS]
 
     Options:
-    -r, --regions <REGIONS_ALL>...  Set the regions to keep (unordered)
-    -g, --1g1r <REGIONS_ONE>...     Set the 1G1R regions to keep (ordered)
-    -m, --missing                   Show missing games
-    -a, --all                       Sort all systems
-    -y, --yes                       Automatically say yes to prompts
-    -h, --help                      Print help information
-
-    Example: oxyromon sort-roms -g US EU -r US EU JP
+        -r, --regions <REGIONS_ALL>...
+                Set the regions to keep (unordered)
+            --subfolders <REGIONS_ALL_SUBFOLDERS>
+                Set the subfolders scheme for games [possible values: NONE, ALPHA]
+        -g, --1g1r <REGIONS_ONE>...
+                Set the 1G1R regions to keep (ordered)
+            --1g1r-subfolders <REGIONS_ONE_SUBFOLDERS>
+                Set the subfolders scheme for 1G1R games [possible values: NONE, ALPHA]
+        -w, --wanted
+                Show wanted games
+        -a, --all
+                Sort all systems
+        -y, --yes
+                Automatically say yes to prompts
+        -h, --help
+                Print help information
 
 ## oxyromon-rebuild-roms
 
@@ -338,11 +350,11 @@ Supported merging strategies:
     Usage: oxyromon rebuild-roms [OPTIONS]
 
     Options:
-    -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-    -s, --solid              Create solid 7z archives
-    -a, --all                Rebuild all arcade systems
-    -y, --yes                Automatically say yes to prompts
-    -h, --help               Print help information
+        -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+        -s, --solid              Create solid 7z archives
+        -a, --all                Rebuild all arcade systems
+        -y, --yes                Automatically say yes to prompts
+        -h, --help               Print help information
 
 ## oxyromon-convert-roms
 
@@ -365,12 +377,12 @@ Note: CHD will be extracted to their original split CUE/BIN where applicable.
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:
-    -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
-    -s, --solid            Create solid 7z archives
-    -n, --name <NAME>      Select games by name
-    -a, --all              Convert all systems/games
-    -d, --diff             Print size differences
-    -h, --help             Print help information
+        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+        -s, --solid            Create solid 7z archives
+        -n, --name <NAME>      Select games by name
+        -a, --all              Convert all systems/games
+        -d, --diff             Print size differences
+        -h, --help             Print help information
 
 ## oxyromon-check-roms
 
@@ -379,13 +391,12 @@ Check ROM files integrity
 This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
 File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
 
-    USAGE:
-        oxyromon check-roms [OPTIONS]
+    Usage: oxyromon check-roms [OPTIONS]
 
-    OPTIONS:
-        -a, --all     Check all systems
-        -h, --help    Print help information
-        -s, --size    Recalculate ROM file sizes
+    Options:
+        -a, --all   Check all systems
+        -s, --size  Recalculate ROM file sizes
+        -h, --help  Print help information
 
 ## oxyromon-purge-roms
 
@@ -397,11 +408,11 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
     Usage: oxyromon purge-roms [OPTIONS]
 
     Options:
-    -m, --missing  Delete missing ROM files from the database
-    -o, --orphan   Delete ROM files without an associated ROM from the database
-    -t, --trash    Physically delete ROM files from the trash directories
-    -y, --yes      Automatically say yes to prompts
-    -h, --help     Print help information
+        -m, --missing  Delete missing ROM files from the database
+        -o, --orphan   Delete ROM files without an associated ROM from the database
+        -t, --trash    Physically delete ROM files from the trash directories
+        -y, --yes      Automatically say yes to prompts
+        -h, --help     Print help information
 
 ## oxyromon-purge-systems
 
@@ -412,7 +423,7 @@ This will wipe the system and all its ROMs from the database. All ROMs will be p
     Usage: oxyromon purge-systems
 
     Options:
-    -h, --help  Print help information
+        -h, --help  Print help information
 
 ## oxyromon-server
 
@@ -423,9 +434,9 @@ The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js
     Usage: oxyromon server [OPTIONS]
 
     Options:
-    -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
-    -p, --port <PORT>        Specify the server port [default: 8000]
-    -h, --help               Print help information
+        -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
+        -p, --port <PORT>        Specify the server port [default: 8000]
+        -h, --help               Print help information
 
 ## oxyromon-benchmark
 
@@ -438,5 +449,5 @@ Your mileage may vary depending on your architecture.
     Usage: oxyromon benchmark [OPTIONS]
 
     Options:
-    -c, --chunk-size <CHUNK_SIZE>  Set the chunk size in KB for read and writes (Default: 256) [default: 256]
-    -h, --help                     Print help information
+        -c, --chunk-size <CHUNK_SIZE>  Set the chunk size in KB for read and writes (Default: 256) [default: 256]
+        -h, --help                     Print help information

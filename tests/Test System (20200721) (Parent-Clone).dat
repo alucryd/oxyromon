@@ -8,6 +8,18 @@
 		<date>20200721</date>
 		<author>Maxime Gauduin</author>
 	</header>
+	<game name="42 Test Game (USA, Europe)">
+		<description>42 Test Game (USA, Europe)</description>
+		<release name="42 Test Game (USA, Europe)" region="EUR" />
+		<release name="42 Test Game (USA, Europe)" region="USA" />
+		<rom name="42 Test Game (USA, Europe).rom" size="256" crc="625dc922" md5="999f792732101d83a8ce7bcfb4fdbbfe" sha1="0c510ce29fa8c2b4840e03896017a4244d91560c" status="verified" />
+	</game>
+	<game name="Another Test Game (USA, Europe)">
+		<description>Another Test Game (USA, Europe)</description>
+		<release name="Another Test Game (USA, Europe)" region="EUR" />
+		<release name="Another Test Game (USA, Europe)" region="USA" />
+		<rom name="Another Test Game (USA, Europe).rom" size="256" crc="6ce4d2d6" md5="051590b60b856b9ea5df1715f7a6b969" sha1="79042aad92ac640f218f2e157fcb461714f8d6e7" status="verified" />
+	</game>
 	<game name="Test Game (USA, Europe)">
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe)" region="EUR" />

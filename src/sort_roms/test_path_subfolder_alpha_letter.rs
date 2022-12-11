@@ -31,7 +31,7 @@ async fn test() {
     };
     let rom = Rom {
         id: 1,
-        name: String::from("rom name.bin"),
+        name: String::from("rom name.rom"),
         bios: false,
         size: 1,
         crc: Some(String::from("")),
@@ -44,15 +44,15 @@ async fn test() {
     };
     let romfile = Romfile {
         id: 1,
-        path: String::from("romfile.chd"),
+        path: String::from("romfile.rom"),
         size: 0,
     };
 
     // when
-    let path = compute_new_path(&system, &game, &rom, &romfile, &test_directory, "NONE")
+    let path = compute_new_path(&system, &game, &rom, &romfile, &test_directory, "ALPHA")
         .await
         .unwrap();
 
     // then
-    assert_eq!(path, test_directory.join("game name.chd"));
+    assert_eq!(path, test_directory.join("R").join("rom name.rom"));
 }
