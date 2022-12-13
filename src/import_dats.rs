@@ -23,7 +23,7 @@ use std::str;
 use vec_drain_where::VecDrainWhereExt;
 
 lazy_static! {
-    pub static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r"\(.*\)").unwrap();
+    pub static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r" \(.*\)").unwrap();
 }
 
 #[derive(RustEmbed)]

@@ -1,6 +1,7 @@
 # 0.14.0
 - Add the ability to sort ROMs in alphabetical subfolders
-- Add a catch-all region `ZZ` in `REGIONS_ALL` for the 1G1R mode
+- Add a catch-all region `ZZ` in `REGIONS_ALL` for the `sort-roms` hybrid mode
+- Add a `GROUP_SUBSYSTEMS` toggle, if true merge variants of the same system in a single directory
 
 # 0.13.0
 - Remove the ROM original extension from archives, it makes RetroArch name its saves differently between imported and non imported games

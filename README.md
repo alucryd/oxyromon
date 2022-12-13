@@ -78,6 +78,7 @@ Available settings:
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
 - `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `NONE`, `ALPHA`
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `NONE`, `ALPHA`
+- `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -88,6 +89,7 @@ oxyromon config -l
 
 DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
+GROUP_SUBSYSTEMS = true
 HASH_ALGORITHM = CRC
 REGIONS_ALL = US,EU,JP
 REGIONS_ALL_SUBFOLDERS = NONE
@@ -105,6 +107,8 @@ TMP_DIRECTORY = /tmp
             ⮡ 1G1R # Sub directory for 1G1R games
             ⮡ Trash # Sub directory for trashed games
         ...
+
+`${SYSTEM_NAME}` is influenced by the `GROUP_SUBSYSTEMS` setting
 
 ### External programs
 
@@ -312,7 +316,7 @@ In every mode, discarded games are placed in the `Trash` subdirectory.
 1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
 actually play, while keeping original Japanese games for translation patches and other hacks.
 
-The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention). The `Unknown` region, represented by `ZZ`, is used as a catch-all region in `REGIONS_ALL` for the 1G1R mode.
+The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention). The `Unknown` region, represented by `ZZ`, is used as a catch-all region in `REGIONS_ALL` for the hybrid mode.
 
     Usage: oxyromon sort-roms [OPTIONS]
 

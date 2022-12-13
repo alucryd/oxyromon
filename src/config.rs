@@ -27,7 +27,7 @@ cfg_if! {
     }
 }
 
-const BOOLEANS: &[&str] = &[];
+const BOOLEANS: &[&str] = &["GROUP_SUBSYSTEMS"];
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
@@ -209,8 +209,7 @@ async fn set_setting(
     Ok(())
 }
 
-#[cfg(test)]
-async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
+pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
     find_setting_by_key(connection, key)
         .await
         .unwrap()

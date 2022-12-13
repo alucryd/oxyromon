@@ -182,9 +182,15 @@ pub async fn get_system_directory(
     progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let system_directory = get_rom_directory(connection)
-        .await
-        .join(SYSTEM_NAME_REGEX.replace(&system.name, "").trim());
+    let system_name = if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+        SYSTEM_NAME_REGEX
+            .replace(&system.name, "")
+            .trim()
+            .to_owned()
+    } else {
+        system.name.trim().to_owned()
+    };
+    let system_directory = get_rom_directory(connection).await.join(system_name);
     create_directory(progress_bar, &system_directory, true).await?;
     Ok(system_directory)
 }
