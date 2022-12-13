@@ -312,7 +312,7 @@ In every mode, discarded games are placed in the `Trash` subdirectory.
 1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
 actually play, while keeping original Japanese games for translation patches and other hacks.
 
-The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention).
+The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention). The `Unknown` region, represented by `ZZ`, is used as a catch-all region in `REGIONS_ALL` for the 1G1R mode.
 
     Usage: oxyromon sort-roms [OPTIONS]
 

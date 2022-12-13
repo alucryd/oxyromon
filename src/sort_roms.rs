@@ -227,11 +227,12 @@ async fn sort_system(
             // go through the remaining games
             while !games.is_empty() {
                 let game = games.remove(0);
-                let region_in_all_regions = all_regions.iter().any(|region| {
-                    Region::try_from_tosec_region(&game.regions)
-                        .unwrap_or_default()
-                        .contains(region)
-                });
+                let region_in_all_regions = all_regions.contains(&Region::Unknown)
+                    || all_regions.iter().any(|region| {
+                        Region::try_from_tosec_region(&game.regions)
+                            .unwrap_or_default()
+                            .contains(region)
+                    });
                 if region_in_all_regions {
                     if game.complete {
                         all_regions_games.push(game);
@@ -693,6 +694,8 @@ mod test_path_subfolder_alpha_other;
 mod test_sort;
 #[cfg(test)]
 mod test_sort_1g1r;
+#[cfg(test)]
+mod test_sort_1g1r_catch_all;
 #[cfg(test)]
 mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]
