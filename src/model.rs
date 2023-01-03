@@ -109,15 +109,15 @@ pub struct Setting {
 
 #[derive(Deserialize)]
 pub struct ProfileXml {
-    #[serde(rename = "datfile")]
+    #[serde(alias = "datfile")]
     pub systems: Vec<SystemXml>,
 }
 
 #[derive(Deserialize)]
 pub struct DatfileXml {
-    #[serde(rename = "header")]
+    #[serde(alias = "header")]
     pub system: SystemXml,
-    #[serde(rename = "game")]
+    #[serde(alias = "game", alias = "machine")]
     pub games: Vec<GameXml>,
 }
 
@@ -126,36 +126,48 @@ pub struct SystemXml {
     pub name: String,
     pub description: String,
     pub version: String,
-    #[serde(rename = "clrmamepro", default)]
+    #[serde(alias = "clrmamepro", default)]
     pub clrmamepros: Vec<ClrMameProXml>,
     pub url: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct ClrMameProXml {
+    #[serde(rename = "@header")]
     pub header: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct GameXml {
+    #[serde(rename = "@name")]
     pub name: String,
     pub description: String,
     pub comment: Option<String>,
+    #[serde(rename = "@cloneof")]
     pub cloneof: Option<String>,
+    #[serde(rename = "@romof")]
     pub romof: Option<String>,
+    #[serde(rename = "@isbios")]
     pub isbios: Option<String>,
-    #[serde(rename = "rom", default)]
+    #[serde(alias = "rom", default)]
     pub roms: Vec<RomXml>,
 }
 
 #[derive(Deserialize)]
 pub struct RomXml {
+    #[serde(rename = "@name")]
     pub name: String,
+    #[serde(rename = "@merge")]
     pub merge: Option<String>,
+    #[serde(rename = "@size")]
     pub size: i64,
+    #[serde(rename = "@crc")]
     pub crc: Option<String>,
+    #[serde(rename = "@md5")]
     pub md5: Option<String>,
+    #[serde(rename = "@sha1")]
     pub sha1: Option<String>,
+    #[serde(rename = "@status")]
     pub status: Option<String>,
 }
 
@@ -168,13 +180,16 @@ pub struct DetectorXml {
 
 #[derive(Deserialize)]
 pub struct RuleXml {
+    #[serde(rename = "@start_offset")]
     pub start_offset: String,
     pub data: Vec<DataXml>,
 }
 
 #[derive(Deserialize)]
 pub struct DataXml {
+    #[serde(rename = "@offset")]
     pub offset: String,
+    #[serde(rename = "@value")]
     pub value: String,
 }
 

@@ -1,9 +1,12 @@
 # 0.14.0
+
 - Add the ability to sort ROMs in alphabetical subfolders
 - Add a catch-all region `ZZ` in `REGIONS_ALL` for the `sort-roms` hybrid mode
 - Add a `GROUP_SUBSYSTEMS` toggle, if true merge variants of the same system in a single directory
+- Support MAME DAT files that use non-standard `machine` instead of `name` tags
 
 # 0.13.0
+
 - Remove the ROM original extension from archives, it makes RetroArch name its saves differently between imported and non imported games
 - Fix the `sort-roms` prompt to proceed
 - Allow creating solid 7z archives
@@ -12,6 +15,7 @@
 - Greatly speed up `purge-systems`
 
 # 0.12.0
+
 - Change `--missing` to `--wanted` in `sort-roms` to avoid confusion with the same `purge-roms` flag
 - Add a `purge-systems` subcommand (WIP)
 
