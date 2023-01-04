@@ -6,6 +6,9 @@ use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
 
+pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
+pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
+
 #[derive(PartialEq, Eq)]
 pub enum ArchiveType {
     Sevenzip,
@@ -136,6 +139,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     archive_path: &P,
     file_names: &[&str],
     directory: &Q,
+    compression_level: usize,
     solid: bool,
 ) -> SimpleResult<()> {
     progress_bar.set_message("Compressing files");
@@ -146,9 +150,9 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.println(format!("Compressing \"{}\"", file_name));
     }
 
-    let mut args = vec!["-mx=9"];
+    let mut args = vec![format!("-mx={}", compression_level)];
     if solid {
-        args.push("-ms=on")
+        args.push(String::from("-ms=on"))
     }
     let output = Command::new("7z")
         .arg("a")

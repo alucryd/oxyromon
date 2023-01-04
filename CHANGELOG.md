@@ -4,6 +4,7 @@
 - Add a catch-all region `ZZ` in `REGIONS_ALL` for the `sort-roms` hybrid mode
 - Add a `GROUP_SUBSYSTEMS` toggle, if true merge variants of the same system in a single directory
 - Support MAME DAT files that use non-standard `machine` instead of `name` tags
+- Add various compression settings for 7Z, ZIP and RVZ
 
 # 0.13.0
 

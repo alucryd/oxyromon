@@ -6,10 +6,16 @@ use indicatif::ProgressBar;
 use std::process::Command;
 use std::time::Duration;
 
+pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
+pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
 pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
     directory: &Q,
+    compression_algorithm: &str,
+    compression_level: usize,
+    block_size: usize,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating RVZ");
     progress_bar.set_style(get_none_progress_style());
@@ -27,11 +33,11 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-f")
         .arg("rvz")
         .arg("-c")
-        .arg("zstd")
+        .arg(compression_algorithm)
         .arg("-l")
-        .arg("5")
+        .arg(compression_level.to_string())
         .arg("-b")
-        .arg("131072")
+        .arg((block_size * 1024).to_string())
         .arg("-i")
         .arg(iso_path.as_ref())
         .arg("-o")

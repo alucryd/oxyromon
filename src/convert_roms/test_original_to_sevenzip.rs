@@ -66,6 +66,7 @@ async fn test() {
         games_by_id,
         romfiles_by_id,
         false,
+        1,
         false,
     )
     .await

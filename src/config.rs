@@ -1,10 +1,13 @@
 use super::database::*;
+use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
+use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
+use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
 
@@ -27,7 +30,23 @@ cfg_if! {
     }
 }
 
-const BOOLEANS: &[&str] = &["GROUP_SUBSYSTEMS"];
+pub const HASH_ALGORITHMS: &[&str] = &["crc", "md5", "sha1"];
+pub const SUBFOLDER_SCHEMES: &[&str] = &["none", "alpha"];
+pub const RVZ_COMPRESSION_ALGORITHMS: &[&str] = &["none", "zstd", "bzip", "lzma", "lzma2"];
+
+const BOOLEANS: &[&str] = &["GROUP_SUBSYSTEMS", "SEVENZIP_SOLID_COMPRESSION"];
+const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
+    "HASH_ALGORITHM" => HASH_ALGORITHMS,
+    "REGIONS_ALL_SUBFOLDERS" => SUBFOLDER_SCHEMES,
+    "REGIONS_ONE_SUBFOLDERS" => SUBFOLDER_SCHEMES,
+    "RVZ_COMPRESSION_ALGORITHM" => RVZ_COMPRESSION_ALGORITHMS
+};
+const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
+    "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
+    "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
+    "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
+    "ZIP_COMPRESSION_LEVEL" => &ZIP_COMPRESSION_LEVEL_RANGE,
+};
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
@@ -35,11 +54,6 @@ const LISTS: &[&str] = &[
     "REGIONS_ONE",
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
-
-pub static SUBFOLDER_SCHEMES: [&str; 2] = ["NONE", "ALPHA"];
-const SUBFOLDERS: &[&str] = &["REGIONS_ALL_SUBFOLDERS", "REGIONS_ONE_SUBFOLDERS"];
-
-pub const HASH_ALGORITHMS: &[&str] = &["CRC", "MD5", "SHA1"];
 
 #[cfg(feature = "chd")]
 pub static BIN_EXTENSION: &str = "bin";
@@ -195,14 +209,21 @@ async fn set_setting(
     } else if BOOLEANS.contains(&key) {
         let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
         set_bool(connection, key, b).await;
-    } else if LISTS.contains(&key) {
-        println!("Lists can't be set directly, please use ADD or REMOVE instead");
-    } else if SUBFOLDERS.contains(&key) {
-        if SUBFOLDER_SCHEMES.contains(&value) {
+    } else if CHOICES.keys().any(|&s| s == key) {
+        if CHOICES.get(key).unwrap().contains(&value) {
             set_string(connection, key, value).await;
         } else {
-            println!("Valid choices: {:?}", SUBFOLDER_SCHEMES);
+            println!("Valid choices: {:?}", CHOICES.get(key).unwrap());
         }
+    } else if INTEGERS.keys().any(|&i| i == key) {
+        let i: usize = try_with!(FromStr::from_str(value), "Failed to parse integer");
+        if INTEGERS.get(key).unwrap()[0] <= i && i <= INTEGERS.get(key).unwrap()[1] {
+            set_integer(connection, key, i).await;
+        } else {
+            println!("Valid range: {:?}", INTEGERS.get(key).unwrap());
+        }
+    } else if LISTS.contains(&key) {
+        println!("Lists can't be set directly, please use ADD or REMOVE instead");
     } else {
         println!("Unsupported setting");
     }
@@ -220,6 +241,25 @@ pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
 }
 
 async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
+    let setting = find_setting_by_key(connection, key).await;
+    let value = value.to_string();
+    match setting {
+        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
+        None => create_setting(connection, key, Some(value)).await,
+    };
+}
+
+pub async fn get_integer(connection: &mut SqliteConnection, key: &str) -> usize {
+    find_setting_by_key(connection, key)
+        .await
+        .unwrap()
+        .value
+        .unwrap()
+        .parse()
+        .unwrap()
+}
+
+async fn set_integer(connection: &mut SqliteConnection, key: &str, value: usize) {
     let setting = find_setting_by_key(connection, key).await;
     let value = value.to_string();
     match setting {

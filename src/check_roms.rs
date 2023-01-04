@@ -55,9 +55,9 @@ pub async fn main(
         .value
         .as_deref()
     {
-        Some("CRC") => HashAlgorithm::Crc,
-        Some("MD5") => HashAlgorithm::Md5,
-        Some("SHA1") => HashAlgorithm::Sha1,
+        Some("crc") => HashAlgorithm::Crc,
+        Some("md5") => HashAlgorithm::Md5,
+        Some("sha1") => HashAlgorithm::Sha1,
         Some(_) | None => bail!("Not possible"),
     };
     for system in systems {

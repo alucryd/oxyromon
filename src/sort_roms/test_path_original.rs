@@ -49,7 +49,7 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_path(&system, &game, &rom, &romfile, &test_directory, "NONE")
+    let path = compute_new_path(&system, &game, &rom, &romfile, &test_directory, "none")
         .await
         .unwrap();
 

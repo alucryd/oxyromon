@@ -76,9 +76,15 @@ Available settings:
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
 - `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
-- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `NONE`, `ALPHA`
-- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `NONE`, `ALPHA`
+- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `none`, `alpha`
+- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `none`, `alpha`
 - `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
+- `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
+- `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
+- `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
+- `SEVENZIP_COMPRESSION_LEVEL`: The 7Z compression level, defaults to `9`, valid range: `1-9`
+- `SEVENZIP_SOLID_COMPRESSION`: Toggles 7Z solid compression, defaults to `false`
+- `ZIP_COMPRESSION_LEVEL`: The ZIP compression level, defaults to `9`, valid range: `1-9`
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -90,13 +96,18 @@ oxyromon config -l
 DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
-HASH_ALGORITHM = CRC
+HASH_ALGORITHM = crc
 REGIONS_ALL = US,EU,JP
-REGIONS_ALL_SUBFOLDERS = NONE
+REGIONS_ALL_SUBFOLDERS = none
 REGIONS_ONE = US,EU
-REGIONS_ONE_SUBFOLDERS = NONE
+REGIONS_ONE_SUBFOLDERS = none
 ROM_DIRECTORY = /home/alucryd/Emulation
+RVZ_COMPRESSION_ALGORITHM = zstd
+RVZ_COMPRESSION_LEVEL = 5
+SEVENZIP_COMPRESSION_LEVEL = 9
+SEVENZIP_SOLID_COMPRESSION = false
 TMP_DIRECTORY = /tmp
+ZIP_COMPRESSION_LEVEL = 9
 ```
 
 ### Directory Layout
@@ -355,7 +366,6 @@ Supported merging strategies:
 
     Options:
         -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-        -s, --solid              Create solid 7z archives
         -a, --all                Rebuild all arcade systems
         -y, --yes                Automatically say yes to prompts
         -h, --help               Print help information
@@ -382,7 +392,6 @@ Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
     Options:
         -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
-        -s, --solid            Create solid 7z archives
         -n, --name <NAME>      Select games by name
         -a, --all              Convert all systems/games
         -d, --diff             Print size differences

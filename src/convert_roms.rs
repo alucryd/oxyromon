@@ -58,14 +58,6 @@ pub fn subcommand() -> Command {
                 .value_parser(PossibleValuesParser::new(ALL_FORMATS.iter())),
         )
         .arg(
-            Arg::new("SOLID")
-                .short('s')
-                .long("solid")
-                .help("Create solid 7z archives")
-                .required(false)
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("NAME")
                 .short('n')
                 .long("name")
@@ -176,6 +168,8 @@ pub async fn main(
                 .await?
             }
             "7Z" => {
+                let compression_level = get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL").await;
+                let solid: bool = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION").await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -185,11 +179,13 @@ pub async fn main(
                     games_by_id,
                     romfiles_by_id,
                     diff,
-                    matches.get_flag("SOLID"),
+                    compression_level,
+                    solid,
                 )
                 .await?
             }
             "ZIP" => {
+                let compression_level = get_integer(connection, "ZIP_COMPRESSION_LEVEL").await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -199,6 +195,7 @@ pub async fn main(
                     games_by_id,
                     romfiles_by_id,
                     diff,
+                    compression_level,
                     false,
                 )
                 .await?
@@ -234,12 +231,18 @@ pub async fn main(
             "RVZ" => {
                 cfg_if! {
                     if #[cfg(feature = "rvz")] {
+                        let compression_algorithm = get_string(connection, "RVZ_COMPRESSION_ALGORITHM").await;
+                        let compression_level = get_integer(connection, "RVZ_COMPRESSION_LEVEL").await;
+                        let block_size = get_integer(connection, "RVZ_BLOCK_SIZE").await;
                         to_rvz(
                             connection,
                             progress_bar,
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            &compression_algorithm,
+                            compression_level,
+                            block_size,
                         )
                         .await?
                     }
@@ -263,6 +266,7 @@ async fn to_archive(
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    compression_level: usize,
     solid: bool,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -371,6 +375,7 @@ async fn to_archive(
                         &archive_path,
                         &[bin_path.file_name().unwrap().to_str().unwrap()],
                         &tmp_directory.path(),
+                        compression_level,
                         solid,
                     )?;
                     update_romfile(
@@ -426,6 +431,7 @@ async fn to_archive(
                         &archive_path,
                         &[&cue_rom.name],
                         &archive_path.parent().unwrap(),
+                        compression_level,
                         solid,
                     )?;
                     let bin_names: Vec<&str> = bin_paths
@@ -437,6 +443,7 @@ async fn to_archive(
                         &archive_path,
                         &bin_names,
                         &tmp_directory.path(),
+                        compression_level,
                         solid,
                     )?;
                     update_romfile(
@@ -490,6 +497,7 @@ async fn to_archive(
                     &archive_path,
                     &[iso_path.file_name().unwrap().to_str().unwrap()],
                     &tmp_directory.path(),
+                    compression_level,
                     solid,
                 )?;
                 update_romfile(
@@ -539,6 +547,7 @@ async fn to_archive(
                     &archive_path,
                     &[iso_path.file_name().unwrap().to_str().unwrap()],
                     &tmp_directory.path(),
+                    compression_level,
                     solid,
                 )?;
                 update_romfile(
@@ -591,6 +600,7 @@ async fn to_archive(
                 &archive_path,
                 &[&rom.name],
                 &tmp_directory.path(),
+                compression_level,
                 solid,
             )?;
             update_romfile(
@@ -631,6 +641,7 @@ async fn to_archive(
                 &archive_path,
                 &rom_names,
                 &tmp_directory.path(),
+                compression_level,
                 solid,
             )?;
             update_romfile(
@@ -663,6 +674,7 @@ async fn to_archive(
                 &archive_path,
                 &[&rom.name],
                 &archive_path.parent().unwrap(),
+                compression_level,
                 solid,
             )?;
             update_romfile(
@@ -723,6 +735,7 @@ async fn to_archive(
                 &archive_path,
                 &rom_names,
                 &directory,
+                compression_level,
                 solid,
             )?;
             let archive_romfile_id = match find_romfile_by_path(
@@ -1230,6 +1243,9 @@ async fn to_rvz(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    compression_algorithm: &str,
+    compression_level: usize,
+    block_size: usize,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -1291,6 +1307,9 @@ async fn to_rvz(
             progress_bar,
             &extracted_path,
             &Path::new(&romfile.path).parent().unwrap(),
+            compression_algorithm,
+            compression_level,
+            block_size,
         )?;
 
         if diff {
@@ -1319,6 +1338,9 @@ async fn to_rvz(
                 progress_bar,
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
+                compression_algorithm,
+                compression_level,
+                block_size,
             )?;
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;

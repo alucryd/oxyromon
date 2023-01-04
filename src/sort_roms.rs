@@ -413,7 +413,7 @@ async fn sort_system(
             ignored_games,
             &trash_directory,
             &romfiles_by_id,
-            "NONE",
+            "none",
         )
         .await?,
     );
@@ -631,19 +631,19 @@ async fn compute_new_path<P: AsRef<Path>>(
         || romfile_extension == RVZ_EXTENSION
     {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "ALPHA" {
+        if subfolders == "alpha" {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
         new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, &romfile_extension));
     } else if system.arcade || game.jbfolder {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "ALPHA" {
+        if subfolders == "alpha" {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
         new_romfile_path = new_romfile_path.join(&game.name).join(&rom.name);
     } else {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "ALPHA" {
+        if subfolders == "alpha" {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
         }
         new_romfile_path = new_romfile_path.join(&rom.name);

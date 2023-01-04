@@ -73,8 +73,8 @@ pub async fn main(
     .await?;
     let header = find_header_by_system_id(connection, system.id).await;
     let hash_algorithm = match matches.get_one::<String>("HASH").map(String::as_str) {
-        Some("CRC") => HashAlgorithm::Crc,
-        Some("MD5") => HashAlgorithm::Md5,
+        Some("crc") => HashAlgorithm::Crc,
+        Some("md5") => HashAlgorithm::Md5,
         Some(&_) | None => {
             match find_setting_by_key(connection, "HASH_ALGORITHM")
                 .await
@@ -82,8 +82,8 @@ pub async fn main(
                 .value
                 .as_deref()
             {
-                Some("CRC") => HashAlgorithm::Crc,
-                Some("MD5") => HashAlgorithm::Md5,
+                Some("crc") => HashAlgorithm::Crc,
+                Some("md5") => HashAlgorithm::Md5,
                 Some(&_) | None => bail!("Not possible"),
             }
         }

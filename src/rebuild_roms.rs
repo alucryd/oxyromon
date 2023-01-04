@@ -29,14 +29,6 @@ pub fn subcommand() -> Command {
                 .value_parser(PossibleValuesParser::new(MERGING_STRATEGIES)),
         )
         .arg(
-            Arg::new("SOLID")
-                .short('s')
-                .long("solid")
-                .help("Create solid 7z archives")
-                .required(false)
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
@@ -82,14 +74,7 @@ pub async fn main(
             progress_bar.println("");
             continue;
         }
-        rebuild_system(
-            connection,
-            progress_bar,
-            &system,
-            merging,
-            matches.get_flag("SOLID"),
-        )
-        .await?;
+        rebuild_system(connection, progress_bar, &system, merging).await?;
         progress_bar.println("");
     }
 
@@ -101,7 +86,6 @@ async fn rebuild_system(
     progress_bar: &ProgressBar,
     system: &System,
     merging: Merging,
-    solid: bool,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing \"{}\"", system.name));
 
@@ -110,8 +94,17 @@ async fn rebuild_system(
     if (system.merging == Merging::Split as i64 || system.merging == Merging::NonMerged as i64)
         && (merging == Merging::NonMerged || merging == Merging::FullNonMerged)
     {
+        let compression_level = get_integer(connection, "ZIP_COMPRESSION_LEVEL").await;
         for game in games {
-            expand_game(connection, progress_bar, system, &game, merging, solid).await?;
+            expand_game(
+                connection,
+                progress_bar,
+                system,
+                &game,
+                merging,
+                compression_level,
+            )
+            .await?;
         }
     } else if (system.merging == Merging::NonMerged as i64
         || system.merging == Merging::FullNonMerged as i64)
@@ -140,7 +133,7 @@ async fn expand_game(
     system: &System,
     game: &Game,
     merging: Merging,
-    solid: bool,
+    compression_level: usize,
 ) -> SimpleResult<()> {
     progress_bar.println(&format!("Processing \"{}\"", game.name));
     let tmp_directory = get_tmp_directory(connection).await;
@@ -180,7 +173,7 @@ async fn expand_game(
             rom,
             &archive_romfile,
             tmp_directory,
-            solid,
+            compression_level,
         )
         .await?;
     }
@@ -241,7 +234,7 @@ async fn add_rom(
     rom: &Rom,
     archive_romfile: &Romfile,
     tmp_directory: &PathBuf,
-    solid: bool,
+    compression_level: usize,
 ) -> SimpleResult<()> {
     match rom.romfile_id {
         Some(romfile_id) => {
@@ -260,6 +253,7 @@ async fn add_rom(
                         &archive_romfile.path,
                         &file_names,
                         tmp_directory,
+                        compression_level,
                         false,
                     )?;
                     remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
@@ -269,7 +263,8 @@ async fn add_rom(
                         &archive_romfile.path,
                         &file_names,
                         &Path::new(&romfile.path).parent().unwrap(),
-                        solid,
+                        compression_level,
+                        false,
                     )?;
                 }
                 update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
@@ -316,6 +311,7 @@ async fn add_rom(
                         &archive_romfile.path,
                         &[rom.name.as_str()],
                         tmp_directory,
+                        compression_level,
                         false,
                     )?;
                     remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
@@ -332,7 +328,8 @@ async fn add_rom(
                         &archive_romfile.path,
                         &[rom.name.as_str()],
                         tmp_directory,
-                        solid,
+                        compression_level,
+                        false,
                     )?;
                     remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
                 } else {
@@ -341,7 +338,8 @@ async fn add_rom(
                         &archive_romfile.path,
                         &file_names,
                         &Path::new(&existing_romfile.path).parent().unwrap(),
-                        solid,
+                        compression_level,
+                        false,
                     )?;
                 }
                 update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
