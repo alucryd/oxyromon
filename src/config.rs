@@ -59,10 +59,9 @@ const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 pub static BIN_EXTENSION: &str = "bin";
 pub static CHD_EXTENSION: &str = "chd";
 pub static CSO_EXTENSION: &str = "cso";
-#[cfg(feature = "chd")]
 pub static CUE_EXTENSION: &str = "cue";
-#[cfg(any(feature = "chd", feature = "cso"))]
 pub static ISO_EXTENSION: &str = "iso";
+pub static M3U_EXTENSION: &str = "m3u";
 pub static PKG_EXTENSION: &str = "pkg";
 pub static PUP_EXTENSION: &str = "pup";
 pub static RAP_EXTENSION: &str = "rap";

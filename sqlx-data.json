@@ -197,6 +197,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -212,7 +217,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1
@@ -349,6 +355,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -364,7 +375,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1
@@ -1185,6 +1197,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -1200,7 +1217,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 2
@@ -1373,6 +1391,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -1388,7 +1411,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1
@@ -1473,6 +1497,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -1488,7 +1517,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1
@@ -1807,6 +1837,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -1822,7 +1857,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 0
@@ -1959,6 +1995,16 @@
       }
     },
     "query": "\n        SELECT *\n        FROM settings\n        ORDER BY key\n        "
+  },
+  "aa52b9450959a2ec845d5bea3dced8f2a65fa9d1e75dfa1f2967fcdb0b269970": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "\n        UPDATE games\n        SET playlist_id = ?\n        WHERE id = ?\n        "
   },
   "ad75b95a7051eb1f245e7090b35ae004520e79ea4a9e5f62b9c6574a7886d934": {
     "describe": {
@@ -2105,6 +2151,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -2120,7 +2171,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 3
@@ -2137,6 +2189,36 @@
       }
     },
     "query": "\n        DELETE FROM rules\n        WHERE header_id = ?\n        "
+  },
+  "b7076483078dc1b82cb413f40148ec712fa2f547948c6319f5ea0151faf3b9e8": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "path",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT DISTINCT(playlist_id)\n            FROM games\n            WHERE system_id = ?\n        )\n        "
   },
   "b8ac2702d4dbb79be38e49195e1d9a80b6e7213a517a327acb7a6b7b00283fcc": {
     "describe": {
@@ -2305,6 +2387,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -2320,7 +2407,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1
@@ -2525,6 +2613,11 @@
           "name": "jbfolder",
           "ordinal": 12,
           "type_info": "Bool"
+        },
+        {
+          "name": "playlist_id",
+          "ordinal": 13,
+          "type_info": "Int64"
         }
       ],
       "nullable": [
@@ -2540,7 +2633,8 @@
         false,
         true,
         true,
-        false
+        false,
+        true
       ],
       "parameters": {
         "Right": 1

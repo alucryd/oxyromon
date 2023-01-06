@@ -7,13 +7,15 @@
 		<version>20210402</version>
 		<date>20210402</date>
 		<author>Maxime Gauduin</author>
-		<clrmamepro header="header.xml"/>
-		<clrmamepro forcenodump="required"/>
+		<clrmamepro header="header.xml" />
+		<clrmamepro forcenodump="required" />
 	</header>
 	<game name="Test Game (USA, Europe)">
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe)" region="EUR" />
 		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Test Game (USA, Europe).rom" size="256" crc="cc721e14" md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d" status="verified" />
+		<rom name="Test Game (USA, Europe).rom" size="256" crc="cc721e14"
+			md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d"
+			status="verified" />
 	</game>
 </datafile>

@@ -28,6 +28,7 @@ async fn test() {
         system_id: 1,
         parent_id: None,
         bios_id: None,
+        playlist_id: None,
     };
     let rom = Rom {
         id: 1,
@@ -49,7 +50,7 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_path(&system, &game, &rom, &romfile, &test_directory, "none")
+    let path = compute_new_romfile_path(&system, &game, &rom, &romfile, &test_directory, "none")
         .await
         .unwrap();
 

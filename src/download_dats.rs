@@ -21,8 +21,8 @@ const NOINTRO_BASE_URL: &str = "https://datomatic.no-intro.org";
 const NOINTRO_PROFILE_URL: &str = "/profile.xml";
 const REDUMP_BASE_URL: &str = "http://redump.org";
 
-const NOINTRO_SYSTEM_URL: &str = "www.no-intro.org";
-const REDUMP_SYSTEM_URL: &str = "http://redump.org/";
+pub const NOINTRO_SYSTEM_URL: &str = "www.no-intro.org";
+pub const REDUMP_SYSTEM_URL: &str = "http://redump.org/";
 
 cfg_if! {
     if #[cfg(test)] {

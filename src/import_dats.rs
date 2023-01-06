@@ -11,7 +11,6 @@ use core::time::Duration;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
-use regex::Regex;
 use rust_embed::RustEmbed;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
@@ -21,10 +20,6 @@ use std::io;
 use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
-
-lazy_static! {
-    pub static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r" \(.*\)").unwrap();
-}
 
 #[derive(RustEmbed)]
 #[folder = "data/"]

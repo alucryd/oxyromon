@@ -133,7 +133,6 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Automatically create m3u files for multi-discs games
 - Add actions to the web UI
 - Add an optional check of the ROMs after conversion
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
@@ -150,20 +149,21 @@ These should be in your `${PATH}` for extra features.
     Usage: oxyromon [COMMAND]
 
     Commands:
-        config         Query and modify the oxyromon settings
-        import-dats    Parse and import Logiqx DAT files into oxyromon
-        download-dats  Download No-Intro and Redump DAT files and import them into oxyromon
-        import-roms    Validate and import ROM files or directories into oxyromon
-        sort-roms      Sort ROM files according to region and version preferences
-        convert-roms   Convert ROM files between common formats
-        rebuild-roms   Rebuild arcade ROM sets according to the selected strategy
-        check-roms     Check ROM files integrity
-        purge-roms     Purge trashed, missing and orphan ROM files
-        purge-systems  Purge systems
-        import-irds    Parse and import PlayStation 3 IRD files into oxyromon
-        benchmark      Benchmark oxyromon
-        server         Launch the backend server
-        help           Print this message or the help of the given subcommand(s)
+        config              Query and modify the oxyromon settings
+        import-dats         Parse and import Logiqx DAT files into oxyromon
+        download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
+        import-roms         Validate and import ROM files or directories into oxyromon
+        sort-roms           Sort ROM files according to region and version preferences
+        convert-roms        Convert ROM files between common formats
+        rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
+        check-roms          Check ROM files integrity
+        purge-roms          Purge trashed, missing and orphan ROM files
+        purge-systems       Purge systems
+        generate-playlists  
+        import-irds         Parse and import PlayStation 3 IRD files into oxyromon
+        benchmark           Benchmark oxyromon
+        server              Launch the backend server
+        help                Print this message or the help of the given subcommand(s)
 
     Options:
         -h, --help     Print help information
@@ -437,6 +437,39 @@ This will wipe the system and all its ROMs from the database. All ROMs will be p
 
     Options:
         -h, --help  Print help information
+
+## oxyromon-generate-playlists
+
+Generate M3U playlists for multi-disc games
+
+This will generate playlists to be able to swap discs from within RetroArch. Limited to Redump only.
+
+Note: `sort-roms` will move them accordingly but if you use `convert-roms` you will need to run this command again at the moment.
+
+    Usage: oxyromon generate-playlists [OPTIONS]
+
+    Options:
+        -a, --all   Generate playlists for all systems
+        -h, --help  Print help information
+
+
+## oxyromon-import-irds
+
+Parse and import PlayStation 3 IRD files into oxyromon
+
+One of the most common way PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
+
+Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehand. Please make sure it has `PlayStation 3` in the name if you don't go with Redump.
+
+    Usage: oxyromon import-irds [OPTIONS] <IRDS>...
+
+    Arguments:
+        <IRDS>...  Set the IRD files to import
+
+    Options:
+        -i, --info   Show the IRD information and exit
+        -f, --force  Force import of already imported IRD files
+        -h, --help   Print help information
 
 ## oxyromon-server
 

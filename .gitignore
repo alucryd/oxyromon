@@ -9,6 +9,8 @@
 *.rs.bk
 target
 *.db
+*.db-shm
+*.db-wal
 lcov.info
 dist
 

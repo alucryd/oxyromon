@@ -1,15 +1,19 @@
 use super::config::*;
-use super::import_dats::SYSTEM_NAME_REGEX;
 use super::model::*;
 use super::SimpleResult;
 use async_std::fs;
 use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
+use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 #[cfg(any(feature = "ird", feature = "benchmark"))]
 use tempfile::NamedTempFile;
 use tempfile::TempDir;
+
+lazy_static! {
+    static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r" \(.*\)").unwrap();
+}
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(

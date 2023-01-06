@@ -73,6 +73,7 @@ pub struct Game {
     pub system_id: i64,
     pub parent_id: Option<i64>,
     pub bios_id: Option<i64>,
+    pub playlist_id: Option<i64>,
 }
 
 #[derive(FromRow)]

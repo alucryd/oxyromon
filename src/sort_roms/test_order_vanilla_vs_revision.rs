@@ -17,6 +17,7 @@ async fn test() {
         system_id: 1,
         parent_id: None,
         bios_id: None,
+        playlist_id: None,
     };
     let game_b = Game {
         id: 1,
@@ -32,6 +33,7 @@ async fn test() {
         system_id: 1,
         parent_id: None,
         bios_id: None,
+        playlist_id: None,
     };
 
     // when

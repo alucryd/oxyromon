@@ -18,6 +18,7 @@ async fn test() {
             system_id: 1,
             parent_id: None,
             bios_id: None,
+            playlist_id: None,
         },
         Game {
             id: 2,
@@ -33,6 +34,7 @@ async fn test() {
             system_id: 1,
             parent_id: None,
             bios_id: None,
+            playlist_id: None,
         },
         Game {
             id: 3,
@@ -48,6 +50,7 @@ async fn test() {
             system_id: 1,
             parent_id: None,
             bios_id: None,
+            playlist_id: None,
         },
         Game {
             id: 4,
@@ -63,6 +66,7 @@ async fn test() {
             system_id: 1,
             parent_id: None,
             bios_id: None,
+            playlist_id: None,
         },
     ];
 

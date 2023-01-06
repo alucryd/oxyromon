@@ -558,6 +558,21 @@ pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jb
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
+pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, playlist_id: i64) {
+    sqlx::query!(
+        "
+        UPDATE games
+        SET playlist_id = ?
+        WHERE id = ?
+        ",
+        playlist_id,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
+}
+
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
@@ -1514,6 +1529,28 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
         WHERE path LIKE \"%/Trash/%\"
         ORDER BY path
         ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding romfiles in trash")
+}
+
+pub async fn find_playlists_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE id IN (
+            SELECT DISTINCT(playlist_id)
+            FROM games
+            WHERE system_id = ?
+        )
+        ",
+        system_id,
     )
     .fetch_all(connection)
     .await

@@ -58,6 +58,7 @@ mod database;
 #[cfg(feature = "rvz")]
 mod dolphin;
 mod download_dats;
+mod generate_playlists;
 mod import_dats;
 #[cfg(feature = "ird")]
 mod import_irds;
@@ -103,6 +104,7 @@ async fn main() -> SimpleResult<()> {
         check_roms::subcommand(),
         purge_roms::subcommand(),
         purge_systems::subcommand(),
+        generate_playlists::subcommand(),
     ];
     cfg_if! {
         if #[cfg(feature = "ird")] {
@@ -226,6 +228,14 @@ async fn main() -> SimpleResult<()> {
             }
             Some("purge-systems") => {
                 purge_systems::main(&mut pool.acquire().await.unwrap(), &progress_bar).await?
+            }
+            Some("generate-playlists") => {
+                generate_playlists::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("generate-playlists").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("benchmark") => {
                 cfg_if! {

@@ -5,6 +5,7 @@
 - Add a `GROUP_SUBSYSTEMS` toggle, if true merge variants of the same system in a single directory
 - Support MAME DAT files that use non-standard `machine` instead of `game` tags
 - Add various compression settings for 7Z, ZIP and RVZ
+- Add a new `generate-playlists` subcommand
 
 # 0.13.0
 

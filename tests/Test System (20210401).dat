@@ -11,16 +11,22 @@
 	<game name="Test Game (USA, Europe)">
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Updated Test Game (USA, Europe).rom" size="256" crc="cc721e14" md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d" status="verified" />
+		<rom name="Updated Test Game (USA, Europe).rom" size="256" crc="cc721e14"
+			md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d"
+			status="verified" />
 	</game>
 	<game name="Updated Test Game (Japan)">
 		<description>Test Game (Japan)</description>
 		<release name="Test Game (Japan)" region="JPN" />
-		<rom name="Test Game (Japan).rom" size="256" crc="310212e8" md5="d14b417004b9cc868286a0eafb257d2b" sha1="5fcce2e41101d4e0f22a9279e65839145fa61846" status="verified" />
+		<rom name="Test Game (Japan).rom" size="256" crc="310212e8"
+			md5="d14b417004b9cc868286a0eafb257d2b" sha1="5fcce2e41101d4e0f22a9279e65839145fa61846"
+			status="verified" />
 	</game>
 	<game name="Test Game (Asia)">
 		<description>Test Game (Asia)</description>
 		<release name="Test Game (Asia)" region="ASI" />
-		<rom name="Test Game (Asia).rom" size="256" crc="1c3321f4" md5="2b9e40254b661c1970524071059965c8" sha1="31b561b11280b242e797147d4b39aa4d33920d8e" status="verified" />
+		<rom name="Test Game (Asia).rom" size="256" crc="1c3321f4"
+			md5="2b9e40254b661c1970524071059965c8" sha1="31b561b11280b242e797147d4b39aa4d33920d8e"
+			status="verified" />
 	</game>
 </datafile>

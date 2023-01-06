@@ -1,3 +1,5 @@
+use crate::generate_playlists::DISC_REGEX;
+
 use super::config::*;
 use super::database::*;
 use super::model::*;
@@ -179,6 +181,12 @@ async fn sort_system(
         .map(|romfile| (romfile.id, romfile))
         .collect();
 
+    let playlists = find_playlists_by_system_id(connection, system.id).await;
+    let playlists_by_id: HashMap<i64, Romfile> = playlists
+        .into_iter()
+        .map(|romfile| (romfile.id, romfile))
+        .collect();
+
     // 1G1R mode
     if !system.arcade && !one_regions.is_empty() {
         let parent_games = find_parent_games_by_system_id(connection, system.id).await;
@@ -347,6 +355,7 @@ async fn sort_system(
             all_regions_games,
             &system_directory,
             &romfiles_by_id,
+            &playlists_by_id,
             all_regions_subfolders,
         )
         .await?,
@@ -369,6 +378,7 @@ async fn sort_system(
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
+            &playlists_by_id,
             one_regions_subfolders,
         )
         .await?,
@@ -391,6 +401,7 @@ async fn sort_system(
             incomplete_games,
             &system_directory,
             &romfiles_by_id,
+            &playlists_by_id,
             all_regions_subfolders,
         )
         .await?,
@@ -413,6 +424,7 @@ async fn sort_system(
             ignored_games,
             &trash_directory,
             &romfiles_by_id,
+            &playlists_by_id,
             "none",
         )
         .await?,
@@ -491,6 +503,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
     games: Vec<Game>,
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
+    playlists_by_id: &'a HashMap<i64, Romfile>,
     subfolders: &str,
 ) -> SimpleResult<Vec<(&'a Romfile, String)>> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
@@ -519,15 +532,28 @@ async fn sort_games<'a, P: AsRef<Path>>(
         };
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let new_path = String::from(
-                compute_new_path(system, &game, rom, romfile, directory, subfolders)
+            let new_romfile_path = String::from(
+                compute_new_romfile_path(system, &game, rom, romfile, directory, subfolders)
                     .await?
                     .as_os_str()
                     .to_str()
                     .unwrap(),
             );
-            if romfile.path != new_path {
-                romfile_moves.push((romfile, new_path))
+            if romfile.path != new_romfile_path {
+                romfile_moves.push((romfile, new_romfile_path))
+            }
+        }
+        if game.playlist_id.is_some() {
+            let playlist = playlists_by_id.get(&game.playlist_id.unwrap()).unwrap();
+            let new_playlist_path = String::from(
+                compute_new_playlist_path(&game, directory, subfolders)
+                    .await?
+                    .as_os_str()
+                    .to_str()
+                    .unwrap(),
+            );
+            if playlist.path != new_playlist_path {
+                romfile_moves.push((&playlist, new_playlist_path))
             }
         }
     }
@@ -607,7 +633,7 @@ fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering 
     game_b.name.partial_cmp(&game_a.name).unwrap()
 }
 
-async fn compute_new_path<P: AsRef<Path>>(
+async fn compute_new_romfile_path<P: AsRef<Path>>(
     system: &System,
     game: &Game,
     rom: &Rom,
@@ -649,6 +675,23 @@ async fn compute_new_path<P: AsRef<Path>>(
         new_romfile_path = new_romfile_path.join(&rom.name);
     }
     Ok(new_romfile_path)
+}
+
+async fn compute_new_playlist_path<P: AsRef<Path>>(
+    game: &Game,
+    directory: &P,
+    subfolders: &str,
+) -> SimpleResult<PathBuf> {
+    let mut new_playlist_path: PathBuf = directory.as_ref().to_path_buf();
+    if subfolders == "alpha" {
+        new_playlist_path = new_playlist_path.join(compute_alpha_subfolder(&game.name));
+    }
+    new_playlist_path = new_playlist_path.join(format!(
+        "{}.{}",
+        DISC_REGEX.replace(&game.name, ""),
+        M3U_EXTENSION
+    ));
+    Ok(new_playlist_path)
 }
 
 fn compute_alpha_subfolder(name: &str) -> String {
