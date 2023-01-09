@@ -221,7 +221,7 @@ async fn sort_system(
             // find the one game we want to keep, if any
             for region in one_regions {
                 let i = games.iter().position(|game| {
-                    game.complete
+                    (game.complete || games.iter().all(|game| !game.complete))
                         && Region::try_from_tosec_region(&game.regions)
                             .unwrap_or_default()
                             .contains(region)
@@ -745,6 +745,8 @@ mod test_sort_1g1r_discard_asia_and_beta;
 mod test_sort_1g1r_subfolders_alpha;
 #[cfg(test)]
 mod test_sort_1g1r_without_parent_clone;
+#[cfg(test)]
+mod test_sort_1g1r_without_roms;
 #[cfg(test)]
 mod test_sort_discard_asia;
 #[cfg(test)]
