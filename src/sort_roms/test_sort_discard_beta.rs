@@ -67,7 +67,8 @@ async fn test() {
         &["Beta"],
         &[],
         "none",
-        "None",
+        "none",
+        false,
     )
     .await
     .unwrap();

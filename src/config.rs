@@ -34,7 +34,11 @@ pub const HASH_ALGORITHMS: &[&str] = &["crc", "md5", "sha1"];
 pub const SUBFOLDER_SCHEMES: &[&str] = &["none", "alpha"];
 pub const RVZ_COMPRESSION_ALGORITHMS: &[&str] = &["none", "zstd", "bzip", "lzma", "lzma2"];
 
-const BOOLEANS: &[&str] = &["GROUP_SUBSYSTEMS", "SEVENZIP_SOLID_COMPRESSION"];
+const BOOLEANS: &[&str] = &[
+    "GROUP_SUBSYSTEMS",
+    "REGIONS_ONE_STRICT",
+    "SEVENZIP_SOLID_COMPRESSION",
+];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
     "HASH_ALGORITHM" => HASH_ALGORITHMS,
     "REGIONS_ALL_SUBFOLDERS" => SUBFOLDER_SCHEMES,

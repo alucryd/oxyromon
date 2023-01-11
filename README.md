@@ -78,6 +78,7 @@ Available settings:
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
 - `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `none`, `alpha`
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `none`, `alpha`
+- `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
 - `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
@@ -100,6 +101,7 @@ HASH_ALGORITHM = crc
 REGIONS_ALL = US,EU,JP
 REGIONS_ALL_SUBFOLDERS = none
 REGIONS_ONE = US,EU
+REGIONS_ONE_STRICT = false
 REGIONS_ONE_SUBFOLDERS = none
 ROM_DIRECTORY = /home/alucryd/Emulation
 RVZ_COMPRESSION_ALGORITHM = zstd
@@ -321,6 +323,10 @@ Regions are set via the `REGIONS_ONE` setting, and can overriden via the CLI `-r
 
 In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
 directory.
+
+1G1R and hybrid modes have an addtional knob you can turn via `REGIONS_ONE_STRICT`.
+Setting it to false will elect the first available ROM you possess following your region preferences.
+Setting to true will elect ROMs following region preferences regardless of whether you actually posses the ROM or not.
 
 In every mode, discarded games are placed in the `Trash` subdirectory.
 

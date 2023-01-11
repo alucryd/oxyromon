@@ -95,14 +95,15 @@ pub async fn main(
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
-    let all_region_subfolders = matches
+    let all_regions_subfolders = matches
         .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
         .map(String::to_string)
         .unwrap_or(get_string(connection, "REGIONS_ALL_SUBFOLDERS").await);
-    let one_region_subfolders = matches
+    let one_regions_subfolders = matches
         .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
         .map(String::to_string)
         .unwrap_or(get_string(connection, "REGIONS_ONE_SUBFOLDERS").await);
+    let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;
 
     for system in systems {
         sort_system(
@@ -120,8 +121,9 @@ pub async fn main(
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
-            &all_region_subfolders,
-            &one_region_subfolders,
+            &all_regions_subfolders,
+            &one_regions_subfolders,
+            one_regions_strict,
         )
         .await?;
 
@@ -164,6 +166,7 @@ async fn sort_system(
     ignored_flags: &[&str],
     all_regions_subfolders: &str,
     one_regions_subfolders: &str,
+    one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.println(&format!("Processing \"{}\"", system.name));
@@ -172,7 +175,8 @@ async fn sort_system(
     let mut all_regions_games: Vec<Game> = Vec::new();
     let mut one_region_games: Vec<Game> = Vec::new();
     let mut ignored_games: Vec<Game> = Vec::new();
-    let mut incomplete_games: Vec<Game> = Vec::new();
+    let mut incomplete_all_regions_games: Vec<Game> = Vec::new();
+    let mut incomplete_one_region_games: Vec<Game> = Vec::new();
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
@@ -221,13 +225,18 @@ async fn sort_system(
             // find the one game we want to keep, if any
             for region in one_regions {
                 let i = games.iter().position(|game| {
-                    (game.complete || games.iter().all(|game| !game.complete))
+                    (game.complete || one_regions_strict || games.iter().all(|game| !game.complete))
                         && Region::try_from_tosec_region(&game.regions)
                             .unwrap_or_default()
                             .contains(region)
                 });
                 if i.is_some() {
-                    one_region_games.push(games.remove(i.unwrap()));
+                    let game = games.remove(i.unwrap());
+                    if game.complete {
+                        one_region_games.push(game);
+                    } else {
+                        incomplete_one_region_games.push(game);
+                    }
                     break;
                 }
             }
@@ -245,7 +254,7 @@ async fn sort_system(
                     if game.complete {
                         all_regions_games.push(game);
                     } else {
-                        incomplete_games.push(game);
+                        incomplete_all_regions_games.push(game);
                     }
                 } else {
                     ignored_games.push(game);
@@ -274,7 +283,7 @@ async fn sort_system(
                 if game.complete {
                     all_regions_games.push(game);
                 } else {
-                    incomplete_games.push(game);
+                    incomplete_all_regions_games.push(game);
                 }
             } else {
                 ignored_games.push(game);
@@ -295,15 +304,19 @@ async fn sort_system(
             if game.complete {
                 all_regions_games.push(game);
             } else {
-                incomplete_games.push(game)
+                incomplete_all_regions_games.push(game)
             }
         }
     }
 
     if matches.get_flag("WANTED") {
+        let mut all_incomplete_games: Vec<&Game> = Vec::new();
+        all_incomplete_games.extend(incomplete_all_regions_games.iter());
+        all_incomplete_games.extend(incomplete_one_region_games.iter());
+        all_incomplete_games.sort_by_key(|game| &game.name);
         let mut wanted_roms: Vec<Rom> = find_roms_without_romfile_by_game_ids(
             connection,
-            &incomplete_games
+            &all_incomplete_games
                 .par_iter()
                 .map(|game| game.id)
                 .collect::<Vec<i64>>(),
@@ -314,7 +327,7 @@ async fn sort_system(
             progress_bar.println("Wanted:");
             wanted_roms.sort_by_key(|rom| rom.game_id);
             for rom in wanted_roms {
-                let game = incomplete_games
+                let game = all_incomplete_games
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
@@ -387,7 +400,16 @@ async fn sort_system(
     // process incomplete games
     changes += update_games_sorting(
         &mut transaction,
-        &incomplete_games
+        &incomplete_one_region_games
+            .iter()
+            .map(|game| game.id)
+            .collect::<Vec<i64>>(),
+        Sorting::OneRegion,
+    )
+    .await;
+    changes += update_games_sorting(
+        &mut transaction,
+        &incomplete_all_regions_games
             .iter()
             .map(|game| game.id)
             .collect::<Vec<i64>>(),
@@ -398,7 +420,19 @@ async fn sort_system(
         &mut sort_games(
             &mut transaction,
             system,
-            incomplete_games,
+            incomplete_one_region_games,
+            &system_directory,
+            &romfiles_by_id,
+            &playlists_by_id,
+            one_regions_subfolders,
+        )
+        .await?,
+    );
+    romfile_moves.append(
+        &mut sort_games(
+            &mut transaction,
+            system,
+            incomplete_all_regions_games,
             &system_directory,
             &romfiles_by_id,
             &playlists_by_id,
@@ -747,6 +781,10 @@ mod test_sort_1g1r_subfolders_alpha;
 mod test_sort_1g1r_without_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_without_roms;
+#[cfg(test)]
+mod test_sort_1g1r_lenient;
+#[cfg(test)]
+mod test_sort_1g1r_strict;
 #[cfg(test)]
 mod test_sort_discard_asia;
 #[cfg(test)]

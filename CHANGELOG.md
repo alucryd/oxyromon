@@ -6,6 +6,8 @@
 - Support MAME DAT files that use non-standard `machine` instead of `game` tags
 - Add various compression settings for 7Z, ZIP and RVZ
 - Add a new `generate-playlists` subcommand
+- Fix pure 1G1R sorting with parent-clone groups that have no ROMs
+- Add a `REGIONS_ONE_STRICT` option to switch between strict and lenient 1G1R election
 
 # 0.13.0
 
