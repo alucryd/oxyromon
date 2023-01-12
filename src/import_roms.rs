@@ -346,7 +346,19 @@ async fn import_jbfolder<P: AsRef<Path>>(
 
             // abort if no match
             if roms.is_empty() {
-                progress_bar.println("No match");
+                if count_roms_with_romfile_by_size_and_md5_and_parent_id(
+                    &mut transaction,
+                    size,
+                    &md5,
+                    sfb_rom.parent_id.unwrap(),
+                )
+                .await
+                    > 0
+                {
+                    progress_bar.println("Already imported");
+                } else {
+                    progress_bar.println("No match");
+                }
                 continue;
             }
 
@@ -932,7 +944,31 @@ async fn find_rom_by_hash(
 
     // abort if no match
     if roms.is_empty() {
-        progress_bar.println("No match");
+        let rom_count = match hash_algorithm {
+            HashAlgorithm::Crc => {
+                count_roms_with_romfile_by_size_and_crc_and_system_id(
+                    connection, size, hash, system.id,
+                )
+                .await
+            }
+            HashAlgorithm::Md5 => {
+                count_roms_with_romfile_by_size_and_md5_and_system_id(
+                    connection, size, hash, system.id,
+                )
+                .await
+            }
+            HashAlgorithm::Sha1 => {
+                count_roms_with_romfile_by_size_and_sha1_and_system_id(
+                    connection, size, hash, system.id,
+                )
+                .await
+            }
+        };
+        if rom_count > 0 {
+            progress_bar.println("Already imported");
+        } else {
+            progress_bar.println("No match");
+        }
         return Ok(None);
     }
 
@@ -980,7 +1016,20 @@ async fn find_sfb_rom_by_md5(
 
     // abort if no match
     if roms.is_empty() {
-        progress_bar.println("No match");
+        if count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
+            connection,
+            PS3_DISC_SFB,
+            size,
+            md5,
+            system.id,
+        )
+        .await
+            > 0
+        {
+            progress_bar.println("Already imported");
+        } else {
+            progress_bar.println("No match");
+        }
         return Ok(None);
     }
 

@@ -1211,6 +1211,39 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
     })
 }
 
+pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+    system_id: i64,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(r.id) AS 'count!'
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.md5 = ?
+        AND g.system_id = ?
+        ",
+        size,
+        md5,
+        system_id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and MD5 {} and system id {}",
+            size, md5, system_id
+        )
+    })
+    .count
+}
+
 pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1245,6 +1278,40 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
     })
 }
 
+pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    sha1: &str,
+    system_id: i64,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(r.id) AS 'count!'
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.sha1 = ?
+        AND g.system_id = ?
+        ORDER BY r.name
+        ",
+        size,
+        sha1,
+        system_id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and SHA1 {} and system id {}",
+            size, sha1, system_id
+        )
+    })
+    .count
+}
+
 pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1277,6 +1344,39 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
             size, crc, system_id
         )
     })
+}
+
+pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+    system_id: i64,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(r.id) AS 'count!'
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.crc = ?
+        AND g.system_id = ?
+        ",
+        size,
+        crc,
+        system_id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and CRC {} and system id {}",
+            size, crc, system_id
+        )
+    })
+    .count
 }
 
 #[cfg(feature = "ird")]
@@ -1319,6 +1419,44 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
 }
 
 #[cfg(feature = "ird")]
+pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: u64,
+    md5: &str,
+    system_id: i64,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(r.id) AS 'count!'
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.name = ?
+        AND r.size = ?
+        AND r.md5 = ?
+        AND r.parent_id IS NOT NULL
+        AND g.system_id = ?
+        ",
+        name,
+        size,
+        md5,
+        system_id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with name {} and size {} and MD5 {} and system id {}",
+            name, size, md5, system_id
+        )
+    })
+    .count
+}
+
+#[cfg(feature = "ird")]
 pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1350,6 +1488,39 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
             size, md5, parent_id
         )
     })
+}
+
+#[cfg(feature = "ird")]
+pub async fn count_roms_with_romfile_by_size_and_md5_and_parent_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+    parent_id: i64,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT count(id) AS 'count!'
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND size = ?
+        AND md5 = ?
+        AND parent_id = ?
+        ",
+        size,
+        md5,
+        parent_id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and MD5 {} and parent id {}",
+            size, md5, parent_id
+        )
+    })
+    .count
 }
 
 pub async fn find_rom_by_name_and_game_id(

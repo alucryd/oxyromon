@@ -8,6 +8,8 @@
 - Add a new `generate-playlists` subcommand
 - Fix pure 1G1R sorting with parent-clone groups that have no ROMs
 - Add a `REGIONS_ONE_STRICT` option to switch between strict and lenient 1G1R election
+- Fix 1G1R sorting when revisions are clones
+- Display an appropriate message when a ROM has already been imported
 
 # 0.13.0
 

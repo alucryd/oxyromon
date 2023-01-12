@@ -570,6 +570,24 @@
     },
     "query": "\n        INSERT INTO games (name, description, comment, bios, regions, system_id, parent_id, bios_id)\n        VALUES (?, ?, ?, ?, ?, ?, ?, ?)\n        "
   },
+  "42df705bdb2d82ef943abba42f4c06d4c488cc1fc47ff64e920f1610ba4ebdda": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "\n        SELECT COUNT(r.id) AS 'count!'\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NOT NULL\n        AND r.size = ?\n        AND r.md5 = ?\n        AND g.system_id = ?\n        "
+  },
   "4704312498be0fe85028fcab1263c7784cc0412afb08743dde8c545e89a5edde": {
     "describe": {
       "columns": [
@@ -1041,6 +1059,24 @@
       }
     },
     "query": "\n        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NULL\n        AND r.size = ?\n        AND r.sha1 = ?\n        AND g.system_id = ?\n        ORDER BY r.name\n        "
+  },
+  "62696e128d99b70d218f82ab9caa11edbb468f71c707ea090d437957a7e4337f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "\n        SELECT COUNT(r.id) AS 'count!'\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NULL\n        AND r.name = ?\n        AND r.size = ?\n        AND r.md5 = ?\n        AND r.parent_id IS NOT NULL\n        AND g.system_id = ?\n        "
   },
   "6541b42d53193852730eecac0fd71839befb8bbcb24a87f56741db4044cac87c": {
     "describe": {
@@ -1770,6 +1806,42 @@
     },
     "query": "\n        SELECT *\n        FROM roms\n        ORDER BY name\n        "
   },
+  "8b8214aac3faa37c074fbfede633de976a5abd22a44ea7d6179acccde7af4a7f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "\n        SELECT COUNT(r.id) AS 'count!'\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NOT NULL\n        AND r.size = ?\n        AND r.sha1 = ?\n        AND g.system_id = ?\n        ORDER BY r.name\n        "
+  },
+  "93561b76f0db3fe60727271981f6ec227069fe1827be93036d99afb4089cb5bb": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "\n        SELECT COUNT(r.id) AS 'count!'\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NOT NULL\n        AND r.size = ?\n        AND r.crc = ?\n        AND g.system_id = ?\n        "
+  },
   "9a2ad65a97d75cc6a739b34989bae92403f87479788ee17f68acf09f96ea6183": {
     "describe": {
       "columns": [
@@ -1865,6 +1937,24 @@
       }
     },
     "query": "\n        SELECT *\n        FROM games\n        ORDER BY name\n        "
+  },
+  "9e02e82f74fee9c85b1b4679748fee69d7329f5802f7f02b6ec42efdc4dcf647": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count!",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 3
+      }
+    },
+    "query": "\n        SELECT count(id) AS 'count!'\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND size = ?\n        AND md5 = ?\n        AND parent_id = ?\n        "
   },
   "a125e578d08f63cd1a8420b3547952bd41ef8f32db3b814684a57d3fb61abb1a": {
     "describe": {
