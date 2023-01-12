@@ -2,8 +2,8 @@
 <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
 <datafile>
 	<header>
-		<name>Test System</name>
-		<description>Test System</description>
+		<name>Test System (MAME)</name>
+		<description>Test System (MAME)</description>
 		<version>20200721</version>
 		<date>20200721</date>
 		<author>Maxime Gauduin</author>

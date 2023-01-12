@@ -42,7 +42,7 @@ async fn test() {
     assert_eq!(systems.len(), 1);
 
     let system = systems.get(0).unwrap();
-    assert_eq!(system.name, "Test System (Headered)");
+    assert_eq!(system.name, "Test System (Headered) (Duplicate Clrmamepro)");
 
     assert!(find_header_by_system_id(&mut connection, system.id)
         .await

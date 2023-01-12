@@ -207,12 +207,12 @@ async fn sort_system(
         for parent_game in parent_games {
             if clone_games_by_parent_id.contains_key(&parent_game.id) {
                 games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
-                // put newer releases first
-                games.sort_by(sort_games_by_version_or_name_desc);
             } else {
                 games = Vec::new();
             }
-            games.insert(0, parent_game);
+            games.push(parent_game);
+            // put newer releases first
+            games.sort_by(sort_games_by_version_and_hierarchy_desc);
 
             // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
@@ -638,7 +638,9 @@ fn trim_ignored_games(
     }
 }
 
-fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering {
+fn sort_games_by_version_and_hierarchy_desc(game_a: &Game, game_b: &Game) -> Ordering {
+    let mut weight_a: u8 = 0;
+    let mut weight_b: u8 = 0;
     let mut version_a = None;
     let mut version_b = None;
     if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
@@ -656,15 +658,25 @@ fn sort_games_by_version_or_name_desc(game_a: &Game, game_b: &Game) -> Ordering 
         }
     }
     if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
-        return version_b.partial_cmp(version_a).unwrap();
+        match version_b.partial_cmp(version_a).unwrap() {
+            Ordering::Less => weight_a += 2,
+            Ordering::Greater => weight_b += 2,
+            Ordering::Equal => {
+                weight_a += 2;
+                weight_b += 2;
+            }
+        };
+    } else if version_a.is_some() {
+        weight_a += 2;
+    } else if version_b.is_some() {
+        weight_b += 2;
     }
-    if version_a.is_some() {
-        return Ordering::Less;
+    if game_a.parent_id.is_none() {
+        weight_a += 1;
+    } else if game_b.parent_id.is_none() {
+        weight_b += 1;
     }
-    if version_b.is_some() {
-        return Ordering::Greater;
-    }
-    game_b.name.partial_cmp(&game_a.name).unwrap()
+    weight_b.partial_cmp(&weight_a).unwrap()
 }
 
 async fn compute_new_romfile_path<P: AsRef<Path>>(
@@ -776,15 +788,17 @@ mod test_sort_1g1r_catch_all;
 #[cfg(test)]
 mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]
+mod test_sort_1g1r_lenient;
+#[cfg(test)]
+mod test_sort_1g1r_revisions;
+#[cfg(test)]
+mod test_sort_1g1r_strict;
+#[cfg(test)]
 mod test_sort_1g1r_subfolders_alpha;
 #[cfg(test)]
 mod test_sort_1g1r_without_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_without_roms;
-#[cfg(test)]
-mod test_sort_1g1r_lenient;
-#[cfg(test)]
-mod test_sort_1g1r_strict;
 #[cfg(test)]
 mod test_sort_discard_asia;
 #[cfg(test)]

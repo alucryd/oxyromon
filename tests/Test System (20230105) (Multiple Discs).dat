@@ -2,8 +2,8 @@
 <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
 <datafile>
 	<header>
-		<name>Test System</name>
-		<description>Test System</description>
+		<name>Test System (Multiple Discs)</name>
+		<description>Test System (Multiple Discs)</description>
 		<version>20230105</version>
 		<date>20230105</date>
 		<author>Maxime Gauduin</author>

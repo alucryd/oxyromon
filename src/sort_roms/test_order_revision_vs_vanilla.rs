@@ -37,7 +37,7 @@ async fn test() {
     };
 
     // when
-    let ordering = sort_games_by_version_or_name_desc(&game_a, &game_b);
+    let ordering = sort_games_by_version_and_hierarchy_desc(&game_a, &game_b);
 
     // then
     assert_eq!(ordering, Ordering::Less);

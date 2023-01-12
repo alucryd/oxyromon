@@ -2,8 +2,8 @@
 <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
 <datafile>
 	<header>
-		<name>Test System (Headered) (Parent-Clone)</name>
-		<description>Test System (Parent-Clone)</description>
+		<name>Test System (Headered)</name>
+		<description>Test System (Headered)</description>
 		<version>20210402</version>
 		<date>20210402</date>
 		<author>Maxime Gauduin</author>

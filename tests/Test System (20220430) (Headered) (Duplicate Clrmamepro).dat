@@ -2,10 +2,10 @@
 <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
 <datafile>
 	<header>
-		<name>Test System (Headered) (Parent-Clone)</name>
-		<description>Test System (Parent-Clone)</description>
-		<version>20210402</version>
-		<date>20210402</date>
+		<name>Test System (Headered) (Duplicate Clrmamepro)</name>
+		<description>Test System (Headered) (Duplicate Clrmamepro)</description>
+		<version>20220430</version>
+		<date>20220430</date>
 		<author>Maxime Gauduin</author>
 		<clrmamepro header="header.xml" />
 		<clrmamepro forcenodump="required" />
