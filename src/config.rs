@@ -54,6 +54,7 @@ const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
+    "PREFER_FLAGS",
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];

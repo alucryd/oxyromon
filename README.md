@@ -72,6 +72,7 @@ Available settings:
   [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
 - `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
   [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
 - `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
 - `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files

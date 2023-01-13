@@ -95,6 +95,7 @@ pub async fn main(
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
+    let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
     let all_regions_subfolders = matches
         .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
         .map(String::to_string)
@@ -118,6 +119,10 @@ pub async fn main(
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
             &ignored_flags
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<&str>>(),
+            &preferred_flags
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
@@ -164,6 +169,7 @@ async fn sort_system(
     one_regions: &[Region],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
+    preferred_flags: &[&str],
     all_regions_subfolders: &str,
     one_regions_subfolders: &str,
     one_regions_strict: bool,
@@ -212,7 +218,7 @@ async fn sort_system(
             }
             games.push(parent_game);
             // put newer releases first
-            games.sort_by(sort_games_by_version_and_hierarchy_desc);
+            games.sort_by(|a, b| sort_games_by_version_and_hierarchy_desc(a, b, preferred_flags));
 
             // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
@@ -638,7 +644,11 @@ fn trim_ignored_games(
     }
 }
 
-fn sort_games_by_version_and_hierarchy_desc(game_a: &Game, game_b: &Game) -> Ordering {
+fn sort_games_by_version_and_hierarchy_desc(
+    game_a: &Game,
+    game_b: &Game,
+    preferred_flags: &[&str],
+) -> Ordering {
     let mut weight_a: u8 = 0;
     let mut weight_b: u8 = 0;
     let mut version_a = None;
@@ -648,12 +658,26 @@ fn sort_games_by_version_and_hierarchy_desc(game_a: &Game, game_b: &Game) -> Ord
             if let NoIntroToken::Version(version) = token {
                 version_a = Some(version.to_owned());
             }
+            if let NoIntroToken::Flag(_, flags) = token {
+                for flag in flags.split(", ") {
+                    if preferred_flags.contains(&flag) {
+                        weight_a += 3;
+                    }
+                }
+            }
         }
     }
     if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
         for token in name.iter() {
             if let NoIntroToken::Version(version) = token {
                 version_b = Some(version.to_owned());
+            }
+            if let NoIntroToken::Flag(_, flags) = token {
+                for flag in flags.split(", ") {
+                    if preferred_flags.contains(&flag) {
+                        weight_b += 3;
+                    }
+                }
             }
         }
     }

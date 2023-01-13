@@ -10,6 +10,7 @@
 - Add a `REGIONS_ONE_STRICT` option to switch between strict and lenient 1G1R election
 - Fix 1G1R sorting when revisions are clones
 - Display an appropriate message when a ROM has already been imported
+- Add a `PREFER_FLAGS` to give a boost to specific flags in the 1G1R election process
 
 # 0.13.0
 
