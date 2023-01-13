@@ -80,8 +80,8 @@ async fn test() {
     let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
     assert_eq!(4, romfiles.len());
 
-    let one_regions_indices = vec![3];
-    let trash_indices = vec![0, 1, 2];
+    let one_regions_indices = vec![1];
+    let trash_indices = vec![0, 2, 3];
 
     for i in one_regions_indices {
         let romfile = romfiles.get(i).unwrap();

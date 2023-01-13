@@ -15,7 +15,7 @@ async fn test() {
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: None,
+        parent_id: Some(3),
         bios_id: None,
         playlist_id: None,
     };
@@ -31,7 +31,7 @@ async fn test() {
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: None,
+        parent_id: Some(3),
         bios_id: None,
         playlist_id: None,
     };

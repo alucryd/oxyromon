@@ -683,23 +683,21 @@ fn sort_games_by_version_and_hierarchy_desc(
     }
     if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
         match version_b.partial_cmp(version_a).unwrap() {
-            Ordering::Less => weight_a += 2,
-            Ordering::Greater => weight_b += 2,
-            Ordering::Equal => {
-                weight_a += 2;
-                weight_b += 2;
-            }
+            Ordering::Less => weight_a += 1,
+            Ordering::Greater => weight_b += 1,
+            Ordering::Equal => {}
         };
     } else if version_a.is_some() {
-        weight_a += 2;
-    } else if version_b.is_some() {
-        weight_b += 2;
-    }
-    if game_a.parent_id.is_none() {
         weight_a += 1;
-    } else if game_b.parent_id.is_none() {
+    } else if version_b.is_some() {
         weight_b += 1;
     }
+    if game_a.parent_id.is_none() {
+        weight_a += 2;
+    } else if game_b.parent_id.is_none() {
+        weight_b += 2;
+    }
+    // compare in reverse, we want higher weight first
     weight_b.partial_cmp(&weight_a).unwrap()
 }
 

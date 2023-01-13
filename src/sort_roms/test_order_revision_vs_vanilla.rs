@@ -5,7 +5,7 @@ async fn test() {
     // given
     let game_a = Game {
         id: 1,
-        name: String::from("Game (USA) (Rev 2"),
+        name: String::from("Game (USA) (Rev 2)"),
         description: String::from(""),
         comment: None,
         external_id: None,
@@ -15,7 +15,7 @@ async fn test() {
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: None,
+        parent_id: Some(3),
         bios_id: None,
         playlist_id: None,
     };
@@ -31,7 +31,7 @@ async fn test() {
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: None,
+        parent_id: Some(3),
         bios_id: None,
         playlist_id: None,
     };
