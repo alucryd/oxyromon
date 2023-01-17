@@ -21,6 +21,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::mem::drop;
+use std::str::FromStr;
 
 lazy_static! {
     static ref ALL_FORMATS: Vec<&'static str> = {
@@ -231,7 +232,7 @@ pub async fn main(
             "RVZ" => {
                 cfg_if! {
                     if #[cfg(feature = "rvz")] {
-                        let compression_algorithm = get_string(connection, "RVZ_COMPRESSION_ALGORITHM").await;
+                        let compression_algorithm = RvzCompressionAlgorithm::from_str(&get_string(connection, "RVZ_COMPRESSION_ALGORITHM").await).unwrap();
                         let compression_level = get_integer(connection, "RVZ_COMPRESSION_LEVEL").await;
                         let block_size = get_integer(connection, "RVZ_BLOCK_SIZE").await;
                         to_rvz(
@@ -1243,7 +1244,7 @@ async fn to_rvz(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
-    compression_algorithm: &str,
+    compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
 ) -> SimpleResult<()> {

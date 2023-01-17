@@ -10,6 +10,7 @@ use indicatif::ProgressBar;
 use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
 use std::str::FromStr;
+use strum::{Display, EnumString, EnumVariantNames, VariantNames};
 
 cfg_if! {
     if #[cfg(test)] {
@@ -30,20 +31,60 @@ cfg_if! {
     }
 }
 
-pub const HASH_ALGORITHMS: &[&str] = &["crc", "md5", "sha1"];
-pub const SUBFOLDER_SCHEMES: &[&str] = &["none", "alpha"];
-pub const RVZ_COMPRESSION_ALGORITHMS: &[&str] = &["none", "zstd", "bzip", "lzma", "lzma2"];
+#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum HashAlgorithm {
+    Crc,
+    Md5,
+    Sha1,
+}
+
+#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum RvzCompressionAlgorithm {
+    None,
+    Zstd,
+    Bzip,
+    Lzma,
+    Lzma2,
+}
+
+#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum SubfolderScheme {
+    None,
+    Alpha,
+}
+
+#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum PreferVersion {
+    None,
+    New,
+    Old,
+}
+
+#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum PreferRegion {
+    None,
+    Broad,
+    Narrow,
+}
 
 const BOOLEANS: &[&str] = &[
     "GROUP_SUBSYSTEMS",
+    "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
-    "HASH_ALGORITHM" => HASH_ALGORITHMS,
-    "REGIONS_ALL_SUBFOLDERS" => SUBFOLDER_SCHEMES,
-    "REGIONS_ONE_SUBFOLDERS" => SUBFOLDER_SCHEMES,
-    "RVZ_COMPRESSION_ALGORITHM" => RVZ_COMPRESSION_ALGORITHMS
+    "HASH_ALGORITHM" => HashAlgorithm::VARIANTS,
+    "PREFER_REGIONS" => PreferRegion::VARIANTS,
+    "PREFER_VERSIONS" => PreferVersion::VARIANTS,
+    "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
+    "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
+    "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,
 };
 const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
     "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,

@@ -1,7 +1,6 @@
-use crate::generate_playlists::DISC_REGEX;
-
 use super::config::*;
 use super::database::*;
+use super::generate_playlists::DISC_REGEX;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
@@ -21,7 +20,9 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::str::FromStr;
 use std::time::Duration;
+use strum::VariantNames;
 
 pub fn subcommand() -> Command {
     Command::new("sort-roms")
@@ -40,7 +41,7 @@ pub fn subcommand() -> Command {
                 .help("Set the subfolders scheme for games")
                 .required(false)
                 .num_args(1)
-                .value_parser(PossibleValuesParser::new(SUBFOLDER_SCHEMES.iter())),
+                .value_parser(PossibleValuesParser::new(SubfolderScheme::VARIANTS)),
         )
         .arg(
             Arg::new("REGIONS_ONE")
@@ -56,7 +57,7 @@ pub fn subcommand() -> Command {
                 .help("Set the subfolders scheme for 1G1R games")
                 .required(false)
                 .num_args(1)
-                .value_parser(PossibleValuesParser::new(SUBFOLDER_SCHEMES.iter())),
+                .value_parser(PossibleValuesParser::new(SubfolderScheme::VARIANTS)),
         )
         .arg(
             Arg::new("WANTED")
@@ -95,15 +96,24 @@ pub async fn main(
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
-    let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
-    let all_regions_subfolders = matches
-        .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
-        .map(String::to_string)
-        .unwrap_or(get_string(connection, "REGIONS_ALL_SUBFOLDERS").await);
-    let one_regions_subfolders = matches
-        .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
-        .map(String::to_string)
-        .unwrap_or(get_string(connection, "REGIONS_ONE_SUBFOLDERS").await);
+    let prefer_parents = get_bool(connection, "PREFER_PARENTS").await;
+    let prefer_regions =
+        PreferRegion::from_str(&get_string(connection, "PREFER_REGIONS").await).unwrap();
+    let prefer_versions =
+        PreferVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await).unwrap();
+    let prefer_flags = get_list(connection, "PREFER_FLAGS").await;
+    let all_regions_subfolders = SubfolderScheme::from_str(
+        matches
+            .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
+            .unwrap_or(&get_string(connection, "REGIONS_ALL_SUBFOLDERS").await),
+    )
+    .unwrap();
+    let one_regions_subfolders = SubfolderScheme::from_str(
+        matches
+            .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
+            .unwrap_or(&get_string(connection, "REGIONS_ONE_SUBFOLDERS").await),
+    )
+    .unwrap();
     let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;
 
     for system in systems {
@@ -122,7 +132,10 @@ pub async fn main(
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
-            &preferred_flags
+            prefer_parents,
+            &prefer_regions,
+            &prefer_versions,
+            &prefer_flags
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<&str>>(),
@@ -169,9 +182,12 @@ async fn sort_system(
     one_regions: &[Region],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
-    preferred_flags: &[&str],
-    all_regions_subfolders: &str,
-    one_regions_subfolders: &str,
+    prefer_parents: bool,
+    prefer_regions: &PreferRegion,
+    prefer_versions: &PreferVersion,
+    prefer_flags: &[&str],
+    all_regions_subfolders: &SubfolderScheme,
+    one_regions_subfolders: &SubfolderScheme,
     one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -218,7 +234,16 @@ async fn sort_system(
             }
             games.push(parent_game);
             // put newer releases first
-            games.sort_by(|a, b| sort_games_by_version_and_hierarchy_desc(a, b, preferred_flags));
+            games.sort_by(|a, b| {
+                sort_games_by_weight(
+                    a,
+                    b,
+                    prefer_parents,
+                    prefer_regions,
+                    prefer_versions,
+                    prefer_flags,
+                )
+            });
 
             // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
@@ -465,7 +490,7 @@ async fn sort_system(
             &trash_directory,
             &romfiles_by_id,
             &playlists_by_id,
-            "none",
+            &SubfolderScheme::None,
         )
         .await?,
     );
@@ -544,7 +569,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
     playlists_by_id: &'a HashMap<i64, Romfile>,
-    subfolders: &str,
+    subfolders: &SubfolderScheme,
 ) -> SimpleResult<Vec<(&'a Romfile, String)>> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
@@ -644,59 +669,105 @@ fn trim_ignored_games(
     }
 }
 
-fn sort_games_by_version_and_hierarchy_desc(
+fn sort_games_by_weight(
     game_a: &Game,
     game_b: &Game,
+    prefer_parents: bool,
+    prefer_regions: &PreferRegion,
+    prefer_versions: &PreferVersion,
     preferred_flags: &[&str],
 ) -> Ordering {
     let mut weight_a: u8 = 0;
     let mut weight_b: u8 = 0;
-    let mut version_a = None;
-    let mut version_b = None;
-    if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
-        for token in name.iter() {
-            if let NoIntroToken::Version(version) = token {
-                version_a = Some(version.to_owned());
-            }
-            if let NoIntroToken::Flag(_, flags) = token {
-                for flag in flags.split(", ") {
-                    if preferred_flags.contains(&flag) {
-                        weight_a += 3;
-                    }
-                }
-            }
+
+    if prefer_parents {
+        if game_a.parent_id.is_none() {
+            weight_a += 1;
+        } else if game_b.parent_id.is_none() {
+            weight_b += 1;
         }
     }
-    if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
-        for token in name.iter() {
-            if let NoIntroToken::Version(version) = token {
-                version_b = Some(version.to_owned());
-            }
-            if let NoIntroToken::Flag(_, flags) = token {
-                for flag in flags.split(", ") {
-                    if preferred_flags.contains(&flag) {
-                        weight_b += 3;
-                    }
-                }
-            }
-        }
-    }
-    if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
-        match version_b.partial_cmp(version_a).unwrap() {
-            Ordering::Less => weight_a += 1,
-            Ordering::Greater => weight_b += 1,
+
+    if prefer_regions != &PreferRegion::None {
+        let regions_a = Region::try_from_tosec_region(&game_a.regions).unwrap_or_default();
+        let regions_b = Region::try_from_tosec_region(&game_b.regions).unwrap_or_default();
+
+        match regions_b.len().partial_cmp(&regions_a.len()).unwrap() {
+            Ordering::Less => match prefer_regions {
+                &PreferRegion::Broad => weight_a += 1,
+                &PreferRegion::Narrow => weight_b += 1,
+                &PreferRegion::None => {}
+            },
+            Ordering::Greater => match prefer_regions {
+                &PreferRegion::Broad => weight_b += 1,
+                &PreferRegion::Narrow => weight_a += 1,
+                &PreferRegion::None => {}
+            },
             Ordering::Equal => {}
         };
-    } else if version_a.is_some() {
-        weight_a += 1;
-    } else if version_b.is_some() {
-        weight_b += 1;
     }
-    if game_a.parent_id.is_none() {
-        weight_a += 2;
-    } else if game_b.parent_id.is_none() {
-        weight_b += 2;
+
+    if prefer_versions != &PreferVersion::None {
+        let mut version_a = None;
+        let mut version_b = None;
+
+        if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
+            for token in name.iter() {
+                if let NoIntroToken::Version(version) = token {
+                    version_a = Some(version.to_owned());
+                }
+                if let NoIntroToken::Flag(_, flags) = token {
+                    for flag in flags.split(", ") {
+                        if preferred_flags.contains(&flag) {
+                            weight_a += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
+            for token in name.iter() {
+                if let NoIntroToken::Version(version) = token {
+                    version_b = Some(version.to_owned());
+                }
+                if let NoIntroToken::Flag(_, flags) = token {
+                    for flag in flags.split(", ") {
+                        if preferred_flags.contains(&flag) {
+                            weight_b += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
+            match version_b.partial_cmp(version_a).unwrap() {
+                Ordering::Less => match prefer_versions {
+                    &PreferVersion::New => weight_a += 1,
+                    &PreferVersion::Old => weight_b += 1,
+                    &PreferVersion::None => {}
+                },
+                Ordering::Greater => match prefer_versions {
+                    &PreferVersion::New => weight_b += 1,
+                    &PreferVersion::Old => weight_a += 1,
+                    &PreferVersion::None => {}
+                },
+                Ordering::Equal => {}
+            };
+        } else if version_a.is_some() {
+            match prefer_versions {
+                &PreferVersion::New => weight_a += 1,
+                &PreferVersion::Old => weight_b += 1,
+                &PreferVersion::None => {}
+            }
+        } else if version_b.is_some() {
+            match prefer_versions {
+                &PreferVersion::New => weight_b += 1,
+                &PreferVersion::Old => weight_a += 1,
+                &PreferVersion::None => {}
+            }
+        }
     }
+
     // compare in reverse, we want higher weight first
     weight_b.partial_cmp(&weight_a).unwrap()
 }
@@ -707,7 +778,7 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
     rom: &Rom,
     romfile: &Romfile,
     directory: &P,
-    subfolders: &str,
+    subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
     let romfile_path = Path::new(&romfile.path);
     let romfile_extension = romfile_path
@@ -725,19 +796,19 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
         || romfile_extension == RVZ_EXTENSION
     {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "alpha" {
+        if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
         new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, &romfile_extension));
     } else if system.arcade || game.jbfolder {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "alpha" {
+        if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
         new_romfile_path = new_romfile_path.join(&game.name).join(&rom.name);
     } else {
         new_romfile_path = directory.as_ref().to_path_buf();
-        if subfolders == "alpha" {
+        if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
         }
         new_romfile_path = new_romfile_path.join(&rom.name);
@@ -748,10 +819,10 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
 async fn compute_new_playlist_path<P: AsRef<Path>>(
     game: &Game,
     directory: &P,
-    subfolders: &str,
+    subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
     let mut new_playlist_path: PathBuf = directory.as_ref().to_path_buf();
-    if subfolders == "alpha" {
+    if subfolders == &SubfolderScheme::Alpha {
         new_playlist_path = new_playlist_path.join(compute_alpha_subfolder(&game.name));
     }
     new_playlist_path = new_playlist_path.join(format!(

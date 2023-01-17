@@ -67,9 +67,12 @@ async fn test() {
         &one_regions,
         &[],
         &[],
+        true,
+        &PreferRegion::None,
+        &PreferVersion::None,
         &[],
-        "none",
-        "none",
+        &SubfolderScheme::None,
+        &SubfolderScheme::None,
         true,
     )
     .await

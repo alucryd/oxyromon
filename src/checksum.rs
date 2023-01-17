@@ -1,3 +1,4 @@
+use super::config::HashAlgorithm;
 use super::database::*;
 use super::model::Header;
 use super::progress::*;
@@ -17,13 +18,6 @@ use sqlx::sqlite::SqliteConnection;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
-
-#[derive(PartialEq, Eq)]
-pub enum HashAlgorithm {
-    Crc,
-    Md5,
-    Sha1,
-}
 
 #[derive(Clone, Default)]
 struct Crc32 {

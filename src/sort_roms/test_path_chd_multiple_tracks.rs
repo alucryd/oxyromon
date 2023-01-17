@@ -50,9 +50,16 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_romfile_path(&system, &game, &rom, &romfile, &test_directory, "none")
-        .await
-        .unwrap();
+    let path = compute_new_romfile_path(
+        &system,
+        &game,
+        &rom,
+        &romfile,
+        &test_directory,
+        &SubfolderScheme::None,
+    )
+    .await
+    .unwrap();
 
     // then
     assert_eq!(path, test_directory.join("game name.chd"));

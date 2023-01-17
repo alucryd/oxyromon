@@ -11,6 +11,7 @@
 - Fix 1G1R sorting when revisions are clones
 - Display an appropriate message when a ROM has already been imported
 - Add a `PREFER_FLAGS` to give a boost to specific flags in the 1G1R election process
+- Add `PREFER_PARENTS`, `PREFER_REGIONS` and `PREFER_VERSIONS` settings to influence the 1G1R election process
 
 # 0.13.0
 

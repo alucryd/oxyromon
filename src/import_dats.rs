@@ -1,4 +1,4 @@
-use super::checksum::*;
+use super::config::HashAlgorithm;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::model::*;

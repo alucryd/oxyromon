@@ -72,13 +72,16 @@ Available settings:
   [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
 - `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
   [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
+- `PREFER_PARENTS`: Favor parents in the 1G1R election process, defaults to `true`
+- `PREFER_REGIONS`: Favor ROMs targeting more or fewer regions in the 1G1R election process, defaults to `none`, valid choices: `none`, `broad`, `narrow`
+- `PREFER_VERSIONS`: Favor newer or earlier versions of ROMs in the 1G1R election process, defaults to `new`, valid choices: `none`, `new`, `old`
 - `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
 - `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
 - `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
-- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, valid choices: `none`, `alpha`
-- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, valid choices: `none`, `alpha`
+- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
+- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
 - `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
@@ -99,6 +102,10 @@ DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
 HASH_ALGORITHM = crc
+PREFER_FLAGS = 
+PREFER_PARENTS = true
+PREFER_REGIONS = none
+PREFER_VERSIONS = new
 REGIONS_ALL = US,EU,JP
 REGIONS_ALL_SUBFOLDERS = none
 REGIONS_ONE = US,EU

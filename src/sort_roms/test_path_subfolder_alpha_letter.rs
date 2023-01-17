@@ -50,9 +50,16 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_romfile_path(&system, &game, &rom, &romfile, &test_directory, "alpha")
-        .await
-        .unwrap();
+    let path = compute_new_romfile_path(
+        &system,
+        &game,
+        &rom,
+        &romfile,
+        &test_directory,
+        &SubfolderScheme::Alpha,
+    )
+    .await
+    .unwrap();
 
     // then
     assert_eq!(path, test_directory.join("R").join("rom name.rom"));

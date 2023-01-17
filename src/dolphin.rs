@@ -13,7 +13,7 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
     directory: &Q,
-    compression_algorithm: &str,
+    compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
 ) -> SimpleResult<PathBuf> {
@@ -33,7 +33,7 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-f")
         .arg("rvz")
         .arg("-c")
-        .arg(compression_algorithm)
+        .arg(compression_algorithm.to_string())
         .arg("-l")
         .arg(compression_level.to_string())
         .arg("-b")

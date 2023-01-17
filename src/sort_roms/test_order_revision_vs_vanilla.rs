@@ -37,7 +37,14 @@ async fn test() {
     };
 
     // when
-    let ordering = sort_games_by_version_and_hierarchy_desc(&game_a, &game_b, &[]);
+    let ordering = sort_games_by_weight(
+        &game_a,
+        &game_b,
+        false,
+        &PreferRegion::None,
+        &PreferVersion::New,
+        &[],
+    );
 
     // then
     assert_eq!(ordering, Ordering::Less);

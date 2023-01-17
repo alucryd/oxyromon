@@ -25,6 +25,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Duration;
+use strum::VariantNames;
 #[cfg(feature = "ird")]
 use walkdir::WalkDir;
 
@@ -54,7 +55,7 @@ pub fn subcommand() -> Command {
                 .help("Set the hash algorithm")
                 .required(false)
                 .num_args(1)
-                .value_parser(PossibleValuesParser::new(HASH_ALGORITHMS)),
+                .value_parser(PossibleValuesParser::new(HashAlgorithm::VARIANTS)),
         )
 }
 

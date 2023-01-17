@@ -38,6 +38,7 @@ extern crate simple_error;
 extern crate sqlx;
 #[cfg(feature = "ird")]
 extern crate strsim;
+extern crate strum;
 extern crate surf;
 extern crate tempfile;
 #[cfg(feature = "server")]
