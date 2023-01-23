@@ -61,7 +61,7 @@ pub async fn main(
         Some(_) | None => bail!("Not possible"),
     };
     for system in systems {
-        progress_bar.println(&format!("Processing \"{}\"", system.name));
+        progress_bar.println(format!("Processing \"{}\"", system.name));
         check_system(
             connection,
             progress_bar,
@@ -102,7 +102,7 @@ async fn check_system(
         let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
         let roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
-        progress_bar.println(&format!(
+        progress_bar.println(format!(
             "Processing {:?}",
             romfile_path.file_name().unwrap()
         ));

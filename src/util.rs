@@ -56,7 +56,7 @@ pub async fn create_file<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<fs::File> {
     if !quiet {
-        progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
+        progress_bar.println(format!("Creating {:?}", path.as_ref().as_os_str()));
     }
     let file = try_with!(
         fs::File::create(path).await,
@@ -87,7 +87,7 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
-            progress_bar.println(&format!("Copying to {:?}", new_path.as_ref().as_os_str()));
+            progress_bar.println(format!("Copying to {:?}", new_path.as_ref().as_os_str()));
         }
         try_with!(
             fs::copy(old_path, new_path).await,
@@ -111,7 +111,7 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
-            progress_bar.println(&format!("Moving to {:?}", new_path.as_ref().as_os_str()));
+            progress_bar.println(format!("Moving to {:?}", new_path.as_ref().as_os_str()));
         }
         let result = fs::rename(old_path, new_path).await;
         // rename doesn't work across filesystems, use copy/remove as fallback
@@ -129,7 +129,7 @@ pub async fn remove_file<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
+        progress_bar.println(format!("Deleting {:?}", path.as_ref().as_os_str()));
     }
     try_with!(
         fs::remove_file(path).await,
@@ -145,7 +145,7 @@ pub async fn create_directory<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(&format!("Creating {:?}", path.as_ref().as_os_str()));
+        progress_bar.println(format!("Creating {:?}", path.as_ref().as_os_str()));
     }
     if !path.as_ref().is_dir().await {
         try_with!(
@@ -171,7 +171,7 @@ pub async fn remove_directory<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(&format!("Deleting {:?}", path.as_ref().as_os_str()));
+        progress_bar.println(format!("Deleting {:?}", path.as_ref().as_os_str()));
     }
     try_with!(
         fs::remove_dir_all(path).await,

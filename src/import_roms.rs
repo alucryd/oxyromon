@@ -91,7 +91,7 @@ pub async fn main(
     };
 
     for romfile_path in romfile_paths {
-        progress_bar.println(&format!("Processing \"{:?}\"", &romfile_path));
+        progress_bar.println(format!("Processing \"{:?}\"", &romfile_path));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
         if romfile_path.is_dir().await {
             cfg_if! {
@@ -320,7 +320,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     let walker = WalkDir::new(folder_path.as_ref()).into_iter();
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
-            progress_bar.println(&format!(
+            progress_bar.println(format!(
                 "Processing \"{}\"",
                 &entry.path().as_os_str().to_str().unwrap()
             ));
@@ -366,7 +366,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
             // select the first rom if there is only one
             if roms.len() == 1 {
                 rom = Some(roms.remove(0));
-                progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
             } else {
                 // select the first rom that matches the file name if there multiple matches
                 if let Some(rom_index) = roms.iter().position(|rom| {
@@ -389,7 +389,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                 if rom.romfile_id.is_some() {
                     let romfile =
                         find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
-                    progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+                    progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
                     continue;
                 }
 
@@ -437,7 +437,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     for sevenzip_info in &sevenzip_infos {
-        progress_bar.println(&format!("Processing \"{}\"", &sevenzip_info.path));
+        progress_bar.println(format!("Processing \"{}\"", &sevenzip_info.path));
 
         let size: u64;
         let hash: String;
@@ -581,7 +581,7 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         // put arcade roms and JB folders in subdirectories
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.as_ref().join(&game.name).join(&rom.name)
+            new_path = system_directory.as_ref().join(game.name).join(&rom.name)
         // use game name for PS3 updates and DLCs because rom name is usually gibberish
         } else if PS3_EXTENSIONS.contains(&romfile_extension) {
             new_path = system_directory
@@ -894,7 +894,7 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     // put arcade roms and JB folders in subdirectories
     if system.arcade || game.jbfolder {
         let game = find_game_by_id(connection, rom.game_id).await;
-        new_path = system_directory.as_ref().join(&game.name).join(&rom.name)
+        new_path = system_directory.as_ref().join(game.name).join(&rom.name)
     // use game name for PS3 updates and DLCs because rom name is usually gibberish
     } else if PS3_EXTENSIONS.contains(&romfile_extension) {
         new_path = system_directory
@@ -976,7 +976,7 @@ async fn find_rom_by_hash(
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 {
         rom = Some(roms.remove(0));
-        progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
@@ -990,7 +990,7 @@ async fn find_rom_by_hash(
     if rom.is_some() && rom.as_ref().unwrap().romfile_id.is_some() {
         let romfile =
             find_romfile_by_id(connection, rom.as_ref().unwrap().romfile_id.unwrap()).await;
-        progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+        progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
         return Ok(None);
     }
 
@@ -1037,7 +1037,7 @@ async fn find_sfb_rom_by_md5(
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 {
         rom = Some(roms.remove(0));
-        progress_bar.println(&format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
@@ -1051,7 +1051,7 @@ async fn find_sfb_rom_by_md5(
     if rom.is_some() && rom.as_ref().unwrap().romfile_id.is_some() {
         let romfile =
             find_romfile_by_id(connection, rom.as_ref().unwrap().romfile_id.unwrap()).await;
-        progress_bar.println(&format!("Duplicate of \"{}\"", romfile.path));
+        progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
         return Ok(None);
     }
 
@@ -1103,7 +1103,7 @@ async fn move_to_trash<P: AsRef<Path>>(
         .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
-    match find_romfile_by_path(connection, &new_path.as_os_str().to_str().unwrap()).await {
+    match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
         Some(romfile) => {
             update_romfile(
                 connection,

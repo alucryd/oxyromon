@@ -44,7 +44,7 @@ pub async fn main(
     )
     .await?;
     for system in systems {
-        progress_bar.println(&format!("Processing \"{}\"", system.name));
+        progress_bar.println(format!("Processing \"{}\"", system.name));
         process_system(connection, progress_bar, &system).await?;
         progress_bar.println("");
     }
@@ -56,17 +56,16 @@ async fn process_system(
     progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<()> {
-    let games = find_games_with_romfiles_by_system_id(connection, system.id)
+    let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
+    find_games_with_romfiles_by_system_id(connection, system.id)
         .await
         .into_iter()
         .filter(|game| DISC_REGEX.is_match(&game.name))
-        .collect::<Vec<_>>();
-    let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
-    games.into_iter().for_each(|game| {
-        let playlist_name = format!("{}.{}", DISC_REGEX.replace(&game.name, ""), M3U_EXTENSION);
-        let group = grouped_games.entry(playlist_name).or_insert_with(Vec::new);
-        group.push(game);
-    });
+        .for_each(|game| {
+            let playlist_name = format!("{}.{}", DISC_REGEX.replace(&game.name, ""), M3U_EXTENSION);
+            let group = grouped_games.entry(playlist_name).or_insert_with(Vec::new);
+            group.push(game);
+        });
 
     for (playlist_name, games) in grouped_games.into_iter() {
         let roms = find_roms_with_romfile_by_game_ids(
@@ -115,7 +114,7 @@ async fn process_system(
             .await
             .expect("Failed to create M3U file");
 
-        progress_bar.println(&format!("Creating \"{}\"", &playlist_name));
+        progress_bar.println(format!("Creating \"{}\"", &playlist_name));
 
         for romfile in existing_romfiles {
             writeln!(
@@ -143,7 +142,7 @@ async fn process_system(
                         playlist_path.metadata().await.unwrap().len(),
                     )
                     .await;
-                    if &playlist.path != playlist_path.as_os_str().to_str().unwrap() {
+                    if playlist.path != playlist_path.as_os_str().to_str().unwrap() {
                         remove_file(progress_bar, &playlist.path, true).await?;
                     }
                     playlist.id

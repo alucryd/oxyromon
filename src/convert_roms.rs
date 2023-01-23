@@ -101,10 +101,10 @@ pub async fn main(
     let diff = matches.get_flag("DIFF");
 
     for system in systems {
-        progress_bar.println(&format!("Processing \"{}\"", system.name));
+        progress_bar.println(format!("Processing \"{}\"", system.name));
 
         if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
-            progress_bar.println(&format!(
+            progress_bar.println(format!(
                 "Only {:?} are supported for arcade systems",
                 ARCADE_FORMATS
             ));
@@ -126,7 +126,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.contains_id("NAME") {
-                progress_bar.println(&format!("No game matching \"{}\"", game_name.unwrap()));
+                progress_bar.println(format!("No game matching \"{}\"", game_name.unwrap()));
             }
             continue;
         }
@@ -1617,7 +1617,7 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
         )
         .len();
     }
-    progress_bar.println(&format!(
+    progress_bar.println(format!(
         "Before: {} ({:.1}%); After: {} ({:.1}%); Original: {}",
         HumanBytes(old_size),
         old_size as f64 / original_size as f64 * 100f64,

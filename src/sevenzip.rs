@@ -53,12 +53,14 @@ pub fn parse_archive<P: AsRef<Path>>(
     // each chunk will have the path, size and crc respectively
     let mut sevenzip_infos: Vec<ArchiveInfo> = Vec::new();
     for info in lines.chunks(3) {
-        let sevenzip_info = ArchiveInfo {
-            path: String::from(info.get(0).unwrap().to_owned()),
-            size: FromStr::from_str(info.get(1).unwrap()).unwrap(),
-            crc: info.get(2).unwrap().to_owned().to_lowercase(),
-        };
-        sevenzip_infos.push(sevenzip_info);
+        if let [path, size, crc] = info {
+            let sevenzip_info = ArchiveInfo {
+                path: path.to_string(),
+                size: u64::from_str(size).unwrap(),
+                crc: crc.to_lowercase(),
+            };
+            sevenzip_infos.push(sevenzip_info);
+        }
     }
 
     progress_bar.set_message("");

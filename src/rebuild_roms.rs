@@ -87,7 +87,7 @@ async fn rebuild_system(
     system: &System,
     merging: Merging,
 ) -> SimpleResult<()> {
-    progress_bar.println(&format!("Processing \"{}\"", system.name));
+    progress_bar.println(format!("Processing \"{}\"", system.name));
 
     let games = find_games_with_romfiles_by_system_id(connection, system.id).await;
 
@@ -135,7 +135,7 @@ async fn expand_game(
     merging: Merging,
     compression_level: usize,
 ) -> SimpleResult<()> {
-    progress_bar.println(&format!("Processing \"{}\"", game.name));
+    progress_bar.println(format!("Processing \"{}\"", game.name));
     let tmp_directory = get_tmp_directory(connection).await;
     let mut transaction = begin_transaction(connection).await;
     let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
@@ -195,7 +195,7 @@ async fn trim_game(
     game: &Game,
     merging: Merging,
 ) -> SimpleResult<()> {
-    progress_bar.println(&format!("Processing \"{}\"", game.name));
+    progress_bar.println(format!("Processing \"{}\"", game.name));
     let mut transaction = begin_transaction(connection).await;
     let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
         .await?

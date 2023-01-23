@@ -31,7 +31,7 @@ async fn purge_system(
     progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<()> {
-    progress_bar.println(&format!("Processing \"{}\"", system.name));
+    progress_bar.println(format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
     let trash_directory = get_trash_directory(connection, progress_bar, system).await?;

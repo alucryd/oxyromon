@@ -180,51 +180,37 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    // make sure rom and tmp directories are initialized
-    get_rom_directory(connection).await;
-    get_tmp_directory(connection).await;
-
     if matches.get_flag("LIST") {
         list_settings(connection).await;
     } else if matches.contains_id("GET") {
         get_setting(connection, matches.get_one::<String>("GET").unwrap()).await;
     } else if matches.contains_id("SET") {
-        let key_value: Vec<&str> = matches
+        if let [key, value] = matches
             .get_many::<String>("SET")
             .unwrap()
-            .map(String::as_str)
-            .collect();
-        set_setting(
-            connection,
-            progress_bar,
-            key_value.get(0).unwrap(),
-            key_value.get(1).unwrap(),
-        )
-        .await?;
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            set_setting(connection, progress_bar, key, value).await?;
+        };
     } else if matches.contains_id("ADD") {
-        let key_value: Vec<&str> = matches
+        if let [key, value] = matches
             .get_many::<String>("ADD")
             .unwrap()
-            .map(String::as_str)
-            .collect();
-        add_to_list(
-            connection,
-            key_value.get(0).unwrap(),
-            key_value.get(1).unwrap(),
-        )
-        .await;
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            add_to_list(connection, key, value).await;
+        };
     } else if matches.contains_id("REMOVE") {
-        let key_value: Vec<&str> = matches
+        if let [key, value] = matches
             .get_many::<String>("REMOVE")
             .unwrap()
-            .map(String::as_str)
-            .collect();
-        remove_from_list(
-            connection,
-            key_value.get(0).unwrap(),
-            key_value.get(1).unwrap(),
-        )
-        .await;
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            remove_from_list(connection, key, value).await;
+        };
     }
 
     Ok(())

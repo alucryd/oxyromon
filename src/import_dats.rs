@@ -78,7 +78,7 @@ pub async fn main(
     let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
 
     for dat_path in dat_paths {
-        progress_bar.println(&format!("Processing \"{:?}\"", &dat_path));
+        progress_bar.println(format!("Processing \"{:?}\"", &dat_path));
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
@@ -475,7 +475,7 @@ async fn create_or_update_roms(
                 bios = parent_rom.bios;
                 parent_id = parent_rom.parent_id.or(Some(parent_rom.id));
             } else {
-                progress_bar.println(&format!(
+                progress_bar.println(format!(
                     "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
                     rom_xml.name, game.name
                 ));

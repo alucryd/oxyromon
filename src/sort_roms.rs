@@ -191,7 +191,7 @@ async fn sort_system(
     one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.println(&format!("Processing \"{}\"", system.name));
+    progress_bar.println(format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = Vec::new();
@@ -362,7 +362,7 @@ async fn sort_system(
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
-                progress_bar.println(&format!(
+                progress_bar.println(format!(
                     "{} ({}) [{}]",
                     rom.name,
                     game.name,
@@ -504,7 +504,7 @@ async fn sort_system(
 
         progress_bar.println("Summary:");
         for romfile_move in &romfile_moves {
-            progress_bar.println(&format!(
+            progress_bar.println(format!(
                 "{:?} -> \"{}\"",
                 Path::new(&romfile_move.0.path).file_name().unwrap(),
                 romfile_move.1
@@ -618,7 +618,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
                     .unwrap(),
             );
             if playlist.path != new_playlist_path {
-                romfile_moves.push((&playlist, new_playlist_path))
+                romfile_moves.push((playlist, new_playlist_path))
             }
         }
     }
@@ -693,15 +693,15 @@ fn sort_games_by_weight(
         let regions_b = Region::try_from_tosec_region(&game_b.regions).unwrap_or_default();
 
         match regions_b.len().partial_cmp(&regions_a.len()).unwrap() {
-            Ordering::Less => match prefer_regions {
-                &PreferRegion::Broad => weight_a += 1,
-                &PreferRegion::Narrow => weight_b += 1,
-                &PreferRegion::None => {}
+            Ordering::Less => match *prefer_regions {
+                PreferRegion::Broad => weight_a += 1,
+                PreferRegion::Narrow => weight_b += 1,
+                PreferRegion::None => {}
             },
-            Ordering::Greater => match prefer_regions {
-                &PreferRegion::Broad => weight_b += 1,
-                &PreferRegion::Narrow => weight_a += 1,
-                &PreferRegion::None => {}
+            Ordering::Greater => match *prefer_regions {
+                PreferRegion::Broad => weight_b += 1,
+                PreferRegion::Narrow => weight_a += 1,
+                PreferRegion::None => {}
             },
             Ordering::Equal => {}
         };
@@ -741,29 +741,29 @@ fn sort_games_by_weight(
         }
         if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
             match version_b.partial_cmp(version_a).unwrap() {
-                Ordering::Less => match prefer_versions {
-                    &PreferVersion::New => weight_a += 1,
-                    &PreferVersion::Old => weight_b += 1,
-                    &PreferVersion::None => {}
+                Ordering::Less => match *prefer_versions {
+                    PreferVersion::New => weight_a += 1,
+                    PreferVersion::Old => weight_b += 1,
+                    PreferVersion::None => {}
                 },
-                Ordering::Greater => match prefer_versions {
-                    &PreferVersion::New => weight_b += 1,
-                    &PreferVersion::Old => weight_a += 1,
-                    &PreferVersion::None => {}
+                Ordering::Greater => match *prefer_versions {
+                    PreferVersion::New => weight_b += 1,
+                    PreferVersion::Old => weight_a += 1,
+                    PreferVersion::None => {}
                 },
                 Ordering::Equal => {}
             };
         } else if version_a.is_some() {
-            match prefer_versions {
-                &PreferVersion::New => weight_a += 1,
-                &PreferVersion::Old => weight_b += 1,
-                &PreferVersion::None => {}
+            match *prefer_versions {
+                PreferVersion::New => weight_a += 1,
+                PreferVersion::Old => weight_b += 1,
+                PreferVersion::None => {}
             }
         } else if version_b.is_some() {
-            match prefer_versions {
-                &PreferVersion::New => weight_b += 1,
-                &PreferVersion::Old => weight_a += 1,
-                &PreferVersion::None => {}
+            match *prefer_versions {
+                PreferVersion::New => weight_b += 1,
+                PreferVersion::Old => weight_a += 1,
+                PreferVersion::None => {}
             }
         }
     }

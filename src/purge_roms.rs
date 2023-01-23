@@ -85,7 +85,7 @@ async fn purge_missing_romfiles(
     }
 
     if count > 0 {
-        progress_bar.println(&format!(
+        progress_bar.println(format!(
             "Deleted {} missing ROM file(s) from the database",
             count
         ));
@@ -125,7 +125,7 @@ async fn purge_trashed_romfiles(
             commit_transaction(transaction).await;
 
             if count > 0 {
-                progress_bar.println(&format!("Deleted {} trashed ROM file(s)", count));
+                progress_bar.println(format!("Deleted {} trashed ROM file(s)", count));
             }
         }
     }

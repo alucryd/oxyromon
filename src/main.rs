@@ -83,6 +83,7 @@ mod util;
 use async_std::path::PathBuf;
 use cfg_if::cfg_if;
 use clap::Command;
+use config::{get_rom_directory, get_tmp_directory};
 use database::*;
 use dotenv::dotenv;
 use progress::*;
@@ -142,6 +143,10 @@ async fn main() -> SimpleResult<()> {
             create_file(&progress_bar, &db_file, true).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
+
+        // make sure rom and tmp directories are initialized
+        get_rom_directory(&mut pool.acquire().await.unwrap()).await;
+        get_tmp_directory(&mut pool.acquire().await.unwrap()).await;
 
         match matches.subcommand_name() {
             Some("config") => {
