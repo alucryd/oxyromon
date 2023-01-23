@@ -1,3 +1,5 @@
+# 0.15.0
+
 # 0.14.0
 
 - Add the ability to sort ROMs in alphabetical subfolders
