@@ -350,7 +350,10 @@ pub async fn create_game_from_xml(
     )
     .execute(connection)
     .await
-    .expect(&format!("Error while creating game with name '{}'", game_xml.name))
+    .expect(&format!(
+        "Error while creating game with name '{}'",
+        game_xml.name
+    ))
     .last_insert_rowid()
 }
 
@@ -1211,6 +1214,43 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
     })
 }
 
+pub async fn find_roms_without_romfile_by_size_and_md5_and_game_name_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+    game_names: Vec<&str>,
+    system_id: i64,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.md5 = '{}'
+        AND g.name IN ({})
+        AND g.system_id = {}
+        ORDER BY r.name
+        ",
+        size,
+        md5,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        system_id,
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+            "Error while finding roms with size {} and MD5 {} and game names {:?} and system id {}",
+            size, md5, game_names, system_id
+        )
+        })
+}
+
 pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1274,6 +1314,43 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
         panic!(
             "Error while finding roms with size {} and SHA1 {} and system id {}",
             size, sha1, system_id
+        )
+    })
+}
+
+pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    sha1: &str,
+    game_names: Vec<&str>,
+    system_id: i64,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.sha1 = '{}'
+        AND g.name IN ({})
+        AND g.system_id = {}
+        ORDER BY r.name
+        ",
+        size,
+        sha1,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        system_id,
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+            "Error while finding roms with size {} and SHA1 {} and game names {:?} and system id {}",
+            size, sha1, game_names, system_id
         )
     })
 }
@@ -1344,6 +1421,43 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
             size, crc, system_id
         )
     })
+}
+
+pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+    game_names: Vec<&str>,
+    system_id: i64,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.crc = '{}'
+        AND g.name IN ({})
+        AND g.system_id = {}
+        ORDER BY r.name
+        ",
+        size,
+        crc,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        system_id,
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+            "Error while finding roms with size {} and CRC {} and game names {:?} and system id {}",
+            size, crc, game_names, system_id
+        )
+        })
 }
 
 pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(

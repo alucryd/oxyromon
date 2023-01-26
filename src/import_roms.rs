@@ -437,7 +437,11 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     for sevenzip_info in &sevenzip_infos {
-        progress_bar.println(format!("Processing \"{}\"", &sevenzip_info.path));
+        progress_bar.println(format!(
+            "Processing \"{} ({})\"",
+            &sevenzip_info.path,
+            romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+        ));
 
         let size: u64;
         let hash: String;
@@ -470,12 +474,19 @@ async fn import_archive<P: AsRef<Path>, Q: AsRef<Path>>(
             hash = sevenzip_info.crc.clone();
         }
 
-        match find_rom_by_hash(
+        let mut game_names: Vec<&str> = Vec::new();
+        game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
+        if let Some(path) = Path::new(&sevenzip_info.path).parent() {
+            game_names.push(path.as_os_str().to_str().unwrap());
+        }
+
+        match find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
             &hash,
             system,
+            game_names,
             hash_algorithm,
         )
         .await?
@@ -628,12 +639,13 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             hash_algorithm,
         )
         .await?;
-        let cue_rom = match find_rom_by_hash(
+        let cue_rom = match find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
             &hash,
             system,
+            Vec::new(),
             hash_algorithm,
         )
         .await?
@@ -718,12 +730,13 @@ async fn import_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         )
         .await?;
         remove_file(progress_bar, &bin_path, true).await?;
-        let rom = match find_rom_by_hash(
+        let rom = match find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
             &hash,
             system,
+            Vec::new(),
             hash_algorithm,
         )
         .await?
@@ -771,12 +784,13 @@ async fn import_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     )
     .await?;
     remove_file(progress_bar, &iso_path, true).await?;
-    let rom = match find_rom_by_hash(
+    let rom = match find_rom_by_size_and_hash(
         connection,
         progress_bar,
         size,
         &hash,
         system,
+        Vec::new(),
         hash_algorithm,
     )
     .await?
@@ -823,12 +837,13 @@ async fn import_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     )
     .await?;
     remove_file(progress_bar, &iso_path, true).await?;
-    let rom = match find_rom_by_hash(
+    let rom = match find_rom_by_size_and_hash(
         connection,
         progress_bar,
         size,
         &hash,
         system,
+        Vec::new(),
         hash_algorithm,
     )
     .await?
@@ -872,12 +887,13 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
         hash_algorithm,
     )
     .await?;
-    let rom = match find_rom_by_hash(
+    let rom = match find_rom_by_size_and_hash(
         connection,
         progress_bar,
         size,
         &hash,
         system,
+        Vec::new(),
         hash_algorithm,
     )
     .await?
@@ -913,35 +929,69 @@ async fn import_other<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-async fn find_rom_by_hash(
+async fn find_rom_by_size_and_hash(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     size: u64,
     hash: &str,
     system: &System,
+    game_names: Vec<&str>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<Option<Rom>> {
     let rom: Option<Rom>;
-    let mut roms = match hash_algorithm {
-        HashAlgorithm::Crc => {
-            find_roms_without_romfile_by_size_and_crc_and_system_id(
+    let mut roms: Vec<Rom> = Vec::new();
+
+    if system.arcade && !game_names.is_empty() {
+        match hash_algorithm {
+            HashAlgorithm::Crc => {
+                find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
+                    connection, size, hash, game_names, system.id,
+                )
+                .await
+                .into_iter()
+                .for_each(|rom| roms.push(rom))
+            }
+            HashAlgorithm::Md5 => {
+                find_roms_without_romfile_by_size_and_md5_and_game_name_and_system_id(
+                    connection, size, hash, game_names, system.id,
+                )
+                .await
+                .into_iter()
+                .for_each(|rom| roms.push(rom))
+            }
+            HashAlgorithm::Sha1 => {
+                find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
+                    connection, size, hash, game_names, system.id,
+                )
+                .await
+                .into_iter()
+                .for_each(|rom| roms.push(rom))
+            }
+        };
+    }
+
+    if roms.is_empty() {
+        match hash_algorithm {
+            HashAlgorithm::Crc => find_roms_without_romfile_by_size_and_crc_and_system_id(
                 connection, size, hash, system.id,
             )
             .await
-        }
-        HashAlgorithm::Md5 => {
-            find_roms_without_romfile_by_size_and_md5_and_system_id(
+            .into_iter()
+            .for_each(|rom| roms.push(rom)),
+            HashAlgorithm::Md5 => find_roms_without_romfile_by_size_and_md5_and_system_id(
                 connection, size, hash, system.id,
             )
             .await
-        }
-        HashAlgorithm::Sha1 => {
-            find_roms_without_romfile_by_size_and_sha1_and_system_id(
+            .into_iter()
+            .for_each(|rom| roms.push(rom)),
+            HashAlgorithm::Sha1 => find_roms_without_romfile_by_size_and_sha1_and_system_id(
                 connection, size, hash, system.id,
             )
             .await
-        }
-    };
+            .into_iter()
+            .for_each(|rom| roms.push(rom)),
+        };
+    }
 
     // abort if no match
     if roms.is_empty() {

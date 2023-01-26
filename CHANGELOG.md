@@ -1,5 +1,7 @@
 # 0.15.0
 
+- Use archive name and directory names in the archive when importing arcade games
+
 # 0.14.1
 
 - Fix game filtering in the web UI with the new 1G1R system
