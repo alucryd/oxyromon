@@ -67,9 +67,6 @@
 
   function computeGameColor(game) {
     if (game.complete) {
-      if (game.sorting == 1) {
-        return "list-group-item-primary";
-      }
       return "list-group-item-success";
     } else {
       if (game.sorting == 2) {
@@ -206,7 +203,7 @@
               id="lgi-game-{i}"
               tag="button"
               action
-              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)}"
+              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)} {game.sorting == 1 ? 'fw-bold' : ''}"
               on:click={() => {
                 gameId.set(game.id);
               }}
