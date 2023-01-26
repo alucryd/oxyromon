@@ -1,5 +1,9 @@
 # 0.15.0
 
+# 0.14.1
+
+- Fix game filtering in the web UI with the new 1G1R system
+
 # 0.14.0
 
 - Add the ability to sort ROMs in alphabetical subfolders

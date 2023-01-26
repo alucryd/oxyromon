@@ -41,12 +41,14 @@
       on:update={handleNavbarUpdate}
     >
       <ButtonToolbar class="d-flex">
-        <ButtonGroup>
-          <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
-            Complete
-          </Button>
+        <ButtonGroup class="ms-3">
           <Button color="primary" bind:active={$oneRegionFilter} on:click={() => oneRegionFilter.update((b) => !b)}>
             1G1R
+          </Button>
+        </ButtonGroup>
+        <ButtonGroup class="ms-3">
+          <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
+            Complete
           </Button>
           <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
             Incomplete

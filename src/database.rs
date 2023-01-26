@@ -350,7 +350,7 @@ pub async fn create_game_from_xml(
     )
     .execute(connection)
     .await
-    .expect("Error while creating game")
+    .expect(&format!("Error while creating game with name '{}'", game_xml.name))
     .last_insert_rowid()
 }
 
