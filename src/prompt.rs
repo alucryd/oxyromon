@@ -142,16 +142,17 @@ pub fn prompt_for_rom(roms: &mut Vec<Rom>, default: Option<usize>) -> SimpleResu
 }
 
 pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> SimpleResult<Option<Rom>> {
-    let index = select_opt(
-        &roms_games
-            .iter()
-            .map(|(rom, game)| format!("{} ({})", &rom.name, &game.name))
-            .collect::<Vec<String>>(),
-        "Please select a ROM",
-        None,
-        Some(10),
-    )?;
-    Ok(index.map(|i| roms_games.remove(i).0))
+    let mut items = roms_games
+        .iter()
+        .map(|(rom, game)| format!("{} ({})", &rom.name, &game.name))
+        .collect::<Vec<String>>();
+    items.insert(0, String::from("None"));
+    let index = select_opt(&items, "Please select a ROM", Some(0), Some(10))?;
+    Ok(match index {
+        Some(0) => None,
+        Some(_) => index.map(|i| roms_games.remove(i - 1).0),
+        None => None,
+    })
 }
 
 pub fn confirm(default: bool) -> SimpleResult<bool> {

@@ -78,7 +78,10 @@ pub async fn main(
     let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
 
     for dat_path in dat_paths {
-        progress_bar.println(format!("Processing \"{:?}\"", &dat_path));
+        progress_bar.println(format!(
+            "Processing \"{}\"",
+            &dat_path.file_name().unwrap().to_str().unwrap()
+        ));
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,

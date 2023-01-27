@@ -1,6 +1,7 @@
 # 0.15.0
 
 - Use archive name and directory names in the archive when importing arcade games
+- Also use the file name in the archive when importing arcade games
 
 # 0.14.1
 
