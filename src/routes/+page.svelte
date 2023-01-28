@@ -85,14 +85,23 @@
       await updateSystems();
     });
     systemId.subscribe(async (systemId) => {
-      await getGamesBySystemId(systemId);
-      await getSizesBySystemId(systemId);
+      games.set([]);
+      gamesPage.set(1);
+      gameId.set(-1);
+      if ($systemId !== -1) {
+        await getGamesBySystemId(systemId);
+        await getSizesBySystemId(systemId);
+      }
     });
     gamesPage.subscribe(async () => {
       await updateGames();
     });
     gameId.subscribe(async (gameId) => {
-      await getRomsByGameId(gameId);
+      roms.set([]);
+      romsPage.set(1);
+      if ($gameId !== -1) {
+        await getRomsByGameId(gameId);
+      }
     });
     romsPage.subscribe(async () => {
       await updateRoms();
@@ -203,7 +212,9 @@
               id="lgi-game-{i}"
               tag="button"
               action
-              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)} {game.sorting == 1 ? 'fw-bold' : ''}"
+              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)} {game.sorting == 1
+                ? 'fw-bold'
+                : ''}"
               on:click={() => {
                 gameId.set(game.id);
               }}
