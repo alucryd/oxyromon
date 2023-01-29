@@ -46,8 +46,7 @@ async fn test() {
     import_other(
         &mut connection,
         &progress_bar,
-        &system_directory,
-        &system,
+        Some(&system),
         &header,
         &romfile_path,
         romfile_path.extension().unwrap().to_str().unwrap(),

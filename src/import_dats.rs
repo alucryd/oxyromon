@@ -217,7 +217,7 @@ pub async fn import_dat(
     // create necessary directories
     let system = find_system_by_id(&mut transaction, system_id).await;
     get_system_directory(&mut transaction, progress_bar, &system).await?;
-    get_trash_directory(&mut transaction, progress_bar, &system).await?;
+    get_trash_directory(&mut transaction, progress_bar, Some(&system)).await?;
 
     // update games and systems completion
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -557,7 +557,7 @@ pub async fn reimport_orphan_romfiles(
     orphan_romfile_ids: Vec<i64>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let system = find_system_by_id(connection, system_id).await;
+    let system = Some(find_system_by_id(connection, system_id).await);
     let header = find_header_by_system_id(connection, system_id).await;
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id).await;
@@ -565,7 +565,7 @@ pub async fn reimport_orphan_romfiles(
         import_rom(
             connection,
             progress_bar,
-            &system,
+            system.as_ref(),
             &header,
             &Path::new(&romfile.path),
             hash_algorithm,

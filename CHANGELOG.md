@@ -2,6 +2,7 @@
 
 - Use archive name and directory names in the archive when importing arcade games
 - Also use the file name in the archive when importing arcade games
+- Rework import-roms to only ask for a system when desired or necessary
 
 # 0.14.1
 

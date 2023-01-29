@@ -214,11 +214,14 @@ pub async fn get_one_region_directory(
 pub async fn get_trash_directory(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: &System,
+    system: Option<&System>,
 ) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(connection, progress_bar, system)
-        .await?
-        .join("Trash");
+    let trash_directory = match system {
+        Some(system) => get_system_directory(connection, progress_bar, system)
+            .await?
+            .join("Trash"),
+        None => get_rom_directory(connection).await.join("Trash"),
+    };
     create_directory(progress_bar, &trash_directory, true).await?;
     Ok(trash_directory)
 }

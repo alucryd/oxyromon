@@ -74,7 +74,7 @@ async fn test() {
     assert_eq!(entries.len(), 1);
     assert_eq!(
         entries.get(0).unwrap().path(),
-        get_trash_directory(&mut connection, &progress_bar, &system)
+        get_trash_directory(&mut connection, &progress_bar, Some(&system))
             .await
             .unwrap()
     );

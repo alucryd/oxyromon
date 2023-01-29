@@ -376,7 +376,7 @@ async fn sort_system(
 
     let system_directory = get_system_directory(connection, progress_bar, system).await?;
     let one_region_directory = get_one_region_directory(connection, progress_bar, system).await?;
-    let trash_directory = get_trash_directory(connection, progress_bar, system).await?;
+    let trash_directory = get_trash_directory(connection, progress_bar, Some(system)).await?;
 
     let mut transaction = begin_transaction(connection).await;
 

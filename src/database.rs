@@ -1177,6 +1177,36 @@ pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
     .expect("Error while finding roms with romfile")
 }
 
+pub async fn find_roms_without_romfile_by_size_and_md5(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NULL
+        AND size = ?
+        AND md5 = ?
+        ORDER BY name
+        ",
+        size,
+        md5,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and MD5 {}",
+            size, md5
+        )
+    })
+}
+
 pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1288,6 +1318,35 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
         })
 }
 
+pub async fn count_roms_with_romfile_by_size_and_md5(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND size = ?
+        AND md5 = ?
+        ",
+        size,
+        md5,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and MD5 {}",
+            size, md5
+        )
+    })
+    .count
+}
+
 pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1319,6 +1378,36 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
         )
     })
     .count
+}
+
+pub async fn find_roms_without_romfile_by_size_and_sha1(
+    connection: &mut SqliteConnection,
+    size: u64,
+    sha1: &str,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NULL
+        AND size = ?
+        AND sha1 = ?
+        ORDER BY name
+        ",
+        size,
+        sha1,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and SHA1 {}",
+            size, sha1
+        )
+    })
 }
 
 pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
@@ -1432,6 +1521,36 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
         })
 }
 
+pub async fn count_roms_with_romfile_by_size_and_sha1(
+    connection: &mut SqliteConnection,
+    size: u64,
+    sha1: &str,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND size = ?
+        AND sha1 = ?
+        ORDER BY name
+        ",
+        size,
+        sha1,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and SHA1 {}",
+            size, sha1
+        )
+    })
+    .count
+}
+
 pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1464,6 +1583,36 @@ pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
         )
     })
     .count
+}
+
+pub async fn find_roms_without_romfile_by_size_and_crc(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NULL
+        AND size = ?
+        AND crc = ?
+        ORDER BY name
+        ",
+        size,
+        crc,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and CRC {}",
+            size, crc
+        )
+    })
 }
 
 pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
@@ -1575,6 +1724,35 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
             name, size, crc, game_names, system_id
         )
         })
+}
+
+pub async fn count_roms_with_romfile_by_size_and_crc(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+) -> i32 {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND size = ?
+        AND crc = ?
+        ",
+        size,
+        crc,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding roms with size {} and CRC {}",
+            size, crc
+        )
+    })
+    .count
 }
 
 pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(

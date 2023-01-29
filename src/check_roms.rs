@@ -446,7 +446,7 @@ async fn move_to_trash(
     system: &System,
     romfile: &Romfile,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, progress_bar, system)
+    let new_path = get_trash_directory(connection, progress_bar, Some(system))
         .await?
         .join(Path::new(&romfile.path).file_name().unwrap());
     rename_file(progress_bar, &romfile.path, &new_path, true).await?;
