@@ -43,7 +43,7 @@ pub fn subcommand() -> Command {
             Arg::new("SYSTEM")
                 .short('s')
                 .long("system")
-                .help("Prompt for systems")
+                .help("Prompt for a system")
                 .required(false)
                 .action(ArgAction::SetTrue),
         )

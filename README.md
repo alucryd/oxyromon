@@ -273,7 +273,7 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
 Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
-You will be prompted for the system you want to check your ROMs against.
+In most cases the system is auto-detected, you will still be prompted for the system you want when importing JB folders. You can also force a system prompt to narrow the search.
 Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
@@ -298,7 +298,7 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system <SYSTEM>  Set the system number to use
+        -s, --system           Prompt for a system
         -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
         -h, --help             Print help information
 
