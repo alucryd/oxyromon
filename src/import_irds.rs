@@ -58,11 +58,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let ird_paths: Vec<&str> = matches
-        .get_many::<String>("IRDS")
-        .unwrap()
-        .map(String::as_str)
-        .collect();
+    let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
     let system = prompt_for_system_like(
         connection,
         matches
