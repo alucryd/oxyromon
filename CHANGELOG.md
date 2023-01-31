@@ -4,6 +4,7 @@
 - Also use the file name in the archive when importing arcade games
 - Rework import-roms to only ask for a system when desired or necessary
 - Rework rebuild-roms to make it a lot faster
+- Fix completion computation for arcade systems
 
 # 0.14.1
 

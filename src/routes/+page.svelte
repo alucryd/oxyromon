@@ -20,7 +20,7 @@
 
   import {
     getGamesBySystemId,
-    getRomsByGameId,
+    getRomsByGameIdAndSystemId,
     getSizesBySystemId,
     getSystems,
     updateGames,
@@ -68,24 +68,24 @@
   function computeGameColor(game) {
     if (game.complete) {
       return "list-group-item-success";
-    } else {
-      if (game.sorting == 2) {
-        return "list-group-item-secondary";
-      }
-      return "list-group-item-danger";
     }
+
+    if (game.sorting == 2) {
+      return "list-group-item-secondary";
+    }
+
+    return "list-group-item-danger";
   }
 
   function computeRomColor(rom) {
     if (rom.romfile) {
       return "list-group-item-success";
-    } else {
-      const system = $systems.find((system) => system.id === $systemId);
-      console.log(system);
-      if (system.arcade && system.merging == 0 && rom.parentId !== null) {
-        return "list-group-item-secondary";
-      }
     }
+
+    if (rom.ignored) {
+      return "list-group-item-secondary";
+    }
+
     return "list-group-item-danger";
   }
 
@@ -94,10 +94,11 @@
       await updateSystems();
     });
     systemId.subscribe(async (systemId) => {
-      games.set([]);
-      gamesPage.set(1);
       gameId.set(-1);
-      if (systemId !== -1) {
+      gamesPage.set(1);
+      if (systemId === -1) {
+        games.set([]);
+      } else {
         await getGamesBySystemId(systemId);
         await getSizesBySystemId(systemId);
       }
@@ -106,10 +107,11 @@
       await updateGames();
     });
     gameId.subscribe(async (gameId) => {
-      roms.set([]);
       romsPage.set(1);
-      if (gameId !== -1) {
-        await getRomsByGameId(gameId);
+      if (gameId === -1) {
+        roms.set([]);
+      } else {
+        await getRomsByGameIdAndSystemId(gameId, $systemId);
       }
     });
     romsPage.subscribe(async () => {
@@ -159,7 +161,6 @@
   });
 </script>
 
-<div class="card-group" />
 <Row class="mb-3">
   <Col sm="3" class="d-flex flex-column">
     <Card class="text-center flex-fill">

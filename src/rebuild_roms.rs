@@ -66,14 +66,8 @@ pub async fn main(
         .unwrap(),
     };
 
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-
     for system in systems {
-        if system.merging == merging as i64 {
-            progress_bar.println("Nothing to do");
-            progress_bar.println("");
-            continue;
-        }
+        progress_bar.println(format!("Processing \"{}\"", system.name));
         rebuild_system(connection, progress_bar, &system, merging).await?;
         progress_bar.println("");
     }
@@ -87,7 +81,13 @@ async fn rebuild_system(
     system: &System,
     merging: Merging,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Processing \"{}\"", system.name));
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+    if system.merging == merging as i64 {
+        progress_bar.println("Nothing to do");
+        return Ok(());
+    }
 
     let games = find_games_with_romfiles_by_system_id(connection, system.id).await;
 
@@ -116,13 +116,7 @@ async fn rebuild_system(
     }
 
     update_system_merging(connection, system.id, merging).await;
-
-    // mark games and system as complete if they are
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_complete(connection, system.id).await;
-    update_system_mark_complete(connection, system.id).await;
+    compute_arcade_system_completion(connection, progress_bar, system).await;
 
     Ok(())
 }
@@ -139,7 +133,6 @@ async fn expand_game(
     let game_directory = get_system_directory(connection, progress_bar, system)
         .await?
         .join(&game.name);
-    let tmp_directory = get_tmp_directory(connection).await;
     let mut transaction = begin_transaction(connection).await;
     let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
         .await?
@@ -184,7 +177,6 @@ async fn expand_game(
                 &source_rom,
                 &archive_romfile,
                 &game_directory,
-                tmp_directory,
                 compression_level,
             )
             .await?;
@@ -253,7 +245,6 @@ async fn add_rom(
     source_rom: &Rom,
     archive_romfile: &Option<Romfile>,
     game_directory: &PathBuf,
-    tmp_directory: &PathBuf,
     compression_level: usize,
 ) -> SimpleResult<()> {
     let source_romfile = find_romfile_by_id(transaction, source_rom.romfile_id.unwrap()).await;

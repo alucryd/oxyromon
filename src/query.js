@@ -107,7 +107,7 @@ export async function updateGames() {
   games.set(paginate(get(filteredGames), get(gamesPage), get(pageSize)));
 }
 
-export async function getRomsByGameId(gameId) {
+export async function getRomsByGameIdAndSystemId(gameId, systemId) {
   const query = gql`
         {
             roms(gameId: ${gameId}) {
@@ -117,7 +117,7 @@ export async function getRomsByGameId(gameId) {
                     path
                     size
                 }
-                parentId
+                ignored(systemId: ${systemId})
             }
         }
     `;

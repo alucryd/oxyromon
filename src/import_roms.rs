@@ -8,7 +8,6 @@ use super::dolphin;
 #[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -23,7 +22,6 @@ use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
-use std::time::Duration;
 use strum::VariantNames;
 #[cfg(feature = "ird")]
 use walkdir::WalkDir;
@@ -104,8 +102,18 @@ pub async fn main(
             cfg_if! {
                 if #[cfg(feature = "ird")] {
                     if romfile_path.join(PS3_DISC_SFB).is_file().await {
-                        let jb_system = if system.is_none() { Some(prompt_for_system(connection, None).await?) } else { None };
-                        import_jbfolder(connection, progress_bar, system.as_ref().unwrap_or(&jb_system.unwrap()), &romfile_path).await?;
+                        match system.as_ref() {
+                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path).await?,
+                            None => {
+                                let system = prompt_for_system_like(
+                                    connection,
+                                    None,
+                                    "%PlayStation 3%",
+                                )
+                                .await?;
+                                import_jbfolder(connection, progress_bar, &system, &romfile_path).await?;
+                            }
+                        }
                     } else {
                         let walker = WalkDir::new(&romfile_path).into_iter();
                         for entry in walker.filter_map(|e| e.ok()) {
@@ -159,18 +167,13 @@ pub async fn main(
         progress_bar.println("");
     }
 
-    // mark games and system as complete if they are
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
     for system_id in system_ids {
-        update_games_by_system_id_mark_complete(connection, system_id).await;
-        cfg_if! {
-            if #[cfg(feature = "ird")] {
-                update_jbfolder_games_by_system_id_mark_complete(connection, system_id).await;
-            }
+        let system = find_system_by_id(connection, system_id).await;
+        if system.arcade {
+            compute_arcade_system_completion(connection, progress_bar, &system).await;
+        } else {
+            compute_system_completion(connection, progress_bar, &system).await;
         }
-        update_system_mark_complete(connection, system_id).await;
     }
 
     Ok(())

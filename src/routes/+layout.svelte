@@ -62,7 +62,7 @@
     </Collapse> />
   </Navbar>
 
-  <Container fluid class="flex-grow-1">
+  <Container fluid class="flex-fill">
     <slot />
   </Container>
 </div>

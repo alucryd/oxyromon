@@ -7,7 +7,6 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use core::time::Duration;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -220,14 +219,13 @@ pub async fn import_dat(
     get_trash_directory(&mut transaction, progress_bar, Some(&system)).await?;
 
     // update games and systems completion
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_complete(&mut transaction, system.id).await;
-    update_games_by_system_id_mark_incomplete(&mut transaction, system.id).await;
-    update_system_mark_complete(&mut transaction, system.id).await;
-    update_system_mark_incomplete(&mut transaction, system.id).await;
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    if system.arcade {
+        compute_arcade_system_completion(&mut transaction, progress_bar, &system).await;
+        compute_arcade_system_incompletion(&mut transaction, progress_bar, &system).await;
+    } else {
+        compute_system_completion(&mut transaction, progress_bar, &system).await;
+        compute_system_incompletion(&mut transaction, progress_bar, &system).await;
+    }
 
     commit_transaction(transaction).await;
 
