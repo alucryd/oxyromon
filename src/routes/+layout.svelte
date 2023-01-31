@@ -17,8 +17,6 @@
 
   import { completeFilter, ignoredFilter, incompleteFilter, nameFilter, oneRegionFilter } from "../store.js";
 
-  export const ssr = false;
-
   let navbarIsOpen = false;
 
   function handleNavbarUpdate(event) {

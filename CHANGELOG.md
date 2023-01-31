@@ -3,6 +3,7 @@
 - Use archive name and directory names in the archive when importing arcade games
 - Also use the file name in the archive when importing arcade games
 - Rework import-roms to only ask for a system when desired or necessary
+- Rework rebuild-roms to make it a lot faster
 
 # 0.14.1
 
@@ -50,7 +51,7 @@
 - Allow selecting the checksum algorithm in import-roms (useful for JB folders which only provide MD5)
 - Add a new benchmark subcommand (Linux only for now) to measure the performance of checksum algorithms
 - Support moving files across different filesystems
-- Fix a parsing issue on DAT files with duplicate `clrmamepro` fields 
+- Fix a parsing issue on DAT files with duplicate `clrmamepro` fields
 
 # 0.10.1
 

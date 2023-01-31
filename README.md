@@ -102,7 +102,7 @@ DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
 HASH_ALGORITHM = crc
-PREFER_FLAGS = 
+PREFER_FLAGS =
 PREFER_PARENTS = true
 PREFER_REGIONS = none
 PREFER_VERSIONS = new
@@ -168,7 +168,7 @@ These should be in your `${PATH}` for extra features.
         check-roms          Check ROM files integrity
         purge-roms          Purge trashed, missing and orphan ROM files
         purge-systems       Purge systems
-        generate-playlists  
+        generate-playlists
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
         benchmark           Benchmark oxyromon
         server              Launch the backend server
@@ -238,16 +238,17 @@ Supported DAT providers:
 
 - Redump (Download and update)
 - No-Intro (Update check only)
-<!-- -->
-    Usage: oxyromon download-dats [OPTIONS]
+  <!-- -->
 
-    Options:
-        -n, --nointro  Download No-Intro DAT files
-        -r, --redump   Download Redump DAT files
-        -u, --update   Check for system updates
-        -a, --all      Import all systems
-        -f, --force    Force import of outdated DAT files
-        -h, --help     Print help information
+      Usage: oxyromon download-dats [OPTIONS]
+
+      Options:
+          -n, --nointro  Download No-Intro DAT files
+          -r, --redump   Download Redump DAT files
+          -u, --update   Check for system updates
+          -a, --all      Import all systems
+          -f, --force    Force import of outdated DAT files
+          -h, --help     Print help information
 
 ## oxyromon-import-irds
 
@@ -374,14 +375,15 @@ Supported merging strategies:
 - Non-Merged (each parent and clone set contains its ROM files and its parent's files)
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
 - ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
-<!-- -->
-    Usage: oxyromon rebuild-roms [OPTIONS]
+  <!-- -->
 
-    Options:
-        -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-        -a, --all                Rebuild all arcade systems
-        -y, --yes                Automatically say yes to prompts
-        -h, --help               Print help information
+      Usage: oxyromon rebuild-roms [OPTIONS]
+
+      Options:
+          -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+          -a, --all                Rebuild all arcade systems
+          -y, --yes                Automatically say yes to prompts
+          -h, --help               Print help information
 
 ## oxyromon-convert-roms
 
@@ -464,7 +466,6 @@ Note: `sort-roms` will move them accordingly but if you use `convert-roms` you w
     Options:
         -a, --all   Generate playlists for all systems
         -h, --help  Print help information
-
 
 ## oxyromon-import-irds
 

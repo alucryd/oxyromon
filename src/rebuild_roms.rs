@@ -53,7 +53,7 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, true, matches.get_flag("ALL")).await?;
 
-    let merging = match matches.get_one::<String>("STRATEGY").map(String::as_str) {
+    let merging = match matches.get_one::<String>("MERGING").map(String::as_str) {
         Some("SPLIT") => Merging::Split,
         Some("NON_MERGED") => Merging::NonMerged,
         Some("FULL_NON_MERGED") => Merging::FullNonMerged,
@@ -136,28 +136,19 @@ async fn expand_game(
     compression_level: usize,
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", game.name));
+    let game_directory = get_system_directory(connection, progress_bar, system)
+        .await?
+        .join(&game.name);
     let tmp_directory = get_tmp_directory(connection).await;
     let mut transaction = begin_transaction(connection).await;
     let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
         .await?
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
-    let archive_romfile = match find_romfile_by_path(
+    let archive_romfile = find_romfile_by_path(
         &mut transaction,
         archive_romfile_path.as_os_str().to_str().unwrap(),
     )
-    .await
-    {
-        Some(romfile) => romfile,
-        None => {
-            let romfile_id = create_romfile(
-                &mut transaction,
-                archive_romfile_path.as_os_str().to_str().unwrap(),
-                archive_romfile_path.metadata().await.unwrap().len(),
-            )
-            .await;
-            find_romfile_by_id(&mut transaction, romfile_id).await
-        }
-    };
+    .await;
     let roms = match merging {
         Merging::NonMerged => {
             find_roms_by_game_id_parents_no_parent_bioses(&mut transaction, game.id).await
@@ -165,25 +156,52 @@ async fn expand_game(
         Merging::FullNonMerged => find_roms_by_game_id_parents(&mut transaction, game.id).await,
         _ => bail!("Not possible"),
     };
-    for rom in &roms {
-        add_rom(
-            &mut transaction,
-            progress_bar,
-            system,
-            rom,
-            &archive_romfile,
-            tmp_directory,
-            compression_level,
-        )
-        .await?;
+    for rom in roms.iter().filter(|rom| rom.romfile_id.is_none()) {
+        let mut source_rom: Option<Rom> = None;
+        if let Some(parent_id) = rom.parent_id {
+            let parent_rom = find_rom_by_id(&mut transaction, parent_id).await;
+            if parent_rom.romfile_id.is_some() {
+                source_rom = Some(parent_rom);
+            }
+        };
+        if source_rom.is_none() {
+            let mut existing_roms = find_roms_with_romfile_by_size_and_crc_and_system_id(
+                &mut transaction,
+                rom.size,
+                rom.crc.as_ref().unwrap(),
+                system.id,
+            )
+            .await;
+            if !existing_roms.is_empty() {
+                source_rom = Some(existing_roms.remove(0));
+            }
+        }
+        if let Some(source_rom) = source_rom {
+            add_rom(
+                &mut transaction,
+                progress_bar,
+                rom,
+                &source_rom,
+                &archive_romfile,
+                &game_directory,
+                tmp_directory,
+                compression_level,
+            )
+            .await?;
+        } else {
+            progress_bar.println(format!("Missing \"{}\"", &rom.name));
+            return Ok(());
+        }
     }
-    update_romfile(
-        &mut transaction,
-        archive_romfile.id,
-        &archive_romfile.path,
-        archive_romfile_path.metadata().await.unwrap().len(),
-    )
-    .await;
+    if let Some(romfile) = archive_romfile {
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            &romfile.path,
+            archive_romfile_path.metadata().await.unwrap().len(),
+        )
+        .await;
+    }
     commit_transaction(transaction).await;
     Ok(())
 }
@@ -204,8 +222,7 @@ async fn trim_game(
         &mut transaction,
         archive_romfile_path.as_os_str().to_str().unwrap(),
     )
-    .await
-    .unwrap();
+    .await;
     let roms = match merging {
         Merging::Split => find_roms_by_game_id_parents_only(&mut transaction, game.id).await,
         Merging::NonMerged => {
@@ -213,16 +230,18 @@ async fn trim_game(
         }
         _ => bail!("Not possible"),
     };
-    for rom in &roms {
-        remove_rom(&mut transaction, progress_bar, rom, &archive_romfile).await?;
+    for rom in roms.iter().filter(|rom| rom.romfile_id.is_some()) {
+        delete_rom(&mut transaction, progress_bar, rom, &archive_romfile).await?;
     }
-    update_romfile(
-        &mut transaction,
-        archive_romfile.id,
-        &archive_romfile.path,
-        archive_romfile_path.metadata().await.unwrap().len(),
-    )
-    .await;
+    if let Some(romfile) = archive_romfile {
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            &romfile.path,
+            archive_romfile_path.metadata().await.unwrap().len(),
+        )
+        .await;
+    }
     commit_transaction(transaction).await;
     Ok(())
 }
@@ -230,142 +249,100 @@ async fn trim_game(
 async fn add_rom(
     transaction: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: &System,
     rom: &Rom,
-    archive_romfile: &Romfile,
+    source_rom: &Rom,
+    archive_romfile: &Option<Romfile>,
+    game_directory: &PathBuf,
     tmp_directory: &PathBuf,
     compression_level: usize,
 ) -> SimpleResult<()> {
-    match rom.romfile_id {
-        Some(romfile_id) => {
-            if romfile_id != archive_romfile.id {
-                let romfile = find_romfile_by_id(transaction, romfile_id).await;
-                let file_names = vec![rom.name.as_str()];
-                if romfile.path.ends_with(ZIP_EXTENSION) {
-                    sevenzip::extract_files_from_archive(
-                        progress_bar,
-                        &romfile.path,
-                        &file_names,
-                        tmp_directory,
-                    )?;
-                    sevenzip::add_files_to_archive(
-                        progress_bar,
-                        &archive_romfile.path,
-                        &file_names,
-                        tmp_directory,
-                        compression_level,
-                        false,
-                    )?;
-                    remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
-                } else {
-                    sevenzip::add_files_to_archive(
-                        progress_bar,
-                        &archive_romfile.path,
-                        &file_names,
-                        &Path::new(&romfile.path).parent().unwrap(),
-                        compression_level,
-                        false,
-                    )?;
-                }
-                update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
-                if find_roms_by_romfile_id(transaction, romfile_id)
-                    .await
-                    .is_empty()
-                {
-                    remove_file(progress_bar, &romfile.path, false).await?;
-                    delete_romfile_by_id(transaction, romfile_id).await;
-                }
+    let source_romfile = find_romfile_by_id(transaction, source_rom.romfile_id.unwrap()).await;
+    if let Some(archive_romfile) = archive_romfile {
+        if source_romfile.path.ends_with(ZIP_EXTENSION) {
+            // both source and destination are archives
+            sevenzip::copy_files_between_archives(
+                progress_bar,
+                &source_romfile.path,
+                &archive_romfile.path,
+                &[&source_rom.name],
+                &[&rom.name],
+            )
+            .await?;
+            update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
+        } else {
+            // source is directory and destination is archive
+            sevenzip::add_files_to_archive(
+                progress_bar,
+                &archive_romfile.path,
+                &[&source_rom.name],
+                &Path::new(&source_romfile.path).parent().unwrap(),
+                compression_level,
+                false,
+            )?;
+            if source_rom.name != rom.name {
+                sevenzip::rename_file_in_archive(
+                    progress_bar,
+                    &archive_romfile.path,
+                    &source_rom.name,
+                    &rom.name,
+                )?;
             }
+            update_rom_romfile(transaction, rom.id, Some(source_romfile.id)).await;
         }
-        None => {
-            let mut existing_roms = find_roms_with_romfile_by_size_and_crc_and_system_id(
+    } else {
+        if source_romfile.path.ends_with(ZIP_EXTENSION) {
+            // source is archive and destination is directory
+            let romfile_path = game_directory.join(&rom.name);
+            sevenzip::extract_files_from_archive(
+                progress_bar,
+                &source_romfile.path,
+                &[&source_rom.name],
+                game_directory,
+            )?;
+            if source_rom.name != rom.name {
+                rename_file(
+                    progress_bar,
+                    &game_directory.join(&source_rom.name),
+                    &romfile_path,
+                    true,
+                )
+                .await?;
+            }
+            let romfile_id = create_romfile(
                 transaction,
-                rom.size,
-                rom.crc.as_ref().unwrap(),
-                system.id,
+                &romfile_path.as_os_str().to_str().unwrap(),
+                romfile_path.metadata().await.unwrap().len(),
             )
             .await;
-            if !existing_roms.is_empty() {
-                let existing_rom = existing_roms.remove(0);
-                let existing_romfile =
-                    find_romfile_by_id(transaction, existing_rom.romfile_id.unwrap()).await;
-                let file_names = vec![existing_rom.name.as_str()];
-                if existing_romfile.path.ends_with(ZIP_EXTENSION) {
-                    sevenzip::extract_files_from_archive(
-                        progress_bar,
-                        &existing_romfile.path,
-                        &file_names,
-                        tmp_directory,
-                    )?;
-                    if existing_rom.name != rom.name {
-                        rename_file(
-                            progress_bar,
-                            &tmp_directory.join(&existing_rom.name),
-                            &tmp_directory.join(&rom.name),
-                            true,
-                        )
-                        .await?;
-                    }
-                    sevenzip::add_files_to_archive(
-                        progress_bar,
-                        &archive_romfile.path,
-                        &[rom.name.as_str()],
-                        tmp_directory,
-                        compression_level,
-                        false,
-                    )?;
-                    remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
-                } else if existing_rom.name != rom.name {
-                    copy_file(
-                        progress_bar,
-                        &existing_romfile.path,
-                        &tmp_directory.join(&rom.name),
-                        true,
-                    )
-                    .await?;
-                    sevenzip::add_files_to_archive(
-                        progress_bar,
-                        &archive_romfile.path,
-                        &[rom.name.as_str()],
-                        tmp_directory,
-                        compression_level,
-                        false,
-                    )?;
-                    remove_file(progress_bar, &tmp_directory.join(&rom.name), true).await?;
-                } else {
-                    sevenzip::add_files_to_archive(
-                        progress_bar,
-                        &archive_romfile.path,
-                        &file_names,
-                        &Path::new(&existing_romfile.path).parent().unwrap(),
-                        compression_level,
-                        false,
-                    )?;
-                }
-                update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
-            }
+            update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
+        } else {
+            // source and destination are directories
+            let romfile_path = game_directory.join(&rom.name);
+            copy_file(progress_bar, &source_romfile.path, &romfile_path, false).await?;
+            let romfile_id = create_romfile(
+                transaction,
+                &romfile_path.as_os_str().to_str().unwrap(),
+                romfile_path.metadata().await.unwrap().len(),
+            )
+            .await;
+            update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
         }
     }
     Ok(())
 }
 
-async fn remove_rom(
+async fn delete_rom(
     transaction: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     rom: &Rom,
-    archive_romfile: &Romfile,
+    archive_romfile: &Option<Romfile>,
 ) -> SimpleResult<()> {
-    if let Some(romfile_id) = rom.romfile_id {
-        if romfile_id == archive_romfile.id {
-            let romfile = find_romfile_by_id(transaction, romfile_id).await;
-            let file_names = vec![rom.name.as_str()];
-            if romfile.path.ends_with(ZIP_EXTENSION) {
-                sevenzip::remove_files_from_archive(progress_bar, &romfile.path, &file_names)?;
-            } else {
-                remove_file(progress_bar, &romfile.path, false).await?;
-            }
-            update_rom_romfile(transaction, rom.id, None).await;
-        }
+    if let Some(archive_romfile) = archive_romfile {
+        sevenzip::remove_files_from_archive(progress_bar, &archive_romfile.path, &[&rom.name])?;
+    } else {
+        let romfile = find_romfile_by_id(transaction, rom.romfile_id.unwrap()).await;
+        remove_file(progress_bar, &romfile.path, false).await?;
     }
+    update_rom_romfile(transaction, rom.id, None).await;
     Ok(())
 }

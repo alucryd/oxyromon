@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
   import { onMount } from "svelte";
@@ -77,7 +77,16 @@
   }
 
   function computeRomColor(rom) {
-    return rom.romfile ? "list-group-item-success" : "list-group-item-danger";
+    if (rom.romfile) {
+      return "list-group-item-success";
+    } else {
+      const system = $systems.find((system) => system.id === $systemId);
+      console.log(system);
+      if (system.arcade && system.merging == 0 && rom.parentId !== null) {
+        return "list-group-item-secondary";
+      }
+    }
+    return "list-group-item-danger";
   }
 
   onMount(async () => {
@@ -88,7 +97,7 @@
       games.set([]);
       gamesPage.set(1);
       gameId.set(-1);
-      if ($systemId !== -1) {
+      if (systemId !== -1) {
         await getGamesBySystemId(systemId);
         await getSizesBySystemId(systemId);
       }
@@ -99,7 +108,7 @@
     gameId.subscribe(async (gameId) => {
       roms.set([]);
       romsPage.set(1);
-      if ($gameId !== -1) {
+      if (gameId !== -1) {
         await getRomsByGameId(gameId);
       }
     });

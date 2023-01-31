@@ -2884,6 +2884,84 @@
     },
     "query": "\n        UPDATE games\n        SET complete = false\n        WHERE system_id = ?\n        AND complete = true\n        AND jbfolder = true\n        AND EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS NULL\n            AND r.parent_id IS NOT NULL\n            AND r.name NOT LIKE 'PS3_CONTENT/%'\n            AND r.name NOT LIKE 'PS3_EXTRA/%'\n            AND r.name NOT LIKE 'PS3_UPDATE/%'\n        )\n        "
   },
+  "d3c5cf0c91aa16cafcae3c25e43a07700d1212c234a03801369b6228648edb26": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "size",
+          "ordinal": 2,
+          "type_info": "Int64"
+        },
+        {
+          "name": "rom_status",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "game_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "romfile_id",
+          "ordinal": 5,
+          "type_info": "Int64"
+        },
+        {
+          "name": "md5",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "sha1",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "parent_id",
+          "ordinal": 8,
+          "type_info": "Int64"
+        },
+        {
+          "name": "bios",
+          "ordinal": 9,
+          "type_info": "Bool"
+        },
+        {
+          "name": "crc",
+          "ordinal": 10,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "\n        SELECT *\n        FROM roms\n        WHERE id = ?\n        "
+  },
   "da902f9627b1b0fe14827f5ee3970c958723d6decd3e9eada2e0e6a2d48e9e8f": {
     "describe": {
       "columns": [],

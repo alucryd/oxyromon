@@ -950,6 +950,21 @@ pub async fn update_rom_romfile(
     .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
 }
 
+pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_one(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
+}
+
 pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     sqlx::query_as!(
         Rom,

@@ -32,8 +32,8 @@ const endpoint = "/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {
-  let start = pageSize * (page - 1);
-  let end = Math.min(pageSize * page, array.length);
+  const start = pageSize * (page - 1);
+  const end = Math.min(pageSize * page, array.length);
   return array.slice(start, end);
 }
 
@@ -45,6 +45,8 @@ export async function getSystems() {
         name
         description
         complete
+        merging
+        arcade
       }
     }
   `;
@@ -85,10 +87,10 @@ function filterGames(games) {
     games = reject(games, (game) => !game.complete);
   }
   if (!get(ignoredFilter)) {
-    games = reject(games, (game) => game.sorting == 2);
+    games = reject(games, (game) => game.sorting === 2);
   }
   if (get(oneRegionFilter)) {
-    games = reject(games, (game) => game.sorting != 1);
+    games = reject(games, (game) => game.sorting !== 1);
   }
   if (get(nameFilter).length) {
     games = reject(
@@ -115,6 +117,7 @@ export async function getRomsByGameId(gameId) {
                     path
                     size
                 }
+                parentId
             }
         }
     `;
