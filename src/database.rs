@@ -846,6 +846,9 @@ pub async fn create_rom_from_xml(
     game_id: i64,
     parent_id: Option<i64>,
 ) -> i64 {
+    if rom_xml.crc.is_none() {
+        panic!("Game \"{}\" has no CRC", &rom_xml.name);
+    }
     let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
@@ -906,6 +909,9 @@ pub async fn update_rom_from_xml(
     game_id: i64,
     parent_id: Option<i64>,
 ) {
+    if rom_xml.crc.is_none() {
+        panic!("Game \"{}\" has no CRC", &rom_xml.name);
+    }
     let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
