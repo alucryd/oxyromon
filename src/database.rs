@@ -1319,6 +1319,40 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
     })
 }
 
+pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
+    connection: &mut SqliteConnection,
+    size: u64,
+    md5: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.md5 = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        size,
+        md5,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with size {} and MD5 {} and game names {:?}",
+                size, md5, game_names
+            )
+        })
+}
+
 pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1353,6 +1387,43 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
             "Error while finding roms with size {} and MD5 {} and game names {:?} and system id {}",
             size, md5, game_names, system_id
         )
+        })
+}
+
+pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: u64,
+    md5: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let md5 = md5.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.name = '{}'
+        AND r.size = {}
+        AND r.sha1 = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        name,
+        size,
+        md5,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with name {} and size {} and MD5 {} and game names {:?}",
+                name, size, md5, game_names
+            )
         })
 }
 
@@ -1522,6 +1593,40 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
     })
 }
 
+pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
+    connection: &mut SqliteConnection,
+    size: u64,
+    sha1: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.sha1 = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        size,
+        sha1,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with size {} and SHA1 {} and game names {:?}",
+                size, sha1, game_names
+            )
+        })
+}
+
 pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1557,6 +1662,43 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
             size, sha1, game_names, system_id
         )
     })
+}
+
+pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: u64,
+    sha1: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let sha1 = sha1.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.name = '{}'
+        AND r.size = {}
+        AND r.sha1 = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        name,
+        size,
+        sha1,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with name {} and size {} and SHA1 {} and game names {:?}",
+                name, size, sha1, game_names
+            )
+        })
 }
 
 pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_and_system_id(
@@ -1727,6 +1869,40 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
     })
 }
 
+pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
+    connection: &mut SqliteConnection,
+    size: u64,
+    crc: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.size = {}
+        AND r.crc = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        size,
+        crc,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with size {} and CRC {} and game names {:?}",
+                size, crc, game_names
+            )
+        })
+}
+
 pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1761,6 +1937,43 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
             "Error while finding roms with size {} and CRC {} and game names {:?} and system id {}",
             size, crc, game_names, system_id
         )
+        })
+}
+
+pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
+    connection: &mut SqliteConnection,
+    name: &str,
+    size: u64,
+    crc: &str,
+    game_names: &Vec<&str>,
+) -> Vec<Rom> {
+    let size = i64::try_from(size).unwrap();
+    let crc = crc.to_lowercase();
+    let sql = format!(
+        "
+        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NULL
+        AND r.name = '{}'
+        AND r.size = {}
+        AND r.crc = '{}'
+        AND g.name IN ({})
+        ORDER BY r.name
+        ",
+        name,
+        size,
+        crc,
+        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding roms with name {} and size {} and CRC {} and game names {:?}",
+                name, size, crc, game_names
+            )
         })
 }
 

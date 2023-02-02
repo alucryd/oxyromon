@@ -713,7 +713,7 @@ async fn import_chd<P: AsRef<Path>>(
             &hash,
             &system,
             Vec::new(),
-            cue_path.file_name().unwrap().to_str(),
+            None,
             hash_algorithm,
         )
         .await?
@@ -813,7 +813,7 @@ async fn import_chd<P: AsRef<Path>>(
             &hash,
             &system,
             Vec::new(),
-            bin_path.file_name().unwrap().to_str(),
+            None,
             hash_algorithm,
         )
         .await?
@@ -991,7 +991,7 @@ async fn import_other<P: AsRef<Path>>(
         &hash,
         &system,
         Vec::new(),
-        romfile_path.as_ref().file_name().unwrap().to_str(),
+        None,
         hash_algorithm,
     )
     .await?
@@ -1043,137 +1043,216 @@ async fn find_rom_by_size_and_hash(
     let rom: Option<Rom>;
     let mut roms: Vec<Rom> = Vec::new();
 
-    if system.is_some()
-        && system.as_ref().unwrap().arcade
-        && !game_names.is_empty()
-        && rom_name.is_some()
-    {
+    // first try matching with game and rom names
+    if !game_names.is_empty() && rom_name.is_some() {
         match hash_algorithm {
             HashAlgorithm::Crc => {
-                find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_and_system_id(
-                    connection,
-                    rom_name.unwrap(),
-                    size,
-                    hash,
-                    &game_names,
-                    system.as_ref().unwrap().id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom))
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_and_system_id(
+                        connection,
+                        rom_name.unwrap(),
+                        size,
+                        hash,
+                        &game_names,
+                        system.id,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
+                        connection,
+                        rom_name.unwrap(),
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
             HashAlgorithm::Md5 => {
-                find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_and_system_id(
-                    connection,
-                    rom_name.unwrap(),
-                    size,
-                    hash,
-                    &game_names,
-                    system.as_ref().unwrap().id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom))
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_and_system_id(
+                        connection,
+                        rom_name.unwrap(),
+                        size,
+                        hash,
+                        &game_names,
+                        system.id,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
+                        connection,
+                        rom_name.unwrap(),
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
             HashAlgorithm::Sha1 => {
-                find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_and_system_id(
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_and_system_id(
                     connection,
                     rom_name.unwrap(),
                     size,
                     hash,
                     &game_names,
-                    system.as_ref().unwrap().id,
+                    system.id,
                 )
                 .await
                 .into_iter()
                 .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
+                        connection,
+                        rom_name.unwrap(),
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
         };
     }
 
-    if roms.is_empty()
-        && system.is_some()
-        && system.as_ref().unwrap().arcade
-        && !game_names.is_empty()
-    {
+    // then with game name only
+    if roms.is_empty() && !game_names.is_empty() {
         match hash_algorithm {
             HashAlgorithm::Crc => {
-                find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
-                    connection,
-                    size,
-                    hash,
-                    &game_names,
-                    system.as_ref().unwrap().id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom))
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                        system.id,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_crc_and_game_names(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
             HashAlgorithm::Md5 => {
-                find_roms_without_romfile_by_size_and_md5_and_game_names_and_system_id(
-                    connection,
-                    size,
-                    hash,
-                    &game_names,
-                    system.as_ref().unwrap().id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom))
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_md5_and_game_names_and_system_id(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                        system.id,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_md5_and_game_names(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
             HashAlgorithm::Sha1 => {
-                find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
-                    connection,
-                    size,
-                    hash,
-                    &game_names,
-                    system.as_ref().unwrap().id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom))
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                        system.id,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_sha1_and_game_names(
+                        connection,
+                        size,
+                        hash,
+                        &game_names,
+                    )
+                    .await
+                    .into_iter()
+                    .for_each(|rom| roms.push(rom))
+                }
             }
         };
     }
 
+    // finally without any
     if roms.is_empty() {
         match hash_algorithm {
-            HashAlgorithm::Crc => match system {
-                Some(system) => find_roms_without_romfile_by_size_and_crc_and_system_id(
-                    connection, size, hash, system.id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom)),
-                None => find_roms_without_romfile_by_size_and_crc(connection, size, hash)
+            HashAlgorithm::Crc => {
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_crc_and_system_id(
+                        connection, size, hash, system.id,
+                    )
                     .await
                     .into_iter()
-                    .for_each(|rom| roms.push(rom)),
-            },
-            HashAlgorithm::Md5 => match system {
-                Some(system) => find_roms_without_romfile_by_size_and_md5_and_system_id(
-                    connection, size, hash, system.id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom)),
-                None => find_roms_without_romfile_by_size_and_md5(connection, size, hash)
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_crc(connection, size, hash)
+                        .await
+                        .into_iter()
+                        .for_each(|rom| roms.push(rom))
+                }
+            }
+            HashAlgorithm::Md5 => {
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_md5_and_system_id(
+                        connection, size, hash, system.id,
+                    )
                     .await
                     .into_iter()
-                    .for_each(|rom| roms.push(rom)),
-            },
-            HashAlgorithm::Sha1 => match system {
-                Some(system) => find_roms_without_romfile_by_size_and_sha1_and_system_id(
-                    connection, size, hash, system.id,
-                )
-                .await
-                .into_iter()
-                .for_each(|rom| roms.push(rom)),
-                None => find_roms_without_romfile_by_size_and_sha1(connection, size, hash)
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_md5(connection, size, hash)
+                        .await
+                        .into_iter()
+                        .for_each(|rom| roms.push(rom))
+                }
+            }
+            HashAlgorithm::Sha1 => {
+                if let Some(system) = system {
+                    find_roms_without_romfile_by_size_and_sha1_and_system_id(
+                        connection, size, hash, system.id,
+                    )
                     .await
                     .into_iter()
-                    .for_each(|rom| roms.push(rom)),
-            },
+                    .for_each(|rom| roms.push(rom))
+                } else {
+                    find_roms_without_romfile_by_size_and_sha1(connection, size, hash)
+                        .await
+                        .into_iter()
+                        .for_each(|rom| roms.push(rom))
+                }
+            }
         };
     }
 
@@ -1221,12 +1300,22 @@ async fn find_rom_by_size_and_hash(
         rom = Some(roms.remove(0));
         progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
     } else {
-        let mut roms_games: Vec<(Rom, Game)> = vec![];
-        for rom in roms {
-            let game = find_game_by_id(connection, rom.game_id).await;
-            roms_games.push((rom, game));
+        if system.is_some() {
+            let mut roms_games: Vec<(Rom, Game)> = vec![];
+            for rom in roms {
+                let game = find_game_by_id(connection, rom.game_id).await;
+                roms_games.push((rom, game));
+            }
+            rom = prompt_for_rom_game(&mut roms_games)?;
+        } else {
+            let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
+            for rom in roms {
+                let game = find_game_by_id(connection, rom.game_id).await;
+                let system = find_system_by_id(connection, game.system_id).await;
+                roms_games_systems.push((rom, game, system));
+            }
+            rom = prompt_for_rom_game_system(&mut roms_games_systems)?;
         }
-        rom = prompt_for_rom_game(&mut roms_games)?;
     }
 
     // abort if rom already has a file
