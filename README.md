@@ -299,9 +299,11 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system           Prompt for a system
-        -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
-        -h, --help             Print help information
+        -s, --system       Prompt for a system
+        -t, --trash        Trash invalid ROM files
+        -f, --force        Force import of existing ROM files
+        -a, --hash <HASH>  Set the hash algorithm [possible values: crc, md5, sha1]
+        -h, --help         Print help
 
 ## oxyromon-sort-roms
 

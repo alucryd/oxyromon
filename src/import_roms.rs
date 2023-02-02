@@ -46,6 +46,22 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("TRASH")
+                .short('t')
+                .long("trash")
+                .help("Trash invalid ROM files")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("FORCE")
+                .short('f')
+                .long("force")
+                .help("Force import of existing ROM files")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("HASH")
                 .short('a')
                 .long("hash")
@@ -90,6 +106,9 @@ pub async fn main(
         }
     };
 
+    let trash = matches.get_flag("TRASH");
+    let force = matches.get_flag("FORCE");
+
     let mut system_ids: HashSet<i64> = HashSet::new();
 
     for romfile_path in romfile_paths {
@@ -103,7 +122,7 @@ pub async fn main(
                 if #[cfg(feature = "ird")] {
                     if romfile_path.join(PS3_DISC_SFB).is_file().await {
                         match system.as_ref() {
-                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path).await?,
+                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash).await?,
                             None => {
                                 let system = prompt_for_system_like(
                                     connection,
@@ -111,7 +130,7 @@ pub async fn main(
                                     "%PlayStation 3%",
                                 )
                                 .await?;
-                                import_jbfolder(connection, progress_bar, &system, &romfile_path).await?;
+                                import_jbfolder(connection, progress_bar, &system, &romfile_path, trash).await?;
                             }
                         }
                     } else {
@@ -126,6 +145,8 @@ pub async fn main(
                                         &header,
                                         &entry.path(),
                                         &hash_algorithm,
+                                        trash,
+                                        force,
                                     )
                                     .await?
                                 );
@@ -160,6 +181,8 @@ pub async fn main(
                     &header,
                     &romfile_path,
                     &hash_algorithm,
+                    trash,
+                    force,
                 )
                 .await?,
             );
@@ -186,17 +209,20 @@ pub async fn import_rom<P: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
+    force: bool,
 ) -> SimpleResult<HashSet<i64>> {
     let mut transaction = begin_transaction(connection).await;
     let mut system_ids: HashSet<i64> = HashSet::new();
 
     // abort if the romfile is already in the database
-    if find_romfile_by_path(
-        &mut transaction,
-        romfile_path.as_ref().as_os_str().to_str().unwrap(),
-    )
-    .await
-    .is_some()
+    if !force
+        && find_romfile_by_path(
+            &mut transaction,
+            romfile_path.as_ref().as_os_str().to_str().unwrap(),
+        )
+        .await
+        .is_some()
     {
         progress_bar.println("Already in database");
         return Ok(system_ids);
@@ -220,6 +246,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                 &romfile_path,
                 &romfile_extension,
                 hash_algorithm,
+                trash,
             )
             .await?,
         );
@@ -233,6 +260,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     header,
                     &romfile_path,
                     hash_algorithm,
+                    trash,
                 )
                 .await?
                 {
@@ -252,6 +280,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     header,
                     &romfile_path,
                     hash_algorithm,
+                    trash,
                 )
                 .await?
                 {
@@ -271,6 +300,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     header,
                     &romfile_path,
                     hash_algorithm,
+                    trash,
                 )
                 .await?
                 {
@@ -289,6 +319,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &romfile_path,
             &romfile_extension,
             hash_algorithm,
+            trash,
         )
         .await?
         {
@@ -307,6 +338,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     system: &System,
     folder_path: &P,
+    trash: bool,
 ) -> SimpleResult<()> {
     let sfb_romfile_path = folder_path.as_ref().join(PS3_DISC_SFB);
 
@@ -336,7 +368,9 @@ async fn import_jbfolder<P: AsRef<Path>>(
         match find_sfb_rom_by_md5(&mut transaction, size, &md5, system, progress_bar).await? {
             Some(rom) => rom,
             None => {
-                move_to_trash(&mut transaction, progress_bar, Some(system), &folder_path).await?;
+                if trash {
+                    move_to_trash(&mut transaction, progress_bar, &folder_path).await?;
+                }
                 return Ok(());
             }
         };
@@ -455,6 +489,7 @@ async fn import_archive<P: AsRef<Path>>(
     romfile_path: &P,
     romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
 ) -> SimpleResult<HashSet<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
@@ -526,8 +561,8 @@ async fn import_archive<P: AsRef<Path>>(
                 roms_sevenzip_infos.push((rom, sevenzip_info));
             }
             None => {
-                if sevenzip_infos.len() == 1 {
-                    move_to_trash(connection, progress_bar, system, romfile_path).await?;
+                if trash && sevenzip_infos.len() == 1 {
+                    move_to_trash(connection, progress_bar, romfile_path).await?;
                 }
             }
         }
@@ -652,6 +687,7 @@ async fn import_chd<P: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -684,7 +720,9 @@ async fn import_chd<P: AsRef<Path>>(
         {
             Some(rom) => rom,
             None => {
-                move_to_trash(connection, progress_bar, system, &cue_path).await?;
+                if trash {
+                    move_to_trash(connection, progress_bar, &cue_path).await?;
+                }
                 return Ok(None);
             }
         };
@@ -729,7 +767,9 @@ async fn import_chd<P: AsRef<Path>>(
             .any(|(i, rom)| &hashes[i] != rom.crc.as_ref().unwrap())
         {
             progress_bar.println("CRC mismatch");
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            if trash {
+                move_to_trash(connection, progress_bar, romfile_path).await?;
+            }
             return Ok(None);
         }
 
@@ -780,7 +820,9 @@ async fn import_chd<P: AsRef<Path>>(
         {
             Some(rom) => rom,
             None => {
-                move_to_trash(connection, progress_bar, system, romfile_path).await?;
+                if trash {
+                    move_to_trash(connection, progress_bar, romfile_path).await?;
+                }
                 return Ok(None);
             }
         };
@@ -810,6 +852,7 @@ async fn import_cso<P: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
@@ -838,7 +881,9 @@ async fn import_cso<P: AsRef<Path>>(
     {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            if trash {
+                move_to_trash(connection, progress_bar, romfile_path).await?;
+            }
             return Ok(None);
         }
     };
@@ -867,6 +912,7 @@ async fn import_rvz<P: AsRef<Path>>(
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
@@ -895,7 +941,9 @@ async fn import_rvz<P: AsRef<Path>>(
     {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            if trash {
+                move_to_trash(connection, progress_bar, romfile_path).await?;
+            }
             return Ok(None);
         }
     };
@@ -924,6 +972,7 @@ async fn import_other<P: AsRef<Path>>(
     romfile_path: &P,
     romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
+    trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let (size, hash) = get_size_and_hash(
         connection,
@@ -949,7 +998,9 @@ async fn import_other<P: AsRef<Path>>(
     {
         Some(rom) => rom,
         None => {
-            move_to_trash(connection, progress_bar, system, romfile_path).await?;
+            if trash {
+                move_to_trash(connection, progress_bar, romfile_path).await?;
+            }
             return Ok(None);
         }
     };
@@ -1288,11 +1339,11 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
 async fn move_to_trash<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, progress_bar, system)
-        .await?
+    let new_path = get_rom_directory(connection)
+        .await
+        .join("Trash")
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
     match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {

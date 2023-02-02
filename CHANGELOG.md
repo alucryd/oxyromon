@@ -5,6 +5,8 @@
 - Rework import-roms to only ask for a system when desired or necessary
 - Rework rebuild-roms to make it a lot faster
 - Fix completion computation for arcade systems
+- Don't automatically trash invalid roms, put the mechanic behind a flag
+- Add a flag to force import existing roms
 
 # 0.14.1
 

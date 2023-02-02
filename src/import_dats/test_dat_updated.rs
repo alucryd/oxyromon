@@ -58,6 +58,8 @@ async fn test() {
             &None,
             &romfile_path,
             &HashAlgorithm::Crc,
+            true,
+            true,
         )
         .await
         .unwrap();
@@ -95,7 +97,7 @@ async fn test() {
 
     let game = games.get(0).unwrap();
     let rom = roms.get(0).unwrap();
-    let romfile = romfiles.get(1).unwrap();
+    let romfile = romfiles.get(2).unwrap();
 
     assert_eq!(game.name, "Test Game (Asia)");
     assert_eq!(rom.name, "Test Game (Asia).rom");
@@ -104,7 +106,7 @@ async fn test() {
 
     let game = games.get(1).unwrap();
     let rom = roms.get(2).unwrap();
-    let romfile = romfiles.get(2).unwrap();
+    let romfile = romfiles.get(1).unwrap();
 
     assert_eq!(game.name, "Test Game (USA, Europe)");
     assert_eq!(rom.name, "Updated Test Game (USA, Europe).rom");

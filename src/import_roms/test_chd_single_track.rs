@@ -49,6 +49,7 @@ async fn test() {
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,
+        true,
     )
     .await
     .unwrap();
