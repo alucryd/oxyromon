@@ -449,6 +449,14 @@ async fn create_or_update_roms(
         if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
             continue;
         }
+        // skip roms without CRC
+        if rom_xml.crc.is_none() {
+            progress_bar.println(format!(
+                "Skipping \"{}\" because it has no CRC",
+                &rom_xml.name
+            ));
+            continue;
+        }
         // find parent rom if needed
         let mut parent_id = None;
         if rom_xml.merge.is_some() {
