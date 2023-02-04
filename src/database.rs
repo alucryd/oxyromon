@@ -1340,7 +1340,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
         ",
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1376,7 +1376,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
         ",
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1411,10 +1411,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
         AND g.name IN ({})
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1450,10 +1450,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
         AND g.system_id = {}
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1614,7 +1614,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
         ",
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1650,7 +1650,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
         ",
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1685,10 +1685,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
         AND g.name IN ({})
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1724,10 +1724,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
         AND g.system_id = {}
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1890,7 +1890,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
         ",
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1926,7 +1926,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
         ",
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1961,10 +1961,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
         AND g.name IN ({})
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -2000,10 +2000,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
         AND g.system_id = {}
         ORDER BY r.name
         ",
-        name,
+        name.replace("'", "''"),
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name)).join(","),
+        game_names.iter().map(|game_name| format!("'{}'", game_name.replace("'", "''"))).join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
