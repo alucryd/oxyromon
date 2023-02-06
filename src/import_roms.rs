@@ -112,15 +112,15 @@ pub async fn main(
     let mut system_ids: HashSet<i64> = HashSet::new();
 
     for romfile_path in romfile_paths {
-        progress_bar.println(format!(
-            "Processing \"{}\"",
-            &romfile_path.file_name().unwrap().to_str().unwrap()
-        ));
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
         if romfile_path.is_dir().await {
             cfg_if! {
                 if #[cfg(feature = "ird")] {
                     if romfile_path.join(PS3_DISC_SFB).is_file().await {
+                        progress_bar.println(format!(
+                            "Processing \"{}\"",
+                            &romfile_path.file_name().unwrap().to_str().unwrap()
+                        ));
                         match system.as_ref() {
                             Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash).await?,
                             None => {
@@ -212,6 +212,11 @@ pub async fn import_rom<P: AsRef<Path>>(
     trash: bool,
     force: bool,
 ) -> SimpleResult<HashSet<i64>> {
+    progress_bar.println(format!(
+        "Processing \"{}\"",
+        romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+    ));
+
     let mut transaction = begin_transaction(connection).await;
     let mut system_ids: HashSet<i64> = HashSet::new();
 
