@@ -2,7 +2,16 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.15.0
+<img 
+    style="display: block; 
+           margin-left: auto;
+           margin-right: auto;
+           width: 20%;"
+    src="https://github.com/alucryd/oxyromon/raw/develop/resources/logo.svg" 
+    alt="logo">
+</img>
+
+<h1 style="text-align: center;">oxyROMon 0.15.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -13,22 +22,31 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 Both console and arcade (WIP) systems are supported using Logiqx DAT files.
 The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
 
+<img 
+    style="display: block; 
+           margin-left: auto;
+           margin-right: auto;
+           width: 100%;"
+    src="https://github.com/alucryd/oxyromon/raw/develop/resources/screenshot.png" 
+    alt="screenshot">
+</img>
+
 ### Quick start
 
 To create and manage a new system, you need a Logiqx DAT file.
-Cartridge based consoles and computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
+Cartridge based consoles and older computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
 CD based ones can be downloaded from [Redump](http://redump.org/).
 Alternatively the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
-Arcade DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
+MAME DATs can be found on [Progetto-Snaps](https://www.progettosnaps.net/index.php). FBNeo DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
 
 Manually downloaded DATs are then imported using the `import-dats` subcommand.
 Once a system has been created, you can start importing ROMs using the `import-roms` subcommand.
 Imported ROMs that check out will be placed in the main folder of their respective system.
 They can then be sorted using the `sort-roms` subcommand according to your configuration.
 Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list beforehand.
-See configuration below.
+See all configuration options below.
 
-You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or find manually deleted ROMs.
+You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or detect and forget manually deleted ROMs.
 
 ### Compilation
 

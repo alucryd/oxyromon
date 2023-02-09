@@ -27,7 +27,7 @@
 <div class="d-flex flex-column min-vh-100">
   <Navbar color="dark" dark sticky="top" expand="md" class="mb-3">
     <NavbarBrand href="/" class="ms-3">
-      <Fa icon={faGamepad} />
+      <img src="/logo.svg" alt="logo" style="height: 32px;" />
       oxyromon
     </NavbarBrand>
     <NavbarToggler on:click={() => (navbarIsOpen = !navbarIsOpen)} />
