@@ -23,7 +23,6 @@ use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use strum::VariantNames;
-#[cfg(feature = "ird")]
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -157,14 +156,16 @@ pub async fn main(
                     let walker = WalkDir::new(&romfile_path).into_iter();
                     for entry in walker.filter_map(|e| e.ok()) {
                         if entry.path().is_file() {
-                            system_ids.insert(
+                            system_ids.extend(
                                 import_rom(
                                     connection,
                                     progress_bar,
-                                    &system,
+                                    system.as_ref(),
                                     &header,
                                     &entry.path(),
                                     &hash_algorithm,
+                                    trash,
+                                    force,
                                 )
                                 .await?
                             );

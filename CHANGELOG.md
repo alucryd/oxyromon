@@ -7,6 +7,7 @@
 - Fix completion computation for arcade systems
 - Don't automatically trash invalid roms, put the mechanic behind a flag
 - Add a flag to force import existing roms
+- Use native rust implementations by default (openssl-sys -> rustls, libz-sys -> miniz_oxide)
 
 # 0.14.1
 

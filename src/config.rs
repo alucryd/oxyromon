@@ -424,7 +424,10 @@ cfg_if::cfg_if! {
                     let rom_directory = match get_directory(connection, "ROM_DIRECTORY").await {
                         Some(rom_directory) => rom_directory,
                         None => {
-                            let rom_directory = PathBuf::from(dirs::home_dir().unwrap()).join("Emulation");
+                            let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
+                                Ok(rom_directory) => PathBuf::from(rom_directory),
+                                Err(_) => dirs::home_dir().map(PathBuf::from).unwrap().join("Emulation")
+                            };
                             set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
                             rom_directory
                         }
@@ -444,7 +447,10 @@ cfg_if::cfg_if! {
                     let tmp_directory = match get_directory(connection, "TMP_DIRECTORY").await {
                         Some(tmp_directory) => tmp_directory,
                         None => {
-                            let tmp_directory = PathBuf::from(env::temp_dir());
+                            let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
+                                Ok(tmp_directory) => PathBuf::from(tmp_directory),
+                                Err(_) => PathBuf::from(env::temp_dir())
+                            };
                             set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
                             tmp_directory
                         }

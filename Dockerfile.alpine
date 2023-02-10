@@ -1,0 +1,24 @@
+FROM alpine
+
+WORKDIR /usr/src/oxyromon
+COPY . .
+RUN apk add --no-cache cargo dolphin-emu musl-dev 7zip rust yarn && \
+    cargo install \
+    --no-default-features \
+    --features use-rustls,enable-asm,rvz,benchmark,server \
+    --root /usr \
+    --path . && \
+    cargo clean && \
+    yarn cache clean --all && \
+    rm -rf /root/.cargo /tmp/* && \
+    apk del --no-cache cargo musl-dev rust yarn
+
+WORKDIR /
+RUN rm -rf /usr/src/oxyromon
+
+ENV OXYROMON_DATA_DIRECTORY=/data \
+    OXYROMON_ROM_DIRECTORY=/roms
+
+VOLUME [ "/data", "/roms" ]
+
+CMD ["oxyromon"]

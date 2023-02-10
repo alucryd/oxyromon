@@ -56,27 +56,25 @@ The CLI has no specific requirement, you can just:
 
 For the web UI, you will also need yarn:
 
-    yarn install
-    yarn build
     cargo build --release --features server
 
-The build uses native TLS by default, but you can also opt for rustls:
+The build uses rustls by default, but you can also opt for openssl:
 
-    cargo build --no-default-features --features use-rustls
+    cargo build --no-default-features --features use-native-tls
 
 ### Features
 
 | feature        | description                                                   | default |
 | -------------- | ------------------------------------------------------------- | ------- |
-| use-native-tls | use the system OpenSSL library                                | x       |
-| use-rustls     | use rustls where possible, and fallback to a vendored OpenSSL |         |
-| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
 | chd            | CHD support                                                   | x       |
 | cso            | CSO support                                                   | x       |
 | ird            | IRD support                                                   | x       |
 | rvz            | RVZ support                                                   | x       |
 | benchmark      | build the benchmark subcommand                                |         |
 | server         | build the server subcommand                                   |         |
+| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
+| use-native-tls | use the system OpenSSL library                                |         |
+| use-rustls     | use rustls                                                    | x       |
 
 ### Configuration
 
