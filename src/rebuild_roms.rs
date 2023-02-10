@@ -280,44 +280,42 @@ async fn add_rom(
             }
             update_rom_romfile(transaction, rom.id, Some(source_romfile.id)).await;
         }
-    } else {
-        if source_romfile.path.ends_with(ZIP_EXTENSION) {
-            // source is archive and destination is directory
-            let romfile_path = game_directory.join(&rom.name);
-            sevenzip::extract_files_from_archive(
+    } else if source_romfile.path.ends_with(ZIP_EXTENSION) {
+        // source is archive and destination is directory
+        let romfile_path = game_directory.join(&rom.name);
+        sevenzip::extract_files_from_archive(
+            progress_bar,
+            &source_romfile.path,
+            &[&source_rom.name],
+            game_directory,
+        )?;
+        if source_rom.name != rom.name {
+            rename_file(
                 progress_bar,
-                &source_romfile.path,
-                &[&source_rom.name],
-                game_directory,
-            )?;
-            if source_rom.name != rom.name {
-                rename_file(
-                    progress_bar,
-                    &game_directory.join(&source_rom.name),
-                    &romfile_path,
-                    true,
-                )
-                .await?;
-            }
-            let romfile_id = create_romfile(
-                transaction,
-                &romfile_path.as_os_str().to_str().unwrap(),
-                romfile_path.metadata().await.unwrap().len(),
+                &game_directory.join(&source_rom.name),
+                &romfile_path,
+                true,
             )
-            .await;
-            update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
-        } else {
-            // source and destination are directories
-            let romfile_path = game_directory.join(&rom.name);
-            copy_file(progress_bar, &source_romfile.path, &romfile_path, false).await?;
-            let romfile_id = create_romfile(
-                transaction,
-                &romfile_path.as_os_str().to_str().unwrap(),
-                romfile_path.metadata().await.unwrap().len(),
-            )
-            .await;
-            update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
+            .await?;
         }
+        let romfile_id = create_romfile(
+            transaction,
+            romfile_path.as_os_str().to_str().unwrap(),
+            romfile_path.metadata().await.unwrap().len(),
+        )
+        .await;
+        update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
+    } else {
+        // source and destination are directories
+        let romfile_path = game_directory.join(&rom.name);
+        copy_file(progress_bar, &source_romfile.path, &romfile_path, false).await?;
+        let romfile_id = create_romfile(
+            transaction,
+            romfile_path.as_os_str().to_str().unwrap(),
+            romfile_path.metadata().await.unwrap().len(),
+        )
+        .await;
+        update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
     }
     Ok(())
 }

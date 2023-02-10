@@ -219,7 +219,7 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let source_file = File::open(&source_path.as_ref()).expect("Failed to read archive");
+    let source_file = File::open(source_path.as_ref()).expect("Failed to read archive");
     let mut source_archive = ZipArchive::new(source_file).expect("Failed to open archive");
 
     let destination_file: File;
@@ -228,13 +228,13 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
         destination_file = OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&destination_path.as_ref())
+            .open(destination_path.as_ref())
             .expect("Failed to open archive");
         destination_archive =
             ZipWriter::new_append(destination_file).expect("Failed to open archive");
     } else {
         destination_file =
-            File::create(&destination_path.as_ref()).expect("Failed to create archive");
+            File::create(destination_path.as_ref()).expect("Failed to create archive");
         destination_archive = ZipWriter::new(destination_file);
     };
 

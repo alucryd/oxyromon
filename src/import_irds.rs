@@ -71,7 +71,7 @@ pub async fn main(
         let mut reader = get_reader_sync(&ird_path)?;
         let mut magic = [0u8; 2];
         reader.read_exact(&mut magic).unwrap();
-        try_with!(reader.seek(io::SeekFrom::Start(0)), "Failed to seek file");
+        try_with!(reader.rewind(), "Failed to rewind file");
 
         let (irdfile, mut header) = if magic == GZIP_MAGIC {
             let mut decoder = GzDecoder::new(&mut reader);

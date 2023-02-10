@@ -316,22 +316,20 @@ pub async fn import_rom<P: AsRef<Path>>(
                 progress_bar.println("Please rebuild with the RVZ feature enabled");
             }
         }
-    } else {
-        if let Some(system_id) = import_other(
-            &mut transaction,
-            progress_bar,
-            system,
-            header,
-            &romfile_path,
-            &romfile_extension,
-            hash_algorithm,
-            trash,
-        )
-        .await?
-        {
-            system_ids.insert(system_id);
-        };
-    }
+    } else if let Some(system_id) = import_other(
+        &mut transaction,
+        progress_bar,
+        system,
+        header,
+        &romfile_path,
+        &romfile_extension,
+        hash_algorithm,
+        trash,
+    )
+    .await?
+    {
+        system_ids.insert(system_id);
+    };
 
     commit_transaction(transaction).await;
 
@@ -545,7 +543,7 @@ async fn import_archive<P: AsRef<Path>>(
         game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
         if let Some(path) = path.parent() {
             let game_name = path.as_os_str().to_str().unwrap();
-            if game_name.len() > 0 {
+            if !game_name.is_empty() {
                 game_names.push(game_name);
             }
         }
@@ -1282,26 +1280,24 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
-    } else {
-        if system.is_some() {
-            let mut roms_games: Vec<(Rom, Game)> = vec![];
-            for rom in roms {
-                let game = find_game_by_id(connection, rom.game_id).await;
-                roms_games.push((rom, game));
-            }
-            if let Some((rom, game)) = prompt_for_rom_game(&mut roms_games)? {
-                let system = find_system_by_id(connection, game.system_id).await;
-                rom_game_system = Some((rom, game, system));
-            };
-        } else {
-            let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
-            for rom in roms {
-                let game = find_game_by_id(connection, rom.game_id).await;
-                let system = find_system_by_id(connection, game.system_id).await;
-                roms_games_systems.push((rom, game, system));
-            }
-            rom_game_system = prompt_for_rom_game_system(&mut roms_games_systems)?;
+    } else if system.is_some() {
+        let mut roms_games: Vec<(Rom, Game)> = vec![];
+        for rom in roms {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            roms_games.push((rom, game));
         }
+        if let Some((rom, game)) = prompt_for_rom_game(&mut roms_games)? {
+            let system = find_system_by_id(connection, game.system_id).await;
+            rom_game_system = Some((rom, game, system));
+        };
+    } else {
+        let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
+        for rom in roms {
+            let game = find_game_by_id(connection, rom.game_id).await;
+            let system = find_system_by_id(connection, game.system_id).await;
+            roms_games_systems.push((rom, game, system));
+        }
+        rom_game_system = prompt_for_rom_game_system(&mut roms_games_systems)?;
     }
 
     // abort if rom already has a file
