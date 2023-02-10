@@ -8,7 +8,6 @@ use super::dolphin;
 #[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -20,7 +19,6 @@ use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::time::Duration;
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
@@ -194,22 +192,16 @@ async fn check_system(
         }
     }
 
-    commit_transaction(transaction).await;
-
     // update games and systems completion
     if errors > 0 {
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
-        progress_bar.set_message("Computing system completion");
-        update_games_by_system_id_mark_incomplete(connection, system.id).await;
-        cfg_if! {
-            if #[cfg(feature = "ird")] {
-                update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-            }
+        if system.arcade {
+            compute_arcade_system_incompletion(&mut transaction, progress_bar, system).await;
+        } else {
+            compute_system_incompletion(&mut transaction, progress_bar, system).await;
         }
-        update_system_mark_complete(connection, system.id).await;
-        update_system_mark_incomplete(connection, system.id).await;
     }
+
+    commit_transaction(transaction).await;
 
     Ok(())
 }
@@ -446,7 +438,7 @@ async fn move_to_trash(
     system: &System,
     romfile: &Romfile,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, progress_bar, system)
+    let new_path = get_trash_directory(connection, progress_bar, Some(system))
         .await?
         .join(Path::new(&romfile.path).file_name().unwrap());
     rename_file(progress_bar, &romfile.path, &new_path, true).await?;

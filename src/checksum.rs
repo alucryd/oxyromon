@@ -208,7 +208,7 @@ async fn get_file_and_size<P: AsRef<Path>>(
         if matches.iter().all(|&m| m) {
             size -= header.size as u64;
         } else {
-            try_with!(file.seek(io::SeekFrom::Start(0)), "Failed to seek file");
+            try_with!(file.rewind(), "Failed to rewind file");
         }
     }
 

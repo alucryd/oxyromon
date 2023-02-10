@@ -1,3 +1,18 @@
+# 0.15.0
+
+- Use archive name and directory names in the archive when importing arcade games
+- Also use the file name in the archive when importing arcade games
+- Rework import-roms to only ask for a system when desired or necessary
+- Rework rebuild-roms to make it a lot faster
+- Fix completion computation for arcade systems
+- Don't automatically trash invalid roms, put the mechanic behind a flag
+- Add a flag to force import existing roms
+- Use native rust implementations by default (openssl-sys -> rustls, libz-sys -> miniz_oxide)
+
+# 0.14.1
+
+- Fix game filtering in the web UI with the new 1G1R system
+
 # 0.14.0
 
 - Add the ability to sort ROMs in alphabetical subfolders
@@ -40,7 +55,7 @@
 - Allow selecting the checksum algorithm in import-roms (useful for JB folders which only provide MD5)
 - Add a new benchmark subcommand (Linux only for now) to measure the performance of checksum algorithms
 - Support moving files across different filesystems
-- Fix a parsing issue on DAT files with duplicate `clrmamepro` fields 
+- Fix a parsing issue on DAT files with duplicate `clrmamepro` fields
 
 # 0.10.1
 

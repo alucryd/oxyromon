@@ -52,11 +52,11 @@ async fn test() {
     import_chd(
         &mut connection,
         &progress_bar,
-        &system_directory,
-        &system,
+        Some(&system),
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,
+        true,
     )
     .await
     .unwrap();

@@ -17,8 +17,6 @@
 
   import { completeFilter, ignoredFilter, incompleteFilter, nameFilter, oneRegionFilter } from "../store.js";
 
-  export const ssr = false;
-
   let navbarIsOpen = false;
 
   function handleNavbarUpdate(event) {
@@ -29,7 +27,7 @@
 <div class="d-flex flex-column min-vh-100">
   <Navbar color="dark" dark sticky="top" expand="md" class="mb-3">
     <NavbarBrand href="/" class="ms-3">
-      <Fa icon={faGamepad} />
+      <img src="/logo.svg" alt="logo" style="height: 32px;" />
       oxyromon
     </NavbarBrand>
     <NavbarToggler on:click={() => (navbarIsOpen = !navbarIsOpen)} />
@@ -41,12 +39,14 @@
       on:update={handleNavbarUpdate}
     >
       <ButtonToolbar class="d-flex">
-        <ButtonGroup>
-          <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
-            Complete
-          </Button>
+        <ButtonGroup class="ms-3">
           <Button color="primary" bind:active={$oneRegionFilter} on:click={() => oneRegionFilter.update((b) => !b)}>
             1G1R
+          </Button>
+        </ButtonGroup>
+        <ButtonGroup class="ms-3">
+          <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
+            Complete
           </Button>
           <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
             Incomplete
@@ -62,7 +62,7 @@
     </Collapse> />
   </Navbar>
 
-  <Container fluid class="flex-grow-1">
+  <Container fluid class="flex-fill">
     <slot />
   </Container>
 </div>

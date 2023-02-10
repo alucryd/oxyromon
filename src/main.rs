@@ -88,6 +88,7 @@ use database::*;
 use dotenv::dotenv;
 use progress::*;
 use simple_error::SimpleError;
+use std::env;
 use util::*;
 
 type SimpleResult<T> = Result<T, SimpleError>;
@@ -135,7 +136,10 @@ async fn main() -> SimpleResult<()> {
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
-        let data_directory = PathBuf::from(dirs::data_dir().unwrap()).join("oxyromon");
+        let data_directory = match env::var("OXYROMON_DATA_DIRECTORY") {
+            Ok(data_directory) => PathBuf::from(data_directory),
+            Err(_) => dirs::data_dir().map(PathBuf::from).unwrap().join("oxyromon"),
+        };
         create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");

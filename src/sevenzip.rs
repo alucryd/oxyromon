@@ -2,9 +2,12 @@ use super::progress::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
+use std::fs::{File, OpenOptions};
+use std::iter::zip;
 use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
+use zip::{ZipArchive, ZipWriter};
 
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
@@ -201,6 +204,59 @@ pub fn remove_files_from_archive<P: AsRef<Path>>(
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
+
+    Ok(())
+}
+
+pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    source_path: &P,
+    destination_path: &Q,
+    source_names: &[&str],
+    destination_names: &[&str],
+) -> SimpleResult<()> {
+    progress_bar.set_message("Copying files between archives");
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+    let source_file = File::open(source_path.as_ref()).expect("Failed to read archive");
+    let mut source_archive = ZipArchive::new(source_file).expect("Failed to open archive");
+
+    let destination_file: File;
+    let mut destination_archive: ZipWriter<File>;
+    if destination_path.as_ref().is_file().await {
+        destination_file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(destination_path.as_ref())
+            .expect("Failed to open archive");
+        destination_archive =
+            ZipWriter::new_append(destination_file).expect("Failed to open archive");
+    } else {
+        destination_file =
+            File::create(destination_path.as_ref()).expect("Failed to create archive");
+        destination_archive = ZipWriter::new(destination_file);
+    };
+
+    for (&source_name, &destination_name) in zip(source_names, destination_names) {
+        if source_name == destination_name {
+            progress_bar.println(format!("Copying \"{}\"", source_name));
+            destination_archive
+                .raw_copy_file(source_archive.by_name(source_name).unwrap())
+                .expect("Failed to copy file")
+        } else {
+            progress_bar.println(format!(
+                "Copying \"{}\" to \"{}\"",
+                source_name, destination_name
+            ));
+            destination_archive
+                .raw_copy_file_rename(
+                    source_archive.by_name(source_name).unwrap(),
+                    destination_name,
+                )
+                .expect("Failed to copy file")
+        }
+    }
 
     Ok(())
 }

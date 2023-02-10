@@ -1,12 +1,17 @@
 use super::config::*;
+use super::database::*;
 use super::model::*;
+use super::progress::*;
 use super::SimpleResult;
 use async_std::fs;
 use async_std::path::{Path, PathBuf};
+use cfg_if::cfg_if;
 use indicatif::ProgressBar;
+use num_traits::FromPrimitive;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
+use std::time::Duration;
 #[cfg(any(feature = "ird", feature = "benchmark"))]
 use tempfile::NamedTempFile;
 use tempfile::TempDir;
@@ -214,11 +219,14 @@ pub async fn get_one_region_directory(
 pub async fn get_trash_directory(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: &System,
+    system: Option<&System>,
 ) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(connection, progress_bar, system)
-        .await?
-        .join("Trash");
+    let trash_directory = match system {
+        Some(system) => get_system_directory(connection, progress_bar, system)
+            .await?
+            .join("Trash"),
+        None => get_rom_directory(connection).await.join("Trash"),
+    };
     create_directory(progress_bar, &trash_directory, true).await?;
     Ok(trash_directory)
 }
@@ -244,4 +252,94 @@ pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &st
             true
         }
     }
+}
+
+pub async fn compute_system_completion(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) {
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.set_message("Computing system completion");
+    update_games_by_system_id_mark_complete(connection, system.id).await;
+    cfg_if! {
+        if #[cfg(feature = "ird")] {
+            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
+        }
+    }
+    update_system_mark_complete(connection, system.id).await;
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+}
+
+pub async fn compute_system_incompletion(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) {
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.set_message("Computing system completion");
+    update_games_by_system_id_mark_incomplete(connection, system.id).await;
+    cfg_if! {
+        if #[cfg(feature = "ird")] {
+            update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
+        }
+    }
+    update_system_mark_incomplete(connection, system.id).await;
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+}
+
+pub async fn compute_arcade_system_completion(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) {
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.set_message("Computing system completion");
+    let merging = Merging::from_i64(system.merging).unwrap();
+    match merging {
+        Merging::Split => {
+            update_split_games_by_system_id_mark_complete(connection, system.id).await;
+        }
+        Merging::NonMerged | Merging::Merged => {
+            update_non_merged_and_merged_games_by_system_id_mark_complete(connection, system.id)
+                .await;
+        }
+        Merging::FullNonMerged | Merging::FullMerged => {
+            update_games_by_system_id_mark_complete(connection, system.id).await;
+        }
+    }
+    update_system_mark_complete(connection, system.id).await;
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+}
+
+pub async fn compute_arcade_system_incompletion(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) {
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.set_message("Computing system completion");
+    let merging = Merging::from_i64(system.merging).unwrap();
+    match merging {
+        Merging::Split => {
+            update_split_games_by_system_id_mark_incomplete(connection, system.id).await;
+        }
+        Merging::NonMerged | Merging::Merged => {
+            update_non_merged_and_merged_games_by_system_id_mark_incomplete(connection, system.id)
+                .await;
+        }
+        Merging::FullNonMerged | Merging::FullMerged => {
+            update_games_by_system_id_mark_incomplete(connection, system.id).await;
+        }
+    }
+    update_system_mark_incomplete(connection, system.id).await;
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
 }

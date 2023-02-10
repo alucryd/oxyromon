@@ -38,19 +38,16 @@ async fn test() {
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
-        .await
-        .unwrap();
 
     // when
     import_chd(
         &mut connection,
         &progress_bar,
-        &system_directory,
-        &system,
+        Some(&system),
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,
+        true,
     )
     .await
     .unwrap();

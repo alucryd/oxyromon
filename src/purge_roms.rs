@@ -1,5 +1,4 @@
 use super::database::*;
-use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -7,7 +6,6 @@ use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::time::Duration;
 
 pub fn subcommand() -> Command {
     Command::new("purge-roms")
@@ -60,11 +58,13 @@ pub async fn main(
     if matches.get_flag("ORPHAN") {
         purge_orphan_romfiles(connection, progress_bar).await?;
     }
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_mark_incomplete(connection).await;
-    update_systems_mark_incomplete(connection).await;
+    for system in find_systems(connection).await {
+        if system.arcade {
+            compute_arcade_system_incompletion(connection, progress_bar, &system).await;
+        } else {
+            compute_system_incompletion(connection, progress_bar, &system).await;
+        }
+    }
     Ok(())
 }
 

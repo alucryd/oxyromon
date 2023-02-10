@@ -7,7 +7,6 @@ use super::util::*;
 use super::SimpleResult;
 use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use core::time::Duration;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -78,7 +77,10 @@ pub async fn main(
     let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
 
     for dat_path in dat_paths {
-        progress_bar.println(format!("Processing \"{:?}\"", &dat_path));
+        progress_bar.println(format!(
+            "Processing \"{}\"",
+            &dat_path.file_name().unwrap().to_str().unwrap()
+        ));
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
@@ -214,17 +216,16 @@ pub async fn import_dat(
     // create necessary directories
     let system = find_system_by_id(&mut transaction, system_id).await;
     get_system_directory(&mut transaction, progress_bar, &system).await?;
-    get_trash_directory(&mut transaction, progress_bar, &system).await?;
+    get_trash_directory(&mut transaction, progress_bar, Some(&system)).await?;
 
     // update games and systems completion
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_complete(&mut transaction, system.id).await;
-    update_games_by_system_id_mark_incomplete(&mut transaction, system.id).await;
-    update_system_mark_complete(&mut transaction, system.id).await;
-    update_system_mark_incomplete(&mut transaction, system.id).await;
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    if system.arcade {
+        compute_arcade_system_completion(&mut transaction, progress_bar, &system).await;
+        compute_arcade_system_incompletion(&mut transaction, progress_bar, &system).await;
+    } else {
+        compute_system_completion(&mut transaction, progress_bar, &system).await;
+        compute_system_incompletion(&mut transaction, progress_bar, &system).await;
+    }
 
     commit_transaction(transaction).await;
 
@@ -448,6 +449,14 @@ async fn create_or_update_roms(
         if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
             continue;
         }
+        // skip roms without CRC
+        if rom_xml.crc.is_none() {
+            progress_bar.println(format!(
+                "Skipping \"{}\" because it has no CRC",
+                &rom_xml.name
+            ));
+            continue;
+        }
         // find parent rom if needed
         let mut parent_id = None;
         if rom_xml.merge.is_some() {
@@ -554,7 +563,7 @@ pub async fn reimport_orphan_romfiles(
     orphan_romfile_ids: Vec<i64>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let system = find_system_by_id(connection, system_id).await;
+    let system = Some(find_system_by_id(connection, system_id).await);
     let header = find_header_by_system_id(connection, system_id).await;
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id).await;
@@ -562,10 +571,12 @@ pub async fn reimport_orphan_romfiles(
         import_rom(
             connection,
             progress_bar,
-            &system,
+            system.as_ref(),
             &header,
             &Path::new(&romfile.path),
             hash_algorithm,
+            true,
+            false,
         )
         .await?;
     }

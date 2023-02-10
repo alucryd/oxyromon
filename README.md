@@ -2,7 +2,16 @@
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 
-# oxyROMon 0.14.0
+<img 
+    style="display: block; 
+           margin-left: auto;
+           margin-right: auto;
+           width: 20%;"
+    src="https://github.com/alucryd/oxyromon/raw/master/resources/logo.svg" 
+    alt="logo">
+</img>
+
+<h1 style="text-align: center;">oxyROMon 0.15.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -13,22 +22,31 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 Both console and arcade (WIP) systems are supported using Logiqx DAT files.
 The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
 
+<img 
+    style="display: block; 
+           margin-left: auto;
+           margin-right: auto;
+           width: 100%;"
+    src="https://github.com/alucryd/oxyromon/raw/master/resources/screenshot.png" 
+    alt="screenshot">
+</img>
+
 ### Quick start
 
 To create and manage a new system, you need a Logiqx DAT file.
-Cartridge based consoles and computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
+Cartridge based consoles and older computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
 CD based ones can be downloaded from [Redump](http://redump.org/).
 Alternatively the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
-Arcade DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
+MAME DATs can be found on [Progetto-Snaps](https://www.progettosnaps.net/index.php). FBNeo DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
 
 Manually downloaded DATs are then imported using the `import-dats` subcommand.
 Once a system has been created, you can start importing ROMs using the `import-roms` subcommand.
 Imported ROMs that check out will be placed in the main folder of their respective system.
 They can then be sorted using the `sort-roms` subcommand according to your configuration.
 Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list beforehand.
-See configuration below.
+See all configuration options below.
 
-You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or find manually deleted ROMs.
+You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or detect and forget manually deleted ROMs.
 
 ### Compilation
 
@@ -38,27 +56,25 @@ The CLI has no specific requirement, you can just:
 
 For the web UI, you will also need yarn:
 
-    yarn install
-    yarn build
     cargo build --release --features server
 
-The build uses native TLS by default, but you can also opt for rustls:
+The build uses rustls by default, but you can also opt for openssl:
 
-    cargo build --no-default-features --features use-rustls
+    cargo build --no-default-features --features use-native-tls
 
 ### Features
 
 | feature        | description                                                   | default |
 | -------------- | ------------------------------------------------------------- | ------- |
-| use-native-tls | use the system OpenSSL library                                | x       |
-| use-rustls     | use rustls where possible, and fallback to a vendored OpenSSL |         |
-| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
 | chd            | CHD support                                                   | x       |
 | cso            | CSO support                                                   | x       |
 | ird            | IRD support                                                   | x       |
 | rvz            | RVZ support                                                   | x       |
 | benchmark      | build the benchmark subcommand                                |         |
 | server         | build the server subcommand                                   |         |
+| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
+| use-native-tls | use the system OpenSSL library                                |         |
+| use-rustls     | use rustls                                                    | x       |
 
 ### Configuration
 
@@ -102,7 +118,7 @@ DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
 HASH_ALGORITHM = crc
-PREFER_FLAGS = 
+PREFER_FLAGS =
 PREFER_PARENTS = true
 PREFER_REGIONS = none
 PREFER_VERSIONS = new
@@ -147,7 +163,6 @@ These should be in your `${PATH}` for extra features.
 - Add an optional check of the ROMs after conversion
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
-- Infer arcade games based on the archive name for duplicate ROMs
 - Craft some unit tests for arcade systems
 - Craft some unit tests for RVZ
 - Craft some unit tests for IRD and PS3 in general
@@ -169,7 +184,7 @@ These should be in your `${PATH}` for extra features.
         check-roms          Check ROM files integrity
         purge-roms          Purge trashed, missing and orphan ROM files
         purge-systems       Purge systems
-        generate-playlists  
+        generate-playlists
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
         benchmark           Benchmark oxyromon
         server              Launch the backend server
@@ -239,16 +254,17 @@ Supported DAT providers:
 
 - Redump (Download and update)
 - No-Intro (Update check only)
-<!-- -->
-    Usage: oxyromon download-dats [OPTIONS]
+  <!-- -->
 
-    Options:
-        -n, --nointro  Download No-Intro DAT files
-        -r, --redump   Download Redump DAT files
-        -u, --update   Check for system updates
-        -a, --all      Import all systems
-        -f, --force    Force import of outdated DAT files
-        -h, --help     Print help information
+      Usage: oxyromon download-dats [OPTIONS]
+
+      Options:
+          -n, --nointro  Download No-Intro DAT files
+          -r, --redump   Download Redump DAT files
+          -u, --update   Check for system updates
+          -a, --all      Import all systems
+          -f, --force    Force import of outdated DAT files
+          -h, --help     Print help information
 
 ## oxyromon-import-irds
 
@@ -274,7 +290,7 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
 Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
-You will be prompted for the system you want to check your ROMs against.
+In most cases the system is auto-detected, you will still be prompted for the system you want when importing JB folders. You can also force a system prompt to narrow the search.
 Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
@@ -299,9 +315,11 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system <SYSTEM>  Set the system number to use
-        -a, --hash <HASH>      Set the hash algorithm [possible values: CRC, MD5, SHA1]
-        -h, --help             Print help information
+        -s, --system       Prompt for a system
+        -t, --trash        Trash invalid ROM files
+        -f, --force        Force import of existing ROM files
+        -a, --hash <HASH>  Set the hash algorithm [possible values: crc, md5, sha1]
+        -h, --help         Print help
 
 ## oxyromon-sort-roms
 
@@ -375,14 +393,15 @@ Supported merging strategies:
 - Non-Merged (each parent and clone set contains its ROM files and its parent's files)
 - Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
 - ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
-<!-- -->
-    Usage: oxyromon rebuild-roms [OPTIONS]
+  <!-- -->
 
-    Options:
-        -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-        -a, --all                Rebuild all arcade systems
-        -y, --yes                Automatically say yes to prompts
-        -h, --help               Print help information
+      Usage: oxyromon rebuild-roms [OPTIONS]
+
+      Options:
+          -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+          -a, --all                Rebuild all arcade systems
+          -y, --yes                Automatically say yes to prompts
+          -h, --help               Print help information
 
 ## oxyromon-convert-roms
 
@@ -465,7 +484,6 @@ Note: `sort-roms` will move them accordingly but if you use `convert-roms` you w
     Options:
         -a, --all   Generate playlists for all systems
         -h, --help  Print help information
-
 
 ## oxyromon-import-irds
 

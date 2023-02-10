@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
   import { onMount } from "svelte";
@@ -20,7 +20,7 @@
 
   import {
     getGamesBySystemId,
-    getRomsByGameId,
+    getRomsByGameIdAndSystemId,
     getSizesBySystemId,
     getSystems,
     updateGames,
@@ -67,20 +67,26 @@
 
   function computeGameColor(game) {
     if (game.complete) {
-      if (game.sorting == 1) {
-        return "list-group-item-primary";
-      }
       return "list-group-item-success";
-    } else {
-      if (game.sorting == 2) {
-        return "list-group-item-secondary";
-      }
-      return "list-group-item-danger";
     }
+
+    if (game.sorting == 2) {
+      return "list-group-item-secondary";
+    }
+
+    return "list-group-item-danger";
   }
 
   function computeRomColor(rom) {
-    return rom.romfile ? "list-group-item-success" : "list-group-item-danger";
+    if (rom.romfile) {
+      return "list-group-item-success";
+    }
+
+    if (rom.ignored) {
+      return "list-group-item-secondary";
+    }
+
+    return "list-group-item-danger";
   }
 
   onMount(async () => {
@@ -88,14 +94,25 @@
       await updateSystems();
     });
     systemId.subscribe(async (systemId) => {
-      await getGamesBySystemId(systemId);
-      await getSizesBySystemId(systemId);
+      gameId.set(-1);
+      gamesPage.set(1);
+      if (systemId === -1) {
+        games.set([]);
+      } else {
+        await getGamesBySystemId(systemId);
+        await getSizesBySystemId(systemId);
+      }
     });
     gamesPage.subscribe(async () => {
       await updateGames();
     });
     gameId.subscribe(async (gameId) => {
-      await getRomsByGameId(gameId);
+      romsPage.set(1);
+      if (gameId === -1) {
+        roms.set([]);
+      } else {
+        await getRomsByGameIdAndSystemId(gameId, $systemId);
+      }
     });
     romsPage.subscribe(async () => {
       await updateRoms();
@@ -144,7 +161,6 @@
   });
 </script>
 
-<div class="card-group" />
 <Row class="mb-3">
   <Col sm="3" class="d-flex flex-column">
     <Card class="text-center flex-fill">
@@ -206,7 +222,9 @@
               id="lgi-game-{i}"
               tag="button"
               action
-              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)}"
+              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)} {game.sorting == 1
+                ? 'fw-bold'
+                : ''}"
               on:click={() => {
                 gameId.set(game.id);
               }}

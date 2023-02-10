@@ -3,7 +3,6 @@ use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::isoinfo;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
@@ -17,7 +16,6 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::str;
 use std::str::FromStr;
-use std::time::Duration;
 use strsim::jaro_winkler;
 
 const GZIP_MAGIC: &[u8] = &[31, 139];
@@ -58,11 +56,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let ird_paths: Vec<&str> = matches
-        .get_many::<String>("IRDS")
-        .unwrap()
-        .map(String::as_str)
-        .collect();
+    let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
     let system = prompt_for_system_like(
         connection,
         matches
@@ -77,7 +71,7 @@ pub async fn main(
         let mut reader = get_reader_sync(&ird_path)?;
         let mut magic = [0u8; 2];
         reader.read_exact(&mut magic).unwrap();
-        try_with!(reader.seek(io::SeekFrom::Start(0)), "Failed to seek file");
+        try_with!(reader.rewind(), "Failed to rewind file");
 
         let (irdfile, mut header) = if magic == GZIP_MAGIC {
             let mut decoder = GzDecoder::new(&mut reader);
@@ -117,12 +111,7 @@ pub async fn main(
         progress_bar.println("");
     }
 
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-    update_system_mark_complete(connection, system.id).await;
-    update_system_mark_incomplete(connection, system.id).await;
+    compute_system_incompletion(connection, progress_bar, &system).await;
 
     Ok(())
 }

@@ -27,7 +27,7 @@ jobs:
       - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
-          args: --features server
+          args: --features benchmark,server
           token: ${{secrets.GITHUB_TOKEN}}
       - name: Audit
         uses: actions-rs/audit-check@v1
@@ -37,11 +37,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --features server
+          args: --release --features benchmark,server
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
         with:
-          args: --features server
+          args: --features benchmark,server
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
         with:

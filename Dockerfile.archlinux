@@ -1,0 +1,25 @@
+FROM archlinux
+
+WORKDIR /usr/src/oxyromon
+COPY . .
+RUN pacman -Sy --noconfirm cdrtools dolphin-emu mame-tools maxcso p7zip rust yarn && \
+    cargo install \
+    --no-default-features \
+    --features use-rustls,enable-asm,chd,cso,ird,rvz,benchmark,server \
+    --root /usr \
+    --path . && \
+    cargo clean && \
+    yarn cache clean --all && \
+    rm -rf /root/.cargo /tmp/* && \
+    pacman -Rns --noconfirm rust yarn && \
+    pacman -Sc --noconfirm
+
+WORKDIR /
+RUN rm -rf /usr/src/oxyromon
+
+ENV OXYROMON_DATA_DIRECTORY=/data \
+    OXYROMON_ROM_DIRECTORY=/roms
+
+VOLUME [ "/data", "/roms" ]
+
+CMD ["oxyromon"]

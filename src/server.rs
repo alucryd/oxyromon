@@ -14,6 +14,7 @@ use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use num_traits::FromPrimitive;
 use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
@@ -87,6 +88,37 @@ impl Rom {
             }
             None => None,
         })
+    }
+
+    async fn ignored(&self, ctx: &Context<'_>, system_id: i64) -> Result<bool> {
+        let system_loader = ctx.data_unchecked::<DataLoader<SystemLoader>>();
+        let system = system_loader.load_one(system_id).await?.unwrap();
+
+        if !system.arcade || self.parent_id.is_none() {
+            return Ok(false);
+        }
+
+        let merging = Merging::from_i64(system.merging).unwrap();
+        let ignored = match merging {
+            Merging::Split => true,
+            Merging::NonMerged | Merging::Merged => {
+                let sql = format!(
+                    "
+                        SELECT g.bios
+                        FROM roms AS r
+                        JOIN games AS g ON r.game_id = g.id
+                        WHERE r.id = {};
+                    ",
+                    self.parent_id.unwrap()
+                );
+                let row: (bool,) = sqlx::query_as(&sql)
+                    .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+                    .await?;
+                row.0
+            }
+            Merging::FullNonMerged | Merging::FullMerged => false,
+        };
+        Ok(ignored)
     }
 }
 
@@ -191,8 +223,8 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(r.size), 0)
-                FROM roms r
-                JOIN games g ON r.game_id = g.id
+                FROM roms AS r
+                JOIN games AS g ON r.game_id = g.id
                 WHERE r.romfile_id IS NOT NULL
                 AND g.system_id = {};
             ",
@@ -208,8 +240,8 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(r.size), 0)
-                FROM roms r
-                JOIN games g ON r.game_id = g.id
+                FROM roms AS r
+                JOIN games AS g ON r.game_id = g.id
                 WHERE r.romfile_id IS NOT NULL
                 AND g.sorting = 1
                 AND g.system_id = {};
@@ -226,10 +258,10 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles rf
+                FROM romfiles AS rf
                 WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms r
-                    JOIN games g ON r.game_id = g.id
+                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
+                    JOIN games AS g ON r.game_id = g.id
                     WHERE r.romfile_id IS NOT NULL
                     AND g.system_id = {}
                 );
@@ -246,10 +278,10 @@ impl QueryRoot {
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles rf
+                FROM romfiles AS rf
                 WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms r
-                    JOIN games g ON r.game_id = g.id
+                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
+                    JOIN games AS g ON r.game_id = g.id
                     WHERE r.romfile_id IS NOT NULL
                     AND g.sorting = 1
                     AND g.system_id = {}

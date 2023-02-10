@@ -14,6 +14,7 @@ pub enum Merging {
     NonMerged = 1,
     FullNonMerged = 2,
     Merged = 3,
+    FullMerged = 4,
 }
 
 #[derive(FromRow)]

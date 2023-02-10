@@ -32,8 +32,8 @@ const endpoint = "/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {
-  let start = pageSize * (page - 1);
-  let end = Math.min(pageSize * page, array.length);
+  const start = pageSize * (page - 1);
+  const end = Math.min(pageSize * page, array.length);
   return array.slice(start, end);
 }
 
@@ -45,6 +45,8 @@ export async function getSystems() {
         name
         description
         complete
+        merging
+        arcade
       }
     }
   `;
@@ -79,16 +81,16 @@ export async function getGamesBySystemId(systemId) {
 
 function filterGames(games) {
   if (!get(completeFilter)) {
-    games = reject(games, (game) => game.complete && game.sorting != 1);
+    games = reject(games, (game) => game.complete);
   }
   if (!get(incompleteFilter)) {
-    games = reject(games, (game) => !game.complete && game.sorting != 2);
+    games = reject(games, (game) => !game.complete);
   }
   if (!get(ignoredFilter)) {
-    games = reject(games, (game) => game.sorting == 2);
+    games = reject(games, (game) => game.sorting === 2);
   }
-  if (!get(oneRegionFilter)) {
-    games = reject(games, (game) => game.sorting == 1);
+  if (get(oneRegionFilter)) {
+    games = reject(games, (game) => game.sorting !== 1);
   }
   if (get(nameFilter).length) {
     games = reject(
@@ -105,7 +107,7 @@ export async function updateGames() {
   games.set(paginate(get(filteredGames), get(gamesPage), get(pageSize)));
 }
 
-export async function getRomsByGameId(gameId) {
+export async function getRomsByGameIdAndSystemId(gameId, systemId) {
   const query = gql`
         {
             roms(gameId: ${gameId}) {
@@ -115,6 +117,7 @@ export async function getRomsByGameId(gameId) {
                     path
                     size
                 }
+                ignored(systemId: ${systemId})
             }
         }
     `;

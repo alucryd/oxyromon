@@ -2,13 +2,11 @@ use super::config::*;
 use super::database::*;
 use super::generate_playlists::DISC_REGEX;
 use super::model::*;
-use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
 use async_std::stream::StreamExt;
-use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -376,7 +374,7 @@ async fn sort_system(
 
     let system_directory = get_system_directory(connection, progress_bar, system).await?;
     let one_region_directory = get_one_region_directory(connection, progress_bar, system).await?;
-    let trash_directory = get_trash_directory(connection, progress_bar, system).await?;
+    let trash_directory = get_trash_directory(connection, progress_bar, Some(system)).await?;
 
     let mut transaction = begin_transaction(connection).await;
 
@@ -544,19 +542,13 @@ async fn sort_system(
 
     // update games and systems completion
     if changes > 0 {
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
-        progress_bar.set_message("Computing system completion");
-        update_games_by_system_id_mark_incomplete(connection, system.id).await;
-        cfg_if! {
-            if #[cfg(feature = "ird")] {
-                update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-            }
+        if system.arcade {
+            compute_arcade_system_completion(connection, progress_bar, system).await;
+            compute_arcade_system_incompletion(connection, progress_bar, system).await;
+        } else {
+            compute_system_completion(connection, progress_bar, system).await;
+            compute_system_incompletion(connection, progress_bar, system).await;
         }
-        update_system_mark_complete(connection, system.id).await;
-        update_system_mark_incomplete(connection, system.id).await;
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
     }
 
     Ok(())

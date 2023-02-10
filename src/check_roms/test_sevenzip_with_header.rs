@@ -38,12 +38,20 @@ async fn test() {
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
+    let header = find_header_by_system_id(&mut connection, system.id).await;
 
-    let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
+    import_roms::import_rom(
+        &mut connection,
+        &progress_bar,
+        Some(&system),
+        &header,
+        &romfile_path,
+        &HashAlgorithm::Crc,
+        true,
+        false,
+    )
+    .await
+    .unwrap();
 
     // when
     check_system(

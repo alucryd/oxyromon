@@ -264,35 +264,36 @@ async fn download_redump_dat(
     progress_bar.println(format!("Processing \"{}\"", system_name));
     let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
     let zip_url = format!("{}/datfile/{}/", base_url, code);
-    let response = surf::get(zip_url)
-        .recv_bytes()
-        .await
-        .expect("Failed to download ZIP");
-    let tmp_directory = create_tmp_directory(connection).await?;
-    let mut zip_archive = try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read ZIP");
-    match zip_archive.len() {
-        0 => progress_bar.println("Update ZIP is empty"),
-        1 => {
-            try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
-            let (datfile_xml, detector_xml) = parse_dat(
-                progress_bar,
-                &tmp_directory
-                    .path()
-                    .join(zip_archive.file_names().next().unwrap()),
-                true,
-            )
-            .await?;
-            import_dat(
-                connection,
-                progress_bar,
-                &datfile_xml,
-                &detector_xml,
-                false,
-                force,
-            )
-            .await?;
+    if let Ok(response) = surf::get(zip_url).recv_bytes().await {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut zip_archive =
+            try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read ZIP");
+        match zip_archive.len() {
+            0 => progress_bar.println("Update ZIP is empty"),
+            1 => {
+                try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+                let (datfile_xml, detector_xml) = parse_dat(
+                    progress_bar,
+                    &tmp_directory
+                        .path()
+                        .join(zip_archive.file_names().next().unwrap()),
+                    true,
+                )
+                .await?;
+                import_dat(
+                    connection,
+                    progress_bar,
+                    &datfile_xml,
+                    &detector_xml,
+                    false,
+                    force,
+                )
+                .await?;
+            }
+            _ => progress_bar.println("Update ZIP contains too many files"),
         }
-        _ => progress_bar.println("Update ZIP contains too many files"),
+    } else {
+        progress_bar.println("Failed to download ZIP")
     }
     // rate limit
     task::sleep(Duration::from_secs(1)).await;
