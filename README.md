@@ -7,7 +7,7 @@
            margin-left: auto;
            margin-right: auto;
            width: 20%;"
-    src="https://github.com/alucryd/oxyromon/raw/develop/resources/logo.svg" 
+    src="https://github.com/alucryd/oxyromon/raw/master/resources/logo.svg" 
     alt="logo">
 </img>
 
@@ -27,7 +27,7 @@ The former requires No-Intro or Redump DAT files, the latter can use MAME or FBN
            margin-left: auto;
            margin-right: auto;
            width: 100%;"
-    src="https://github.com/alucryd/oxyromon/raw/develop/resources/screenshot.png" 
+    src="https://github.com/alucryd/oxyromon/raw/master/resources/screenshot.png" 
     alt="screenshot">
 </img>
 
