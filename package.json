@@ -15,7 +15,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.3.0",
     "@popperjs/core": "^2.11.6",
     "@sveltejs/adapter-static": "^2.0.1",
-    "@sveltejs/kit": "^1.5.3",
+    "@sveltejs/kit": "^1.15.1",
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "bootstrap": "^5.2.3",
     "eslint-plugin-svelte3": "^4.0.0",
