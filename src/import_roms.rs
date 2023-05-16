@@ -665,9 +665,6 @@ async fn import_archive<P: AsRef<Path>>(
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
             new_path = system_directory.join(game.name).join(&rom.name)
-        // use game name for PS3 updates and DLCs because rom name is usually gibberish
-        } else if PS3_EXTENSIONS.contains(&romfile_extension) {
-            new_path = system_directory.join(format!("{}.{}", &game.name, romfile_extension));
         } else {
             new_path = system_directory.join(&rom.name);
         }
@@ -986,9 +983,6 @@ async fn import_other<P: AsRef<Path>>(
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
             new_path = system_directory.join(game.name).join(&rom.name)
-        // use game name for PS3 updates and DLCs because rom name is usually gibberish
-        } else if PS3_EXTENSIONS.contains(&romfile_extension) {
-            new_path = system_directory.join(format!("{}.{}", &game.name, romfile_extension));
         } else {
             new_path = system_directory.join(&rom.name);
         }
