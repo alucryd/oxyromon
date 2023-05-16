@@ -48,7 +48,6 @@ async fn test() {
         Some(&system),
         &None,
         &romfile_path,
-        romfile_path.extension().unwrap().to_str().unwrap(),
         &HashAlgorithm::Crc,
         true,
     )

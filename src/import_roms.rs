@@ -322,7 +322,6 @@ pub async fn import_rom<P: AsRef<Path>>(
         system,
         header,
         &romfile_path,
-        &romfile_extension,
         hash_algorithm,
         trash,
     )
@@ -950,7 +949,6 @@ async fn import_other<P: AsRef<Path>>(
     system: Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
-    romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
