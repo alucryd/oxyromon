@@ -75,7 +75,7 @@ async fn test() {
 
     // when
     let (ignored_games, regular_games) =
-        trim_ignored_games(games, &ignored_releases, &ignored_flags, false);
+        trim_ignored_games(games, &[], &ignored_releases, &ignored_flags, false);
 
     // then
     assert_eq!(ignored_games.len(), 3);

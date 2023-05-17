@@ -66,6 +66,7 @@ async fn test() {
         &one_regions,
         &[],
         &[],
+        &[],
         true,
         &PreferRegion::None,
         &PreferVersion::None,

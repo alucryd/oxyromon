@@ -18,6 +18,7 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::println;
 use std::str::FromStr;
 use std::time::Duration;
 use strum::VariantNames;
@@ -92,6 +93,7 @@ pub async fn main(
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
+    let languages = get_list(connection, "LANGUAGES").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
     let prefer_parents = get_bool(connection, "PREFER_PARENTS").await;
@@ -122,6 +124,7 @@ pub async fn main(
             &system,
             &all_regions,
             &one_regions,
+            &languages.iter().map(String::as_str).collect::<Vec<&str>>(),
             &ignored_releases
                 .iter()
                 .map(String::as_str)
@@ -178,6 +181,7 @@ async fn sort_system(
     system: &System,
     all_regions: &[Region],
     one_regions: &[Region],
+    languages: &[&str],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
     prefer_parents: bool,
@@ -245,8 +249,13 @@ async fn sort_system(
 
             // trim ignored games
             if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-                let (mut left_games, right_games) =
-                    trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
+                let (mut left_games, right_games) = trim_ignored_games(
+                    games,
+                    languages,
+                    ignored_releases,
+                    ignored_flags,
+                    system.arcade,
+                );
                 ignored_games.append(&mut left_games);
                 games = right_games;
             }
@@ -296,8 +305,13 @@ async fn sort_system(
 
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut left_games, right_games) =
-                trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
+            let (mut left_games, right_games) = trim_ignored_games(
+                games,
+                languages,
+                ignored_releases,
+                ignored_flags,
+                system.arcade,
+            );
             ignored_games.append(&mut left_games);
             games = right_games;
         }
@@ -323,8 +337,13 @@ async fn sort_system(
 
         // trim ignored games
         if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut left_games, right_games) =
-                trim_ignored_games(games, ignored_releases, ignored_flags, system.arcade);
+            let (mut left_games, right_games) = trim_ignored_games(
+                games,
+                languages,
+                ignored_releases,
+                ignored_flags,
+                system.arcade,
+            );
             ignored_games.append(&mut left_games);
             games = right_games;
         }
@@ -620,6 +639,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
 
 fn trim_ignored_games(
     games: Vec<Game>,
+    languages: &[&str],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
     arcade: bool,
@@ -642,6 +662,20 @@ fn trim_ignored_games(
         games.into_iter().partition(|game| {
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
                 for token in name.iter() {
+                    if let NoIntroToken::Languages(parsed_languages) = token {
+                        let parsed_languages_cleaned = parsed_languages
+                            .iter()
+                            .map(|&(language, _)| language)
+                            .filter(|&language| language != "NP")
+                            .collect::<Vec<&str>>();
+                        if !parsed_languages_cleaned.is_empty()
+                            && !parsed_languages_cleaned
+                                .into_iter()
+                                .any(|language| languages.contains(&language))
+                        {
+                            return true;
+                        }
+                    }
                     if let NoIntroToken::Release(release, _) = token {
                         if ignored_releases.contains(release) {
                             return true;
