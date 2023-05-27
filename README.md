@@ -94,8 +94,9 @@ Available settings:
 - `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
 - `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
-- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
-- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
+- `LANGUAGES`: List of languages you want to keep, applies only to ROMs that do specify them (eg: `En,Ja`)
+- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files (eg: `US,EU,JP`)
+- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file (eg: `US,EU`)
 - `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`

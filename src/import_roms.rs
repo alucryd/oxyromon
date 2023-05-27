@@ -663,7 +663,7 @@ async fn import_archive<P: AsRef<Path>>(
         // put arcade roms and JB folders in subdirectories
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.join(game.name).join(&rom.name)
+            new_path = system_directory.join(game.name).join(&rom.name);
         } else {
             new_path = system_directory.join(&rom.name);
         }
@@ -980,7 +980,7 @@ async fn import_other<P: AsRef<Path>>(
         // put arcade roms and JB folders in subdirectories
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.join(game.name).join(&rom.name)
+            new_path = system_directory.join(game.name).join(&rom.name);
         } else {
             new_path = system_directory.join(&rom.name);
         }

@@ -64,6 +64,7 @@ async fn test() {
         &system,
         &all_regions,
         &one_regions,
+        &[],
         &["Beta"],
         &[],
         true,

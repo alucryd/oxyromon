@@ -1,3 +1,8 @@
+# 0.16.0
+- Use original name for PSN stuff
+- Add a language whitelist setting
+- Always name archives after the game name
+
 # 0.15.0
 
 - Use archive name and directory names in the archive when importing arcade games
