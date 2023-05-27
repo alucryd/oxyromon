@@ -1,6 +1,7 @@
 # 0.16.0
 - Use original name for PSN stuff
 - Add a language whitelist setting
+- Always name archives after the game name
 
 # 0.15.0
 

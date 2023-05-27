@@ -11,6 +11,7 @@ use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
+use regex::Regex;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
@@ -23,77 +24,8 @@ use std::time::Duration;
 use strum::VariantNames;
 
 lazy_static! {
-    static ref REGIONS_LANGUAGES: HashMap<Region, &'static str> = {
-        let mut m = HashMap::new();
-        m.insert(Region::Albania, "Sq");
-        m.insert(Region::Argentina, "Es");
-        m.insert(Region::Australia, "En");
-        m.insert(Region::Austria, "De");
-        m.insert(Region::Belgium, "De,Fr,Nl");
-        m.insert(Region::Bosnia, "Bs");
-        m.insert(Region::Bulgaria, "Bg");
-        m.insert(Region::Brazil, "Pt");
-        m.insert(Region::Canada, "En,Fr");
-        m.insert(Region::Chile, "Es");
-        m.insert(Region::China, "Zh");
-        m.insert(Region::Croatia, "Hr");
-        m.insert(Region::Cyprus, "El,Tr");
-        m.insert(Region::Czechia, "Cs");
-        m.insert(Region::Denmark, "Da");
-        m.insert(Region::Estonia, "Et");
-        m.insert(Region::Egypt, "Ar");
-        m.insert(Region::Finland, "Fi");
-        m.insert(Region::France, "Fr");
-        m.insert(Region::Germany, "De");
-        m.insert(Region::Greece, "El");
-        m.insert(Region::HongKong, "En,Zh");
-        m.insert(Region::Hungary, "Hu");
-        m.insert(Region::Iceland, "Is");
-        m.insert(Region::India, "Hi");
-        m.insert(Region::Indonesia, "Id");
-        m.insert(Region::Iran, "Fa");
-        m.insert(Region::Ireland, "En");
-        m.insert(Region::Israel, "He");
-        m.insert(Region::Italy, "It");
-        m.insert(Region::Japan, "Ja");
-        m.insert(Region::Jordan, "Ar");
-        m.insert(Region::Latvia, "Lv");
-        m.insert(Region::Lithuania, "Lt");
-        m.insert(Region::Luxembourg, "De,Fr,Lb");
-        m.insert(Region::Malaysia, "Ms");
-        m.insert(Region::Mexico, "Es");
-        m.insert(Region::Mongolia, "Mn");
-        m.insert(Region::Netherlands, "Nl");
-        m.insert(Region::Nepal, "Ne");
-        m.insert(Region::NewZealand, "En");
-        m.insert(Region::Norway, "No");
-        m.insert(Region::Oman, "Ar");
-        m.insert(Region::Peru, "Es");
-        m.insert(Region::Philippines, "En");
-        m.insert(Region::Poland, "Pl");
-        m.insert(Region::Portugal, "Pt");
-        m.insert(Region::Qatar, "Ar");
-        m.insert(Region::Romania, "Ro");
-        m.insert(Region::Russia, "Ru");
-        m.insert(Region::Serbia, "Sr");
-        m.insert(Region::Singapore, "En,Ms,Ta,Zh");
-        m.insert(Region::Slovakia, "Sk");
-        m.insert(Region::Slovenia, "Sl");
-        m.insert(Region::SouthAfrica, "Af");
-        m.insert(Region::SouthKorea, "Ko");
-        m.insert(Region::Spain, "Es");
-        m.insert(Region::Sweden, "Sv");
-        m.insert(Region::Switzerland, "De,Fr,It");
-        m.insert(Region::Taiwan, "Zh");
-        m.insert(Region::Thailand, "Th");
-        m.insert(Region::Turkey, "Tr");
-        m.insert(Region::UnitedArabEmirates, "Ar");
-        m.insert(Region::UnitedKingdom, "En");
-        m.insert(Region::UnitedStates, "En");
-        m.insert(Region::Vietnam, "Vi");
-        m.insert(Region::Yugoslavia, "Hr,Mk,Sl");
-        m
-    };
+    pub static ref LANGUAGE_REGEX: Regex = Regex::new(r"[A-Z][a-z]").unwrap();
+    pub static ref VARIANT_REGEX: Regex = Regex::new(r"[A-Z]{2}").unwrap();
 }
 
 pub fn subcommand() -> Command {
@@ -734,28 +666,25 @@ fn trim_ignored_games(
     } else {
         games.into_iter().partition(|game| {
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
-                let mut inferred_languages: Vec<&str> = Vec::new();
-                if !languages.is_empty() {
-                    inferred_languages.append(
-                        &mut Region::try_from_tosec_region(&game.regions)
-                            .unwrap_or_default()
-                            .iter()
-                            .filter(|region| REGIONS_LANGUAGES.contains_key(region))
-                            .map(|region| REGIONS_LANGUAGES.get(region).unwrap().split(','))
-                            .flatten()
-                            .collect::<Vec<&str>>(),
-                    );
-                }
                 for token in name.iter() {
-                    if !languages.is_empty() {
-                        if let NoIntroToken::Languages(parsed_languages) = token {
-                            inferred_languages.append(
-                                &mut parsed_languages
+                    if let NoIntroToken::Languages(parsed_languages) = token {
+                        if !languages.is_empty() {
+                            let clean_parsed_languages = parsed_languages
+                                .iter()
+                                .filter(|(language, variant)| {
+                                    LANGUAGE_REGEX.is_match(language)
+                                        && (variant.is_none()
+                                            || VARIANT_REGEX.is_match(variant.unwrap()))
+                                })
+                                .map(|(language, _)| language.to_string())
+                                .collect::<Vec<String>>();
+                            if !clean_parsed_languages.is_empty()
+                                && !clean_parsed_languages
                                     .iter()
-                                    .map(|&(language, _)| language)
-                                    .filter(|&language| language != "NP")
-                                    .collect::<Vec<&str>>(),
-                            );
+                                    .any(|language| languages.contains(&language.as_str()))
+                            {
+                                return true;
+                            }
                         }
                     }
                     if let NoIntroToken::Release(release, _) = token {
@@ -770,14 +699,6 @@ fn trim_ignored_games(
                             }
                         }
                     }
-                }
-                if !languages.is_empty()
-                    && !inferred_languages.is_empty()
-                    && !inferred_languages
-                        .into_iter()
-                        .any(|language| languages.contains(&language))
-                {
-                    return true;
                 }
             }
             false

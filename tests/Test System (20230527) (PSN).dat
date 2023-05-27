@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (PSN)</name>
+		<description>Test System (PSN)</description>
+		<version>20230527</version>
+		<date>20230527</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA, Europe) (DLC)">
+		<description>Test Game (USA, Europe) (DLC)</description>
+		<release name="Test Game (USA, Europe) (DLC)" region="USA" />
+		<rom name="UP0001-BLUS00001.pkg" size="256" crc="e09f89e8" md5="225eaca427891bf5d14d1dd4b67cca66" sha1="71a405b5ca5dec0bec55fec6d7254a1bdbaac069" />
+		<rom name="prfgmHWxGNxsfJ.rap" size="256" crc="c1cf6a8b" md5="62b874d5a72f51d77a53f4c22bb289d9" sha1="93124d304171ebbba26de27699e46c0e977ba65f" />
+	</game>
+</datafile>
