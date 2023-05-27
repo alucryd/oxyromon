@@ -69,6 +69,8 @@ mod isoinfo;
 #[cfg(feature = "cso")]
 mod maxcso;
 mod model;
+#[cfg(feature = "nsz")]
+mod nsz;
 mod progress;
 mod prompt;
 mod purge_roms;

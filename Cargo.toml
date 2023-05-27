@@ -13,13 +13,14 @@ repository = "https://github.com/alucryd/oxyromon"
 version = "0.15.0"
 
 [features]
-default = ["use-rustls", "enable-asm", "chd", "cso", "ird", "rvz"]
+default = ["use-rustls", "enable-asm", "chd", "cso", "ird", "nsz", "rvz"]
 use-native-tls = ["sqlx/runtime-async-std-native-tls", "surf/h1-client"]
 use-rustls = ["sqlx/runtime-async-std-rustls", "surf/h1-client-rustls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
 chd = []
 cso = []
 ird = ["flate2", "strsim"]
+nsz = []
 rvz = []
 benchmark = []
 server = [

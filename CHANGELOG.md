@@ -2,6 +2,7 @@
 - Use original name for PSN stuff
 - Add a language whitelist setting
 - Always name archives after the game name
+- Add support for NSZ
 
 # 0.15.0
 
