@@ -46,13 +46,13 @@
         </ButtonGroup>
         <ButtonGroup class="ms-3">
           <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
-            {#if $completeFilter}Show{:else}Hide{/if} Complete
+            {#if $completeFilter}Hide{:else}Show{/if} Complete
           </Button>
           <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
-            {#if $incompleteFilter}Show{:else}Hide{/if} Incomplete
+            {#if $incompleteFilter}Hide{:else}Show{/if} Incomplete
           </Button>
           <Button color="secondary" bind:active={$ignoredFilter} on:click={() => ignoredFilter.update((b) => !b)}>
-            {#if $ignoredFilter}Show{:else}Hide{/if} Ignored
+            {#if $ignoredFilter}Hide{:else}Show{/if} Ignored
           </Button>
         </ButtonGroup>
         <InputGroup class="ms-3">
