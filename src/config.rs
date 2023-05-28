@@ -102,6 +102,8 @@ const LISTS: &[&str] = &[
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
+const LIST_SEPARATOR: &str = "|";
+
 #[cfg(feature = "chd")]
 pub static BIN_EXTENSION: &str = "bin";
 pub static CHD_EXTENSION: &str = "chd";
@@ -274,7 +276,7 @@ pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
         .unwrap()
 }
 
-async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
+pub async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
     let setting = find_setting_by_key(connection, key).await;
     let value = value.to_string();
     match setting {
@@ -305,7 +307,7 @@ async fn set_integer(connection: &mut SqliteConnection, key: &str, value: usize)
 pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<String> {
     match find_setting_by_key(connection, key).await {
         Some(setting) => match setting.value {
-            Some(value) => value.split(',').map(|s| s.to_owned()).collect(),
+            Some(value) => value.split(LIST_SEPARATOR).map(|s| s.to_owned()).collect(),
             None => Vec::new(),
         },
         None => Vec::new(),
@@ -345,7 +347,7 @@ async fn set_list(connection: &mut SqliteConnection, key: &str, value: &[String]
     let value = if value.is_empty() {
         None
     } else {
-        Some(value.join(","))
+        Some(value.join(LIST_SEPARATOR))
     };
     match setting {
         Some(setting) => update_setting(connection, setting.id, value).await,
@@ -384,7 +386,7 @@ pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> String 
         .unwrap()
 }
 
-async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
+pub async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
     let setting = find_setting_by_key(connection, key).await;
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value.to_string())).await,

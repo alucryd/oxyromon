@@ -23,36 +23,31 @@ ird = ["flate2", "strsim"]
 nsz = []
 rvz = []
 benchmark = []
-server = [
-    "async-ctrlc",
-    "async-graphql",
-    "async-graphql-tide",
-    "async-trait",
-    "http-types",
-    "tide",
-]
+server = ["async-ctrlc", "async-graphql", "async-graphql-tide", "async-trait", "http-types", "tide"]
 
 [dependencies]
 async-ctrlc = { version = "1.2.0", optional = true }
-async-graphql = { version = "5.0.8", features = [
+async-graphql = { version = "5.0.9", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-tide = { version = "5.0.8", optional = true }
+async-graphql-tide = { version = "5.0.9", optional = true }
 async-std = { version = "1.12.0", features = ["attributes"] }
 async-trait = { version = "0.1.68", optional = true }
 cfg-if = "1.0.0"
-clap = "4.2.7"
+clap = "4.3.0"
 crc32fast = "1.3.2"
 dialoguer = "0.10.4"
-digest = { version = "0.10.6", features = ["std"] }
+digest = { version = "0.10.7", features = ["std"] }
 dirs = "5.0.1"
 dotenv = "0.15.0"
+env_logger = "0.10.0"
 flate2 = { version = "1.0.26", optional = true }
 futures = "0.3.28"
 http-types = { version = "2.12.0", optional = true }
 indicatif = { version = "0.17.3", features = ["rayon"] }
 itertools = "0.10.5"
 lazy_static = "1.4.0"
+log = "0.4.18"
 md-5 = "0.10.5"
 num-derive = "0.3.3"
 num-traits = "0.2.15"
@@ -60,7 +55,7 @@ once_cell = "1.17.1"
 phf = { version = "0.11.1", features = ["macros"] }
 quick-xml = { version = "0.28.2", features = ["serialize"] }
 rayon = "1.7.0"
-regex = "1.8.1"
+regex = "1.8.3"
 rust-embed = { version = "6.6.1", features = [
     "compression",
     "interpolate-folder-path",

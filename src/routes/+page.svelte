@@ -22,6 +22,7 @@
     getGamesBySystemId,
     getRomsByGameIdAndSystemId,
     getSizesBySystemId,
+    getSettings,
     getSystems,
     updateGames,
     updateRoms,
@@ -90,6 +91,7 @@
   }
 
   onMount(async () => {
+    await getSettings();
     systemsPage.subscribe(async () => {
       await updateSystems();
     });

@@ -3,18 +3,36 @@ import { reject } from "lodash-es";
 import { get } from "svelte/store";
 
 import {
+  allRegions,
+  allRegionsKey,
   completeFilter,
+  discardFlags,
+  discardFlagsKey,
+  discardReleases,
+  discardReleasesKey,
   filteredGames,
   games,
   gamesPage,
   gamesTotalPages,
   ignoredFilter,
   incompleteFilter,
+  languages,
+  languagesKey,
   nameFilter,
   oneRegionActualSize,
   oneRegionFilter,
   oneRegionOriginalSize,
+  oneRegions,
+  oneRegionsKey,
   pageSize,
+  preferFlags,
+  preferFlagsKey,
+  preferParents,
+  preferParentsKey,
+  preferRegions,
+  preferRegionsKey,
+  preferVersions,
+  preferVersionsKey,
   roms,
   romsPage,
   romsTotalPages,
@@ -35,6 +53,32 @@ function paginate(array, page, pageSize) {
   const start = pageSize * (page - 1);
   const end = Math.min(pageSize * page, array.length);
   return array.slice(start, end);
+}
+
+function splitList(list) {
+  return list ? list.split("|") : [];
+}
+
+export async function getSettings() {
+  const query = gql`
+    {
+      settings {
+        key
+        value
+      }
+    }
+  `;
+
+  const data = await graphQLClient.request(query);
+  oneRegions.set(splitList(data.settings.find((setting) => setting.key === oneRegionsKey).value));
+  allRegions.set(splitList(data.settings.find((setting) => setting.key === allRegionsKey).value));
+  languages.set(splitList(data.settings.find((setting) => setting.key === languagesKey).value));
+  discardReleases.set(splitList(data.settings.find((setting) => setting.key === discardReleasesKey).value));
+  discardFlags.set(splitList(data.settings.find((setting) => setting.key === discardFlagsKey).value));
+  preferFlags.set(splitList(data.settings.find((setting) => setting.key === preferFlagsKey).value));
+  preferParents.set(data.settings.find((setting) => setting.key === preferParentsKey).value === "true");
+  preferRegions.set(data.settings.find((setting) => setting.key === preferRegionsKey).value);
+  preferVersions.set(data.settings.find((setting) => setting.key === preferVersionsKey).value);
 }
 
 export async function getSystems() {

@@ -15,12 +15,16 @@ extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
+#[cfg(feature = "server")]
+extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
 extern crate http_types;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
+#[cfg(feature = "server")]
+extern crate log;
 #[cfg(feature = "ird")]
 extern crate md5;
 extern crate num_derive;
@@ -69,18 +73,24 @@ mod isoinfo;
 #[cfg(feature = "cso")]
 mod maxcso;
 mod model;
+#[cfg(feature = "server")]
+mod mutation;
 #[cfg(feature = "nsz")]
 mod nsz;
 mod progress;
 mod prompt;
 mod purge_roms;
 mod purge_systems;
+#[cfg(feature = "server")]
+mod query;
 mod rebuild_roms;
 #[cfg(feature = "server")]
 mod server;
 mod sevenzip;
 mod sort_roms;
 mod util;
+#[cfg(feature = "server")]
+mod validator;
 
 use async_std::path::PathBuf;
 use cfg_if::cfg_if;

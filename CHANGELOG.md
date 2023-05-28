@@ -3,6 +3,7 @@
 - Add a language whitelist setting
 - Always name archives after the game name
 - Add support for NSZ
+- Expose settings in the web UI
 
 # 0.15.0
 
