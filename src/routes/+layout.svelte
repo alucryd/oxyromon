@@ -41,18 +41,18 @@
       <ButtonToolbar class="d-flex">
         <ButtonGroup class="ms-3">
           <Button color="primary" bind:active={$oneRegionFilter} on:click={() => oneRegionFilter.update((b) => !b)}>
-            1G1R
+            {#if $oneRegionFilter}Show{:else}Hide{/if} 1G1R
           </Button>
         </ButtonGroup>
         <ButtonGroup class="ms-3">
           <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
-            Complete
+            {#if $completeFilter}Show{:else}Hide{/if} Complete
           </Button>
           <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
-            Incomplete
+            {#if $incompleteFilter}Show{:else}Hide{/if} Incomplete
           </Button>
           <Button color="secondary" bind:active={$ignoredFilter} on:click={() => ignoredFilter.update((b) => !b)}>
-            Ignored
+            {#if $ignoredFilter}Show{:else}Hide{/if} Ignored
           </Button>
         </ButtonGroup>
         <InputGroup class="ms-3">
