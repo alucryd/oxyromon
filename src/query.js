@@ -5,6 +5,8 @@ import { get } from "svelte/store";
 import {
   allRegions,
   allRegionsKey,
+  allRegionsSubfolders,
+  allRegionsSubfoldersKey,
   completeFilter,
   discardFlags,
   discardFlagsKey,
@@ -14,6 +16,8 @@ import {
   games,
   gamesPage,
   gamesTotalPages,
+  groupSubsystems,
+  groupSubsystemsKey,
   ignoredFilter,
   incompleteFilter,
   languages,
@@ -24,6 +28,8 @@ import {
   oneRegionOriginalSize,
   oneRegions,
   oneRegionsKey,
+  oneRegionsSubfolders,
+  oneRegionsSubfoldersKey,
   pageSize,
   preferFlags,
   preferFlagsKey,
@@ -33,12 +39,18 @@ import {
   preferRegionsKey,
   preferVersions,
   preferVersionsKey,
+  romDirectory,
+  romDirectoryKey,
   roms,
   romsPage,
   romsTotalPages,
+  strictOneRegions,
+  strictOneRegionsKey,
   systems,
   systemsPage,
   systemsTotalPages,
+  tmpDirectory,
+  tmpDirectoryKey,
   totalActualSize,
   totalOriginalSize,
   unfilteredGames,
@@ -70,15 +82,24 @@ export async function getSettings() {
   `;
 
   const data = await graphQLClient.request(query);
-  oneRegions.set(splitList(data.settings.find((setting) => setting.key === oneRegionsKey).value));
-  allRegions.set(splitList(data.settings.find((setting) => setting.key === allRegionsKey).value));
-  languages.set(splitList(data.settings.find((setting) => setting.key === languagesKey).value));
-  discardReleases.set(splitList(data.settings.find((setting) => setting.key === discardReleasesKey).value));
-  discardFlags.set(splitList(data.settings.find((setting) => setting.key === discardFlagsKey).value));
-  preferFlags.set(splitList(data.settings.find((setting) => setting.key === preferFlagsKey).value));
-  preferParents.set(data.settings.find((setting) => setting.key === preferParentsKey).value === "true");
-  preferRegions.set(data.settings.find((setting) => setting.key === preferRegionsKey).value);
-  preferVersions.set(data.settings.find((setting) => setting.key === preferVersionsKey).value);
+
+  oneRegions.set(splitList(data.settings.find(setting => setting.key === oneRegionsKey).value));
+  allRegions.set(splitList(data.settings.find(setting => setting.key === allRegionsKey).value));
+  languages.set(splitList(data.settings.find(setting => setting.key === languagesKey).value));
+  discardReleases.set(splitList(data.settings.find(setting => setting.key === discardReleasesKey).value));
+  discardFlags.set(splitList(data.settings.find(setting => setting.key === discardFlagsKey).value));
+
+  strictOneRegions.set(data.settings.find(setting => setting.key === strictOneRegionsKey).value === "true");
+  preferParents.set(data.settings.find(setting => setting.key === preferParentsKey).value === "true");
+  preferRegions.set(data.settings.find(setting => setting.key === preferRegionsKey).value);
+  preferVersions.set(data.settings.find(setting => setting.key === preferVersionsKey).value);
+  preferFlags.set(splitList(data.settings.find(setting => setting.key === preferFlagsKey).value));
+
+  romDirectory.set(data.settings.find(setting => setting.key === romDirectoryKey).value)
+  tmpDirectory.set(data.settings.find(setting => setting.key === tmpDirectoryKey).value)
+  groupSubsystems.set(data.settings.find(setting => setting.key === groupSubsystemsKey).value === "true")
+  oneRegionsSubfolders.set(data.settings.find(setting => setting.key === oneRegionsSubfoldersKey).value)
+  allRegionsSubfolders.set(data.settings.find(setting => setting.key === allRegionsSubfoldersKey).value)
 }
 
 export async function getSystems() {

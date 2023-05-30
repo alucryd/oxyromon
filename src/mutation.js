@@ -70,3 +70,31 @@ export async function setPreferVersions(value) {
   };
   await graphQLClient.request(mutation, variables);
 }
+
+export async function setSubfolderScheme(key, value) {
+  const mutation = gql`
+    mutation SetSubfolderScheme($key: String!, $value: String!) {
+      setSubfolderScheme(key: $key, value: $value)
+    }
+  `;
+
+  const variables = {
+    key,
+    value,
+  };
+  await graphQLClient.request(mutation, variables);
+}
+
+export async function setDirectory(key, value) {
+  const mutation = gql`
+    mutation SetDirectory($key: String!, $value: String!) {
+      setDirectory(key: $key, value: $value)
+    }
+  `;
+
+  const variables = {
+    key,
+    value,
+  };
+  await graphQLClient.request(mutation, variables);
+}

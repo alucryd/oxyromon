@@ -157,7 +157,7 @@ pub struct QueryRoot;
 #[Object]
 impl QueryRoot {
     async fn settings(&self) -> Result<Vec<Setting>> {
-        log::debug!("get settings");
+        log::debug!("query::get settings()");
         Ok(find_settings(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
     }
 

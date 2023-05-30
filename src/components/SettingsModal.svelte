@@ -1,5 +1,5 @@
 <script>
-  import { faTimes } from "@fortawesome/free-solid-svg-icons";
+  import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import {
     Badge,
@@ -16,20 +16,34 @@
     Tooltip,
   } from "sveltestrap";
 
-  import { addToList, removeFromList, setBool, setPreferRegions, setPreferVersions } from "../mutation.js";
+  import {
+    addToList,
+    removeFromList,
+    setBool,
+    setDirectory,
+    setPreferRegions,
+    setPreferVersions,
+    setSubfolderScheme,
+  } from "../mutation.js";
   import { getSettings } from "../query.js";
   import {
     allRegions,
     allRegionsKey,
+    allRegionsSubfolders,
+    allRegionsSubfoldersKey,
     discardFlags,
     discardFlagsKey,
     discardReleases,
     discardReleasesKey,
+    groupSubsystems,
+    groupSubsystemsKey,
     isSettingsModalOpen,
     languages,
     languagesKey,
     oneRegions,
     oneRegionsKey,
+    oneRegionsSubfolders,
+    oneRegionsSubfoldersKey,
     preferFlags,
     preferFlagsKey,
     preferParents,
@@ -38,6 +52,13 @@
     preferRegionsChoices,
     preferVersions,
     preferVersionsChoices,
+    romDirectory,
+    romDirectoryKey,
+    strictOneRegions,
+    strictOneRegionsKey,
+    tmpDirectory,
+    tmpDirectoryKey,
+    subfolderSchemesChoices,
   } from "../store.js";
 
   export let toggle = undefined;
@@ -99,6 +120,18 @@
     await getSettings();
   };
 
+  const onStrictOneRegionsChange = async () => {
+    await onSwitchChange(strictOneRegionsKey, !$strictOneRegions);
+  };
+
+  const onPreferParentsChange = async () => {
+    await onSwitchChange(preferParentsKey, !$preferParents);
+  };
+
+  const onGroupSubsystemsChange = async () => {
+    await onSwitchChange(groupSubsystemsKey, !$groupSubsystems);
+  };
+
   const onPreferRegionsChange = async () => {
     await new Promise(setTimeout);
     await setPreferRegions($preferRegions);
@@ -110,11 +143,39 @@
     await setPreferVersions($preferVersions);
     await getSettings();
   };
+
+  const onOneRegionsSubfoldersChange = async () => {
+    await new Promise(setTimeout);
+    await setSubfolderScheme(oneRegionsSubfoldersKey, $oneRegionsSubfolders);
+    await getSettings();
+  };
+
+  const onAllRegionsSubfoldersChange = async () => {
+    await new Promise(setTimeout);
+    await setSubfolderScheme(allRegionsSubfoldersKey, $allRegionsSubfolders);
+    await getSettings();
+  };
+
+  const onDirectoryChange = async (key, value) => {
+    if (value) {
+      await setDirectory(key, value);
+      await getSettings();
+    }
+  };
+
+  const onRomDirectoryChange = async () => {
+    await onDirectoryChange(romDirectoryKey, $romDirectory);
+  };
+
+  const onTmpDirectoryChange = async () => {
+    await onDirectoryChange(tmpDirectoryKey, $tmpDirectory);
+  };
 </script>
 
 <Modal isOpen={$isSettingsModalOpen} {toggle} size="xl" class="text-start">
   <ModalHeader {toggle}>Settings</ModalHeader>
   <ModalBody class="pb-0">
+    <h6 class="text-muted">REGIONS/LANGUAGES</h6>
     <Row class="mb-2">
       <Col>
         {#each $oneRegions as oneRegion}
@@ -125,7 +186,7 @@
               class="px-1 py-0 text-center"
               on:click={() => onRemoveFromListClick(oneRegionsKey, oneRegion)}
             >
-              <Fa icon={faTimes} />
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -139,7 +200,7 @@
         bind:value={addOneRegion}
         on:change={onAddOneRegionChange}
       />
-      <Tooltip target="one-regions" placement="top">2 letters, uppercase, ordered</Tooltip>
+      <Tooltip target="one-regions" placement="left">2 letters, uppercase, ordered</Tooltip>
     </FormGroup>
     <Row class="mb-2">
       <Col>
@@ -151,7 +212,7 @@
               class="px-1 py-0 text-center"
               on:click={() => onRemoveFromListClick(allRegionsKey, allRegion)}
             >
-              <Fa icon={faTimes} />
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -165,19 +226,15 @@
         bind:value={addAllRegion}
         on:change={onAddAllRegionChange}
       />
-      <Tooltip target="all-regions" placement="top">2 letters, uppercase, unordered</Tooltip>
+      <Tooltip target="all-regions" placement="left">2 letters, uppercase, unordered</Tooltip>
     </FormGroup>
     <Row class="mb-2">
       <Col>
         {#each $languages as language}
           <Badge class="m-1">
             {language}
-            <Button
-              small
-              class="px-1 py-0 text-center"
-              on:click={() => onRemoveFromListClick(languagesKey, language)}
-            >
-              <Fa icon={faTimes} />
+            <Button small class="px-1 py-0 text-center" on:click={() => onRemoveFromListClick(languagesKey, language)}>
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -191,8 +248,9 @@
         bind:value={addLanguage}
         on:change={onAddLanguageChange}
       />
-      <Tooltip target="languages" placement="top">2 letters, capitalized</Tooltip>
+      <Tooltip target="languages" placement="left">2 letters, capitalized</Tooltip>
     </FormGroup>
+    <h6 class="text-muted">FILTERS</h6>
     <Row class="mb-2">
       <Col>
         {#each $discardReleases as discardRelease}
@@ -203,7 +261,7 @@
               class="px-1 py-0 text-center"
               on:click={() => onRemoveFromListClick(discardReleasesKey, discardRelease)}
             >
-              <Fa icon={faTimes} />
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -217,6 +275,7 @@
         bind:value={addDiscardRelease}
         on:change={onAddDiscardReleaseChange}
       />
+      <Tooltip target="discard-releases" placement="left">Discard specific releases</Tooltip>
     </FormGroup>
     <Row class="mb-2">
       <Col>
@@ -228,7 +287,7 @@
               class="px-1 py-0 text-center"
               on:click={() => onRemoveFromListClick(discardFlagsKey, discardFlag)}
             >
-              <Fa icon={faTimes} />
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -242,47 +301,42 @@
         bind:value={addDiscardFlag}
         on:change={onAddDiscardFlagChange}
       />
+      <Tooltip target="discard-flags" placement="left">Discard specific flags</Tooltip>
     </FormGroup>
-    <FormGroup>
-      <Input
-        id="prefer-parents"
-        type="switch"
-        label="Prefer Parents"
-        bind:checked={$preferParents}
-        on:change={() => onSwitchChange(preferParentsKey, !$preferParents)}
-      />
+    <h6 class="text-muted">SORTING</h6>
+    <FormGroup id="strict-one-regions">
+      <Input type="switch" label="Strict 1G1R" bind:checked={$strictOneRegions} on:change={onStrictOneRegionsChange} />
+      <Tooltip target="strict-one-regions" placement="left"
+        >Strict mode elects games regardless of their completion</Tooltip
+      >
     </FormGroup>
-    <FormGroup>
+    <FormGroup id="prefer-parents">
+      <Input type="switch" label="Prefer Parents" bind:checked={$preferParents} on:change={onPreferParentsChange} />
+      <Tooltip target="prefer-parents" placement="left">Favor parents vs clones in the election process</Tooltip>
+    </FormGroup>
+    <FormGroup id="prefer-regions">
       <InputGroup>
-        <InputGroupText>Prefer Regions</InputGroupText>
-        <Input
-          id="prefer-regions"
-          type="select"
-          label="Prefer Regions"
-          bind:value={$preferRegions}
-          on:change={onPreferRegionsChange}
-        >
+        <InputGroupText class="w-25">Prefer Regions</InputGroupText>
+        <Input type="select" label="Prefer Regions" bind:value={$preferRegions} on:change={onPreferRegionsChange}>
           {#each preferRegionsChoices as preferRegionChoice}
             <option value={preferRegionChoice}>{preferRegionChoice}</option>
           {/each}
-      </Input>
+        </Input>
       </InputGroup>
+      <Tooltip target="prefer-regions" placement="left"
+        >Broad favors games targeting more regions, narrow favors fewer regions</Tooltip
+      >
     </FormGroup>
-    <FormGroup>
+    <FormGroup id="prefer-versions">
       <InputGroup>
-        <InputGroupText>Prefer Versions</InputGroupText>
-        <Input
-          id="prefer-versions"
-          type="select"
-          label="Prefer Versions"
-          bind:value={$preferVersions}
-          on:change={onPreferVersionsChange}
-        >
+        <InputGroupText class="w-25">Prefer Versions</InputGroupText>
+        <Input type="select" label="Prefer Versions" bind:value={$preferVersions} on:change={onPreferVersionsChange}>
           {#each preferVersionsChoices as preferVersionChoice}
             <option value={preferVersionChoice}>{preferVersionChoice}</option>
           {/each}
         </Input>
       </InputGroup>
+      <Tooltip target="prefer-versions" placement="left">New favors newer revisions, old favors older</Tooltip>
     </FormGroup>
     <Row class="mb-2">
       <Col>
@@ -294,7 +348,7 @@
               class="px-1 py-0 text-center"
               on:click={() => onRemoveFromListClick(preferFlagsKey, preferFlag)}
             >
-              <Fa icon={faTimes} />
+              <Fa icon={faTrashCan} />
             </Button>
           </Badge>
         {/each}
@@ -308,6 +362,71 @@
         bind:value={addPreferFlag}
         on:change={onAddPreferFlagChange}
       />
+      <Tooltip target="prefer-flags" placement="left">Favors specific flags in the election process</Tooltip>
+    </FormGroup>
+    <h6 class="text-muted">DIRECTORIES</h6>
+    <FormGroup floating label="ROM Directory">
+      <Input
+        name="rom-directory"
+        id="rom-directory"
+        placeholder="ROM Directory"
+        bind:value={$romDirectory}
+        on:change={onRomDirectoryChange}
+      />
+      <Tooltip target="rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
+    </FormGroup>
+    <FormGroup floating label="TMP Directory">
+      <Input
+        name="tmp-directory"
+        id="tmp-directory"
+        placeholder="TMP Directory"
+        bind:value={$tmpDirectory}
+        on:change={onTmpDirectoryChange}
+      />
+      <Tooltip target="tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
+    </FormGroup>
+    <FormGroup id="group-subsystems">
+      <Input
+        type="switch"
+        label="Group Subsystems"
+        bind:checked={$groupSubsystems}
+        on:change={onGroupSubsystemsChange}
+      />
+      <Tooltip target="group-subsystems" placement="left"
+        >Group subsystems in the main system directory (eg: PS3 DLCs and updates)</Tooltip
+      >
+    </FormGroup>
+    <FormGroup id="one-regions-subfolders">
+      <InputGroup>
+        <InputGroupText class="w-25">1G1R Subfolders</InputGroupText>
+        <Input
+          type="select"
+          label="1G1R Subfolders"
+          bind:value={$oneRegionsSubfolders}
+          on:change={onOneRegionsSubfoldersChange}
+        >
+          {#each subfolderSchemesChoices as subfolderSchemeChoice}
+            <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
+          {/each}
+        </Input>
+      </InputGroup>
+      <Tooltip target="one-regions-subfolders" placement="left">Store 1G1R games in subfolders</Tooltip>
+    </FormGroup>
+    <FormGroup id="all-regions-subfolders">
+      <InputGroup>
+        <InputGroupText class="w-25">All Subfolders</InputGroupText>
+        <Input
+          type="select"
+          label="All Subfolders"
+          bind:value={$allRegionsSubfolders}
+          on:change={onAllRegionsSubfoldersChange}
+        >
+          {#each subfolderSchemesChoices as subfolderSchemeChoice}
+            <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
+          {/each}
+        </Input>
+      </InputGroup>
+      <Tooltip target="all-regions-subfolders" placement="left">Store all games in subfolders</Tooltip>
     </FormGroup>
   </ModalBody>
 </Modal>
