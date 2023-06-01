@@ -3,7 +3,9 @@
 - Add a language whitelist setting
 - Always name archives after the game name
 - Add support for NSZ
-- Expose settings in the web UI
+- Expose most settings in the web UI
+- Make ignored status take precedence over complete status in the web UI
+- Match the whole flag string to allow discarding specific flag combinations
 
 # 0.15.0
 
