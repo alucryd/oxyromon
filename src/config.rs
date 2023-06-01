@@ -319,6 +319,9 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
         let mut list = get_list(connection, key).await;
         if !list.contains(&String::from(value)) {
             list.push(value.to_owned());
+            if key != "REGIONS_ONE" {
+                list.sort();
+            }
             set_list(connection, key, &list).await;
         } else {
             println!("Value already in list");
