@@ -665,9 +665,11 @@ fn trim_ignored_games(
         })
     } else {
         games.into_iter().partition(|game| {
+            log::debug!("sort_roms::trim_ignored_games(\"{}\")", &game.name);
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
                 for token in name.iter() {
                     if let NoIntroToken::Languages(parsed_languages) = token {
+                        log::debug!("parsed languages: {:?}", parsed_languages);
                         if !languages.is_empty() {
                             let clean_parsed_languages = parsed_languages
                                 .iter()
@@ -688,13 +690,21 @@ fn trim_ignored_games(
                         }
                     }
                     if let NoIntroToken::Release(release, _) = token {
+                        log::debug!("release: {}", release);
                         if ignored_releases.contains(release) {
+                            log::debug!("ignoring release");
                             return true;
                         }
                     }
                     if let NoIntroToken::Flag(_, flags) = token {
+                        log::debug!("flags: {}", flags);
+                        if ignored_flags.contains(flags) {
+                            log::debug!("ignoring flag: {}", flags);
+                            return true;
+                        }
                         for flag in flags.split(", ") {
                             if ignored_flags.contains(&flag) {
+                                log::debug!("ignoring flag: {}", flag);
                                 return true;
                             }
                         }

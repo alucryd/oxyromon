@@ -68,8 +68,6 @@ async fn serve_asset(req: tide::Request<()>) -> tide::Result {
 }
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
-    env_logger::init();
-
     POOL.set(pool).expect("Failed to set database pool");
 
     let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)

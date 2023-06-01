@@ -15,7 +15,6 @@ extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
-#[cfg(feature = "server")]
 extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
@@ -23,7 +22,6 @@ extern crate http_types;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
-#[cfg(feature = "server")]
 extern crate log;
 #[cfg(feature = "ird")]
 extern crate md5;
@@ -98,6 +96,7 @@ use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
 use dotenv::dotenv;
+use env_logger::{Builder, Target};
 use progress::*;
 use simple_error::SimpleError;
 use std::env;
@@ -145,6 +144,13 @@ async fn main() -> SimpleResult<()> {
 
     if matches.subcommand().is_some() {
         dotenv().ok();
+
+        let mut builder = Builder::from_env("OXYROMON_LOG");
+        if matches.subcommand_name().unwrap() != "server" {
+            // log to stdout for interactive commands because indicatif uses stderr
+            builder.target(Target::Stdout);
+        }
+        builder.init();
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
