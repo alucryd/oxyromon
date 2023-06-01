@@ -79,6 +79,16 @@ pub struct Game {
 
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+pub struct GameInformation {
+    pub title: String,
+    pub regions: Vec<String>,
+    pub languages: Vec<String>,
+    pub release: Option<String>,
+    pub flags: Vec<String>,
+}
+
+#[derive(FromRow)]
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
 pub struct Rom {
     pub id: i64,

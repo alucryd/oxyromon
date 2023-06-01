@@ -7,6 +7,9 @@ use async_trait::async_trait;
 use futures::stream::TryStreamExt;
 use itertools::Itertools;
 use num_traits::FromPrimitive;
+use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
+use shiratsu_naming::naming::TokenizedName;
+use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
 
@@ -170,6 +173,52 @@ impl QueryRoot {
             find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), system_id)
                 .await,
         )
+    }
+
+    async fn game_information(&self, game_name: String) -> Result<GameInformation> {
+        let mut title: String = String::new();
+        let mut regions: Vec<String> = Vec::new();
+        let mut languages: Vec<String> = Vec::new();
+        let mut release: Option<String> = None;
+        let mut flags: Vec<String> = Vec::new();
+
+        if let Ok(name) = NoIntroName::try_parse(&game_name) {
+            for token in name.iter() {
+                if let NoIntroToken::Title(parsed_title) = token {
+                    title = parsed_title.to_string();
+                } else if let NoIntroToken::Region(_, parsed_regions) = token {
+                    regions.append(
+                        &mut Region::to_normalized_region_string(parsed_regions)
+                            .split("-")
+                            .map(|region| region.to_string())
+                            .collect_vec(),
+                    );
+                } else if let NoIntroToken::Languages(parsed_languages) = token {
+                    languages.append(
+                        &mut parsed_languages
+                            .iter()
+                            .map(|(language, _)| language.to_string())
+                            .collect_vec(),
+                    );
+                } else if let NoIntroToken::Release(parsed_release, _) = token {
+                    release = Some(parsed_release.to_string());
+                } else if let NoIntroToken::Flag(_, parsed_flags) = token {
+                    flags.append(
+                        &mut parsed_flags
+                            .split(", ")
+                            .map(|flag| flag.to_string())
+                            .collect_vec(),
+                    );
+                }
+            }
+        }
+        Ok(GameInformation {
+            title,
+            regions,
+            languages,
+            release,
+            flags,
+        })
     }
 
     async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
