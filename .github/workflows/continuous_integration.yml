@@ -8,28 +8,40 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: "sccache"
+  SCCACHE_GHA_ENABLED: "true"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install stable toolchain
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools yarn
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+      - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: clippy, llvm-tools
+          profile: minimal
+          components: clippy, llvm-tools-preview
           override: true
-      - name: Install dependencies
-        run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools yarn
-      - name: Clippy
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Install llvm-cov
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: llvm-cov
+      - name: Run clippy
         uses: actions-rs/clippy-check@v1
         with:
           args: --features benchmark,server
           token: ${{secrets.GITHUB_TOKEN}}
-      - name: Audit
+      - name: Run audit
         uses: actions-rs/audit-check@v1
         with:
           token: ${{secrets.GITHUB_TOKEN}}
@@ -41,14 +53,9 @@ jobs:
       - name: Test
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --features benchmark,server
-        env:
-          CARGO_INCREMENTAL: '0'
-          LLVM_PROFILE_FILE: 'cargo-test-%p-%m.profraw'
-          RUSTFLAGS: '-Cinstrument-coverage'
-      - uses: actions-rs/grcov@v0.1
-      - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@v1
+          command: llvm-cov
+          args: --features benchmark,server --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
