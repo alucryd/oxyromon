@@ -14,7 +14,7 @@
   "devDependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
     "@sveltejs/adapter-static": "^2.0.2",
-    "@sveltejs/kit": "^1.19.0",
+    "@sveltejs/kit": "^1.20.0",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
     "bootstrap": "^5.2.3",
     "eslint-plugin-svelte3": "^4.0.0",

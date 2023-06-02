@@ -10,7 +10,6 @@ use num_traits::FromPrimitive;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
-use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
 
 #[ComplexObject]
@@ -73,7 +72,7 @@ impl Rom {
                     self.parent_id.unwrap()
                 );
                 let row: (bool,) = sqlx::query_as(&sql)
-                    .fetch_one(&mut ctx.data_unchecked::<&SqlitePool>().acquire().await.unwrap())
+                    .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
                     .await?;
                 row.0
             }
@@ -100,7 +99,7 @@ impl Loader<i64> for SystemLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .map_ok(|system: System| (system.id, system))
             .try_collect()
             .await?)
@@ -124,7 +123,7 @@ impl Loader<i64> for GameLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .map_ok(|game: Game| (game.id, game))
             .try_collect()
             .await?)
@@ -148,7 +147,7 @@ impl Loader<i64> for RomfileLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .map_ok(|romfile: Romfile| (romfile.id, romfile))
             .try_collect()
             .await?)
@@ -243,7 +242,7 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .await?;
         Ok(row.0)
     }
@@ -261,7 +260,7 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .await?;
         Ok(row.0)
     }
@@ -281,7 +280,7 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .await?;
         Ok(row.0)
     }
@@ -302,7 +301,7 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap().detach())
             .await?;
         Ok(row.0)
     }

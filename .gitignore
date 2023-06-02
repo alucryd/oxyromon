@@ -13,6 +13,7 @@ target
 *.db-wal
 lcov.info
 dist
+.sqlx
 
 # javascript
 node_modules
