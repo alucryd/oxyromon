@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM games\n        WHERE name LIKE ?\n        AND system_id = ?\n        AND id IN (\n            SELECT DISTINCT(game_id)\n            FROM roms\n            WHERE romfile_id IS NOT NULL\n        )\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "regions",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "system_id",
+        "ordinal": 4,
+        "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 5,
+        "type_info": "Int64"
+      },
+      {
+        "name": "complete",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "sorting",
+        "ordinal": 7,
+        "type_info": "Int64"
+      },
+      {
+        "name": "comment",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "bios",
+        "ordinal": 9,
+        "type_info": "Bool"
+      },
+      {
+        "name": "bios_id",
+        "ordinal": 10,
+        "type_info": "Int64"
+      },
+      {
+        "name": "external_id",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "jbfolder",
+        "ordinal": 12,
+        "type_info": "Bool"
+      },
+      {
+        "name": "playlist_id",
+        "ordinal": 13,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "6b8018ed9bc56d1e9f94bfd8ed97268a3498c82e7c2648dad6a90040cb8457ab"
+}

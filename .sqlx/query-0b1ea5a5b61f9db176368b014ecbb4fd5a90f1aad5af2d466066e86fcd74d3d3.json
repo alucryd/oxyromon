@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE headers\n        SET name = ?, version = ?, size = ?, system_id = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "0b1ea5a5b61f9db176368b014ecbb4fd5a90f1aad5af2d466066e86fcd74d3d3"
+}

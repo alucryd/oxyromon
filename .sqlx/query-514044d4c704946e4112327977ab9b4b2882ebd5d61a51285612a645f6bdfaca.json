@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO rules (start_byte, hex_value, header_id)\n        VALUES (?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "514044d4c704946e4112327977ab9b4b2882ebd5d61a51285612a645f6bdfaca"
+}
