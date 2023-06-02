@@ -20,7 +20,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, llvm-tools
           override: true
       - name: Install dependencies
         run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools yarn
@@ -39,11 +39,16 @@ jobs:
           command: build
           args: --release --features benchmark,server
       - name: Test
-        uses: actions-rs/tarpaulin@v0.1
+        uses: actions-rs/cargo@v1
         with:
-          version: 0.25.2
+          command: test
           args: --features benchmark,server
-      - name: Upload to codecov.io
+        env:
+          CARGO_INCREMENTAL: '0'
+          LLVM_PROFILE_FILE: 'cargo-test-%p-%m.profraw'
+          RUSTFLAGS: '-Cinstrument-coverage'
+      - uses: actions-rs/grcov@v0.1
+      - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
