@@ -35,7 +35,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: llvm-cov
+          args: cargo-llvm-cov
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
         with:
