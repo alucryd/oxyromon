@@ -41,6 +41,7 @@ jobs:
       - name: Test
         uses: actions-rs/tarpaulin@v0.1
         with:
+          version: 0.25.2
           args: --features benchmark,server
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1

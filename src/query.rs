@@ -188,7 +188,7 @@ impl QueryRoot {
                 } else if let NoIntroToken::Region(_, parsed_regions) = token {
                     regions.append(
                         &mut Region::to_normalized_region_string(parsed_regions)
-                            .split("-")
+                            .split('-')
                             .map(|region| region.to_string())
                             .collect_vec(),
                     );
