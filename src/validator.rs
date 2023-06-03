@@ -1,4 +1,4 @@
-use super::config::{PreferRegion, PreferVersion, SubfolderScheme};
+use super::config::{PreferredRegion, PreferredVersion, SubfolderScheme};
 use async_graphql::{CustomValidator, InputValueError};
 use std::path::Path;
 use strum::VariantNames;
@@ -13,12 +13,12 @@ impl PreferRegionValidator {
 
 impl CustomValidator<String> for PreferRegionValidator {
     fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
-        if PreferRegion::VARIANTS.contains(&value.as_str()) {
+        if PreferredRegion::VARIANTS.contains(&value.as_str()) {
             Ok(())
         } else {
             Err(InputValueError::custom(format!(
                 "Valid choices: {:?}",
-                PreferRegion::VARIANTS
+                PreferredRegion::VARIANTS
             )))
         }
     }
@@ -34,12 +34,12 @@ impl PreferVersionValidator {
 
 impl CustomValidator<String> for PreferVersionValidator {
     fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
-        if PreferVersion::VARIANTS.contains(&value.as_str()) {
+        if PreferredVersion::VARIANTS.contains(&value.as_str()) {
             Ok(())
         } else {
             Err(InputValueError::custom(format!(
                 "Valid choices: {:?}",
-                PreferVersion::VARIANTS
+                PreferredVersion::VARIANTS
             )))
         }
     }

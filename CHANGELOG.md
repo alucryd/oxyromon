@@ -6,6 +6,7 @@
 - Expose most settings in the web UI
 - Make ignored status take precedence over complete status in the web UI
 - Match the whole flag string to allow discarding specific flag combinations
+- Make `purge-roms` physically delete orphan ROMs
 
 # 0.15.0
 

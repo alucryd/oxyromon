@@ -10,6 +10,7 @@ use async_std::stream::StreamExt;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
+use itertools::Itertools;
 use rayon::prelude::*;
 use regex::Regex;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
@@ -102,11 +103,11 @@ pub async fn main(
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
     let prefer_parents = get_bool(connection, "PREFER_PARENTS").await;
-    let prefer_regions =
-        PreferRegion::from_str(&get_string(connection, "PREFER_REGIONS").await).unwrap();
-    let prefer_versions =
-        PreferVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await).unwrap();
-    let prefer_flags = get_list(connection, "PREFER_FLAGS").await;
+    let preferred_regions =
+        PreferredRegion::from_str(&get_string(connection, "PREFER_REGIONS").await).unwrap();
+    let preferred_versions =
+        PreferredVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await).unwrap();
+    let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
     let all_regions_subfolders = SubfolderScheme::from_str(
         matches
             .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
@@ -121,30 +122,25 @@ pub async fn main(
     .unwrap();
     let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;
 
+    let answer_yes = matches.get_flag("YES");
+    let print_wanted = matches.get_flag("WANTED");
+
     for system in systems {
         sort_system(
             connection,
-            matches,
             progress_bar,
+            answer_yes,
+            print_wanted,
             &system,
             &all_regions,
             &one_regions,
-            &languages.iter().map(String::as_str).collect::<Vec<&str>>(),
-            &ignored_releases
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<&str>>(),
-            &ignored_flags
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<&str>>(),
+            &languages.iter().map(String::as_str).collect_vec(),
+            &ignored_releases.iter().map(String::as_str).collect_vec(),
+            &ignored_flags.iter().map(String::as_str).collect_vec(),
             prefer_parents,
-            &prefer_regions,
-            &prefer_versions,
-            &prefer_flags
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<&str>>(),
+            &preferred_regions,
+            &preferred_versions,
+            &preferred_flags.iter().map(String::as_str).collect_vec(),
             &all_regions_subfolders,
             &one_regions_subfolders,
             one_regions_strict,
@@ -181,8 +177,9 @@ pub async fn get_regions(
 
 async fn sort_system(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches,
     progress_bar: &ProgressBar,
+    answer_yes: bool,
+    print_wanted: bool,
     system: &System,
     all_regions: &[Region],
     one_regions: &[Region],
@@ -190,9 +187,9 @@ async fn sort_system(
     ignored_releases: &[&str],
     ignored_flags: &[&str],
     prefer_parents: bool,
-    prefer_regions: &PreferRegion,
-    prefer_versions: &PreferVersion,
-    prefer_flags: &[&str],
+    preferred_regions: &PreferredRegion,
+    preferred_versions: &PreferredVersion,
+    preferred_flags: &[&str],
     all_regions_subfolders: &SubfolderScheme,
     one_regions_subfolders: &SubfolderScheme,
     one_regions_strict: bool,
@@ -246,9 +243,9 @@ async fn sort_system(
                     a,
                     b,
                     prefer_parents,
-                    prefer_regions,
-                    prefer_versions,
-                    prefer_flags,
+                    preferred_regions,
+                    preferred_versions,
+                    preferred_flags,
                 )
             });
 
@@ -362,7 +359,7 @@ async fn sort_system(
         }
     }
 
-    if matches.get_flag("WANTED") {
+    if print_wanted {
         let mut all_incomplete_games: Vec<&Game> = Vec::new();
         all_incomplete_games.extend(incomplete_all_regions_games.iter());
         all_incomplete_games.extend(incomplete_one_region_games.iter());
@@ -534,7 +531,7 @@ async fn sort_system(
         }
 
         // prompt user for confirmation
-        if matches.get_flag("YES") || confirm(true)? {
+        if answer_yes || confirm(true)? {
             for romfile_move in romfile_moves {
                 rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, true).await?;
                 update_romfile(
@@ -720,8 +717,8 @@ fn sort_games_by_weight(
     game_a: &Game,
     game_b: &Game,
     prefer_parents: bool,
-    prefer_regions: &PreferRegion,
-    prefer_versions: &PreferVersion,
+    preferred_regions: &PreferredRegion,
+    preferred_versions: &PreferredVersion,
     preferred_flags: &[&str],
 ) -> Ordering {
     let mut weight_a: u8 = 0;
@@ -735,26 +732,26 @@ fn sort_games_by_weight(
         }
     }
 
-    if prefer_regions != &PreferRegion::None {
+    if preferred_regions != &PreferredRegion::None {
         let regions_a = Region::try_from_tosec_region(&game_a.regions).unwrap_or_default();
         let regions_b = Region::try_from_tosec_region(&game_b.regions).unwrap_or_default();
 
         match regions_b.len().partial_cmp(&regions_a.len()).unwrap() {
-            Ordering::Less => match *prefer_regions {
-                PreferRegion::Broad => weight_a += 1,
-                PreferRegion::Narrow => weight_b += 1,
-                PreferRegion::None => {}
+            Ordering::Less => match preferred_regions {
+                PreferredRegion::Broad => weight_a += 1,
+                PreferredRegion::Narrow => weight_b += 1,
+                PreferredRegion::None => {}
             },
-            Ordering::Greater => match *prefer_regions {
-                PreferRegion::Broad => weight_b += 1,
-                PreferRegion::Narrow => weight_a += 1,
-                PreferRegion::None => {}
+            Ordering::Greater => match preferred_regions {
+                PreferredRegion::Broad => weight_b += 1,
+                PreferredRegion::Narrow => weight_a += 1,
+                PreferredRegion::None => {}
             },
             Ordering::Equal => {}
         };
     }
 
-    if prefer_versions != &PreferVersion::None {
+    if preferred_versions != &PreferredVersion::None {
         let mut version_a = None;
         let mut version_b = None;
 
@@ -763,6 +760,47 @@ fn sort_games_by_weight(
                 if let NoIntroToken::Version(version) = token {
                     version_a = Some(version.to_owned());
                 }
+            }
+        }
+        if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
+            for token in name.iter() {
+                if let NoIntroToken::Version(version) = token {
+                    version_b = Some(version.to_owned());
+                }
+            }
+        }
+        if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
+            match version_b.partial_cmp(version_a).unwrap() {
+                Ordering::Less => match *preferred_versions {
+                    PreferredVersion::New => weight_a += 1,
+                    PreferredVersion::Old => weight_b += 1,
+                    PreferredVersion::None => {}
+                },
+                Ordering::Greater => match *preferred_versions {
+                    PreferredVersion::New => weight_b += 1,
+                    PreferredVersion::Old => weight_a += 1,
+                    PreferredVersion::None => {}
+                },
+                Ordering::Equal => {}
+            };
+        } else if version_a.is_some() {
+            match *preferred_versions {
+                PreferredVersion::New => weight_a += 1,
+                PreferredVersion::Old => weight_b += 1,
+                PreferredVersion::None => {}
+            }
+        } else if version_b.is_some() {
+            match *preferred_versions {
+                PreferredVersion::New => weight_b += 1,
+                PreferredVersion::Old => weight_a += 1,
+                PreferredVersion::None => {}
+            }
+        }
+    }
+
+    if !preferred_flags.is_empty() {
+        if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
+            for token in name.iter() {
                 if let NoIntroToken::Flag(_, flags) = token {
                     for flag in flags.split(", ") {
                         if preferred_flags.contains(&flag) {
@@ -774,9 +812,6 @@ fn sort_games_by_weight(
         }
         if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
             for token in name.iter() {
-                if let NoIntroToken::Version(version) = token {
-                    version_b = Some(version.to_owned());
-                }
                 if let NoIntroToken::Flag(_, flags) = token {
                     for flag in flags.split(", ") {
                         if preferred_flags.contains(&flag) {
@@ -784,33 +819,6 @@ fn sort_games_by_weight(
                         }
                     }
                 }
-            }
-        }
-        if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
-            match version_b.partial_cmp(version_a).unwrap() {
-                Ordering::Less => match *prefer_versions {
-                    PreferVersion::New => weight_a += 1,
-                    PreferVersion::Old => weight_b += 1,
-                    PreferVersion::None => {}
-                },
-                Ordering::Greater => match *prefer_versions {
-                    PreferVersion::New => weight_b += 1,
-                    PreferVersion::Old => weight_a += 1,
-                    PreferVersion::None => {}
-                },
-                Ordering::Equal => {}
-            };
-        } else if version_a.is_some() {
-            match *prefer_versions {
-                PreferVersion::New => weight_a += 1,
-                PreferVersion::Old => weight_b += 1,
-                PreferVersion::None => {}
-            }
-        } else if version_b.is_some() {
-            match *prefer_versions {
-                PreferVersion::New => weight_b += 1,
-                PreferVersion::Old => weight_a += 1,
-                PreferVersion::None => {}
             }
         }
     }
@@ -897,11 +905,45 @@ mod test_one_region_from_db;
 #[cfg(test)]
 mod test_one_region_from_matches;
 #[cfg(test)]
-mod test_order_revision_vs_revision;
+mod test_order_no_prefer_parents_clone_vs_clone;
 #[cfg(test)]
-mod test_order_revision_vs_vanilla;
+mod test_order_no_prefer_parents_clone_vs_parent;
 #[cfg(test)]
-mod test_order_vanilla_vs_revision;
+mod test_order_no_prefer_parents_parent_vs_clone;
+#[cfg(test)]
+mod test_order_prefer_flags;
+#[cfg(test)]
+mod test_order_prefer_flags_swapped;
+#[cfg(test)]
+mod test_order_prefer_parents_clone_vs_clone;
+#[cfg(test)]
+mod test_order_prefer_parents_clone_vs_parent;
+#[cfg(test)]
+mod test_order_prefer_parents_parent_vs_clone;
+#[cfg(test)]
+mod test_order_prefer_regions_broad;
+#[cfg(test)]
+mod test_order_prefer_regions_broad_swapped;
+#[cfg(test)]
+mod test_order_prefer_regions_narrow;
+#[cfg(test)]
+mod test_order_prefer_regions_narrow_swapped;
+#[cfg(test)]
+mod test_order_prefer_versions_new_revision_vs_revision;
+#[cfg(test)]
+mod test_order_prefer_versions_new_revision_vs_revision_swapped;
+#[cfg(test)]
+mod test_order_prefer_versions_new_revision_vs_vanilla;
+#[cfg(test)]
+mod test_order_prefer_versions_new_vanilla_vs_revision;
+#[cfg(test)]
+mod test_order_prefer_versions_old_revision_vs_revision;
+#[cfg(test)]
+mod test_order_prefer_versions_old_revision_vs_revision_swapped;
+#[cfg(test)]
+mod test_order_prefer_versions_old_revision_vs_vanilla;
+#[cfg(test)]
+mod test_order_prefer_versions_old_vanilla_vs_revision;
 #[cfg(test)]
 mod test_path_archive_multiple_files;
 #[cfg(test)]
@@ -914,6 +956,10 @@ mod test_path_chd_single_track;
 mod test_path_cso;
 #[cfg(test)]
 mod test_path_original;
+#[cfg(test)]
+mod test_path_playlist;
+#[cfg(test)]
+mod test_path_playlist_subfolder_alpha;
 #[cfg(test)]
 mod test_path_subfolder_alpha_letter;
 #[cfg(test)]
@@ -928,6 +974,8 @@ mod test_sort_1g1r_catch_all;
 mod test_sort_1g1r_discard_asia_and_beta;
 #[cfg(test)]
 mod test_sort_1g1r_lenient;
+#[cfg(test)]
+mod test_sort_1g1r_playlist;
 #[cfg(test)]
 mod test_sort_1g1r_revisions;
 #[cfg(test)]

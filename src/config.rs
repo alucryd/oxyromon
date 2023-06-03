@@ -58,7 +58,7 @@ pub enum SubfolderScheme {
 
 #[derive(PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
-pub enum PreferVersion {
+pub enum PreferredVersion {
     None,
     New,
     Old,
@@ -66,7 +66,7 @@ pub enum PreferVersion {
 
 #[derive(PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
-pub enum PreferRegion {
+pub enum PreferredRegion {
     None,
     Broad,
     Narrow,
@@ -80,8 +80,8 @@ const BOOLEANS: &[&str] = &[
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
     "HASH_ALGORITHM" => HashAlgorithm::VARIANTS,
-    "PREFER_REGIONS" => PreferRegion::VARIANTS,
-    "PREFER_VERSIONS" => PreferVersion::VARIANTS,
+    "PREFER_REGIONS" => PreferredRegion::VARIANTS,
+    "PREFER_VERSIONS" => PreferredVersion::VARIANTS,
     "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,

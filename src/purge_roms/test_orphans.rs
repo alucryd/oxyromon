@@ -2,11 +2,10 @@ use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
-use super::super::sort_roms;
 use super::*;
 use async_std::fs;
 use async_std::path::PathBuf;
-use async_std::prelude::*;
+use futures::stream::TryStreamExt;
 use tempfile::{NamedTempFile, TempDir};
 
 #[async_std::test]
@@ -46,30 +45,35 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-g", "JP"]);
-    sort_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
     let system = find_systems(&mut connection).await.remove(0);
     let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
         .await
         .unwrap();
 
+    delete_game_by_name_and_system_id(&mut connection, "Test Game (USA, Europe)", system.id).await;
+
     // when
-    purge_trashed_romfiles(&mut connection, &progress_bar, true)
+    purge_orphan_romfiles(&mut connection, &progress_bar, true)
         .await
         .unwrap();
 
     // then
     let romfiles = find_romfiles(&mut connection).await;
     assert!(romfiles.is_empty());
-    assert!(&system_directory
-        .join("Trash")
+    let entries: Vec<fs::DirEntry> = system_directory
         .read_dir()
         .await
         .unwrap()
-        .next()
+        .map_ok(|entry| entry)
+        .try_collect()
         .await
-        .is_none());
+        .unwrap();
+    println!("{:?}", entries);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(
+        entries.get(0).unwrap().path(),
+        get_trash_directory(&mut connection, &progress_bar, Some(&system))
+            .await
+            .unwrap()
+    );
 }

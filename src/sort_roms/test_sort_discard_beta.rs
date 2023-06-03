@@ -52,15 +52,15 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = subcommand().get_matches_from(&["config", "-y"]);
     let all_regions = vec![];
     let one_regions = vec![];
 
     // when
     sort_system(
         &mut connection,
-        &matches,
         &progress_bar,
+        true,
+        false,
         &system,
         &all_regions,
         &one_regions,
@@ -68,8 +68,8 @@ async fn test() {
         &["Beta"],
         &[],
         true,
-        &PreferRegion::None,
-        &PreferVersion::None,
+        &PreferredRegion::None,
+        &PreferredVersion::None,
         &[],
         &SubfolderScheme::None,
         &SubfolderScheme::None,
