@@ -18,3 +18,4 @@ dist
 # javascript
 node_modules
 .svelte-kit
+vite.config.js.*
