@@ -2390,11 +2390,16 @@ pub async fn find_orphan_romfiles(connection: &mut SqliteConnection) -> Vec<Romf
         Romfile,
         "
         SELECT *
-        FROM romfiles
-        WHERE id NOT IN (
-            SELECT DISTINCT(romfile_id)
-            FROM roms 
-            WHERE romfile_id IS NOT NULL
+        FROM romfiles rf
+        WHERE NOT EXISTS (
+            SELECT r.id
+            FROM roms r
+            WHERE r.romfile_id = rf.id
+        )
+        AND NOT EXISTS (
+            SELECT g.id
+            FROM games g
+            WHERE g.playlist_id = rf.id
         )
         ORDER BY path
         ",

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id NOT IN (\n            SELECT DISTINCT(romfile_id)\n            FROM roms \n            WHERE romfile_id IS NOT NULL\n        )\n        ORDER BY path\n        ",
+  "query": "\n        SELECT *\n        FROM romfiles rf\n        WHERE NOT EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.romfile_id = rf.id\n        )\n        AND NOT EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.playlist_id = rf.id\n        )\n        ORDER BY path\n        ",
   "describe": {
     "columns": [
       {
@@ -28,5 +28,5 @@
       false
     ]
   },
-  "hash": "24b66132d725cb6750b4a70bf0baebe93514df453db2a27f22ae927ab22021d4"
+  "hash": "7ebc93088f066f46349416734aa51a41af14344048b978a4efdb76d24754b7ea"
 }
