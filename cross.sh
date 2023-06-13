@@ -1,24 +1,43 @@
-#!/bin/sh
+#!/bin/bash
 
 mkdir -p dist
-for target in aarch64-apple-darwin aarch64-unknown-linux-gnu aarch64-unknown-linux-musl; do
-    CROSS_CONTAINER_ENGINE=podman SKIP_YARN=true cross build \
-        --release \
-        --target $target \
-        --features benchmark,server
-done
-rcodesign sign target/aarch64-apple-darwin/release/oxyromon
-tar -cJf dist/oxyromon.aarch64-apple-darwin.tar.xz target/aarch64-apple-darwin/release/oxyromon
-tar -cJf dist/oxyromon.aarch64-linux-gnu.tar.xz target/aarch64-unknown-linux-gnu/release/oxyromon
-tar -cJf dist/oxyromon.aarch64-linux-musl.tar.xz target/aarch64-unknown-linux-musl/release/oxyromon
 
-for target in x86_64-apple-darwin x86_64-pc-windows-gnu x86_64-unknown-linux-musl; do
-    CROSS_CONTAINER_ENGINE=podman SKIP_YARN=true cross build \
+export SKIP_YARN=true
+
+export CROSS_CONTAINER_ENGINE=podman
+
+for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-musl; do
+    yarn install
+    yarn build
+    cross build \
         --release \
         --target $target \
         --features benchmark,server
+    tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
+    cargo clean
 done
-rcodesign sign target/x86_64-apple-darwin/release/oxyromon
-tar -cJf dist/oxyromon.x86_64-apple-darwin.tar.xz target/x86_64-apple-darwin/release/oxyromon
-7z a dist/oxyromon.x86_64-windows-gnu.7z target/x86_64-pc-windows-gnu/release/oxyromon.exe
-tar -cJf dist/oxyromon.x86_64-linux-musl.tar.xz target/x86_64-unknown-linux-musl/release/oxyromon
+
+for target in x86_64-pc-windows-gnu; do
+    yarn install
+    yarn build
+    cross build \
+        --release \
+        --target $target \
+        --features benchmark,server
+    7z a dist/oxyromon.${target/-unknown/}.7z target/$target/release/oxyromon.exe
+    cargo clean
+done
+
+export CROSS_CONTAINER_ENGINE=docker
+
+for target in aarch64-apple-darwin x86_64-apple-darwin; do
+    yarn install
+    yarn build
+    cross build \
+        --release \
+        --target $target \
+        --features benchmark,server
+    rcodesign sign target/$target/release/oxyromon
+    tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
+    cargo clean
+done
