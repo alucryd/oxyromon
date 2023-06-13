@@ -5,17 +5,17 @@ async fn test() {
     // given
     let game_a = Game {
         id: 1,
-        name: String::from("Game (USA) (Rev 2)"),
+        name: String::from("Game (World)"),
         description: String::from(""),
         comment: None,
         external_id: None,
         bios: false,
         jbfolder: false,
-        regions: String::from(""),
+        regions: String::from("US"),
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: Some(3),
+        parent_id: None,
         bios_id: None,
         playlist_id: None,
     };
@@ -27,11 +27,11 @@ async fn test() {
         external_id: None,
         bios: false,
         jbfolder: false,
-        regions: String::from(""),
+        regions: String::from("US-EU-JP"),
         sorting: Sorting::AllRegions as i64,
         complete: true,
         system_id: 1,
-        parent_id: Some(3),
+        parent_id: Some(1),
         bios_id: None,
         playlist_id: None,
     };
@@ -41,11 +41,11 @@ async fn test() {
         &game_a,
         &game_b,
         false,
-        &PreferRegion::None,
-        &PreferVersion::New,
+        &PreferredRegion::None,
+        &PreferredVersion::None,
         &[],
     );
 
     // then
-    assert_eq!(ordering, Ordering::Less);
+    assert_eq!(ordering, Ordering::Equal);
 }

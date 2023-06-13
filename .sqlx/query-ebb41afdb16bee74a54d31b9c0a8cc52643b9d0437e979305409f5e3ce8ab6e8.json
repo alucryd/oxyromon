@@ -1,0 +1,80 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NULL\n        AND r.size = ?\n        AND r.md5 = ?\n        AND g.system_id = ?\n        ORDER BY r.name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "bios",
+        "ordinal": 2,
+        "type_info": "Bool"
+      },
+      {
+        "name": "size",
+        "ordinal": 3,
+        "type_info": "Int64"
+      },
+      {
+        "name": "crc",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "md5",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "sha1",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "rom_status",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "game_id",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "romfile_id",
+        "ordinal": 9,
+        "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 10,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "ebb41afdb16bee74a54d31b9c0a8cc52643b9d0437e979305409f5e3ce8ab6e8"
+}

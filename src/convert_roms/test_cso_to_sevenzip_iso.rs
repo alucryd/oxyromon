@@ -85,7 +85,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).7z")
+            .join("Test Game (USA, Europe) (ISO).7z")
             .as_os_str()
             .to_str()
             .unwrap(),

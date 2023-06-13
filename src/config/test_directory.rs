@@ -8,7 +8,9 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let test_directory = get_canonicalized_path(&String::from("tests")).await.unwrap();
+    let test_directory = get_canonicalized_path(&String::from("tests"))
+        .await
+        .unwrap();
     let key = "TEST_DIRECTORY";
 
     // when

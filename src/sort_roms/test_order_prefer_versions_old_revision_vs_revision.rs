@@ -5,7 +5,7 @@ async fn test() {
     // given
     let game_a = Game {
         id: 1,
-        name: String::from("Game (USA)"),
+        name: String::from("Game (USA) (Rev 1)"),
         description: String::from(""),
         comment: None,
         external_id: None,
@@ -41,11 +41,11 @@ async fn test() {
         &game_a,
         &game_b,
         false,
-        &PreferRegion::None,
-        &PreferVersion::New,
+        &PreferredRegion::None,
+        &PreferredVersion::Old,
         &[],
     );
 
     // then
-    assert_eq!(ordering, Ordering::Greater);
+    assert_eq!(ordering, Ordering::Less);
 }

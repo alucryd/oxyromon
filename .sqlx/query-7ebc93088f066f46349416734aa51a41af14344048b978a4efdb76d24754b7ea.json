@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM romfiles rf\n        WHERE NOT EXISTS (\n            SELECT r.id\n            FROM roms r\n            WHERE r.romfile_id = rf.id\n        )\n        AND NOT EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.playlist_id = rf.id\n        )\n        ORDER BY path\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "path",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7ebc93088f066f46349416734aa51a41af14344048b978a4efdb76d24754b7ea"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE systems\n        SET complete = false\n        WHERE id = ?\n        AND complete = true\n        AND EXISTS (\n            SELECT g.id\n            FROM games g\n            WHERE g.system_id = systems.id\n            AND g.complete = false\n            AND g.sorting != 2\n        )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "5582f59f4057aa716a10a7daff0755ad2a2e6b8d9c12b409813d4db4363ee115"
+}

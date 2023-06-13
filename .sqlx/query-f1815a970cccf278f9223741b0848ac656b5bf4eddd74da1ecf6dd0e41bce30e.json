@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM rules\n        WHERE header_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "start_byte",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "hex_value",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "header_id",
+        "ordinal": 3,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f1815a970cccf278f9223741b0848ac656b5bf4eddd74da1ecf6dd0e41bce30e"
+}

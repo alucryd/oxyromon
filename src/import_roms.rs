@@ -8,6 +8,8 @@ use super::dolphin;
 #[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
+#[cfg(feature = "nsz")]
+use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -296,6 +298,26 @@ pub async fn import_rom<P: AsRef<Path>>(
                 progress_bar.println("Please rebuild with the CSO feature enabled");
             }
         }
+    } else if NSZ_EXTENSION == romfile_extension {
+        cfg_if! {
+            if #[cfg(feature = "nsz")] {
+                if let Some(system_id) = import_nsz(
+                    &mut transaction,
+                    progress_bar,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                    trash,
+                )
+                .await?
+                {
+                    system_ids.insert(system_id);
+                };
+            } else {
+                progress_bar.println("Please rebuild with the NSZ feature enabled");
+            }
+        }
     } else if RVZ_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "rvz")] {
@@ -322,7 +344,6 @@ pub async fn import_rom<P: AsRef<Path>>(
         system,
         header,
         &romfile_path,
-        &romfile_extension,
         hash_algorithm,
         trash,
     )
@@ -664,10 +685,7 @@ async fn import_archive<P: AsRef<Path>>(
         // put arcade roms and JB folders in subdirectories
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.join(game.name).join(&rom.name)
-        // use game name for PS3 updates and DLCs because rom name is usually gibberish
-        } else if PS3_EXTENSIONS.contains(&romfile_extension) {
-            new_path = system_directory.join(format!("{}.{}", &game.name, romfile_extension));
+            new_path = system_directory.join(game.name).join(&rom.name);
         } else {
             new_path = system_directory.join(&rom.name);
         }
@@ -892,6 +910,61 @@ async fn import_cso<P: AsRef<Path>>(
     }
 }
 
+#[cfg(feature = "nsz")]
+async fn import_nsz<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: Option<&System>,
+    header: &Option<Header>,
+    romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
+    trash: bool,
+) -> SimpleResult<Option<i64>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &nsp_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
+    remove_file(progress_bar, &nsp_path, true).await?;
+    if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
+        connection,
+        progress_bar,
+        size,
+        &hash,
+        &system,
+        Vec::new(),
+        None,
+        hash_algorithm,
+    )
+    .await?
+    {
+        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+
+        let mut new_nsz_path = system_directory.join(&rom.name);
+        new_nsz_path.set_extension(NSZ_EXTENSION);
+
+        // move NSZ if needed
+        rename_file(progress_bar, romfile_path, &new_nsz_path, false).await?;
+
+        // persist in database
+        create_or_update_romfile(connection, &new_nsz_path, &[rom]).await;
+
+        Ok(Some(system.id))
+    } else {
+        if trash {
+            move_to_trash(connection, progress_bar, romfile_path).await?;
+        }
+        Ok(None)
+    }
+}
+
 #[cfg(feature = "rvz")]
 async fn import_rvz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
@@ -953,7 +1026,6 @@ async fn import_other<P: AsRef<Path>>(
     system: Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
-    romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
@@ -985,10 +1057,7 @@ async fn import_other<P: AsRef<Path>>(
         // put arcade roms and JB folders in subdirectories
         if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.join(game.name).join(&rom.name)
-        // use game name for PS3 updates and DLCs because rom name is usually gibberish
-        } else if PS3_EXTENSIONS.contains(&romfile_extension) {
-            new_path = system_directory.join(format!("{}.{}", &game.name, romfile_extension));
+            new_path = system_directory.join(game.name).join(&rom.name);
         } else {
             new_path = system_directory.join(&rom.name);
         }

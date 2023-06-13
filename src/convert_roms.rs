@@ -7,6 +7,8 @@ use super::dolphin;
 #[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
+#[cfg(feature = "nsz")]
+use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -34,6 +36,11 @@ lazy_static! {
         cfg_if! {
             if #[cfg(feature = "cso")] {
                 all_formats.push("CSO");
+            }
+        }
+        cfg_if! {
+            if #[cfg(feature = "nsz")] {
+                all_formats.push("NSZ");
             }
         }
         cfg_if! {
@@ -229,6 +236,20 @@ pub async fn main(
                     }
                 }
             }
+            "NSZ" => {
+                cfg_if! {
+                    if #[cfg(feature = "nsz")] {
+                        to_nsz(
+                            connection,
+                            progress_bar,
+                            roms_by_game_id,
+                            romfiles_by_id,
+                            diff,
+                        )
+                        .await?
+                    }
+                }
+            }
             "RVZ" => {
                 cfg_if! {
                     if #[cfg(feature = "rvz")] {
@@ -317,6 +338,23 @@ async fn to_archive(
         }
     }
 
+    // partition NSZs
+    let (nszs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(NSZ_EXTENSION)
+            })
+        });
+    cfg_if! {
+        if #[cfg(not(feature = "nsz"))] {
+            drop(nszs)
+        }
+    }
+
     // partition RVZs
     let (rvzs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -364,13 +402,18 @@ async fn to_archive(
                         &tmp_directory.path(),
                     )
                     .await?;
-                    let mut archive_path = Path::new(&romfile.path).to_path_buf();
-                    archive_path.set_extension(
+
+                    let game = games_by_id.get(&rom.game_id).unwrap();
+                    let archive_name = format!(
+                        "{}.{}",
+                        &game.name,
                         match archive_type {
                             sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                             sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                         }
                     );
+                    let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
+
                     sevenzip::add_files_to_archive(
                         progress_bar,
                         &archive_path,
@@ -408,11 +451,16 @@ async fn to_archive(
                         .get(&bin_roms.get(0).unwrap().romfile_id.unwrap())
                         .unwrap();
 
-                    let mut archive_path = Path::new(&chd_romfile.path).to_path_buf();
-                    archive_path.set_extension(match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    });
+                    let game = games_by_id.get(&cue_rom.game_id).unwrap();
+                    let archive_name = format!(
+                        "{}.{}",
+                        &game.name,
+                        match archive_type {
+                            sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                            sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                        }
+                    );
+                    let archive_path = Path::new(&cue_romfile.path).with_file_name(&archive_name);
 
                     let bin_names_sizes: Vec<(&str, u64)> = bin_roms
                         .iter()
@@ -485,18 +533,76 @@ async fn to_archive(
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
-                let mut archive_path = Path::new(&romfile.path).to_path_buf();
-                archive_path.set_extension(
+
+                let game = games_by_id.get(&rom.game_id).unwrap();
+                let archive_name = format!(
+                    "{}.{}",
+                    &game.name,
                     match archive_type {
                         sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                         sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                     }
                 );
+                let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
 
                 sevenzip::add_files_to_archive(
                     progress_bar,
                     &archive_path,
                     &[iso_path.file_name().unwrap().to_str().unwrap()],
+                    &tmp_directory.path(),
+                    compression_level,
+                    solid,
+                )?;
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    archive_path.as_os_str().to_str().unwrap(),
+                    archive_path.metadata().await.unwrap().len(),
+                )
+                .await;
+
+                if diff {
+                    print_diff(
+                        progress_bar,
+                        &roms.iter().collect::<Vec<&Rom>>(),
+                        &[&romfile.path],
+                        &[&archive_path],
+                    )
+                    .await?;
+                }
+
+                remove_file(progress_bar, &romfile.path, false).await?;
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
+    // convert NSZs
+    cfg_if! {
+        if #[cfg(feature = "nsz")] {
+            for roms in nszs.values() {
+                let mut transaction = begin_transaction(connection).await;
+
+                let rom = roms.get(0).unwrap();
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let nsp_path = nsz::extract_nsz(progress_bar, &romfile.path, &tmp_directory.path())?;
+
+                let game = games_by_id.get(&rom.game_id).unwrap();
+                let archive_name = format!(
+                    "{}.{}",
+                    &game.name,
+                    match archive_type {
+                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                    }
+                );
+                let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
+
+                sevenzip::add_files_to_archive(
+                    progress_bar,
+                    &archive_path,
+                    &[nsp_path.file_name().unwrap().to_str().unwrap()],
                     &tmp_directory.path(),
                     compression_level,
                     solid,
@@ -535,13 +641,17 @@ async fn to_archive(
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let iso_path = dolphin::extract_rvz(progress_bar, &romfile.path, &tmp_directory.path())?;
-                let mut archive_path = Path::new(&romfile.path).to_path_buf();
-                archive_path.set_extension(
+
+                let game = games_by_id.get(&rom.game_id).unwrap();
+                let archive_name = format!(
+                    "{}.{}",
+                    &game.name,
                     match archive_type {
                         sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
                         sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
                     }
                 );
+                let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
 
                 sevenzip::add_files_to_archive(
                     progress_bar,
@@ -664,11 +774,17 @@ async fn to_archive(
         if roms.len() == 1 && !system.arcade {
             let rom = roms.get(0).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let mut archive_path = Path::new(&romfile.path).to_path_buf();
-            archive_path.set_extension(match archive_type {
-                sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-            });
+
+            let game = games_by_id.get(&rom.game_id).unwrap();
+            let archive_name = format!(
+                "{}.{}",
+                &game.name,
+                match archive_type {
+                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                }
+            );
+            let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
 
             sevenzip::add_files_to_archive(
                 progress_bar,
@@ -1237,6 +1353,122 @@ async fn to_cso(
     Ok(())
 }
 
+#[cfg(feature = "nsz")]
+async fn to_nsz(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+    diff: bool,
+) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+
+    // partition archives
+    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
+    // partition NSPs
+    let (nsps, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(NSP_EXTENSION)
+            })
+        });
+
+    // drop others
+    drop(others);
+
+    // convert archives
+    for roms in archives.values() {
+        let mut transaction = begin_transaction(connection).await;
+
+        let mut romfiles: Vec<&Romfile> = roms
+            .par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+
+        if roms.len() > 1 || !roms.get(0).unwrap().name.ends_with(ISO_EXTENSION) {
+            continue;
+        }
+
+        let rom = roms.get(0).unwrap();
+        let romfile = romfiles.get(0).unwrap();
+        let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
+
+        let extracted_paths = sevenzip::extract_files_from_archive(
+            progress_bar,
+            &romfile.path,
+            &file_names,
+            &tmp_directory.path(),
+        )?;
+        let extracted_path = extracted_paths.get(0).unwrap();
+
+        let nsz_path = nsz::create_nsz(
+            progress_bar,
+            &extracted_path,
+            &Path::new(&romfile.path).parent().unwrap(),
+        )?;
+
+        if diff {
+            print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_path]).await?;
+        }
+
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            nsz_path.as_os_str().to_str().unwrap(),
+            nsz_path.metadata().await.unwrap().len(),
+        )
+        .await;
+        remove_file(progress_bar, &romfile.path, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert NSPs
+    for roms in nsps.values() {
+        let mut transaction = begin_transaction(connection).await;
+
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let nsz_path = nsz::create_nsz(
+                progress_bar,
+                &romfile.path,
+                &Path::new(&romfile.path).parent().unwrap(),
+            )?;
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_path]).await?;
+            }
+            update_romfile(
+                &mut transaction,
+                romfile.id,
+                nsz_path.as_os_str().to_str().unwrap(),
+                nsz_path.metadata().await.unwrap().len(),
+            )
+            .await;
+            remove_file(progress_bar, &romfile.path, false).await?;
+        }
+
+        commit_transaction(transaction).await;
+    }
+
+    Ok(())
+}
+
 #[cfg(feature = "rvz")]
 async fn to_rvz(
     connection: &mut SqliteConnection,
@@ -1410,6 +1642,22 @@ async fn to_original(
         }
     }
 
+    // partition NSZs
+    cfg_if! {
+        if #[cfg(feature = "rvz")] {
+            let (nszs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(NSP_EXTENSION)
+                    })
+                });
+        }
+    }
+
     // partition RVZs
     cfg_if! {
         if #[cfg(feature = "rvz")] {
@@ -1563,6 +1811,33 @@ async fn to_original(
         }
     }
 
+    cfg_if! {
+        if #[cfg(feature = "nsz")] {
+            for roms in nszs.values() {
+                let mut transaction = begin_transaction(connection).await;
+
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    let nsp_path = nsz::extract_nsz(
+                        progress_bar,
+                        &romfile.path,
+                        &Path::new(&romfile.path).parent().unwrap(),
+                    )?;
+                    update_romfile(
+                        &mut transaction,
+                        romfile.id,
+                        nsp_path.as_os_str().to_str().unwrap(),
+                        nsp_path.metadata().await.unwrap().len(),
+                    )
+                    .await;
+                    remove_file(progress_bar, &romfile.path, false).await?;
+                }
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
     // convert RVZs
     cfg_if! {
         if #[cfg(feature = "rvz")] {
@@ -1652,6 +1927,8 @@ mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
 mod test_original_to_sevenzip;
 #[cfg(test)]
 mod test_original_to_zip;
+#[cfg(test)]
+mod test_original_to_zip_multiple_roms;
 #[cfg(test)]
 mod test_original_to_zip_with_correct_name;
 #[cfg(test)]

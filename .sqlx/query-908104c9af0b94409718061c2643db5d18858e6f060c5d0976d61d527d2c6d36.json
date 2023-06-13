@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT COUNT(id) AS 'count!'\n        FROM roms\n        WHERE romfile_id IS NOT NULL\n        AND size = ?\n        AND sha1 = ?\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "count!",
+        "ordinal": 0,
+        "type_info": "Int"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "908104c9af0b94409718061c2643db5d18858e6f060c5d0976d61d527d2c6d36"
+}

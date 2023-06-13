@@ -7,6 +7,7 @@ use super::super::import_roms;
 use super::super::sort_roms;
 use super::super::util::*;
 use super::*;
+use async_graphql::Result;
 use async_std::fs;
 use async_std::path::PathBuf;
 use async_std::task;

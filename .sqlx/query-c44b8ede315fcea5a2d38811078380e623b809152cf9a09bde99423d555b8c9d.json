@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND parent_id IS NULL\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "regions",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "system_id",
+        "ordinal": 4,
+        "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 5,
+        "type_info": "Int64"
+      },
+      {
+        "name": "complete",
+        "ordinal": 6,
+        "type_info": "Bool"
+      },
+      {
+        "name": "sorting",
+        "ordinal": 7,
+        "type_info": "Int64"
+      },
+      {
+        "name": "comment",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "bios",
+        "ordinal": 9,
+        "type_info": "Bool"
+      },
+      {
+        "name": "bios_id",
+        "ordinal": 10,
+        "type_info": "Int64"
+      },
+      {
+        "name": "external_id",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "jbfolder",
+        "ordinal": 12,
+        "type_info": "Bool"
+      },
+      {
+        "name": "playlist_id",
+        "ordinal": 13,
+        "type_info": "Int64"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "c44b8ede315fcea5a2d38811078380e623b809152cf9a09bde99423d555b8c9d"
+}

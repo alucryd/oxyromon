@@ -22,6 +22,7 @@
     getGamesBySystemId,
     getRomsByGameIdAndSystemId,
     getSizesBySystemId,
+    getSettings,
     getSystems,
     updateGames,
     updateRoms,
@@ -66,30 +67,31 @@
   }
 
   function computeGameColor(game) {
-    if (game.complete) {
-      return "list-group-item-success";
-    }
-
     if (game.sorting == 2) {
       return "list-group-item-secondary";
+    }
+
+    if (game.complete) {
+      return "list-group-item-success";
     }
 
     return "list-group-item-danger";
   }
 
   function computeRomColor(rom) {
-    if (rom.romfile) {
-      return "list-group-item-success";
-    }
-
     if (rom.ignored) {
       return "list-group-item-secondary";
+    }
+
+    if (rom.romfile) {
+      return "list-group-item-success";
     }
 
     return "list-group-item-danger";
   }
 
   onMount(async () => {
+    await getSettings();
     systemsPage.subscribe(async () => {
       await updateSystems();
     });

@@ -58,7 +58,7 @@ pub enum SubfolderScheme {
 
 #[derive(PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
-pub enum PreferVersion {
+pub enum PreferredVersion {
     None,
     New,
     Old,
@@ -66,7 +66,7 @@ pub enum PreferVersion {
 
 #[derive(PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
-pub enum PreferRegion {
+pub enum PreferredRegion {
     None,
     Broad,
     Narrow,
@@ -80,8 +80,8 @@ const BOOLEANS: &[&str] = &[
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
     "HASH_ALGORITHM" => HashAlgorithm::VARIANTS,
-    "PREFER_REGIONS" => PreferRegion::VARIANTS,
-    "PREFER_VERSIONS" => PreferVersion::VARIANTS,
+    "PREFER_REGIONS" => PreferredRegion::VARIANTS,
+    "PREFER_VERSIONS" => PreferredVersion::VARIANTS,
     "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,
@@ -95,11 +95,14 @@ const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
+    "LANGUAGES",
     "PREFER_FLAGS",
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
+
+const LIST_SEPARATOR: &str = "|";
 
 #[cfg(feature = "chd")]
 pub static BIN_EXTENSION: &str = "bin";
@@ -108,6 +111,8 @@ pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
 pub static ISO_EXTENSION: &str = "iso";
 pub static M3U_EXTENSION: &str = "m3u";
+pub static NSP_EXTENSION: &str = "nsp";
+pub static NSZ_EXTENSION: &str = "nsz";
 pub static PKG_EXTENSION: &str = "pkg";
 pub static PUP_EXTENSION: &str = "pup";
 pub static RAP_EXTENSION: &str = "rap";
@@ -271,7 +276,7 @@ pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
         .unwrap()
 }
 
-async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
+pub async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
     let setting = find_setting_by_key(connection, key).await;
     let value = value.to_string();
     match setting {
@@ -302,7 +307,7 @@ async fn set_integer(connection: &mut SqliteConnection, key: &str, value: usize)
 pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<String> {
     match find_setting_by_key(connection, key).await {
         Some(setting) => match setting.value {
-            Some(value) => value.split(',').map(|s| s.to_owned()).collect(),
+            Some(value) => value.split(LIST_SEPARATOR).map(|s| s.to_owned()).collect(),
             None => Vec::new(),
         },
         None => Vec::new(),
@@ -314,6 +319,9 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
         let mut list = get_list(connection, key).await;
         if !list.contains(&String::from(value)) {
             list.push(value.to_owned());
+            if key != "REGIONS_ONE" {
+                list.sort();
+            }
             set_list(connection, key, &list).await;
         } else {
             println!("Value already in list");
@@ -342,7 +350,7 @@ async fn set_list(connection: &mut SqliteConnection, key: &str, value: &[String]
     let value = if value.is_empty() {
         None
     } else {
-        Some(value.join(","))
+        Some(value.join(LIST_SEPARATOR))
     };
     match setting {
         Some(setting) => update_setting(connection, setting.id, value).await,
@@ -381,7 +389,7 @@ pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> String 
         .unwrap()
 }
 
-async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
+pub async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
     let setting = find_setting_by_key(connection, key).await;
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value.to_string())).await,

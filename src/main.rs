@@ -15,12 +15,14 @@ extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
 extern crate dotenv;
+extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
 extern crate http_types;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
+extern crate log;
 #[cfg(feature = "ird")]
 extern crate md5;
 extern crate num_derive;
@@ -69,16 +71,24 @@ mod isoinfo;
 #[cfg(feature = "cso")]
 mod maxcso;
 mod model;
+#[cfg(feature = "server")]
+mod mutation;
+#[cfg(feature = "nsz")]
+mod nsz;
 mod progress;
 mod prompt;
 mod purge_roms;
 mod purge_systems;
+#[cfg(feature = "server")]
+mod query;
 mod rebuild_roms;
 #[cfg(feature = "server")]
 mod server;
 mod sevenzip;
 mod sort_roms;
 mod util;
+#[cfg(feature = "server")]
+mod validator;
 
 use async_std::path::PathBuf;
 use cfg_if::cfg_if;
@@ -86,6 +96,7 @@ use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
 use dotenv::dotenv;
+use env_logger::{Builder, Target};
 use progress::*;
 use simple_error::SimpleError;
 use std::env;
@@ -134,11 +145,21 @@ async fn main() -> SimpleResult<()> {
     if matches.subcommand().is_some() {
         dotenv().ok();
 
+        let mut builder = Builder::from_env("OXYROMON_LOG");
+        if matches.subcommand_name().unwrap() != "server" {
+            // log to stdout for interactive commands because indicatif uses stderr
+            builder.target(Target::Stdout);
+        }
+        builder.init();
+
         let progress_bar = get_progress_bar(0, get_none_progress_style());
 
         let data_directory = match env::var("OXYROMON_DATA_DIRECTORY") {
             Ok(data_directory) => PathBuf::from(data_directory),
-            Err(_) => dirs::data_dir().map(PathBuf::from).unwrap().join("oxyromon"),
+            Err(_) => dirs::data_dir()
+                .map(PathBuf::from)
+                .unwrap()
+                .join("oxyromon"),
         };
         create_directory(&progress_bar, &data_directory, true).await?;
 

@@ -1,0 +1,80 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM roms\n        WHERE game_id = ?\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Int64"
+      },
+      {
+        "name": "rom_status",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "game_id",
+        "ordinal": 4,
+        "type_info": "Int64"
+      },
+      {
+        "name": "romfile_id",
+        "ordinal": 5,
+        "type_info": "Int64"
+      },
+      {
+        "name": "md5",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "sha1",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 8,
+        "type_info": "Int64"
+      },
+      {
+        "name": "bios",
+        "ordinal": 9,
+        "type_info": "Bool"
+      },
+      {
+        "name": "crc",
+        "ordinal": 10,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "718603323fd3e270284d060343a938c582d9d640e45e2c5cb1616d250c68906a"
+}

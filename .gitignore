@@ -13,7 +13,9 @@ target
 *.db-wal
 lcov.info
 dist
+*.profraw
 
 # javascript
 node_modules
 .svelte-kit
+vite.config.js.*

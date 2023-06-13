@@ -2,12 +2,21 @@ use super::config::*;
 use super::progress::*;
 use super::SimpleResult;
 use async_std::path::{Path, PathBuf};
+use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use std::process::Command;
 use std::time::Duration;
 
 pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
 pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+cfg_if! {
+    if #[cfg(windows)] {
+        const DOLPHIN_TOOL: &str = "DolphinTool.exe";
+    } else {
+        const DOLPHIN_TOOL: &str = "dolphin-tool";
+    }
+}
 
 pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
@@ -28,7 +37,7 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
 
     progress_bar.println(format!("Creating {:?}", rvz_path.file_name().unwrap()));
 
-    let output = Command::new("dolphin-tool")
+    let output = Command::new(DOLPHIN_TOOL)
         .arg("convert")
         .arg("-f")
         .arg("rvz")
@@ -74,7 +83,7 @@ pub fn extract_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(rvz_path.as_ref().file_name().unwrap());
     iso_path.set_extension(ISO_EXTENSION);
 
-    let output = Command::new("dolphin-tool")
+    let output = Command::new(DOLPHIN_TOOL)
         .arg("convert")
         .arg("-f")
         .arg("iso")

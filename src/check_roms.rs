@@ -8,6 +8,8 @@ use super::dolphin;
 #[cfg(feature = "cso")]
 use super::maxcso;
 use super::model::*;
+#[cfg(feature = "nsz")]
+use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -146,6 +148,23 @@ async fn check_system(
                     .await;
                 } else {
                     progress_bar.println("Please rebuild with the CSO feature enabled");
+                    continue;
+                }
+            }
+        } else if NSZ_EXTENSION == romfile_extension {
+            cfg_if! {
+                if #[cfg(feature = "nsz")] {
+                    result = check_nsz(
+                        &mut transaction,
+                        progress_bar,
+                        &header,
+                        &romfile_path,
+                        roms.get(0).unwrap(),
+                        hash_algorithm
+                    )
+                    .await;
+                } else {
+                    progress_bar.println("Please rebuild with the NSZ feature enabled");
                     continue;
                 }
             }
@@ -346,6 +365,31 @@ async fn check_cso<P: AsRef<Path>>(
         connection,
         progress_bar,
         &iso_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
+    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    Ok(())
+}
+
+#[cfg(feature = "nsz")]
+async fn check_nsz<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    header: &Option<Header>,
+    romfile_path: &P,
+    rom: &Rom,
+    hash_algorithm: &HashAlgorithm,
+) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &nsp_path,
         header,
         1,
         1,

@@ -1,28 +1,22 @@
 use super::database::*;
-use super::model::*;
+use super::mutation::Mutation;
+use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
 use async_ctrlc::CtrlC;
-use async_graphql::dataloader::{DataLoader, Loader};
-use async_graphql::{
-    ComplexObject, Context, EmptyMutation, EmptySubscription, Error, Object, Result, Schema,
-};
+use async_graphql::dataloader::DataLoader;
+use async_graphql::{EmptySubscription, Schema};
 use async_std::path::Path;
 use async_std::prelude::FutureExt;
-use async_trait::async_trait;
 use clap::{Arg, ArgMatches, Command};
-use futures::stream::TryStreamExt;
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
-use itertools::Itertools;
 use lazy_static::lazy_static;
-use num_traits::FromPrimitive;
 use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
-use std::collections::HashMap;
 
 lazy_static! {
-    static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
+    pub static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
 }
 
 #[derive(RustEmbed)]
@@ -52,250 +46,6 @@ pub fn subcommand() -> Command {
         )
 }
 
-#[ComplexObject]
-impl System {
-    async fn header(&self) -> Result<Option<Header>> {
-        Ok(
-            find_header_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id)
-                .await,
-        )
-    }
-}
-
-#[ComplexObject]
-impl Game {
-    async fn system(&self, ctx: &Context<'_>) -> Result<Option<System>> {
-        ctx.data_unchecked::<DataLoader<SystemLoader>>()
-            .load_one(self.system_id)
-            .await
-    }
-}
-
-#[ComplexObject]
-impl Rom {
-    async fn game(&self, ctx: &Context<'_>) -> Result<Option<Game>> {
-        ctx.data_unchecked::<DataLoader<GameLoader>>()
-            .load_one(self.game_id)
-            .await
-    }
-
-    async fn romfile(&self, ctx: &Context<'_>) -> Result<Option<Romfile>> {
-        Ok(match self.romfile_id {
-            Some(romfile_id) => {
-                ctx.data_unchecked::<DataLoader<RomfileLoader>>()
-                    .load_one(romfile_id)
-                    .await?
-            }
-            None => None,
-        })
-    }
-
-    async fn ignored(&self, ctx: &Context<'_>, system_id: i64) -> Result<bool> {
-        let system_loader = ctx.data_unchecked::<DataLoader<SystemLoader>>();
-        let system = system_loader.load_one(system_id).await?.unwrap();
-
-        if !system.arcade || self.parent_id.is_none() {
-            return Ok(false);
-        }
-
-        let merging = Merging::from_i64(system.merging).unwrap();
-        let ignored = match merging {
-            Merging::Split => true,
-            Merging::NonMerged | Merging::Merged => {
-                let sql = format!(
-                    "
-                        SELECT g.bios
-                        FROM roms AS r
-                        JOIN games AS g ON r.game_id = g.id
-                        WHERE r.id = {};
-                    ",
-                    self.parent_id.unwrap()
-                );
-                let row: (bool,) = sqlx::query_as(&sql)
-                    .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
-                    .await?;
-                row.0
-            }
-            Merging::FullNonMerged | Merging::FullMerged => false,
-        };
-        Ok(ignored)
-    }
-}
-
-pub struct SystemLoader;
-
-#[async_trait]
-impl Loader<i64> for SystemLoader {
-    type Value = System;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM systems
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|system: System| (system.id, system))
-            .try_collect()
-            .await?)
-    }
-}
-
-pub struct GameLoader;
-
-#[async_trait]
-impl Loader<i64> for GameLoader {
-    type Value = Game;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM games
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|game: Game| (game.id, game))
-            .try_collect()
-            .await?)
-    }
-}
-
-pub struct RomfileLoader;
-
-#[async_trait]
-impl Loader<i64> for RomfileLoader {
-    type Value = Romfile;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
-            "
-        SELECT *
-        FROM romfiles
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(&query)
-            .fetch(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .map_ok(|romfile: Romfile| (romfile.id, romfile))
-            .try_collect()
-            .await?)
-    }
-}
-
-struct QueryRoot;
-
-#[Object]
-impl QueryRoot {
-    async fn systems(&self) -> Result<Vec<System>> {
-        Ok(find_systems(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
-    }
-
-    async fn games(&self, system_id: i64) -> Result<Vec<Game>> {
-        Ok(
-            find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), system_id)
-                .await,
-        )
-    }
-
-    async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
-        Ok(
-            find_roms_by_game_id_parents(
-                &mut POOL.get().unwrap().acquire().await.unwrap(),
-                game_id,
-            )
-            .await,
-        )
-    }
-
-    async fn total_original_size(&self, system_id: i64) -> Result<i64> {
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(r.size), 0)
-                FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                AND g.system_id = {};
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
-    }
-
-    async fn one_region_original_size(&self, system_id: i64) -> Result<i64> {
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(r.size), 0)
-                FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                AND g.sorting = 1
-                AND g.system_id = {};
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
-    }
-
-    async fn total_actual_size(&self, system_id: i64) -> Result<i64> {
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles AS rf
-                WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                    JOIN games AS g ON r.game_id = g.id
-                    WHERE r.romfile_id IS NOT NULL
-                    AND g.system_id = {}
-                );
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
-    }
-
-    async fn one_region_actual_size(&self, system_id: i64) -> Result<i64> {
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles AS rf
-                WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                    JOIN games AS g ON r.game_id = g.id
-                    WHERE r.romfile_id IS NOT NULL
-                    AND g.sorting = 1
-                    AND g.system_id = {}
-                );
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut POOL.get().unwrap().acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
-    }
-}
-
 async fn serve_asset(req: tide::Request<()>) -> tide::Result {
     let file_path = req.param("path").unwrap_or("index.html");
     match Assets::get(file_path) {
@@ -320,7 +70,7 @@ async fn serve_asset(req: tide::Request<()>) -> tide::Result {
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription)
+    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
         .data(DataLoader::new(SystemLoader, async_std::task::spawn))
         .data(DataLoader::new(GameLoader, async_std::task::spawn))
         .data(DataLoader::new(RomfileLoader, async_std::task::spawn))

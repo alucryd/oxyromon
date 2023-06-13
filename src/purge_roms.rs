@@ -53,10 +53,10 @@ pub async fn main(
         purge_missing_romfiles(connection, progress_bar).await?;
     }
     if matches.get_flag("TRASH") {
-        purge_trashed_romfiles(connection, matches, progress_bar).await?;
+        purge_trashed_romfiles(connection, progress_bar, matches.get_flag("YES")).await?;
     }
     if matches.get_flag("ORPHAN") {
-        purge_orphan_romfiles(connection, progress_bar).await?;
+        purge_orphan_romfiles(connection, progress_bar, matches.get_flag("YES")).await?;
     }
     for system in find_systems(connection).await {
         if system.arcade {
@@ -96,8 +96,8 @@ async fn purge_missing_romfiles(
 
 async fn purge_trashed_romfiles(
     connection: &mut SqliteConnection,
-    matches: &ArgMatches,
     progress_bar: &ProgressBar,
+    answer_yes: bool,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing trashed ROM files");
 
@@ -110,7 +110,7 @@ async fn purge_trashed_romfiles(
             progress_bar.println(&romfile.path);
         }
 
-        if matches.get_flag("YES") || confirm(true)? {
+        if answer_yes || confirm(true)? {
             let mut transaction = begin_transaction(connection).await;
 
             for romfile in &romfiles {
@@ -136,13 +136,45 @@ async fn purge_trashed_romfiles(
 async fn purge_orphan_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    answer_yes: bool,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing orphan ROM files");
-    delete_romfiles_without_rom(connection).await;
+
+    let romfiles = find_orphan_romfiles(connection).await;
+    let mut count = 0;
+
+    if !romfiles.is_empty() {
+        progress_bar.println("Summary:");
+        for romfile in &romfiles {
+            progress_bar.println(&romfile.path);
+        }
+
+        if answer_yes || confirm(true)? {
+            let mut transaction = begin_transaction(connection).await;
+
+            for romfile in &romfiles {
+                let romfile_path = Path::new(&romfile.path);
+                if romfile_path.is_file().await {
+                    remove_file(progress_bar, &romfile_path, false).await?;
+                    delete_romfile_by_id(&mut transaction, romfile.id).await;
+                    count += 1;
+                }
+            }
+
+            commit_transaction(transaction).await;
+
+            if count > 0 {
+                progress_bar.println(format!("Deleted {} trashed ROM file(s)", count));
+            }
+        }
+    }
+
     Ok(())
 }
 
 #[cfg(test)]
 mod test_missing;
+#[cfg(test)]
+mod test_orphans;
 #[cfg(test)]
 mod test_trashed;

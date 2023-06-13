@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        DELETE FROM roms\n        WHERE name = ?\n        AND game_id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "f4d60d24b7c389d4f60d84495abe94de0b2e000bc2439c90a7a5c23175b50da8"
+}

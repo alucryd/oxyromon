@@ -1,3 +1,13 @@
+# 0.16.0
+- Use original names for PSN stuff
+- Add a language whitelist setting
+- Always name archives after the game name
+- Add support for NSZ
+- Expose most settings in the web UI
+- Make ignored status take precedence over complete status in the web UI
+- Additionally match the whole flag string to allow discarding specific flag combinations
+- Make `purge-roms` physically delete orphan ROMs
+
 # 0.15.0
 
 - Use archive name and directory names in the archive when importing arcade games

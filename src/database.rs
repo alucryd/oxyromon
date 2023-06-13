@@ -2385,6 +2385,30 @@ pub async fn find_romfiles_by_system_id(
     .expect("Error while finding romfiles in trash")
 }
 
+pub async fn find_orphan_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles rf
+        WHERE NOT EXISTS (
+            SELECT r.id
+            FROM roms r
+            WHERE r.romfile_id = rf.id
+        )
+        AND NOT EXISTS (
+            SELECT g.id
+            FROM games g
+            WHERE g.playlist_id = rf.id
+        )
+        ORDER BY path
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding romfiles in trash")
+}
+
 pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Romfile> {
     sqlx::query_as!(
         Romfile,
@@ -2466,23 +2490,6 @@ pub async fn delete_romfile_by_id(connection: &mut SqliteConnection, id: i64) {
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while deleting romfile with id {}", id));
-}
-
-pub async fn delete_romfiles_without_rom(connection: &mut SqliteConnection) {
-    sqlx::query!(
-        "
-        DELETE
-        FROM romfiles
-        WHERE id NOT IN (
-            SELECT DISTINCT(romfile_id)
-            FROM roms 
-            WHERE romfile_id IS NOT NULL
-        )
-        "
-    )
-    .execute(connection)
-    .await
-    .expect("Error while finding romfiles without rom");
 }
 
 pub async fn create_header_from_xml(

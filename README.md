@@ -69,6 +69,7 @@ The build uses rustls by default, but you can also opt for openssl:
 | chd            | CHD support                                                   | x       |
 | cso            | CSO support                                                   | x       |
 | ird            | IRD support                                                   | x       |
+| nsz            | NSZ support                                                   | x       |
 | rvz            | RVZ support                                                   | x       |
 | benchmark      | build the benchmark subcommand                                |         |
 | server         | build the server subcommand                                   |         |
@@ -94,8 +95,9 @@ Available settings:
 - `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
 - `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
-- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files
-- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file
+- `LANGUAGES`: List of languages you want to keep, applies only to ROMs that do specify them (eg: `En,Ja`)
+- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files (eg: `US,EU,JP`)
+- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file (eg: `US,EU`)
 - `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
@@ -156,6 +158,7 @@ These should be in your `${PATH}` for extra features.
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
 - [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO support (optional)
+- [nsz](https://github.com/nicoboss/nsz): NSZ support (optional, needs [this PR](https://github.com/nicoboss/nsz/pull/131))
 
 ### TODO
 
@@ -164,6 +167,7 @@ These should be in your `${PATH}` for extra features.
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
+- Craft some unit tests for NSZ
 - Craft some unit tests for RVZ
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible and requested
@@ -299,6 +303,7 @@ Supported console ROM formats:
 - 7Z and ZIP archives
 - CHD (Compressed Hunks of Data)
 - CSO (Compressed ISO)
+- NSZ (Compressed NSP)
 - RVZ (Modern Dolphin format)
 - JB folders (Extracted PS3 ISO)
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { faGamepad } from "@fortawesome/free-solid-svg-icons";
+  import { faGear } from "@fortawesome/free-solid-svg-icons";
   import "bootstrap/dist/css/bootstrap.min.css";
   import Fa from "svelte-fa";
   import {
@@ -15,7 +15,15 @@
     NavbarToggler,
   } from "sveltestrap";
 
-  import { completeFilter, ignoredFilter, incompleteFilter, nameFilter, oneRegionFilter } from "../store.js";
+  import SettingsModal from "../components/SettingsModal.svelte";
+  import {
+    completeFilter,
+    ignoredFilter,
+    incompleteFilter,
+    isSettingsModalOpen,
+    nameFilter,
+    oneRegionFilter,
+  } from "../store.js";
 
   let navbarIsOpen = false;
 
@@ -41,28 +49,39 @@
       <ButtonToolbar class="d-flex">
         <ButtonGroup class="ms-3">
           <Button color="primary" bind:active={$oneRegionFilter} on:click={() => oneRegionFilter.update((b) => !b)}>
-            1G1R
+            {#if $oneRegionFilter}Show All{:else}Show 1G1R only{/if}
           </Button>
         </ButtonGroup>
         <ButtonGroup class="ms-3">
           <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
-            Complete
+            {#if $completeFilter}Hide{:else}Show{/if} Complete
           </Button>
           <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
-            Incomplete
+            {#if $incompleteFilter}Hide{:else}Show{/if} Incomplete
           </Button>
           <Button color="secondary" bind:active={$ignoredFilter} on:click={() => ignoredFilter.update((b) => !b)}>
-            Ignored
+            {#if $ignoredFilter}Hide{:else}Show{/if} Ignored
           </Button>
         </ButtonGroup>
         <InputGroup class="ms-3">
           <Input placeholder="Game Name" bind:value={$nameFilter} />
         </InputGroup>
+        <ButtonGroup class="ms-3">
+          <Button
+            color="dark"
+            bind:active={$isSettingsModalOpen}
+            on:click={() => isSettingsModalOpen.update((b) => !b)}
+          >
+            <Fa icon={faGear} />
+          </Button>
+        </ButtonGroup>
       </ButtonToolbar>
-    </Collapse> />
+    </Collapse>
   </Navbar>
 
   <Container fluid class="flex-fill">
     <slot />
   </Container>
+
+  <SettingsModal toggle={() => isSettingsModalOpen.update((b) => !b)} />
 </div>

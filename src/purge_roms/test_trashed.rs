@@ -57,9 +57,7 @@ async fn test() {
         .unwrap();
 
     // when
-    let matches = subcommand().get_matches_from(&["purge-roms", "-y"]);
-
-    purge_trashed_romfiles(&mut connection, &matches, &progress_bar)
+    purge_trashed_romfiles(&mut connection, &progress_bar, true)
         .await
         .unwrap();
 

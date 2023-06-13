@@ -45,7 +45,7 @@ async fn test() {
         .await
         .unwrap();
 
-    for i in 1..3 {
+    for i in 1..=2 {
         let romfile_name = format!("Test Game (USA, Europe) (Disc {}).iso", i);
         let romfile_path = tmp_directory.join(&romfile_name);
         fs::copy(test_directory.join(&romfile_name), &romfile_path)

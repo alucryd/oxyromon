@@ -57,3 +57,6 @@ async fn purge_system(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_purge_systems;
