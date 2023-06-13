@@ -22,13 +22,9 @@ async fn test() {
     };
 
     // when
-    let path = compute_new_playlist_path(
-        &game,
-        &test_directory,
-        &SubfolderScheme::Alpha,
-    )
-    .await
-    .unwrap();
+    let path = compute_new_playlist_path(&game, &test_directory, &SubfolderScheme::Alpha)
+        .await
+        .unwrap();
 
     // then
     assert_eq!(path, test_directory.join("G/game name.m3u"));
