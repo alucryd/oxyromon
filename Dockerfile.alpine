@@ -2,7 +2,9 @@ FROM alpine
 
 WORKDIR /usr/src/oxyromon
 COPY . .
-RUN apk add --no-cache cargo dolphin-emu musl-dev 7zip rust yarn && \
+RUN apk add --no-cache build-base dolphin-emu musl-dev 7zip rustup yarn && \
+    rustup-init -y && \
+    source /root/.cargo/env && \
     cargo install \
     --no-default-features \
     --features use-rustls,enable-asm,rvz,benchmark,server \
@@ -10,8 +12,8 @@ RUN apk add --no-cache cargo dolphin-emu musl-dev 7zip rust yarn && \
     --path . && \
     cargo clean && \
     yarn cache clean --all && \
-    rm -rf /root/.cargo /tmp/* && \
-    apk del --no-cache cargo musl-dev rust yarn
+    rm -rf /root/.cargo /root/.rustup /tmp/* && \
+    apk del --no-cache build-base musl-dev rustup yarn
 
 WORKDIR /
 RUN rm -rf /usr/src/oxyromon
