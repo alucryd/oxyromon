@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (RVZ)</name>
+		<description>Test System (RVZ)</description>
+		<version>20230618</version>
+		<date>20230618</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA)">
+		<description>Test Game (USA)</description>
+		<release name="Test Game (USA)" region="USA" />
+		<rom name="Test Game (USA).iso" size="1013760" crc="ba308785"
+			md5="bed7fedbecab1b5b794df190dcd287f8" sha1="e329534a00ecfb5c2d7f48b4d1b7f0097d968e43" />
+	</game>
+</datafile>
