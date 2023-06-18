@@ -502,6 +502,8 @@ mod test_chd_multiple_tracks;
 mod test_chd_single_track;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

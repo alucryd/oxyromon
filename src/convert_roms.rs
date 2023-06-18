@@ -1911,14 +1911,20 @@ mod test_chd_to_iso;
 mod test_cso_to_chd;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_iso;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz_to_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_sevenzip_iso;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
 mod test_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
 mod test_iso_to_cso;
+#[cfg(all(test, feature = "rvz"))]
+mod test_iso_to_rvz;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(all(test, feature = "chd"))]
