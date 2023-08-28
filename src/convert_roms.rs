@@ -291,8 +291,6 @@ async fn to_archive(
     compression_level: usize,
     solid: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
     // remove same type archives
     roms_by_game_id.retain(|_, roms| {
         roms.par_iter().any(|rom| {
@@ -391,6 +389,7 @@ async fn to_archive(
     cfg_if! {
         if #[cfg(feature = "chd")] {
             for roms in chds.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
 
                 if roms.len() == 1 {
@@ -528,6 +527,7 @@ async fn to_archive(
     cfg_if! {
         if #[cfg(feature = "cso")] {
             for roms in csos.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
@@ -582,6 +582,7 @@ async fn to_archive(
     cfg_if! {
         if #[cfg(feature = "nsz")] {
             for roms in nszs.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
@@ -636,6 +637,7 @@ async fn to_archive(
     cfg_if! {
         if #[cfg(feature = "rvz")] {
             for roms in rvzs.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
@@ -688,6 +690,7 @@ async fn to_archive(
 
     // convert archives
     for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
         if roms.len() == 1 {
@@ -913,8 +916,6 @@ async fn to_chd(
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -975,6 +976,7 @@ async fn to_chd(
 
     // convert archives
     for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
@@ -1153,6 +1155,7 @@ async fn to_chd(
     cfg_if! {
         if #[cfg(feature = "cso")] {
             for roms in csos.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
 
                 for rom in roms {
@@ -1173,6 +1176,7 @@ async fn to_chd(
                         chd_path.metadata().await.unwrap().len(),
                     )
                     .await;
+                    // remove_file(progress_bar, &iso_path, false).await?;
                     remove_file(progress_bar, &romfile.path, false).await?;
                 }
 
@@ -1192,8 +1196,6 @@ async fn to_cso(
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1237,6 +1239,7 @@ async fn to_cso(
 
     // convert archives
     for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
@@ -1318,6 +1321,7 @@ async fn to_cso(
     cfg_if! {
         if #[cfg(feature = "chd")] {
             for roms in chds.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
                 let mut transaction = begin_transaction(connection).await;
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -1361,8 +1365,6 @@ async fn to_nsz(
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1389,6 +1391,7 @@ async fn to_nsz(
 
     // convert archives
     for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
@@ -1480,8 +1483,6 @@ async fn to_rvz(
     compression_level: usize,
     block_size: usize,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1508,6 +1509,7 @@ async fn to_rvz(
 
     // convert archives
     for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
@@ -1911,12 +1913,8 @@ mod test_chd_to_iso;
 mod test_cso_to_chd;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_iso;
-#[cfg(all(test, feature = "rvz"))]
-mod test_rvz_to_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_sevenzip_iso;
-#[cfg(all(test, feature = "rvz"))]
-mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
 mod test_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
@@ -1939,6 +1937,10 @@ mod test_original_to_zip_multiple_roms;
 mod test_original_to_zip_with_correct_name;
 #[cfg(test)]
 mod test_original_to_zip_with_incorrect_name;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz_to_iso;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]

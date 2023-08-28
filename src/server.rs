@@ -20,7 +20,7 @@ lazy_static! {
 }
 
 #[derive(RustEmbed)]
-#[folder = "$CARGO_MANIFEST_DIR/target/assets"]
+#[folder = "target/assets"]
 struct Assets;
 
 pub fn subcommand() -> Command {
