@@ -20,7 +20,10 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(iso_path.as_ref().file_name().unwrap());
     cso_path.set_extension(CSO_EXTENSION);
 
-    progress_bar.println(format!("Creating {:?}", cso_path.file_name().unwrap()));
+    progress_bar.println(format!(
+        "Creating \"{}\"",
+        cso_path.file_name().unwrap().to_str().unwrap()
+    ));
 
     let output = Command::new("maxcso")
         .arg(iso_path.as_ref())
@@ -49,8 +52,8 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
-        "Extracting {:?}",
-        cso_path.as_ref().file_name().unwrap()
+        "Extracting \"{}\"",
+        cso_path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
 
     let mut iso_path = directory

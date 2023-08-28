@@ -103,8 +103,8 @@ async fn check_system(
         let roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
         progress_bar.println(format!(
-            "Processing {:?}",
-            romfile_path.file_name().unwrap()
+            "Processing \"{}\"",
+            romfile_path.file_name().unwrap().to_str().unwrap()
         ));
 
         let result;

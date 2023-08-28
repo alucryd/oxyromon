@@ -524,8 +524,12 @@ async fn sort_system(
         progress_bar.println("Summary:");
         for romfile_move in &romfile_moves {
             progress_bar.println(format!(
-                "{:?} -> \"{}\"",
-                Path::new(&romfile_move.0.path).file_name().unwrap(),
+                "\"{}\" -> \"{}\"",
+                Path::new(&romfile_move.0.path)
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
                 romfile_move.1
             ));
         }
