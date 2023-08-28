@@ -17,7 +17,8 @@ use tempfile::NamedTempFile;
 use tempfile::TempDir;
 
 lazy_static! {
-    static ref SYSTEM_NAME_REGEX: Regex = Regex::new(r" \(.*\)").unwrap();
+    static ref SYSTEM_NAME_REGEX: Regex =
+        Regex::new(r"^(Non-Redump - )?([^()]+)( \(.*\))?$").unwrap();
 }
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
@@ -193,8 +194,11 @@ pub async fn get_system_directory(
 ) -> SimpleResult<PathBuf> {
     let system_name = if get_bool(connection, "GROUP_SUBSYSTEMS").await {
         SYSTEM_NAME_REGEX
-            .replace(&system.name, "")
-            .trim()
+            .captures(&system.name)
+            .unwrap()
+            .get(2)
+            .unwrap()
+            .as_str()
             .to_owned()
     } else {
         system.name.trim().to_owned()
@@ -343,3 +347,12 @@ pub async fn compute_arcade_system_incompletion(
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 }
+
+#[cfg(test)]
+mod test_system_directory_no_group_subsystems;
+
+#[cfg(test)]
+mod test_system_directory_group_subsystems;
+
+#[cfg(test)]
+mod test_system_directory_group_non_redump;
