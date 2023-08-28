@@ -1,3 +1,6 @@
+# 0.17.0
+- Clean temporary files immediately in `convert-roms`
+
 # 0.16.0
 - Use original names for PSN stuff
 - Add a language whitelist setting
