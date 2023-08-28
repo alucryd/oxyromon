@@ -392,7 +392,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     if let Some((sfb_rom, game)) =
         find_sfb_rom_by_md5(&mut transaction, size, &md5, system, progress_bar).await?
     {
-        let system_directory = get_system_directory(&mut transaction, progress_bar, system).await?;
+        let system_directory = get_system_directory(&mut transaction, system).await?;
 
         let walker = WalkDir::new(folder_path.as_ref()).into_iter();
         for entry in walker.filter_map(|e| e.ok()) {
@@ -615,7 +615,7 @@ async fn import_archive<P: AsRef<Path>>(
             let game = &roms_games_systems_sevenzip_infos.first().unwrap().1;
             let system = &roms_games_systems_sevenzip_infos.first().unwrap().2;
             system_ids.insert(system.id);
-            let system_directory = get_system_directory(connection, progress_bar, system).await?;
+            let system_directory = get_system_directory(connection, system).await?;
 
             for (rom, _game, _system, sevenzip_info) in &roms_games_systems_sevenzip_infos {
                 if sevenzip_info.path != rom.name {
@@ -679,7 +679,7 @@ async fn import_archive<P: AsRef<Path>>(
         .remove(0);
 
         system_ids.insert(system.id);
-        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+        let system_directory = get_system_directory(connection, &system).await?;
 
         let new_path;
         // put arcade roms and JB folders in subdirectories
@@ -785,7 +785,7 @@ async fn import_chd<P: AsRef<Path>>(
                 return Ok(None);
             }
 
-            let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+            let system_directory = get_system_directory(connection, &system).await?;
 
             let new_cue_path = system_directory.join(&cue_rom.name);
             let mut new_chd_path = new_cue_path.clone();
@@ -834,7 +834,7 @@ async fn import_chd<P: AsRef<Path>>(
         )
         .await?
         {
-            let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+            let system_directory = get_system_directory(connection, &system).await?;
 
             let mut new_chd_path = system_directory.join(&rom.name);
             new_chd_path.set_extension(CHD_EXTENSION);
@@ -890,7 +890,7 @@ async fn import_cso<P: AsRef<Path>>(
     )
     .await?
     {
-        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+        let system_directory = get_system_directory(connection, &system).await?;
 
         let mut new_cso_path = system_directory.join(&rom.name);
         new_cso_path.set_extension(CSO_EXTENSION);
@@ -945,7 +945,7 @@ async fn import_nsz<P: AsRef<Path>>(
     )
     .await?
     {
-        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+        let system_directory = get_system_directory(connection, &system).await?;
 
         let mut new_nsz_path = system_directory.join(&rom.name);
         new_nsz_path.set_extension(NSZ_EXTENSION);
@@ -1000,7 +1000,7 @@ async fn import_rvz<P: AsRef<Path>>(
     )
     .await?
     {
-        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+        let system_directory = get_system_directory(connection, &system).await?;
 
         let mut new_rvz_path = system_directory.join(&rom.name);
         new_rvz_path.set_extension(RVZ_EXTENSION);
@@ -1051,7 +1051,7 @@ async fn import_other<P: AsRef<Path>>(
     )
     .await?
     {
-        let system_directory = get_system_directory(connection, progress_bar, &system).await?;
+        let system_directory = get_system_directory(connection, &system).await?;
 
         let new_path;
         // put arcade roms and JB folders in subdirectories
@@ -1521,12 +1521,12 @@ mod test_chd_multiple_tracks_without_cue_should_fail;
 mod test_chd_single_track;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
-#[cfg(all(test, feature = "rvz"))]
-mod test_rvz;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
 mod test_original_headered;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz;
 #[cfg(test)]
 mod test_sevenzip_multiple_files_full_game;
 #[cfg(test)]

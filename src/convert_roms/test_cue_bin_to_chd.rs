@@ -55,7 +55,7 @@ async fn test_cue_bin_to_chd() {
     romfile_paths.push(romfile_path);
 
     let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+    let system_directory = get_system_directory(&mut connection, &system)
         .await
         .unwrap();
 

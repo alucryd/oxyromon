@@ -393,9 +393,9 @@ async fn sort_system(
         }
     }
 
-    let system_directory = get_system_directory(connection, progress_bar, system).await?;
-    let one_region_directory = get_one_region_directory(connection, progress_bar, system).await?;
-    let trash_directory = get_trash_directory(connection, progress_bar, Some(system)).await?;
+    let system_directory = get_system_directory(connection, system).await?;
+    let one_region_directory = get_one_region_directory(connection, system).await?;
+    let trash_directory = get_trash_directory(connection, Some(system)).await?;
 
     let mut transaction = begin_transaction(connection).await;
 
@@ -954,14 +954,14 @@ mod test_path_chd_multiple_tracks;
 mod test_path_chd_single_track;
 #[cfg(all(test, feature = "cso"))]
 mod test_path_cso;
-#[cfg(all(test, feature = "rvz"))]
-mod test_path_rvz;
 #[cfg(test)]
 mod test_path_original;
 #[cfg(test)]
 mod test_path_playlist;
 #[cfg(test)]
 mod test_path_playlist_subfolder_alpha;
+#[cfg(all(test, feature = "rvz"))]
+mod test_path_rvz;
 #[cfg(test)]
 mod test_path_subfolder_alpha_letter;
 #[cfg(test)]

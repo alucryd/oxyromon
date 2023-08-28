@@ -130,11 +130,11 @@ async fn expand_game(
     compression_level: usize,
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", game.name));
-    let game_directory = get_system_directory(connection, progress_bar, system)
+    let game_directory = get_system_directory(connection, system)
         .await?
         .join(&game.name);
     let mut transaction = begin_transaction(connection).await;
-    let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
+    let archive_romfile_path = get_system_directory(&mut transaction, system)
         .await?
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
     let archive_romfile = find_romfile_by_path(
@@ -207,7 +207,7 @@ async fn trim_game(
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", game.name));
     let mut transaction = begin_transaction(connection).await;
-    let archive_romfile_path = get_system_directory(&mut transaction, progress_bar, system)
+    let archive_romfile_path = get_system_directory(&mut transaction, system)
         .await?
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
     let archive_romfile = find_romfile_by_path(

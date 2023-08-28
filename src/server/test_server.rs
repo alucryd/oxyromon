@@ -166,7 +166,7 @@ async fn test() -> Result<()> {
                             "name": "Test Game (USA, Europe).rom",
                             "romfile": {
                                 "id": 1,
-                                "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &progress_bar, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                                "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
                                 "size": 256
                             },
                             "game": {

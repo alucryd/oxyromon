@@ -482,7 +482,7 @@ async fn move_to_trash(
     system: &System,
     romfile: &Romfile,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, progress_bar, Some(system))
+    let new_path = get_trash_directory(connection, Some(system))
         .await?
         .join(Path::new(&romfile.path).file_name().unwrap());
     rename_file(progress_bar, &romfile.path, &new_path, true).await?;
@@ -502,8 +502,6 @@ mod test_chd_multiple_tracks;
 mod test_chd_single_track;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
-#[cfg(all(test, feature = "rvz"))]
-mod test_rvz;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
@@ -512,6 +510,8 @@ mod test_original_crc_mismatch;
 mod test_original_size_mismatch;
 #[cfg(test)]
 mod test_original_with_header;
+#[cfg(all(test, feature = "rvz"))]
+mod test_rvz;
 #[cfg(test)]
 mod test_sevenzip;
 #[cfg(test)]
