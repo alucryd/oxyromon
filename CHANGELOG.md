@@ -1,6 +1,7 @@
 # 0.17.0
 - Clean temporary files immediately in `convert-roms`
 - Include Non-Redump DATs in the grouped subsystems
+- Don't create empty directories
 
 # 0.16.0
 - Use original names for PSN stuff

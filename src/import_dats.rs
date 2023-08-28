@@ -215,8 +215,8 @@ pub async fn import_dat(
 
     // create necessary directories
     let system = find_system_by_id(&mut transaction, system_id).await;
-    get_system_directory(&mut transaction, progress_bar, &system).await?;
-    get_trash_directory(&mut transaction, progress_bar, Some(&system)).await?;
+    get_system_directory(&mut transaction, &system).await?;
+    get_trash_directory(&mut transaction, Some(&system)).await?;
 
     // update games and systems completion
     if system.arcade {

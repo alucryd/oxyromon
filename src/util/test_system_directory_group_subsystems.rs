@@ -9,7 +9,6 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
-    let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
@@ -32,7 +31,7 @@ async fn test() {
     };
 
     // when
-    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+    let system_directory = get_system_directory(&mut connection, &system)
         .await
         .unwrap();
 

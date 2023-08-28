@@ -51,7 +51,7 @@ async fn test() {
         .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &progress_bar, &system)
+    let system_directory = get_system_directory(&mut connection, &system)
         .await
         .unwrap();
 
@@ -71,11 +71,5 @@ async fn test() {
         .try_collect()
         .await
         .unwrap();
-    assert_eq!(entries.len(), 1);
-    assert_eq!(
-        entries.get(0).unwrap().path(),
-        get_trash_directory(&mut connection, &progress_bar, Some(&system))
-            .await
-            .unwrap()
-    );
+    assert_eq!(entries.len(), 0);
 }

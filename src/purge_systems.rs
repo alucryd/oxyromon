@@ -34,7 +34,7 @@ async fn purge_system(
     progress_bar.println(format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
-    let trash_directory = get_trash_directory(connection, progress_bar, Some(system)).await?;
+    let trash_directory = get_trash_directory(connection, Some(system)).await?;
 
     for romfile in romfiles {
         let new_path = trash_directory.join(Path::new(&romfile.path).file_name().unwrap());

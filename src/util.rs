@@ -189,7 +189,6 @@ pub async fn remove_directory<P: AsRef<Path>>(
 
 pub async fn get_system_directory(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<PathBuf> {
     let system_name = if get_bool(connection, "GROUP_SUBSYSTEMS").await {
@@ -204,34 +203,27 @@ pub async fn get_system_directory(
         system.name.trim().to_owned()
     };
     let system_directory = get_rom_directory(connection).await.join(system_name);
-    create_directory(progress_bar, &system_directory, true).await?;
     Ok(system_directory)
 }
 
 pub async fn get_one_region_directory(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(connection, progress_bar, system)
-        .await?
-        .join("1G1R");
-    create_directory(progress_bar, &trash_directory, true).await?;
+    let trash_directory = get_system_directory(connection, system).await?.join("1G1R");
     Ok(trash_directory)
 }
 
 pub async fn get_trash_directory(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     system: Option<&System>,
 ) -> SimpleResult<PathBuf> {
     let trash_directory = match system {
-        Some(system) => get_system_directory(connection, progress_bar, system)
+        Some(system) => get_system_directory(connection, system)
             .await?
             .join("Trash"),
         None => get_rom_directory(connection).await.join("Trash"),
     };
-    create_directory(progress_bar, &trash_directory, true).await?;
     Ok(trash_directory)
 }
 
