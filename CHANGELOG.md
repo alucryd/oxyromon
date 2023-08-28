@@ -2,6 +2,7 @@
 - Clean temporary files immediately in `convert-roms`
 - Include Non-Redump DATs in the grouped subsystems
 - Don't create empty directories
+- Fix paths displayed on Windows
 
 # 0.16.0
 - Use original names for PSN stuff

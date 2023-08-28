@@ -35,7 +35,10 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(iso_path.as_ref().file_name().unwrap());
     rvz_path.set_extension(RVZ_EXTENSION);
 
-    progress_bar.println(format!("Creating {:?}", rvz_path.file_name().unwrap()));
+    progress_bar.println(format!(
+        "Creating \"{}\"",
+        rvz_path.file_name().unwrap().to_str().unwrap()
+    ));
 
     let output = Command::new(DOLPHIN_TOOL)
         .arg("convert")
@@ -74,8 +77,8 @@ pub fn extract_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
-        "Extracting {:?}",
-        rvz_path.as_ref().file_name().unwrap()
+        "Extracting \"{}\"",
+        rvz_path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
 
     let mut iso_path = directory

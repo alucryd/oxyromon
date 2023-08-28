@@ -20,7 +20,10 @@ pub fn create_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(nsp_path.as_ref().file_name().unwrap());
     nsz_path.set_extension(NSZ_EXTENSION);
 
-    progress_bar.println(format!("Creating {:?}", nsz_path.file_name().unwrap()));
+    progress_bar.println(format!(
+        "Creating \"{}\"",
+        nsz_path.file_name().unwrap().to_str().unwrap()
+    ));
 
     let output = Command::new("nsz")
         .arg("-C")
@@ -52,8 +55,8 @@ pub fn extract_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
-        "Extracting {:?}",
-        nsz_path.as_ref().file_name().unwrap()
+        "Extracting \"{}\"",
+        nsz_path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
 
     let mut nsp_path = directory

@@ -13,7 +13,7 @@ fn main() {
             .arg("build")
             .output()
             .expect("failed to run yarn build");
-        fs::remove_dir_all(".svelte-kit").expect("failed to delete .svelte-kit");
-        fs::remove_dir_all("node_modules").expect("failed to delete node_modules");
+        fs::remove_dir_all(".svelte-kit").ok();
+        fs::remove_dir_all("node_modules").ok();
     }
 }

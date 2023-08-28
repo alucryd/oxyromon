@@ -68,6 +68,5 @@ async fn test() {
         .try_collect()
         .await
         .unwrap();
-    println!("{:?}", entries);
     assert_eq!(entries.len(), 0);
 }

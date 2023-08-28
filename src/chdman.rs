@@ -23,7 +23,10 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(romfile_path.as_ref().file_name().unwrap());
     chd_path.set_extension(CHD_EXTENSION);
 
-    progress_bar.println(format!("Creating {:?}", chd_path.file_name().unwrap()));
+    progress_bar.println(format!(
+        "Creating \"{}\"",
+        chd_path.file_name().unwrap().to_str().unwrap()
+    ));
 
     let output = Command::new("chdman")
         .arg("createcd")
@@ -56,8 +59,8 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     progress_bar.println(format!(
-        "Extracting {:?}",
-        chd_path.as_ref().file_name().unwrap()
+        "Extracting \"{}\"",
+        chd_path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
 
     let cue_path = directory.as_ref().join(format!(
