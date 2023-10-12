@@ -5,6 +5,7 @@ use indicatif::ProgressBar;
 use std::fs::File;
 use std::io::{prelude::*, SeekFrom};
 use std::process::Command;
+use std::str::FromStr;
 use std::time::Duration;
 
 const CA_CERT_SIZE: usize = 0x400;
@@ -49,8 +50,8 @@ pub fn parse_cia<P: AsRef<Path>>(
         if let Some(version_str) = line.strip_prefix("Title version:") {
             if version.is_none() {
                 let version_number_str =
-                    version_str.split_once("v").unwrap().1.trim_end_matches(")");
-                version = Some(u16::from_str_radix(version_number_str, 16).unwrap());
+                    version_str.split_once('v').unwrap().1.trim_end_matches(')');
+                version = Some(u16::from_str(version_number_str).unwrap());
             }
         } else if let Some(tmd_size_str) = line.strip_prefix("TMD size:") {
             tmd_size =
@@ -68,7 +69,7 @@ pub fn parse_cia<P: AsRef<Path>>(
     }
 
     cia_infos.push(ArchiveInfo {
-        path: format!("tmd.{:x}", version.unwrap()),
+        path: format!("tmd.{}", version.unwrap()),
         size: tmd_size + TMD_CERT_SIZE as u64 + CA_CERT_SIZE as u64,
     });
 
