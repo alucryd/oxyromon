@@ -1,6 +1,8 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 use super::checksum::*;
+#[cfg(feature = "cia")]
+use super::cia;
 use super::config::*;
 use super::database::*;
 #[cfg(feature = "rvz")]
@@ -276,6 +278,26 @@ pub async fn import_rom<P: AsRef<Path>>(
                 };
             } else {
                 progress_bar.println("Please rebuild with the CHD feature enabled");
+            }
+        }
+    } else if CIA_EXTENSION == romfile_extension {
+        cfg_if! {
+            if #[cfg(feature = "cia")] {
+                if let Some(system_id) = import_cia(
+                    &mut transaction,
+                    progress_bar,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                    trash,
+                )
+                .await?
+                {
+                    system_ids.insert(system_id);
+                };
+            } else {
+                progress_bar.println("Please rebuild with the CIA feature enabled");
             }
         }
     } else if CSO_EXTENSION == romfile_extension {
@@ -853,6 +875,122 @@ async fn import_chd<P: AsRef<Path>>(
             Ok(None)
         }
     }
+}
+
+#[cfg(feature = "cia")]
+async fn import_cia<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: Option<&System>,
+    header: &Option<Header>,
+    romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
+    trash: bool,
+) -> SimpleResult<Option<i64>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let cia_infos = cia::parse_cia(progress_bar, romfile_path)?;
+
+    let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &cia::ArchiveInfo)> = Vec::new();
+    let mut game_ids: HashSet<i64> = HashSet::new();
+
+    let extracted_files =
+        cia::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path())?;
+
+    for (cia_info, extracted_path) in cia_infos.iter().zip(&extracted_files) {
+        progress_bar.println(format!(
+            "Processing \"{} ({})\"",
+            &cia_info.path,
+            romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+        ));
+
+        let (size, hash) = get_size_and_hash(
+            connection,
+            progress_bar,
+            &extracted_path,
+            header,
+            1,
+            1,
+            hash_algorithm,
+        )
+        .await?;
+        remove_file(progress_bar, &extracted_path, true).await?;
+
+        let path = Path::new(&cia_info.path);
+        let mut game_names: Vec<&str> = Vec::new();
+        game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
+        if let Some(path) = path.parent() {
+            let game_name = path.as_os_str().to_str().unwrap();
+            if !game_name.is_empty() {
+                game_names.push(game_name);
+            }
+        }
+        let rom_name = path.file_name().unwrap().to_str();
+
+        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+            connection,
+            progress_bar,
+            size,
+            &hash,
+            &system,
+            game_names,
+            rom_name,
+            hash_algorithm,
+        )
+        .await?
+        {
+            game_ids.insert(game.id);
+            roms_games_systems_cia_infos.push((rom, game, system, cia_info));
+        }
+    }
+
+    // archive contains a single full game with no invalid file
+    if roms_games_systems_cia_infos.len() == cia_infos.len() && game_ids.len() == 1 {
+        let game_id = game_ids.drain().last().unwrap();
+        let rom_ids: HashSet<i64> = find_roms_by_game_id_no_parents(connection, game_id)
+            .await
+            .into_par_iter()
+            .map(|rom| rom.id)
+            .collect();
+        if rom_ids
+            .difference(
+                &roms_games_systems_cia_infos
+                    .par_iter()
+                    .map(|(rom, _, _, _)| rom.id)
+                    .collect(),
+            )
+            .count()
+            == 0
+        {
+            let game = &roms_games_systems_cia_infos.first().unwrap().1;
+            let system = &roms_games_systems_cia_infos.first().unwrap().2;
+            let system_id = system.id;
+            let system_directory = get_system_directory(connection, system).await?;
+
+            let new_path = system_directory.join(format!("{}.cia", &game.name));
+
+            // move file
+            rename_file(progress_bar, romfile_path, &new_path, false).await?;
+
+            // persist in database
+            create_or_update_romfile(
+                connection,
+                &new_path,
+                &roms_games_systems_cia_infos
+                    .into_iter()
+                    .map(|(rom, _, _, _)| rom)
+                    .collect::<Vec<Rom>>(),
+            )
+            .await;
+
+            return Ok(Some(system_id));
+        }
+    }
+
+    if trash {
+        move_to_trash(connection, progress_bar, romfile_path).await?;
+    }
+
+    Ok(None)
 }
 
 #[cfg(feature = "cso")]

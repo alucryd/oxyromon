@@ -67,6 +67,7 @@ The build uses rustls by default, but you can also opt for openssl:
 | feature        | description                                                   | default |
 | -------------- | ------------------------------------------------------------- | ------- |
 | chd            | CHD support                                                   | x       |
+| cia            | CIA support                                                   | x       |
 | cso            | CSO support                                                   | x       |
 | ird            | IRD support                                                   | x       |
 | nsz            | NSZ support                                                   | x       |
@@ -155,6 +156,7 @@ These should be in your `${PATH}` for extra features.
 
 - [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
 - [chdman](https://www.mamedev.org/release.html): CHD support (optional)
+- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support (optional)
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
 - [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO support (optional)
@@ -302,6 +304,7 @@ Supported console ROM formats:
 - All No-Intro and Redump supported formats
 - 7Z and ZIP archives
 - CHD (Compressed Hunks of Data)
+- CIA (Installable 3DS title)
 - CSO (Compressed ISO)
 - NSZ (Compressed NSP)
 - RVZ (Modern Dolphin format)
