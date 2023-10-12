@@ -952,14 +952,12 @@ async fn import_cia<P: AsRef<Path>>(
             .map(|rom| rom.id)
             .collect();
         if rom_ids
-            .difference(
+            .is_superset(
                 &roms_games_systems_cia_infos
                     .par_iter()
                     .map(|(rom, _, _, _)| rom.id)
                     .collect(),
             )
-            .count()
-            == 0
         {
             let game = &roms_games_systems_cia_infos.first().unwrap().1;
             let system = &roms_games_systems_cia_infos.first().unwrap().2;
