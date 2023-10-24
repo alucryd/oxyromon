@@ -1,9 +1,9 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 use super::checksum::*;
-#[cfg(feature = "cia")]
-use super::cia;
 use super::config::*;
+#[cfg(feature = "cia")]
+use super::ctrtool;
 use super::database::*;
 #[cfg(feature = "rvz")]
 use super::dolphin;
@@ -888,13 +888,14 @@ async fn import_cia<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let cia_infos = cia::parse_cia(progress_bar, romfile_path)?;
+    let cia_infos = ctrtool::parse_cia(progress_bar, romfile_path)?;
 
-    let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &cia::ArchiveInfo)> = Vec::new();
+    let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &ctrtool::ArchiveInfo)> =
+        Vec::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     let extracted_files =
-        cia::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path())?;
+        ctrtool::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path())?;
 
     for (cia_info, extracted_path) in cia_infos.iter().zip(&extracted_files) {
         progress_bar.println(format!(
@@ -951,14 +952,12 @@ async fn import_cia<P: AsRef<Path>>(
             .into_par_iter()
             .map(|rom| rom.id)
             .collect();
-        if rom_ids
-            .is_superset(
-                &roms_games_systems_cia_infos
-                    .par_iter()
-                    .map(|(rom, _, _, _)| rom.id)
-                    .collect(),
-            )
-        {
+        if rom_ids.is_superset(
+            &roms_games_systems_cia_infos
+                .par_iter()
+                .map(|(rom, _, _, _)| rom.id)
+                .collect(),
+        ) {
             let game = &roms_games_systems_cia_infos.first().unwrap().1;
             let system = &roms_games_systems_cia_infos.first().unwrap().2;
             let system_id = system.id;

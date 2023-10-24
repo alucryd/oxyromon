@@ -55,10 +55,10 @@ mod benchmark;
 mod chdman;
 mod check_roms;
 mod checksum;
-#[cfg(feature = "cia")]
-mod cia;
 mod config;
 mod convert_roms;
+#[cfg(feature = "cia")]
+mod ctrtool;
 mod database;
 #[cfg(feature = "rvz")]
 mod dolphin;
