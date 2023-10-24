@@ -1654,6 +1654,8 @@ mod test_chd_multiple_tracks;
 mod test_chd_multiple_tracks_without_cue_should_fail;
 #[cfg(all(test, feature = "chd"))]
 mod test_chd_single_track;
+#[cfg(all(test, feature = "cia"))]
+mod test_cia;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
 #[cfg(test)]
