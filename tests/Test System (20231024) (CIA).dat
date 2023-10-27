@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (CIA)</name>
+		<description>Test System (CIA)</description>
+		<version>20231024</version>
+		<date>20231024</date>
+		<author>leo60228</author>
+	</header>
+	<game name="Test Game (USA, Europe)">
+		<description>Test Game (USA, Europe)</description>
+		<game_id>000400000f800100</game_id>
+		<rom name="00000000" size="1163264" crc="062ee486" md5="ddfb974d7bef2a8cd8c30d7124f30761" sha1="253d9dd59d96b8c764c79002e10f64237642120f"/>
+		<rom name="tmd.2145" size="4660" crc="db775b78" md5="c3a317307032269bf91ac3d61e79b662" sha1="8285b7d64d5f9e67dcbe7bf2010ced381bf4c85d"/>
+	</game>
+</datafile>
