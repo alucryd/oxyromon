@@ -107,6 +107,7 @@ const LIST_SEPARATOR: &str = "|";
 #[cfg(feature = "chd")]
 pub static BIN_EXTENSION: &str = "bin";
 pub static CHD_EXTENSION: &str = "chd";
+pub static CIA_EXTENSION: &str = "cia";
 pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
 pub static ISO_EXTENSION: &str = "iso";
