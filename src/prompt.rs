@@ -188,12 +188,12 @@ pub fn select<T: ToString>(
     max_length: Option<usize>,
 ) -> SimpleResult<usize> {
     let mut select = Select::new();
-    select.items(items).with_prompt(prompt);
+    select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
-        select.default(default);
+        select = select.default(default);
     }
     if let Some(max_length) = max_length {
-        select.max_length(max_length);
+        select = select.max_length(max_length);
     }
     Ok(try_with!(select.interact(), "Failed to get user input"))
 }
@@ -205,12 +205,12 @@ pub fn select_opt<T: ToString>(
     max_length: Option<usize>,
 ) -> SimpleResult<Option<usize>> {
     let mut select = Select::new();
-    select.items(items).with_prompt(prompt);
+    select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
-        select.default(default);
+        select = select.default(default);
     }
     if let Some(max_length) = max_length {
-        select.max_length(max_length);
+        select = select.max_length(max_length);
     }
     Ok(try_with!(select.interact_opt(), "Failed to get user input"))
 }
@@ -222,12 +222,12 @@ pub fn multiselect<T: ToString>(
     max_length: Option<usize>,
 ) -> SimpleResult<Vec<usize>> {
     let mut multiselect = MultiSelect::new();
-    multiselect.items(items).with_prompt(prompt);
+    multiselect = multiselect.items(items).with_prompt(prompt);
     if let Some(defaults) = defaults {
-        multiselect.defaults(defaults);
+        multiselect = multiselect.defaults(defaults);
     }
     if let Some(max_length) = max_length {
-        multiselect.max_length(max_length);
+        multiselect = multiselect.max_length(max_length);
     }
     Ok(try_with!(
         multiselect.interact(),
