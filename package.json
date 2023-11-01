@@ -1,6 +1,6 @@
 {
   "name": "oxyromon",
-  "version": "0.17.0-beta",
+  "version": "0.17.0",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
