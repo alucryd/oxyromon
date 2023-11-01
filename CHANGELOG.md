@@ -3,6 +3,7 @@
 - Include Non-Redump DATs in the grouped subsystems
 - Don't create empty directories
 - Fix paths displayed on Windows
+- Add support for importing CIA files (@leo60228)
 
 # 0.16.0
 - Use original names for PSN stuff
