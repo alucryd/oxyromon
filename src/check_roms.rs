@@ -89,7 +89,7 @@ async fn check_system(
     roms.into_iter().for_each(|rom| {
         let group = roms_by_romfile_id
             .entry(rom.romfile_id.unwrap())
-            .or_insert_with(Vec::new);
+            .or_default();
         group.push(rom);
     });
 

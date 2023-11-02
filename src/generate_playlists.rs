@@ -63,7 +63,7 @@ async fn process_system(
         .filter(|game| DISC_REGEX.is_match(&game.name))
         .for_each(|game| {
             let playlist_name = format!("{}.{}", DISC_REGEX.replace(&game.name, ""), M3U_EXTENSION);
-            let group = grouped_games.entry(playlist_name).or_insert_with(Vec::new);
+            let group = grouped_games.entry(playlist_name).or_default();
             group.push(game);
         });
 
