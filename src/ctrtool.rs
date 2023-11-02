@@ -30,12 +30,18 @@ pub fn parse_cia<P: AsRef<Path>>(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     let output = Command::new("ctrtool")
-        .arg("-i")
+        .arg("-p")
+        .arg("-v")
         .arg(cia_path.as_ref())
         .output()
         .expect("Failed to parse CIA");
 
-    if !output.status.success() {
+    if !output.status.success()
+        // error expected when using -p with non-homebrew titles
+        && !output
+            .stdout
+            .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
+    {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
     }
 
@@ -47,22 +53,26 @@ pub fn parse_cia<P: AsRef<Path>>(
     let mut content_id = None;
 
     for line in stdout.lines() {
-        if let Some(version_str) = line.strip_prefix("Title version:") {
-            if version.is_none() {
-                let version_number_str =
-                    version_str.split_once('v').unwrap().1.trim_end_matches(')');
-                version = Some(u16::from_str(version_number_str).unwrap());
-            }
-        } else if let Some(tmd_size_str) = line.strip_prefix("TMD size:") {
+        if let Some(version_str) = line.strip_prefix("|- TitleVersion:  ") {
+            let version_number_str = version_str.split_once('(').unwrap().1.trim_end_matches(')');
+            version = Some(u16::from_str(version_number_str).unwrap());
+        } else if let Some(tmd_size_str) = line.strip_prefix("|- TitleMetaSize:") {
             tmd_size =
                 u64::from_str_radix(tmd_size_str.trim().trim_start_matches("0x"), 16).unwrap();
-        } else if let Some(content_id_str) = line.strip_prefix("Content id:") {
+        } else if let Some(content_id_str) = line
+            .trim_start_matches(&[' ', '|', '\\', '-'])
+            .strip_prefix("ContentId:   0x")
+        {
             content_id = Some(content_id_str.trim().to_string());
-        } else if let Some(content_size_str) = line.strip_prefix("Content size:") {
+        } else if let Some(content_size_str) = line
+            .trim_start_matches(&[' ', '|', '\\', '-'])
+            .strip_prefix("Size:")
+        {
             if let Some(content_id) = content_id.take() {
                 cia_infos.push(ArchiveInfo {
                     path: content_id,
-                    size: u64::from_str_radix(content_size_str.trim(), 16).unwrap(),
+                    size: u64::from_str_radix(content_size_str.trim().trim_start_matches("0x"), 16)
+                        .unwrap(),
                 });
             }
         }
@@ -93,6 +103,7 @@ pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let output = Command::new("ctrtool")
         .arg("-p")
+        .arg("-v")
         .arg("--certs=certs")
         .arg("--tmd=tmd")
         .arg("--contents=content")
@@ -101,14 +112,20 @@ pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
         .output()
         .expect("Failed to extract archive");
 
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str())
+    let stderr = String::from_utf8(output.stderr).unwrap();
+
+    if !output.status.success()
+        // error expected when using -p with non-homebrew titles
+        && !output
+            .stdout
+            .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
+    {
+        bail!(stderr.as_str())
     }
 
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    for line in stdout.lines() {
-        if let Some(content_str) = line.strip_prefix("Saving content #") {
-            let filename = &content_str[8..];
+    for line in stderr.lines() {
+        if let Some(content_str) = line.strip_prefix("[ctrtool::CiaProcess LOG] Saving content ") {
+            let filename = &content_str[8..content_str.len() - 3];
             extracted_paths.push(directory.join(filename));
         }
     }
