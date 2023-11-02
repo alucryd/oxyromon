@@ -25,7 +25,7 @@ pub fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
 ) -> SimpleResult<Vec<ArchiveInfo>> {
-    progress_bar.set_message("Parsing ctrtool");
+    progress_bar.set_message("Parsing CIA");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -60,12 +60,12 @@ pub fn parse_cia<P: AsRef<Path>>(
             tmd_size =
                 u64::from_str_radix(tmd_size_str.trim().trim_start_matches("0x"), 16).unwrap();
         } else if let Some(content_id_str) = line
-            .trim_start_matches(&[' ', '|', '\\', '-'])
+            .trim_start_matches([' ', '|', '\\', '-'])
             .strip_prefix("ContentId:   0x")
         {
             content_id = Some(content_id_str.trim().to_string());
         } else if let Some(content_size_str) = line
-            .trim_start_matches(&[' ', '|', '\\', '-'])
+            .trim_start_matches([' ', '|', '\\', '-'])
             .strip_prefix("Size:")
         {
             if let Some(content_id) = content_id.take() {

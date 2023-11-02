@@ -479,8 +479,7 @@ async fn create_or_update_roms(
                 )
                 .await;
             }
-            if parent_rom.is_some() {
-                let parent_rom = parent_rom.unwrap();
+            if let Some(parent_rom) = parent_rom {
                 bios = parent_rom.bios;
                 parent_id = parent_rom.parent_id.or(Some(parent_rom.id));
             } else {

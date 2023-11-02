@@ -226,7 +226,7 @@ async fn sort_system(
         clone_games.into_iter().for_each(|game| {
             let group = clone_games_by_parent_id
                 .entry(game.parent_id.unwrap())
-                .or_insert_with(Vec::new);
+                .or_default();
             group.push(game);
         });
 
@@ -270,8 +270,8 @@ async fn sort_system(
                             .unwrap_or_default()
                             .contains(region)
                 });
-                if i.is_some() {
-                    let game = games.remove(i.unwrap());
+                if let Some(i) = i {
+                    let game = games.remove(i);
                     if game.complete {
                         one_region_games.push(game);
                     } else {
@@ -602,7 +602,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
 
     let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
-        let group = roms_by_game_id.entry(rom.game_id).or_insert_with(Vec::new);
+        let group = roms_by_game_id.entry(rom.game_id).or_default();
         group.push(rom);
     });
 
