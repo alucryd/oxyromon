@@ -2,12 +2,12 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
-use async_std::path::Path;
 use std::env;
+use std::path::Path;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -76,7 +76,7 @@ async fn test() {
     let playlist = find_romfile_by_id(&mut connection, playlist_id.unwrap()).await;
     let playlist_path = system_directory.join("Test Game (USA, Europe).m3u");
     assert_eq!(playlist.path, playlist_path.as_os_str().to_str().unwrap());
-    assert!(playlist_path.is_file().await);
+    assert!(playlist_path.is_file());
 
     let lines = fs::read_to_string(playlist_path)
         .await

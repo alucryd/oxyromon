@@ -1,11 +1,11 @@
 use super::super::config::*;
 use super::super::database::*;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;

@@ -1,11 +1,8 @@
 use super::database::*;
 use super::mutation::Mutation;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
-use async_ctrlc::CtrlC;
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
-use async_std::path::Path;
-use async_std::prelude::FutureExt;
 use clap::{Arg, ArgMatches, Command};
 use http_types::mime::BYTE_STREAM;
 use http_types::{Mime, StatusCode};
@@ -14,6 +11,9 @@ use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
+use std::path::Path;
+use tokio::select;
+use tokio::signal::ctrl_c;
 
 lazy_static! {
     pub static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
@@ -67,33 +67,33 @@ async fn serve_asset(req: tide::Request<()>) -> tide::Result {
     }
 }
 
+async fn run(address: &str, port: &str) -> SimpleResult<()> {
+    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
+        .data(DataLoader::new(SystemLoader, tokio::task::spawn))
+        .data(DataLoader::new(GameLoader, tokio::task::spawn))
+        .data(DataLoader::new(RomfileLoader, tokio::task::spawn))
+        .finish();
+
+    let mut app = tide::new();
+    app.at("/").get(serve_asset);
+    app.at("/*path").get(serve_asset);
+    app.at("/graphql").post(async_graphql_tide::graphql(schema));
+    try_with!(
+        app.listen(format!("{}:{}", address, port)).await,
+        "Failed to run server"
+    );
+    Ok(())
+}
+
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
-    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
-        .data(DataLoader::new(SystemLoader, async_std::task::spawn))
-        .data(DataLoader::new(GameLoader, async_std::task::spawn))
-        .data(DataLoader::new(RomfileLoader, async_std::task::spawn))
-        .finish();
-
-    let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
-    ctrlc
-        .race(async {
-            let mut app = tide::new();
-
-            app.at("/").get(serve_asset);
-            app.at("/*path").get(serve_asset);
-
-            app.at("/graphql").post(async_graphql_tide::graphql(schema));
-
-            let address = matches.get_one::<String>("ADDRESS").unwrap();
-            let port = matches.get_one::<String>("PORT").unwrap();
-            app.listen(format!("{}:{}", address, port))
-                .await
-                .expect("Failed to run server");
-        })
-        .await;
-    close_connection(POOL.get().unwrap()).await;
+    select! {
+        Ok(()) = ctrl_c() => {
+            close_connection(POOL.get().unwrap()).await;
+        }
+        Ok(()) = run(matches.get_one::<String>("ADDRESS").unwrap(), matches.get_one::<String>("PORT").unwrap()) => {}
+    }
     Ok(())
 }
 

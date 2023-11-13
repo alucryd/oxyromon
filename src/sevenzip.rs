@@ -1,9 +1,9 @@
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 use std::time::Duration;
@@ -224,7 +224,7 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let destination_file: File;
     let mut destination_archive: ZipWriter<File>;
-    if destination_path.as_ref().is_file().await {
+    if destination_path.as_ref().is_file() {
         destination_file = OpenOptions::new()
             .read(true)
             .write(true)

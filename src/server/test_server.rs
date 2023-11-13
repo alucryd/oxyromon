@@ -8,16 +8,16 @@ use super::super::sort_roms;
 use super::super::util::*;
 use super::*;
 use async_graphql::Result;
-use async_std::fs;
-use async_std::path::PathBuf;
-use async_std::task;
 use indicatif::ProgressBar;
 use serde_json::{json, Value};
-use std::time::Duration;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tide::Body;
+use tokio::fs;
+use tokio::select;
+use tokio::time::{sleep, Duration};
 
-#[async_std::test]
+#[tokio::test]
 async fn test() -> Result<()> {
     // given
     let _guard = MUTEX.lock().await;
@@ -76,138 +76,138 @@ async fn test() -> Result<()> {
 
     // when
     let matches = subcommand().get_matches_from(&["server"]);
-    task::block_on(async {
-        let server: task::JoinHandle<Result<()>> = task::spawn(async move {
-            main(pool, &matches).await?;
-            Ok(())
-        });
+    let server = async move {
+        main(pool, &matches).await.unwrap();
+    };
 
-        let client: task::JoinHandle<Result<()>> = task::spawn(async move {
-            task::sleep(Duration::from_millis(1000)).await;
+    let client = async move {
+        sleep(Duration::from_millis(1000)).await;
 
-            let string = surf::post("http://127.0.0.1:8000/graphql")
-                .body(Body::from(
-                    r#"{"query":"{ systems { id, name, header { id, name } } }"}"#,
-                ))
-                .header("Content-Type", "application/json")
-                .recv_string()
-                .await?;
+        let string = surf::post("http://127.0.0.1:8000/graphql")
+            .body(Body::from(
+                r#"{"query":"{ systems { id, name, header { id, name } } }"}"#,
+            ))
+            .header("Content-Type", "application/json")
+            .recv_string()
+            .await
+            .unwrap();
 
-            let v: Value = serde_json::from_str(&string)?;
-            assert_eq!(
-                v["data"]["systems"],
-                json!(
-                    [
-                        {
-                            "id": 1,
-                            "name": "Test System",
-                            "header": null
-                        }
-                    ]
-                )
-            );
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(
+            v["data"]["systems"],
+            json!(
+                [
+                    {
+                        "id": 1,
+                        "name": "Test System",
+                        "header": null
+                    }
+                ]
+            )
+        );
 
-            let string = surf::post("http://127.0.0.1:8000/graphql")
-                .body(Body::from(
-                    r#"{"query":"{ games(systemId: 1) { id, name } }"}"#,
-                ))
-                .header("Content-Type", "application/json")
-                .recv_string()
-                .await?;
+        let string = surf::post("http://127.0.0.1:8000/graphql")
+            .body(Body::from(
+                r#"{"query":"{ games(systemId: 1) { id, name } }"}"#,
+            ))
+            .header("Content-Type", "application/json")
+            .recv_string()
+            .await
+            .unwrap();
 
-            let v: Value = serde_json::from_str(&string)?;
-            assert_eq!(
-                v["data"]["games"],
-                json!(
-                    [
-                        {
-                            "id": 5,
-                            "name": "Test Game (Asia)"
-                        },
-                        {
-                            "id": 4,
-                            "name": "Test Game (Japan)"
-                        },
-                        {
-                            "id": 1,
-                            "name": "Test Game (USA, Europe)"
-                        },
-                        {
-                            "id": 6,
-                            "name": "Test Game (USA, Europe) (Beta)"
-                        },
-                        {
-                            "id": 3,
-                            "name": "Test Game (USA, Europe) (CUE BIN)"
-                        },
-                        {
-                            "id": 2,
-                            "name": "Test Game (USA, Europe) (ISO)"
-                        }
-                    ]
-                )
-            );
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(
+            v["data"]["games"],
+            json!(
+                [
+                    {
+                        "id": 5,
+                        "name": "Test Game (Asia)"
+                    },
+                    {
+                        "id": 4,
+                        "name": "Test Game (Japan)"
+                    },
+                    {
+                        "id": 1,
+                        "name": "Test Game (USA, Europe)"
+                    },
+                    {
+                        "id": 6,
+                        "name": "Test Game (USA, Europe) (Beta)"
+                    },
+                    {
+                        "id": 3,
+                        "name": "Test Game (USA, Europe) (CUE BIN)"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Test Game (USA, Europe) (ISO)"
+                    }
+                ]
+            )
+        );
 
-            let string = surf::post("http://127.0.0.1:8000/graphql")
+        let string = surf::post("http://127.0.0.1:8000/graphql")
                 .body(Body::from(
                     r#"{"query":"{ roms(gameId: 1) { id, name, romfile { id, path, size }, game { id, name, system { id, name } } } }"}"#,
                 ))
                 .header("Content-Type", "application/json")
                 .recv_string()
-                .await?;
+                .await.unwrap();
 
-            let v: Value = serde_json::from_str(&string)?;
-            assert_eq!(
-                v["data"]["roms"],
-                json!(
-                    [
-                        {
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(
+            v["data"]["roms"],
+            json!(
+                [
+                    {
+                        "id": 1,
+                        "name": "Test Game (USA, Europe).rom",
+                        "romfile": {
                             "id": 1,
-                            "name": "Test Game (USA, Europe).rom",
-                            "romfile": {
+                            "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                            "size": 256
+                        },
+                        "game": {
+                            "id": 1,
+                            "name": "Test Game (USA, Europe)",
+                            "system": {
                                 "id": 1,
-                                "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
-                                "size": 256
-                            },
-                            "game": {
-                                "id": 1,
-                                "name": "Test Game (USA, Europe)",
-                                "system": {
-                                    "id": 1,
-                                    "name": "Test System"
-                                }
-                            },
-                        }
-                    ]
-                )
-            );
+                                "name": "Test System"
+                            }
+                        },
+                    }
+                ]
+            )
+        );
 
-            let string = surf::post("http://127.0.0.1:8000/graphql")
+        let string = surf::post("http://127.0.0.1:8000/graphql")
                 .body(Body::from(
                     r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1) }"}"#,
                 ))
                 .header("Content-Type", "application/json")
                 .recv_string()
-                .await?;
+                .await.unwrap();
 
-            let v: Value = serde_json::from_str(&string)?;
-            assert_eq!(
-                v["data"],
-                json!(
-                    {
-                        "totalOriginalSize": 512,
-                        "oneRegionOriginalSize": 256,
-                        "totalActualSize": 512,
-                        "oneRegionActualSize": 256,
-                    }
-                )
-            );
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(
+            v["data"],
+            json!(
+                {
+                    "totalOriginalSize": 512,
+                    "oneRegionOriginalSize": 256,
+                    "totalActualSize": 512,
+                    "oneRegionActualSize": 256,
+                }
+            )
+        );
+    };
 
-            Ok(())
-        });
+    select! {
+        _ = server => {}
+        _ = client => {}
+    }
 
-        server.race(client).await?;
-
-        Ok(())
-    })
+    Ok(())
 }

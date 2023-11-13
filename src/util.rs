@@ -3,8 +3,8 @@ use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
-use async_std::fs;
-use async_std::path::{Path, PathBuf};
+use tokio::fs;
+use std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
@@ -23,7 +23,7 @@ lazy_static! {
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
-        path.as_ref().canonicalize().await,
+        path.as_ref().canonicalize(),
         "Failed to get canonicalized path for \"{}\"",
         path.as_ref().as_os_str().to_str().unwrap()
     );
@@ -92,7 +92,7 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
-        if !new_directory.is_dir().await {
+        if !new_directory.is_dir() {
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
@@ -119,7 +119,7 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
-        if !new_directory.is_dir().await {
+        if !new_directory.is_dir() {
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
@@ -168,7 +168,7 @@ pub async fn create_directory<P: AsRef<Path>>(
             path.as_ref().as_os_str().to_str().unwrap()
         ));
     }
-    if !path.as_ref().is_dir().await {
+    if !path.as_ref().is_dir() {
         try_with!(
             fs::create_dir_all(path).await,
             "Failed to create \"{}\"",

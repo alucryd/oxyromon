@@ -16,7 +16,6 @@ use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -25,6 +24,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::ffi::OsString;
+use std::path::Path;
 use std::path::PathBuf;
 use strum::VariantNames;
 use walkdir::WalkDir;
@@ -116,10 +116,10 @@ pub async fn main(
 
     for romfile_path in romfile_paths {
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
-        if romfile_path.is_dir().await {
+        if romfile_path.is_dir() {
             cfg_if! {
                 if #[cfg(feature = "ird")] {
-                    if romfile_path.join(PS3_DISC_SFB).is_file().await {
+                    if romfile_path.join(PS3_DISC_SFB).is_file() {
                         progress_bar.println(format!(
                             "Processing \"{}\"",
                             &romfile_path.file_name().unwrap().to_str().unwrap()
@@ -737,7 +737,7 @@ async fn import_chd<P: AsRef<Path>>(
     let mut cue_path = romfile_path.as_ref().to_path_buf();
     cue_path.set_extension(CUE_EXTENSION);
 
-    if cue_path.is_file().await {
+    if cue_path.is_file() {
         progress_bar.println("CUE file found, using multiple tracks mode");
         let (size, hash) = get_size_and_hash(
             connection,
@@ -1597,7 +1597,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
                 connection,
                 romfile.id,
                 &romfile.path,
-                romfile_path.as_ref().metadata().await.unwrap().len(),
+                romfile_path.as_ref().metadata().unwrap().len(),
             )
             .await;
             romfile.id
@@ -1606,7 +1606,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
             create_romfile(
                 connection,
                 romfile_path.as_ref().as_os_str().to_str().unwrap(),
-                romfile_path.as_ref().metadata().await.unwrap().len(),
+                romfile_path.as_ref().metadata().unwrap().len(),
             )
             .await
         }
@@ -1632,7 +1632,7 @@ async fn move_to_trash<P: AsRef<Path>>(
                 connection,
                 romfile.id,
                 new_path.as_os_str().to_str().unwrap(),
-                new_path.metadata().await.unwrap().len(),
+                new_path.metadata().unwrap().len(),
             )
             .await;
         }
@@ -1640,7 +1640,7 @@ async fn move_to_trash<P: AsRef<Path>>(
             create_romfile(
                 connection,
                 new_path.as_os_str().to_str().unwrap(),
-                new_path.metadata().await.unwrap().len(),
+                new_path.metadata().unwrap().len(),
             )
             .await;
         }

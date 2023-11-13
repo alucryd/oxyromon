@@ -4,7 +4,6 @@ use super::model::Header;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use crc32fast::Hasher;
 use digest::generic_array::typenum::U4;
 use digest::generic_array::GenericArray;
@@ -18,6 +17,7 @@ use sqlx::sqlite::SqliteConnection;
 use std::fs;
 use std::io;
 use std::io::prelude::*;
+use std::path::Path;
 
 #[derive(Clone, Default)]
 struct Crc32 {

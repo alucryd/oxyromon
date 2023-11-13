@@ -1,9 +1,9 @@
 use super::config::*;
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use indicatif::ProgressBar;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 

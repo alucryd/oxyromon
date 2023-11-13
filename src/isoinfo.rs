@@ -1,9 +1,9 @@
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::path::Path;
 use std::process::Command;
 use std::time::Duration;
 

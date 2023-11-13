@@ -13,7 +13,6 @@ use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
-use async_std::path::Path;
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -21,6 +20,7 @@ use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::path::Path;
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
@@ -205,7 +205,7 @@ async fn check_system(
                 &mut transaction,
                 romfile.id,
                 &romfile.path,
-                Path::new(&romfile.path).metadata().await.unwrap().len(),
+                Path::new(&romfile.path).metadata().unwrap().len(),
             )
             .await;
         }

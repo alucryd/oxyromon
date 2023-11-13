@@ -2,12 +2,12 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -39,12 +39,9 @@ async fn test() {
         .unwrap();
 
     let romfile_path = tmp_directory.join("Test Game (USA).rvz");
-    fs::copy(
-        test_directory.join("Test Game (USA).rvz"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
+    fs::copy(test_directory.join("Test Game (USA).rvz"), &romfile_path)
+        .await
+        .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
 
@@ -71,5 +68,5 @@ async fn test() {
 
     let romfile = romfiles.remove(0);
     assert!(!romfile.path.contains("/Trash/"));
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
 }

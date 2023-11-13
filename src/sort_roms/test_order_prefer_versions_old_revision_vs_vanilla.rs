@@ -1,6 +1,6 @@
 use super::*;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let game_a = Game {

@@ -2,10 +2,10 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -82,7 +82,7 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
 
     let rom = roms.get(0).unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
@@ -103,6 +103,6 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
 }

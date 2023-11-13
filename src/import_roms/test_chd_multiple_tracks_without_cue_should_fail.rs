@@ -1,12 +1,12 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
 #[cfg(feature = "chd")]
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;

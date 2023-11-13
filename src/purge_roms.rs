@@ -2,10 +2,10 @@ use super::database::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::path::Path;
 
 pub fn subcommand() -> Command {
     Command::new("purge-roms")
@@ -78,7 +78,7 @@ async fn purge_missing_romfiles(
     let mut count = 0;
 
     for romfile in romfiles {
-        if !Path::new(&romfile.path).is_file().await {
+        if !Path::new(&romfile.path).is_file() {
             delete_romfile_by_id(connection, romfile.id).await;
             count += 1;
         }
@@ -115,7 +115,7 @@ async fn purge_trashed_romfiles(
 
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path);
-                if romfile_path.is_file().await {
+                if romfile_path.is_file() {
                     remove_file(progress_bar, &romfile_path, false).await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
                     count += 1;
@@ -154,7 +154,7 @@ async fn purge_orphan_romfiles(
 
             for romfile in &romfiles {
                 let romfile_path = Path::new(&romfile.path);
-                if romfile_path.is_file().await {
+                if romfile_path.is_file() {
                     remove_file(progress_bar, &romfile_path, false).await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
                     count += 1;

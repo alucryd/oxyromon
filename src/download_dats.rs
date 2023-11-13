@@ -4,7 +4,6 @@ use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::task;
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -14,7 +13,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::io::Cursor;
-use std::time::Duration;
+use tokio::time::{sleep, Duration};
 use zip::read::ZipArchive;
 
 const NOINTRO_BASE_URL: &str = "https://datomatic.no-intro.org";
@@ -296,7 +295,7 @@ async fn download_redump_dat(
         progress_bar.println("Failed to download ZIP")
     }
     // rate limit
-    task::sleep(Duration::from_secs(1)).await;
+    sleep(Duration::from_secs(1)).await;
     progress_bar.println("");
     Ok(())
 }

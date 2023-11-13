@@ -1,10 +1,7 @@
 #[cfg(feature = "server")]
-extern crate async_ctrlc;
-#[cfg(feature = "server")]
 extern crate async_graphql;
 #[cfg(feature = "server")]
 extern crate async_graphql_tide;
-extern crate async_std;
 #[cfg(feature = "server")]
 extern crate async_trait;
 extern crate cfg_if;
@@ -45,6 +42,7 @@ extern crate surf;
 extern crate tempfile;
 #[cfg(feature = "server")]
 extern crate tide;
+extern crate tokio;
 extern crate vec_drain_where;
 #[cfg(feature = "ird")]
 extern crate walkdir;
@@ -92,7 +90,6 @@ mod util;
 #[cfg(feature = "server")]
 mod validator;
 
-use async_std::path::PathBuf;
 use cfg_if::cfg_if;
 use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
@@ -102,11 +99,12 @@ use env_logger::{Builder, Target};
 use progress::*;
 use simple_error::SimpleError;
 use std::env;
+use std::path::PathBuf;
 use util::*;
 
 type SimpleResult<T> = Result<T, SimpleError>;
 
-#[async_std::main]
+#[tokio::main]
 #[allow(unused_mut)]
 async fn main() -> SimpleResult<()> {
     let mut subcommands = vec![
@@ -166,7 +164,7 @@ async fn main() -> SimpleResult<()> {
         create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");
-        if !db_file.is_file().await {
+        if !db_file.is_file() {
             create_file(&progress_bar, &db_file, true).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;

@@ -6,12 +6,12 @@ use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use sqlx::sqlite::SqliteConnection;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
@@ -190,7 +190,7 @@ async fn expand_game(
             &mut transaction,
             romfile.id,
             &romfile.path,
-            archive_romfile_path.metadata().await.unwrap().len(),
+            archive_romfile_path.metadata().unwrap().len(),
         )
         .await;
     }
@@ -230,7 +230,7 @@ async fn trim_game(
             &mut transaction,
             romfile.id,
             &romfile.path,
-            archive_romfile_path.metadata().await.unwrap().len(),
+            archive_romfile_path.metadata().unwrap().len(),
         )
         .await;
     }
@@ -301,7 +301,7 @@ async fn add_rom(
         let romfile_id = create_romfile(
             transaction,
             romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().await.unwrap().len(),
+            romfile_path.metadata().unwrap().len(),
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
@@ -312,7 +312,7 @@ async fn add_rom(
         let romfile_id = create_romfile(
             transaction,
             romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().await.unwrap().len(),
+            romfile_path.metadata().unwrap().len(),
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
