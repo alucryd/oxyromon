@@ -10,12 +10,12 @@ license = "GPL-3.0+"
 name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
-version = "0.17.0"
+version = "0.18.0-beta1"
 
 [features]
 default = ["use-rustls", "enable-asm", "chd", "cia", "cso", "ird", "nsz", "rvz"]
-use-native-tls = ["surf/h1-client"]
-use-rustls = ["surf/h1-client-rustls"]
+use-native-tls = ["reqwest/default-tls"]
+use-rustls = ["reqwest/rustls-tls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
 chd = []
 cia = []
@@ -26,31 +26,36 @@ rvz = []
 benchmark = []
 server = [
     "async-graphql",
-    "async-graphql-tide",
+    "async-graphql-axum",
     "async-trait",
+    "axum",
     "http-types",
-    "tide",
 ]
 
 [dependencies]
-async-graphql = { version = "6.0.9", features = [
+async-graphql = { version = "6.0.10", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-tide = { version = "6.0.9", optional = true }
+async-graphql-axum = { version = "6.0.10", optional = true }
 async-trait = { version = "0.1.74", optional = true }
+axum = { version = "0.6.20", default-features = false, features = [
+    "http2",
+    "tokio",
+    "ws",
+], optional = true }
 cfg-if = "1.0.0"
-clap = "4.4.7"
+clap = "4.4.8"
 crc32fast = "1.3.2"
 dialoguer = "0.11.0"
 digest = { version = "0.10.7", features = ["std"] }
 dirs = "5.0.1"
 dotenv = "0.15.0"
-env_logger = "0.10.0"
+env_logger = "0.10.1"
 flate2 = { version = "1.0.28", optional = true }
 futures = "0.3.29"
 http-types = { version = "2.12.0", optional = true }
 indicatif = { version = "0.17.7", features = ["rayon"] }
-itertools = "0.11.0"
+itertools = "0.12.0"
 lazy_static = "1.4.0"
 log = "0.4.20"
 md-5 = "0.10.6"
@@ -61,8 +66,9 @@ phf = { version = "0.11.2", features = ["macros"] }
 quick-xml = { version = "0.31.0", features = ["serialize"] }
 rayon = "1.8.0"
 regex = "1.10.2"
+reqwest = { version = "0.11.22", default-features = false }
 rust-embed = { version = "8.0.0", features = ["compression"] }
-serde = { version = "1.0.190", features = ["derive"] }
+serde = { version = "1.0.192", features = ["derive"] }
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
 simple-error = "0.3.0"
@@ -74,12 +80,8 @@ sqlx = { version = "0.7.2", default-features = false, features = [
 ] }
 strsim = { version = "0.10.0", optional = true }
 strum = { version = "0.25.0", features = ["derive"] }
-surf = { version = "2.3.2", default-features = false }
 tempfile = "3.8.1"
-tide = { version = "0.16.0", features = [
-    "h1-server",
-], default-features = false, optional = true }
-tokio = { version = "1.33.0", features = [
+tokio = { version = "1.34.0", features = [
     "fs",
     "io-std",
     "io-util",
@@ -95,7 +97,7 @@ zip = { version = "0.6.6", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0.108"
-wiremock = "0.5.19"
+wiremock = "0.5.21"
 
 [[bin]]
 name = "oxyromon"

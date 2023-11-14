@@ -3,15 +3,22 @@ use super::mutation::Mutation;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
+use async_graphql_axum::GraphQL;
+use axum::{
+    body::{Bytes, Full},
+    extract::Path,
+    http::{header, Response, StatusCode},
+    routing::{get, post_service},
+    Router, Server,
+};
 use clap::{Arg, ArgMatches, Command};
-use http_types::mime::BYTE_STREAM;
-use http_types::{Mime, StatusCode};
+use http_types::mime::{BYTE_STREAM, HTML};
+use http_types::Mime;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
-use std::path::Path;
 use tokio::select;
 use tokio::signal::ctrl_c;
 
@@ -46,24 +53,37 @@ pub fn subcommand() -> Command {
         )
 }
 
-async fn serve_asset(req: tide::Request<()>) -> tide::Result {
-    let file_path = req.param("path").unwrap_or("index.html");
-    match Assets::get(file_path) {
+async fn serve_index() -> Response<Full<Bytes>> {
+    Response::builder()
+        .header(header::CONTENT_TYPE, HTML.to_string())
+        .body(Full::from(Assets::get("index.html").unwrap().data.to_vec()))
+        .unwrap()
+}
+
+async fn serve_asset(Path(path): Path<String>) -> Response<Full<Bytes>> {
+    match Assets::get(&path) {
         Some(file) => {
             let mime = Mime::sniff(file.data.as_ref())
                 .or_else(|err| {
                     Mime::from_extension(
-                        Path::new(file_path).extension().unwrap().to_str().unwrap(),
+                        std::path::Path::new(&path)
+                            .extension()
+                            .unwrap()
+                            .to_str()
+                            .unwrap(),
                     )
                     .ok_or(err)
                 })
                 .unwrap_or(BYTE_STREAM);
-            Ok(tide::Response::builder(StatusCode::Ok)
-                .body(tide::Body::from_bytes(file.data.to_vec()))
-                .content_type(mime)
-                .build())
+            Response::builder()
+                .header(header::CONTENT_TYPE, mime.to_string())
+                .body(Full::from(file.data.to_vec()))
+                .unwrap()
         }
-        None => Ok(tide::Response::new(StatusCode::NotFound)),
+        None => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Full::from(Vec::new()))
+            .unwrap(),
     }
 }
 
@@ -74,14 +94,16 @@ async fn run(address: &str, port: &str) -> SimpleResult<()> {
         .data(DataLoader::new(RomfileLoader, tokio::task::spawn))
         .finish();
 
-    let mut app = tide::new();
-    app.at("/").get(serve_asset);
-    app.at("/*path").get(serve_asset);
-    app.at("/graphql").post(async_graphql_tide::graphql(schema));
-    try_with!(
-        app.listen(format!("{}:{}", address, port)).await,
-        "Failed to run server"
-    );
+    let app = Router::new()
+        .route("/graphql", post_service(GraphQL::new(schema)))
+        .route("/*path", get(serve_asset))
+        .route("/", get(serve_index));
+
+    Server::bind(&format!("{}:{}", address, port).parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+
     Ok(())
 }
 

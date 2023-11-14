@@ -1,4 +1,5 @@
 # 0.17.0
+
 - Clean temporary files immediately in `convert-roms`
 - Include Non-Redump DATs in the grouped subsystems
 - Don't create empty directories
@@ -6,6 +7,7 @@
 - Add support for importing CIA files (@leo60228)
 
 # 0.16.0
+
 - Use original names for PSN stuff
 - Add a language whitelist setting
 - Always name archives after the game name

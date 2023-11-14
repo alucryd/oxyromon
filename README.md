@@ -64,19 +64,19 @@ The build uses rustls by default, but you can also opt for openssl:
 
 ### Features
 
-| feature        | description                                                   | default |
-| -------------- | ------------------------------------------------------------- | ------- |
-| chd            | CHD support                                                   | x       |
-| cia            | CIA support                                                   | x       |
-| cso            | CSO support                                                   | x       |
-| ird            | IRD support                                                   | x       |
-| nsz            | NSZ support                                                   | x       |
-| rvz            | RVZ support                                                   | x       |
-| benchmark      | build the benchmark subcommand                                |         |
-| server         | build the server subcommand                                   |         |
-| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
-| use-native-tls | use the system OpenSSL library                                |         |
-| use-rustls     | use rustls                                                    | x       |
+| feature        | description                                    | default |
+| -------------- | ---------------------------------------------- | ------- |
+| chd            | CHD support                                    | x       |
+| cia            | CIA support                                    | x       |
+| cso            | CSO support                                    | x       |
+| ird            | IRD support                                    | x       |
+| nsz            | NSZ support                                    | x       |
+| rvz            | RVZ support                                    | x       |
+| benchmark      | build the benchmark subcommand                 |         |
+| server         | build the server subcommand                    |         |
+| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes | x       |
+| use-native-tls | use the system OpenSSL library                 |         |
+| use-rustls     | use rustls                                     | x       |
 
 ### Configuration
 

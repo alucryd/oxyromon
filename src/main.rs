@@ -1,9 +1,11 @@
 #[cfg(feature = "server")]
 extern crate async_graphql;
 #[cfg(feature = "server")]
-extern crate async_graphql_tide;
+extern crate async_graphql_axum;
 #[cfg(feature = "server")]
 extern crate async_trait;
+#[cfg(feature = "server")]
+extern crate axum;
 extern crate cfg_if;
 #[macro_use]
 extern crate clap;
@@ -29,6 +31,7 @@ extern crate phf;
 extern crate quick_xml;
 extern crate rayon;
 extern crate regex;
+extern crate reqwest;
 extern crate rust_embed;
 extern crate serde;
 extern crate sha1;
@@ -38,10 +41,7 @@ extern crate sqlx;
 #[cfg(feature = "ird")]
 extern crate strsim;
 extern crate strum;
-extern crate surf;
 extern crate tempfile;
-#[cfg(feature = "server")]
-extern crate tide;
 extern crate tokio;
 extern crate vec_drain_where;
 #[cfg(feature = "ird")]

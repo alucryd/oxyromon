@@ -10,9 +10,8 @@ use super::*;
 use async_graphql::Result;
 use indicatif::ProgressBar;
 use serde_json::{json, Value};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
-use tide::Body;
 use tokio::fs;
 use tokio::select;
 use tokio::time::{sleep, Duration};
@@ -83,12 +82,16 @@ async fn test() -> Result<()> {
     let client = async move {
         sleep(Duration::from_millis(1000)).await;
 
-        let string = surf::post("http://127.0.0.1:8000/graphql")
-            .body(Body::from(
-                r#"{"query":"{ systems { id, name, header { id, name } } }"}"#,
-            ))
+        let client = reqwest::Client::new();
+
+        let string = client
+            .post("http://127.0.0.1:8000/graphql")
+            .body(r#"{"query":"{ systems { id, name, header { id, name } } }"}"#)
             .header("Content-Type", "application/json")
-            .recv_string()
+            .send()
+            .await
+            .unwrap()
+            .text()
             .await
             .unwrap();
 
@@ -106,12 +109,14 @@ async fn test() -> Result<()> {
             )
         );
 
-        let string = surf::post("http://127.0.0.1:8000/graphql")
-            .body(Body::from(
-                r#"{"query":"{ games(systemId: 1) { id, name } }"}"#,
-            ))
+        let string = client
+            .post("http://127.0.0.1:8000/graphql")
+            .body(r#"{"query":"{ games(systemId: 1) { id, name } }"}"#)
             .header("Content-Type", "application/json")
-            .recv_string()
+            .send()
+            .await
+            .unwrap()
+            .text()
             .await
             .unwrap();
 
@@ -148,13 +153,15 @@ async fn test() -> Result<()> {
             )
         );
 
-        let string = surf::post("http://127.0.0.1:8000/graphql")
-                .body(Body::from(
-                    r#"{"query":"{ roms(gameId: 1) { id, name, romfile { id, path, size }, game { id, name, system { id, name } } } }"}"#,
-                ))
-                .header("Content-Type", "application/json")
-                .recv_string()
-                .await.unwrap();
+        let string = client.post("http://127.0.0.1:8000/graphql")
+            .body(r#"{"query":"{ roms(gameId: 1) { id, name, romfile { id, path, size }, game { id, name, system { id, name } } } }"}"#)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
 
         let v: Value = serde_json::from_str(&string).unwrap();
         assert_eq!(
@@ -182,13 +189,15 @@ async fn test() -> Result<()> {
             )
         );
 
-        let string = surf::post("http://127.0.0.1:8000/graphql")
-                .body(Body::from(
-                    r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1) }"}"#,
-                ))
-                .header("Content-Type", "application/json")
-                .recv_string()
-                .await.unwrap();
+        let string = client.post("http://127.0.0.1:8000/graphql")
+            .body(r#"{"query":"{ totalOriginalSize(systemId: 1), oneRegionOriginalSize(systemId: 1), totalActualSize(systemId: 1), oneRegionActualSize(systemId: 1) }"}"#)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
 
         let v: Value = serde_json::from_str(&string).unwrap();
         assert_eq!(
