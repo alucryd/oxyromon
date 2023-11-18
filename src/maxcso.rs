@@ -3,10 +3,10 @@ use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::Duration;
+use tokio::process::Command;
 
-pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
     directory: &Q,
@@ -30,6 +30,7 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&cso_path)
         .output()
+        .await
         .expect("Failed to create CSO");
 
     if !output.status.success() {
@@ -42,7 +43,7 @@ pub fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(cso_path)
 }
 
-pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cso_path: &P,
     directory: &Q,
@@ -67,6 +68,7 @@ pub fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&iso_path)
         .output()
+        .await
         .expect("Failed to extract CSO");
 
     if !output.status.success() {

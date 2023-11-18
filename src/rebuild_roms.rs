@@ -269,14 +269,16 @@ async fn add_rom(
                 &Path::new(&source_romfile.path).parent().unwrap(),
                 compression_level,
                 false,
-            )?;
+            )
+            .await?;
             if source_rom.name != rom.name {
                 sevenzip::rename_file_in_archive(
                     progress_bar,
                     &archive_romfile.path,
                     &source_rom.name,
                     &rom.name,
-                )?;
+                )
+                .await?;
             }
             update_rom_romfile(transaction, rom.id, Some(source_romfile.id)).await;
         }
@@ -288,7 +290,8 @@ async fn add_rom(
             &source_romfile.path,
             &[&source_rom.name],
             game_directory,
-        )?;
+        )
+        .await?;
         if source_rom.name != rom.name {
             rename_file(
                 progress_bar,
@@ -327,7 +330,8 @@ async fn delete_rom(
     archive_romfile: &Option<Romfile>,
 ) -> SimpleResult<()> {
     if let Some(archive_romfile) = archive_romfile {
-        sevenzip::remove_files_from_archive(progress_bar, &archive_romfile.path, &[&rom.name])?;
+        sevenzip::remove_files_from_archive(progress_bar, &archive_romfile.path, &[&rom.name])
+            .await?;
     } else {
         let romfile = find_romfile_by_id(transaction, rom.romfile_id.unwrap()).await;
         remove_file(progress_bar, &romfile.path, false).await?;

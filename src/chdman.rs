@@ -4,11 +4,12 @@ use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::Duration;
-use tokio::io::{copy, AsyncReadExt};
+use tokio::io;
+use tokio::io::AsyncReadExt;
+use tokio::process::Command;
 
-pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,
     directory: &Q,
@@ -34,6 +35,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&chd_path)
         .output()
+        .await
         .expect("Failed to create CHD");
 
     if !output.status.success() {
@@ -81,6 +83,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-ob")
         .arg(&bin_path)
         .output()
+        .await
         .expect("Failed to spawn chdman process");
 
     remove_file(progress_bar, &cue_path, true).await?;
@@ -108,7 +111,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
 
         let mut handle = (&mut bin_file).take(*size);
 
-        copy(&mut handle, &mut split_bin_file)
+        io::copy(&mut handle, &mut split_bin_file)
             .await
             .expect("Failed to copy data");
 
@@ -151,6 +154,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-ob")
         .arg(&bin_path)
         .output()
+        .await
         .expect("Failed to spawn chdman process");
 
     remove_file(progress_bar, &cue_path, true).await?;

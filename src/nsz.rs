@@ -3,10 +3,10 @@ use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::Duration;
+use tokio::process::Command;
 
-pub fn create_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn create_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     nsp_path: &P,
     directory: &Q,
@@ -33,6 +33,7 @@ pub fn create_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(directory.as_ref())
         .arg(nsp_path.as_ref())
         .output()
+        .await
         .expect("Failed to create NSZ");
 
     if !output.status.success() {
@@ -45,7 +46,7 @@ pub fn create_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(nsz_path)
 }
 
-pub fn extract_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     nsz_path: &P,
     directory: &Q,
@@ -71,6 +72,7 @@ pub fn extract_nsz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(directory.as_ref())
         .arg(nsz_path.as_ref())
         .output()
+        .await
         .expect("Failed to extract NSZ");
 
     if !output.status.success() {

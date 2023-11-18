@@ -108,6 +108,8 @@ async fn test() {
     assert_eq!(rom.name, "Test Game (USA, Europe).cue");
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
-    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path).unwrap();
+    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path)
+        .await
+        .unwrap();
     assert_eq!(sevenzip_infos.len(), 3);
 }

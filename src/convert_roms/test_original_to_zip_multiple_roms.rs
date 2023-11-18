@@ -98,7 +98,9 @@ async fn test() {
     );
     assert!(Path::new(&romfile.path).is_file());
 
-    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path).unwrap();
+    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path)
+        .await
+        .unwrap();
     assert_eq!(sevenzip_infos.len(), 2);
 
     let rom = roms.get(0).unwrap();

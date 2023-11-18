@@ -13,7 +13,7 @@ extern crate crc32fast;
 extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
-extern crate dotenv;
+extern crate dotenvy;
 extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
@@ -94,7 +94,7 @@ use cfg_if::cfg_if;
 use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use env_logger::{Builder, Target};
 use progress::*;
 use simple_error::SimpleError;
