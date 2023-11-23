@@ -1,11 +1,11 @@
 use super::config::*;
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use indicatif::ProgressBar;
-use std::process::Command;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tokio::process::Command;
 
 pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
 pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
@@ -18,7 +18,7 @@ cfg_if! {
     }
 }
 
-pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
     directory: &Q,
@@ -55,6 +55,7 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&rvz_path)
         .output()
+        .await
         .expect("Failed to create RVZ");
 
     if !output.status.success() {
@@ -67,7 +68,7 @@ pub fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(rvz_path)
 }
 
-pub fn extract_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     rvz_path: &P,
     directory: &Q,
@@ -95,6 +96,7 @@ pub fn extract_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&iso_path)
         .output()
+        .await
         .expect("Failed to extract RVZ");
 
     if !output.status.success() {

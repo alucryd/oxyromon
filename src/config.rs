@@ -3,18 +3,18 @@ use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use strum::{Display, EnumString, EnumVariantNames, VariantNames};
 
 cfg_if! {
     if #[cfg(test)] {
-        use async_std::sync::Mutex;
+        use tokio::sync::Mutex;
 
         static mut ROM_DIRECTORY: Option<PathBuf> = None;
         static mut TMP_DIRECTORY: Option<PathBuf> = None;

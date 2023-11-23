@@ -1,12 +1,12 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -99,7 +99,7 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
     assert_eq!(rom_0.romfile_id, Some(romfile.id));
     assert_eq!(rom_1.romfile_id, Some(romfile.id));
 }

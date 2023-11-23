@@ -16,7 +16,6 @@ use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -25,6 +24,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::ffi::OsString;
+use std::path::Path;
 use std::path::PathBuf;
 use strum::VariantNames;
 use walkdir::WalkDir;
@@ -116,10 +116,10 @@ pub async fn main(
 
     for romfile_path in romfile_paths {
         let romfile_path = get_canonicalized_path(&romfile_path).await?;
-        if romfile_path.is_dir().await {
+        if romfile_path.is_dir() {
             cfg_if! {
                 if #[cfg(feature = "ird")] {
-                    if romfile_path.join(PS3_DISC_SFB).is_file().await {
+                    if romfile_path.join(PS3_DISC_SFB).is_file() {
                         progress_bar.println(format!(
                             "Processing \"{}\"",
                             &romfile_path.file_name().unwrap().to_str().unwrap()
@@ -536,7 +536,7 @@ async fn import_archive<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<HashSet<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
+    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path).await?;
 
     let mut roms_games_systems_sevenzip_infos: Vec<(Rom, Game, System, &sevenzip::ArchiveInfo)> =
         Vec::new();
@@ -561,7 +561,8 @@ async fn import_archive<P: AsRef<Path>>(
                 romfile_path,
                 &[&sevenzip_info.path],
                 &tmp_directory.path(),
-            )?
+            )
+            .await?
             .remove(0);
             let size_hash = get_size_and_hash(
                 connection,
@@ -646,7 +647,8 @@ async fn import_archive<P: AsRef<Path>>(
                         romfile_path,
                         &sevenzip_info.path,
                         &rom.name,
-                    )?;
+                    )
+                    .await?;
                 }
             }
 
@@ -697,7 +699,8 @@ async fn import_archive<P: AsRef<Path>>(
             romfile_path,
             &[&sevenzip_info.path],
             &tmp_directory.path(),
-        )?
+        )
+        .await?
         .remove(0);
 
         system_ids.insert(system.id);
@@ -737,7 +740,7 @@ async fn import_chd<P: AsRef<Path>>(
     let mut cue_path = romfile_path.as_ref().to_path_buf();
     cue_path.set_extension(CUE_EXTENSION);
 
-    if cue_path.is_file().await {
+    if cue_path.is_file() {
         progress_bar.println("CUE file found, using multiple tracks mode");
         let (size, hash) = get_size_and_hash(
             connection,
@@ -888,14 +891,14 @@ async fn import_cia<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let cia_infos = ctrtool::parse_cia(progress_bar, romfile_path)?;
+    let cia_infos = ctrtool::parse_cia(progress_bar, romfile_path).await?;
 
     let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &ctrtool::ArchiveInfo)> =
         Vec::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     let extracted_files =
-        ctrtool::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path())?;
+        ctrtool::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path()).await?;
 
     for (cia_info, extracted_path) in cia_infos.iter().zip(&extracted_files) {
         progress_bar.println(format!(
@@ -1001,7 +1004,7 @@ async fn import_cso<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,
@@ -1056,7 +1059,7 @@ async fn import_nsz<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,
@@ -1111,7 +1114,7 @@ async fn import_rvz<P: AsRef<Path>>(
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,
@@ -1597,7 +1600,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
                 connection,
                 romfile.id,
                 &romfile.path,
-                romfile_path.as_ref().metadata().await.unwrap().len(),
+                romfile_path.as_ref().metadata().unwrap().len(),
             )
             .await;
             romfile.id
@@ -1606,7 +1609,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
             create_romfile(
                 connection,
                 romfile_path.as_ref().as_os_str().to_str().unwrap(),
-                romfile_path.as_ref().metadata().await.unwrap().len(),
+                romfile_path.as_ref().metadata().unwrap().len(),
             )
             .await
         }
@@ -1632,7 +1635,7 @@ async fn move_to_trash<P: AsRef<Path>>(
                 connection,
                 romfile.id,
                 new_path.as_os_str().to_str().unwrap(),
-                new_path.metadata().await.unwrap().len(),
+                new_path.metadata().unwrap().len(),
             )
             .await;
         }
@@ -1640,7 +1643,7 @@ async fn move_to_trash<P: AsRef<Path>>(
             create_romfile(
                 connection,
                 new_path.as_os_str().to_str().unwrap(),
-                new_path.metadata().await.unwrap().len(),
+                new_path.metadata().unwrap().len(),
             )
             .await;
         }

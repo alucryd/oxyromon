@@ -1,9 +1,9 @@
 use super::*;
-use async_std::fs;
-use async_std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;

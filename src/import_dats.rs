@@ -5,7 +5,6 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::de;
@@ -16,6 +15,7 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
@@ -130,7 +130,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
             progress_bar.println("Processing header");
             if let Some(header_file_name) = &clr_mame_pro_xml.header {
                 let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
-                if header_file_path.is_file().await {
+                if header_file_path.is_file() {
                     let header_file = open_file_sync(&header_file_path.as_path())?;
                     let reader = io::BufReader::new(header_file);
                     detector_xml = de::from_reader(reader).expect("Failed to parse header file");

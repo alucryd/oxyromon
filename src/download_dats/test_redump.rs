@@ -4,13 +4,13 @@ use super::super::config::*;
 use super::super::database::*;
 use super::super::util::*;
 use super::*;
-use async_std::io::prelude::*;
-use async_std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
+use tokio::io::AsyncReadExt;
 use wiremock::matchers::{method, path_regex};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;

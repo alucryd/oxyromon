@@ -5,8 +5,6 @@ use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
-use async_std::stream::StreamExt;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -20,6 +18,7 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 use strum::VariantNames;
@@ -547,7 +546,7 @@ async fn sort_system(
                 .await;
                 // delete empty directories
                 let mut directory = Path::new(&romfile_move.0.path).parent().unwrap();
-                while directory.read_dir().await.unwrap().next().await.is_none() {
+                while directory.read_dir().unwrap().next().is_none() {
                     if directory == system_directory {
                         break;
                     } else {

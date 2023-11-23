@@ -13,7 +13,6 @@ use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
-use async_std::path::Path;
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -21,6 +20,7 @@ use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::path::Path;
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
@@ -205,7 +205,7 @@ async fn check_system(
                 &mut transaction,
                 romfile.id,
                 &romfile.path,
-                Path::new(&romfile.path).metadata().await.unwrap().len(),
+                Path::new(&romfile.path).metadata().unwrap().len(),
             )
             .await;
         }
@@ -233,7 +233,7 @@ async fn check_archive<P: AsRef<Path>>(
     mut roms: Vec<Rom>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path)?;
+    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path).await?;
 
     if sevenzip_infos.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
@@ -250,7 +250,8 @@ async fn check_archive<P: AsRef<Path>>(
                 romfile_path,
                 &[&sevenzip_info.path],
                 &tmp_directory.path(),
-            )?
+            )
+            .await?
             .remove(0);
             let size_hash = get_size_and_hash(
                 connection,
@@ -360,7 +361,7 @@ async fn check_cso<P: AsRef<Path>>(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,
@@ -385,7 +386,7 @@ async fn check_nsz<P: AsRef<Path>>(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,
@@ -410,7 +411,7 @@ async fn check_rvz<P: AsRef<Path>>(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path())?;
+    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let (size, hash) = get_size_and_hash(
         connection,
         progress_bar,

@@ -3,10 +3,10 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::util::*;
 use super::*;
-use async_std::fs;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -98,7 +98,7 @@ async fn test() {
                 .unwrap(),
             &romfile.path
         );
-        assert!(Path::new(&romfile.path).is_file().await);
+        assert!(Path::new(&romfile.path).is_file());
     }
 
     for i in all_regions_indices {
@@ -111,6 +111,6 @@ async fn test() {
                 .unwrap(),
             &romfile.path
         );
-        assert!(Path::new(&romfile.path).is_file().await);
+        assert!(Path::new(&romfile.path).is_file());
     }
 }

@@ -1,11 +1,11 @@
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::process::Command;
+use std::path::Path;
 use std::time::Duration;
+use tokio::process::Command;
 
 lazy_static! {
     static ref DIRECTORY_RE: Regex = Regex::new(r"^Directory listing of /(.+)$").unwrap();
@@ -15,7 +15,7 @@ lazy_static! {
     .unwrap();
 }
 
-pub fn parse_iso<P: AsRef<Path>>(
+pub async fn parse_iso<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
 ) -> SimpleResult<Vec<(String, i64, u64)>> {
@@ -29,6 +29,7 @@ pub fn parse_iso<P: AsRef<Path>>(
         .arg("-J")
         .arg("-l")
         .output()
+        .await
         .expect("Failed to parse ISO header");
 
     if !output.status.success() {

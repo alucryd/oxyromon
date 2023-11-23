@@ -1,12 +1,12 @@
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
-use std::process::Command;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
@@ -24,7 +24,7 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
-pub fn parse_archive<P: AsRef<Path>>(
+pub async fn parse_archive<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
 ) -> SimpleResult<Vec<ArchiveInfo>> {
@@ -37,6 +37,7 @@ pub fn parse_archive<P: AsRef<Path>>(
         .arg("-slt")
         .arg(archive_path.as_ref())
         .output()
+        .await
         .expect("Failed to parse archive");
 
     if !output.status.success() {
@@ -72,7 +73,7 @@ pub fn parse_archive<P: AsRef<Path>>(
     Ok(sevenzip_infos)
 }
 
-pub fn rename_file_in_archive<P: AsRef<Path>>(
+pub async fn rename_file_in_archive<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     file_name: &str,
@@ -92,6 +93,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
         .arg(file_name)
         .arg(new_file_name)
         .output()
+        .await
         .expect("Failed to rename file in archive");
 
     if !output.status.success() {
@@ -104,7 +106,7 @@ pub fn rename_file_in_archive<P: AsRef<Path>>(
     Ok(())
 }
 
-pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     file_names: &[&str],
@@ -124,6 +126,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         .args(file_names)
         .current_dir(directory.as_ref())
         .output()
+        .await
         .expect("Failed to extract archive");
 
     if !output.status.success() {
@@ -139,7 +142,7 @@ pub fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         .collect())
 }
 
-pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     file_names: &[&str],
@@ -166,6 +169,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         .args(args)
         .current_dir(directory.as_ref())
         .output()
+        .await
         .expect("Failed to add files to archive");
 
     if !output.status.success() {
@@ -178,7 +182,7 @@ pub fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-pub fn remove_files_from_archive<P: AsRef<Path>>(
+pub async fn remove_files_from_archive<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     file_names: &[&str],
@@ -196,6 +200,7 @@ pub fn remove_files_from_archive<P: AsRef<Path>>(
         .arg(archive_path.as_ref())
         .args(file_names)
         .output()
+        .await
         .expect("Failed to remove files from archive");
 
     if !output.status.success() {
@@ -224,7 +229,7 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let destination_file: File;
     let mut destination_archive: ZipWriter<File>;
-    if destination_path.as_ref().is_file().await {
+    if destination_path.as_ref().is_file() {
         destination_file = OpenOptions::new()
             .read(true)
             .write(true)

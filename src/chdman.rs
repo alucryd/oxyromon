@@ -2,14 +2,14 @@ use super::config::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::io;
-use async_std::path::{Path, PathBuf};
-use async_std::prelude::*;
 use indicatif::ProgressBar;
-use std::process::Command;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tokio::io;
+use tokio::io::AsyncReadExt;
+use tokio::process::Command;
 
-pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,
     directory: &Q,
@@ -35,6 +35,7 @@ pub fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-o")
         .arg(&chd_path)
         .output()
+        .await
         .expect("Failed to create CHD");
 
     if !output.status.success() {
@@ -82,6 +83,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-ob")
         .arg(&bin_path)
         .output()
+        .await
         .expect("Failed to spawn chdman process");
 
     remove_file(progress_bar, &cue_path, true).await?;
@@ -99,7 +101,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
     }
 
     let mut bin_paths: Vec<PathBuf> = Vec::new();
-    let bin_file = open_file(&bin_path).await?;
+    let mut bin_file = open_file(&bin_path).await?;
 
     for (bin_name, size) in bin_names_sizes {
         progress_bar.set_length(*size);
@@ -107,7 +109,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         let split_bin_path = directory.as_ref().join(bin_name);
         let mut split_bin_file = create_file(progress_bar, &split_bin_path, quiet).await?;
 
-        let mut handle = (&bin_file).take(*size);
+        let mut handle = (&mut bin_file).take(*size);
 
         io::copy(&mut handle, &mut split_bin_file)
             .await
@@ -152,6 +154,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-ob")
         .arg(&bin_path)
         .output()
+        .await
         .expect("Failed to spawn chdman process");
 
     remove_file(progress_bar, &cue_path, true).await?;

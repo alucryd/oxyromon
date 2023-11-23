@@ -4,12 +4,12 @@ use super::super::generate_playlists;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
-use async_std::path::Path;
 use std::env;
+use std::path::Path;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -112,7 +112,7 @@ async fn test() {
                 .unwrap(),
             &romfile.path
         );
-        assert!(Path::new(&romfile.path).is_file().await);
+        assert!(Path::new(&romfile.path).is_file());
     }
 
     let romfile = romfiles.get(2).unwrap();
@@ -125,5 +125,5 @@ async fn test() {
             .unwrap(),
         &romfile.path
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
 }

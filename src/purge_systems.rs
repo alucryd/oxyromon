@@ -3,10 +3,10 @@ use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use clap::Command;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::path::Path;
 use std::time::Duration;
 
 pub fn subcommand() -> Command {

@@ -238,7 +238,7 @@ pub async fn import_ird(
     let mut transaction = begin_transaction(connection).await;
 
     // parse ISO header
-    let files = isoinfo::parse_iso(progress_bar, &header_file.path())?;
+    let files = isoinfo::parse_iso(progress_bar, &header_file.path()).await?;
 
     if files.len() != irdfile.files_count {
         bail!(

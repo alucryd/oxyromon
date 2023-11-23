@@ -4,15 +4,14 @@ use super::database::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::fs;
-use async_std::io;
-use async_std::io::{ReadExt, WriteExt};
-use async_std::path::Path;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::path::Path;
 use std::time::Duration;
 use std::time::Instant;
+use tokio::fs;
+use tokio::io::{copy, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 
 pub fn subcommand() -> Command {
     Command::new("benchmark").about("Benchmark oxyromon").arg(
@@ -58,16 +57,16 @@ pub async fn main(
 
     // rom write speed
     progress_bar.set_message("Measuring ROM directory write speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open("/dev/random").await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create(&rom_file_path).await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -80,16 +79,16 @@ pub async fn main(
 
     // rom read speed
     progress_bar.set_message("Measuring ROM directory read speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open(&rom_file_path).await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create("/dev/null").await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -102,16 +101,16 @@ pub async fn main(
 
     // tmp write speed
     progress_bar.set_message("Measuring TMP directory write speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open("/dev/random").await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create(&tmp_file_path).await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -124,17 +123,17 @@ pub async fn main(
 
     // tmp read speed
     progress_bar.set_message("Measuring TMP directory read speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open(&tmp_file_path).await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create("/dev/null").await.unwrap(),
     );
 
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();

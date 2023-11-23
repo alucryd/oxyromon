@@ -13,7 +13,6 @@ use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -23,6 +22,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::mem::drop;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 lazy_static! {
@@ -420,12 +420,12 @@ async fn to_archive(
                         &tmp_directory.path(),
                         compression_level,
                         solid,
-                    )?;
+                    ).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
                         archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().await.unwrap().len(),
+                        archive_path.metadata().unwrap().len(),
                     )
                     .await;
 
@@ -481,7 +481,7 @@ async fn to_archive(
                         &archive_path.parent().unwrap(),
                         compression_level,
                         solid,
-                    )?;
+                    ).await?;
                     let bin_names: Vec<&str> = bin_paths
                         .iter()
                         .map(|p| p.file_name().unwrap().to_str().unwrap())
@@ -493,12 +493,12 @@ async fn to_archive(
                         &tmp_directory.path(),
                         compression_level,
                         solid,
-                    )?;
+                    ).await?;
                     update_romfile(
                         &mut transaction,
                         chd_romfile.id,
                         archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().await.unwrap().len(),
+                        archive_path.metadata().unwrap().len(),
                     )
                     .await;
                     update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
@@ -532,7 +532,7 @@ async fn to_archive(
 
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
+                let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
                 let game = games_by_id.get(&rom.game_id).unwrap();
                 let archive_name = format!(
@@ -552,12 +552,12 @@ async fn to_archive(
                     &tmp_directory.path(),
                     compression_level,
                     solid,
-                )?;
+                ).await?;
                 update_romfile(
                     &mut transaction,
                     romfile.id,
                     archive_path.as_os_str().to_str().unwrap(),
-                    archive_path.metadata().await.unwrap().len(),
+                    archive_path.metadata().unwrap().len(),
                 )
                 .await;
 
@@ -587,7 +587,7 @@ async fn to_archive(
 
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                let nsp_path = nsz::extract_nsz(progress_bar, &romfile.path, &tmp_directory.path())?;
+                let nsp_path = nsz::extract_nsz(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
                 let game = games_by_id.get(&rom.game_id).unwrap();
                 let archive_name = format!(
@@ -607,12 +607,12 @@ async fn to_archive(
                     &tmp_directory.path(),
                     compression_level,
                     solid,
-                )?;
+                ).await?;
                 update_romfile(
                     &mut transaction,
                     romfile.id,
                     archive_path.as_os_str().to_str().unwrap(),
-                    archive_path.metadata().await.unwrap().len(),
+                    archive_path.metadata().unwrap().len(),
                 )
                 .await;
 
@@ -642,7 +642,7 @@ async fn to_archive(
 
                 let rom = roms.get(0).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                let iso_path = dolphin::extract_rvz(progress_bar, &romfile.path, &tmp_directory.path())?;
+                let iso_path = dolphin::extract_rvz(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
                 let game = games_by_id.get(&rom.game_id).unwrap();
                 let archive_name = format!(
@@ -662,12 +662,12 @@ async fn to_archive(
                     &tmp_directory.path(),
                     compression_level,
                     solid,
-                )?;
+                ).await?;
                 update_romfile(
                     &mut transaction,
                     romfile.id,
                     archive_path.as_os_str().to_str().unwrap(),
-                    archive_path.metadata().await.unwrap().len(),
+                    archive_path.metadata().unwrap().len(),
                 )
                 .await;
 
@@ -703,7 +703,8 @@ async fn to_archive(
                 &archive_path,
                 &[&rom.name],
                 &tmp_directory.path(),
-            )?;
+            )
+            .await?;
             remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
                 sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
@@ -716,12 +717,13 @@ async fn to_archive(
                 &tmp_directory.path(),
                 compression_level,
                 solid,
-            )?;
+            )
+            .await?;
             update_romfile(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
-                archive_path.metadata().await.unwrap().len(),
+                archive_path.metadata().unwrap().len(),
             )
             .await;
         } else {
@@ -744,7 +746,8 @@ async fn to_archive(
                 &archive_path,
                 &rom_names,
                 &tmp_directory.path(),
-            )?;
+            )
+            .await?;
             remove_file(progress_bar, &archive_path, false).await?;
             archive_path.set_extension(match archive_type {
                 sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
@@ -757,12 +760,13 @@ async fn to_archive(
                 &tmp_directory.path(),
                 compression_level,
                 solid,
-            )?;
+            )
+            .await?;
             update_romfile(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
-                archive_path.metadata().await.unwrap().len(),
+                archive_path.metadata().unwrap().len(),
             )
             .await;
         }
@@ -796,12 +800,13 @@ async fn to_archive(
                 &archive_path.parent().unwrap(),
                 compression_level,
                 solid,
-            )?;
+            )
+            .await?;
             update_romfile(
                 &mut transaction,
                 romfile.id,
                 archive_path.as_os_str().to_str().unwrap(),
-                archive_path.metadata().await.unwrap().len(),
+                archive_path.metadata().unwrap().len(),
             )
             .await;
 
@@ -857,7 +862,8 @@ async fn to_archive(
                 &directory,
                 compression_level,
                 solid,
-            )?;
+            )
+            .await?;
             let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
                 archive_path.as_os_str().to_str().unwrap(),
@@ -869,7 +875,7 @@ async fn to_archive(
                     create_romfile(
                         &mut transaction,
                         archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().await.unwrap().len(),
+                        archive_path.metadata().unwrap().len(),
                     )
                     .await
                 }
@@ -1011,7 +1017,8 @@ async fn to_chd(
             &romfile.path,
             &file_names,
             &tmp_directory.path(),
-        )?;
+        )
+        .await?;
         let (cue_paths, extracted_paths): (Vec<PathBuf>, Vec<PathBuf>) =
             extracted_paths.into_par_iter().partition(|path| {
                 path.file_name()
@@ -1022,16 +1029,22 @@ async fn to_chd(
             });
 
         let chd_path = match cue_paths.get(0) {
-            Some(cue_path) => chdman::create_chd(
-                progress_bar,
-                cue_path,
-                &Path::new(&romfile.path).parent().unwrap(),
-            )?,
-            None => chdman::create_chd(
-                progress_bar,
-                extracted_paths.get(0).unwrap(),
-                &Path::new(&romfile.path).parent().unwrap(),
-            )?,
+            Some(cue_path) => {
+                chdman::create_chd(
+                    progress_bar,
+                    cue_path,
+                    &Path::new(&romfile.path).parent().unwrap(),
+                )
+                .await?
+            }
+            None => {
+                chdman::create_chd(
+                    progress_bar,
+                    extracted_paths.get(0).unwrap(),
+                    &Path::new(&romfile.path).parent().unwrap(),
+                )
+                .await?
+            }
         };
 
         if diff {
@@ -1057,7 +1070,7 @@ async fn to_chd(
             let cue_romfile_id = create_romfile(
                 &mut transaction,
                 new_cue_path.as_os_str().to_str().unwrap(),
-                new_cue_path.metadata().await.unwrap().len(),
+                new_cue_path.metadata().unwrap().len(),
             )
             .await;
             update_rom_romfile(
@@ -1075,7 +1088,7 @@ async fn to_chd(
             &mut transaction,
             romfile.id,
             chd_path.as_os_str().to_str().unwrap(),
-            chd_path.metadata().await.unwrap().len(),
+            chd_path.metadata().unwrap().len(),
         )
         .await;
         remove_file(progress_bar, &romfile.path, false).await?;
@@ -1097,7 +1110,8 @@ async fn to_chd(
             progress_bar,
             &cue_romfile.path,
             &Path::new(&cue_romfile.path).parent().unwrap(),
-        )?;
+        )
+        .await?;
         if diff {
             let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
             let mut romfile_paths = romfiles_by_id
@@ -1111,7 +1125,7 @@ async fn to_chd(
         let chd_romfile_id = create_romfile(
             &mut transaction,
             chd_path.as_os_str().to_str().unwrap(),
-            chd_path.metadata().await.unwrap().len(),
+            chd_path.metadata().unwrap().len(),
         )
         .await;
         for bin_rom in bin_roms {
@@ -1134,7 +1148,8 @@ async fn to_chd(
                 progress_bar,
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
-            )?;
+            )
+            .await?;
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
             }
@@ -1142,7 +1157,7 @@ async fn to_chd(
                 &mut transaction,
                 romfile.id,
                 chd_path.as_os_str().to_str().unwrap(),
-                chd_path.metadata().await.unwrap().len(),
+                chd_path.metadata().unwrap().len(),
             )
             .await;
             remove_file(progress_bar, &romfile.path, false).await?;
@@ -1160,12 +1175,12 @@ async fn to_chd(
 
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path())?;
+                    let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
                     let chd_path = chdman::create_chd(
                         progress_bar,
                         &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    )?;
+                    ).await?;
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
                     }
@@ -1173,7 +1188,7 @@ async fn to_chd(
                         &mut transaction,
                         romfile.id,
                         chd_path.as_os_str().to_str().unwrap(),
-                        chd_path.metadata().await.unwrap().len(),
+                        chd_path.metadata().unwrap().len(),
                     )
                     .await;
                     // remove_file(progress_bar, &iso_path, false).await?;
@@ -1265,14 +1280,16 @@ async fn to_cso(
             &romfile.path,
             &file_names,
             &tmp_directory.path(),
-        )?;
+        )
+        .await?;
         let extracted_path = extracted_paths.get(0).unwrap();
 
         let cso_path = maxcso::create_cso(
             progress_bar,
             &extracted_path,
             &Path::new(&romfile.path).parent().unwrap(),
-        )?;
+        )
+        .await?;
 
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
@@ -1282,7 +1299,7 @@ async fn to_cso(
             &mut transaction,
             romfile.id,
             cso_path.as_os_str().to_str().unwrap(),
-            cso_path.metadata().await.unwrap().len(),
+            cso_path.metadata().unwrap().len(),
         )
         .await;
         remove_file(progress_bar, &romfile.path, false).await?;
@@ -1300,7 +1317,8 @@ async fn to_cso(
                 progress_bar,
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
-            )?;
+            )
+            .await?;
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
             }
@@ -1308,7 +1326,7 @@ async fn to_cso(
                 &mut transaction,
                 romfile.id,
                 cso_path.as_os_str().to_str().unwrap(),
-                cso_path.metadata().await.unwrap().len(),
+                cso_path.metadata().unwrap().len(),
             )
             .await;
             remove_file(progress_bar, &romfile.path, false).await?;
@@ -1335,7 +1353,7 @@ async fn to_cso(
                         progress_bar,
                         &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    )?;
+                    ).await?;
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
                     }
@@ -1343,7 +1361,7 @@ async fn to_cso(
                         &mut transaction,
                         romfile.id,
                         cso_path.as_os_str().to_str().unwrap(),
-                        cso_path.metadata().await.unwrap().len(),
+                        cso_path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -1417,14 +1435,16 @@ async fn to_nsz(
             &romfile.path,
             &file_names,
             &tmp_directory.path(),
-        )?;
+        )
+        .await?;
         let extracted_path = extracted_paths.get(0).unwrap();
 
         let nsz_path = nsz::create_nsz(
             progress_bar,
             &extracted_path,
             &Path::new(&romfile.path).parent().unwrap(),
-        )?;
+        )
+        .await?;
 
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_path]).await?;
@@ -1434,7 +1454,7 @@ async fn to_nsz(
             &mut transaction,
             romfile.id,
             nsz_path.as_os_str().to_str().unwrap(),
-            nsz_path.metadata().await.unwrap().len(),
+            nsz_path.metadata().unwrap().len(),
         )
         .await;
         remove_file(progress_bar, &romfile.path, false).await?;
@@ -1452,7 +1472,8 @@ async fn to_nsz(
                 progress_bar,
                 &romfile.path,
                 &Path::new(&romfile.path).parent().unwrap(),
-            )?;
+            )
+            .await?;
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_path]).await?;
             }
@@ -1460,7 +1481,7 @@ async fn to_nsz(
                 &mut transaction,
                 romfile.id,
                 nsz_path.as_os_str().to_str().unwrap(),
-                nsz_path.metadata().await.unwrap().len(),
+                nsz_path.metadata().unwrap().len(),
             )
             .await;
             remove_file(progress_bar, &romfile.path, false).await?;
@@ -1535,7 +1556,8 @@ async fn to_rvz(
             &romfile.path,
             &file_names,
             &tmp_directory.path(),
-        )?;
+        )
+        .await?;
         let extracted_path = extracted_paths.get(0).unwrap();
 
         let rvz_path = dolphin::create_rvz(
@@ -1545,7 +1567,8 @@ async fn to_rvz(
             compression_algorithm,
             compression_level,
             block_size,
-        )?;
+        )
+        .await?;
 
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
@@ -1555,7 +1578,7 @@ async fn to_rvz(
             &mut transaction,
             romfile.id,
             rvz_path.as_os_str().to_str().unwrap(),
-            rvz_path.metadata().await.unwrap().len(),
+            rvz_path.metadata().unwrap().len(),
         )
         .await;
         remove_file(progress_bar, &romfile.path, false).await?;
@@ -1576,7 +1599,8 @@ async fn to_rvz(
                 compression_algorithm,
                 compression_level,
                 block_size,
-            )?;
+            )
+            .await?;
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_path]).await?;
             }
@@ -1584,7 +1608,7 @@ async fn to_rvz(
                 &mut transaction,
                 romfile.id,
                 rvz_path.as_os_str().to_str().unwrap(),
-                rvz_path.metadata().await.unwrap().len(),
+                rvz_path.metadata().unwrap().len(),
             )
             .await;
             remove_file(progress_bar, &romfile.path, false).await?;
@@ -1714,14 +1738,15 @@ async fn to_original(
             &romfile.path,
             &file_names,
             &directory,
-        )?;
+        )
+        .await?;
         let roms_extracted_paths: Vec<(&Rom, PathBuf)> = roms.iter().zip(extracted_paths).collect();
 
         for (rom, extracted_path) in roms_extracted_paths {
             let romfile_id = create_romfile(
                 &mut transaction,
                 extracted_path.as_os_str().to_str().unwrap(),
-                extracted_path.metadata().await.unwrap().len(),
+                extracted_path.metadata().unwrap().len(),
             )
             .await;
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
@@ -1772,7 +1797,7 @@ async fn to_original(
                     let romfile_id = create_romfile(
                         &mut transaction,
                         bin_path.as_os_str().to_str().unwrap(),
-                        bin_path.metadata().await.unwrap().len(),
+                        bin_path.metadata().unwrap().len(),
                     )
                     .await;
                     update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
@@ -1797,12 +1822,12 @@ async fn to_original(
                         progress_bar,
                         &romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    )?;
+                    ).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
                         iso_path.as_os_str().to_str().unwrap(),
-                        iso_path.metadata().await.unwrap().len(),
+                        iso_path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -1824,12 +1849,12 @@ async fn to_original(
                         progress_bar,
                         &romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    )?;
+                    ).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
                         nsp_path.as_os_str().to_str().unwrap(),
-                        nsp_path.metadata().await.unwrap().len(),
+                        nsp_path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -1852,12 +1877,12 @@ async fn to_original(
                         progress_bar,
                         &romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    )?;
+                    ).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
                         iso_path.as_os_str().to_str().unwrap(),
-                        iso_path.metadata().await.unwrap().len(),
+                        iso_path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -1880,19 +1905,11 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
     let original_size = roms.iter().map(|&r| r.size as u64).sum();
     let mut old_size = 0u64;
     for &old_file in old_files {
-        old_size += try_with!(
-            old_file.as_ref().metadata().await,
-            "Failed to read file metadata"
-        )
-        .len();
+        old_size += try_with!(old_file.as_ref().metadata(), "Failed to read file metadata").len();
     }
     let mut new_size = 0u64;
     for &new_file in new_files {
-        new_size += try_with!(
-            new_file.as_ref().metadata().await,
-            "Failed to read file metadata"
-        )
-        .len();
+        new_size += try_with!(new_file.as_ref().metadata(), "Failed to read file metadata").len();
     }
     progress_bar.println(format!(
         "Before: {} ({:.1}%); After: {} ({:.1}%); Original: {}",

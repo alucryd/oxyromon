@@ -2,7 +2,7 @@ use super::super::database::*;
 use super::*;
 use tempfile::NamedTempFile;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let db_file = NamedTempFile::new().unwrap();

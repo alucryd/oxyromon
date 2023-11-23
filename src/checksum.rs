@@ -4,7 +4,6 @@ use super::model::Header;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use crc32fast::Hasher;
 use digest::generic_array::typenum::U4;
 use digest::generic_array::GenericArray;
@@ -15,9 +14,10 @@ use indicatif::ProgressBar;
 use md5::Md5;
 use sha1::Sha1;
 use sqlx::sqlite::SqliteConnection;
-use std::fs;
+use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::path::Path;
 
 #[derive(Clone, Default)]
 struct Crc32 {
@@ -178,7 +178,7 @@ async fn get_file_and_size<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     file_path: &P,
     header: &Option<Header>,
-) -> SimpleResult<(fs::File, u64)> {
+) -> SimpleResult<(File, u64)> {
     let mut file = open_file_sync(file_path)?;
     let mut size = file.metadata().unwrap().len();
 
