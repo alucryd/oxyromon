@@ -1,3 +1,7 @@
+# 0.18.0
+
+- Replace `async-std` with `tokio`
+
 # 0.17.0
 
 - Clean temporary files immediately in `convert-roms`
