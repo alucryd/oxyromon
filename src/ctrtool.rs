@@ -1,12 +1,15 @@
 use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
+use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom};
 use tokio::process::Command;
+
+const CTRTOOL: &str = "ctrtool";
 
 const CA_CERT_SIZE: usize = 0x400;
 const CA_CERT_OFFSET: u64 = 0;
@@ -15,10 +18,32 @@ const TICKET_CERT_OFFSET: u64 = CA_CERT_OFFSET + CA_CERT_SIZE as u64;
 const TMD_CERT_SIZE: usize = 0x300;
 const TMD_CERT_OFFSET: u64 = TICKET_CERT_OFFSET + TICKET_CERT_SIZE as u64;
 
+lazy_static! {
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
+}
+
 #[derive(Debug)]
 pub struct ArchiveInfo {
     pub path: String,
     pub size: u64,
+}
+
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(
+        Command::new(CTRTOOL).output().await,
+        "Failed to spawn ctrtool"
+    );
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    let version = stderr
+        .lines()
+        .next()
+        .map(|line| VERSION_REGEX.find(line))
+        .flatten()
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown"));
+
+    Ok(version)
 }
 
 pub async fn parse_cia<P: AsRef<Path>>(
@@ -29,7 +54,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let output = Command::new("ctrtool")
+    let output = Command::new(CTRTOOL)
         .arg("-p")
         .arg("-v")
         .arg(cia_path.as_ref())
@@ -102,7 +127,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     let directory = directory.as_ref();
     let mut extracted_paths = Vec::new();
 
-    let output = Command::new("ctrtool")
+    let output = Command::new(CTRTOOL)
         .arg("-p")
         .arg("-v")
         .arg("--certs=certs")

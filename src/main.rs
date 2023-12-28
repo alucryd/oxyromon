@@ -66,6 +66,7 @@ mod import_dats;
 #[cfg(feature = "ird")]
 mod import_irds;
 mod import_roms;
+mod info;
 #[cfg(feature = "ird")]
 mod isoinfo;
 #[cfg(feature = "cso")]
@@ -108,6 +109,7 @@ type SimpleResult<T> = Result<T, SimpleError>;
 #[allow(unused_mut)]
 async fn main() -> SimpleResult<()> {
     let mut subcommands = vec![
+        info::subcommand(),
         config::subcommand(),
         import_dats::subcommand(),
         download_dats::subcommand(),
@@ -174,6 +176,7 @@ async fn main() -> SimpleResult<()> {
         get_tmp_directory(&mut pool.acquire().await.unwrap()).await;
 
         match matches.subcommand_name() {
+            Some("info") => info::main(&mut pool.acquire().await.unwrap(), &progress_bar).await?,
             Some("config") => {
                 config::main(
                     &mut pool.acquire().await.unwrap(),

@@ -3,11 +3,36 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
+use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::io;
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
+
+const CHDMAN: &str = "chdman";
+
+lazy_static! {
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
+}
+
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(
+        Command::new(CHDMAN).output().await,
+        "Failed to spawn chdman"
+    );
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let version = stdout
+        .lines()
+        .next()
+        .map(|line| VERSION_REGEX.find(line))
+        .flatten()
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown"));
+
+    Ok(version)
+}
 
 pub async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
@@ -28,7 +53,7 @@ pub async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         chd_path.file_name().unwrap().to_str().unwrap()
     ));
 
-    let output = Command::new("chdman")
+    let output = Command::new(CHDMAN)
         .arg("createcd")
         .arg("-i")
         .arg(romfile_path.as_ref())
@@ -74,7 +99,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
 
-    let output = Command::new("chdman")
+    let output = Command::new(CHDMAN)
         .arg("extractcd")
         .arg("-i")
         .arg(chd_path.as_ref())
@@ -84,7 +109,7 @@ pub async fn extract_chd_to_multiple_tracks<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(&bin_path)
         .output()
         .await
-        .expect("Failed to spawn chdman process");
+        .expect("Failed to extract CHD");
 
     remove_file(progress_bar, &cue_path, true).await?;
 
@@ -145,7 +170,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(chd_path.as_ref().file_name().unwrap());
     bin_path.set_extension(BIN_EXTENSION);
 
-    let output = Command::new("chdman")
+    let output = Command::new(CHDMAN)
         .arg("extractcd")
         .arg("-i")
         .arg(chd_path.as_ref())
@@ -155,7 +180,7 @@ pub async fn extract_chd_to_single_track<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(&bin_path)
         .output()
         .await
-        .expect("Failed to spawn chdman process");
+        .expect("Failed to extract CHD");
 
     remove_file(progress_bar, &cue_path, true).await?;
 

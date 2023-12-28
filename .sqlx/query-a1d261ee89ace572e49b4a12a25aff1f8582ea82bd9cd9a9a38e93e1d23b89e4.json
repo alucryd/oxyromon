@@ -22,7 +22,11 @@
     "parameters": {
       "Right": 1
     },
-    "nullable": [false, false, true]
+    "nullable": [
+      false,
+      false,
+      true
+    ]
   },
   "hash": "a1d261ee89ace572e49b4a12a25aff1f8582ea82bd9cd9a9a38e93e1d23b89e4"
 }
