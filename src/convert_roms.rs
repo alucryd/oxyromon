@@ -108,6 +108,56 @@ pub async fn main(
     };
     let diff = matches.get_flag("DIFF");
 
+    match format.as_str() {
+        "7Z" | "ZIP" => {
+            if sevenzip::get_version().await.is_err() {
+                progress_bar.println("Please install sevenzip");
+                return Ok(());
+            }
+        }
+        "CHD" => {
+            cfg_if! {
+                if #[cfg(feature = "chd")] {
+                    if chdman::get_version().await.is_err() {
+                        progress_bar.println("Please install chdman");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        "CSO" => {
+            cfg_if! {
+                if #[cfg(feature = "cso")] {
+                    if maxcso::get_version().await.is_err() {
+                        progress_bar.println("Please install maxcso");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        "NSZ" => {
+            cfg_if! {
+                if #[cfg(feature = "nsz")] {
+                    if nsz::get_version().await.is_err() {
+                        progress_bar.println("Please install nsz");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        "RVZ" => {
+            cfg_if! {
+                if #[cfg(feature = "rvz")] {
+                    if dolphin::get_version().await.is_err() {
+                        progress_bar.println("Please install dolphin");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        _ => bail!("Not supported"),
+    }
+
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
 
@@ -1715,6 +1765,11 @@ async fn to_original(
 
     // convert archives
     for roms in archives.values() {
+        if sevenzip::get_version().await.is_err() {
+            progress_bar.println("Please install sevenzip");
+            break;
+        }
+
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
@@ -1771,6 +1826,11 @@ async fn to_original(
     cfg_if! {
         if #[cfg(feature = "chd")] {
             for (_, mut roms) in chds {
+                if chdman::get_version().await.is_err() {
+                    progress_bar.println("Please install chdman");
+                    break;
+                }
+
                 let mut transaction = begin_transaction(connection).await;
 
                 // we don't need the cue sheet
@@ -1824,6 +1884,11 @@ async fn to_original(
     cfg_if! {
         if #[cfg(feature = "cso")] {
             for roms in csos.values() {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    break;
+                }
+
                 let mut transaction = begin_transaction(connection).await;
 
                 for rom in roms {
@@ -1851,6 +1916,11 @@ async fn to_original(
     cfg_if! {
         if #[cfg(feature = "nsz")] {
             for roms in nszs.values() {
+                if nsz::get_version().await.is_err() {
+                    progress_bar.println("Please install nsz");
+                    break;
+                }
+
                 let mut transaction = begin_transaction(connection).await;
 
                 for rom in roms {
@@ -1879,6 +1949,11 @@ async fn to_original(
     cfg_if! {
         if #[cfg(feature = "rvz")] {
             for roms in rvzs.values() {
+                if dolphin::get_version().await.is_err() {
+                    progress_bar.println("Please install dolphin");
+                    break;
+                }
+
                 let mut transaction = begin_transaction(connection).await;
 
                 for rom in roms {

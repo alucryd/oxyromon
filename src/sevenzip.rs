@@ -1,5 +1,6 @@
 use super::progress::*;
 use super::SimpleResult;
+use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::fs::{File, OpenOptions};
@@ -10,7 +11,13 @@ use std::time::Duration;
 use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
-const SEVENZIP: &str = "7z";
+cfg_if! {
+    if #[cfg(macos)] {
+        const SEVENZIP: &str = "7zz";
+    } else {
+        const SEVENZIP: &str = "7z";
+    }
+}
 
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];

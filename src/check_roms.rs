@@ -109,6 +109,10 @@ async fn check_system(
 
         let result;
         if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
+            if sevenzip::get_version().await.is_err() {
+                progress_bar.println("Please install sevenzip");
+                break;
+            }
             result = check_archive(
                 &mut transaction,
                 progress_bar,
@@ -121,6 +125,10 @@ async fn check_system(
         } else if CHD_EXTENSION == romfile_extension {
             cfg_if! {
                 if #[cfg(feature = "chd")] {
+                    if chdman::get_version().await.is_err() {
+                        progress_bar.println("Please install chdman");
+                        break;
+                    }
                     result = check_chd(
                         &mut transaction,
                         progress_bar, &header,
@@ -131,12 +139,16 @@ async fn check_system(
                     .await;
                 } else {
                 progress_bar.println("Please rebuild with the CHD feature enabled");
-                    continue;
+                    break;
                 }
             }
         } else if CSO_EXTENSION == romfile_extension {
             cfg_if! {
                 if #[cfg(feature = "cso")] {
+                    if maxcso::get_version().await.is_err() {
+                        progress_bar.println("Please install maxcso");
+                        break;
+                    }
                     result = check_cso(
                         &mut transaction,
                         progress_bar,
@@ -148,12 +160,16 @@ async fn check_system(
                     .await;
                 } else {
                     progress_bar.println("Please rebuild with the CSO feature enabled");
-                    continue;
+                    break;
                 }
             }
         } else if NSZ_EXTENSION == romfile_extension {
             cfg_if! {
                 if #[cfg(feature = "nsz")] {
+                    if nsz::get_version().await.is_err() {
+                        progress_bar.println("Please install nsz");
+                        break;
+                    }
                     result = check_nsz(
                         &mut transaction,
                         progress_bar,
@@ -165,12 +181,16 @@ async fn check_system(
                     .await;
                 } else {
                     progress_bar.println("Please rebuild with the NSZ feature enabled");
-                    continue;
+                    break;
                 }
             }
         } else if RVZ_EXTENSION == romfile_extension {
             cfg_if! {
                 if #[cfg(feature = "rvz")] {
+                    if dolphin::get_version().await.is_err() {
+                        progress_bar.println("Please install dolphin");
+                        break;
+                    }
                     result = check_rvz(
                         &mut transaction,
                         progress_bar,
@@ -182,7 +202,7 @@ async fn check_system(
                     .await;
                 } else {
                     progress_bar.println("Please rebuild with the RVZ feature enabled");
-                    continue;
+                    break;
                 }
             }
         } else {

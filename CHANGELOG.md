@@ -3,6 +3,8 @@
 - Replace `async-std` with `tokio`
 - Add an `info` subcommand to display basic system and dependencies information
 - Only generate playlists for complete sets of games
+- Exit gracefully in most places when missing an external program
+- Use `7zz` instead of `7z` on mac
 
 # 0.17.0
 

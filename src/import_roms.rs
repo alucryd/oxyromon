@@ -247,6 +247,10 @@ pub async fn import_rom<P: AsRef<Path>>(
         .to_lowercase();
 
     if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
+        if sevenzip::get_version().await.is_err() {
+            progress_bar.println("Please install sevenzip");
+            return Ok(system_ids);
+        }
         system_ids.extend(
             import_archive(
                 &mut transaction,
@@ -263,6 +267,10 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if CHD_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "chd")] {
+                if chdman::get_version().await.is_err() {
+                    progress_bar.println("Please install chdman");
+                    return Ok(system_ids);
+                }
                 if let Some(system_id) = import_chd(
                     &mut transaction,
                     progress_bar,
@@ -283,6 +291,10 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if CIA_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "cia")] {
+                if ctrtool::get_version().await.is_err() {
+                    progress_bar.println("Please install ctrtool");
+                    return Ok(system_ids);
+                }
                 if let Some(system_id) = import_cia(
                     &mut transaction,
                     progress_bar,
@@ -303,6 +315,10 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if CSO_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "cso")] {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    return Ok(system_ids);
+                }
                 if let Some(system_id) = import_cso(
                     &mut transaction,
                     progress_bar,
@@ -323,6 +339,10 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if NSZ_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "nsz")] {
+                if nsz::get_version().await.is_err() {
+                    progress_bar.println("Please install nsz");
+                    return Ok(system_ids);
+                }
                 if let Some(system_id) = import_nsz(
                     &mut transaction,
                     progress_bar,
@@ -343,6 +363,10 @@ pub async fn import_rom<P: AsRef<Path>>(
     } else if RVZ_EXTENSION == romfile_extension {
         cfg_if! {
             if #[cfg(feature = "rvz")] {
+                if dolphin::get_version().await.is_err() {
+                    progress_bar.println("Please install dolphin");
+                    return Ok(system_ids);
+                }
                 if let Some(system_id) = import_rvz(
                     &mut transaction,
                     progress_bar,
