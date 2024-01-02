@@ -58,7 +58,7 @@ async fn process_system(
     system: &System,
 ) -> SimpleResult<()> {
     let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
-    find_games_with_romfiles_by_system_id(connection, system.id)
+    find_games_by_system_id(connection, system.id)
         .await
         .into_iter()
         .filter(|game| DISC_REGEX.is_match(&game.name))
@@ -69,6 +69,10 @@ async fn process_system(
         });
 
     for (playlist_name, games) in grouped_games.into_iter() {
+        if games.iter().any(|game| !game.complete) {
+            continue;
+        }
+
         let roms = find_roms_with_romfile_by_game_ids(
             connection,
             games
@@ -170,4 +174,7 @@ async fn process_system(
 }
 
 #[cfg(test)]
-mod test_iso;
+mod test_iso_complete;
+
+#[cfg(test)]
+mod test_iso_incomplete;

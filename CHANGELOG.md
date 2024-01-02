@@ -2,6 +2,7 @@
 
 - Replace `async-std` with `tokio`
 - Add an `info` subcommand to display basic system and dependencies information
+- Only generate playlists for complete sets of games
 
 # 0.17.0
 
