@@ -170,7 +170,6 @@ These should be in your `${PATH}` for extra features.
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
 - Craft some unit tests for NSZ
-- Craft some unit tests for RVZ
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible and requested
 - Add a metadata scraper in the retroarch format
@@ -181,6 +180,7 @@ These should be in your `${PATH}` for extra features.
 
     Commands:
         config              Query and modify the oxyromon settings
+        info                Print system information
         import-dats         Parse and import Logiqx DAT files into oxyromon
         download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
         import-roms         Validate and import ROM files or directories into oxyromon
@@ -190,7 +190,7 @@ These should be in your `${PATH}` for extra features.
         check-roms          Check ROM files integrity
         purge-roms          Purge trashed, missing and orphan ROM files
         purge-systems       Purge systems
-        generate-playlists
+        generate-playlists  Generate M3U playlists for multi-disc games
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
         benchmark           Benchmark oxyromon
         server              Launch the backend server
@@ -215,6 +215,17 @@ The settings can be queried, modified and deleted from the command line.
         -a, --add <KEY> <VALUE>     Add an entry to a list
         -r, --remove <KEY> <VALUE>  Remove an entry from a list
         -h, --help                  Print help information
+
+## oxyromon-info
+
+Print system information
+
+Prints the program version, installed dependencies and their version (when possible), as well as some basic system statistics.
+
+    Usage: oxyromon info
+
+    Options:
+    -h, --help  Print help
 
 ## oxyromon-import-dats
 
