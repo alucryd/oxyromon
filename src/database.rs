@@ -197,6 +197,19 @@ pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, m
     .unwrap_or_else(|_| panic!("Error while updating system with id {} merging", merging));
 }
 
+pub async fn count_systems(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM systems
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting systems")
+    .count
+}
+
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
@@ -648,6 +661,19 @@ pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, pl
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
+pub async fn count_games(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM games
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting games")
+    .count
+}
+
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     sqlx::query_as!(
         Game,
@@ -1038,6 +1064,19 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .fetch_one(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
+}
+
+pub async fn count_roms(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM roms
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting roms")
+    .count
 }
 
 pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {

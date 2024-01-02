@@ -1,6 +1,7 @@
 # 0.18.0
 
 - Replace `async-std` with `tokio`
+- Add an `info` subcommand to display basic system and dependencies information
 
 # 0.17.0
 

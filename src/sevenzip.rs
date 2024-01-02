@@ -1,6 +1,7 @@
 use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
+use regex::Regex;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
 use std::path::{Path, PathBuf};
@@ -9,8 +10,14 @@ use std::time::Duration;
 use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
+const SEVENZIP: &str = "7z";
+
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
+
+lazy_static! {
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
+}
 
 #[derive(PartialEq, Eq)]
 pub enum ArchiveType {
@@ -24,6 +31,21 @@ pub struct ArchiveInfo {
     pub crc: String,
 }
 
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(Command::new(SEVENZIP).output().await, "Failed to spawn 7z");
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let version = stdout
+        .lines()
+        .nth(1)
+        .map(|line| VERSION_REGEX.find(line))
+        .flatten()
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown"));
+
+    Ok(version)
+}
+
 pub async fn parse_archive<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
@@ -32,7 +54,7 @@ pub async fn parse_archive<P: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let output = Command::new("7z")
+    let output = Command::new(SEVENZIP)
         .arg("l")
         .arg("-slt")
         .arg(archive_path.as_ref())
@@ -87,7 +109,7 @@ pub async fn rename_file_in_archive<P: AsRef<Path>>(
         file_name, new_file_name
     ));
 
-    let output = Command::new("7z")
+    let output = Command::new(SEVENZIP)
         .arg("rn")
         .arg(archive_path.as_ref())
         .arg(file_name)
@@ -120,7 +142,7 @@ pub async fn extract_files_from_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         progress_bar.println(format!("Extracting \"{}\"", file_name));
     }
 
-    let output = Command::new("7z")
+    let output = Command::new(SEVENZIP)
         .arg("x")
         .arg(archive_path.as_ref())
         .args(file_names)
@@ -162,7 +184,7 @@ pub async fn add_files_to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
     if solid {
         args.push(String::from("-ms=on"))
     }
-    let output = Command::new("7z")
+    let output = Command::new(SEVENZIP)
         .arg("a")
         .arg(archive_path.as_ref())
         .args(file_names)
@@ -195,7 +217,7 @@ pub async fn remove_files_from_archive<P: AsRef<Path>>(
         progress_bar.println(format!("Deleting \"{}\"", file_name));
     }
 
-    let output = Command::new("7z")
+    let output = Command::new(SEVENZIP)
         .arg("d")
         .arg(archive_path.as_ref())
         .args(file_names)

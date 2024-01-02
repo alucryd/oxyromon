@@ -2,9 +2,34 @@ use super::config::*;
 use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
+use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::process::Command;
+
+const MAXCSO: &str = "maxcso";
+
+lazy_static! {
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
+}
+
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(
+        Command::new(MAXCSO).output().await,
+        "Failed to spawn maxcso"
+    );
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    let version = stderr
+        .lines()
+        .next()
+        .map(|line| VERSION_REGEX.find(line))
+        .flatten()
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown"));
+
+    Ok(version)
+}
 
 pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
@@ -25,7 +50,7 @@ pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         cso_path.file_name().unwrap().to_str().unwrap()
     ));
 
-    let output = Command::new("maxcso")
+    let output = Command::new(MAXCSO)
         .arg(iso_path.as_ref())
         .arg("-o")
         .arg(&cso_path)
@@ -62,7 +87,7 @@ pub async fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(cso_path.as_ref().file_name().unwrap());
     iso_path.set_extension(ISO_EXTENSION);
 
-    let output = Command::new("maxcso")
+    let output = Command::new(MAXCSO)
         .arg("--decompress")
         .arg(cso_path.as_ref())
         .arg("-o")

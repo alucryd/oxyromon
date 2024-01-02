@@ -20,6 +20,7 @@ use indicatif::{HumanBytes, ProgressBar};
 use lazy_static::lazy_static;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
@@ -214,6 +215,7 @@ pub async fn main(
                         to_chd(
                             connection,
                             progress_bar,
+                            &system,
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
@@ -918,10 +920,18 @@ async fn to_archive(
 async fn to_chd(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
+    system: &System,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
 ) -> SimpleResult<()> {
+    if system.name.contains("Dreamcast")
+        && chdman::get_version().await?.as_str().cmp("0.240") == Ordering::Less
+    {
+        progress_bar.println("Older chdman versions have issues with Dreamcast games, please update to a newer version");
+        return Ok(());
+    }
+
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {

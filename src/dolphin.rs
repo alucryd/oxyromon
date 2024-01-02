@@ -7,15 +7,28 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::process::Command;
 
-pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
-pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
-
 cfg_if! {
     if #[cfg(windows)] {
         const DOLPHIN_TOOL: &str = "DolphinTool.exe";
     } else {
         const DOLPHIN_TOOL: &str = "dolphin-tool";
     }
+}
+
+pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
+pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(
+        Command::new(DOLPHIN_TOOL).output().await,
+        "Failed to spawn dolphin"
+    );
+
+    // dolphin doesn't advertise any version
+    String::from_utf8(output.stderr).unwrap();
+    let version = String::from("unknown");
+
+    Ok(version)
 }
 
 pub async fn create_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
