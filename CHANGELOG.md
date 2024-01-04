@@ -5,6 +5,7 @@
 - Only generate playlists for complete sets of games
 - Exit gracefully in most places when missing an external program
 - Use `7zz` instead of `7z` on mac
+- Don't silently delete files in `check-roms`
 
 # 0.17.0
 

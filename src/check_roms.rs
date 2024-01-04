@@ -506,7 +506,7 @@ async fn move_to_trash(
     let new_path = get_trash_directory(connection, Some(system))
         .await?
         .join(Path::new(&romfile.path).file_name().unwrap());
-    rename_file(progress_bar, &romfile.path, &new_path, true).await?;
+    rename_file(progress_bar, &romfile.path, &new_path, false).await?;
     update_romfile(
         connection,
         romfile.id,
