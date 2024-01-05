@@ -200,13 +200,13 @@ pub async fn main(
                     system.id,
                 )
                 .await;
-                prompt_for_games(games, matches.get_flag("ALL"))?
+                prompt_for_games(games, cfg!(test))?
             }
             None => find_games_with_romfiles_by_system_id(connection, system.id).await,
         };
 
         if games.is_empty() {
-            if matches.contains_id("NAME") {
+            if game_name.is_some() {
                 progress_bar.println(format!("No game matching \"{}\"", game_name.unwrap()));
             }
             continue;

@@ -50,6 +50,7 @@ async fn test() {
         &mut connection,
         &progress_bar,
         &system,
+        &None,
         true,
         &HashAlgorithm::Crc,
     )

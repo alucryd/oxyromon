@@ -8,6 +8,7 @@
 - Don't silently delete files in `check-roms`
 - Add support for ZSO
 - Add optional dependency on bchunk
+- Allow filtering games by name in `check-roms`
 
 # 0.17.0
 
