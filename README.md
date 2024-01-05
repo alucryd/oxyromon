@@ -440,6 +440,8 @@ Supported ROM formats:
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
+Warning: CHD is temporarily disabled for Dreamcast as it's not entirely lossless, see https://github.com/alucryd/oxyromon/issues/110
+
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:

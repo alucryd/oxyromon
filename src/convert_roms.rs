@@ -161,6 +161,15 @@ pub async fn main(
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
 
+        if format == "CHD" && system.name.contains("Dreamcast") {
+            // if chdman::get_version().await?.as_str().cmp("0.240") == Ordering::Less {
+            //     progress_bar.println("Older chdman versions have issues with Dreamcast games, please update to a newer version");
+            //     continue;
+            // }
+            progress_bar.println("chdman has issues with Dreamcast games, see https://github.com/alucryd/oxyromon/issues/110");
+            continue;
+        }
+
         if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
             progress_bar.println(format!(
                 "Only {:?} are supported for arcade systems",
@@ -975,13 +984,6 @@ async fn to_chd(
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
 ) -> SimpleResult<()> {
-    if system.name.contains("Dreamcast")
-        && chdman::get_version().await?.as_str().cmp("0.240") == Ordering::Less
-    {
-        progress_bar.println("Older chdman versions have issues with Dreamcast games, please update to a newer version");
-        return Ok(());
-    }
-
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
