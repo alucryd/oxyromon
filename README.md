@@ -156,12 +156,13 @@ ZIP_COMPRESSION_LEVEL = 9
 These should be in your `${PATH}` for extra features.
 
 - [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
+- [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support (optional)
 - [chdman](https://www.mamedev.org/release.html): CHD support (optional)
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support (optional)
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
 - [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support (optional)
-- [nsz](https://github.com/nicoboss/nsz): NSZ support (optional, needs [this PR](https://github.com/nicoboss/nsz/pull/131))
+- [nsz](https://github.com/nicoboss/nsz): NSZ support (optional)
 
 ### TODO
 

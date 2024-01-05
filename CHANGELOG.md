@@ -7,6 +7,7 @@
 - Use `7zz` instead of `7z` on mac
 - Don't silently delete files in `check-roms`
 - Add support for ZSO
+- Add optional dependency on bchunk
 
 # 0.17.0
 

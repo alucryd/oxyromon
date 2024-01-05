@@ -47,6 +47,7 @@ extern crate vec_drain_where;
 #[cfg(feature = "ird")]
 extern crate walkdir;
 
+mod bchunk;
 #[cfg(feature = "benchmark")]
 mod benchmark;
 #[cfg(feature = "chd")]

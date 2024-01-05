@@ -1,3 +1,4 @@
+use super::bchunk;
 use super::chdman;
 use super::ctrtool;
 use super::database::*;
@@ -31,6 +32,10 @@ pub async fn main(
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
     };
+    let bchunk_version = match bchunk::get_version().await {
+        Ok(version) => format!("found ({})", version),
+        Err(_) => String::from("not found"),
+    };
     let chdman_version = match chdman::get_version().await {
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
@@ -58,6 +63,7 @@ pub async fn main(
 
     progress_bar.println("Dependencies:");
     progress_bar.println(format!("  7-zip: {}", sevenzip_version));
+    progress_bar.println(format!("  bchunk: {}", bchunk_version));
     progress_bar.println(format!("  chdman: {}", chdman_version));
     progress_bar.println(format!("  ctrtool: {}", ctrtool_version));
     progress_bar.println(format!("  dolphin: {}", dolphin_version));

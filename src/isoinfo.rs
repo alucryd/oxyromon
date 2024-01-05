@@ -44,7 +44,7 @@ pub async fn parse_iso<P: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let output = Command::new("isoinfo")
+    let output = Command::new(ISOINFO)
         .arg("-i")
         .arg(iso_path.as_ref())
         .arg("-J")
