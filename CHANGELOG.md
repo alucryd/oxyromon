@@ -6,6 +6,7 @@
 - Exit gracefully in most places when missing an external program
 - Use `7zz` instead of `7z` on mac
 - Don't silently delete files in `check-roms`
+- Add support for ZSO
 
 # 0.17.0
 

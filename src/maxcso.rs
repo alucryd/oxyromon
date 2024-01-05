@@ -31,32 +31,36 @@ pub async fn get_version() -> SimpleResult<String> {
     Ok(version)
 }
 
-pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
+async fn create_xso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
     directory: &Q,
+    extension: &str,
+    format: (&str, &str),
 ) -> SimpleResult<PathBuf> {
-    progress_bar.set_message("Creating CSO");
+    progress_bar.set_message(format!("Creating {}", format.0));
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let mut cso_path = directory
+    let mut xso_path = directory
         .as_ref()
         .join(iso_path.as_ref().file_name().unwrap());
-    cso_path.set_extension(CSO_EXTENSION);
+    xso_path.set_extension(extension);
 
     progress_bar.println(format!(
         "Creating \"{}\"",
-        cso_path.file_name().unwrap().to_str().unwrap()
+        xso_path.file_name().unwrap().to_str().unwrap()
     ));
 
     let output = Command::new(MAXCSO)
+        .arg("--block=2048")
+        .arg(format!("--format={}", format.1))
         .arg(iso_path.as_ref())
         .arg("-o")
-        .arg(&cso_path)
+        .arg(&xso_path)
         .output()
         .await
-        .expect("Failed to create CSO");
+        .expect(&format!("Failed to create {}", format.0));
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -65,6 +69,61 @@ pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
+    Ok(xso_path)
+}
+
+async fn extract_xso<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    xso_path: &P,
+    directory: &Q,
+    format: &str,
+) -> SimpleResult<PathBuf> {
+    progress_bar.set_message(format!("Extracting {}", format));
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+    progress_bar.println(format!(
+        "Extracting \"{}\"",
+        xso_path.as_ref().file_name().unwrap().to_str().unwrap()
+    ));
+
+    let mut iso_path = directory
+        .as_ref()
+        .join(xso_path.as_ref().file_name().unwrap());
+    iso_path.set_extension(ISO_EXTENSION);
+
+    let output = Command::new(MAXCSO)
+        .arg("--decompress")
+        .arg(xso_path.as_ref())
+        .arg("-o")
+        .arg(&iso_path)
+        .output()
+        .await
+        .expect(&format!("Failed to extract {}", format));
+
+    if !output.status.success() {
+        bail!(String::from_utf8(output.stderr).unwrap().as_str())
+    }
+
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+
+    Ok(iso_path)
+}
+
+pub async fn create_cso<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    iso_path: &P,
+    directory: &Q,
+) -> SimpleResult<PathBuf> {
+    let cso_path = create_xso(
+        progress_bar,
+        iso_path,
+        directory,
+        CSO_EXTENSION,
+        ("CSO", "cso1"),
+    )
+    .await?;
     Ok(cso_path)
 }
 
@@ -73,35 +132,31 @@ pub async fn extract_cso<P: AsRef<Path>, Q: AsRef<Path>>(
     cso_path: &P,
     directory: &Q,
 ) -> SimpleResult<PathBuf> {
-    progress_bar.set_message("Extracting CSO");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    let iso_path = extract_xso(progress_bar, cso_path, directory, "CSO").await?;
+    Ok(iso_path)
+}
 
-    progress_bar.println(format!(
-        "Extracting \"{}\"",
-        cso_path.as_ref().file_name().unwrap().to_str().unwrap()
-    ));
+pub async fn create_zso<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    iso_path: &P,
+    directory: &Q,
+) -> SimpleResult<PathBuf> {
+    let zso_path = create_xso(
+        progress_bar,
+        iso_path,
+        directory,
+        ZSO_EXTENSION,
+        ("ZSO", "zso"),
+    )
+    .await?;
+    Ok(zso_path)
+}
 
-    let mut iso_path = directory
-        .as_ref()
-        .join(cso_path.as_ref().file_name().unwrap());
-    iso_path.set_extension(ISO_EXTENSION);
-
-    let output = Command::new(MAXCSO)
-        .arg("--decompress")
-        .arg(cso_path.as_ref())
-        .arg("-o")
-        .arg(&iso_path)
-        .output()
-        .await
-        .expect("Failed to extract CSO");
-
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str())
-    }
-
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
-
+pub async fn extract_zso<P: AsRef<Path>, Q: AsRef<Path>>(
+    progress_bar: &ProgressBar,
+    zso_path: &P,
+    directory: &Q,
+) -> SimpleResult<PathBuf> {
+    let iso_path = extract_xso(progress_bar, zso_path, directory, "ZSO").await?;
     Ok(iso_path)
 }

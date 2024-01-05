@@ -5,7 +5,7 @@ use super::config::*;
 use super::database::*;
 #[cfg(feature = "rvz")]
 use super::dolphin;
-#[cfg(feature = "cso")]
+#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
 use super::model::*;
 #[cfg(feature = "nsz")]
@@ -202,6 +202,27 @@ async fn check_system(
                     .await;
                 } else {
                     progress_bar.println("Please rebuild with the RVZ feature enabled");
+                    break;
+                }
+            }
+        } else if ZSO_EXTENSION == romfile_extension {
+            cfg_if! {
+                if #[cfg(feature = "zso")] {
+                    if maxcso::get_version().await.is_err() {
+                        progress_bar.println("Please install maxcso");
+                        break;
+                    }
+                    result = check_zso(
+                        &mut transaction,
+                        progress_bar,
+                        &header,
+                        &romfile_path,
+                        roms.get(0).unwrap(),
+                        hash_algorithm
+                    )
+                    .await;
+                } else {
+                    progress_bar.println("Please rebuild with the ZSO feature enabled");
                     break;
                 }
             }
@@ -446,6 +467,31 @@ async fn check_rvz<P: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(feature = "zso")]
+async fn check_zso<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    header: &Option<Header>,
+    romfile_path: &P,
+    rom: &Rom,
+    hash_algorithm: &HashAlgorithm,
+) -> SimpleResult<()> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let iso_path = maxcso::extract_zso(progress_bar, romfile_path, &tmp_directory.path()).await?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &iso_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
+    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    Ok(())
+}
+
 async fn check_original<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -539,3 +585,5 @@ mod test_sevenzip;
 mod test_sevenzip_with_header;
 #[cfg(test)]
 mod test_zip;
+#[cfg(all(test, feature = "zso"))]
+mod test_zso;

@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::env;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -11,6 +12,14 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
+    env::set_var(
+        "PATH",
+        format!(
+            "{}:{}",
+            test_directory.as_os_str().to_str().unwrap(),
+            env::var("PATH").unwrap()
+        ),
+    );
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -28,9 +37,16 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Full).7z");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Full).7z"),
+        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd"),
         &romfile_path,
     )
     .await
@@ -57,7 +73,7 @@ async fn test() {
     roms_by_game_id.insert(roms[0].game_id, roms);
 
     // when
-    to_chd(
+    to_zso(
         &mut connection,
         &progress_bar,
         roms_by_game_id,
@@ -84,16 +100,6 @@ async fn test() {
     );
     assert!(Path::new(&romfile.path).is_file());
 
-    let rom = roms.get(0).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-    let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-
-    let rom = roms.get(2).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
-
     let romfile = romfiles.get(1).unwrap();
     assert_eq!(
         romfile.path,
@@ -104,5 +110,4 @@ async fn test() {
             .unwrap(),
     );
     assert!(Path::new(&romfile.path).is_file());
-    assert_eq!(rom.romfile_id, Some(romfile.id));
 }

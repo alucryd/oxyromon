@@ -72,6 +72,7 @@ The build uses rustls by default, but you can also opt for openssl:
 | ird            | IRD support                                    | x       |
 | nsz            | NSZ support                                    | x       |
 | rvz            | RVZ support                                    | x       |
+| zso            | ZSO support                                    | x       |
 | benchmark      | build the benchmark subcommand                 |         |
 | server         | build the server subcommand                    |         |
 | enable-asm     | enable ASM variants of the MD5 and SHA1 hashes | x       |
@@ -159,7 +160,7 @@ These should be in your `${PATH}` for extra features.
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support (optional)
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
 - [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
-- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO support (optional)
+- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support (optional)
 - [nsz](https://github.com/nicoboss/nsz): NSZ support (optional, needs [this PR](https://github.com/nicoboss/nsz/pull/131))
 
 ### TODO
@@ -319,6 +320,7 @@ Supported console ROM formats:
 - CSO (Compressed ISO)
 - NSZ (Compressed NSP)
 - RVZ (Modern Dolphin format)
+- ZSO (LZ4 Compressed ISO)
 - JB folders (Extracted PS3 ISO)
 
 Supported arcade ROM formats:
@@ -436,6 +438,7 @@ Supported ROM formats:
 - CUE/BIN <-> CHD (Compressed Hunks of Data)
 - ISO <-> CHD (Compressed Hunks of Data)
 - ISO <-> CSO (Compressed ISO)
+- ISO <-> ZSO (LZ4 Compressed ISO)
 - ISO <-> RVZ (Modern Dolphin format)
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
@@ -445,7 +448,7 @@ Warning: CHD is temporarily disabled for Dreamcast as it's not entirely lossless
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:
-        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
         -n, --name <NAME>      Select games by name
         -a, --all              Convert all systems/games
         -d, --diff             Print size differences

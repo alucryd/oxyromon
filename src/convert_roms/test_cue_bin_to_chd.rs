@@ -80,7 +80,6 @@ async fn test_cue_bin_to_chd() {
     to_chd(
         &mut connection,
         &progress_bar,
-        &system,
         roms_by_game_id,
         romfiles_by_id,
         true,

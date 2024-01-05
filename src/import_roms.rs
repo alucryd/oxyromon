@@ -7,7 +7,7 @@ use super::ctrtool;
 use super::database::*;
 #[cfg(feature = "rvz")]
 use super::dolphin;
-#[cfg(feature = "cso")]
+#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
 use super::model::*;
 #[cfg(feature = "nsz")]
@@ -382,6 +382,30 @@ pub async fn import_rom<P: AsRef<Path>>(
                 };
             } else {
                 progress_bar.println("Please rebuild with the RVZ feature enabled");
+            }
+        }
+    } else if ZSO_EXTENSION == romfile_extension {
+        cfg_if! {
+            if #[cfg(feature = "zso")] {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    return Ok(system_ids);
+                }
+                if let Some(system_id) = import_zso(
+                    &mut transaction,
+                    progress_bar,
+                    system,
+                    header,
+                    &romfile_path,
+                    hash_algorithm,
+                    trash,
+                )
+                .await?
+                {
+                    system_ids.insert(system_id);
+                };
+            } else {
+                progress_bar.println("Please rebuild with the ZSO feature enabled");
             }
         }
     } else if let Some(system_id) = import_other(
@@ -1182,6 +1206,61 @@ async fn import_rvz<P: AsRef<Path>>(
     }
 }
 
+#[cfg(feature = "zso")]
+async fn import_zso<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: Option<&System>,
+    header: &Option<Header>,
+    romfile_path: &P,
+    hash_algorithm: &HashAlgorithm,
+    trash: bool,
+) -> SimpleResult<Option<i64>> {
+    let tmp_directory = create_tmp_directory(connection).await?;
+    let iso_path = maxcso::extract_zso(progress_bar, romfile_path, &tmp_directory.path()).await?;
+    let (size, hash) = get_size_and_hash(
+        connection,
+        progress_bar,
+        &iso_path,
+        header,
+        1,
+        1,
+        hash_algorithm,
+    )
+    .await?;
+    remove_file(progress_bar, &iso_path, true).await?;
+    if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
+        connection,
+        progress_bar,
+        size,
+        &hash,
+        &system,
+        Vec::new(),
+        None,
+        hash_algorithm,
+    )
+    .await?
+    {
+        let system_directory = get_system_directory(connection, &system).await?;
+
+        let mut new_zso_path = system_directory.join(&rom.name);
+        new_zso_path.set_extension(ZSO_EXTENSION);
+
+        // move ZSO if needed
+        rename_file(progress_bar, romfile_path, &new_zso_path, false).await?;
+
+        // persist in database
+        create_or_update_romfile(connection, &new_zso_path, &[rom]).await;
+
+        Ok(Some(system.id))
+    } else {
+        if trash {
+            move_to_trash(connection, progress_bar, romfile_path).await?;
+        }
+        Ok(None)
+    }
+}
+
 async fn import_other<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1705,3 +1784,5 @@ mod test_sevenzip_single_file;
 mod test_sevenzip_single_file_headered;
 #[cfg(test)]
 mod test_zip_single_file;
+#[cfg(all(test, feature = "zso"))]
+mod test_zso;

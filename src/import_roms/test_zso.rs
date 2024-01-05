@@ -1,7 +1,8 @@
 use super::super::database::*;
 use super::super::import_dats;
-use super::super::import_roms;
 use super::*;
+use std::env;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -11,6 +12,14 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
+    env::set_var(
+        "PATH",
+        format!(
+            "{}:{}",
+            test_directory.as_os_str().to_str().unwrap(),
+            env::var("PATH").unwrap()
+        ),
+    );
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -28,10 +37,10 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Full).7z");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).zso");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Full).7z"),
-        &romfile_path,
+        test_directory.join("Test Game (USA, Europe).zso"),
+        &romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
@@ -41,27 +50,14 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-    import_roms::main(&mut connection, &matches, &progress_bar)
-        .await
-        .unwrap();
-
-    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
-    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
-    let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    for rom in &roms {
-        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
-        romfiles_by_id.insert(romfile.id, romfile);
-    }
-    roms_by_game_id.insert(roms[0].game_id, roms);
-
     // when
-    to_chd(
+    import_zso(
         &mut connection,
         &progress_bar,
-        roms_by_game_id,
-        romfiles_by_id,
+        Some(&system),
+        &None,
+        &romfile_path,
+        &HashAlgorithm::Crc,
         true,
     )
     .await
@@ -69,36 +65,32 @@ async fn test() {
 
     // then
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    assert_eq!(roms.len(), 3);
+    assert_eq!(roms.len(), 1);
     let romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 2);
+    assert_eq!(romfiles.len(), 1);
+    let games = find_games_by_ids(
+        &mut connection,
+        roms.iter()
+            .map(|rom| rom.game_id)
+            .collect::<Vec<i64>>()
+            .as_slice(),
+    )
+    .await;
+    assert_eq!(games.len(), 1);
+
+    let game = games.get(0).unwrap();
+    assert_eq!(game.name, "Test Game (USA, Europe) (ISO)");
+    assert_eq!(game.system_id, system.id);
+
+    let rom = roms.get(0).unwrap();
+    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+    assert_eq!(rom.game_id, game.id);
 
     let romfile = romfiles.get(0).unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
-    );
-    assert!(Path::new(&romfile.path).is_file());
-
-    let rom = roms.get(0).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-    let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-
-    let rom = roms.get(2).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
-
-    let romfile = romfiles.get(1).unwrap();
-    assert_eq!(
-        romfile.path,
-        system_directory
-            .join("Test Game (USA, Europe).cue")
+            .join("Test Game (USA, Europe).zso")
             .as_os_str()
             .to_str()
             .unwrap(),

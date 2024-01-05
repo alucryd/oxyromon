@@ -120,6 +120,7 @@ pub static RAP_EXTENSION: &str = "rap";
 pub static RVZ_EXTENSION: &str = "rvz";
 pub static SEVENZIP_EXTENSION: &str = "7z";
 pub static ZIP_EXTENSION: &str = "zip";
+pub static ZSO_EXTENSION: &str = "zso";
 
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];

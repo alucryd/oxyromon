@@ -13,7 +13,17 @@ repository = "https://github.com/alucryd/oxyromon"
 version = "0.18.0-beta1"
 
 [features]
-default = ["use-rustls", "enable-asm", "chd", "cia", "cso", "ird", "nsz", "rvz"]
+default = [
+    "use-rustls",
+    "enable-asm",
+    "chd",
+    "cia",
+    "cso",
+    "ird",
+    "nsz",
+    "rvz",
+    "zso",
+]
 use-native-tls = ["reqwest/default-tls"]
 use-rustls = ["reqwest/rustls-tls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
@@ -23,6 +33,7 @@ cso = []
 ird = ["flate2", "strsim"]
 nsz = []
 rvz = []
+zso = []
 benchmark = []
 server = [
     "async-graphql",

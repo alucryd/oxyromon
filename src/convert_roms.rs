@@ -4,7 +4,7 @@ use super::config::*;
 use super::database::*;
 #[cfg(feature = "rvz")]
 use super::dolphin;
-#[cfg(feature = "cso")]
+#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
 use super::model::*;
 #[cfg(feature = "nsz")]
@@ -20,7 +20,6 @@ use indicatif::{HumanBytes, ProgressBar};
 use lazy_static::lazy_static;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
@@ -47,6 +46,11 @@ lazy_static! {
         cfg_if! {
             if #[cfg(feature = "rvz")] {
                 all_formats.push("RVZ");
+            }
+        }
+        cfg_if! {
+            if #[cfg(feature = "zso")] {
+                all_formats.push("ZSO");
             }
         }
         all_formats
@@ -150,6 +154,16 @@ pub async fn main(
                 if #[cfg(feature = "rvz")] {
                     if dolphin::get_version().await.is_err() {
                         progress_bar.println("Please install dolphin");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+        "ZSO" => {
+            cfg_if! {
+                if #[cfg(feature = "zso")] {
+                    if maxcso::get_version().await.is_err() {
+                        progress_bar.println("Please install maxcso");
                         return Ok(());
                     }
                 }
@@ -274,7 +288,6 @@ pub async fn main(
                         to_chd(
                             connection,
                             progress_bar,
-                            &system,
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
@@ -326,6 +339,20 @@ pub async fn main(
                             &compression_algorithm,
                             compression_level,
                             block_size,
+                        )
+                        .await?
+                    }
+                }
+            }
+            "ZSO" => {
+                cfg_if! {
+                    if #[cfg(feature = "zso")] {
+                        to_zso(
+                            connection,
+                            progress_bar,
+                            roms_by_game_id,
+                            romfiles_by_id,
+                            diff,
                         )
                         .await?
                     }
@@ -428,6 +455,23 @@ async fn to_archive(
     cfg_if! {
         if #[cfg(not(feature = "rvz"))] {
             drop(rvzs)
+        }
+    }
+
+    // partition ZSOs
+    let (zsos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ZSO_EXTENSION)
+            })
+        });
+    cfg_if! {
+        if #[cfg(not(feature = "zso"))] {
+            drop(zsos)
         }
     }
 
@@ -749,6 +793,61 @@ async fn to_archive(
         }
     }
 
+    // convert ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            for roms in zsos.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                let mut transaction = begin_transaction(connection).await;
+
+                let rom = roms.get(0).unwrap();
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let iso_path = maxcso::extract_zso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
+
+                let game = games_by_id.get(&rom.game_id).unwrap();
+                let archive_name = format!(
+                    "{}.{}",
+                    &game.name,
+                    match archive_type {
+                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                    }
+                );
+                let archive_path = Path::new(&romfile.path).with_file_name(&archive_name);
+
+                sevenzip::add_files_to_archive(
+                    progress_bar,
+                    &archive_path,
+                    &[iso_path.file_name().unwrap().to_str().unwrap()],
+                    &tmp_directory.path(),
+                    compression_level,
+                    solid,
+                ).await?;
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    archive_path.as_os_str().to_str().unwrap(),
+                    archive_path.metadata().unwrap().len(),
+                )
+                .await;
+
+                if diff {
+                    print_diff(
+                        progress_bar,
+                        &roms.iter().collect::<Vec<&Rom>>(),
+                        &[&romfile.path],
+                        &[&archive_path],
+                    )
+                    .await?;
+                }
+
+                remove_file(progress_bar, &romfile.path, false).await?;
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
     // convert archives
     for roms in archives.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
@@ -979,7 +1078,6 @@ async fn to_archive(
 async fn to_chd(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: &System,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
@@ -1034,6 +1132,22 @@ async fn to_chd(
                             .unwrap()
                             .path
                             .ends_with(CSO_EXTENSION)
+                    })
+                });
+        }
+    }
+
+    // partition ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(ZSO_EXTENSION)
                     })
                 });
         }
@@ -1253,7 +1367,39 @@ async fn to_chd(
                         chd_path.metadata().unwrap().len(),
                     )
                     .await;
-                    // remove_file(progress_bar, &iso_path, false).await?;
+                    remove_file(progress_bar, &romfile.path, false).await?;
+                }
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
+    // convert ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            for roms in zsos.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                let mut transaction = begin_transaction(connection).await;
+
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    let iso_path = maxcso::extract_zso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
+                    let chd_path = chdman::create_chd(
+                        progress_bar,
+                        &iso_path,
+                        &Path::new(&romfile.path).parent().unwrap(),
+                    ).await?;
+                    if diff {
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_path]).await?;
+                    }
+                    update_romfile(
+                        &mut transaction,
+                        romfile.id,
+                        chd_path.as_os_str().to_str().unwrap(),
+                        chd_path.metadata().unwrap().len(),
+                    )
+                    .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
                 }
 
@@ -1682,6 +1828,178 @@ async fn to_rvz(
     Ok(())
 }
 
+#[cfg(feature = "zso")]
+async fn to_zso(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+    diff: bool,
+) -> SimpleResult<()> {
+    // partition archives
+    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
+    // partition ISOs
+    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ISO_EXTENSION)
+            })
+        });
+
+    // partition CHDs
+    cfg_if! {
+        if #[cfg(feature = "chd")] {
+            let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.len() == 1
+                        && roms.par_iter().any(|rom| {
+                            romfiles_by_id
+                                .get(&rom.romfile_id.unwrap())
+                                .unwrap()
+                                .path
+                                .ends_with(CHD_EXTENSION)
+                        })
+                });
+        }
+    }
+
+    // drop others
+    drop(others);
+
+    // convert archives
+    for roms in archives.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+
+        let mut romfiles: Vec<&Romfile> = roms
+            .par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+
+        if roms.len() > 1 || !roms.get(0).unwrap().name.ends_with(ISO_EXTENSION) {
+            continue;
+        }
+
+        let rom = roms.get(0).unwrap();
+        let romfile = romfiles.get(0).unwrap();
+        let file_names: Vec<&str> = roms.par_iter().map(|rom| rom.name.as_str()).collect();
+
+        let extracted_paths = sevenzip::extract_files_from_archive(
+            progress_bar,
+            &romfile.path,
+            &file_names,
+            &tmp_directory.path(),
+        )
+        .await?;
+        let extracted_path = extracted_paths.get(0).unwrap();
+
+        let zso_path = maxcso::create_zso(
+            progress_bar,
+            &extracted_path,
+            &Path::new(&romfile.path).parent().unwrap(),
+        )
+        .await?;
+
+        if diff {
+            print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+        }
+
+        update_romfile(
+            &mut transaction,
+            romfile.id,
+            zso_path.as_os_str().to_str().unwrap(),
+            zso_path.metadata().unwrap().len(),
+        )
+        .await;
+        remove_file(progress_bar, &romfile.path, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert ISOs
+    for roms in isos.values() {
+        let mut transaction = begin_transaction(connection).await;
+
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let zso_path = maxcso::create_zso(
+                progress_bar,
+                &romfile.path,
+                &Path::new(&romfile.path).parent().unwrap(),
+            )
+            .await?;
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+            }
+            update_romfile(
+                &mut transaction,
+                romfile.id,
+                zso_path.as_os_str().to_str().unwrap(),
+                zso_path.metadata().unwrap().len(),
+            )
+            .await;
+            remove_file(progress_bar, &romfile.path, false).await?;
+        }
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert CHDs
+    cfg_if! {
+        if #[cfg(feature = "chd")] {
+            for roms in chds.values() {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                let mut transaction = begin_transaction(connection).await;
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    let iso_path = chdman::extract_chd_to_single_track(
+                        progress_bar,
+                        &romfile.path,
+                        &tmp_directory.path(),
+                    )
+                    .await?;
+                    let zso_path = maxcso::create_zso(
+                        progress_bar,
+                        &iso_path,
+                        &Path::new(&romfile.path).parent().unwrap(),
+                    ).await?;
+                    if diff {
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+                    }
+                    update_romfile(
+                        &mut transaction,
+                        romfile.id,
+                        zso_path.as_os_str().to_str().unwrap(),
+                        zso_path.metadata().unwrap().len(),
+                    )
+                    .await;
+                    remove_file(progress_bar, &romfile.path, false).await?;
+                }
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 async fn to_original(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1757,6 +2075,22 @@ async fn to_original(
                             .unwrap()
                             .path
                             .ends_with(RVZ_EXTENSION)
+                    })
+                });
+        }
+    }
+
+    // partition ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(ZSO_EXTENSION)
                     })
                 });
         }
@@ -1915,6 +2249,7 @@ async fn to_original(
         }
     }
 
+    // convert NSZs
     cfg_if! {
         if #[cfg(feature = "nsz")] {
             for roms in nszs.values() {
@@ -1961,6 +2296,39 @@ async fn to_original(
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let iso_path = dolphin::extract_rvz(
+                        progress_bar,
+                        &romfile.path,
+                        &Path::new(&romfile.path).parent().unwrap(),
+                    ).await?;
+                    update_romfile(
+                        &mut transaction,
+                        romfile.id,
+                        iso_path.as_os_str().to_str().unwrap(),
+                        iso_path.metadata().unwrap().len(),
+                    )
+                    .await;
+                    remove_file(progress_bar, &romfile.path, false).await?;
+                }
+
+                commit_transaction(transaction).await;
+            }
+        }
+    }
+
+    // convert ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            for roms in zsos.values() {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    break;
+                }
+
+                let mut transaction = begin_transaction(connection).await;
+
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    let iso_path = maxcso::extract_zso(
                         progress_bar,
                         &romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
@@ -2031,6 +2399,8 @@ mod test_iso_to_rvz;
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(all(test, feature = "chd"))]
 mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
+#[cfg(all(test, feature = "chd", feature = "zso"))]
+mod test_multiple_tracks_chd_to_zso_should_do_nothing;
 #[cfg(test)]
 mod test_original_to_sevenzip;
 #[cfg(test)]
@@ -2051,6 +2421,8 @@ mod test_sevenzip_cue_bin_to_chd;
 mod test_sevenzip_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
 mod test_sevenzip_iso_to_cso;
+#[cfg(all(test, feature = "zso"))]
+mod test_sevenzip_iso_to_zso;
 #[cfg(test)]
 mod test_sevenzip_to_original;
 #[cfg(test)]
@@ -2059,7 +2431,15 @@ mod test_sevenzip_to_zip;
 mod test_single_track_chd_to_cso;
 #[cfg(all(test, feature = "chd"))]
 mod test_single_track_chd_to_sevenzip_iso;
+#[cfg(all(test, feature = "chd", feature = "zso"))]
+mod test_single_track_chd_to_zso;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]
 mod test_zip_to_sevenzip;
+#[cfg(all(test, feature = "chd", feature = "zso"))]
+mod test_zso_to_chd;
+#[cfg(all(test, feature = "zso"))]
+mod test_zso_to_iso;
+#[cfg(all(test, feature = "zso"))]
+mod test_zso_to_sevenzip_iso;
