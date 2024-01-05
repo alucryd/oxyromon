@@ -118,7 +118,14 @@ async fn check_system(
         &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
     )
     .await;
-    let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+    let romfiles = find_romfiles_by_ids(
+        connection,
+        roms.iter()
+            .map(|rom| rom.romfile_id.unwrap())
+            .collect::<Vec<i64>>()
+            .as_slice(),
+    )
+    .await;
     let mut roms_by_romfile_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms.into_iter().for_each(|rom| {
         let group = roms_by_romfile_id
