@@ -12,6 +12,8 @@ use tokio::process::Command;
 
 const CHDMAN: &str = "chdman";
 
+pub const MIN_DREAMCAST_VERSION: &str = "0.262";
+
 lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
 }

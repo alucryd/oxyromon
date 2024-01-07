@@ -20,6 +20,7 @@ use indicatif::{HumanBytes, ProgressBar};
 use lazy_static::lazy_static;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::mem::drop;
 use std::path::{Path, PathBuf};
@@ -176,11 +177,15 @@ pub async fn main(
         progress_bar.println(format!("Processing \"{}\"", system.name));
 
         if format == "CHD" && system.name.contains("Dreamcast") {
-            // if chdman::get_version().await?.as_str().cmp("0.240") == Ordering::Less {
-            //     progress_bar.println("Older chdman versions have issues with Dreamcast games, please update to a newer version");
-            //     continue;
-            // }
-            progress_bar.println("chdman has issues with Dreamcast games, see https://github.com/alucryd/oxyromon/issues/110");
+            if chdman::get_version()
+                .await?
+                .as_str()
+                .cmp(chdman::MIN_DREAMCAST_VERSION)
+                == Ordering::Less
+            {
+                progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
+                continue;
+            }
             continue;
         }
 
