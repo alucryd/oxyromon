@@ -1664,7 +1664,7 @@ async fn find_sfb_rom_by_md5(
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 {
         let rom = roms.remove(0);
-        let game = find_game_by_id(connection, rom.id).await;
+        let game = find_game_by_id(connection, rom.game_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game = Some((rom, game));
     } else {
