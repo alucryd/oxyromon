@@ -53,7 +53,6 @@ mod benchmark;
 #[cfg(feature = "chd")]
 mod chdman;
 mod check_roms;
-mod checksum;
 mod common;
 mod config;
 mod convert_roms;

@@ -1,9 +1,10 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip;
+use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use clap::builder::PossibleValuesParser;
@@ -251,7 +252,7 @@ async fn add_rom(
     if let Some(archive_romfile) = archive_romfile {
         if source_romfile.path.ends_with(ZIP_EXTENSION) {
             // both source and destination are archives
-            sevenzip::copy_files_between_archives(
+            copy_files_between_archives(
                 progress_bar,
                 &source_romfile.path,
                 &archive_romfile.path,
@@ -262,49 +263,46 @@ async fn add_rom(
             update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
         } else {
             // source is directory and destination is archive
-            sevenzip::add_files_to_archive(
-                progress_bar,
-                &archive_romfile.path,
-                &[&source_rom.name],
-                &Path::new(&source_romfile.path).parent().unwrap(),
-                compression_level,
-                false,
-            )
-            .await?;
-            if source_rom.name != rom.name {
-                sevenzip::rename_file_in_archive(
+            let original_romfile = OriginalRomfile {
+                path: game_directory.join(&source_rom.name),
+            };
+            let archived_romfile = original_romfile
+                .to_archive(
                     progress_bar,
                     &archive_romfile.path,
-                    &source_rom.name,
-                    &rom.name,
+                    &Path::new(&source_romfile.path).parent().unwrap(),
+                    compression_level,
+                    false,
                 )
                 .await?;
+            if source_rom.name != rom.name {
+                archived_romfile
+                    .rename_file(progress_bar, &rom.name)
+                    .await?;
             }
             update_rom_romfile(transaction, rom.id, Some(source_romfile.id)).await;
         }
     } else if source_romfile.path.ends_with(ZIP_EXTENSION) {
         // source is archive and destination is directory
-        let romfile_path = game_directory.join(&rom.name);
-        sevenzip::extract_files_from_archive(
-            progress_bar,
-            &source_romfile.path,
-            &[&source_rom.name],
-            game_directory,
-        )
-        .await?;
-        if source_rom.name != rom.name {
-            rename_file(
-                progress_bar,
-                &game_directory.join(&source_rom.name),
-                &romfile_path,
-                true,
-            )
+        let archived_romfile = ArchiveRomfile {
+            path: game_directory.join(&source_romfile.path),
+            file_path: source_rom.name.clone(),
+        };
+        let mut original_romfile = archived_romfile
+            .to_original(progress_bar, game_directory)
             .await?;
+        if source_rom.name != rom.name {
+            original_romfile = original_romfile
+                .rename(progress_bar, &game_directory.join(&rom.name), true)
+                .await?;
         }
+        let size = original_romfile
+            .get_size(transaction, progress_bar, &None)
+            .await?;
         let romfile_id = create_romfile(
             transaction,
-            romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().unwrap().len(),
+            original_romfile.path.as_os_str().to_str().unwrap(),
+            size,
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
@@ -330,8 +328,11 @@ async fn delete_rom(
     archive_romfile: &Option<Romfile>,
 ) -> SimpleResult<()> {
     if let Some(archive_romfile) = archive_romfile {
-        sevenzip::remove_files_from_archive(progress_bar, &archive_romfile.path, &[&rom.name])
-            .await?;
+        let archived_romfile = ArchiveRomfile {
+            path: PathBuf::from(&archive_romfile.path),
+            file_path: rom.name.clone(),
+        };
+        archived_romfile.delete_file(progress_bar).await?;
     } else {
         let romfile = find_romfile_by_id(transaction, rom.romfile_id.unwrap()).await;
         remove_file(progress_bar, &romfile.path, false).await?;
