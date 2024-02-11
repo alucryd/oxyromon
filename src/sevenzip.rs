@@ -1,3 +1,5 @@
+use super::common::*;
+use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
 use cfg_if::cfg_if;
@@ -10,6 +12,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
+use async_trait::async_trait;
 
 cfg_if! {
     if #[cfg(macos)] {
@@ -32,10 +35,28 @@ pub enum ArchiveType {
     Zip,
 }
 
+pub struct ArchiveFile {
+    pub path: PathBuf,
+    pub rom: Rom,
+}
+
 pub struct ArchiveInfo {
     pub path: String,
     pub size: u64,
     pub crc: String,
+}
+
+pub trait ArchiveFile {}
+
+impl Size for ArchiveFile {
+    async fn get_size(
+        self,
+        connection: &mut SqliteConnection,
+        header: &Option<Header>,
+    ) -> SimpleResult<u64> {
+        let (mut file, header_size) = self.get_file_and_header_size(connection, header).await?;
+        Ok(file.metadata().unwrap().len() - header_size)
+    }
 }
 
 pub async fn get_version() -> SimpleResult<String> {

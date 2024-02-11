@@ -54,6 +54,7 @@ mod benchmark;
 mod chdman;
 mod check_roms;
 mod checksum;
+mod common;
 mod config;
 mod convert_roms;
 #[cfg(feature = "cia")]
