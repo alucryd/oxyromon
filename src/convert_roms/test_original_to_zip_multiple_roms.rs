@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -98,10 +99,8 @@ async fn test() {
     );
     assert!(Path::new(&romfile.path).is_file());
 
-    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path)
-        .await
-        .unwrap();
-    assert_eq!(sevenzip_infos.len(), 2);
+    let archive_romfiles = sevenzip::parse(&progress_bar, &romfile.path).await.unwrap();
+    assert_eq!(archive_romfiles.len(), 2);
 
     let rom = roms.get(0).unwrap();
     assert_eq!(rom.name, "UP0001-BLUS00001.pkg");

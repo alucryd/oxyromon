@@ -263,7 +263,7 @@ impl Checksum for ArchiveRomfile {
                     .find(|&line| line.starts_with("CRC ="))
                     .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
                     .unwrap();
-                Ok(hash.to_string())
+                Ok(hash.to_string().to_lowercase())
             }
         }
     }
@@ -322,7 +322,7 @@ pub trait AsArchive {
 impl AsArchive for Romfile {
     fn as_archive(&self, rom: &Rom) -> ArchiveRomfile {
         ArchiveRomfile {
-            path: PathBuf::from(self.path),
+            path: PathBuf::from(&self.path),
             file_path: rom.name.clone(),
         }
     }

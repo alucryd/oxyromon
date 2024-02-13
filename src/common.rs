@@ -59,7 +59,7 @@ pub trait AsOriginal {
 impl AsOriginal for Romfile {
     fn as_original(&self) -> OriginalRomfile {
         OriginalRomfile {
-            path: PathBuf::from(self.path),
+            path: PathBuf::from(&self.path),
         }
     }
 }

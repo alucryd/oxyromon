@@ -1,6 +1,6 @@
 #[cfg(feature = "chd")]
 use super::chdman;
-use super::checksum::*;
+use super::common::*;
 use super::config::*;
 use super::database::*;
 #[cfg(feature = "rvz")]
@@ -19,7 +19,6 @@ use indicatif::ProgressBar;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::path::Path;
 
 pub fn subcommand() -> Command {
@@ -316,48 +315,21 @@ async fn check_archive<P: AsRef<Path>>(
     mut roms: Vec<Rom>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let sevenzip_infos = sevenzip::parse_archive(progress_bar, romfile_path).await?;
+    let archive_romfiles = sevenzip::parse(progress_bar, romfile_path).await?;
 
-    if sevenzip_infos.len() != roms.len() {
+    if archive_romfiles.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
     }
 
-    for sevenzip_info in sevenzip_infos {
-        let size: u64;
-        let hash: String;
-        if header.is_some() || sevenzip_info.crc.is_empty() || hash_algorithm != &HashAlgorithm::Crc
-        {
-            let tmp_directory = create_tmp_directory(connection).await?;
-            let extracted_path = sevenzip::extract_files_from_archive(
-                progress_bar,
-                romfile_path,
-                &[&sevenzip_info.path],
-                &tmp_directory.path(),
-            )
-            .await?
-            .remove(0);
-            let size_hash = get_size_and_hash(
-                connection,
-                progress_bar,
-                &extracted_path,
-                header,
-                1,
-                1,
-                hash_algorithm,
-            )
-            .await?;
-            size = size_hash.0;
-            hash = size_hash.1;
-        } else {
-            size = sevenzip_info.size;
-            hash = sevenzip_info.crc.clone();
-        }
+    for archive_romfile in archive_romfiles {
         let rom_index = roms
             .iter()
-            .position(|rom| rom.name == sevenzip_info.path)
+            .position(|rom| rom.name == archive_romfile.file_path)
             .unwrap();
         let rom = roms.remove(rom_index);
-        check_size_and_hash(&rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+        archive_romfile
+            .check(connection, progress_bar, header, &rom, 1, 1, hash_algorithm)
+            .await?;
     }
 
     Ok(())
@@ -386,19 +358,22 @@ async fn check_chd<P: AsRef<Path>>(
         true,
     )
     .await?;
+    let bin_count = bin_paths.len();
     let mut hashes: Vec<String> = Vec::new();
-    for (i, bin_path) in bin_paths.iter().enumerate() {
-        let (_, hash) = get_size_and_hash(
-            connection,
-            progress_bar,
-            &bin_path,
-            header,
-            i,
-            bin_paths.len(),
-            hash_algorithm,
-        )
-        .await?;
-        hashes.push(hash);
+    for (i, bin_path) in bin_paths.into_iter().enumerate() {
+        let bin_romfile = OriginalRomfile { path: bin_path };
+        hashes.push(
+            bin_romfile
+                .get_hash(
+                    connection,
+                    progress_bar,
+                    header,
+                    i,
+                    bin_count,
+                    hash_algorithm,
+                )
+                .await?,
+        );
     }
 
     match hash_algorithm {
@@ -445,17 +420,10 @@ async fn check_cso<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let (size, hash) = get_size_and_hash(
-        connection,
-        progress_bar,
-        &iso_path,
-        header,
-        1,
-        1,
-        hash_algorithm,
-    )
-    .await?;
-    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    let iso_romfile = OriginalRomfile { path: iso_path };
+    iso_romfile
+        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+        .await?;
     Ok(())
 }
 
@@ -470,17 +438,10 @@ async fn check_nsz<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let (size, hash) = get_size_and_hash(
-        connection,
-        progress_bar,
-        &nsp_path,
-        header,
-        1,
-        1,
-        hash_algorithm,
-    )
-    .await?;
-    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    let nsp_romfile = OriginalRomfile { path: nsp_path };
+    nsp_romfile
+        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+        .await?;
     Ok(())
 }
 
@@ -495,17 +456,10 @@ async fn check_rvz<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let (size, hash) = get_size_and_hash(
-        connection,
-        progress_bar,
-        &iso_path,
-        header,
-        1,
-        1,
-        hash_algorithm,
-    )
-    .await?;
-    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    let iso_romfile = OriginalRomfile { path: iso_path };
+    iso_romfile
+        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+        .await?;
     Ok(())
 }
 
@@ -520,17 +474,10 @@ async fn check_zso<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = maxcso::extract_zso(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let (size, hash) = get_size_and_hash(
-        connection,
-        progress_bar,
-        &iso_path,
-        header,
-        1,
-        1,
-        hash_algorithm,
-    )
-    .await?;
-    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
+    let iso_romfile = OriginalRomfile { path: iso_path };
+    iso_romfile
+        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+        .await?;
     Ok(())
 }
 
@@ -542,46 +489,12 @@ async fn check_original<P: AsRef<Path>>(
     rom: &Rom,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let (size, hash) = get_size_and_hash(
-        connection,
-        progress_bar,
-        romfile_path,
-        header,
-        1,
-        1,
-        hash_algorithm,
-    )
-    .await?;
-    check_size_and_hash(rom, i64::try_from(size).unwrap(), &hash, hash_algorithm)?;
-    Ok(())
-}
-
-fn check_size_and_hash(
-    rom: &Rom,
-    size: i64,
-    hash: &str,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    if size != rom.size {
-        bail!("Size mismatch");
+    let original_romfile = OriginalRomfile {
+        path: romfile_path.as_ref().to_path_buf(),
     };
-    match hash_algorithm {
-        HashAlgorithm::Crc => {
-            if hash != rom.crc.as_ref().unwrap() {
-                bail!("Checksum mismatch");
-            }
-        }
-        HashAlgorithm::Md5 => {
-            if hash != rom.md5.as_ref().unwrap() {
-                bail!("Checksum mismatch");
-            }
-        }
-        HashAlgorithm::Sha1 => {
-            if hash != rom.sha1.as_ref().unwrap() {
-                bail!("Checksum mismatch");
-            }
-        }
-    }
+    original_romfile
+        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+        .await?;
     Ok(())
 }
 

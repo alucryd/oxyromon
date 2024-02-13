@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
