@@ -31,7 +31,7 @@ cfg_if! {
     }
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,

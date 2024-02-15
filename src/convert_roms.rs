@@ -1,3 +1,5 @@
+use crate::sevenzip::ArchiveFile;
+
 #[cfg(feature = "chd")]
 use super::chdman;
 use super::common::*;
@@ -7,6 +9,7 @@ use super::database::*;
 use super::dolphin;
 #[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
+use super::maxcso::{AsXso, ToXso};
 use super::model::*;
 #[cfg(feature = "nsz")]
 use super::nsz;
@@ -379,24 +382,13 @@ async fn to_archive(
     progress_bar: &ProgressBar,
     archive_type: sevenzip::ArchiveType,
     system: &System,
-    mut roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: HashMap<i64, Vec<Rom>>,
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
     compression_level: usize,
     solid: bool,
 ) -> SimpleResult<()> {
-    // remove same type archives
-    roms_by_game_id.retain(|_, roms| {
-        roms.par_iter().any(|rom| {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            !(romfile.path.ends_with(match archive_type {
-                sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-            }))
-        })
-    });
-
     // partition CHDs
     let (chds, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -486,14 +478,8 @@ async fn to_archive(
     let (archives, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => ZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => SEVENZIP_EXTENSION,
-                    })
+                let path = &romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap().path;
+                path.ends_with(SEVENZIP_EXTENSION) || path.ends_with(ZIP_EXTENSION)
             })
         });
 
@@ -514,21 +500,15 @@ async fn to_archive(
                     )
                     .await?;
 
-                    let bin_romfile = OriginalRomfile { path: bin_path};
+                    let bin_romfile = CommonRomfile { path: bin_path};
 
                     let game = games_by_id.get(&rom.game_id).unwrap();
-                    let archive_name = format!(
-                        "{}.{}",
-                        &game.name,
-                        match archive_type {
-                            sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                            sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                        }
-                    );
                     let archive_romfile = bin_romfile.to_archive(
                         progress_bar,
-                        &Path::new(&romfile.path).with_file_name(&archive_name),
                         &tmp_directory.path(),
+                        &Path::new(&romfile.path).parent().unwrap(),
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid
                     )
@@ -558,21 +538,13 @@ async fn to_archive(
                         .into_par_iter()
                         .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
                     let cue_rom = cue_roms.get(0).unwrap();
+                    let game = games_by_id.get(&cue_rom.game_id).unwrap();
                     let cue_romfile = romfiles_by_id.get(&cue_rom.romfile_id.unwrap()).unwrap();
                     let chd_romfile = romfiles_by_id
                         .get(&bin_roms.get(0).unwrap().romfile_id.unwrap())
                         .unwrap();
 
-                    let game = games_by_id.get(&cue_rom.game_id).unwrap();
-                    let archive_name = format!(
-                        "{}.{}",
-                        &game.name,
-                        match archive_type {
-                            sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                            sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                        }
-                    );
-                    let archive_path = Path::new(&cue_romfile.path).with_file_name(&archive_name);
+                    let destination_directory = Path::new(&cue_romfile.path).parent().unwrap();
 
                     let bin_names_sizes: Vec<(&str, u64)> = bin_roms
                         .iter()
@@ -587,23 +559,40 @@ async fn to_archive(
                     )
                     .await?;
 
-                    cue_romfile
+                    let archive_romfile = cue_romfile
                         .as_original()
-                        .to_archive(progress_bar, &archive_path, &archive_path.parent().unwrap(), compression_level, solid)
+                        .to_archive(
+                            progress_bar,
+                            &cue_romfile.as_original().path.parent().unwrap(),
+                            &destination_directory,
+                            &game.name,
+                            &archive_type,
+                            compression_level,
+                            solid
+                        )
                         .await?;
                     let bin_names: Vec<&str> = bin_paths
                         .iter()
                         .map(|p| p.file_name().unwrap().to_str().unwrap())
                         .collect();
                     for bin_name in bin_names {
-                        let bin_romfile = OriginalRomfile { path: tmp_directory.path().join(bin_name)};
-                        bin_romfile.to_archive(progress_bar, &archive_path, &tmp_directory.path(), compression_level, solid).await?;
+                        let bin_romfile = CommonRomfile { path: tmp_directory.path().join(bin_name)};
+                        bin_romfile.to_archive(
+                            progress_bar,
+                            &tmp_directory.path(),
+                            &destination_directory,
+                            &game.name,
+                            &archive_type,
+                            compression_level,
+                            solid
+                        )
+                        .await?;
                     }
                     update_romfile(
                         &mut transaction,
                         chd_romfile.id,
-                        archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().unwrap().len(),
+                        archive_romfile.path.as_os_str().to_str().unwrap(),
+                        archive_romfile.path.metadata().unwrap().len(),
                     )
                     .await;
                     update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
@@ -614,7 +603,7 @@ async fn to_archive(
                             progress_bar,
                             &roms.iter().collect::<Vec<&Rom>>(),
                             &[&cue_romfile.path, &chd_romfile.path],
-                            &[&archive_path],
+                            &[&archive_romfile.path],
                         )
                         .await?;
                     }
@@ -636,25 +625,17 @@ async fn to_archive(
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
-                let iso_romfile = OriginalRomfile { path: iso_path };
-
                 let game = games_by_id.get(&rom.game_id).unwrap();
-                let archive_name = format!(
-                    "{}.{}",
-                    &game.name,
-                    match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    }
-                );
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
 
-                let archive_romfile = iso_romfile
+                let cso_romfile = romfile.as_xso();
+                let archive_romfile = cso_romfile
                     .to_archive(
                         progress_bar,
-                        &Path::new(&romfile.path).with_file_name(&archive_name),
                         &tmp_directory.path(),
+                        &cso_romfile.path.parent().unwrap(),
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid
                     )
@@ -671,13 +652,13 @@ async fn to_archive(
                     print_diff(
                         progress_bar,
                         &roms.iter().collect::<Vec<&Rom>>(),
-                        &[&romfile.path],
+                        &[&cso_romfile.path],
                         &[&archive_romfile.path],
                     )
                     .await?;
                 }
 
-                remove_file(progress_bar, &romfile.path, false).await?;
+                cso_romfile.delete(progress_bar, false).await?;
 
                 commit_transaction(transaction).await;
             }
@@ -692,25 +673,18 @@ async fn to_archive(
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
+                let game = games_by_id.get(&rom.game_id).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let nsp_path = nsz::extract_nsz(progress_bar, &romfile.path, &tmp_directory.path()).await?;
-                let nsp_romfile = OriginalRomfile { path: nsp_path };
-
-                let game = games_by_id.get(&rom.game_id).unwrap();
-                let archive_name = format!(
-                    "{}.{}",
-                    &game.name,
-                    match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    }
-                );
+                let nsp_romfile = CommonRomfile { path: nsp_path };
 
                 let archive_romfile = nsp_romfile
                     .to_archive(
                         progress_bar,
-                        &Path::new(&romfile.path).with_file_name(&archive_name),
                         &tmp_directory.path(),
+                        &Path::new(&romfile.path).parent().unwrap(),
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid
                     )
@@ -748,25 +722,18 @@ async fn to_archive(
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
+                let game = games_by_id.get(&rom.game_id).unwrap();
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 let iso_path = dolphin::extract_rvz(progress_bar, &romfile.path, &tmp_directory.path()).await?;
-                let iso_romfile = OriginalRomfile { path: iso_path };
-
-                let game = games_by_id.get(&rom.game_id).unwrap();
-                let archive_name = format!(
-                    "{}.{}",
-                    &game.name,
-                    match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    }
-                );
+                let iso_romfile = CommonRomfile { path: iso_path };
 
                 let archive_romfile = iso_romfile
                     .to_archive(
                         progress_bar,
-                        &Path::new(&romfile.path).with_file_name(&archive_name),
                         &tmp_directory.path(),
+                        &Path::new(&romfile.path).parent().unwrap(),
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid
                     )
@@ -804,25 +771,17 @@ async fn to_archive(
                 let mut transaction = begin_transaction(connection).await;
 
                 let rom = roms.get(0).unwrap();
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                let iso_path = maxcso::extract_zso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
-                let iso_romfile = OriginalRomfile { path: iso_path };
-
                 let game = games_by_id.get(&rom.game_id).unwrap();
-                let archive_name = format!(
-                    "{}.{}",
-                    &game.name,
-                    match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    }
-                );
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
 
-                let archive_romfile = iso_romfile
+                let zso_romfile = romfile.as_xso();
+                let archive_romfile = zso_romfile
                     .to_archive(
                         progress_bar,
-                        &Path::new(&romfile.path).with_file_name(&archive_name),
                         &tmp_directory.path(),
+                        &zso_romfile.path.parent().unwrap(),
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid
                     )
@@ -839,13 +798,13 @@ async fn to_archive(
                     print_diff(
                         progress_bar,
                         &roms.iter().collect::<Vec<&Rom>>(),
-                        &[&romfile.path],
+                        &[&zso_romfile.path],
                         &[&archive_romfile.path],
                     )
                     .await?;
                 }
 
-                remove_file(progress_bar, &romfile.path, false).await?;
+                zso_romfile.delete(progress_bar, false).await?;
 
                 commit_transaction(transaction).await;
             }
@@ -857,77 +816,32 @@ async fn to_archive(
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
-        if roms.len() == 1 {
-            let rom = roms.get(0).unwrap();
+        for rom in roms {
+            let game = games_by_id.get(&rom.game_id).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let new_archive_path = Path::new(&romfile.path).with_extension(match archive_type {
-                sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-            });
 
-            let original_romfile = romfile
-                .as_archive(rom)
-                .to_original(progress_bar, &tmp_directory.path())
-                .await?;
-            let archive_romfile = original_romfile
+            let archive_romfile = romfile.as_archive(rom);
+            let new_archive_romfile = archive_romfile
                 .to_archive(
                     progress_bar,
-                    &new_archive_path,
                     &tmp_directory.path(),
+                    &archive_romfile.path.parent().unwrap(),
+                    &game.name,
+                    &archive_type,
                     compression_level,
                     solid,
                 )
                 .await?;
-            romfile.as_original().delete(progress_bar, false).await?;
 
             update_romfile(
                 &mut transaction,
                 romfile.id,
-                archive_romfile.path.as_os_str().to_str().unwrap(),
-                archive_romfile.path.metadata().unwrap().len(),
+                new_archive_romfile.path.as_os_str().to_str().unwrap(),
+                new_archive_romfile.path.metadata().unwrap().len(),
             )
             .await;
-        } else {
-            let mut romfiles: Vec<&Romfile> = roms
-                .par_iter()
-                .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                .collect();
-            romfiles.dedup();
 
-            if romfiles.len() > 1 {
-                bail!("Multiple archives found");
-            }
-
-            let romfile = romfiles.get(0).unwrap();
-            let new_archive_path = Path::new(&romfile.path).with_extension(match archive_type {
-                sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-            });
-
-            for rom in roms {
-                let archive_romfile = romfile.as_archive(rom);
-                let original_romfile = archive_romfile
-                    .to_original(progress_bar, &tmp_directory.path())
-                    .await?;
-                original_romfile
-                    .to_archive(
-                        progress_bar,
-                        &new_archive_path,
-                        &tmp_directory.path(),
-                        compression_level,
-                        solid,
-                    )
-                    .await?;
-            }
-            romfile.as_original().delete(progress_bar, false).await?;
-
-            update_romfile(
-                &mut transaction,
-                romfile.id,
-                new_archive_path.as_os_str().to_str().unwrap(),
-                new_archive_path.metadata().unwrap().len(),
-            )
-            .await;
+            archive_romfile.delete_file(progress_bar).await?;
         }
 
         commit_transaction(transaction).await;
@@ -939,24 +853,17 @@ async fn to_archive(
 
         if roms.len() == 1 && !system.arcade {
             let rom = roms.get(0).unwrap();
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-
             let game = games_by_id.get(&rom.game_id).unwrap();
-            let archive_name = format!(
-                "{}.{}",
-                &game.name,
-                match archive_type {
-                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                }
-            );
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
 
             let original_romfile = romfile.as_original();
             let archive_romfile = original_romfile
                 .to_archive(
                     progress_bar,
-                    &Path::new(&romfile.path).with_file_name(&archive_name),
                     &original_romfile.path.parent().unwrap(),
+                    &original_romfile.path.parent().unwrap(),
+                    &game.name,
+                    &archive_type,
                     compression_level,
                     solid,
                 )
@@ -974,13 +881,13 @@ async fn to_archive(
                 print_diff(
                     progress_bar,
                     &roms.iter().collect::<Vec<&Rom>>(),
-                    &[&romfile.path],
+                    &[&original_romfile.path],
                     &[&archive_romfile.path],
                 )
                 .await?;
             }
 
-            remove_file(progress_bar, &romfile.path, false).await?;
+            original_romfile.delete(progress_bar, false).await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
             roms = roms
@@ -1019,12 +926,17 @@ async fn to_archive(
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
                 .collect::<Vec<&Romfile>>();
             for romfile in &romfiles {
-                romfile
-                    .as_original()
+                let original_romfile = romfile.as_original();
+                original_romfile
                     .to_archive(
                         progress_bar,
-                        &archive_path,
-                        &directory,
+                        &original_romfile.path.parent().unwrap(),
+                        &match system.arcade {
+                            true => directory.parent().unwrap(),
+                            false => directory,
+                        },
+                        &game.name,
+                        &archive_type,
                         compression_level,
                         solid,
                     )
@@ -1198,7 +1110,7 @@ async fn to_chd(
             }
         }
 
-        let mut original_romfiles: Vec<OriginalRomfile> = Vec::new();
+        let mut original_romfiles: Vec<CommonRomfile> = Vec::new();
         for rom in roms {
             original_romfiles.push(
                 romfile
@@ -1207,7 +1119,7 @@ async fn to_chd(
                     .await?,
             );
         }
-        let (cue_romfiles, bin_iso_romfiles): (Vec<OriginalRomfile>, Vec<OriginalRomfile>) =
+        let (cue_romfiles, bin_iso_romfiles): (Vec<CommonRomfile>, Vec<CommonRomfile>) =
             original_romfiles
                 .into_par_iter()
                 .partition(|original_romfile| {
@@ -1367,10 +1279,10 @@ async fn to_chd(
 
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let iso_path = maxcso::extract_cso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
+                    let iso_romfile = romfile.as_xso().to_original(progress_bar, &tmp_directory.path()).await?;
                     let chd_path = chdman::create_chd(
                         progress_bar,
-                        &iso_path,
+                        &iso_romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
                     ).await?;
                     if diff {
@@ -1400,10 +1312,10 @@ async fn to_chd(
 
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let iso_path = maxcso::extract_zso(progress_bar, &romfile.path, &tmp_directory.path()).await?;
+                    let iso_romfile = romfile.as_xso().to_original(progress_bar, &tmp_directory.path()).await?;
                     let chd_path = chdman::create_chd(
                         progress_bar,
-                        &iso_path,
+                        &iso_romfile.path,
                         &Path::new(&romfile.path).parent().unwrap(),
                     ).await?;
                     if diff {
@@ -1498,30 +1410,37 @@ async fn to_cso(
         let rom = roms.get(0).unwrap();
         let romfile = romfiles.get(0).unwrap();
 
-        let original_romfile = romfile
-            .as_archive(rom)
+        let archive_romfile = romfile.as_archive(rom);
+        let iso_romfile = archive_romfile
             .to_original(progress_bar, &tmp_directory.path())
             .await?;
-
-        let cso_path = maxcso::create_cso(
-            progress_bar,
-            &original_romfile.path,
-            &Path::new(&romfile.path).parent().unwrap(),
-        )
-        .await?;
+        let cso_romfile = iso_romfile
+            .to_xso(
+                progress_bar,
+                &archive_romfile.path.parent().unwrap(),
+                &maxcso::XsoType::Cso,
+            )
+            .await?;
 
         if diff {
-            print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+            print_diff(
+                progress_bar,
+                &[rom],
+                &[&archive_romfile.path],
+                &[&cso_romfile.path],
+            )
+            .await?;
         }
 
         update_romfile(
             &mut transaction,
             romfile.id,
-            cso_path.as_os_str().to_str().unwrap(),
-            cso_path.metadata().unwrap().len(),
+            cso_romfile.path.as_os_str().to_str().unwrap(),
+            cso_romfile.path.metadata().unwrap().len(),
         )
         .await;
-        remove_file(progress_bar, &romfile.path, false).await?;
+
+        archive_romfile.delete_file(progress_bar).await?;
 
         commit_transaction(transaction).await;
     }
@@ -1529,26 +1448,33 @@ async fn to_cso(
     // convert ISOs
     for roms in isos.values() {
         let mut transaction = begin_transaction(connection).await;
-
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let cso_path = maxcso::create_cso(
-                progress_bar,
-                &romfile.path,
-                &Path::new(&romfile.path).parent().unwrap(),
-            )
-            .await?;
+            let iso_romfile = romfile.as_original();
+            let cso_romfile = iso_romfile
+                .to_xso(
+                    progress_bar,
+                    &iso_romfile.path.parent().unwrap(),
+                    &maxcso::XsoType::Cso,
+                )
+                .await?;
             if diff {
-                print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+                print_diff(
+                    progress_bar,
+                    &[rom],
+                    &[&iso_romfile.path],
+                    &[&cso_romfile.path],
+                )
+                .await?;
             }
             update_romfile(
                 &mut transaction,
                 romfile.id,
-                cso_path.as_os_str().to_str().unwrap(),
-                cso_path.metadata().unwrap().len(),
+                cso_romfile.path.as_os_str().to_str().unwrap(),
+                cso_romfile.path.metadata().unwrap().len(),
             )
             .await;
-            remove_file(progress_bar, &romfile.path, false).await?;
+            iso_romfile.delete(progress_bar, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -1568,19 +1494,21 @@ async fn to_cso(
                         &tmp_directory.path(),
                     )
                     .await?;
-                    let cso_path = maxcso::create_cso(
+                    let iso_romfile = CommonRomfile { path: iso_path};
+                    let cso_romfile = iso_romfile.to_xso(
                         progress_bar,
-                        &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    ).await?;
+                        &maxcso::XsoType::Cso
+                    )
+                    .await?;
                     if diff {
-                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_path]).await?;
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_romfile.path]).await?;
                     }
                     update_romfile(
                         &mut transaction,
                         romfile.id,
-                        cso_path.as_os_str().to_str().unwrap(),
-                        cso_path.metadata().unwrap().len(),
+                        cso_romfile.path.as_os_str().to_str().unwrap(),
+                        cso_romfile.path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -1900,30 +1828,36 @@ async fn to_zso(
         let rom = roms.get(0).unwrap();
         let romfile = romfiles.get(0).unwrap();
 
-        let original_romfile = romfile
-            .as_archive(rom)
+        let archive_romfile = romfile.as_archive(rom);
+        let iso_romfile = archive_romfile
             .to_original(progress_bar, &tmp_directory.path())
             .await?;
-
-        let zso_path = maxcso::create_zso(
-            progress_bar,
-            &original_romfile.path,
-            &Path::new(&romfile.path).parent().unwrap(),
-        )
-        .await?;
+        let zso_romfile = iso_romfile
+            .to_xso(
+                progress_bar,
+                &archive_romfile.path.parent().unwrap(),
+                &maxcso::XsoType::Zso,
+            )
+            .await?;
 
         if diff {
-            print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+            print_diff(
+                progress_bar,
+                &[rom],
+                &[&archive_romfile.path],
+                &[&zso_romfile.path],
+            )
+            .await?;
         }
 
         update_romfile(
             &mut transaction,
             romfile.id,
-            zso_path.as_os_str().to_str().unwrap(),
-            zso_path.metadata().unwrap().len(),
+            zso_romfile.path.as_os_str().to_str().unwrap(),
+            zso_romfile.path.metadata().unwrap().len(),
         )
         .await;
-        remove_file(progress_bar, &romfile.path, false).await?;
+        archive_romfile.delete_file(progress_bar).await?;
 
         commit_transaction(transaction).await;
     }
@@ -1934,23 +1868,31 @@ async fn to_zso(
 
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let zso_path = maxcso::create_zso(
-                progress_bar,
-                &romfile.path,
-                &Path::new(&romfile.path).parent().unwrap(),
-            )
-            .await?;
+            let iso_romfile = romfile.as_original();
+            let zso_romfile = iso_romfile
+                .to_xso(
+                    progress_bar,
+                    &iso_romfile.path.parent().unwrap(),
+                    &maxcso::XsoType::Zso,
+                )
+                .await?;
             if diff {
-                print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+                print_diff(
+                    progress_bar,
+                    &[rom],
+                    &[&iso_romfile.path],
+                    &[&zso_romfile.path],
+                )
+                .await?;
             }
             update_romfile(
                 &mut transaction,
                 romfile.id,
-                zso_path.as_os_str().to_str().unwrap(),
-                zso_path.metadata().unwrap().len(),
+                zso_romfile.path.as_os_str().to_str().unwrap(),
+                zso_romfile.path.metadata().unwrap().len(),
             )
             .await;
-            remove_file(progress_bar, &romfile.path, false).await?;
+            iso_romfile.delete(progress_bar, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -1970,19 +1912,21 @@ async fn to_zso(
                         &tmp_directory.path(),
                     )
                     .await?;
-                    let zso_path = maxcso::create_zso(
+                    let iso_romfile = CommonRomfile { path: iso_path };
+                    let zso_romfile = iso_romfile.to_xso(
                         progress_bar,
-                        &iso_path,
                         &Path::new(&romfile.path).parent().unwrap(),
-                    ).await?;
+                        &maxcso::XsoType::Zso
+                    )
+                    .await?;
                     if diff {
-                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_path]).await?;
+                        print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_romfile.path]).await?;
                     }
                     update_romfile(
                         &mut transaction,
                         romfile.id,
-                        zso_path.as_os_str().to_str().unwrap(),
-                        zso_path.metadata().unwrap().len(),
+                        zso_romfile.path.as_os_str().to_str().unwrap(),
+                        zso_romfile.path.metadata().unwrap().len(),
                     )
                     .await;
                     remove_file(progress_bar, &romfile.path, false).await?;
@@ -2220,19 +2164,16 @@ async fn to_original(
 
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let iso_path = maxcso::extract_cso(
-                        progress_bar,
-                        &romfile.path,
-                        &Path::new(&romfile.path).parent().unwrap(),
-                    ).await?;
+                    let cso_romfile = romfile.as_xso();
+                    let iso_romfile = cso_romfile.to_original(progress_bar, &cso_romfile.path.parent().unwrap()).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
-                        iso_path.as_os_str().to_str().unwrap(),
-                        iso_path.metadata().unwrap().len(),
+                        iso_romfile.path.as_os_str().to_str().unwrap(),
+                        iso_romfile.path.metadata().unwrap().len(),
                     )
                     .await;
-                    remove_file(progress_bar, &romfile.path, false).await?;
+                    cso_romfile.delete(progress_bar, false).await?;
                 }
 
                 commit_transaction(transaction).await;
@@ -2319,19 +2260,16 @@ async fn to_original(
 
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    let iso_path = maxcso::extract_zso(
-                        progress_bar,
-                        &romfile.path,
-                        &Path::new(&romfile.path).parent().unwrap(),
-                    ).await?;
+                    let zso_romfile = romfile.as_xso();
+                    let iso_romfile = zso_romfile.to_original(progress_bar, &zso_romfile.path.parent().unwrap()).await?;
                     update_romfile(
                         &mut transaction,
                         romfile.id,
-                        iso_path.as_os_str().to_str().unwrap(),
-                        iso_path.metadata().unwrap().len(),
+                        iso_romfile.path.as_os_str().to_str().unwrap(),
+                        iso_romfile.path.metadata().unwrap().len(),
                     )
                     .await;
-                    remove_file(progress_bar, &romfile.path, false).await?;
+                    zso_romfile.delete(progress_bar, false).await?;
                 }
 
                 commit_transaction(transaction).await;

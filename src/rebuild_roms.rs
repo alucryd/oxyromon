@@ -263,14 +263,20 @@ async fn add_rom(
             update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
         } else {
             // source is directory and destination is archive
-            let original_romfile = OriginalRomfile {
+            let original_romfile = CommonRomfile {
                 path: game_directory.join(&source_rom.name),
             };
             let archived_romfile = original_romfile
                 .to_archive(
                     progress_bar,
-                    &archive_romfile.path,
-                    &Path::new(&source_romfile.path).parent().unwrap(),
+                    game_directory,
+                    &Path::new(&archive_romfile.path).parent().unwrap(),
+                    Path::new(&archive_romfile.path)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                    &ArchiveType::Zip,
                     compression_level,
                     false,
                 )

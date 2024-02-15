@@ -7,6 +7,8 @@ use super::database::*;
 use super::dolphin;
 #[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
+#[cfg(any(feature = "cso", feature = "zso"))]
+use super::maxcso::AsXso;
 use super::model::*;
 #[cfg(feature = "nsz")]
 use super::nsz;
@@ -158,7 +160,7 @@ async fn check_system(
                 &mut transaction,
                 progress_bar,
                 &header,
-                &romfile_path,
+                &romfile,
                 roms,
                 hash_algorithm,
             )
@@ -194,7 +196,7 @@ async fn check_system(
                         &mut transaction,
                         progress_bar,
                         &header,
-                        &romfile_path,
+                        &romfile,
                         roms.get(0).unwrap(),
                         hash_algorithm
                     )
@@ -257,7 +259,7 @@ async fn check_system(
                         &mut transaction,
                         progress_bar,
                         &header,
-                        &romfile_path,
+                        &romfile,
                         roms.get(0).unwrap(),
                         hash_algorithm
                     )
@@ -272,7 +274,7 @@ async fn check_system(
                 &mut transaction,
                 progress_bar,
                 &header,
-                &romfile_path,
+                &romfile,
                 roms.get(0).unwrap(),
                 hash_algorithm,
             )
@@ -307,31 +309,27 @@ async fn check_system(
     Ok(())
 }
 
-async fn check_archive<P: AsRef<Path>>(
+async fn check_archive(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
-    romfile_path: &P,
-    mut roms: Vec<Rom>,
+    romfile: &Romfile,
+    roms: Vec<Rom>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let archive_romfiles = sevenzip::parse(progress_bar, romfile_path).await?;
-
+    let archive_romfiles = sevenzip::parse(progress_bar, &romfile.path).await?;
     if archive_romfiles.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
     }
-
     for archive_romfile in archive_romfiles {
-        let rom_index = roms
+        let rom = roms
             .iter()
-            .position(|rom| rom.name == archive_romfile.file_path)
+            .find(|rom| rom.name == archive_romfile.file_path)
             .unwrap();
-        let rom = roms.remove(rom_index);
         archive_romfile
-            .check(connection, progress_bar, header, &rom, 1, 1, hash_algorithm)
+            .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
             .await?;
     }
-
     Ok(())
 }
 
@@ -361,19 +359,18 @@ async fn check_chd<P: AsRef<Path>>(
     let bin_count = bin_paths.len();
     let mut hashes: Vec<String> = Vec::new();
     for (i, bin_path) in bin_paths.into_iter().enumerate() {
-        let bin_romfile = OriginalRomfile { path: bin_path };
-        hashes.push(
-            bin_romfile
-                .get_hash(
-                    connection,
-                    progress_bar,
-                    header,
-                    i,
-                    bin_count,
-                    hash_algorithm,
-                )
-                .await?,
-        );
+        let bin_romfile = CommonRomfile { path: bin_path };
+        let (hash, _) = bin_romfile
+            .get_hash_and_size(
+                connection,
+                progress_bar,
+                header,
+                i,
+                bin_count,
+                hash_algorithm,
+            )
+            .await?;
+        hashes.push(hash);
     }
 
     match hash_algorithm {
@@ -410,18 +407,16 @@ async fn check_chd<P: AsRef<Path>>(
 }
 
 #[cfg(feature = "cso")]
-async fn check_cso<P: AsRef<Path>>(
+async fn check_cso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
-    romfile_path: &P,
+    romfile: &Romfile,
     rom: &Rom,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = maxcso::extract_cso(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let iso_romfile = OriginalRomfile { path: iso_path };
-    iso_romfile
+    romfile
+        .as_xso()
         .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
         .await?;
     Ok(())
@@ -438,7 +433,7 @@ async fn check_nsz<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let nsp_romfile = OriginalRomfile { path: nsp_path };
+    let nsp_romfile = CommonRomfile { path: nsp_path };
     nsp_romfile
         .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
         .await?;
@@ -456,7 +451,7 @@ async fn check_rvz<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let iso_romfile = OriginalRomfile { path: iso_path };
+    let iso_romfile = CommonRomfile { path: iso_path };
     iso_romfile
         .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
         .await?;
@@ -464,35 +459,31 @@ async fn check_rvz<P: AsRef<Path>>(
 }
 
 #[cfg(feature = "zso")]
-async fn check_zso<P: AsRef<Path>>(
+async fn check_zso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
-    romfile_path: &P,
+    romfile: &Romfile,
     rom: &Rom,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = maxcso::extract_zso(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let iso_romfile = OriginalRomfile { path: iso_path };
-    iso_romfile
+    romfile
+        .as_xso()
         .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
         .await?;
     Ok(())
 }
 
-async fn check_original<P: AsRef<Path>>(
+async fn check_original(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     header: &Option<Header>,
-    romfile_path: &P,
+    romfile: &Romfile,
     rom: &Rom,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let original_romfile = OriginalRomfile {
-        path: romfile_path.as_ref().to_path_buf(),
-    };
-    original_romfile
+    romfile
+        .as_original()
         .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
         .await?;
     Ok(())

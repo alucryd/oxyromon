@@ -56,6 +56,7 @@ mod check_roms;
 mod common;
 mod config;
 mod convert_roms;
+mod crc32;
 #[cfg(feature = "cia")]
 mod ctrtool;
 mod database;

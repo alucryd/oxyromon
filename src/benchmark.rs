@@ -47,7 +47,7 @@ pub async fn main(
     let rom_file_path = Path::new(&rom_directory).join(".oxyromon");
     let tmp_file_path = Path::new(&tmp_directory).join(".oxyromon");
 
-    let original_romfile_tmpdir = OriginalRomfile {
+    let original_romfile_tmpdir = CommonRomfile {
         path: tmp_file_path.to_path_buf(),
     };
 
@@ -151,14 +151,7 @@ pub async fn main(
     // crc speed
     let start = Instant::now();
     original_romfile_tmpdir
-        .get_hash(
-            connection,
-            progress_bar,
-            &None,
-            1,
-            1,
-            &HashAlgorithm::Crc,
-        )
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Crc)
         .await?;
     let duration = start.elapsed();
 
@@ -170,14 +163,7 @@ pub async fn main(
     // md5 speed
     let start = Instant::now();
     original_romfile_tmpdir
-        .get_hash(
-            connection,
-            progress_bar,
-            &None,
-            1,
-            1,
-            &HashAlgorithm::Md5,
-        )
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Md5)
         .await?;
     let duration = start.elapsed();
 
@@ -189,14 +175,7 @@ pub async fn main(
     // sha1 speed
     let start = Instant::now();
     original_romfile_tmpdir
-        .get_hash(
-            connection,
-            progress_bar,
-            &None,
-            1,
-            1,
-            &HashAlgorithm::Sha1,
-        )
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Sha1)
         .await?;
     let duration = start.elapsed();
 
