@@ -30,26 +30,6 @@ pub trait CommonFile {
     async fn delete(self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
 }
 
-pub trait AsOriginal {
-    fn as_original(&self) -> CommonRomfile;
-}
-
-impl AsOriginal for Romfile {
-    fn as_original(&self) -> CommonRomfile {
-        CommonRomfile {
-            path: PathBuf::from(&self.path),
-        }
-    }
-}
-
-pub trait ToOriginal {
-    async fn to_original<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        destination_directory: &P,
-    ) -> SimpleResult<CommonRomfile>;
-}
-
 impl CommonFile for CommonRomfile {
     async fn rename<P: AsRef<Path>>(
         &self,
@@ -69,12 +49,48 @@ impl CommonFile for CommonRomfile {
     }
 }
 
+impl ToString for CommonRomfile {
+    fn to_string(&self) -> String {
+        self.path.as_os_str().to_str().unwrap().to_string()
+    }
+}
+
+pub trait FromPath<T> {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<T>;
+}
+
+impl FromPath<CommonRomfile> for CommonRomfile {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<CommonRomfile> {
+        Ok(CommonRomfile {
+            path: path.as_ref().to_path_buf(),
+        })
+    }
+}
+
+pub trait AsOriginal {
+    fn as_original(&self) -> SimpleResult<CommonRomfile>;
+}
+
+impl AsOriginal for Romfile {
+    fn as_original(&self) -> SimpleResult<CommonRomfile> {
+        Ok(CommonRomfile::from_path(&self.path)?)
+    }
+}
+
+pub trait ToOriginal {
+    async fn to_original<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> SimpleResult<CommonRomfile>;
+}
+
 pub trait HeaderedFile {
     async fn get_file_and_header_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
     ) -> SimpleResult<(File, u64)>;
 }
 
@@ -83,39 +99,36 @@ impl HeaderedFile for CommonRomfile {
         &self,
         connection: &mut SqliteConnection,
         _progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
     ) -> SimpleResult<(File, u64)> {
         let mut file = open_file_sync(&self.path)?;
         let mut header_size: u64 = 0;
 
         // extract a potential header, revert if none is found
-        if header.is_some() {
-            let header = header.as_ref().unwrap();
-            let rules = find_rules_by_header_id(connection, header.id).await;
-            let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
-            try_with!(
-                (&mut file)
-                    .take(header.size as u64)
-                    .read_to_end(&mut buffer),
-                "Failed to read into buffer"
-            );
+        let rules = find_rules_by_header_id(connection, header.id).await;
+        let mut buffer: Vec<u8> = Vec::with_capacity(header.size as usize);
+        try_with!(
+            (&mut file)
+                .take(header.size as u64)
+                .read_to_end(&mut buffer),
+            "Failed to read into buffer"
+        );
 
-            let mut matches: Vec<bool> = Vec::new();
-            for rule in rules {
-                let start_byte = rule.start_byte as usize;
-                let hex_values: Vec<String> = buffer[start_byte..]
-                    .iter()
-                    .map(|b| format!("{:02x}", b))
-                    .collect();
-                let hex_value = hex_values.join("").to_lowercase();
-                matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
-            }
+        let mut matches: Vec<bool> = Vec::new();
+        for rule in rules {
+            let start_byte = rule.start_byte as usize;
+            let hex_values: Vec<String> = buffer[start_byte..]
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect();
+            let hex_value = hex_values.join("").to_lowercase();
+            matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
+        }
 
-            if matches.iter().all(|&m| m) {
-                header_size = header.size as u64;
-            } else {
-                try_with!(file.rewind(), "Failed to rewind file");
-            }
+        if matches.iter().all(|&m| m) {
+            header_size = header.size as u64;
+        } else {
+            try_with!(file.rewind(), "Failed to rewind file");
         }
 
         Ok((file, header_size))
@@ -123,20 +136,26 @@ impl HeaderedFile for CommonRomfile {
 }
 
 pub trait Size {
-    async fn get_size(
+    async fn get_size(&self) -> SimpleResult<u64>;
+
+    async fn get_headered_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
     ) -> SimpleResult<u64>;
 }
 
 impl Size for CommonRomfile {
-    async fn get_size(
+    async fn get_size(&self) -> SimpleResult<u64> {
+        Ok(self.path.metadata().unwrap().len())
+    }
+
+    async fn get_headered_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
     ) -> SimpleResult<u64> {
         let (file, header_size) = self
             .get_file_and_header_size(connection, progress_bar, header)
@@ -167,7 +186,13 @@ impl Hash for CommonRomfile {
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<(String, u64)> {
-        let size = self.get_size(connection, progress_bar, header).await?;
+        let size = match header {
+            Some(header) => {
+                self.get_headered_size(connection, progress_bar, header)
+                    .await?
+            }
+            None => self.get_size().await?,
+        };
 
         progress_bar.reset();
         progress_bar.set_message(format!(
@@ -177,9 +202,14 @@ impl Hash for CommonRomfile {
         progress_bar.set_style(get_bytes_progress_style());
         progress_bar.set_length(size);
 
-        let (mut file, _) = self
-            .get_file_and_header_size(connection, progress_bar, header)
-            .await?;
+        let mut file = match header {
+            Some(header) => {
+                self.get_file_and_header_size(connection, progress_bar, header)
+                    .await?
+                    .0
+            }
+            None => open_file_sync(&self.path)?,
+        };
         let hash = match hash_algorithm {
             HashAlgorithm::Crc => {
                 let mut digest = Crc32::new();

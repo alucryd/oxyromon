@@ -9,8 +9,9 @@ use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::time::Duration;
-use strum::Display;
+use strum::{Display, EnumString};
 use tokio::process::Command;
 
 const MAXCSO: &str = "maxcso";
@@ -19,7 +20,7 @@ lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
 }
 
-#[derive(Display, PartialEq, Eq)]
+#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
 pub enum XsoType {
     Cso,
@@ -28,41 +29,12 @@ pub enum XsoType {
 
 pub struct XsoRomfile {
     pub path: PathBuf,
+    pub xso_type: XsoType,
 }
 
-pub trait XsoFile {
-    fn get_type(&self) -> SimpleResult<XsoType>;
-}
-
-impl XsoFile for XsoRomfile {
-    fn get_type(&self) -> SimpleResult<XsoType> {
-        let extension = self.path.extension().unwrap().to_str().unwrap();
-        if extension == CSO_EXTENSION {
-            return Ok(XsoType::Cso);
-        }
-        if extension == ZSO_EXTENSION {
-            return Ok(XsoType::Zso);
-        }
-        bail!("Not a valid XSO");
-    }
-}
-
-impl CommonFile for XsoRomfile {
-    async fn rename<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        new_path: &P,
-        quiet: bool,
-    ) -> SimpleResult<CommonRomfile> {
-        rename_file(progress_bar, &self.path, new_path, quiet).await?;
-        Ok(CommonRomfile {
-            path: new_path.as_ref().to_path_buf(),
-        })
-    }
-
-    async fn delete(self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
-        remove_file(progress_bar, &self.path, quiet).await?;
-        Ok(())
+impl AsOriginal for XsoRomfile {
+    fn as_original(&self) -> SimpleResult<CommonRomfile> {
+        Ok(CommonRomfile::from_path(&self.path)?)
     }
 }
 
@@ -145,7 +117,7 @@ impl ToOriginal for XsoRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> SimpleResult<CommonRomfile> {
-        progress_bar.set_message(format!("Extracting {}", self.get_type()?));
+        progress_bar.set_message(format!("Extracting {}", self.xso_type));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -166,7 +138,7 @@ impl ToOriginal for XsoRomfile {
             .arg(&path)
             .output()
             .await
-            .expect(&format!("Failed to extract {}", self.get_type()?));
+            .expect(&format!("Failed to extract {}", self.xso_type));
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -235,7 +207,10 @@ impl ToXso for CommonRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(XsoRomfile { path })
+        Ok(XsoRomfile {
+            path,
+            xso_type: xso_type.clone(),
+        })
     }
 }
 
@@ -266,15 +241,22 @@ impl ToArchive for XsoRomfile {
     }
 }
 
+impl FromPath<XsoRomfile> for XsoRomfile {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<XsoRomfile> {
+        let path = path.as_ref().to_path_buf();
+        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
+        let xso_type = try_with!(XsoType::from_str(&extension), "Not a valid xso");
+        Ok(XsoRomfile { path, xso_type })
+    }
+}
+
 pub trait AsXso {
-    fn as_xso(&self) -> XsoRomfile;
+    fn as_xso(&self) -> SimpleResult<XsoRomfile>;
 }
 
 impl AsXso for Romfile {
-    fn as_xso(&self) -> XsoRomfile {
-        XsoRomfile {
-            path: PathBuf::from(&self.path),
-        }
+    fn as_xso(&self) -> SimpleResult<XsoRomfile> {
+        Ok(XsoRomfile::from_path(&self.path)?)
     }
 }
 

@@ -13,7 +13,7 @@ use std::iter::zip;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
-use strum::Display;
+use strum::{Display, EnumString};
 use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
@@ -32,9 +32,10 @@ lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
 }
 
-#[derive(Display, PartialEq, Eq)]
+#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
 pub enum ArchiveType {
+    #[strum(serialize = "7z")]
     Sevenzip,
     Zip,
 }
@@ -43,10 +44,10 @@ pub enum ArchiveType {
 pub struct ArchiveRomfile {
     pub path: PathBuf,
     pub file_path: String,
+    pub archive_type: ArchiveType,
 }
 
 pub trait ArchiveFile {
-    fn get_type(&self) -> SimpleResult<ArchiveType>;
     async fn rename_file(
         &self,
         progress_bar: &ProgressBar,
@@ -56,17 +57,6 @@ pub trait ArchiveFile {
 }
 
 impl ArchiveFile for ArchiveRomfile {
-    fn get_type(&self) -> SimpleResult<ArchiveType> {
-        let extension = self.path.extension().unwrap().to_str().unwrap();
-        if extension == SEVENZIP_EXTENSION {
-            return Ok(ArchiveType::Sevenzip);
-        }
-        if extension == ZIP_EXTENSION {
-            return Ok(ArchiveType::Zip);
-        }
-        bail!("impossible");
-    }
-
     async fn rename_file(
         &self,
         progress_bar: &ProgressBar,
@@ -99,6 +89,7 @@ impl ArchiveFile for ArchiveRomfile {
         Ok(ArchiveRomfile {
             path: self.path.clone(),
             file_path: new_file_path.to_string(),
+            archive_type: self.archive_type,
         })
     }
 
@@ -125,75 +116,59 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.disable_steady_tick();
 
         if parse(progress_bar, &self.path).await?.len() == 0 {
-            self.delete(progress_bar, false).await?;
+            self.as_original()?.delete(progress_bar, false).await?;
         }
 
         Ok(())
     }
 }
 
-impl CommonFile for ArchiveRomfile {
-    async fn rename<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        new_path: &P,
-        quiet: bool,
-    ) -> SimpleResult<CommonRomfile> {
-        rename_file(progress_bar, &self.path, new_path, quiet).await?;
-        Ok(CommonRomfile {
-            path: new_path.as_ref().to_path_buf(),
-        })
-    }
-
-    async fn delete(self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
-        remove_file(progress_bar, &self.path, quiet).await?;
-        Ok(())
+impl AsOriginal for ArchiveRomfile {
+    fn as_original(&self) -> SimpleResult<CommonRomfile> {
+        Ok(CommonRomfile::from_path(&self.path)?)
     }
 }
 
 impl Size for ArchiveRomfile {
-    async fn get_size(
+    async fn get_size(&self) -> SimpleResult<u64> {
+        let output = Command::new(SEVENZIP)
+            .arg("l")
+            .arg("-slt")
+            .arg(&self.path)
+            .arg(&self.file_path)
+            .output()
+            .await
+            .expect("Failed to parse archive");
+
+        if !output.status.success() {
+            bail!(String::from_utf8(output.stderr).unwrap().as_str());
+        }
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let size: &str = stdout
+            .lines()
+            .find(|&line| line.starts_with("Size ="))
+            .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
+            .unwrap();
+        Ok(u64::from_str(size).unwrap())
+    }
+
+    async fn get_headered_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
     ) -> SimpleResult<u64> {
-        match header.is_some() {
-            true => {
-                let tmp_directory = create_tmp_directory(connection).await?;
-                let original_file = self
-                    .clone()
-                    .to_original(progress_bar, &tmp_directory)
-                    .await?;
-                let size = original_file
-                    .get_size(connection, progress_bar, header)
-                    .await?;
-                original_file.delete(progress_bar, true).await?;
-                Ok(size)
-            }
-            false => {
-                let output = Command::new(SEVENZIP)
-                    .arg("l")
-                    .arg("-slt")
-                    .arg(&self.path)
-                    .arg(&self.file_path)
-                    .output()
-                    .await
-                    .expect("Failed to parse archive");
-
-                if !output.status.success() {
-                    bail!(String::from_utf8(output.stderr).unwrap().as_str());
-                }
-
-                let stdout = String::from_utf8(output.stdout).unwrap();
-                let size: &str = stdout
-                    .lines()
-                    .find(|&line| line.starts_with("Size ="))
-                    .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
-                    .unwrap();
-                Ok(u64::from_str(size).unwrap())
-            }
-        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let original_file = self
+            .clone()
+            .to_original(progress_bar, &tmp_directory)
+            .await?;
+        let size = original_file
+            .get_headered_size(connection, progress_bar, header)
+            .await?;
+        original_file.delete(progress_bar, true).await?;
+        Ok(size)
     }
 }
 
@@ -249,7 +224,7 @@ impl Hash for ArchiveRomfile {
                     .unwrap()
                     .to_string()
                     .to_lowercase();
-                let size = self.get_size(connection, progress_bar, header).await?;
+                let size = self.get_size().await?;
                 Ok((hash, size))
             }
         }
@@ -405,6 +380,7 @@ impl ToArchive for CommonRomfile {
         Ok(ArchiveRomfile {
             path,
             file_path: relative_path.as_os_str().to_str().unwrap().to_string(),
+            archive_type: archive_type.clone(),
         })
     }
 }
@@ -420,7 +396,7 @@ impl ToArchive for ArchiveRomfile {
         compression_level: usize,
         solid: bool,
     ) -> SimpleResult<ArchiveRomfile> {
-        if &self.get_type()? == archive_type {
+        if &self.archive_type == archive_type {
             return Ok(self.clone());
         }
         let original_romfile = self.to_original(progress_bar, source_directory).await?;
@@ -441,15 +417,19 @@ impl ToArchive for ArchiveRomfile {
 }
 
 pub trait AsArchive {
-    fn as_archive(&self, rom: &Rom) -> ArchiveRomfile;
+    fn as_archive(&self, rom: &Rom) -> SimpleResult<ArchiveRomfile>;
 }
 
 impl AsArchive for Romfile {
-    fn as_archive(&self, rom: &Rom) -> ArchiveRomfile {
-        ArchiveRomfile {
-            path: PathBuf::from(&self.path),
+    fn as_archive(&self, rom: &Rom) -> SimpleResult<ArchiveRomfile> {
+        let path = PathBuf::from(&self.path);
+        let extension = path.extension().unwrap().to_str().unwrap();
+        let archive_type = try_with!(ArchiveType::from_str(extension), "Not a valid xso");
+        Ok(ArchiveRomfile {
+            path,
             file_path: rom.name.clone(),
-        }
+            archive_type,
+        })
     }
 }
 
@@ -481,11 +461,20 @@ pub async fn parse<P: AsRef<Path>>(
         .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
         .collect();
 
+    let extension = path
+        .as_ref()
+        .extension()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_lowercase();
+    let archive_type = try_with!(ArchiveType::from_str(&extension), "Not a valid archive");
     let archived_romfiles: Vec<ArchiveRomfile> = file_paths
         .into_iter()
         .map(|file_path| ArchiveRomfile {
             path: path.as_ref().to_path_buf(),
             file_path: file_path.to_string(),
+            archive_type,
         })
         .collect();
 

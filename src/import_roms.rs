@@ -324,7 +324,6 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &mut transaction,
                     progress_bar,
                     system,
-                    header,
                     &romfile_path,
                     hash_algorithm,
                     trash,
@@ -348,7 +347,6 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &mut transaction,
                     progress_bar,
                     system,
-                    header,
                     &romfile_path,
                     hash_algorithm,
                     trash,
@@ -372,7 +370,6 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &mut transaction,
                     progress_bar,
                     system,
-                    header,
                     &romfile_path,
                     hash_algorithm,
                     trash,
@@ -396,7 +393,6 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &mut transaction,
                     progress_bar,
                     system,
-                    header,
                     &romfile_path,
                     hash_algorithm,
                     trash,
@@ -999,16 +995,13 @@ async fn import_cso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: Option<&System>,
-    header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
-    let cso_romfile = maxcso::XsoRomfile {
-        path: romfile_path.as_ref().to_path_buf(),
-    };
+    let cso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
     let (hash, size) = cso_romfile
-        .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1026,7 +1019,10 @@ async fn import_cso<P: AsRef<Path>>(
         let mut new_path = system_directory.join(&rom.name);
         new_path.set_extension(CSO_EXTENSION);
         // move CSO if needed
-        cso_romfile.rename(progress_bar, &new_path, false).await?;
+        cso_romfile
+            .as_original()?
+            .rename(progress_bar, &new_path, false)
+            .await?;
         // persist in database
         create_or_update_romfile(connection, &new_path, &[rom]).await;
         Ok(Some(system.id))
@@ -1043,7 +1039,6 @@ async fn import_nsz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: Option<&System>,
-    header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
@@ -1052,7 +1047,7 @@ async fn import_nsz<P: AsRef<Path>>(
     let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
     let nsp_romfile = CommonRomfile { path: nsp_path };
     let (hash, size) = nsp_romfile
-        .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
         .await?;
     nsp_romfile.delete(progress_bar, true).await?;
     if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
@@ -1092,18 +1087,14 @@ async fn import_rvz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: Option<&System>,
-    header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-    let iso_path = dolphin::extract_rvz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let iso_romfile = CommonRomfile { path: iso_path };
-    let (hash, size) = iso_romfile
-        .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+    let rvz_romfile = dolphin::RvzRomfile::from_path(romfile_path)?;
+    let (hash, size) = rvz_romfile
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
         .await?;
-    iso_romfile.delete(progress_bar, true).await?;
     if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
         connection,
         progress_bar,
@@ -1117,16 +1108,15 @@ async fn import_rvz<P: AsRef<Path>>(
     .await?
     {
         let system_directory = get_system_directory(connection, &system).await?;
-
         let mut new_rvz_path = system_directory.join(&rom.name);
         new_rvz_path.set_extension(RVZ_EXTENSION);
-
         // move RVZ if needed
-        rename_file(progress_bar, romfile_path, &new_rvz_path, false).await?;
-
+        rvz_romfile
+            .as_original()?
+            .rename(progress_bar, &new_rvz_path, false)
+            .await?;
         // persist in database
         create_or_update_romfile(connection, &new_rvz_path, &[rom]).await;
-
         Ok(Some(system.id))
     } else {
         if trash {
@@ -1141,16 +1131,13 @@ async fn import_zso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: Option<&System>,
-    header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
 ) -> SimpleResult<Option<i64>> {
-    let cso_romfile = maxcso::XsoRomfile {
-        path: romfile_path.as_ref().to_path_buf(),
-    };
-    let (hash, size) = cso_romfile
-        .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+    let zso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
+    let (hash, size) = zso_romfile
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, _game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1168,7 +1155,8 @@ async fn import_zso<P: AsRef<Path>>(
         let mut new_zso_path = system_directory.join(&rom.name);
         new_zso_path.set_extension(ZSO_EXTENSION);
         // move ZSO if needed
-        cso_romfile
+        zso_romfile
+            .as_original()?
             .rename(progress_bar, &new_zso_path, false)
             .await?;
         // persist in database
