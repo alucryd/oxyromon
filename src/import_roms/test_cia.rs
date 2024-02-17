@@ -78,11 +78,11 @@ async fn test() {
     .await;
     assert_eq!(games.len(), 1);
 
-    let game = games.get(0).unwrap();
+    let game = games.first().unwrap();
     assert_eq!(game.name, "Test Game (USA, Europe)");
     assert_eq!(game.system_id, system.id);
 
-    let rom_0 = roms.get(0).unwrap();
+    let rom_0 = roms.first().unwrap();
     assert_eq!(rom_0.name, "00000000");
     assert_eq!(rom_0.game_id, game.id);
 
@@ -90,7 +90,7 @@ async fn test() {
     assert_eq!(rom_1.name, "tmd.2145");
     assert_eq!(rom_1.game_id, game.id);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory

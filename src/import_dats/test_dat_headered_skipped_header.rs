@@ -40,7 +40,7 @@ async fn test() {
     let systems = find_systems(&mut connection).await;
     assert_eq!(systems.len(), 1);
 
-    let system = systems.get(0).unwrap();
+    let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System (Headered)");
 
     assert!(find_header_by_system_id(&mut connection, system.id)

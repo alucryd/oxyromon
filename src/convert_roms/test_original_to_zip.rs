@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -49,7 +50,7 @@ async fn test() {
 
     let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
     let roms =
-        find_roms_with_romfile_by_game_ids(&mut connection, &[games.get(0).unwrap().id]).await;
+        find_roms_with_romfile_by_game_ids(&mut connection, &[games.first().unwrap().id]).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
     let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
@@ -79,10 +80,10 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -94,8 +95,6 @@ async fn test() {
     assert!(Path::new(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
-    let sevenzip_infos = sevenzip::parse_archive(&progress_bar, &romfile.path)
-        .await
-        .unwrap();
-    assert_eq!(sevenzip_infos.len(), 1);
+    let archive_romfiles = sevenzip::parse(&progress_bar, &romfile.path).await.unwrap();
+    assert_eq!(archive_romfiles.len(), 1);
 }

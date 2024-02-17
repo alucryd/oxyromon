@@ -25,8 +25,7 @@ pub async fn get_version() -> SimpleResult<String> {
     let version = stdout
         .lines()
         .next()
-        .map(|line| VERSION_REGEX.find(line))
-        .flatten()
+        .and_then(|line| VERSION_REGEX.find(line))
         .map(|version| version.as_str().to_string())
         .unwrap_or(String::from("unknown"));
 
@@ -43,10 +42,10 @@ pub async fn create_iso<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let mut iso_path = directory
+    let iso_path = directory
         .as_ref()
-        .join(bin_path.as_ref().file_name().unwrap());
-    iso_path.set_extension(ISO_EXTENSION);
+        .join(bin_path.as_ref().file_name().unwrap())
+        .with_extension(ISO_EXTENSION);
 
     let output = Command::new(BCHUNK)
         .arg(bin_path.as_ref())

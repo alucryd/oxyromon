@@ -31,7 +31,7 @@ cfg_if! {
     }
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,
@@ -459,7 +459,7 @@ cfg_if::cfg_if! {
                         None => {
                             let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
                                 Ok(tmp_directory) => PathBuf::from(tmp_directory),
-                                Err(_) => PathBuf::from(env::temp_dir())
+                                Err(_) => env::temp_dir()
                             };
                             set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
                             tmp_directory

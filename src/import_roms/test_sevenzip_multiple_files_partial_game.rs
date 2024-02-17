@@ -70,11 +70,11 @@ async fn test() {
     .await;
     assert_eq!(games.len(), 1);
 
-    let game = games.get(0).unwrap();
+    let game = games.first().unwrap();
     assert_eq!(game.name, "Test Game (USA, Europe) (CUE BIN)");
     assert_eq!(game.system_id, system.id);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -85,7 +85,7 @@ async fn test() {
     );
     assert!(Path::new(&romfile.path).is_file());
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));

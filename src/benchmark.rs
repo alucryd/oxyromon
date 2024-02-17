@@ -1,4 +1,4 @@
-use super::checksum::*;
+use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::progress::*;
@@ -46,6 +46,10 @@ pub async fn main(
 
     let rom_file_path = Path::new(&rom_directory).join(".oxyromon");
     let tmp_file_path = Path::new(&tmp_directory).join(".oxyromon");
+
+    let original_romfile_tmpdir = CommonRomfile {
+        path: tmp_file_path.to_path_buf(),
+    };
 
     let mb_count = 1024;
     // TODO: make this into a setting
@@ -146,16 +150,9 @@ pub async fn main(
 
     // crc speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Crc,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Crc)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(
@@ -165,16 +162,9 @@ pub async fn main(
 
     // md5 speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Md5,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Md5)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(
@@ -184,16 +174,9 @@ pub async fn main(
 
     // sha1 speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Sha1,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Sha1)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(

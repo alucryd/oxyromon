@@ -70,7 +70,7 @@ async fn test() {
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     assert_eq!(roms.len(), 2);
 
-    let playlist_id = games.get(0).unwrap().playlist_id;
+    let playlist_id = games.first().unwrap().playlist_id;
     assert!(playlist_id.is_some());
 
     let playlist = find_romfile_by_id(&mut connection, playlist_id.unwrap()).await;
@@ -85,7 +85,7 @@ async fn test() {
         .map(|s| s.to_owned())
         .collect::<Vec<String>>();
     assert_eq!(lines.len(), 3);
-    assert_eq!(lines.get(0).unwrap(), &roms.get(0).unwrap().name);
+    assert_eq!(lines.first().unwrap(), &roms.first().unwrap().name);
     assert_eq!(lines.get(1).unwrap(), &roms.get(1).unwrap().name);
     assert_eq!(lines.get(2).unwrap(), "");
 }

@@ -112,6 +112,6 @@ async fn test() {
     // then
     assert_eq!(ignored_games.len(), 4);
     assert_eq!(regular_games.len(), 2);
-    assert_eq!(regular_games.get(0).unwrap().name, "Game (USA)");
+    assert_eq!(regular_games.first().unwrap().name, "Game (USA)");
     assert_eq!(regular_games.get(1).unwrap().name, "Game (Europe) (En,Fr)");
 }

@@ -65,6 +65,6 @@ async fn test() {
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     assert_eq!(roms.len(), 1);
 
-    let playlist_id = games.get(0).unwrap().playlist_id;
+    let playlist_id = games.first().unwrap().playlist_id;
     assert!(playlist_id.is_none());
 }

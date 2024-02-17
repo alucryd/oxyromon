@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -80,10 +81,10 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 3);
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
