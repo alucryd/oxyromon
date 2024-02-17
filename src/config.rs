@@ -10,7 +10,7 @@ use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use strum::{Display, EnumString, EnumVariantNames, VariantNames};
+use strum::{Display, EnumString, VariantNames};
 
 cfg_if! {
     if #[cfg(test)] {
@@ -31,7 +31,7 @@ cfg_if! {
     }
 }
 
-#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,
@@ -39,7 +39,7 @@ pub enum HashAlgorithm {
     Sha1,
 }
 
-#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum RvzCompressionAlgorithm {
     None,
@@ -49,14 +49,14 @@ pub enum RvzCompressionAlgorithm {
     Lzma2,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum SubfolderScheme {
     None,
     Alpha,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum PreferredVersion {
     None,
@@ -64,7 +64,7 @@ pub enum PreferredVersion {
     Old,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum PreferredRegion {
     None,

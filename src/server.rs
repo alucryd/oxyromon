@@ -5,11 +5,11 @@ use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{
-    body::{Bytes, Full},
+    body::Body,
     extract::Path,
     http::{header, Response, StatusCode},
     routing::{get, post_service},
-    Router, Server,
+    serve, Router,
 };
 use clap::{Arg, ArgMatches, Command};
 use http_types::mime::{BYTE_STREAM, HTML};
@@ -19,6 +19,7 @@ use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
+use tokio::net::TcpListener;
 use tokio::select;
 use tokio::signal::ctrl_c;
 
@@ -53,14 +54,14 @@ pub fn subcommand() -> Command {
         )
 }
 
-async fn serve_index() -> Response<Full<Bytes>> {
+async fn serve_index() -> Response<Body> {
     Response::builder()
         .header(header::CONTENT_TYPE, HTML.to_string())
-        .body(Full::from(Assets::get("index.html").unwrap().data.to_vec()))
+        .body(Body::from(Assets::get("index.html").unwrap().data.to_vec()))
         .unwrap()
 }
 
-async fn serve_asset(Path(path): Path<String>) -> Response<Full<Bytes>> {
+async fn serve_asset(Path(path): Path<String>) -> Response<Body> {
     match Assets::get(&path) {
         Some(file) => {
             let mime = Mime::sniff(file.data.as_ref())
@@ -77,12 +78,12 @@ async fn serve_asset(Path(path): Path<String>) -> Response<Full<Bytes>> {
                 .unwrap_or(BYTE_STREAM);
             Response::builder()
                 .header(header::CONTENT_TYPE, mime.to_string())
-                .body(Full::from(file.data.to_vec()))
+                .body(Body::from(file.data.to_vec()))
                 .unwrap()
         }
         None => Response::builder()
             .status(StatusCode::NOT_FOUND)
-            .body(Full::from(Vec::new()))
+            .body(Body::from(Vec::new()))
             .unwrap(),
     }
 }
@@ -99,10 +100,10 @@ async fn run(address: &str, port: &str) -> SimpleResult<()> {
         .route("/*path", get(serve_asset))
         .route("/", get(serve_index));
 
-    Server::bind(&format!("{}:{}", address, port).parse().unwrap())
-        .serve(app.into_make_service())
+    let listener = TcpListener::bind(format!("{}:{}", address, port))
         .await
         .unwrap();
+    serve(listener, app.into_make_service()).await.unwrap();
 
     Ok(())
 }

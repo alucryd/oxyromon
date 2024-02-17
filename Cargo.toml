@@ -44,42 +44,42 @@ server = [
 ]
 
 [dependencies]
-async-graphql = { version = "6.0.11", features = [
+async-graphql = { version = "7.0.1", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-axum = { version = "6.0.11", optional = true }
+async-graphql-axum = { version = "7.0.1", optional = true }
 async-trait = { version = "0.1.77", optional = true }
-axum = { version = "0.6.20", default-features = false, features = [
+axum = { version = "0.7.4", default-features = false, features = [
     "http2",
     "tokio",
     "ws",
 ], optional = true }
 cfg-if = "1.0.0"
-clap = "4.4.12"
-crc32fast = "1.3.2"
+clap = "4.5.1"
+crc32fast = "1.4.0"
 dialoguer = "0.11.0"
 digest = { version = "0.10.7", features = ["std"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"
-env_logger = "0.10.1"
+env_logger = "0.11.2"
 flate2 = { version = "1.0.28", optional = true }
 futures = "0.3.30"
 http-types = { version = "2.12.0", optional = true }
-indicatif = { version = "0.17.7", features = ["rayon"] }
-itertools = "0.12.0"
+indicatif = { version = "0.17.8", features = ["rayon"] }
+itertools = "0.12.1"
 lazy_static = "1.4.0"
 log = "0.4.20"
 md-5 = "0.10.6"
-num-derive = "0.4.1"
-num-traits = "0.2.17"
+num-derive = "0.4.2"
+num-traits = "0.2.18"
 once_cell = "1.19.0"
 phf = { version = "0.11.2", features = ["macros"] }
 quick-xml = { version = "0.31.0", features = ["serialize"] }
-rayon = "1.8.0"
-regex = "1.10.2"
-reqwest = { version = "0.11.23", default-features = false }
+rayon = "1.8.1"
+regex = "1.10.3"
+reqwest = { version = "0.11.24", default-features = false }
 rust-embed = { version = "8.2.0", features = ["compression"] }
-serde = { version = "1.0.194", features = ["derive"] }
+serde = { version = "1.0.196", features = ["derive"] }
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
 simple-error = "0.3.0"
@@ -89,10 +89,10 @@ sqlx = { version = "0.7.3", default-features = false, features = [
     "runtime-tokio",
     "sqlite",
 ] }
-strsim = { version = "0.10.0", optional = true }
-strum = { version = "0.25.0", features = ["derive"] }
-tempfile = "3.9.0"
-tokio = { version = "1.35.1", features = [
+strsim = { version = "0.11.0", optional = true }
+strum = { version = "0.26.1", features = ["derive"] }
+tempfile = "3.10.0"
+tokio = { version = "1.36.0", features = [
     "fs",
     "io-std",
     "io-util",
@@ -107,8 +107,8 @@ walkdir = "2.4.0"
 zip = { version = "0.6.6", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0.110"
-wiremock = "0.5.22"
+serde_json = "1.0.113"
+wiremock = "0.6.0"
 
 [[bin]]
 name = "oxyromon"
