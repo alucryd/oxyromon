@@ -115,17 +115,17 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        if parse(progress_bar, &self.path).await?.len() == 0 {
-            self.as_original()?.delete(progress_bar, false).await?;
+        if parse(progress_bar, &self.path).await?.is_empty() {
+            self.as_common()?.delete(progress_bar, false).await?;
         }
 
         Ok(())
     }
 }
 
-impl AsOriginal for ArchiveRomfile {
-    fn as_original(&self) -> SimpleResult<CommonRomfile> {
-        Ok(CommonRomfile::from_path(&self.path)?)
+impl AsCommon for ArchiveRomfile {
+    fn as_common(&self) -> SimpleResult<CommonRomfile> {
+        CommonRomfile::from_path(&self.path)
     }
 }
 
@@ -160,10 +160,7 @@ impl Size for ArchiveRomfile {
         header: &Header,
     ) -> SimpleResult<u64> {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let original_file = self
-            .clone()
-            .to_original(progress_bar, &tmp_directory)
-            .await?;
+        let original_file = self.clone().to_common(progress_bar, &tmp_directory).await?;
         let size = original_file
             .get_headered_size(connection, progress_bar, header)
             .await?;
@@ -185,11 +182,8 @@ impl Hash for ArchiveRomfile {
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;
-                let original_file = self
-                    .clone()
-                    .to_original(progress_bar, &tmp_directory)
-                    .await?;
-                let hash_and_size = original_file
+                let common_romfile = self.clone().to_common(progress_bar, &tmp_directory).await?;
+                let hash_and_size = common_romfile
                     .get_hash_and_size(
                         connection,
                         progress_bar,
@@ -199,7 +193,7 @@ impl Hash for ArchiveRomfile {
                         hash_algorithm,
                     )
                     .await?;
-                remove_file(progress_bar, &original_file.path, true).await?;
+                remove_file(progress_bar, &common_romfile.path, true).await?;
                 Ok(hash_and_size)
             }
             false => {
@@ -237,50 +231,49 @@ impl Check for ArchiveRomfile {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Option<Header>,
-        rom: &Rom,
-        position: usize,
-        total: usize,
+        roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        let (hash, size) = self
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
-            .await?;
-
-        if size != rom.size as u64 {
-            bail!("Size mismatch");
-        };
-
-        match hash_algorithm {
-            HashAlgorithm::Crc => {
-                if &hash != rom.crc.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
+        match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
+            true => {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                let common_romfile = self.clone().to_common(progress_bar, &tmp_directory).await?;
+                common_romfile
+                    .check(connection, progress_bar, header, roms, hash_algorithm)
+                    .await?;
             }
-            HashAlgorithm::Md5 => {
-                if &hash != rom.md5.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Sha1 => {
-                if &hash != rom.sha1.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
+            false => {
+                let (hash, size) = self
+                    .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+                    .await?;
+                if size != roms[0].size as u64 {
+                    bail!("Size mismatch");
+                };
+                match hash_algorithm {
+                    HashAlgorithm::Crc => {
+                        if &hash != roms[0].crc.as_ref().unwrap() {
+                            bail!("Checksum mismatch");
+                        }
+                    }
+                    HashAlgorithm::Md5 => {
+                        if &hash != roms[0].md5.as_ref().unwrap() {
+                            bail!("Checksum mismatch");
+                        }
+                    }
+                    HashAlgorithm::Sha1 => {
+                        if &hash != roms[0].sha1.as_ref().unwrap() {
+                            bail!("Checksum mismatch");
+                        }
+                    }
                 }
             }
         }
-
         Ok(())
     }
 }
 
-impl ToOriginal for ArchiveRomfile {
-    async fn to_original<P: AsRef<Path>>(
+impl ToCommon for ArchiveRomfile {
+    async fn to_common<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         directory: &P,
@@ -313,6 +306,7 @@ impl ToOriginal for ArchiveRomfile {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub trait ToArchive {
     async fn to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
         &self,
@@ -380,7 +374,7 @@ impl ToArchive for CommonRomfile {
         Ok(ArchiveRomfile {
             path,
             file_path: relative_path.as_os_str().to_str().unwrap().to_string(),
-            archive_type: archive_type.clone(),
+            archive_type: *archive_type,
         })
     }
 }
@@ -399,7 +393,7 @@ impl ToArchive for ArchiveRomfile {
         if &self.archive_type == archive_type {
             return Ok(self.clone());
         }
-        let original_romfile = self.to_original(progress_bar, source_directory).await?;
+        let original_romfile = self.to_common(progress_bar, source_directory).await?;
         let archive_romfile = original_romfile
             .to_archive(
                 progress_bar,
@@ -544,8 +538,7 @@ pub async fn get_version() -> SimpleResult<String> {
     let version = stdout
         .lines()
         .nth(1)
-        .map(|line| VERSION_REGEX.find(line))
-        .flatten()
+        .and_then(|line| VERSION_REGEX.find(line))
         .map(|version| version.as_str().to_string())
         .unwrap_or(String::from("unknown"));
 

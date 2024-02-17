@@ -37,7 +37,9 @@ impl CommonFile for CommonRomfile {
         new_path: &P,
         quiet: bool,
     ) -> SimpleResult<CommonRomfile> {
-        rename_file(progress_bar, &self.path, new_path, quiet).await?;
+        if self.path != new_path.as_ref() {
+            rename_file(progress_bar, &self.path, new_path, quiet).await?;
+        }
         Ok(CommonRomfile {
             path: new_path.as_ref().to_path_buf(),
         })
@@ -67,18 +69,18 @@ impl FromPath<CommonRomfile> for CommonRomfile {
     }
 }
 
-pub trait AsOriginal {
-    fn as_original(&self) -> SimpleResult<CommonRomfile>;
+pub trait AsCommon {
+    fn as_common(&self) -> SimpleResult<CommonRomfile>;
 }
 
-impl AsOriginal for Romfile {
-    fn as_original(&self) -> SimpleResult<CommonRomfile> {
-        Ok(CommonRomfile::from_path(&self.path)?)
+impl AsCommon for Romfile {
+    fn as_common(&self) -> SimpleResult<CommonRomfile> {
+        CommonRomfile::from_path(&self.path)
     }
 }
 
-pub trait ToOriginal {
-    async fn to_original<P: AsRef<Path>>(
+pub trait ToCommon {
+    async fn to_common<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
@@ -250,9 +252,7 @@ pub trait Check {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Option<Header>,
-        rom: &Rom,
-        position: usize,
-        total: usize,
+        roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()>;
 }
@@ -263,44 +263,77 @@ impl Check for CommonRomfile {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Option<Header>,
-        rom: &Rom,
-        position: usize,
-        total: usize,
+        roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         let (hash, size) = self
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
+            .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
             .await?;
-
-        if size != rom.size as u64 {
+        if size != roms[0].size as u64 {
             bail!("Size mismatch");
         };
-
         match hash_algorithm {
             HashAlgorithm::Crc => {
-                if &hash != rom.crc.as_ref().unwrap() {
+                if &hash != roms[0].crc.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }
             HashAlgorithm::Md5 => {
-                if &hash != rom.md5.as_ref().unwrap() {
+                if &hash != roms[0].md5.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }
             HashAlgorithm::Sha1 => {
-                if &hash != rom.sha1.as_ref().unwrap() {
+                if &hash != roms[0].sha1.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }
         }
-
         Ok(())
+    }
+}
+
+pub struct IsoRomfile {
+    pub path: PathBuf,
+}
+
+impl AsCommon for IsoRomfile {
+    fn as_common(&self) -> SimpleResult<CommonRomfile> {
+        CommonRomfile::from_path(&self.path)
+    }
+}
+
+pub trait ToIso {
+    async fn to_iso<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> SimpleResult<IsoRomfile>;
+}
+
+impl FromPath<IsoRomfile> for IsoRomfile {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<IsoRomfile> {
+        let path = path.as_ref().to_path_buf();
+        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
+        if extension != ISO_EXTENSION {
+            bail!("Not a valid iso");
+        }
+        Ok(IsoRomfile { path })
+    }
+}
+
+pub trait AsIso {
+    fn as_iso(&self) -> SimpleResult<IsoRomfile>;
+}
+
+impl AsIso for Romfile {
+    fn as_iso(&self) -> SimpleResult<IsoRomfile> {
+        IsoRomfile::from_path(&self.path)
+    }
+}
+
+impl AsIso for CommonRomfile {
+    fn as_iso(&self) -> SimpleResult<IsoRomfile> {
+        IsoRomfile::from_path(&self.path)
     }
 }

@@ -19,5 +19,5 @@ async fn test() {
 
     // then
     assert_eq!(all_regions.len(), 1);
-    assert_eq!(all_regions.get(0).unwrap(), &Region::UnitedStates);
+    assert_eq!(all_regions.first().unwrap(), &Region::UnitedStates);
 }

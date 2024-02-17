@@ -90,7 +90,7 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 2);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory

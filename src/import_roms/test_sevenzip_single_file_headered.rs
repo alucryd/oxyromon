@@ -71,15 +71,15 @@ async fn test() {
     .await;
     assert_eq!(games.len(), 1);
 
-    let game = games.get(0).unwrap();
+    let game = games.first().unwrap();
     assert_eq!(game.name, "Test Game (USA, Europe)");
     assert_eq!(game.system_id, system.id);
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe).rom");
     assert_eq!(rom.game_id, game.id);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -94,7 +94,7 @@ async fn test() {
     let archive_romfiles = sevenzip::parse(&progress_bar, &romfile.path).await.unwrap();
     assert_eq!(archive_romfiles.len(), 1);
     assert_eq!(
-        archive_romfiles.get(0).unwrap().file_path,
+        archive_romfiles.first().unwrap().file_path,
         "Test Game (USA, Europe).rom"
     );
 }

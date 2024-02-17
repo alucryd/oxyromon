@@ -94,7 +94,7 @@ async fn test_cue_bin_to_chd() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 2);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -105,7 +105,7 @@ async fn test_cue_bin_to_chd() {
     );
     assert!(Path::new(&romfile.path).is_file());
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
     assert_eq!(rom.romfile_id, Some(romfile.id));
     let rom = roms.get(1).unwrap();

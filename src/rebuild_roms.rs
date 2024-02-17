@@ -225,7 +225,7 @@ async fn trim_game(
             &mut transaction,
             romfile.id,
             &romfile.path,
-            romfile.as_original()?.get_size().await?,
+            romfile.as_common()?.get_size().await?,
         )
         .await;
     }
@@ -286,7 +286,7 @@ async fn add_rom(
         // source is archive and destination is directory
         let archive_romfile = source_romfile.as_archive(source_rom)?;
         let mut original_romfile = archive_romfile
-            .to_original(progress_bar, game_directory)
+            .to_common(progress_bar, game_directory)
             .await?;
         if source_rom.name != rom.name {
             original_romfile = original_romfile
@@ -326,7 +326,7 @@ async fn delete_rom(
         archive_romfile.delete_file(progress_bar).await?;
     } else {
         let romfile = find_romfile_by_id(transaction, rom.romfile_id.unwrap()).await;
-        romfile.as_original()?.delete(progress_bar, false).await?;
+        romfile.as_common()?.delete(progress_bar, false).await?;
     }
     update_rom_romfile(transaction, rom.id, None).await;
     Ok(())

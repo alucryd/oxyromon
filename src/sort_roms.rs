@@ -174,6 +174,7 @@ pub async fn get_regions(
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn sort_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,

@@ -28,8 +28,7 @@ pub async fn get_version() -> SimpleResult<String> {
     let version = stdout
         .lines()
         .next()
-        .map(|line| VERSION_REGEX.find(line))
-        .flatten()
+        .and_then(|line| VERSION_REGEX.find(line))
         .map(|version| version.as_str().to_string())
         .unwrap_or(String::from("unknown"));
 

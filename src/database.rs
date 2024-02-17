@@ -11,7 +11,9 @@ use std::time::Duration;
 static MIGRATOR: Migrator = sqlx::migrate!();
 
 pub async fn establish_connection(url: &str) -> SqlitePool {
+    #[allow(clippy::needless_late_init)]
     let max_connections: u32;
+    #[allow(clippy::needless_late_init)]
     let locking_mode: &str;
     cfg_if! {
         if #[cfg(feature = "server")] {

@@ -274,8 +274,10 @@ async fn download_redump_dat(
         .await
     {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let mut zip_archive =
-            try_with!(ZipArchive::new(Cursor::new(response)), "Failed to read Redump ZIP");
+        let mut zip_archive = try_with!(
+            ZipArchive::new(Cursor::new(response)),
+            "Failed to read Redump ZIP"
+        );
         match zip_archive.len() {
             0 => progress_bar.println("ZIP is empty"),
             1 => {

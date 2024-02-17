@@ -2,7 +2,6 @@ use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
-use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
@@ -32,9 +31,9 @@ pub struct XsoRomfile {
     pub xso_type: XsoType,
 }
 
-impl AsOriginal for XsoRomfile {
-    fn as_original(&self) -> SimpleResult<CommonRomfile> {
-        Ok(CommonRomfile::from_path(&self.path)?)
+impl AsCommon for XsoRomfile {
+    fn as_common(&self) -> SimpleResult<CommonRomfile> {
+        CommonRomfile::from_path(&self.path)
     }
 }
 
@@ -49,8 +48,9 @@ impl Hash for XsoRomfile {
         hash_algorithm: &HashAlgorithm,
     ) -> simple_error::SimpleResult<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let original_file = self.to_original(progress_bar, &tmp_directory).await?;
-        let hash_and_size = original_file
+        let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
+        let hash_and_size = iso_romfile
+            .as_common()?
             .get_hash_and_size(
                 connection,
                 progress_bar,
@@ -60,7 +60,7 @@ impl Hash for XsoRomfile {
                 hash_algorithm,
             )
             .await?;
-        original_file.delete(progress_bar, true).await?;
+        iso_romfile.as_common()?.delete(progress_bar, true).await?;
         Ok(hash_and_size)
     }
 }
@@ -71,52 +71,25 @@ impl Check for XsoRomfile {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Option<Header>,
-        rom: &Rom,
-        position: usize,
-        total: usize,
+        roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        let (hash, size) = self
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
+        iso_romfile
+            .as_common()?
+            .check(connection, progress_bar, header, roms, hash_algorithm)
             .await?;
-        if size != rom.size as u64 {
-            bail!("Size mismatch");
-        };
-        match hash_algorithm {
-            HashAlgorithm::Crc => {
-                if &hash != rom.crc.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Md5 => {
-                if &hash != rom.md5.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Sha1 => {
-                if &hash != rom.sha1.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-        }
-
         Ok(())
     }
 }
 
-impl ToOriginal for XsoRomfile {
-    async fn to_original<P: AsRef<Path>>(
+impl ToIso for XsoRomfile {
+    async fn to_iso<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<CommonRomfile> {
+    ) -> SimpleResult<IsoRomfile> {
         progress_bar.set_message(format!("Extracting {}", self.xso_type));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -126,10 +99,10 @@ impl ToOriginal for XsoRomfile {
             self.path.file_name().unwrap().to_str().unwrap()
         ));
 
-        let mut path = destination_directory
+        let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap());
-        path.set_extension(ISO_EXTENSION);
+            .join(self.path.file_name().unwrap())
+            .with_extension(ISO_EXTENSION);
 
         let output = Command::new(MAXCSO)
             .arg("--decompress")
@@ -138,7 +111,7 @@ impl ToOriginal for XsoRomfile {
             .arg(&path)
             .output()
             .await
-            .expect(&format!("Failed to extract {}", self.xso_type));
+            .unwrap_or_else(|_| panic!("Failed to extract {}", self.xso_type));
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -147,7 +120,7 @@ impl ToOriginal for XsoRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(CommonRomfile { path })
+        Ok(IsoRomfile { path })
     }
 }
 
@@ -160,7 +133,7 @@ pub trait ToXso {
     ) -> SimpleResult<XsoRomfile>;
 }
 
-impl ToXso for CommonRomfile {
+impl ToXso for IsoRomfile {
     async fn to_xso<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -171,13 +144,13 @@ impl ToXso for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        let mut path = destination_directory
+        let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap());
-        path.set_extension(match xso_type {
-            XsoType::Cso => CSO_EXTENSION,
-            XsoType::Zso => ZSO_EXTENSION,
-        });
+            .join(self.path.file_name().unwrap())
+            .with_extension(match xso_type {
+                XsoType::Cso => CSO_EXTENSION,
+                XsoType::Zso => ZSO_EXTENSION,
+            });
 
         progress_bar.println(format!(
             "Creating \"{}\"",
@@ -198,7 +171,7 @@ impl ToXso for CommonRomfile {
             .arg(&path)
             .output()
             .await
-            .expect(&format!("Failed to create {}", xso_type));
+            .unwrap_or_else(|_| panic!("Failed to create {}", xso_type));
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -209,35 +182,8 @@ impl ToXso for CommonRomfile {
 
         Ok(XsoRomfile {
             path,
-            xso_type: xso_type.clone(),
+            xso_type: *xso_type,
         })
-    }
-}
-
-impl ToArchive for XsoRomfile {
-    async fn to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        working_directory: &P,
-        destination_directory: &Q,
-        archive_name: &str,
-        archive_type: &ArchiveType,
-        compression_level: usize,
-        solid: bool,
-    ) -> SimpleResult<ArchiveRomfile> {
-        let original_file = self.to_original(progress_bar, working_directory).await?;
-        let archive_romfile = original_file
-            .to_archive(
-                progress_bar,
-                working_directory,
-                destination_directory,
-                archive_name,
-                archive_type,
-                compression_level,
-                solid,
-            )
-            .await?;
-        Ok(archive_romfile)
     }
 }
 
@@ -256,7 +202,7 @@ pub trait AsXso {
 
 impl AsXso for Romfile {
     fn as_xso(&self) -> SimpleResult<XsoRomfile> {
-        Ok(XsoRomfile::from_path(&self.path)?)
+        XsoRomfile::from_path(&self.path)
     }
 }
 
@@ -270,8 +216,7 @@ pub async fn get_version() -> SimpleResult<String> {
     let version = stderr
         .lines()
         .next()
-        .map(|line| VERSION_REGEX.find(line))
-        .flatten()
+        .and_then(|line| VERSION_REGEX.find(line))
         .map(|version| version.as_str().to_string())
         .unwrap_or(String::from("unknown"));
 

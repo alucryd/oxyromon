@@ -1,5 +1,7 @@
 #[cfg(feature = "chd")]
 use super::chdman;
+#[cfg(feature = "chd")]
+use super::chdman::AsChd;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -14,6 +16,8 @@ use super::maxcso::AsXso;
 use super::model::*;
 #[cfg(feature = "nsz")]
 use super::nsz;
+#[cfg(feature = "nsz")]
+use super::nsz::AsNsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
@@ -129,8 +133,8 @@ async fn check_system(
             .as_slice(),
     )
     .await;
-    let mut roms_by_romfile_id: HashMap<i64, Vec<Rom>> = HashMap::new();
-    roms.into_iter().for_each(|rom| {
+    let mut roms_by_romfile_id: HashMap<i64, Vec<&Rom>> = HashMap::new();
+    roms.iter().for_each(|rom| {
         let group = roms_by_romfile_id
             .entry(rom.romfile_id.unwrap())
             .or_default();
@@ -142,10 +146,10 @@ async fn check_system(
 
     let mut errors = 0;
 
-    for romfile in romfiles {
+    for romfile in &romfiles {
         let romfile_path = get_canonicalized_path(&romfile.path).await?;
         let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
-        let roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
+        let romfile_roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
         progress_bar.println(format!(
             "Processing \"{}\"",
@@ -162,8 +166,8 @@ async fn check_system(
                 &mut transaction,
                 progress_bar,
                 &header,
-                &romfile,
-                roms,
+                romfile,
+                romfile_roms,
                 hash_algorithm,
             )
             .await;
@@ -174,14 +178,19 @@ async fn check_system(
                         progress_bar.println("Please install chdman");
                         break;
                     }
-                    result = check_chd(
-                        &mut transaction,
-                        progress_bar, &header,
-                        &romfile_path,
-                        roms,
-                        hash_algorithm
-                    )
-                    .await;
+                    let game = games.iter().find(|game| game.id == romfile_roms.first().unwrap().game_id).unwrap();
+                    let cue_rom = roms.iter().find(|rom| rom.game_id == game.id && rom.name.ends_with(CUE_EXTENSION));
+                    let cue_romfile = cue_rom.map(|cue_rom| romfiles.iter().find(|romfile| romfile.id == cue_rom.romfile_id.unwrap()).unwrap());
+                    result = match cue_romfile {
+                        Some(cue_romfile) => romfile
+                            .as_chd_with_cue(&cue_romfile.path)?
+                            .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                            .await,
+                        None => romfile
+                            .as_chd()?
+                            .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                            .await,
+                    };
                 } else {
                 progress_bar.println("Please rebuild with the CHD feature enabled");
                     break;
@@ -194,15 +203,10 @@ async fn check_system(
                         progress_bar.println("Please install maxcso");
                         break;
                     }
-                    result = check_cso(
-                        &mut transaction,
-                        progress_bar,
-                        &header,
-                        &romfile,
-                        roms.get(0).unwrap(),
-                        hash_algorithm
-                    )
-                    .await;
+                    result = romfile
+                        .as_xso()?
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                        .await;
                 } else {
                     progress_bar.println("Please rebuild with the CSO feature enabled");
                     break;
@@ -215,15 +219,10 @@ async fn check_system(
                         progress_bar.println("Please install nsz");
                         break;
                     }
-                    result = check_nsz(
-                        &mut transaction,
-                        progress_bar,
-                        &header,
-                        &romfile_path,
-                        roms.get(0).unwrap(),
-                        hash_algorithm
-                    )
-                    .await;
+                    result = romfile
+                        .as_nsz()?
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                        .await;
                 } else {
                     progress_bar.println("Please rebuild with the NSZ feature enabled");
                     break;
@@ -236,15 +235,10 @@ async fn check_system(
                         progress_bar.println("Please install dolphin");
                         break;
                     }
-                    result = check_rvz(
-                        &mut transaction,
-                        progress_bar,
-                        &header,
-                        &romfile,
-                        roms.get(0).unwrap(),
-                        hash_algorithm
-                    )
-                    .await;
+                    result = romfile
+                        .as_rvz()?
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                        .await;
                 } else {
                     progress_bar.println("Please rebuild with the RVZ feature enabled");
                     break;
@@ -257,35 +251,31 @@ async fn check_system(
                         progress_bar.println("Please install maxcso");
                         break;
                     }
-                    result = check_zso(
-                        &mut transaction,
-                        progress_bar,
-                        &header,
-                        &romfile,
-                        roms.get(0).unwrap(),
-                        hash_algorithm
-                    )
-                    .await;
+                    result = romfile
+                        .as_xso()?
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
+                        .await;
                 } else {
                     progress_bar.println("Please rebuild with the ZSO feature enabled");
                     break;
                 }
             }
         } else {
-            result = check_original(
-                &mut transaction,
-                progress_bar,
-                &header,
-                &romfile,
-                roms.get(0).unwrap(),
-                hash_algorithm,
-            )
-            .await;
+            result = romfile
+                .as_common()?
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         }
 
         if result.is_err() {
             errors += 1;
-            move_to_trash(&mut transaction, progress_bar, system, &romfile).await?;
+            move_to_trash(&mut transaction, progress_bar, system, romfile).await?;
         } else if size {
             update_romfile(
                 &mut transaction,
@@ -316,7 +306,7 @@ async fn check_archive(
     progress_bar: &ProgressBar,
     header: &Option<Header>,
     romfile: &Romfile,
-    roms: Vec<Rom>,
+    roms: Vec<&Rom>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let archive_romfiles = sevenzip::parse(progress_bar, &romfile.path).await?;
@@ -329,163 +319,9 @@ async fn check_archive(
             .find(|rom| rom.name == archive_romfile.file_path)
             .unwrap();
         archive_romfile
-            .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
+            .check(connection, progress_bar, header, &[rom], hash_algorithm)
             .await?;
     }
-    Ok(())
-}
-
-#[cfg(feature = "chd")]
-async fn check_chd<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile_path: &P,
-    roms: Vec<Rom>,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-
-    let names_sizes: Vec<(&str, u64)> = roms
-        .iter()
-        .map(|rom| (rom.name.as_str(), rom.size as u64))
-        .collect();
-    let bin_paths = chdman::extract_chd_to_multiple_tracks(
-        progress_bar,
-        romfile_path,
-        &tmp_directory.path(),
-        &names_sizes,
-        true,
-    )
-    .await?;
-    let bin_count = bin_paths.len();
-    let mut hashes: Vec<String> = Vec::new();
-    for (i, bin_path) in bin_paths.into_iter().enumerate() {
-        let bin_romfile = CommonRomfile { path: bin_path };
-        let (hash, _) = bin_romfile
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                i,
-                bin_count,
-                hash_algorithm,
-            )
-            .await?;
-        hashes.push(hash);
-    }
-
-    match hash_algorithm {
-        HashAlgorithm::Crc => {
-            if roms
-                .iter()
-                .enumerate()
-                .any(|(i, rom)| &hashes[i] != rom.crc.as_ref().unwrap())
-            {
-                bail!("Checksum mismatch");
-            }
-        }
-        HashAlgorithm::Md5 => {
-            if roms
-                .iter()
-                .enumerate()
-                .any(|(i, rom)| &hashes[i] != rom.md5.as_ref().unwrap())
-            {
-                bail!("Checksum mismatch");
-            }
-        }
-        HashAlgorithm::Sha1 => {
-            if roms
-                .iter()
-                .enumerate()
-                .any(|(i, rom)| &hashes[i] != rom.sha1.as_ref().unwrap())
-            {
-                bail!("Checksum mismatch");
-            }
-        }
-    }
-
-    Ok(())
-}
-
-#[cfg(feature = "cso")]
-async fn check_cso(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile: &Romfile,
-    rom: &Rom,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    romfile
-        .as_xso()?
-        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
-        .await?;
-    Ok(())
-}
-
-#[cfg(feature = "nsz")]
-async fn check_nsz<P: AsRef<Path>>(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile_path: &P,
-    rom: &Rom,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    let tmp_directory = create_tmp_directory(connection).await?;
-    let nsp_path = nsz::extract_nsz(progress_bar, romfile_path, &tmp_directory.path()).await?;
-    let nsp_romfile = CommonRomfile { path: nsp_path };
-    nsp_romfile
-        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
-        .await?;
-    Ok(())
-}
-
-#[cfg(feature = "rvz")]
-async fn check_rvz(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile: &Romfile,
-    rom: &Rom,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    romfile
-        .as_rvz()?
-        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
-        .await?;
-    Ok(())
-}
-
-#[cfg(feature = "zso")]
-async fn check_zso(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile: &Romfile,
-    rom: &Rom,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    romfile
-        .as_xso()?
-        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
-        .await?;
-    Ok(())
-}
-
-async fn check_original(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    header: &Option<Header>,
-    romfile: &Romfile,
-    rom: &Rom,
-    hash_algorithm: &HashAlgorithm,
-) -> SimpleResult<()> {
-    romfile
-        .as_original()?
-        .check(connection, progress_bar, header, rom, 1, 1, hash_algorithm)
-        .await?;
     Ok(())
 }
 

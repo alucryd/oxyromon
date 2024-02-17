@@ -113,7 +113,7 @@ async fn process_system(
             continue;
         }
 
-        let mut playlist_path = PathBuf::from(&existing_romfiles.get(0).unwrap().path);
+        let mut playlist_path = PathBuf::from(&existing_romfiles.first().unwrap().path);
         playlist_path.set_file_name(&playlist_name);
         let playlist_file = File::create(&playlist_path)
             .await
@@ -124,7 +124,7 @@ async fn process_system(
 
         for romfile in existing_romfiles {
             writer
-                .write(
+                .write_all(
                     format!(
                         "{}\n",
                         PathBuf::from(&romfile.path)

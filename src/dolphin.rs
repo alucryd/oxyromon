@@ -2,7 +2,6 @@ use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
-use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
 use cfg_if::cfg_if;
@@ -27,13 +26,9 @@ pub struct RvzRomfile {
     pub path: PathBuf,
 }
 
-pub trait RvzFile {}
-
-impl RvzFile for RvzRomfile {}
-
-impl AsOriginal for RvzRomfile {
-    fn as_original(&self) -> SimpleResult<CommonRomfile> {
-        Ok(CommonRomfile::from_path(&self.path)?)
+impl AsCommon for RvzRomfile {
+    fn as_common(&self) -> SimpleResult<CommonRomfile> {
+        CommonRomfile::from_path(&self.path)
     }
 }
 
@@ -48,8 +43,9 @@ impl Hash for RvzRomfile {
         hash_algorithm: &HashAlgorithm,
     ) -> simple_error::SimpleResult<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let original_file = self.to_original(progress_bar, &tmp_directory).await?;
-        let hash_and_size = original_file
+        let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
+        let hash_and_size = iso_romfile
+            .as_common()?
             .get_hash_and_size(
                 connection,
                 progress_bar,
@@ -59,7 +55,7 @@ impl Hash for RvzRomfile {
                 hash_algorithm,
             )
             .await?;
-        original_file.delete(progress_bar, true).await?;
+        iso_romfile.as_common()?.delete(progress_bar, true).await?;
         Ok(hash_and_size)
     }
 }
@@ -70,52 +66,25 @@ impl Check for RvzRomfile {
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Option<Header>,
-        rom: &Rom,
-        position: usize,
-        total: usize,
+        roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        let (hash, size) = self
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
+        iso_romfile
+            .as_common()?
+            .check(connection, progress_bar, header, roms, hash_algorithm)
             .await?;
-        if size != rom.size as u64 {
-            bail!("Size mismatch");
-        };
-        match hash_algorithm {
-            HashAlgorithm::Crc => {
-                if &hash != rom.crc.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Md5 => {
-                if &hash != rom.md5.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Sha1 => {
-                if &hash != rom.sha1.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-        }
-
         Ok(())
     }
 }
 
-impl ToOriginal for RvzRomfile {
-    async fn to_original<P: AsRef<Path>>(
+impl ToIso for RvzRomfile {
+    async fn to_iso<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<CommonRomfile> {
+    ) -> SimpleResult<IsoRomfile> {
         progress_bar.set_message("Extracting rvz");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -125,10 +94,10 @@ impl ToOriginal for RvzRomfile {
             self.path.file_name().unwrap().to_str().unwrap()
         ));
 
-        let mut path = destination_directory
+        let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap());
-        path.set_extension(ISO_EXTENSION);
+            .join(self.path.file_name().unwrap())
+            .with_extension(ISO_EXTENSION);
 
         let output = Command::new(DOLPHIN_TOOL)
             .arg("convert")
@@ -149,7 +118,7 @@ impl ToOriginal for RvzRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(CommonRomfile { path })
+        Ok(IsoRomfile { path })
     }
 }
 
@@ -164,7 +133,7 @@ pub trait ToRvz {
     ) -> SimpleResult<RvzRomfile>;
 }
 
-impl ToRvz for CommonRomfile {
+impl ToRvz for IsoRomfile {
     async fn to_rvz<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -177,10 +146,10 @@ impl ToRvz for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        let mut path = destination_directory
+        let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap());
-        path.set_extension(ISO_EXTENSION);
+            .join(self.path.file_name().unwrap())
+            .with_extension(RVZ_EXTENSION);
 
         progress_bar.println(format!(
             "Creating \"{}\"",
@@ -216,33 +185,6 @@ impl ToRvz for CommonRomfile {
     }
 }
 
-impl ToArchive for RvzRomfile {
-    async fn to_archive<P: AsRef<Path>, Q: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        working_directory: &P,
-        destination_directory: &Q,
-        archive_name: &str,
-        archive_type: &ArchiveType,
-        compression_level: usize,
-        solid: bool,
-    ) -> SimpleResult<ArchiveRomfile> {
-        let original_file = self.to_original(progress_bar, working_directory).await?;
-        let archive_romfile = original_file
-            .to_archive(
-                progress_bar,
-                working_directory,
-                destination_directory,
-                archive_name,
-                archive_type,
-                compression_level,
-                solid,
-            )
-            .await?;
-        Ok(archive_romfile)
-    }
-}
-
 impl FromPath<RvzRomfile> for RvzRomfile {
     fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<RvzRomfile> {
         let path = path.as_ref().to_path_buf();
@@ -260,18 +202,17 @@ pub trait AsRvz {
 
 impl AsRvz for Romfile {
     fn as_rvz(&self) -> SimpleResult<RvzRomfile> {
-        Ok(RvzRomfile::from_path(&self.path)?)
+        RvzRomfile::from_path(&self.path)
     }
 }
+
 pub async fn get_version() -> SimpleResult<String> {
     let output = try_with!(
         Command::new(DOLPHIN_TOOL).output().await,
         "Failed to spawn dolphin"
     );
-
-    // dolphin doesn't advertise any version
+    // dolphin doesn't advertize any version
     String::from_utf8(output.stderr).unwrap();
     let version = String::from("unknown");
-
     Ok(version)
 }

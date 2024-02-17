@@ -18,5 +18,5 @@ async fn test() {
 
     // then
     assert_eq!(list.len(), 1);
-    assert_eq!(list.get(0).unwrap(), "item1");
+    assert_eq!(list.first().unwrap(), "item1");
 }

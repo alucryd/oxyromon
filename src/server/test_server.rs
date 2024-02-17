@@ -51,7 +51,7 @@ async fn test() -> Result<()> {
 
     let matches = import_roms::subcommand().get_matches_from(&[
         "import-roms",
-        romfile_paths.get(0).unwrap().as_os_str().to_str().unwrap(),
+        romfile_paths.first().unwrap().as_os_str().to_str().unwrap(),
         romfile_paths.get(1).unwrap().as_os_str().to_str().unwrap(),
     ]);
     import_roms::main(&mut connection, &matches, &progress_bar)
