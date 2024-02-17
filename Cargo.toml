@@ -35,14 +35,20 @@ nsz = []
 rvz = []
 zso = []
 benchmark = []
-server = ["async-graphql", "async-graphql-axum", "axum", "http-types"]
+server = [
+    "async-graphql",
+    "async-graphql-axum",
+    "async-trait",
+    "axum",
+    "http-types",
+]
 
 [dependencies]
 async-graphql = { version = "6.0.11", features = [
     "dataloader",
 ], default-features = false, optional = true }
 async-graphql-axum = { version = "6.0.11", optional = true }
-async-trait = "0.1.77"
+async-trait = { version = "0.1.77", optional = true }
 axum = { version = "0.6.20", default-features = false, features = [
     "http2",
     "tokio",
