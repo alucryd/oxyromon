@@ -233,6 +233,11 @@ impl Check for ArchiveRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
+        progress_bar.println(format!(
+            "Checking \"{}\" ({})",
+            self.as_common()?.to_string(),
+            self.file_path
+        ));
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;

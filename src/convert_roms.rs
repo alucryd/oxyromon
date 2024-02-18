@@ -461,8 +461,6 @@ async fn to_archive(
         }
     }
 
-    println!("{}", roms_by_game_id.len());
-
     // partition CSOs
     let (csos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -479,8 +477,6 @@ async fn to_archive(
             drop(csos)
         }
     }
-
-    println!("{}", roms_by_game_id.len());
 
     // partition NSZs
     let (nszs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -499,8 +495,6 @@ async fn to_archive(
         }
     }
 
-    println!("{}", roms_by_game_id.len());
-
     // partition RVZs
     let (rvzs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -517,8 +511,6 @@ async fn to_archive(
             drop(rvzs)
         }
     }
-
-    println!("{}", roms_by_game_id.len());
 
     // partition ZSOs
     let (zsos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1057,7 +1049,6 @@ async fn to_archive(
 
     // convert others
     for (game_id, mut roms) in roms_by_game_id {
-        println!("converting others");
         let mut transaction = begin_transaction(connection).await;
 
         if roms.len() == 1 && !system.arcade {
@@ -2562,6 +2553,9 @@ async fn to_original(
         let mut romfiles: Vec<&Romfile> = roms
             .par_iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .filter(|romfile| {
+                romfile.path.ends_with(SEVENZIP_EXTENSION) || romfile.path.ends_with(ZIP_EXTENSION)
+            })
             .collect();
         romfiles.dedup();
 
@@ -2570,6 +2564,10 @@ async fn to_original(
         }
 
         let romfile = romfiles.first().unwrap();
+        let roms: Vec<&Rom> = roms
+            .iter()
+            .filter(|rom| rom.romfile_id.unwrap() == rom.id)
+            .collect();
 
         let destination_directory = match system.arcade {
             true => {
@@ -2585,7 +2583,7 @@ async fn to_original(
         };
 
         let mut common_romfiles: Vec<CommonRomfile> = Vec::new();
-        for rom in roms {
+        for rom in &roms {
             let common_romfile = romfile
                 .as_archive(rom)?
                 .to_common(progress_bar, &destination_directory)
@@ -2598,7 +2596,7 @@ async fn to_original(
             for (common_romfile, rom) in common_romfiles
                 .iter()
                 .zip(roms.iter())
-                .collect::<Vec<(&CommonRomfile, &Rom)>>()
+                .collect::<Vec<(&CommonRomfile, &&Rom)>>()
             {
                 if common_romfile
                     .check(
@@ -2627,7 +2625,7 @@ async fn to_original(
         for (common_romfile, rom) in common_romfiles
             .iter()
             .zip(roms.iter())
-            .collect::<Vec<(&CommonRomfile, &Rom)>>()
+            .collect::<Vec<(&CommonRomfile, &&Rom)>>()
         {
             let romfile_id = create_romfile(
                 &mut transaction,

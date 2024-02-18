@@ -842,7 +842,6 @@ async fn import_chd<P: AsRef<Path>>(
                 let (hash, _) = bin_romfile
                     .get_hash_and_size(connection, progress_bar, header, i, total, hash_algorithm)
                     .await?;
-                println!("{}", &hash);
                 hashes.push(hash);
                 bin_romfile.delete(progress_bar, true).await?;
             }

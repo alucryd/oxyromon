@@ -267,6 +267,7 @@ impl Check for CommonRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
+        progress_bar.println(format!("Checking \"{}\"", self.to_string()));
         let (hash, size) = self
             .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
             .await?;

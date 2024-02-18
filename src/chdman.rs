@@ -46,6 +46,7 @@ impl Check for ChdRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
+        progress_bar.println(format!("Checking \"{}\"", self.as_common()?.to_string()));
         let tmp_directory = create_tmp_directory(connection).await?;
         match &self.cue_path {
             Some(cue_path) => {

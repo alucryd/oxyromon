@@ -69,6 +69,7 @@ impl Check for RvzRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
+        progress_bar.println(format!("Checking \"{}\"", self.as_common()?.to_string()));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
         iso_romfile
