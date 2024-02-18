@@ -16,6 +16,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
+#[derive(Clone)]
 pub struct CommonRomfile {
     pub path: PathBuf,
 }
@@ -27,7 +28,7 @@ pub trait CommonFile {
         new_path: &P,
         quiet: bool,
     ) -> SimpleResult<CommonRomfile>;
-    async fn delete(self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
+    async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
 }
 
 impl CommonFile for CommonRomfile {
@@ -45,7 +46,7 @@ impl CommonFile for CommonRomfile {
         })
     }
 
-    async fn delete(self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
+    async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
         remove_file(progress_bar, &self.path, quiet).await?;
         Ok(())
     }

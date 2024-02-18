@@ -53,7 +53,7 @@ pub trait ArchiveFile {
         progress_bar: &ProgressBar,
         new_file_path: &str,
     ) -> SimpleResult<ArchiveRomfile>;
-    async fn delete_file(self, progress_bar: &ProgressBar) -> SimpleResult<()>;
+    async fn delete_file(&self, progress_bar: &ProgressBar) -> SimpleResult<()>;
 }
 
 impl ArchiveFile for ArchiveRomfile {
@@ -93,7 +93,7 @@ impl ArchiveFile for ArchiveRomfile {
         })
     }
 
-    async fn delete_file(self, progress_bar: &ProgressBar) -> SimpleResult<()> {
+    async fn delete_file(&self, progress_bar: &ProgressBar) -> SimpleResult<()> {
         progress_bar.set_message("Deleting files");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));

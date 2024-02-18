@@ -801,10 +801,9 @@ async fn import_chd<P: AsRef<Path>>(
                 )
                 .await?;
 
-            let total = cue_bin_romfile.bin_paths.len();
+            let total = cue_bin_romfile.bin_romfiles.len();
             let mut hashes: Vec<String> = Vec::new();
-            for (i, bin_path) in cue_bin_romfile.bin_paths.into_iter().enumerate() {
-                let bin_romfile = CommonRomfile { path: bin_path };
+            for (i, bin_romfile) in cue_bin_romfile.bin_romfiles.into_iter().enumerate() {
                 let (hash, _) = bin_romfile
                     .get_hash_and_size(connection, progress_bar, header, i, total, hash_algorithm)
                     .await?;

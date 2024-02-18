@@ -62,6 +62,8 @@ async fn test() {
         &system,
         roms_by_game_id,
         romfiles_by_id,
+        true,
+        &HashAlgorithm::Crc,
     )
     .await
     .unwrap();

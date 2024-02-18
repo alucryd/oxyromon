@@ -19,7 +19,7 @@ use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::prompt::*;
 use super::sevenzip;
-use super::sevenzip::{AsArchive, ToArchive};
+use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
 use super::util::*;
 use super::SimpleResult;
 use cfg_if::cfg_if;
@@ -104,6 +104,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("CHECK")
+                .short('c')
+                .long("check")
+                .help("Check ROM files after conversion")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -120,7 +128,19 @@ pub async fn main(
             .map(|&s| s.to_owned())
             .unwrap(),
     };
+    let hash_algorithm = match find_setting_by_key(connection, "HASH_ALGORITHM")
+        .await
+        .unwrap()
+        .value
+        .as_deref()
+    {
+        Some("crc") => HashAlgorithm::Crc,
+        Some("md5") => HashAlgorithm::Md5,
+        Some("sha1") => HashAlgorithm::Sha1,
+        Some(_) | None => bail!("Not possible"),
+    };
     let diff = matches.get_flag("DIFF");
+    let check = matches.get_flag("CHECK");
 
     match format.as_str() {
         "7Z" | "ZIP" => {
@@ -260,6 +280,8 @@ pub async fn main(
                     &system,
                     roms_by_game_id,
                     romfiles_by_id,
+                    check,
+                    &hash_algorithm,
                 )
                 .await?
             }
@@ -275,6 +297,8 @@ pub async fn main(
                     games_by_id,
                     romfiles_by_id,
                     diff,
+                    check,
+                    &hash_algorithm,
                     compression_level,
                     solid,
                 )
@@ -291,6 +315,8 @@ pub async fn main(
                     games_by_id,
                     romfiles_by_id,
                     diff,
+                    check,
+                    &hash_algorithm,
                     compression_level,
                     false,
                 )
@@ -305,6 +331,8 @@ pub async fn main(
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            check,
+                            &hash_algorithm,
                         )
                         .await?
                     }
@@ -319,6 +347,8 @@ pub async fn main(
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            check,
+                            &hash_algorithm,
                         )
                         .await?
                     }
@@ -333,6 +363,8 @@ pub async fn main(
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            check,
+                            &hash_algorithm,
                         )
                         .await?
                     }
@@ -350,6 +382,8 @@ pub async fn main(
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            check,
+                            &hash_algorithm,
                             &compression_algorithm,
                             compression_level,
                             block_size,
@@ -367,6 +401,8 @@ pub async fn main(
                             roms_by_game_id,
                             romfiles_by_id,
                             diff,
+                            check,
+                            &hash_algorithm,
                         )
                         .await?
                     }
@@ -391,6 +427,8 @@ async fn to_archive(
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
     compression_level: usize,
     solid: bool,
 ) -> SimpleResult<()> {
@@ -515,6 +553,26 @@ async fn to_archive(
                         )
                         .await?;
 
+                    if check
+                        && archive_romfile
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        archive_romfile
+                            .as_common()?
+                            .delete(progress_bar, false)
+                            .await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -545,6 +603,7 @@ async fn to_archive(
                         .get(&bin_roms.first().unwrap().romfile_id.unwrap())
                         .unwrap();
 
+                    let mut archive_romfiles: Vec<ArchiveRomfile> = Vec::new();
                     let destination_directory = Path::new(&cue_romfile.path).parent().unwrap();
                     let archive_romfile = cue_romfile
                         .as_common()?
@@ -558,14 +617,14 @@ async fn to_archive(
                             solid
                         )
                         .await?;
+                    archive_romfiles.push(archive_romfile);
                     let cue_bin_romfile = chd_romfile
                         .as_chd_with_cue(&cue_romfile.path)?
                         .to_cue_bin(progress_bar, &tmp_directory.path(), &cue_romfile.as_common()?, &bin_roms, true)
                         .await?;
 
-                    for bin_path in cue_bin_romfile.bin_paths {
-                        let bin_romfile = CommonRomfile { path: bin_path};
-                        bin_romfile.to_archive(
+                    for bin_romfile in cue_bin_romfile.bin_romfiles {
+                        let archive_romfile = bin_romfile.to_archive(
                             progress_bar,
                             &tmp_directory.path(),
                             &destination_directory,
@@ -575,12 +634,33 @@ async fn to_archive(
                             solid
                         )
                         .await?;
+                        archive_romfiles.push(archive_romfile);
                     }
+
+                    if check {
+                        let mut error = false;
+                        let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
+                        for (archive_romfile, rom) in archive_romfiles.iter().zip(roms) {
+                            if archive_romfile.check(&mut transaction, progress_bar, &None, &[rom], hash_algorithm)
+                                .await
+                                .is_err()
+                            {
+                                error = true;
+                                break;
+                            }
+                        }
+                        if error {
+                            progress_bar.println("Converted file doesn't match the original");
+                            archive_romfiles.first().unwrap().as_common()?.delete(progress_bar, false).await?;
+                            continue;
+                        }
+                    }
+
                     update_romfile(
                         &mut transaction,
                         chd_romfile.id,
-                        &archive_romfile.as_common()?.to_string(),
-                        archive_romfile.as_common()?.get_size().await?,
+                        &archive_romfiles.first().unwrap().as_common()?.to_string(),
+                        archive_romfiles.first().unwrap().as_common()?.get_size().await?,
                     )
                     .await;
                     update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
@@ -591,7 +671,7 @@ async fn to_archive(
                             progress_bar,
                             &roms.iter().collect::<Vec<&Rom>>(),
                             &[&cue_romfile.path, &chd_romfile.path],
-                            &[&archive_romfile.path],
+                            &[&archive_romfiles.first().unwrap().path],
                         )
                         .await?;
                     }
@@ -631,6 +711,27 @@ async fn to_archive(
                         solid
                     )
                     .await?;
+
+                if check
+                    && archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    archive_romfile
+                        .as_common()?
+                        .delete(progress_bar, false)
+                        .await?;
+                    continue;
+                };
+
                 update_romfile(
                     &mut transaction,
                     romfile.id,
@@ -682,6 +783,27 @@ async fn to_archive(
                         solid
                     )
                     .await?;
+
+                if check
+                    && archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    archive_romfile
+                        .as_common()?
+                        .delete(progress_bar, false)
+                        .await?;
+                    continue;
+                };
+
                 update_romfile(
                     &mut transaction,
                     romfile.id,
@@ -733,6 +855,27 @@ async fn to_archive(
                         solid
                     )
                     .await?;
+
+                if check
+                    && archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    archive_romfile
+                        .as_common()?
+                        .delete(progress_bar, false)
+                        .await?;
+                    continue;
+                };
+
                 update_romfile(
                     &mut transaction,
                     romfile.id,
@@ -784,6 +927,27 @@ async fn to_archive(
                         solid
                     )
                     .await?;
+
+                if check
+                    && archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    archive_romfile
+                        .as_common()?
+                        .delete(progress_bar, false)
+                        .await?;
+                    continue;
+                };
+
                 update_romfile(
                     &mut transaction,
                     romfile.id,
@@ -831,6 +995,26 @@ async fn to_archive(
                 )
                 .await?;
 
+            if check
+                && archive_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                archive_romfile
+                    .as_common()?
+                    .delete(progress_bar, false)
+                    .await?;
+                continue;
+            };
+
             update_romfile(
                 &mut transaction,
                 romfile.id,
@@ -866,6 +1050,26 @@ async fn to_archive(
                     solid,
                 )
                 .await?;
+
+            if check
+                && archive_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                archive_romfile
+                    .as_common()?
+                    .delete(progress_bar, false)
+                    .await?;
+                continue;
+            };
 
             update_romfile(
                 &mut transaction,
@@ -923,8 +1127,9 @@ async fn to_archive(
                 .iter()
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
                 .collect::<Vec<&Romfile>>();
+            let mut archive_romfiles: Vec<ArchiveRomfile> = Vec::new();
             for romfile in &romfiles {
-                romfile
+                let archive_romfile = romfile
                     .as_common()?
                     .to_archive(
                         progress_bar,
@@ -939,6 +1144,30 @@ async fn to_archive(
                         solid,
                     )
                     .await?;
+                archive_romfiles.push(archive_romfile);
+            }
+
+            if check {
+                let mut results: Vec<SimpleResult<()>> = Vec::new();
+                for (archive_romfile, rom) in archive_romfiles.iter().zip(&roms) {
+                    let result = archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await;
+                    if result.is_err() {
+                        progress_bar.println("Converted file doesn't match the original");
+                        archive_romfile.delete_file(progress_bar).await?;
+                    }
+                    results.push(result);
+                }
+                if results.iter().any(|result| result.is_err()) {
+                    continue;
+                }
             }
 
             let archive_romfile_id = match find_romfile_by_path(
@@ -1002,6 +1231,8 @@ async fn to_chd(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1108,34 +1339,35 @@ async fn to_chd(
             }
         }
 
-        let mut common_romfiles: Vec<CommonRomfile> = Vec::new();
-        for rom in roms {
-            common_romfiles.push(
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .into_par_iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+
+        let mut cue_romfiles: Vec<CommonRomfile> = Vec::new();
+        for rom in &cue_roms {
+            cue_romfiles.push(
                 romfile
                     .as_archive(rom)?
                     .to_common(progress_bar, &tmp_directory.path())
                     .await?,
             );
         }
-        let (cue_romfiles, bin_iso_romfiles): (Vec<CommonRomfile>, Vec<CommonRomfile>) =
-            common_romfiles
-                .into_par_iter()
-                .partition(|original_romfile| {
-                    original_romfile
-                        .path
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .ends_with(CUE_EXTENSION)
-                });
-        let cue_romfile = cue_romfiles.first();
 
-        let chd_romfile = match cue_romfile {
+        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        for rom in &bin_roms {
+            bin_romfiles.push(
+                romfile
+                    .as_archive(rom)?
+                    .to_common(progress_bar, &tmp_directory.path())
+                    .await?,
+            );
+        }
+
+        let chd_romfile = match cue_romfiles.first() {
             Some(cue_romfile) => {
                 cue_romfile
                     .as_cue_bin(
-                        &bin_iso_romfiles
+                        &bin_romfiles
                             .iter()
                             .map(|bin_iso_romfile| &bin_iso_romfile.path)
                             .collect::<Vec<&PathBuf>>(),
@@ -1148,7 +1380,7 @@ async fn to_chd(
                     .await?
             }
             None => {
-                bin_iso_romfiles
+                bin_romfiles
                     .first()
                     .unwrap()
                     .as_iso()?
@@ -1161,9 +1393,29 @@ async fn to_chd(
             }
         };
 
+        if check
+            && chd_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &bin_roms,
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            chd_romfile.as_common()?.delete(progress_bar, false).await?;
+            if let Some(cue_romfile) = cue_romfiles.first() {
+                cue_romfile.delete(progress_bar, false).await?;
+            }
+            continue;
+        };
+
         if diff {
             let mut new_paths = vec![&chd_romfile.path];
-            if let Some(cue_romfile) = cue_romfile {
+            if let Some(cue_romfile) = cue_romfiles.first() {
                 new_paths.push(&cue_romfile.path)
             }
             print_diff(
@@ -1239,6 +1491,24 @@ async fn to_chd(
                 &Some(&cue_romfile.as_common()?),
             )
             .await?;
+
+        if check
+            && chd_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &bin_roms,
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            chd_romfile.as_common()?.delete(progress_bar, false).await?;
+            continue;
+        };
+
         if diff {
             let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
             let mut romfile_paths = romfiles_by_id
@@ -1249,6 +1519,7 @@ async fn to_chd(
             romfile_paths.push(&cue_romfile.path);
             print_diff(progress_bar, &roms, &romfile_paths, &[&chd_romfile.path]).await?;
         }
+
         let chd_romfile_id = create_romfile(
             &mut transaction,
             &chd_romfile.as_common()?.to_string(),
@@ -1279,6 +1550,22 @@ async fn to_chd(
                     &None,
                 )
                 .await?;
+            if check
+                && chd_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                chd_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_romfile.path]).await?;
             }
@@ -1310,6 +1597,22 @@ async fn to_chd(
                         .await?
                         .to_chd(progress_bar, &romfile.as_common()?.path.parent().unwrap(), &None)
                         .await?;
+                    if check
+                        && chd_romfile
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        chd_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_romfile.path]).await?;
                     }
@@ -1346,6 +1649,22 @@ async fn to_chd(
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&chd_romfile.path]).await?;
                     }
+                    if check
+                        && chd_romfile
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        chd_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -1371,6 +1690,8 @@ async fn to_cso(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1447,6 +1768,23 @@ async fn to_cso(
             )
             .await?;
 
+        if check
+            && cso_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &[rom],
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            cso_romfile.as_common()?.delete(progress_bar, false).await?;
+            continue;
+        };
+
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_romfile.path]).await?;
         }
@@ -1477,6 +1815,22 @@ async fn to_cso(
                     &maxcso::XsoType::Cso,
                 )
                 .await?;
+            if check
+                && cso_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                cso_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_romfile.path]).await?;
             }
@@ -1511,6 +1865,22 @@ async fn to_cso(
                             &maxcso::XsoType::Cso
                         )
                         .await?;
+                    if check
+                        && cso_romfile
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        cso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_romfile.path]).await?;
                     }
@@ -1539,6 +1909,8 @@ async fn to_nsz(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1594,6 +1966,23 @@ async fn to_nsz(
             .to_nsz(progress_bar, &romfile.as_common()?.path.parent().unwrap())
             .await?;
 
+        if check
+            && nsz_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &[rom],
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            nsz_romfile.as_common()?.delete(progress_bar, false).await?;
+            continue;
+        };
+
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_romfile.path]).await?;
         }
@@ -1621,6 +2010,22 @@ async fn to_nsz(
                 .as_nsp()?
                 .to_nsz(progress_bar, &romfile.as_common()?.path.parent().unwrap())
                 .await?;
+            if check
+                && nsz_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                nsz_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&nsz_romfile.path]).await?;
             }
@@ -1648,6 +2053,8 @@ async fn to_rvz(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
@@ -1712,6 +2119,23 @@ async fn to_rvz(
             )
             .await?;
 
+        if check
+            && rvz_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &[rom],
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            rvz_romfile.as_common()?.delete(progress_bar, false).await?;
+            continue;
+        };
+
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_romfile.path]).await?;
         }
@@ -1744,6 +2168,22 @@ async fn to_rvz(
                     block_size,
                 )
                 .await?;
+            if check
+                && rvz_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                rvz_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&rvz_romfile.path]).await?;
             }
@@ -1770,6 +2210,8 @@ async fn to_zso(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     diff: bool,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1846,6 +2288,23 @@ async fn to_zso(
             )
             .await?;
 
+        if check
+            && zso_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &None,
+                    &[rom],
+                    hash_algorithm,
+                )
+                .await
+                .is_err()
+        {
+            progress_bar.println("Converted file doesn't match the original");
+            zso_romfile.as_common()?.delete(progress_bar, false).await?;
+            continue;
+        };
+
         if diff {
             print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_romfile.path]).await?;
         }
@@ -1876,6 +2335,22 @@ async fn to_zso(
                     &maxcso::XsoType::Zso,
                 )
                 .await?;
+            if check
+                && zso_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                zso_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
             if diff {
                 print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_romfile.path]).await?;
             }
@@ -1910,6 +2385,22 @@ async fn to_zso(
                             &maxcso::XsoType::Zso
                         )
                         .await?;
+                    if check
+                        && zso_romfile
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        zso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
                     if diff {
                         print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_romfile.path]).await?;
                     }
@@ -1937,6 +2428,8 @@ async fn to_original(
     system: &System,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    check: bool,
+    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -2064,11 +2557,51 @@ async fn to_original(
             false => Path::new(&romfile.path).parent().unwrap().to_path_buf(),
         };
 
+        let mut common_romfiles: Vec<CommonRomfile> = Vec::new();
         for rom in roms {
             let common_romfile = romfile
                 .as_archive(rom)?
                 .to_common(progress_bar, &destination_directory)
                 .await?;
+            common_romfiles.push(common_romfile);
+        }
+
+        if check {
+            let mut error = false;
+            for (common_romfile, rom) in common_romfiles
+                .iter()
+                .zip(roms.iter())
+                .collect::<Vec<(&CommonRomfile, &Rom)>>()
+            {
+                if common_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+                {
+                    error = true;
+                    break;
+                };
+            }
+            if error {
+                progress_bar.println("Converted files don't match the original");
+                for common_romfile in common_romfiles {
+                    common_romfile.delete(progress_bar, false).await?;
+                }
+                continue;
+            }
+        }
+
+        for (common_romfile, rom) in common_romfiles
+            .iter()
+            .zip(roms.iter())
+            .collect::<Vec<(&CommonRomfile, &Rom)>>()
+        {
             let romfile_id = create_romfile(
                 &mut transaction,
                 &common_romfile.to_string(),
@@ -2098,6 +2631,25 @@ async fn to_original(
                 if roms.len() == 1 {
                     let romfile = romfiles_by_id.get(&roms.first().unwrap().romfile_id.unwrap()).unwrap();
                     let iso_romfile = romfile.as_chd()?.to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap()).await?;
+
+                    if check
+                        && iso_romfile
+                            .as_common()?
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &roms.iter().collect::<Vec<&Rom>>(),
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        iso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -2131,11 +2683,38 @@ async fn to_original(
                         .to_cue_bin(progress_bar, &cue_romfile.path.parent().unwrap(), &cue_romfile, &bin_roms, false)
                         .await?;
 
-                    for (bin_path, bin_rom) in cue_bin_romfile.bin_paths.iter().zip(bin_roms).collect::<Vec<(&PathBuf, &Rom)>>() {
+                    if check {
+                        let mut error = false;
+                        for (bin_romfile, bin_rom) in cue_bin_romfile.bin_romfiles.iter().zip(&bin_roms).collect::<Vec<(&CommonRomfile, &&Rom)>>() {
+                            if bin_romfile
+                                .check(
+                                    &mut transaction,
+                                    progress_bar,
+                                    &None,
+                                    &[bin_rom],
+                                    hash_algorithm,
+                                )
+                                .await
+                                .is_err()
+                            {
+                                error = true;
+                                break;
+                            };
+                        }
+                        if error {
+                            progress_bar.println("Converted files don't match the original");
+                            for bin_romfile in cue_bin_romfile.bin_romfiles {
+                                bin_romfile.delete(progress_bar, false).await?;
+                            }
+                            continue;
+                        }
+                    }
+
+                    for (bin_romfile, bin_rom) in cue_bin_romfile.bin_romfiles.iter().zip(&bin_roms).collect::<Vec<(&CommonRomfile, &&Rom)>>() {
                         let romfile_id = create_romfile(
                             &mut transaction,
-                            bin_path.as_os_str().to_str().unwrap(),
-                            bin_path.metadata().unwrap().len(),
+                            &bin_romfile.to_string(),
+                            bin_romfile.get_size().await?,
                         )
                         .await;
                         update_rom_romfile(&mut transaction, bin_rom.id, Some(romfile_id)).await;
@@ -2164,6 +2743,25 @@ async fn to_original(
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let iso_romfile = romfile.as_xso()?.to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap()).await?;
+
+                    if check
+                        && iso_romfile
+                            .as_common()?
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        iso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -2193,6 +2791,25 @@ async fn to_original(
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let nsp_romfile = romfile.as_nsz()?.to_nsp(progress_bar, &romfile.as_common()?.path.parent().unwrap()).await?;
+
+                    if check
+                        && nsp_romfile
+                            .as_common()?
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        nsp_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -2222,6 +2839,25 @@ async fn to_original(
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let iso_romfile = romfile.as_rvz()?.to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap()).await?;
+
+                    if check
+                        && iso_romfile
+                            .as_common()?
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        iso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,
@@ -2251,6 +2887,25 @@ async fn to_original(
                 for rom in roms {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     let iso_romfile = romfile.as_xso()?.to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap()).await?;
+
+                    if check
+                        && iso_romfile
+                            .as_common()?
+                            .check(
+                                &mut transaction,
+                                progress_bar,
+                                &None,
+                                &[rom],
+                                hash_algorithm,
+                            )
+                            .await
+                            .is_err()
+                    {
+                        progress_bar.println("Converted file doesn't match the original");
+                        iso_romfile.as_common()?.delete(progress_bar, false).await?;
+                        continue;
+                    };
+
                     update_romfile(
                         &mut transaction,
                         romfile.id,

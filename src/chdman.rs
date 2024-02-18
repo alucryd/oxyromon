@@ -22,8 +22,8 @@ lazy_static! {
 }
 
 pub struct CueBinRomfile {
-    pub cue_path: PathBuf,
-    pub bin_paths: Vec<PathBuf>,
+    pub cue_romfile: CommonRomfile,
+    pub bin_romfiles: Vec<CommonRomfile>,
 }
 
 pub struct ChdRomfile {
@@ -61,10 +61,7 @@ impl Check for ChdRomfile {
                         true,
                     )
                     .await?;
-                let roms_paths: Vec<(&&Rom, PathBuf)> =
-                    roms.iter().zip(cue_bin_romfile.bin_paths).collect();
-                for (rom, path) in roms_paths {
-                    let bin_romfile = CommonRomfile { path };
+                for (rom, bin_romfile) in roms.iter().zip(cue_bin_romfile.bin_romfiles) {
                     bin_romfile
                         .check(connection, progress_bar, header, &[rom], hash_algorithm)
                         .await?;
@@ -98,7 +95,7 @@ impl ToChd for CueBinRomfile {
         destination_directory: &P,
         cue_romfile: &Option<&CommonRomfile>,
     ) -> SimpleResult<ChdRomfile> {
-        let path = create_chd(progress_bar, &self.cue_path, destination_directory).await?;
+        let path = create_chd(progress_bar, &self.cue_romfile.path, destination_directory).await?;
         Ok(ChdRomfile {
             path,
             cue_path: cue_romfile.map(|romfile| romfile.path.clone()),
@@ -161,8 +158,10 @@ impl ToCueBin for ChdRomfile {
                 )
                 .await?;
             return Ok(CueBinRomfile {
-                cue_path: cue_romfile.path.clone(),
-                bin_paths: vec![bin_romfile.path.clone()],
+                cue_romfile: CommonRomfile {
+                    path: cue_romfile.path.clone(),
+                },
+                bin_romfiles: vec![bin_romfile],
             });
         }
 
@@ -187,8 +186,13 @@ impl ToCueBin for ChdRomfile {
         remove_file(progress_bar, &path, quiet).await?;
 
         Ok(CueBinRomfile {
-            cue_path: cue_romfile.path.clone(),
-            bin_paths,
+            cue_romfile: cue_romfile.clone(),
+            bin_romfiles: bin_paths
+                .iter()
+                .map(|bin_path| CommonRomfile {
+                    path: bin_path.clone(),
+                })
+                .collect(),
         })
     }
 }
@@ -211,10 +215,8 @@ impl ToIso for ChdRomfile {
 }
 
 pub trait FromBinPaths<T> {
-    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(
-        path: &P,
-        bin_paths: &[Q],
-    ) -> SimpleResult<T>;
+    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(path: &P, bin_paths: &[Q])
+        -> SimpleResult<T>;
 }
 
 impl FromBinPaths<CueBinRomfile> for CueBinRomfile {
@@ -240,10 +242,12 @@ impl FromBinPaths<CueBinRomfile> for CueBinRomfile {
             }
         }
         Ok(CueBinRomfile {
-            cue_path: path,
-            bin_paths: bin_paths
+            cue_romfile: CommonRomfile { path },
+            bin_romfiles: bin_paths
                 .iter()
-                .map(|bin_path| bin_path.as_ref().to_path_buf())
+                .map(|bin_path| CommonRomfile {
+                    path: bin_path.as_ref().to_path_buf(),
+                })
                 .collect(),
         })
     }

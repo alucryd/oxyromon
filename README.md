@@ -453,6 +453,7 @@ Warning: CHD is temporarily disabled for Dreamcast as it's not entirely lossless
         -n, --name <NAME>      Select games by name
         -a, --all              Convert all systems/games
         -d, --diff             Print size differences
+        -c, --check            Check ROM files after conversion
         -h, --help             Print help information
 
 ## oxyromon-check-roms

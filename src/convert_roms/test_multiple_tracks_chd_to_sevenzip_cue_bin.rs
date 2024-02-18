@@ -76,6 +76,8 @@ async fn test() {
         games_by_id,
         romfiles_by_id,
         false,
+        true,
+        &HashAlgorithm::Crc,
         1,
         false,
     )

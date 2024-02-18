@@ -1,3 +1,7 @@
+# 0.19.0
+- Traits! Makes parts of the code actually reusable
+- Add an optional post-conversion check
+
 # 0.18.0
 
 - Replace `async-std` with `tokio`
