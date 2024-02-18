@@ -2,6 +2,7 @@
 - Traits! Makes parts of the code actually reusable
 - Add an optional post-conversion check
 - Fix importing a couple more bogus DAT files
+- Accept ZIP files as input for `import-dats`
 
 # 0.18.0
 

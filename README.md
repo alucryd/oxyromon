@@ -234,6 +234,7 @@ Prints the program version, installed dependencies and their version (when possi
 Parse and import Logiqx DAT files into oxyromon
 
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
+ZIP files such as the No-Intro Love Pack can be imported directly without extracting them first.
 
 Supported console DAT providers:
 

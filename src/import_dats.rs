@@ -1,4 +1,4 @@
-use super::config::HashAlgorithm;
+use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::model::*;
@@ -19,6 +19,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
+use zip::ZipArchive;
 
 #[derive(RustEmbed)]
 #[folder = "data/"]
@@ -74,7 +75,23 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
+    let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
+        .get_many::<PathBuf>("DATS")
+        .unwrap()
+        .map(|path| path.clone())
+        .partition(|path| path.extension().unwrap().to_str().unwrap() == ZIP_EXTENSION);
+
+    let tmp_directory = create_tmp_directory(connection).await?;
+    for zip_path in zip_paths {
+        let mut reader = get_reader_sync(&zip_path)?;
+        let mut zip_archive = try_with!(ZipArchive::new(&mut reader), "Failed to read ZIP");
+        try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+        for file_name in zip_archive.file_names() {
+            if file_name.ends_with(DAT_EXTENSION) {
+                dat_paths.push(tmp_directory.path().join(file_name));
+            }
+        }
+    }
 
     for dat_path in dat_paths {
         progress_bar.println(format!(

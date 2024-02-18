@@ -110,6 +110,7 @@ pub static CHD_EXTENSION: &str = "chd";
 pub static CIA_EXTENSION: &str = "cia";
 pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
+pub static DAT_EXTENSION: &str = "dat";
 pub static ISO_EXTENSION: &str = "iso";
 pub static M3U_EXTENSION: &str = "m3u";
 pub static NSP_EXTENSION: &str = "nsp";
