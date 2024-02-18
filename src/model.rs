@@ -1,7 +1,7 @@
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use sqlx::{FromRow, Type};
 #[cfg(feature = "ird")]
 use std::collections::HashMap;
@@ -66,6 +66,7 @@ pub struct Game {
     pub description: String,
     pub comment: Option<String>,
     pub external_id: Option<String>,
+    pub device: bool,
     pub bios: bool,
     pub jbfolder: bool,
     pub regions: String,
@@ -129,7 +130,7 @@ pub struct ProfileXml {
 pub struct DatfileXml {
     #[serde(alias = "header")]
     pub system: SystemXml,
-    #[serde(alias = "game", alias = "machine")]
+    #[serde(alias = "game", alias = "machine", default)]
     pub games: Vec<GameXml>,
 }
 
@@ -149,6 +150,14 @@ pub struct ClrMameProXml {
     pub header: Option<String>,
 }
 
+fn string_to_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s == "yes")
+}
+
 #[derive(Deserialize)]
 pub struct GameXml {
     #[serde(rename = "@name")]
@@ -159,10 +168,20 @@ pub struct GameXml {
     pub cloneof: Option<String>,
     #[serde(rename = "@romof")]
     pub romof: Option<String>,
-    #[serde(rename = "@isbios")]
-    pub isbios: Option<String>,
+    #[serde(rename = "@isdevice", deserialize_with = "string_to_bool", default)]
+    pub isdevice: bool,
+    #[serde(rename = "@isbios", deserialize_with = "string_to_bool", default)]
+    pub isbios: bool,
     #[serde(alias = "rom", default)]
     pub roms: Vec<RomXml>,
+}
+
+fn empty_string_to_zero<'de, D>(deserializer: D) -> Result<i64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    i64::from_str_radix(&s, 10).or_else(|_| Ok(0))
 }
 
 #[derive(Deserialize)]
@@ -171,7 +190,7 @@ pub struct RomXml {
     pub name: String,
     #[serde(rename = "@merge")]
     pub merge: Option<String>,
-    #[serde(rename = "@size")]
+    #[serde(rename = "@size", deserialize_with = "empty_string_to_zero")]
     pub size: i64,
     #[serde(rename = "@crc")]
     pub crc: Option<String>,

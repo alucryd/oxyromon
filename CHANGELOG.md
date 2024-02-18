@@ -1,6 +1,7 @@
 # 0.19.0
 - Traits! Makes parts of the code actually reusable
 - Add an optional post-conversion check
+- Fix importing a couple more bogus DAT files
 
 # 0.18.0
 

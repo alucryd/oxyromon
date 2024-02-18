@@ -10,6 +10,7 @@ async fn test() {
         description: String::from(""),
         comment: None,
         external_id: None,
+        device: false,
         bios: false,
         jbfolder: false,
         regions: String::from(""),

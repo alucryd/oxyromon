@@ -328,16 +328,16 @@ pub async fn create_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) -> i64 {
-    let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
-        INSERT INTO games (name, description, comment, bios, regions, system_id, parent_id, bios_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO games (name, description, comment, device, bios, regions, system_id, parent_id, bios_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         game_xml.name,
         game_xml.description,
         game_xml.comment,
-        bios,
+        game_xml.isdevice,
+        game_xml.isbios,
         regions,
         system_id,
         parent_id,
@@ -358,17 +358,17 @@ pub async fn update_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) {
-    let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
         UPDATE games
-        SET name = ?, description = ?, comment = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
+        SET name = ?, description = ?, comment = ?, device = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
         WHERE id = ?
         ",
         game_xml.name,
         game_xml.description,
         game_xml.comment,
-        bios,
+        game_xml.isdevice,
+        game_xml.isbios,
         regions,
         system_id,
         parent_id,
