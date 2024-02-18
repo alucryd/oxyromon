@@ -414,7 +414,7 @@ impl AsArchive for Romfile {
     fn as_archive(&self, rom: &Rom) -> SimpleResult<ArchiveRomfile> {
         let path = PathBuf::from(&self.path);
         let extension = path.extension().unwrap().to_str().unwrap();
-        let archive_type = try_with!(ArchiveType::from_str(extension), "Not a valid xso");
+        let archive_type = try_with!(ArchiveType::from_str(extension), "Not a valid archive");
         Ok(ArchiveRomfile {
             path,
             file_path: rom.name.clone(),

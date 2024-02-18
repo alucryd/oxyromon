@@ -210,6 +210,7 @@ pub async fn main(
                 }
             }
         }
+        "ORIGINAL" => {}
         _ => bail!("Not supported"),
     }
 
@@ -460,6 +461,8 @@ async fn to_archive(
         }
     }
 
+    println!("{}", roms_by_game_id.len());
+
     // partition CSOs
     let (csos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -476,6 +479,8 @@ async fn to_archive(
             drop(csos)
         }
     }
+
+    println!("{}", roms_by_game_id.len());
 
     // partition NSZs
     let (nszs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -494,6 +499,8 @@ async fn to_archive(
         }
     }
 
+    println!("{}", roms_by_game_id.len());
+
     // partition RVZs
     let (rvzs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -510,6 +517,8 @@ async fn to_archive(
             drop(rvzs)
         }
     }
+
+    println!("{}", roms_by_game_id.len());
 
     // partition ZSOs
     let (zsos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1048,6 +1057,7 @@ async fn to_archive(
 
     // convert others
     for (game_id, mut roms) in roms_by_game_id {
+        println!("converting others");
         let mut transaction = begin_transaction(connection).await;
 
         if roms.len() == 1 && !system.arcade {
