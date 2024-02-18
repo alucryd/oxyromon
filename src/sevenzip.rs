@@ -40,7 +40,6 @@ pub enum ArchiveType {
     Zip,
 }
 
-#[derive(Clone)]
 pub struct ArchiveRomfile {
     pub path: PathBuf,
     pub file_path: String,
@@ -160,7 +159,7 @@ impl Size for ArchiveRomfile {
         header: &Header,
     ) -> SimpleResult<u64> {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let original_file = self.clone().to_common(progress_bar, &tmp_directory).await?;
+        let original_file = self.to_common(progress_bar, &tmp_directory).await?;
         let size = original_file
             .get_headered_size(connection, progress_bar, header)
             .await?;
@@ -182,7 +181,7 @@ impl Hash for ArchiveRomfile {
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;
-                let common_romfile = self.clone().to_common(progress_bar, &tmp_directory).await?;
+                let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
                 let hash_and_size = common_romfile
                     .get_hash_and_size(
                         connection,
@@ -237,7 +236,7 @@ impl Check for ArchiveRomfile {
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;
-                let common_romfile = self.clone().to_common(progress_bar, &tmp_directory).await?;
+                let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
                 common_romfile
                     .check(connection, progress_bar, header, roms, hash_algorithm)
                     .await?;
@@ -390,9 +389,6 @@ impl ToArchive for ArchiveRomfile {
         compression_level: usize,
         solid: bool,
     ) -> SimpleResult<ArchiveRomfile> {
-        if &self.archive_type == archive_type {
-            return Ok(self.clone());
-        }
         let original_romfile = self.to_common(progress_bar, source_directory).await?;
         let archive_romfile = original_romfile
             .to_archive(

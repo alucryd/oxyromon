@@ -753,7 +753,6 @@ async fn import_archive<P: AsRef<Path>>(
     // all other cases
     for (rom, game, system, archive_romfile) in roms_games_systems_archive_romfiles {
         let original_romfile = archive_romfile
-            .clone()
             .to_common(progress_bar, &tmp_directory.path())
             .await?;
 

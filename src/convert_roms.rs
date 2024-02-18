@@ -993,8 +993,14 @@ async fn to_archive(
             let game = games_by_id.get(&rom.game_id).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
 
-            let archive_romfile = romfile
-                .as_archive(rom)?
+            let mut archive_romfile = romfile.as_archive(rom)?;
+
+            // skip archives that are the same type
+            if archive_romfile.archive_type == archive_type {
+                continue;
+            }
+
+            archive_romfile = archive_romfile
                 .to_archive(
                     progress_bar,
                     &tmp_directory.path(),
@@ -3023,6 +3029,8 @@ mod test_single_track_chd_to_zso;
 mod test_zip_to_original;
 #[cfg(test)]
 mod test_zip_to_sevenzip;
+#[cfg(test)]
+mod test_zip_to_zip_should_do_nothing;
 #[cfg(all(test, feature = "chd", feature = "zso"))]
 mod test_zso_to_chd;
 #[cfg(all(test, feature = "zso"))]
