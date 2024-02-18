@@ -612,6 +612,7 @@ pub async fn reimport_orphan_romfiles(
             hash_algorithm,
             true,
             false,
+            false,
         )
         .await?;
     }
@@ -628,6 +629,8 @@ mod test_dat_headered_duplicate_clrmamepro;
 mod test_dat_headered_embedded;
 #[cfg(test)]
 mod test_dat_headered_skipped_header;
+#[cfg(test)]
+mod test_dat_mame;
 #[cfg(test)]
 mod test_dat_outdated_forced;
 #[cfg(test)]

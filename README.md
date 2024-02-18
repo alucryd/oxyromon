@@ -342,6 +342,7 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         -t, --trash        Trash invalid ROM files
         -f, --force        Force import of existing ROM files
         -a, --hash <HASH>  Set the hash algorithm [possible values: crc, md5, sha1]
+        -u, --unattended   Skip ROM files that require human intervention
         -h, --help         Print help
 
 ## oxyromon-sort-roms

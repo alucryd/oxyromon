@@ -3,6 +3,7 @@
 - Add an optional post-conversion check
 - Fix importing a couple more bogus DAT files
 - Accept ZIP files as input for `import-dats`
+- Add a `-u` flag to `import-roms` to skip user prompts
 
 # 0.18.0
 

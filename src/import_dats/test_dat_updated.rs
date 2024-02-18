@@ -1,4 +1,3 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::*;
 use std::path::PathBuf;
@@ -60,6 +59,7 @@ async fn test() {
             &HashAlgorithm::Crc,
             true,
             true,
+            false,
         )
         .await
         .unwrap();

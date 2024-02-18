@@ -76,6 +76,14 @@ pub fn subcommand() -> Command {
                 .num_args(1)
                 .value_parser(PossibleValuesParser::new(HashAlgorithm::VARIANTS)),
         )
+        .arg(
+            Arg::new("UNATTENDED")
+                .short('u')
+                .long("unattended")
+                .help("Skip ROM files that require human intervention")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -114,6 +122,7 @@ pub async fn main(
 
     let trash = matches.get_flag("TRASH");
     let force = matches.get_flag("FORCE");
+    let unattended = matches.get_flag("UNATTENDED");
 
     let mut system_ids: HashSet<i64> = HashSet::new();
 
@@ -128,7 +137,7 @@ pub async fn main(
                             &romfile_path.file_name().unwrap().to_str().unwrap()
                         ));
                         match system.as_ref() {
-                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash).await?,
+                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash, unattended).await?,
                             None => {
                                 let system = prompt_for_system_like(
                                     connection,
@@ -136,7 +145,7 @@ pub async fn main(
                                     "%PlayStation 3%",
                                 )
                                 .await?;
-                                import_jbfolder(connection, progress_bar, &system, &romfile_path, trash).await?;
+                                import_jbfolder(connection, progress_bar, &system, &romfile_path, trash, unattended).await?;
                             }
                         }
                     } else {
@@ -153,6 +162,7 @@ pub async fn main(
                                         &hash_algorithm,
                                         trash,
                                         force,
+                                        unattended,
                                     )
                                     .await?
                                 );
@@ -191,6 +201,7 @@ pub async fn main(
                     &hash_algorithm,
                     trash,
                     force,
+                    unattended,
                 )
                 .await?,
             );
@@ -220,6 +231,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     force: bool,
+    unattended: bool,
 ) -> SimpleResult<HashSet<i64>> {
     progress_bar.println(format!(
         "Processing \"{}\"",
@@ -265,6 +277,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                 &romfile_extension,
                 hash_algorithm,
                 trash,
+                unattended,
             )
             .await?,
         );
@@ -283,6 +296,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -307,6 +321,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -330,6 +345,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -353,6 +369,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -376,6 +393,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -399,6 +417,7 @@ pub async fn import_rom<P: AsRef<Path>>(
                     &romfile_path,
                     hash_algorithm,
                     trash,
+                    unattended,
                 )
                 .await?
                 {
@@ -416,6 +435,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         &romfile_path,
         hash_algorithm,
         trash,
+        unattended,
     )
     .await?
     {
@@ -434,6 +454,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     system: &System,
     folder_path: &P,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<()> {
     let sfb_romfile_path = folder_path.as_ref().join(PS3_DISC_SFB);
 
@@ -462,8 +483,15 @@ async fn import_jbfolder<P: AsRef<Path>>(
             &HashAlgorithm::Md5,
         )
         .await?;
-    if let Some((sfb_rom, game)) =
-        find_sfb_rom_by_md5(&mut transaction, size, &md5, system, progress_bar).await?
+    if let Some((sfb_rom, game)) = find_sfb_rom_by_md5(
+        &mut transaction,
+        progress_bar,
+        system,
+        size,
+        &md5,
+        unattended,
+    )
+    .await?
     {
         let system_directory = get_system_directory(&mut transaction, system).await?;
 
@@ -532,6 +560,10 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     }) {
                         rom = Some(roms.remove(rom_index));
                     } else {
+                        // skip if unattended
+                        if unattended {
+                            progress_bar.println("Multiple matches, skipping");
+                        }
                         // let the user select the rom if all else fails
                         rom = prompt_for_rom(&mut roms, None)?;
                     }
@@ -589,6 +621,7 @@ async fn import_archive<P: AsRef<Path>>(
     romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<HashSet<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let archive_romfiles = sevenzip::parse(progress_bar, romfile_path).await?;
@@ -634,6 +667,7 @@ async fn import_archive<P: AsRef<Path>>(
             game_names,
             rom_name,
             hash_algorithm,
+            unattended,
         )
         .await?
         {
@@ -754,6 +788,7 @@ async fn import_chd<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
@@ -779,6 +814,7 @@ async fn import_chd<P: AsRef<Path>>(
             Vec::new(),
             None,
             hash_algorithm,
+            unattended,
         )
         .await?
         {
@@ -875,6 +911,7 @@ async fn import_chd<P: AsRef<Path>>(
             Vec::new(),
             None,
             hash_algorithm,
+            unattended,
         )
         .await?
         {
@@ -909,6 +946,7 @@ async fn import_cia<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let cia_infos = ctrtool::parse_cia(progress_bar, romfile_path).await?;
@@ -955,6 +993,7 @@ async fn import_cia<P: AsRef<Path>>(
             game_names,
             rom_name,
             hash_algorithm,
+            unattended,
         )
         .await?
         {
@@ -1017,6 +1056,7 @@ async fn import_cso<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let cso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
     let (hash, size) = cso_romfile
@@ -1031,6 +1071,7 @@ async fn import_cso<P: AsRef<Path>>(
         Vec::new(),
         None,
         hash_algorithm,
+        unattended,
     )
     .await?
     {
@@ -1062,6 +1103,7 @@ async fn import_nsz<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let nsz_romfile = nsz::NszRomfile::from_path(romfile_path)?;
     let (hash, size) = nsz_romfile
@@ -1076,6 +1118,7 @@ async fn import_nsz<P: AsRef<Path>>(
         Vec::new(),
         None,
         hash_algorithm,
+        unattended,
     )
     .await?
     {
@@ -1107,6 +1150,7 @@ async fn import_rvz<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let rvz_romfile = dolphin::RvzRomfile::from_path(romfile_path)?;
     let (hash, size) = rvz_romfile
@@ -1121,6 +1165,7 @@ async fn import_rvz<P: AsRef<Path>>(
         Vec::new(),
         None,
         hash_algorithm,
+        unattended,
     )
     .await?
     {
@@ -1152,6 +1197,7 @@ async fn import_zso<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let zso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
     let (hash, size) = zso_romfile
@@ -1166,6 +1212,7 @@ async fn import_zso<P: AsRef<Path>>(
         Vec::new(),
         None,
         hash_algorithm,
+        unattended,
     )
     .await?
     {
@@ -1197,6 +1244,7 @@ async fn import_other<P: AsRef<Path>>(
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
+    unattended: bool,
 ) -> SimpleResult<Option<i64>> {
     let original_romfile = CommonRomfile {
         path: romfile_path.as_ref().to_path_buf(),
@@ -1213,6 +1261,7 @@ async fn import_other<P: AsRef<Path>>(
         Vec::new(),
         None,
         hash_algorithm,
+        unattended,
     )
     .await?
     {
@@ -1250,6 +1299,7 @@ async fn find_rom_by_size_and_hash(
     game_names: Vec<&str>,
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
+    unattended: bool,
 ) -> SimpleResult<Option<(Rom, Game, System)>> {
     let mut rom_game_system: Option<(Rom, Game, System)> = None;
     let mut roms: Vec<Rom> = Vec::new();
@@ -1513,6 +1563,9 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
+    // skip if unattended
+    } else if unattended {
+        progress_bar.println("Multiple matches, skipping");
     } else if system.is_some() {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
@@ -1550,12 +1603,13 @@ async fn find_rom_by_size_and_hash(
 #[cfg(feature = "ird")]
 async fn find_sfb_rom_by_md5(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
     size: u64,
     md5: &str,
-    system: &System,
-    progress_bar: &ProgressBar,
+    unattended: bool,
 ) -> SimpleResult<Option<(Rom, Game)>> {
-    let rom_game: Option<(Rom, Game)>;
+    let mut rom_game: Option<(Rom, Game)> = None;
     let mut roms = find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
         PS3_DISC_SFB,
@@ -1590,6 +1644,9 @@ async fn find_sfb_rom_by_md5(
         let game = find_game_by_id(connection, rom.game_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game = Some((rom, game));
+    // skip if unattended
+    } else if unattended {
+        progress_bar.println("Multiple matches, skipping");
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {

@@ -1,4 +1,3 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::*;
 use std::path::PathBuf;
@@ -41,7 +40,7 @@ async fn test() {
     assert_eq!(systems.len(), 1);
 
     let system = systems.first().unwrap();
-    assert_eq!(system.name, "Test System");
+    assert_eq!(system.name, "Test System (MAME)");
 
     assert_eq!(find_games(&mut connection).await.len(), 6);
     assert_eq!(find_roms(&mut connection).await.len(), 8);

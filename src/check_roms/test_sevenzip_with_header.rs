@@ -49,6 +49,7 @@ async fn test() {
         &HashAlgorithm::Crc,
         true,
         false,
+        false,
     )
     .await
     .unwrap();

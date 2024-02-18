@@ -1,4 +1,3 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::*;
 use std::path::PathBuf;
