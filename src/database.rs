@@ -257,7 +257,6 @@ pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -
     .unwrap_or_else(|_| panic!("Error while finding systems with url {}", url))
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_systems_by_name_like(
     connection: &mut SqliteConnection,
     name: &str,

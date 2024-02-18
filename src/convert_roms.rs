@@ -89,6 +89,14 @@ pub fn subcommand() -> Command {
                 .num_args(1),
         )
         .arg(
+            Arg::new("SYSTEM")
+                .short('s')
+                .long("system")
+                .help("Select systems by name")
+                .required(false)
+                .num_args(1),
+        )
+        .arg(
             Arg::new("ALL")
                 .short('a')
                 .long("all")
@@ -119,7 +127,10 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
+    let systems = match matches.get_one::<String>("SYSTEM") {
+        Some(system) => find_systems_by_name_like(connection, &format!("%{}%", system)).await,
+        None => prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?,
+    };
     let game_name = matches.get_one::<String>("NAME");
     let format = match matches.get_one::<String>("FORMAT") {
         Some(format) => format.as_str().to_owned(),

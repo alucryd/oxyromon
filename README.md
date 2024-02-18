@@ -431,9 +431,10 @@ Supported merging strategies:
 
 Convert ROM files between common formats
 
-ROMs can be converted back and forth between common formats and their original formats.
+ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
 You may optionally filter games by name, the matching string is not case sensitive and doesn't need to be the full game name.
+Systems can also be selected the same way so as to avoid being prompted for them.
 
 Supported ROM formats:
 
@@ -446,13 +447,14 @@ Supported ROM formats:
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
-Warning: CHD is temporarily disabled for Dreamcast as it's not entirely lossless, see https://github.com/alucryd/oxyromon/issues/110
+Warning: CHD for Dreamcast requires at least chdman 0.262 but some games will still have issues, see https://github.com/alucryd/oxyromon/issues/110
 
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:
         -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
         -n, --name <NAME>      Select games by name
+        -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
         -d, --diff             Print size differences
         -c, --check            Check ROM files after conversion
