@@ -3,7 +3,6 @@ use super::model::*;
 use super::server::POOL;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
-use async_trait::async_trait;
 use futures::stream::TryStreamExt;
 use itertools::Itertools;
 use num_traits::FromPrimitive;
@@ -91,7 +90,6 @@ impl Rom {
 
 pub struct SystemLoader;
 
-#[async_trait]
 impl Loader<i64> for SystemLoader {
     type Value = System;
     type Error = Error;
@@ -115,7 +113,6 @@ impl Loader<i64> for SystemLoader {
 
 pub struct GameLoader;
 
-#[async_trait]
 impl Loader<i64> for GameLoader {
     type Value = Game;
     type Error = Error;
@@ -139,7 +136,6 @@ impl Loader<i64> for GameLoader {
 
 pub struct RomfileLoader;
 
-#[async_trait]
 impl Loader<i64> for RomfileLoader {
     type Value = Romfile;
     type Error = Error;

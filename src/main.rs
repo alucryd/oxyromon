@@ -3,8 +3,6 @@ extern crate async_graphql;
 #[cfg(feature = "server")]
 extern crate async_graphql_axum;
 #[cfg(feature = "server")]
-extern crate async_trait;
-#[cfg(feature = "server")]
 extern crate axum;
 extern crate cfg_if;
 #[macro_use]
