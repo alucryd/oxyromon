@@ -94,7 +94,7 @@ pub fn subcommand() -> Command {
                 .long("system")
                 .help("Select systems by name")
                 .required(false)
-                .num_args(1),
+                .action(ArgAction::Append),
         )
         .arg(
             Arg::new("ALL")
@@ -127,8 +127,17 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = match matches.get_one::<String>("SYSTEM") {
-        Some(system) => find_systems_by_name_like(connection, &format!("%{}%", system)).await,
+    let systems = match matches.get_many::<String>("SYSTEM") {
+        Some(system_names) => {
+            let mut systems: Vec<System> = Vec::new();
+            for system_name in system_names {
+                systems.append(
+                    &mut find_systems_by_name_like(connection, &format!("%{}%", system_name)).await,
+                );
+            }
+            systems.dedup_by_key(|system| system.id);
+            systems
+        }
         None => prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?,
     };
     let game_name = matches.get_one::<String>("NAME");
