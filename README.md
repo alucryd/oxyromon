@@ -311,6 +311,7 @@ Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
 In most cases the system is auto-detected, however you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
+Systems that use a header definition require the `-s` flag to be passed to match ROM files which contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800 and Atari Lynx.
 Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
