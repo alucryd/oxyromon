@@ -77,7 +77,7 @@ rayon = "1.8.1"
 regex = "1.10.3"
 reqwest = { version = "0.11.24", default-features = false }
 rust-embed = { version = "8.2.0", features = ["compression"] }
-serde = { version = "1.0.196", features = ["derive"] }
+serde = { version = "1.0.197", features = ["derive"] }
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
 simple-error = "0.3.0"
@@ -105,7 +105,7 @@ walkdir = "2.4.0"
 zip = { version = "0.6.6", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0.113"
+serde_json = "1.0.114"
 wiremock = "0.6.0"
 
 [[bin]]

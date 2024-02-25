@@ -488,8 +488,9 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
         -m, --missing  Delete missing ROM files from the database
         -o, --orphan   Delete ROM files without an associated ROM from the database
         -t, --trash    Physically delete ROM files from the trash directories
+        -f, --foreign  Physically delete ROM files unknown to the database
         -y, --yes      Automatically say yes to prompts
-        -h, --help     Print help information
+        -h, --help     Print help
 
 ## oxyromon-purge-systems
 

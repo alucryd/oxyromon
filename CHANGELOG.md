@@ -6,6 +6,7 @@
 - Add a `-u` flag to `import-roms` to skip user prompts
 - Add a `-s` flag to `convert-roms` to select systems by name 
 - Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
+- Add a `-f` flag in `purge-roms` to track and delete foreign files in the ROM directory
 
 # 0.18.0
 

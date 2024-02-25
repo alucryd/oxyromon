@@ -1,3 +1,4 @@
+use super::config::*;
 use super::database::*;
 use super::prompt::*;
 use super::util::*;
@@ -6,6 +7,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
+use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
     Command::new("purge-roms")
@@ -35,6 +37,14 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("FOREIGN")
+                .short('f')
+                .long("foreign")
+                .help("Physically delete ROM files unknown to the database")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
@@ -49,14 +59,18 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    let answer_yes = matches.get_flag("YES");
     if matches.get_flag("MISSING") {
         purge_missing_romfiles(connection, progress_bar).await?;
     }
     if matches.get_flag("TRASH") {
-        purge_trashed_romfiles(connection, progress_bar, matches.get_flag("YES")).await?;
+        purge_trashed_romfiles(connection, progress_bar, answer_yes).await?;
     }
     if matches.get_flag("ORPHAN") {
-        purge_orphan_romfiles(connection, progress_bar, matches.get_flag("YES")).await?;
+        purge_orphan_romfiles(connection, progress_bar, answer_yes).await?;
+    }
+    if matches.get_flag("FOREIGN") {
+        purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
     }
     for system in find_systems(connection).await {
         if system.arcade {
@@ -172,9 +186,41 @@ async fn purge_orphan_romfiles(
     Ok(())
 }
 
+async fn purge_foreign_romfiles(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    answer_yes: bool,
+) -> SimpleResult<()> {
+    progress_bar.println("Processing foreign ROM files");
+    let rom_directory = get_rom_directory(connection).await;
+    let walker = WalkDir::new(rom_directory).into_iter();
+    let mut count = 0;
+    for entry in walker.filter_map(|e| e.ok()) {
+        if entry.path().is_file() {
+            let path = entry.path().as_os_str().to_str().unwrap().to_string();
+            if find_romfile_by_path(connection, &path).await.is_none() {
+                progress_bar.println(format!("Delete \"{}\"?", path));
+                if answer_yes || confirm(true)? {
+                    remove_file(progress_bar, &path, false).await?;
+                    count += 1;
+                }
+            }
+        }
+    }
+    if count > 0 {
+        progress_bar.println(format!(
+            "Deleted {} foreign ROM file(s) from the ROM directory",
+            count
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod test_missing;
 #[cfg(test)]
 mod test_orphans;
 #[cfg(test)]
 mod test_trashed;
+#[cfg(test)]
+mod test_foreign;
