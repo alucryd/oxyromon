@@ -47,9 +47,9 @@ pub fn subcommand() -> Command {
             Arg::new("SYSTEM")
                 .short('s')
                 .long("system")
-                .help("Prompt for a system")
+                .help("Select systems by name")
                 .required(false)
-                .action(ArgAction::SetTrue),
+                .action(ArgAction::Append),
         )
         .arg(
             Arg::new("TRASH")
@@ -91,17 +91,19 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let romfile_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("ROMS").unwrap().collect();
-    let system = if matches.get_flag("SYSTEM") {
-        Some(prompt_for_system(connection, None).await?)
-    } else {
-        None
-    };
-    let header = if system.is_some() {
-        find_header_by_system_id(connection, system.as_ref().unwrap().id).await
-    } else {
-        None
-    };
+    let mut systems: Vec<System> = Vec::new();
+    if let Some(system_names) = matches.get_many::<String>("SYSTEM") {
+        for system_name in system_names {
+            systems.append(
+                &mut find_systems_by_name_like(connection, &format!("%{}%", system_name)).await,
+            );
+        }
+    }
+    systems.dedup_by_key(|system| system.id);
+    let mut systems: Vec<Option<System>> = systems.into_iter().map(|system| Some(system)).collect();
+    if systems.is_empty() {
+        systems.push(None);
+    }
 
     let hash_algorithm = match matches.get_one::<String>("HASH").map(String::as_str) {
         Some("crc") => HashAlgorithm::Crc,
@@ -126,26 +128,55 @@ pub async fn main(
 
     let mut system_ids: HashSet<i64> = HashSet::new();
 
-    for romfile_path in romfile_paths {
-        let romfile_path = get_canonicalized_path(&romfile_path).await?;
-        if romfile_path.is_dir() {
-            cfg_if! {
-                if #[cfg(feature = "ird")] {
-                    if romfile_path.join(PS3_DISC_SFB).is_file() {
-                        progress_bar.println(format!(
-                            "Processing \"{}\"",
-                            &romfile_path.file_name().unwrap().to_str().unwrap()
-                        ));
-                        match system.as_ref() {
-                            Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash, unattended).await?,
-                            None => {
-                                let system = prompt_for_system_like(
-                                    connection,
-                                    None,
-                                    "%PlayStation 3%",
-                                )
-                                .await?;
-                                import_jbfolder(connection, progress_bar, &system, &romfile_path, trash, unattended).await?;
+    for romfile_path in matches.get_many::<PathBuf>("ROMS").unwrap() {
+        for system in &systems {
+            if let Some(system) = system {
+                progress_bar.println(format!("Searching in \"{}\"", &system.name));
+            }
+            let header = match system {
+                Some(system) => find_header_by_system_id(connection, system.id).await,
+                None => None,
+            };
+            let romfile_path = get_canonicalized_path(&romfile_path).await?;
+            if romfile_path.is_dir() {
+                cfg_if! {
+                    if #[cfg(feature = "ird")] {
+                        if romfile_path.join(PS3_DISC_SFB).is_file() {
+                            progress_bar.println(format!(
+                                "Processing \"{}\"",
+                                &romfile_path.file_name().unwrap().to_str().unwrap()
+                            ));
+                            match system.as_ref() {
+                                Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash, unattended).await?,
+                                None => {
+                                    let system = prompt_for_system_like(
+                                        connection,
+                                        None,
+                                        "%PlayStation 3%",
+                                    )
+                                    .await?;
+                                    import_jbfolder(connection, progress_bar, &system, &romfile_path, trash, unattended).await?;
+                                }
+                            }
+                        } else {
+                            let walker = WalkDir::new(&romfile_path).into_iter();
+                            for entry in walker.filter_map(|e| e.ok()) {
+                                if entry.path().is_file() {
+                                    system_ids.extend(
+                                        import_rom(
+                                            connection,
+                                            progress_bar,
+                                            &system.as_ref(),
+                                            &header,
+                                            &entry.path(),
+                                            &hash_algorithm,
+                                            trash,
+                                            force,
+                                            unattended,
+                                        )
+                                        .await?
+                                    );
+                                }
                             }
                         }
                     } else {
@@ -156,46 +187,24 @@ pub async fn main(
                                     import_rom(
                                         connection,
                                         progress_bar,
-                                        system.as_ref(),
+                                        &system.as_ref(),
                                         &header,
                                         &entry.path(),
                                         &hash_algorithm,
                                         trash,
                                         force,
-                                        unattended,
                                     )
                                     .await?
                                 );
                             }
                         }
                     }
-                } else {
-                    let walker = WalkDir::new(&romfile_path).into_iter();
-                    for entry in walker.filter_map(|e| e.ok()) {
-                        if entry.path().is_file() {
-                            system_ids.extend(
-                                import_rom(
-                                    connection,
-                                    progress_bar,
-                                    system.as_ref(),
-                                    &header,
-                                    &entry.path(),
-                                    &hash_algorithm,
-                                    trash,
-                                    force,
-                                )
-                                .await?
-                            );
-                        }
-                    }
                 }
-            }
-        } else {
-            system_ids.extend(
-                import_rom(
+            } else {
+                let ids = import_rom(
                     connection,
                     progress_bar,
-                    system.as_ref(),
+                    &system.as_ref(),
                     &header,
                     &romfile_path,
                     &hash_algorithm,
@@ -203,10 +212,14 @@ pub async fn main(
                     force,
                     unattended,
                 )
-                .await?,
-            );
+                .await?;
+                if !ids.is_empty() {
+                    system_ids.extend(ids);
+                    continue;
+                }
+            }
+            progress_bar.println("");
         }
-        progress_bar.println("");
     }
 
     for system_id in system_ids {
@@ -225,7 +238,7 @@ pub async fn main(
 pub async fn import_rom<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
@@ -615,7 +628,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
 async fn import_archive<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
     romfile_extension: &str,
@@ -782,7 +795,7 @@ async fn import_archive<P: AsRef<Path>>(
 async fn import_chd<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
@@ -809,7 +822,7 @@ async fn import_chd<P: AsRef<Path>>(
             progress_bar,
             size,
             &hash,
-            &system,
+            system,
             Vec::new(),
             None,
             hash_algorithm,
@@ -905,7 +918,7 @@ async fn import_chd<P: AsRef<Path>>(
             progress_bar,
             size,
             &hash,
-            &system,
+            system,
             Vec::new(),
             None,
             hash_algorithm,
@@ -939,7 +952,7 @@ async fn import_chd<P: AsRef<Path>>(
 async fn import_cia<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
@@ -987,7 +1000,7 @@ async fn import_cia<P: AsRef<Path>>(
             progress_bar,
             size,
             &hash,
-            &system,
+            system,
             game_names,
             rom_name,
             hash_algorithm,
@@ -1050,7 +1063,7 @@ async fn import_cia<P: AsRef<Path>>(
 async fn import_cso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
@@ -1065,7 +1078,7 @@ async fn import_cso<P: AsRef<Path>>(
         progress_bar,
         size,
         &hash,
-        &system,
+        system,
         Vec::new(),
         None,
         hash_algorithm,
@@ -1097,7 +1110,7 @@ async fn import_cso<P: AsRef<Path>>(
 async fn import_nsz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
@@ -1112,7 +1125,7 @@ async fn import_nsz<P: AsRef<Path>>(
         progress_bar,
         size,
         &hash,
-        &system,
+        system,
         Vec::new(),
         None,
         hash_algorithm,
@@ -1144,7 +1157,7 @@ async fn import_nsz<P: AsRef<Path>>(
 async fn import_rvz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
@@ -1159,7 +1172,7 @@ async fn import_rvz<P: AsRef<Path>>(
         progress_bar,
         size,
         &hash,
-        &system,
+        system,
         Vec::new(),
         None,
         hash_algorithm,
@@ -1191,7 +1204,7 @@ async fn import_rvz<P: AsRef<Path>>(
 async fn import_zso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
@@ -1206,7 +1219,7 @@ async fn import_zso<P: AsRef<Path>>(
         progress_bar,
         size,
         &hash,
-        &system,
+        system,
         Vec::new(),
         None,
         hash_algorithm,
@@ -1237,7 +1250,7 @@ async fn import_zso<P: AsRef<Path>>(
 async fn import_other<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system: Option<&System>,
+    system: &Option<&System>,
     header: &Option<Header>,
     romfile_path: &P,
     hash_algorithm: &HashAlgorithm,
@@ -1255,7 +1268,7 @@ async fn import_other<P: AsRef<Path>>(
         progress_bar,
         size,
         &hash,
-        &system,
+        system,
         Vec::new(),
         None,
         hash_algorithm,

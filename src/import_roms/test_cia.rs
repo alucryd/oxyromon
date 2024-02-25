@@ -54,7 +54,7 @@ async fn test() {
     import_cia(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,

@@ -45,7 +45,7 @@ async fn test() {
     import_other(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,

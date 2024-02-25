@@ -40,29 +40,6 @@ pub async fn prompt_for_systems(
         .collect())
 }
 
-pub async fn prompt_for_system(
-    connection: &mut SqliteConnection,
-    default: Option<usize>,
-) -> SimpleResult<System> {
-    let mut systems = find_systems(connection).await;
-    match systems.len() {
-        0 => bail!("No available system"),
-        1 => Ok(systems.remove(0)),
-        _ => {
-            let index = select(
-                &systems
-                    .iter()
-                    .map(|system| &system.name)
-                    .collect::<Vec<&String>>(),
-                "Please select a system",
-                default,
-                None,
-            )?;
-            Ok(systems.remove(index))
-        }
-    }
-}
-
 #[cfg(feature = "ird")]
 pub async fn prompt_for_system_like(
     connection: &mut SqliteConnection,

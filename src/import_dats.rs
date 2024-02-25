@@ -606,7 +606,7 @@ pub async fn reimport_orphan_romfiles(
         import_rom(
             connection,
             progress_bar,
-            system.as_ref(),
+            &system.as_ref(),
             &header,
             &Path::new(&romfile.path),
             hash_algorithm,

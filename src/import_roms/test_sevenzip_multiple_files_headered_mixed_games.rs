@@ -46,7 +46,7 @@ async fn test() {
     import_archive(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &header,
         &romfile_path,
         romfile_path.extension().unwrap().to_str().unwrap(),

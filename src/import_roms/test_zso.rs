@@ -54,7 +54,7 @@ async fn test() {
     import_zso(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &romfile_path,
         &HashAlgorithm::Crc,
         true,

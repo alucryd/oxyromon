@@ -310,8 +310,8 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
 Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
-In most cases the system is auto-detected, you will still be prompted for the system you want when importing JB folders. You can also force a system prompt to narrow the search.
-Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
+In most cases the system is auto-detected, however you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
+Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
 
@@ -338,12 +338,12 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system       Prompt for a system
-        -t, --trash        Trash invalid ROM files
-        -f, --force        Force import of existing ROM files
-        -a, --hash <HASH>  Set the hash algorithm [possible values: crc, md5, sha1]
-        -u, --unattended   Skip ROM files that require human intervention
-        -h, --help         Print help
+        -s, --system <SYSTEM>  Select systems by name
+        -t, --trash            Trash invalid ROM files
+        -f, --force            Force import of existing ROM files
+        -a, --hash <HASH>      Set the hash algorithm [possible values: crc, md5, sha1]
+        -u, --unattended       Skip ROM files that require human intervention
+        -h, --help             Print help
 
 ## oxyromon-sort-roms
 
@@ -433,7 +433,7 @@ Convert ROM files between common formats
 
 ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter games by name, the matching string is not case sensitive and doesn't need to be the full game name.
+You may optionally filter games by name, the matching string is case-insensitive and doesn't need to be the full game name.
 Systems can also be selected the same way so as to avoid being prompted for them.
 
 Supported ROM formats:

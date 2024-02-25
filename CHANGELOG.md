@@ -5,6 +5,7 @@
 - Accept ZIP files as input for `import-dats`
 - Add a `-u` flag to `import-roms` to skip user prompts
 - Add a `-s` flag to `convert-roms` to select systems by name 
+- Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
 
 # 0.18.0
 

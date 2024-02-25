@@ -43,7 +43,7 @@ async fn test() {
     import_roms::import_rom(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &header,
         &romfile_path,
         &HashAlgorithm::Crc,
