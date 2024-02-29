@@ -239,7 +239,7 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("export-roms") => {
-                convert_roms::main(
+                export_roms::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("export-roms").unwrap(),
                     &progress_bar,

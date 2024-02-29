@@ -104,6 +104,14 @@ pub fn subcommand() -> Command {
                 .required(true)
                 .num_args(1),
         )
+        .arg(
+            Arg::new("1G1R")
+                .short('g')
+                .long("1g1r")
+                .help("Export 1G1R games only")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -222,7 +230,7 @@ pub async fn main(
             continue;
         }
 
-        let games = match game_name {
+        let mut games = match game_name {
             Some(game_name) => {
                 let games = find_games_with_romfiles_by_name_and_system_id(
                     connection,
@@ -234,6 +242,10 @@ pub async fn main(
             }
             None => find_games_with_romfiles_by_system_id(connection, system.id).await,
         };
+
+        if matches.get_flag("1G1R") {
+            games.retain(|game| game.sorting == Sorting::OneRegion as i64);
+        }
 
         if games.is_empty() {
             if game_name.is_some() {
@@ -1204,7 +1216,7 @@ async fn to_nsz(
     // drop others
     drop(others);
 
-    // convert archives
+    // export archives
     for roms in archives.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut romfiles: Vec<&Romfile> = roms
@@ -1229,7 +1241,7 @@ async fn to_nsz(
             .await?;
     }
 
-    // convert NSPs
+    // export NSPs
     for roms in nsps.values() {
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
