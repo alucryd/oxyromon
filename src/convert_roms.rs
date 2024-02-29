@@ -1137,18 +1137,6 @@ async fn to_archive(
             )
             .parent()
             .unwrap();
-            let archive_name = format!(
-                "{}.{}",
-                &game.name,
-                match archive_type {
-                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                }
-            );
-            let archive_path = match system.arcade {
-                true => directory.parent().unwrap().join(&archive_name),
-                false => directory.join(&archive_name),
-            };
 
             let romfiles = roms
                 .iter()
@@ -1199,7 +1187,7 @@ async fn to_archive(
 
             let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
-                archive_path.as_os_str().to_str().unwrap(),
+                &archive_romfiles.first().unwrap().as_common()?.to_string(),
             )
             .await
             {
@@ -1207,8 +1195,13 @@ async fn to_archive(
                 None => {
                     create_romfile(
                         &mut transaction,
-                        archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().unwrap().len(),
+                        &archive_romfiles.first().unwrap().as_common()?.to_string(),
+                        archive_romfiles
+                            .first()
+                            .unwrap()
+                            .as_common()?
+                            .get_size()
+                            .await?,
                     )
                     .await
                 }
@@ -1222,7 +1215,7 @@ async fn to_archive(
                         .iter()
                         .map(|romfile| &romfile.path)
                         .collect::<Vec<&String>>(),
-                    &[&archive_path],
+                    &[&archive_romfiles.first().unwrap().path],
                 )
                 .await?;
             }
