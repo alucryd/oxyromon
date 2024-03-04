@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System</name>
+		<description>Test System</description>
+		<version>20240229</version>
+		<date>20240229</date>
+		<author>Maxime Gauduin</author>
+		<url>www.no-intro.org</url>
+	</header>
+	<game name="Test Game (USA, Europe)">
+		<description>Test Game (USA, Europe)</description>
+		<release name="Test Game (USA, Europe)" region="EUR" />
+		<release name="Test Game (USA, Europe)" region="USA" />
+		<rom name="Test Game (USA, Europe).cue" size="130" crc="150b10b7"
+			md5="8a3fb10ca3e2ae0cb7e8b84905be37f9" sha1="cac69402af32e51087bc87bd95ec9501e0796264"
+			status="verified" />
+		<rom name="Test Game (USA, Europe) (Track 01).bin" size="20309520" crc="9fe63aa2"
+			md5="d4b799c30a4e1939fd02686c4deb8ab8" sha1="c19c6189ffc93a266d13b25e72368037b4a6ad1e"
+			status="verified" />
+	</game>
+</datafile>

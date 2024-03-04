@@ -1,3 +1,4 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::generate_playlists::DISC_REGEX;
@@ -537,7 +538,11 @@ async fn sort_system(
         // prompt user for confirmation
         if answer_yes || confirm(true)? {
             for romfile_move in romfile_moves {
-                rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, true).await?;
+                romfile_move
+                    .0
+                    .as_common()?
+                    .rename(progress_bar, &romfile_move.1, true)
+                    .await?;
                 update_romfile(
                     &mut transaction,
                     romfile_move.0.id,

@@ -1,7 +1,7 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 #[cfg(feature = "chd")]
-use super::chdman::{ChdRomfile, ToCueBin};
+use super::chdman::ChdRomfile;
 use super::common::*;
 use super::config::*;
 #[cfg(feature = "cia")]
@@ -933,7 +933,10 @@ async fn import_chd<P: AsRef<Path>>(
                 .with_extension(CHD_EXTENSION);
 
             // move CHD if needed
-            rename_file(progress_bar, romfile_path, &new_chd_path, false).await?;
+            chd_romfile
+                .as_common()?
+                .rename(progress_bar, &new_chd_path, false)
+                .await?;
 
             // persist in database
             create_or_update_romfile(connection, &new_chd_path, &[rom]).await;
@@ -1745,16 +1748,16 @@ async fn move_to_trash<P: AsRef<Path>>(
     Ok(())
 }
 
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks_without_cue_should_fail;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_single_track;
 #[cfg(all(test, feature = "cia"))]
 mod test_cia;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
+#[cfg(all(test, feature = "chd"))]
+mod test_iso_chd;
+#[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_chd;
+#[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_chd_without_cue_should_fail;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
@@ -1773,6 +1776,8 @@ mod test_sevenzip_multiple_files_partial_game;
 mod test_sevenzip_single_file;
 #[cfg(test)]
 mod test_sevenzip_single_file_headered;
+#[cfg(all(test, feature = "chd"))]
+mod test_single_track_chd;
 #[cfg(test)]
 mod test_zip_single_file;
 #[cfg(all(test, feature = "zso"))]

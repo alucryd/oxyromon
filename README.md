@@ -468,10 +468,12 @@ Export ROM files to common formats
 
 Similar to `convert-roms`, however this one leaves your original ROM files untouched, thus allows the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
 
+Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO using bchunk.
+
     Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
     Options:
-        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, NSZ, RVZ, ZSO]
+        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, ZSO]
         -n, --name <NAME>            Select games by name
         -s, --system <SYSTEM>        Select systems by name
         -d, --directory <DIRECTORY>  Set the output directory

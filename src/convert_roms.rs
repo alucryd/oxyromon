@@ -1,7 +1,7 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 #[cfg(feature = "chd")]
-use super::chdman::{AsChd, AsCueBin, ToChd, ToCueBin};
+use super::chdman::{AsChd, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -2978,9 +2978,9 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
 }
 
 #[cfg(all(test, feature = "chd"))]
-mod test_chd_to_cue_bin;
+mod test_multiple_tracks_chd_to_cue_bin;
 #[cfg(all(test, feature = "chd"))]
-mod test_chd_to_iso;
+mod test_iso_chd_to_iso;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_cso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -2988,7 +2988,7 @@ mod test_cso_to_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_cue_bin_to_chd;
+mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -3018,7 +3018,7 @@ mod test_rvz_to_iso;
 #[cfg(all(test, feature = "rvz"))]
 mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_sevenzip_cue_bin_to_chd;
+mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -3030,11 +3030,11 @@ mod test_sevenzip_to_original;
 #[cfg(test)]
 mod test_sevenzip_to_zip;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
-mod test_single_track_chd_to_cso;
+mod test_iso_chd_to_cso;
 #[cfg(all(test, feature = "chd"))]
-mod test_single_track_chd_to_sevenzip_iso;
+mod test_iso_chd_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd", feature = "zso"))]
-mod test_single_track_chd_to_zso;
+mod test_iso_chd_to_zso;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]

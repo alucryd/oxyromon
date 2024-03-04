@@ -1,7 +1,7 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 #[cfg(feature = "chd")]
-use super::chdman::{AsChd, AsCueBin, ToChd, ToCueBin};
+use super::chdman::{AsChd, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -37,7 +37,7 @@ use std::str::FromStr;
 
 lazy_static! {
     static ref ALL_FORMATS: Vec<&'static str> = {
-        let mut all_formats = vec!["ORIGINAL", "7Z", "ZIP"];
+        let mut all_formats = vec!["ORIGINAL", "7Z", "ZIP", "ISO"];
         cfg_if! {
             if #[cfg(feature = "chd")] {
                 all_formats.push("CHD");
@@ -322,6 +322,16 @@ pub async fn main(
                     sevenzip::ArchiveType::Zip,
                     compression_level,
                     false,
+                )
+                .await?
+            }
+            "ISO" => {
+                to_iso(
+                    connection,
+                    progress_bar,
+                    &destination_directory,
+                    roms_by_game_id,
+                    romfiles_by_id,
                 )
                 .await?
             }
@@ -1509,6 +1519,252 @@ async fn to_zso(
     Ok(())
 }
 
+async fn to_iso(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    destination_directory: &PathBuf,
+    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+) -> SimpleResult<()> {
+    // partition archives
+    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
+    // partition CUE/BINs
+    let (cue_bins, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CUE_EXTENSION)
+            }) && roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(BIN_EXTENSION)
+            })
+        });
+
+    // partition CHDs
+    cfg_if! {
+        if #[cfg(feature = "chd")] {
+            let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(CHD_EXTENSION)
+                    })
+                });
+        }
+    }
+
+    // partition CSOs
+    cfg_if! {
+        if #[cfg(feature = "cso")] {
+            let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(CSO_EXTENSION)
+                    })
+                });
+        }
+    }
+
+    // partition ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+                others.into_iter().partition(|(_, roms)| {
+                    roms.par_iter().any(|rom| {
+                        romfiles_by_id
+                            .get(&rom.romfile_id.unwrap())
+                            .unwrap()
+                            .path
+                            .ends_with(ZSO_EXTENSION)
+                    })
+                });
+        }
+    }
+
+    // partition ISOs
+    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ISO_EXTENSION)
+            })
+        });
+
+    drop(others);
+
+    // export archives
+    for roms in archives.values() {
+        let mut romfiles: Vec<&Romfile> = roms
+            .par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+        if roms.len() == 1 && roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
+            let rom = roms.first().unwrap();
+            let romfile = romfiles.first().unwrap();
+            romfile
+                .as_archive(rom)?
+                .to_common(progress_bar, destination_directory)
+                .await?;
+        } else if roms.len() == 2 && roms.iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
+            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+                .into_par_iter()
+                .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let romfile = romfiles.first().unwrap();
+            let cue_romfile = romfile
+                .as_archive(cue_roms.first().unwrap())?
+                .to_common(progress_bar, &tmp_directory.path())
+                .await?;
+            let bin_romfile = romfile
+                .as_archive(bin_roms.first().unwrap())?
+                .to_common(progress_bar, &tmp_directory.path())
+                .await?;
+            cue_romfile
+                .as_cue_bin(&[bin_romfile.path])?
+                .to_iso(progress_bar, destination_directory)
+                .await?;
+        }
+    }
+
+    // export CUE/BIN
+    for roms in cue_bins.values() {
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .into_par_iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        if bin_roms.len() > 1 {
+            continue;
+        }
+        let cue_romfile = romfiles_by_id
+            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap();
+        let bin_romfiles = bin_roms
+            .iter()
+            .map(|bin_rom| romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap())
+            .collect::<Vec<&Romfile>>();
+        cue_romfile
+            .as_cue_bin(
+                &bin_romfiles
+                    .iter()
+                    .map(|romfile| &romfile.path)
+                    .collect::<Vec<&String>>(),
+            )?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
+    }
+
+    // export CHDs
+    cfg_if! {
+        if #[cfg(feature = "chd")] {
+            for roms in chds.values() {
+                if chdman::get_version().await.is_err() {
+                    progress_bar.println("Please install chdman");
+                    break;
+                }
+                if roms.len() == 1 {
+                    let romfile = romfiles_by_id.get(&roms.first().unwrap().romfile_id.unwrap()).unwrap();
+                    romfile.as_chd()?.to_iso(progress_bar, destination_directory).await?;
+                } else if roms.len() == 2 {
+                    let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+                        .into_par_iter()
+                        .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+                    let mut romfiles: Vec<&Romfile> = bin_roms
+                        .par_iter()
+                        .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                        .collect();
+                    romfiles.dedup();
+                    if romfiles.len() > 1 {
+                        bail!("Multiple CHDs found");
+                    }
+                    let tmp_directory = create_tmp_directory(connection).await?;
+                    let cue_romfile = romfiles_by_id.get(&cue_roms.first().unwrap().romfile_id.unwrap()).unwrap().as_common()?;
+                    romfiles
+                        .first()
+                        .unwrap()
+                        .as_chd_with_cue(&cue_romfile.path)?
+                        .to_cue_bin(progress_bar, &tmp_directory.path(), &cue_romfile, &bin_roms, false)
+                        .await?
+                        .to_iso(progress_bar, destination_directory)
+                        .await?;
+                }
+            }
+        }
+    }
+
+    // export CSOs
+    cfg_if! {
+        if #[cfg(feature = "cso")] {
+            for roms in csos.values() {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    break;
+                }
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    romfile.as_xso()?.to_iso(progress_bar, destination_directory).await?;
+                }
+            }
+        }
+    }
+
+    // export ZSOs
+    cfg_if! {
+        if #[cfg(feature = "zso")] {
+            for roms in zsos.values() {
+                if maxcso::get_version().await.is_err() {
+                    progress_bar.println("Please install maxcso");
+                    break;
+                }
+                for rom in roms {
+                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                    romfile.as_xso()?.to_iso(progress_bar, destination_directory).await?;
+                }
+            }
+        }
+    }
+
+    for roms in isos.values() {
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            copy_file(
+                progress_bar,
+                &romfile.path,
+                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                false,
+            )
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
 async fn to_original(
     progress_bar: &ProgressBar,
     destination_directory: &PathBuf,
@@ -1715,7 +1971,7 @@ async fn to_original(
         }
     }
 
-    // cexport RVZs
+    // export RVZs
     cfg_if! {
         if #[cfg(feature = "rvz")] {
             for roms in rvzs.values() {
@@ -1763,12 +2019,6 @@ async fn to_original(
     Ok(())
 }
 
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_to_chd_should_copy;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_to_cue_bin;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_to_iso;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_cso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -1778,7 +2028,15 @@ mod test_cso_to_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_cue_bin_to_chd;
+mod test_iso_chd_to_chd_should_copy;
+#[cfg(all(test, feature = "chd", feature = "cso"))]
+mod test_iso_chd_to_cso;
+#[cfg(all(test, feature = "chd"))]
+mod test_iso_chd_to_iso;
+#[cfg(all(test, feature = "chd"))]
+mod test_iso_chd_to_sevenzip_iso;
+#[cfg(all(test, feature = "chd", feature = "zso"))]
+mod test_iso_chd_to_zso;
 #[cfg(all(test, feature = "chd"))]
 mod test_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -1790,9 +2048,13 @@ mod test_iso_to_zso;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_chd_to_cue_bin;
+#[cfg(all(test, feature = "chd"))]
 mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
 #[cfg(all(test, feature = "chd", feature = "zso"))]
 mod test_multiple_tracks_chd_to_zso_should_do_nothing;
+#[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
 mod test_original_to_original_should_copy;
 #[cfg(test)]
@@ -1812,23 +2074,21 @@ mod test_rvz_to_rvz_should_copy;
 #[cfg(all(test, feature = "rvz"))]
 mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_sevenzip_cue_bin_to_chd;
-#[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
 mod test_sevenzip_iso_to_cso;
 #[cfg(all(test, feature = "zso"))]
 mod test_sevenzip_iso_to_zso;
+#[cfg(all(test, feature = "chd"))]
+mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
+mod test_sevenzip_single_track_cue_bin_to_iso;
 #[cfg(test)]
 mod test_sevenzip_to_original;
 #[cfg(test)]
 mod test_sevenzip_to_zip;
-#[cfg(all(test, feature = "chd", feature = "cso"))]
-mod test_single_track_chd_to_cso;
 #[cfg(all(test, feature = "chd"))]
-mod test_single_track_chd_to_sevenzip_iso;
-#[cfg(all(test, feature = "chd", feature = "zso"))]
-mod test_single_track_chd_to_zso;
+mod test_single_track_chd_to_iso;
+mod test_single_track_cue_bin_to_iso;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]
