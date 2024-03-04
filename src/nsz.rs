@@ -115,7 +115,7 @@ impl ToNsp for NszRomfile {
 
         let output = Command::new(NSZ)
             .arg("-D")
-            .arg("-R")
+            .arg("-F")
             .arg("-o")
             .arg(destination_directory.as_ref())
             .arg(&self.path)
@@ -164,8 +164,9 @@ impl ToNsz for NspRomfile {
 
         let output = Command::new(NSZ)
             .arg("-C")
-            .arg("-L")
             .arg("-K")
+            .arg("-L")
+            .arg("-P")
             .arg("-o")
             .arg(destination_directory.as_ref())
             .arg(&self.path)

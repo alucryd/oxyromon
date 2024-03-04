@@ -21,11 +21,6 @@ lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
 }
 
-pub struct CueBinRomfile {
-    pub cue_romfile: CommonRomfile,
-    pub bin_romfiles: Vec<CommonRomfile>,
-}
-
 pub struct ChdRomfile {
     pub path: PathBuf,
     pub cue_path: Option<PathBuf>,
@@ -119,17 +114,6 @@ impl ToChd for IsoRomfile {
     }
 }
 
-pub trait ToCueBin {
-    async fn to_cue_bin<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        destination_directory: &P,
-        cue_romfile: &CommonRomfile,
-        bin_roms: &[&Rom],
-        quiet: bool,
-    ) -> SimpleResult<CueBinRomfile>;
-}
-
 impl ToCueBin for ChdRomfile {
     async fn to_cue_bin<P: AsRef<Path>>(
         &self,
@@ -148,8 +132,8 @@ impl ToCueBin for ChdRomfile {
         .await?;
 
         if bin_roms.len() == 1 {
-            let bin_romfile = CommonRomfile { path };
-            bin_romfile
+            let mut bin_romfile = CommonRomfile { path };
+            bin_romfile = bin_romfile
                 .rename(
                     progress_bar,
                     &destination_directory
@@ -212,61 +196,6 @@ impl ToIso for ChdRomfile {
         )
         .await?;
         Ok(IsoRomfile { path })
-    }
-}
-
-pub trait FromBinPaths<T> {
-    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(path: &P, bin_paths: &[Q])
-        -> SimpleResult<T>;
-}
-
-impl FromBinPaths<CueBinRomfile> for CueBinRomfile {
-    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(
-        path: &P,
-        bin_paths: &[Q],
-    ) -> SimpleResult<CueBinRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != CUE_EXTENSION {
-            bail!("Not a valid chd");
-        }
-        for bin_path in bin_paths {
-            let bin_path = bin_path.as_ref().to_path_buf();
-            let extension = bin_path
-                .extension()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_lowercase();
-            if extension != BIN_EXTENSION {
-                bail!("Not a valid chd");
-            }
-        }
-        Ok(CueBinRomfile {
-            cue_romfile: CommonRomfile { path },
-            bin_romfiles: bin_paths
-                .iter()
-                .map(|bin_path| CommonRomfile {
-                    path: bin_path.as_ref().to_path_buf(),
-                })
-                .collect(),
-        })
-    }
-}
-
-pub trait AsCueBin {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile>;
-}
-
-impl AsCueBin for Romfile {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile> {
-        CueBinRomfile::from_bin_paths(&self.path, bin_paths)
-    }
-}
-
-impl AsCueBin for CommonRomfile {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile> {
-        CueBinRomfile::from_bin_paths(&self.path, bin_paths)
     }
 }
 

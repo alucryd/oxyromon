@@ -1,7 +1,7 @@
 #[cfg(feature = "chd")]
 use super::chdman;
 #[cfg(feature = "chd")]
-use super::chdman::{AsChd, AsCueBin, ToChd, ToCueBin};
+use super::chdman::{AsChd, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -1137,18 +1137,6 @@ async fn to_archive(
             )
             .parent()
             .unwrap();
-            let archive_name = format!(
-                "{}.{}",
-                &game.name,
-                match archive_type {
-                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                }
-            );
-            let archive_path = match system.arcade {
-                true => directory.parent().unwrap().join(&archive_name),
-                false => directory.join(&archive_name),
-            };
 
             let romfiles = roms
                 .iter()
@@ -1199,7 +1187,7 @@ async fn to_archive(
 
             let archive_romfile_id = match find_romfile_by_path(
                 &mut transaction,
-                archive_path.as_os_str().to_str().unwrap(),
+                &archive_romfiles.first().unwrap().as_common()?.to_string(),
             )
             .await
             {
@@ -1207,8 +1195,13 @@ async fn to_archive(
                 None => {
                     create_romfile(
                         &mut transaction,
-                        archive_path.as_os_str().to_str().unwrap(),
-                        archive_path.metadata().unwrap().len(),
+                        &archive_romfiles.first().unwrap().as_common()?.to_string(),
+                        archive_romfiles
+                            .first()
+                            .unwrap()
+                            .as_common()?
+                            .get_size()
+                            .await?,
                     )
                     .await
                 }
@@ -1222,7 +1215,7 @@ async fn to_archive(
                         .iter()
                         .map(|romfile| &romfile.path)
                         .collect::<Vec<&String>>(),
-                    &[&archive_path],
+                    &[&archive_romfiles.first().unwrap().path],
                 )
                 .await?;
             }
@@ -2985,9 +2978,9 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
 }
 
 #[cfg(all(test, feature = "chd"))]
-mod test_chd_to_cue_bin;
+mod test_multiple_tracks_chd_to_cue_bin;
 #[cfg(all(test, feature = "chd"))]
-mod test_chd_to_iso;
+mod test_iso_chd_to_iso;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
 mod test_cso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -2995,7 +2988,7 @@ mod test_cso_to_iso;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_cue_bin_to_chd;
+mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -3025,7 +3018,7 @@ mod test_rvz_to_iso;
 #[cfg(all(test, feature = "rvz"))]
 mod test_rvz_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd"))]
-mod test_sevenzip_cue_bin_to_chd;
+mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
 #[cfg(all(test, feature = "chd"))]
 mod test_sevenzip_iso_to_chd;
 #[cfg(all(test, feature = "cso"))]
@@ -3037,11 +3030,11 @@ mod test_sevenzip_to_original;
 #[cfg(test)]
 mod test_sevenzip_to_zip;
 #[cfg(all(test, feature = "chd", feature = "cso"))]
-mod test_single_track_chd_to_cso;
+mod test_iso_chd_to_cso;
 #[cfg(all(test, feature = "chd"))]
-mod test_single_track_chd_to_sevenzip_iso;
+mod test_iso_chd_to_sevenzip_iso;
 #[cfg(all(test, feature = "chd", feature = "zso"))]
-mod test_single_track_chd_to_zso;
+mod test_iso_chd_to_zso;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]

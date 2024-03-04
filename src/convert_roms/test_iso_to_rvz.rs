@@ -38,8 +38,8 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA).rvz");
-    fs::copy(test_directory.join("Test Game (USA).rvz"), &romfile_path)
+    let romfile_path = tmp_directory.join("Test Game (USA).iso");
+    fs::copy(test_directory.join("Test Game (USA).iso"), &romfile_path)
         .await
         .unwrap();
 

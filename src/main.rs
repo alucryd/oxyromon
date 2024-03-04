@@ -61,6 +61,7 @@ mod database;
 #[cfg(feature = "rvz")]
 mod dolphin;
 mod download_dats;
+mod export_roms;
 mod generate_playlists;
 mod import_dats;
 #[cfg(feature = "ird")]
@@ -116,6 +117,7 @@ async fn main() -> SimpleResult<()> {
         import_roms::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
+        export_roms::subcommand(),
         rebuild_roms::subcommand(),
         check_roms::subcommand(),
         purge_roms::subcommand(),
@@ -232,6 +234,14 @@ async fn main() -> SimpleResult<()> {
                 convert_roms::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("convert-roms").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("export-roms") => {
+                export_roms::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("export-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?

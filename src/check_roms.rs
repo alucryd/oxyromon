@@ -334,7 +334,10 @@ async fn move_to_trash(
     let new_path = get_trash_directory(connection, Some(system))
         .await?
         .join(Path::new(&romfile.path).file_name().unwrap());
-    rename_file(progress_bar, &romfile.path, &new_path, false).await?;
+    romfile
+        .as_common()?
+        .rename(progress_bar, &new_path, false)
+        .await?;
     update_romfile(
         connection,
         romfile.id,
@@ -345,12 +348,12 @@ async fn move_to_trash(
     Ok(())
 }
 
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_multiple_tracks;
-#[cfg(all(test, feature = "chd"))]
-mod test_chd_single_track;
 #[cfg(all(test, feature = "cso"))]
 mod test_cso;
+#[cfg(all(test, feature = "chd"))]
+mod test_iso_chd;
+#[cfg(all(test, feature = "chd"))]
+mod test_multiple_tracks_chd;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

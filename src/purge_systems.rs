@@ -1,3 +1,4 @@
+use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::prompt::*;
@@ -38,7 +39,10 @@ async fn purge_system(
 
     for romfile in romfiles {
         let new_path = trash_directory.join(Path::new(&romfile.path).file_name().unwrap());
-        rename_file(progress_bar, &romfile.path, &new_path, false).await?;
+        romfile
+            .as_common()?
+            .rename(progress_bar, &new_path, false)
+            .await?;
         update_romfile(
             connection,
             romfile.id,
