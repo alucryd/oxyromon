@@ -40,7 +40,6 @@ pub async fn prompt_for_systems(
         .collect())
 }
 
-#[cfg(feature = "ird")]
 pub async fn prompt_for_system_like(
     connection: &mut SqliteConnection,
     default: Option<usize>,
@@ -87,7 +86,6 @@ pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> 
         .collect())
 }
 
-#[cfg(feature = "ird")]
 pub fn prompt_for_game(games: &[Game]) -> SimpleResult<Option<&Game>> {
     let index = select_opt(
         &games
@@ -101,7 +99,6 @@ pub fn prompt_for_game(games: &[Game]) -> SimpleResult<Option<&Game>> {
     Ok(index.map(|i| games.get(i).unwrap()))
 }
 
-#[cfg(feature = "ird")]
 pub fn prompt_for_rom(roms: &mut Vec<Rom>, default: Option<usize>) -> SimpleResult<Option<Rom>> {
     match roms.len() {
         0 => bail!("No available rom"),

@@ -18,9 +18,10 @@
 oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
 It is designed with archiving in mind, as such it only supports original and lossless ROM formats.
+It can however export in various popular lossy formats, leaving the lossless ROM files untouched.
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
-Both console and arcade (WIP) systems are supported using Logiqx DAT files.
-The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
+Console, computer and arcade (WIP) systems are supported using Logiqx DAT files.
+The first two require No-Intro or Redump DAT files, while the latter makes use MAME or FBNeo DAT files.
 
 <img 
     style="display: block; 
@@ -66,14 +67,6 @@ The build uses rustls by default, but you can also opt for openssl:
 
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
-| chd            | CHD support                                    | x       |
-| cia            | CIA support                                    | x       |
-| cso            | CSO support                                    | x       |
-| ird            | IRD support                                    | x       |
-| nsz            | NSZ support                                    | x       |
-| rvz            | RVZ support                                    | x       |
-| zso            | ZSO support                                    | x       |
-| benchmark      | build the benchmark subcommand                 |         |
 | server         | build the server subcommand                    |         |
 | enable-asm     | enable ASM variants of the MD5 and SHA1 hashes | x       |
 | use-native-tls | use the system OpenSSL library                 |         |
@@ -82,8 +75,8 @@ The build uses rustls by default, but you can also opt for openssl:
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
-The database itself is stored in `${data_dir}/oxyromon` as defined in the
-[dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
 
 Available settings:
 
@@ -156,18 +149,18 @@ ZIP_COMPRESSION_LEVEL = 9
 These should be in your `${PATH}` for extra features.
 
 - [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
-- [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support (optional)
-- [chdman](https://www.mamedev.org/release.html): CHD support (optional)
-- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support (optional)
-- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
-- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
-- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support (optional)
-- [nsz](https://github.com/nicoboss/nsz): NSZ support (optional)
+- [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support
+- [chdman](https://www.mamedev.org/release.html): CHD support
+- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
+- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
+- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support
+- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
+- [nsz](https://github.com/nicoboss/nsz): NSZ support
+- [wit](https://wit.wiimm.de/): WBFS support
 
 ### TODO
 
 - Add actions to the web UI
-- Add an optional check of the ROMs after conversion
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
@@ -473,7 +466,7 @@ Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 
     Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
     Options:
-        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, ZSO]
+        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, WBFS, ZSO]
         -n, --name <NAME>            Select games by name
         -s, --system <SYSTEM>        Select systems by name
         -d, --directory <DIRECTORY>  Set the output directory

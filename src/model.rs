@@ -3,7 +3,6 @@ use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Deserializer};
 use sqlx::{FromRow, Type};
-#[cfg(feature = "ird")]
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, FromPrimitive, Type, Eq, PartialEq)]
@@ -181,7 +180,7 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    i64::from_str_radix(&s, 10).or_else(|_| Ok(0))
+    s.parse::<i64>().or_else(|_| Ok(0))
 }
 
 #[derive(Deserialize)]
@@ -224,7 +223,6 @@ pub struct DataXml {
     pub value: String,
 }
 
-#[cfg(feature = "ird")]
 pub struct Irdfile {
     pub version: u8,
     pub game_id: String,

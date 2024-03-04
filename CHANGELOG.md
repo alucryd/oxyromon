@@ -8,7 +8,7 @@
 - Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
 - Add a `-f` flag in `purge-roms` to track and delete foreign files in the ROM directory
 - Add a new `export-roms` subcommand
-- Update 
+- Add support for WBFS in `export-roms`
 
 # 0.18.0
 

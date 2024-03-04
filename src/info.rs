@@ -8,6 +8,7 @@ use super::maxcso;
 use super::nsz;
 use super::progress::*;
 use super::sevenzip;
+use super::wit;
 use super::SimpleResult;
 use clap::Command;
 use indicatif::ProgressBar;
@@ -60,6 +61,10 @@ pub async fn main(
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
     };
+    let wit_version = match wit::get_version().await {
+        Ok(version) => format!("found ({})", version),
+        Err(_) => String::from("not found"),
+    };
 
     progress_bar.println("Dependencies:");
     progress_bar.println(format!("  7-zip: {}", sevenzip_version));
@@ -70,6 +75,7 @@ pub async fn main(
     progress_bar.println(format!("  isoinfo: {}", isoinfo_version));
     progress_bar.println(format!("  maxcso: {}", maxcso_version));
     progress_bar.println(format!("  nsz: {}", nsz_version));
+    progress_bar.println(format!("  wit: {}", wit_version));
     progress_bar.println("");
 
     let system_count = count_systems(connection).await;

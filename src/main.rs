@@ -20,7 +20,6 @@ extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
-#[cfg(feature = "ird")]
 extern crate md5;
 extern crate num_derive;
 extern crate num_traits;
@@ -36,46 +35,36 @@ extern crate sha1;
 #[macro_use]
 extern crate simple_error;
 extern crate sqlx;
-#[cfg(feature = "ird")]
 extern crate strsim;
 extern crate strum;
 extern crate tempfile;
 extern crate tokio;
 extern crate vec_drain_where;
-#[cfg(feature = "ird")]
 extern crate walkdir;
 
 mod bchunk;
-#[cfg(feature = "benchmark")]
 mod benchmark;
-#[cfg(feature = "chd")]
 mod chdman;
 mod check_roms;
 mod common;
 mod config;
 mod convert_roms;
 mod crc32;
-#[cfg(feature = "cia")]
 mod ctrtool;
 mod database;
-#[cfg(feature = "rvz")]
 mod dolphin;
 mod download_dats;
 mod export_roms;
 mod generate_playlists;
 mod import_dats;
-#[cfg(feature = "ird")]
 mod import_irds;
 mod import_roms;
 mod info;
-#[cfg(feature = "ird")]
 mod isoinfo;
-#[cfg(feature = "cso")]
 mod maxcso;
 mod model;
 #[cfg(feature = "server")]
 mod mutation;
-#[cfg(feature = "nsz")]
 mod nsz;
 mod progress;
 mod prompt;
@@ -91,6 +80,7 @@ mod sort_roms;
 mod util;
 #[cfg(feature = "server")]
 mod validator;
+mod wit;
 
 use cfg_if::cfg_if;
 use clap::Command;
@@ -114,6 +104,7 @@ async fn main() -> SimpleResult<()> {
         config::subcommand(),
         import_dats::subcommand(),
         download_dats::subcommand(),
+        import_irds::subcommand(),
         import_roms::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
@@ -123,17 +114,8 @@ async fn main() -> SimpleResult<()> {
         purge_roms::subcommand(),
         purge_systems::subcommand(),
         generate_playlists::subcommand(),
+        benchmark::subcommand(),
     ];
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            subcommands.push(import_irds::subcommand());
-        }
-    }
-    cfg_if! {
-        if #[cfg(feature = "benchmark")] {
-            subcommands.push(benchmark::subcommand());
-        }
-    }
     cfg_if! {
         if #[cfg(feature = "server")] {
             subcommands.push(server::subcommand());
@@ -204,15 +186,12 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("import-irds") => {
-                cfg_if! {
-                    if #[cfg(feature = "ird")] {
-                        import_irds::main(
-                            &mut pool.acquire().await.unwrap(),
-                            matches.subcommand_matches("import-irds").unwrap(),
-                            &progress_bar,
-                        ).await?
-                    }
-                }
+                import_irds::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("import-irds").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("import-roms") => {
                 import_roms::main(
@@ -282,15 +261,12 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("benchmark") => {
-                cfg_if! {
-                    if #[cfg(feature = "benchmark")] {
-                        benchmark::main(
-                            &mut pool.acquire().await.unwrap(),
-                            matches.subcommand_matches("benchmark").unwrap(),
-                            &progress_bar,
-                        ).await?
-                    }
-                }
+                benchmark::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("benchmark").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("server") => {
                 cfg_if! {

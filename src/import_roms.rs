@@ -1,25 +1,18 @@
-#[cfg(feature = "chd")]
 use super::chdman;
-#[cfg(feature = "chd")]
 use super::chdman::ChdRomfile;
 use super::common::*;
 use super::config::*;
-#[cfg(feature = "cia")]
 use super::ctrtool;
 use super::database::*;
-#[cfg(feature = "rvz")]
 use super::dolphin;
-#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
 use super::model::*;
-#[cfg(feature = "nsz")]
 use super::nsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::ArchiveFile;
 use super::util::*;
 use super::SimpleResult;
-use cfg_if::cfg_if;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -100,7 +93,7 @@ pub async fn main(
         }
     }
     systems.dedup_by_key(|system| system.id);
-    let mut systems: Vec<Option<System>> = systems.into_iter().map(|system| Some(system)).collect();
+    let mut systems: Vec<Option<System>> = systems.into_iter().map(Some).collect();
     if systems.is_empty() {
         systems.push(None);
     }
@@ -139,64 +132,55 @@ pub async fn main(
             };
             let romfile_path = get_canonicalized_path(&romfile_path).await?;
             if romfile_path.is_dir() {
-                cfg_if! {
-                    if #[cfg(feature = "ird")] {
-                        if romfile_path.join(PS3_DISC_SFB).is_file() {
-                            progress_bar.println(format!(
-                                "Processing \"{}\"",
-                                &romfile_path.file_name().unwrap().to_str().unwrap()
-                            ));
-                            match system.as_ref() {
-                                Some(system) => import_jbfolder(connection, progress_bar, system, &romfile_path, trash, unattended).await?,
-                                None => {
-                                    let system = prompt_for_system_like(
-                                        connection,
-                                        None,
-                                        "%PlayStation 3%",
-                                    )
-                                    .await?;
-                                    import_jbfolder(connection, progress_bar, &system, &romfile_path, trash, unattended).await?;
-                                }
-                            }
-                        } else {
-                            let walker = WalkDir::new(&romfile_path).into_iter();
-                            for entry in walker.filter_map(|e| e.ok()) {
-                                if entry.path().is_file() {
-                                    system_ids.extend(
-                                        import_rom(
-                                            connection,
-                                            progress_bar,
-                                            &system.as_ref(),
-                                            &header,
-                                            &entry.path(),
-                                            &hash_algorithm,
-                                            trash,
-                                            force,
-                                            unattended,
-                                        )
-                                        .await?
-                                    );
-                                }
-                            }
+                if romfile_path.join(PS3_DISC_SFB).is_file() {
+                    progress_bar.println(format!(
+                        "Processing \"{}\"",
+                        &romfile_path.file_name().unwrap().to_str().unwrap()
+                    ));
+                    match system.as_ref() {
+                        Some(system) => {
+                            import_jbfolder(
+                                connection,
+                                progress_bar,
+                                system,
+                                &romfile_path,
+                                trash,
+                                unattended,
+                            )
+                            .await?
                         }
-                    } else {
-                        let walker = WalkDir::new(&romfile_path).into_iter();
-                        for entry in walker.filter_map(|e| e.ok()) {
-                            if entry.path().is_file() {
-                                system_ids.extend(
-                                    import_rom(
-                                        connection,
-                                        progress_bar,
-                                        &system.as_ref(),
-                                        &header,
-                                        &entry.path(),
-                                        &hash_algorithm,
-                                        trash,
-                                        force,
-                                    )
-                                    .await?
-                                );
-                            }
+                        None => {
+                            let system =
+                                prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
+                            import_jbfolder(
+                                connection,
+                                progress_bar,
+                                &system,
+                                &romfile_path,
+                                trash,
+                                unattended,
+                            )
+                            .await?;
+                        }
+                    }
+                } else {
+                    let walker = WalkDir::new(&romfile_path).into_iter();
+                    for entry in walker.filter_map(|e| e.ok()) {
+                        if entry.path().is_file() {
+                            system_ids.extend(
+                                import_rom(
+                                    connection,
+                                    progress_bar,
+                                    &system.as_ref(),
+                                    &header,
+                                    &entry.path(),
+                                    &hash_algorithm,
+                                    trash,
+                                    force,
+                                    unattended,
+                                )
+                                .await?,
+                            );
                         }
                     }
                 }
@@ -295,151 +279,115 @@ pub async fn import_rom<P: AsRef<Path>>(
             .await?,
         );
     } else if CHD_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "chd")] {
-                if chdman::get_version().await.is_err() {
-                    progress_bar.println("Please install chdman");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_chd(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    header,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the CHD feature enabled");
-            }
+        if chdman::get_version().await.is_err() {
+            progress_bar.println("Please install chdman");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_chd(
+            &mut transaction,
+            progress_bar,
+            system,
+            header,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if CIA_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "cia")] {
-                if ctrtool::get_version().await.is_err() {
-                    progress_bar.println("Please install ctrtool");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_cia(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    header,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the CIA feature enabled");
-            }
+        if ctrtool::get_version().await.is_err() {
+            progress_bar.println("Please install ctrtool");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_cia(
+            &mut transaction,
+            progress_bar,
+            system,
+            header,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if CSO_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "cso")] {
-                if maxcso::get_version().await.is_err() {
-                    progress_bar.println("Please install maxcso");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_cso(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the CSO feature enabled");
-            }
+        if maxcso::get_version().await.is_err() {
+            progress_bar.println("Please install maxcso");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_cso(
+            &mut transaction,
+            progress_bar,
+            system,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if NSZ_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "nsz")] {
-                if nsz::get_version().await.is_err() {
-                    progress_bar.println("Please install nsz");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_nsz(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the NSZ feature enabled");
-            }
+        if nsz::get_version().await.is_err() {
+            progress_bar.println("Please install nsz");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_nsz(
+            &mut transaction,
+            progress_bar,
+            system,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if RVZ_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "rvz")] {
-                if dolphin::get_version().await.is_err() {
-                    progress_bar.println("Please install dolphin");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_rvz(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the RVZ feature enabled");
-            }
+        if dolphin::get_version().await.is_err() {
+            progress_bar.println("Please install dolphin");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_rvz(
+            &mut transaction,
+            progress_bar,
+            system,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if ZSO_EXTENSION == romfile_extension {
-        cfg_if! {
-            if #[cfg(feature = "zso")] {
-                if maxcso::get_version().await.is_err() {
-                    progress_bar.println("Please install maxcso");
-                    return Ok(system_ids);
-                }
-                if let Some(system_id) = import_zso(
-                    &mut transaction,
-                    progress_bar,
-                    system,
-                    &romfile_path,
-                    hash_algorithm,
-                    trash,
-                    unattended,
-                )
-                .await?
-                {
-                    system_ids.insert(system_id);
-                };
-            } else {
-                progress_bar.println("Please rebuild with the ZSO feature enabled");
-            }
+        if maxcso::get_version().await.is_err() {
+            progress_bar.println("Please install maxcso");
+            return Ok(system_ids);
         }
+        if let Some(system_id) = import_zso(
+            &mut transaction,
+            progress_bar,
+            system,
+            &romfile_path,
+            hash_algorithm,
+            trash,
+            unattended,
+        )
+        .await?
+        {
+            system_ids.insert(system_id);
+        };
     } else if let Some(system_id) = import_other(
         &mut transaction,
         progress_bar,
@@ -460,7 +408,6 @@ pub async fn import_rom<P: AsRef<Path>>(
     Ok(system_ids)
 }
 
-#[cfg(feature = "ird")]
 async fn import_jbfolder<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -676,7 +623,7 @@ async fn import_archive<P: AsRef<Path>>(
             progress_bar,
             size,
             &hash,
-            &system,
+            system,
             game_names,
             rom_name,
             hash_algorithm,
@@ -791,7 +738,7 @@ async fn import_archive<P: AsRef<Path>>(
     Ok(system_ids)
 }
 
-#[cfg(feature = "chd")]
+#[allow(clippy::too_many_arguments)]
 async fn import_chd<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -951,7 +898,7 @@ async fn import_chd<P: AsRef<Path>>(
     }
 }
 
-#[cfg(feature = "cia")]
+#[allow(clippy::too_many_arguments)]
 async fn import_cia<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1062,7 +1009,6 @@ async fn import_cia<P: AsRef<Path>>(
     Ok(None)
 }
 
-#[cfg(feature = "cso")]
 async fn import_cso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1109,7 +1055,6 @@ async fn import_cso<P: AsRef<Path>>(
     }
 }
 
-#[cfg(feature = "nsz")]
 async fn import_nsz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1156,7 +1101,6 @@ async fn import_nsz<P: AsRef<Path>>(
     }
 }
 
-#[cfg(feature = "rvz")]
 async fn import_rvz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1203,7 +1147,6 @@ async fn import_rvz<P: AsRef<Path>>(
     }
 }
 
-#[cfg(feature = "zso")]
 async fn import_zso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1250,6 +1193,7 @@ async fn import_zso<P: AsRef<Path>>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn import_other<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1614,7 +1558,6 @@ async fn find_rom_by_size_and_hash(
     Ok(rom_game_system)
 }
 
-#[cfg(feature = "ird")]
 async fn find_sfb_rom_by_md5(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1748,21 +1691,21 @@ async fn move_to_trash<P: AsRef<Path>>(
     Ok(())
 }
 
-#[cfg(all(test, feature = "cia"))]
+#[cfg(test)]
 mod test_cia;
-#[cfg(all(test, feature = "cso"))]
+#[cfg(test)]
 mod test_cso;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_iso_chd;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_multiple_tracks_chd;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_multiple_tracks_chd_without_cue_should_fail;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
 mod test_original_headered;
-#[cfg(all(test, feature = "rvz"))]
+#[cfg(test)]
 mod test_rvz;
 #[cfg(test)]
 mod test_sevenzip_multiple_files_full_game;
@@ -1776,9 +1719,9 @@ mod test_sevenzip_multiple_files_partial_game;
 mod test_sevenzip_single_file;
 #[cfg(test)]
 mod test_sevenzip_single_file_headered;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_single_track_chd;
 #[cfg(test)]
 mod test_zip_single_file;
-#[cfg(all(test, feature = "zso"))]
+#[cfg(test)]
 mod test_zso;

@@ -463,7 +463,6 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_complete(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_jbfolder_games_by_system_id_mark_complete(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -577,7 +576,6 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_incomplete(
     .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_jbfolder_games_by_system_id_mark_incomplete(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -631,7 +629,6 @@ pub async fn update_games_sorting(
         .rows_affected()
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jbfolder: bool) {
     sqlx::query!(
         "
@@ -708,7 +705,6 @@ pub async fn find_games_by_system_id(
     .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_wanted_games_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -915,7 +911,6 @@ pub async fn delete_game_by_name_and_system_id(
     });
 }
 
-#[cfg(feature = "ird")]
 pub async fn create_rom(
     connection: &mut SqliteConnection,
     name: &str,
@@ -972,7 +967,6 @@ pub async fn create_rom_from_xml(
     .last_insert_rowid()
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_rom(
     connection: &mut SqliteConnection,
     id: i64,
@@ -2113,7 +2107,6 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     .count
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
@@ -2152,7 +2145,6 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     })
 }
 
-#[cfg(feature = "ird")]
 pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
@@ -2190,7 +2182,6 @@ pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     .count
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -2224,7 +2215,6 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
     })
 }
 
-#[cfg(feature = "ird")]
 pub async fn count_roms_with_romfile_by_size_and_md5_and_parent_id(
     connection: &mut SqliteConnection,
     size: u64,

@@ -78,7 +78,7 @@ pub async fn main(
     let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
         .get_many::<PathBuf>("DATS")
         .unwrap()
-        .map(|path| path.clone())
+        .cloned()
         .partition(|path| path.extension().unwrap().to_str().unwrap() == ZIP_EXTENSION);
 
     let tmp_directory = create_tmp_directory(connection).await?;

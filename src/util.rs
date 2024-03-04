@@ -3,7 +3,6 @@ use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
-use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use regex::Regex;
@@ -11,7 +10,6 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-#[cfg(any(feature = "ird", feature = "benchmark"))]
 use tempfile::NamedTempFile;
 use tempfile::TempDir;
 use tokio::fs;
@@ -31,7 +29,6 @@ pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<Pa
     Ok(canonicalized_path)
 }
 
-#[cfg(any(feature = "chd", feature = "cso", feature = "rvz"))]
 pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<File> {
     let file = try_with!(
         File::open(path.as_ref()).await,
@@ -76,7 +73,6 @@ pub async fn create_file<P: AsRef<Path>>(
     Ok(file)
 }
 
-#[cfg(any(feature = "ird", feature = "benchmark"))]
 pub async fn create_tmp_file(connection: &mut SqliteConnection) -> SimpleResult<NamedTempFile> {
     let tmp_file = try_with!(
         NamedTempFile::new_in(get_tmp_directory(connection).await),
@@ -278,11 +274,7 @@ pub async fn compute_system_completion(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
-        }
-    }
+    update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
     update_system_mark_complete(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
@@ -297,11 +289,7 @@ pub async fn compute_system_incompletion(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_incomplete(connection, system.id).await;
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-        }
-    }
+    update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
     update_system_mark_incomplete(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();

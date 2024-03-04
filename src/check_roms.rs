@@ -1,27 +1,18 @@
-#[cfg(feature = "chd")]
 use super::chdman;
-#[cfg(feature = "chd")]
 use super::chdman::AsChd;
 use super::common::*;
 use super::config::*;
 use super::database::*;
-#[cfg(feature = "rvz")]
 use super::dolphin;
-#[cfg(feature = "rvz")]
 use super::dolphin::AsRvz;
-#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso;
-#[cfg(any(feature = "cso", feature = "zso"))]
 use super::maxcso::AsXso;
 use super::model::*;
-#[cfg(feature = "nsz")]
 use super::nsz;
-#[cfg(feature = "nsz")]
 use super::nsz::AsNsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::util::*;
-use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use simple_error::SimpleResult;
@@ -172,94 +163,109 @@ async fn check_system(
             )
             .await;
         } else if CHD_EXTENSION == romfile_extension {
-            cfg_if! {
-                if #[cfg(feature = "chd")] {
-                    if chdman::get_version().await.is_err() {
-                        progress_bar.println("Please install chdman");
-                        break;
-                    }
-                    let game = games.iter().find(|game| game.id == romfile_roms.first().unwrap().game_id).unwrap();
-                    let cue_rom = roms.iter().find(|rom| rom.game_id == game.id && rom.name.ends_with(CUE_EXTENSION));
-                    let cue_romfile = cue_rom.map(|cue_rom| romfiles.iter().find(|romfile| romfile.id == cue_rom.romfile_id.unwrap()).unwrap());
-                    result = match cue_romfile {
-                        Some(cue_romfile) => romfile
-                            .as_chd_with_cue(&cue_romfile.path)?
-                            .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                            .await,
-                        None => romfile
-                            .as_chd()?
-                            .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                            .await,
-                    };
-                } else {
-                progress_bar.println("Please rebuild with the CHD feature enabled");
-                    break;
-                }
+            if chdman::get_version().await.is_err() {
+                progress_bar.println("Please install chdman");
+                break;
             }
+            let game = games
+                .iter()
+                .find(|game| game.id == romfile_roms.first().unwrap().game_id)
+                .unwrap();
+            let cue_rom = roms
+                .iter()
+                .find(|rom| rom.game_id == game.id && rom.name.ends_with(CUE_EXTENSION));
+            let cue_romfile = cue_rom.map(|cue_rom| {
+                romfiles
+                    .iter()
+                    .find(|romfile| romfile.id == cue_rom.romfile_id.unwrap())
+                    .unwrap()
+            });
+            result = match cue_romfile {
+                Some(cue_romfile) => {
+                    romfile
+                        .as_chd_with_cue(&cue_romfile.path)?
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &header,
+                            &romfile_roms,
+                            hash_algorithm,
+                        )
+                        .await
+                }
+                None => {
+                    romfile
+                        .as_chd()?
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &header,
+                            &romfile_roms,
+                            hash_algorithm,
+                        )
+                        .await
+                }
+            };
         } else if CSO_EXTENSION == romfile_extension {
-            cfg_if! {
-                if #[cfg(feature = "cso")] {
-                    if maxcso::get_version().await.is_err() {
-                        progress_bar.println("Please install maxcso");
-                        break;
-                    }
-                    result = romfile
-                        .as_xso()?
-                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                        .await;
-                } else {
-                    progress_bar.println("Please rebuild with the CSO feature enabled");
-                    break;
-                }
+            if maxcso::get_version().await.is_err() {
+                progress_bar.println("Please install maxcso");
+                break;
             }
+            result = romfile
+                .as_xso()?
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         } else if NSZ_EXTENSION == romfile_extension {
-            cfg_if! {
-                if #[cfg(feature = "nsz")] {
-                    if nsz::get_version().await.is_err() {
-                        progress_bar.println("Please install nsz");
-                        break;
-                    }
-                    result = romfile
-                        .as_nsz()?
-                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                        .await;
-                } else {
-                    progress_bar.println("Please rebuild with the NSZ feature enabled");
-                    break;
-                }
+            if nsz::get_version().await.is_err() {
+                progress_bar.println("Please install nsz");
+                break;
             }
+            result = romfile
+                .as_nsz()?
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         } else if RVZ_EXTENSION == romfile_extension {
-            cfg_if! {
-                if #[cfg(feature = "rvz")] {
-                    if dolphin::get_version().await.is_err() {
-                        progress_bar.println("Please install dolphin");
-                        break;
-                    }
-                    result = romfile
-                        .as_rvz()?
-                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                        .await;
-                } else {
-                    progress_bar.println("Please rebuild with the RVZ feature enabled");
-                    break;
-                }
+            if dolphin::get_version().await.is_err() {
+                progress_bar.println("Please install dolphin");
+                break;
             }
+            result = romfile
+                .as_rvz()?
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         } else if ZSO_EXTENSION == romfile_extension {
-            cfg_if! {
-                if #[cfg(feature = "zso")] {
-                    if maxcso::get_version().await.is_err() {
-                        progress_bar.println("Please install maxcso");
-                        break;
-                    }
-                    result = romfile
-                        .as_xso()?
-                        .check(&mut transaction, progress_bar, &header, &romfile_roms, hash_algorithm)
-                        .await;
-                } else {
-                    progress_bar.println("Please rebuild with the ZSO feature enabled");
-                    break;
-                }
+            if maxcso::get_version().await.is_err() {
+                progress_bar.println("Please install maxcso");
+                break;
             }
+            result = romfile
+                .as_xso()?
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         } else {
             result = romfile
                 .as_common()?
@@ -348,11 +354,11 @@ async fn move_to_trash(
     Ok(())
 }
 
-#[cfg(all(test, feature = "cso"))]
+#[cfg(test)]
 mod test_cso;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_iso_chd;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_multiple_tracks_chd;
 #[cfg(test)]
 mod test_original;
@@ -362,7 +368,7 @@ mod test_original_crc_mismatch;
 mod test_original_size_mismatch;
 #[cfg(test)]
 mod test_original_with_header;
-#[cfg(all(test, feature = "rvz"))]
+#[cfg(test)]
 mod test_rvz;
 #[cfg(test)]
 mod test_sevenzip;
@@ -370,5 +376,5 @@ mod test_sevenzip;
 mod test_sevenzip_with_header;
 #[cfg(test)]
 mod test_zip;
-#[cfg(all(test, feature = "zso"))]
+#[cfg(test)]
 mod test_zso;

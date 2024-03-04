@@ -957,11 +957,11 @@ mod test_order_prefer_versions_old_vanilla_vs_revision;
 mod test_path_archive_multiple_files;
 #[cfg(test)]
 mod test_path_archive_single_file;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_path_chd_multiple_tracks;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_path_chd_single_track;
-#[cfg(all(test, feature = "cso"))]
+#[cfg(test)]
 mod test_path_cso;
 #[cfg(test)]
 mod test_path_original;
@@ -969,7 +969,7 @@ mod test_path_original;
 mod test_path_playlist;
 #[cfg(test)]
 mod test_path_playlist_subfolder_alpha;
-#[cfg(all(test, feature = "rvz"))]
+#[cfg(test)]
 mod test_path_rvz;
 #[cfg(test)]
 mod test_path_subfolder_alpha_letter;

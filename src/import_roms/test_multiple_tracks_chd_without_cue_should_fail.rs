@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
-#[cfg(feature = "chd")]
 #[tokio::test]
 async fn test() {
     // given
