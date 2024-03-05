@@ -6,8 +6,7 @@ RUN apk add --no-cache bchunk build-base dolphin-emu musl-dev 7zip rustup yarn &
     rustup-init -y && \
     source /root/.cargo/env && \
     cargo install \
-    --no-default-features \
-    --features use-rustls,enable-asm,rvz,benchmark,server \
+    --features server \
     --root /usr \
     --path . && \
     cargo clean && \
