@@ -5,14 +5,15 @@ use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::fs::File;
-use async_std::io::WriteExt;
-use async_std::path::PathBuf;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
+use std::path::PathBuf;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+use tokio::io::BufWriter;
 
 lazy_static! {
     pub static ref DISC_REGEX: Regex = Regex::new(r" \(Disc \d+\).*").unwrap();
@@ -57,7 +58,7 @@ async fn process_system(
     system: &System,
 ) -> SimpleResult<()> {
     let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
-    find_games_with_romfiles_by_system_id(connection, system.id)
+    find_games_by_system_id(connection, system.id)
         .await
         .into_iter()
         .filter(|game| DISC_REGEX.is_match(&game.name))
@@ -68,6 +69,10 @@ async fn process_system(
         });
 
     for (playlist_name, games) in grouped_games.into_iter() {
+        if games.iter().any(|game| !game.complete) {
+            continue;
+        }
+
         let roms = find_roms_with_romfile_by_game_ids(
             connection,
             games
@@ -108,27 +113,32 @@ async fn process_system(
             continue;
         }
 
-        let mut playlist_path = PathBuf::from(&existing_romfiles.get(0).unwrap().path);
+        let mut playlist_path = PathBuf::from(&existing_romfiles.first().unwrap().path);
         playlist_path.set_file_name(&playlist_name);
-        let mut playlist_file = File::create(&playlist_path)
+        let playlist_file = File::create(&playlist_path)
             .await
             .expect("Failed to create M3U file");
+        let mut writer = BufWriter::new(playlist_file);
 
         progress_bar.println(format!("Creating \"{}\"", &playlist_name));
 
         for romfile in existing_romfiles {
-            writeln!(
-                &mut playlist_file,
-                "{}",
-                PathBuf::from(&romfile.path)
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-            )
-            .await
-            .expect("Failed to write to M3U file");
+            writer
+                .write_all(
+                    format!(
+                        "{}\n",
+                        PathBuf::from(&romfile.path)
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .expect("Failed to write to M3U file");
         }
+        writer.flush().await.expect("Failed to write to M3U file");
 
         let playlist_id =
             match find_romfile_by_path(connection, playlist_path.as_os_str().to_str().unwrap())
@@ -139,7 +149,7 @@ async fn process_system(
                         connection,
                         playlist.id,
                         playlist_path.as_os_str().to_str().unwrap(),
-                        playlist_path.metadata().await.unwrap().len(),
+                        playlist_path.metadata().unwrap().len(),
                     )
                     .await;
                     if playlist.path != playlist_path.as_os_str().to_str().unwrap() {
@@ -151,7 +161,7 @@ async fn process_system(
                     create_romfile(
                         connection,
                         playlist_path.as_os_str().to_str().unwrap(),
-                        playlist_path.metadata().await.unwrap().len(),
+                        playlist_path.metadata().unwrap().len(),
                     )
                     .await
                 }
@@ -164,4 +174,7 @@ async fn process_system(
 }
 
 #[cfg(test)]
-mod test_iso;
+mod test_iso_complete;
+
+#[cfg(test)]
+mod test_iso_incomplete;

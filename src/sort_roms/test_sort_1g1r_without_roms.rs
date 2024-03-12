@@ -3,7 +3,7 @@ use super::super::import_dats;
 use super::*;
 use tempfile::{NamedTempFile, TempDir};
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;

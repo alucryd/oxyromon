@@ -1,19 +1,27 @@
 use super::database::*;
 use super::mutation::Mutation;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
-use async_ctrlc::CtrlC;
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
-use async_std::path::Path;
-use async_std::prelude::FutureExt;
+use async_graphql_axum::GraphQL;
+use axum::{
+    body::Body,
+    extract::Path,
+    http::{header, Response, StatusCode},
+    routing::{get, post_service},
+    serve, Router,
+};
 use clap::{Arg, ArgMatches, Command};
-use http_types::mime::BYTE_STREAM;
-use http_types::{Mime, StatusCode};
+use http_types::mime::{BYTE_STREAM, HTML};
+use http_types::Mime;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
+use tokio::net::TcpListener;
+use tokio::select;
+use tokio::signal::ctrl_c;
 
 lazy_static! {
     pub static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
@@ -46,54 +54,69 @@ pub fn subcommand() -> Command {
         )
 }
 
-async fn serve_asset(req: tide::Request<()>) -> tide::Result {
-    let file_path = req.param("path").unwrap_or("index.html");
-    match Assets::get(file_path) {
+async fn serve_index() -> Response<Body> {
+    Response::builder()
+        .header(header::CONTENT_TYPE, HTML.to_string())
+        .body(Body::from(Assets::get("index.html").unwrap().data.to_vec()))
+        .unwrap()
+}
+
+async fn serve_asset(Path(path): Path<String>) -> Response<Body> {
+    match Assets::get(&path) {
         Some(file) => {
             let mime = Mime::sniff(file.data.as_ref())
                 .or_else(|err| {
                     Mime::from_extension(
-                        Path::new(file_path).extension().unwrap().to_str().unwrap(),
+                        std::path::Path::new(&path)
+                            .extension()
+                            .unwrap()
+                            .to_str()
+                            .unwrap(),
                     )
                     .ok_or(err)
                 })
                 .unwrap_or(BYTE_STREAM);
-            Ok(tide::Response::builder(StatusCode::Ok)
-                .body(tide::Body::from_bytes(file.data.to_vec()))
-                .content_type(mime)
-                .build())
+            Response::builder()
+                .header(header::CONTENT_TYPE, mime.to_string())
+                .body(Body::from(file.data.to_vec()))
+                .unwrap()
         }
-        None => Ok(tide::Response::new(StatusCode::NotFound)),
+        None => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Body::from(Vec::new()))
+            .unwrap(),
     }
+}
+
+async fn run(address: &str, port: &str) -> SimpleResult<()> {
+    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
+        .data(DataLoader::new(SystemLoader, tokio::task::spawn))
+        .data(DataLoader::new(GameLoader, tokio::task::spawn))
+        .data(DataLoader::new(RomfileLoader, tokio::task::spawn))
+        .finish();
+
+    let app = Router::new()
+        .route("/graphql", post_service(GraphQL::new(schema)))
+        .route("/*path", get(serve_asset))
+        .route("/", get(serve_index));
+
+    let listener = TcpListener::bind(format!("{}:{}", address, port))
+        .await
+        .unwrap();
+    serve(listener, app.into_make_service()).await.unwrap();
+
+    Ok(())
 }
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
-    let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
-        .data(DataLoader::new(SystemLoader, async_std::task::spawn))
-        .data(DataLoader::new(GameLoader, async_std::task::spawn))
-        .data(DataLoader::new(RomfileLoader, async_std::task::spawn))
-        .finish();
-
-    let ctrlc = CtrlC::new().expect("Cannot use CTRL-C handler");
-    ctrlc
-        .race(async {
-            let mut app = tide::new();
-
-            app.at("/").get(serve_asset);
-            app.at("/*path").get(serve_asset);
-
-            app.at("/graphql").post(async_graphql_tide::graphql(schema));
-
-            let address = matches.get_one::<String>("ADDRESS").unwrap();
-            let port = matches.get_one::<String>("PORT").unwrap();
-            app.listen(format!("{}:{}", address, port))
-                .await
-                .expect("Failed to run server");
-        })
-        .await;
-    close_connection(POOL.get().unwrap()).await;
+    select! {
+        Ok(()) = ctrl_c() => {
+            close_connection(POOL.get().unwrap()).await;
+        }
+        Ok(()) = run(matches.get_one::<String>("ADDRESS").unwrap(), matches.get_one::<String>("PORT").unwrap()) => {}
+    }
     Ok(())
 }
 

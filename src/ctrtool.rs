@@ -1,12 +1,15 @@
 use super::progress::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use indicatif::ProgressBar;
-use std::fs::File;
-use std::io::{prelude::*, SeekFrom};
-use std::process::Command;
+use regex::Regex;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
+use tokio::fs::File;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom};
+use tokio::process::Command;
+
+const CTRTOOL: &str = "ctrtool";
 
 const CA_CERT_SIZE: usize = 0x400;
 const CA_CERT_OFFSET: u64 = 0;
@@ -15,26 +18,48 @@ const TICKET_CERT_OFFSET: u64 = CA_CERT_OFFSET + CA_CERT_SIZE as u64;
 const TMD_CERT_SIZE: usize = 0x300;
 const TMD_CERT_OFFSET: u64 = TICKET_CERT_OFFSET + TICKET_CERT_SIZE as u64;
 
+lazy_static! {
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
+}
+
 #[derive(Debug)]
 pub struct ArchiveInfo {
     pub path: String,
     pub size: u64,
 }
 
-pub fn parse_cia<P: AsRef<Path>>(
+pub async fn get_version() -> SimpleResult<String> {
+    let output = try_with!(
+        Command::new(CTRTOOL).output().await,
+        "Failed to spawn ctrtool"
+    );
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    let version = stderr
+        .lines()
+        .next()
+        .and_then(|line| VERSION_REGEX.find(line))
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown"));
+
+    Ok(version)
+}
+
+pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
 ) -> SimpleResult<Vec<ArchiveInfo>> {
-    progress_bar.set_message("Parsing CIA");
+    progress_bar.set_message("Parsing cia");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let output = Command::new("ctrtool")
+    let output = Command::new(CTRTOOL)
         .arg("-p")
         .arg("-v")
         .arg(cia_path.as_ref())
         .output()
-        .expect("Failed to parse CIA");
+        .await
+        .expect("Failed to parse cia");
 
     if !output.status.success()
         // error expected when using -p with non-homebrew titles
@@ -89,7 +114,7 @@ pub fn parse_cia<P: AsRef<Path>>(
     Ok(cia_infos)
 }
 
-pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
+pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     directory: &Q,
@@ -101,7 +126,7 @@ pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     let directory = directory.as_ref();
     let mut extracted_paths = Vec::new();
 
-    let output = Command::new("ctrtool")
+    let output = Command::new(CTRTOOL)
         .arg("-p")
         .arg("-v")
         .arg("--certs=certs")
@@ -110,7 +135,8 @@ pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(archive_path.as_ref())
         .current_dir(directory)
         .output()
-        .expect("Failed to extract archive");
+        .await
+        .expect("Failed to extract cia");
 
     let stderr = String::from_utf8(output.stderr).unwrap();
 
@@ -132,18 +158,18 @@ pub fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let tmd_path = directory.join("tmd");
 
-    let mut certs = File::open(directory.join("certs")).unwrap();
+    let mut certs = File::open(directory.join("certs")).await.unwrap();
 
     let mut ca_cert = [0; CA_CERT_SIZE];
-    certs.read_exact(&mut ca_cert).unwrap();
+    certs.read_exact(&mut ca_cert).await.unwrap();
 
     let mut tmd_cert = [0; TMD_CERT_SIZE];
-    certs.seek(SeekFrom::Start(TMD_CERT_OFFSET)).unwrap();
-    certs.read_exact(&mut tmd_cert).unwrap();
+    certs.seek(SeekFrom::Start(TMD_CERT_OFFSET)).await.unwrap();
+    certs.read_exact(&mut tmd_cert).await.unwrap();
 
-    let mut tmd = File::options().append(true).open(&tmd_path).unwrap();
-    tmd.write_all(&tmd_cert).unwrap();
-    tmd.write_all(&ca_cert).unwrap();
+    let mut tmd = File::options().append(true).open(&tmd_path).await.unwrap();
+    tmd.write_all(&tmd_cert).await.unwrap();
+    tmd.write_all(&ca_cert).await.unwrap();
 
     extracted_paths.push(tmd_path);
 

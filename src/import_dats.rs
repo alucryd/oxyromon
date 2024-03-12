@@ -1,11 +1,10 @@
-use super::config::HashAlgorithm;
+use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::de;
@@ -16,9 +15,11 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
+use zip::ZipArchive;
 
 #[derive(RustEmbed)]
 #[folder = "data/"]
@@ -74,7 +75,23 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let dat_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("DATS").unwrap().collect();
+    let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
+        .get_many::<PathBuf>("DATS")
+        .unwrap()
+        .cloned()
+        .partition(|path| path.extension().unwrap().to_str().unwrap() == ZIP_EXTENSION);
+
+    let tmp_directory = create_tmp_directory(connection).await?;
+    for zip_path in zip_paths {
+        let mut reader = get_reader_sync(&zip_path)?;
+        let mut zip_archive = try_with!(ZipArchive::new(&mut reader), "Failed to read ZIP");
+        try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+        for file_name in zip_archive.file_names() {
+            if file_name.ends_with(DAT_EXTENSION) {
+                dat_paths.push(tmp_directory.path().join(file_name));
+            }
+        }
+    }
 
     for dat_path in dat_paths {
         progress_bar.println(format!(
@@ -130,7 +147,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
             progress_bar.println("Processing header");
             if let Some(header_file_name) = &clr_mame_pro_xml.header {
                 let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
-                if header_file_path.is_file().await {
+                if header_file_path.is_file() {
                     let header_file = open_file_sync(&header_file_path.as_path())?;
                     let reader = io::BufReader::new(header_file);
                     detector_xml = de::from_reader(reader).expect("Failed to parse header file");
@@ -298,7 +315,7 @@ async fn create_or_update_games(
         let game = find_game_by_name_and_bios_and_system_id(
             connection,
             &game_xml.name,
-            game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
+            game_xml.isbios,
             system_id,
         )
         .await;
@@ -331,7 +348,7 @@ async fn create_or_update_games(
                     connection,
                     progress_bar,
                     &game_xml.roms,
-                    game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
+                    game_xml.isbios,
                     game_id,
                 )
                 .await,
@@ -361,16 +378,23 @@ async fn create_or_update_games(
             let game = find_game_by_name_and_bios_and_system_id(
                 connection,
                 &game_xml.name,
-                game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
+                game_xml.isbios,
                 system_id,
             )
             .await;
+            // sometimes romof refers to games that aren't bioses
             let parent_game = match game_xml.cloneof.as_ref() {
                 Some(name) => {
                     find_game_by_name_and_bios_and_system_id(connection, name, false, system_id)
                         .await
                 }
-                None => None,
+                None => match game_xml.romof.as_ref() {
+                    Some(name) => {
+                        find_game_by_name_and_bios_and_system_id(connection, name, false, system_id)
+                            .await
+                    }
+                    None => None,
+                },
             };
             let bios_game: Option<Game> = match game_xml.romof.as_ref() {
                 Some(name) => {
@@ -422,7 +446,7 @@ async fn create_or_update_games(
                         connection,
                         progress_bar,
                         &game_xml.roms,
-                        game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes",
+                        game_xml.isbios,
                         game_id,
                     )
                     .await,
@@ -449,6 +473,14 @@ async fn create_or_update_roms(
         if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
             continue;
         }
+        // skip roms without size
+        if rom_xml.size == 0 {
+            progress_bar.println(format!(
+                "Skipping \"{}\" because it has no size",
+                &rom_xml.name
+            ));
+            continue;
+        }
         // skip roms without CRC
         if rom_xml.crc.is_none() {
             progress_bar.println(format!(
@@ -461,27 +493,31 @@ async fn create_or_update_roms(
         let mut parent_id = None;
         if rom_xml.merge.is_some() {
             let game = find_game_by_id(connection, game_id).await;
-            // try cloneof first, or romof if there is no cloneof
-            let mut parent_rom = find_rom_by_size_and_crc_and_game_id(
-                connection,
-                rom_xml.size,
-                rom_xml.crc.as_ref().unwrap(),
-                game.parent_id.or(game.bios_id).unwrap(),
-            )
-            .await;
-            // try romof next
-            if parent_rom.is_none() && game.bios_id.is_some() {
-                parent_rom = find_rom_by_size_and_crc_and_game_id(
+            let parent_rom = if let Some(parent_id) = game.parent_id {
+                find_rom_by_size_and_crc_and_game_id(
                     connection,
                     rom_xml.size,
                     rom_xml.crc.as_ref().unwrap(),
-                    game.bios_id.unwrap(),
+                    parent_id,
                 )
-                .await;
-            }
-            if let Some(parent_rom) = parent_rom {
-                bios = parent_rom.bios;
-                parent_id = parent_rom.parent_id.or(Some(parent_rom.id));
+                .await
+            } else {
+                None
+            };
+            let bios_rom = if let Some(bios_id) = game.bios_id {
+                find_rom_by_size_and_crc_and_game_id(
+                    connection,
+                    rom_xml.size,
+                    rom_xml.crc.as_ref().unwrap(),
+                    bios_id,
+                )
+                .await
+            } else {
+                None
+            };
+            if let Some(rom) = parent_rom.or(bios_rom) {
+                bios = rom.bios;
+                parent_id = rom.parent_id;
             } else {
                 progress_bar.println(format!(
                     "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
@@ -570,11 +606,12 @@ pub async fn reimport_orphan_romfiles(
         import_rom(
             connection,
             progress_bar,
-            system.as_ref(),
+            &system.as_ref(),
             &header,
             &Path::new(&romfile.path),
             hash_algorithm,
             true,
+            false,
             false,
         )
         .await?;
@@ -592,6 +629,8 @@ mod test_dat_headered_duplicate_clrmamepro;
 mod test_dat_headered_embedded;
 #[cfg(test)]
 mod test_dat_headered_skipped_header;
+#[cfg(test)]
+mod test_dat_mame;
 #[cfg(test)]
 mod test_dat_outdated_forced;
 #[cfg(test)]

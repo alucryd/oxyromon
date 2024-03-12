@@ -4,29 +4,29 @@ mkdir -p dist
 
 export SKIP_YARN=true
 
-export CROSS_CONTAINER_ENGINE=podman
+# export CROSS_CONTAINER_ENGINE=podman
 
-for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-musl; do
-    yarn install
-    yarn build
-    cross build \
-        --release \
-        --target $target \
-        --features benchmark,server
-    tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
-    cargo clean
-done
+# for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-musl; do
+#     yarn install
+#     yarn build
+#     cross build \
+#         --release \
+#         --target $target \
+#         --features benchmark,server
+#     tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
+#     cargo clean
+# done
 
-for target in x86_64-pc-windows-gnu; do
-    yarn install
-    yarn build
-    cross build \
-        --release \
-        --target $target \
-        --features benchmark,server
-    7z a dist/oxyromon.${target/-unknown/}.7z target/$target/release/oxyromon.exe
-    cargo clean
-done
+# for target in x86_64-pc-windows-gnu; do
+#     yarn install
+#     yarn build
+#     cross build \
+#         --release \
+#         --target $target \
+#         --features benchmark,server
+#     7z a dist/oxyromon.${target/-pc/}.7z target/$target/release/oxyromon.exe
+#     cargo clean
+# done
 
 export CROSS_CONTAINER_ENGINE=docker
 

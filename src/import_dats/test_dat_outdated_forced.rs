@@ -1,10 +1,9 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::*;
-use async_std::path::PathBuf;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -54,7 +53,7 @@ async fn test() {
     let systems = find_systems(&mut connection).await;
     assert_eq!(systems.len(), 1);
 
-    let system = systems.get(0).unwrap();
+    let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System");
 
     assert_eq!(find_games(&mut connection).await.len(), 3);

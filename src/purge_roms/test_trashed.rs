@@ -4,12 +4,11 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::sort_roms;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
-use async_std::prelude::*;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -67,9 +66,7 @@ async fn test() {
     assert!(&system_directory
         .join("Trash")
         .read_dir()
-        .await
         .unwrap()
         .next()
-        .await
         .is_none());
 }

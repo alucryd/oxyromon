@@ -2,11 +2,12 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
 use std::env;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -79,6 +80,8 @@ async fn test() {
         roms_by_game_id,
         romfiles_by_id,
         true,
+        true,
+        &HashAlgorithm::Crc,
     )
     .await
     .unwrap();
@@ -89,7 +92,7 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 2);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -98,7 +101,7 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
 
     let romfile = romfiles.get(1).unwrap();
     assert_eq!(
@@ -109,5 +112,5 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
 }

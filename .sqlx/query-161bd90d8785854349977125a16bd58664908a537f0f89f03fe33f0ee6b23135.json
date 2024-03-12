@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE games\n        SET name = ?, description = ?, comment = ?, device = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "161bd90d8785854349977125a16bd58664908a537f0f89f03fe33f0ee6b23135"
+}

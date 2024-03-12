@@ -72,6 +72,11 @@
         "name": "playlist_id",
         "ordinal": 13,
         "type_info": "Int64"
+      },
+      {
+        "name": "device",
+        "ordinal": 14,
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -91,7 +96,8 @@
       true,
       true,
       false,
-      true
+      true,
+      false
     ]
   },
   "hash": "217db4a45cefc581a724adbf83cd6eab9a9361a5b2cecad8e9e8f94995062aaa"

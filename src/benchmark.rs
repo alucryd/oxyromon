@@ -1,18 +1,17 @@
-use super::checksum::*;
+use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::fs;
-use async_std::io;
-use async_std::io::{ReadExt, WriteExt};
-use async_std::path::Path;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::path::Path;
 use std::time::Duration;
 use std::time::Instant;
+use tokio::fs;
+use tokio::io::{copy, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
 
 pub fn subcommand() -> Command {
     Command::new("benchmark").about("Benchmark oxyromon").arg(
@@ -48,6 +47,10 @@ pub async fn main(
     let rom_file_path = Path::new(&rom_directory).join(".oxyromon");
     let tmp_file_path = Path::new(&tmp_directory).join(".oxyromon");
 
+    let original_romfile_tmpdir = CommonRomfile {
+        path: tmp_file_path.to_path_buf(),
+    };
+
     let mb_count = 1024;
     // TODO: make this into a setting
     let chunk_size = matches
@@ -58,16 +61,16 @@ pub async fn main(
 
     // rom write speed
     progress_bar.set_message("Measuring ROM directory write speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open("/dev/random").await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create(&rom_file_path).await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -80,16 +83,16 @@ pub async fn main(
 
     // rom read speed
     progress_bar.set_message("Measuring ROM directory read speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open(&rom_file_path).await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create("/dev/null").await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -102,16 +105,16 @@ pub async fn main(
 
     // tmp write speed
     progress_bar.set_message("Measuring TMP directory write speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open("/dev/random").await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create(&tmp_file_path).await.unwrap(),
     );
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -124,17 +127,17 @@ pub async fn main(
 
     // tmp read speed
     progress_bar.set_message("Measuring TMP directory read speed");
-    let reader = io::BufReader::with_capacity(
+    let reader = BufReader::with_capacity(
         chunk_size * 1024,
         fs::File::open(&tmp_file_path).await.unwrap(),
     );
-    let mut writer = io::BufWriter::with_capacity(
+    let mut writer = BufWriter::with_capacity(
         chunk_size * 1024,
         fs::File::create("/dev/null").await.unwrap(),
     );
 
     let start = Instant::now();
-    io::copy(reader.take(1024 * 1024 * mb_count), &mut writer)
+    copy(&mut reader.take(1024 * 1024 * mb_count), &mut writer)
         .await
         .unwrap();
     writer.flush().await.unwrap();
@@ -147,16 +150,9 @@ pub async fn main(
 
     // crc speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Crc,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Crc)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(
@@ -166,16 +162,9 @@ pub async fn main(
 
     // md5 speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Md5,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Md5)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(
@@ -185,16 +174,9 @@ pub async fn main(
 
     // sha1 speed
     let start = Instant::now();
-    get_size_and_hash(
-        connection,
-        progress_bar,
-        &tmp_file_path,
-        &None,
-        1,
-        1,
-        &HashAlgorithm::Sha1,
-    )
-    .await?;
+    original_romfile_tmpdir
+        .get_hash_and_size(connection, progress_bar, &None, 1, 1, &HashAlgorithm::Sha1)
+        .await?;
     let duration = start.elapsed();
 
     progress_bar.println(format!(

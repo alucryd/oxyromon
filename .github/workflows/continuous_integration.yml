@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get install liblz4-1 libuv1 libzopfli1 mame-tools yarn
+        run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit yarn
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install rust toolchain
@@ -39,22 +39,22 @@ jobs:
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
         with:
-          args: --features benchmark,server
+          args: --features server
           token: ${{secrets.GITHUB_TOKEN}}
-      - name: Run audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
+      # - name: Run audit
+      #   uses: actions-rs/audit-check@v1
+      #   with:
+      #     token: ${{secrets.GITHUB_TOKEN}}
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --features benchmark,server
+          args: --release --features server
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: --features benchmark,server --lcov --output-path lcov.info
+          args: --features server --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

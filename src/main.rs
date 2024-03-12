@@ -1,12 +1,9 @@
 #[cfg(feature = "server")]
-extern crate async_ctrlc;
-#[cfg(feature = "server")]
 extern crate async_graphql;
 #[cfg(feature = "server")]
-extern crate async_graphql_tide;
-extern crate async_std;
+extern crate async_graphql_axum;
 #[cfg(feature = "server")]
-extern crate async_trait;
+extern crate axum;
 extern crate cfg_if;
 #[macro_use]
 extern crate clap;
@@ -14,7 +11,7 @@ extern crate crc32fast;
 extern crate dialoguer;
 extern crate digest;
 extern crate dirs;
-extern crate dotenv;
+extern crate dotenvy;
 extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
@@ -23,7 +20,6 @@ extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
-#[cfg(feature = "ird")]
 extern crate md5;
 extern crate num_derive;
 extern crate num_traits;
@@ -32,50 +28,43 @@ extern crate phf;
 extern crate quick_xml;
 extern crate rayon;
 extern crate regex;
+extern crate reqwest;
 extern crate rust_embed;
 extern crate serde;
 extern crate sha1;
 #[macro_use]
 extern crate simple_error;
 extern crate sqlx;
-#[cfg(feature = "ird")]
 extern crate strsim;
 extern crate strum;
-extern crate surf;
 extern crate tempfile;
-#[cfg(feature = "server")]
-extern crate tide;
+extern crate tokio;
 extern crate vec_drain_where;
-#[cfg(feature = "ird")]
 extern crate walkdir;
 
-#[cfg(feature = "benchmark")]
+mod bchunk;
 mod benchmark;
-#[cfg(feature = "chd")]
 mod chdman;
 mod check_roms;
-mod checksum;
+mod common;
 mod config;
 mod convert_roms;
-#[cfg(feature = "cia")]
+mod crc32;
 mod ctrtool;
 mod database;
-#[cfg(feature = "rvz")]
 mod dolphin;
 mod download_dats;
+mod export_roms;
 mod generate_playlists;
 mod import_dats;
-#[cfg(feature = "ird")]
 mod import_irds;
 mod import_roms;
-#[cfg(feature = "ird")]
+mod info;
 mod isoinfo;
-#[cfg(feature = "cso")]
 mod maxcso;
 mod model;
 #[cfg(feature = "server")]
 mod mutation;
-#[cfg(feature = "nsz")]
 mod nsz;
 mod progress;
 mod prompt;
@@ -91,47 +80,42 @@ mod sort_roms;
 mod util;
 #[cfg(feature = "server")]
 mod validator;
+mod wit;
 
-use async_std::path::PathBuf;
 use cfg_if::cfg_if;
 use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use env_logger::{Builder, Target};
 use progress::*;
 use simple_error::SimpleError;
 use std::env;
+use std::path::PathBuf;
 use util::*;
 
 type SimpleResult<T> = Result<T, SimpleError>;
 
-#[async_std::main]
+#[tokio::main]
 #[allow(unused_mut)]
 async fn main() -> SimpleResult<()> {
     let mut subcommands = vec![
+        info::subcommand(),
         config::subcommand(),
         import_dats::subcommand(),
         download_dats::subcommand(),
+        import_irds::subcommand(),
         import_roms::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
+        export_roms::subcommand(),
         rebuild_roms::subcommand(),
         check_roms::subcommand(),
         purge_roms::subcommand(),
         purge_systems::subcommand(),
         generate_playlists::subcommand(),
+        benchmark::subcommand(),
     ];
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            subcommands.push(import_irds::subcommand());
-        }
-    }
-    cfg_if! {
-        if #[cfg(feature = "benchmark")] {
-            subcommands.push(benchmark::subcommand());
-        }
-    }
     cfg_if! {
         if #[cfg(feature = "server")] {
             subcommands.push(server::subcommand());
@@ -166,7 +150,7 @@ async fn main() -> SimpleResult<()> {
         create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");
-        if !db_file.is_file().await {
+        if !db_file.is_file() {
             create_file(&progress_bar, &db_file, true).await?;
         }
         let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
@@ -176,6 +160,7 @@ async fn main() -> SimpleResult<()> {
         get_tmp_directory(&mut pool.acquire().await.unwrap()).await;
 
         match matches.subcommand_name() {
+            Some("info") => info::main(&mut pool.acquire().await.unwrap(), &progress_bar).await?,
             Some("config") => {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
@@ -201,15 +186,12 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("import-irds") => {
-                cfg_if! {
-                    if #[cfg(feature = "ird")] {
-                        import_irds::main(
-                            &mut pool.acquire().await.unwrap(),
-                            matches.subcommand_matches("import-irds").unwrap(),
-                            &progress_bar,
-                        ).await?
-                    }
-                }
+                import_irds::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("import-irds").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("import-roms") => {
                 import_roms::main(
@@ -231,6 +213,14 @@ async fn main() -> SimpleResult<()> {
                 convert_roms::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("convert-roms").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("export-roms") => {
+                export_roms::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("export-roms").unwrap(),
                     &progress_bar,
                 )
                 .await?
@@ -271,15 +261,12 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("benchmark") => {
-                cfg_if! {
-                    if #[cfg(feature = "benchmark")] {
-                        benchmark::main(
-                            &mut pool.acquire().await.unwrap(),
-                            matches.subcommand_matches("benchmark").unwrap(),
-                            &progress_bar,
-                        ).await?
-                    }
-                }
+                benchmark::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("benchmark").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("server") => {
                 cfg_if! {

@@ -1,13 +1,17 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
+    if ctrtool::get_version().await.is_err() {
+        return;
+    }
+
     // given
     let _guard = MUTEX.lock().await;
 
@@ -54,11 +58,12 @@ async fn test() {
     import_cia(
         &mut connection,
         &progress_bar,
-        Some(&system),
+        &Some(&system),
         &None,
         &romfile_path,
         &HashAlgorithm::Crc,
         true,
+        false,
     )
     .await
     .unwrap();
@@ -78,11 +83,11 @@ async fn test() {
     .await;
     assert_eq!(games.len(), 1);
 
-    let game = games.get(0).unwrap();
+    let game = games.first().unwrap();
     assert_eq!(game.name, "Test Game (USA, Europe)");
     assert_eq!(game.system_id, system.id);
 
-    let rom_0 = roms.get(0).unwrap();
+    let rom_0 = roms.first().unwrap();
     assert_eq!(rom_0.name, "00000000");
     assert_eq!(rom_0.game_id, game.id);
 
@@ -90,7 +95,7 @@ async fn test() {
     assert_eq!(rom_1.name, "tmd.2145");
     assert_eq!(rom_1.game_id, game.id);
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -99,7 +104,7 @@ async fn test() {
             .to_str()
             .unwrap(),
     );
-    assert!(Path::new(&romfile.path).is_file().await);
+    assert!(Path::new(&romfile.path).is_file());
     assert_eq!(rom_0.romfile_id, Some(romfile.id));
     assert_eq!(rom_1.romfile_id, Some(romfile.id));
 }

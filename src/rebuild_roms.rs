@@ -1,17 +1,18 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip;
+use super::sevenzip::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use sqlx::sqlite::SqliteConnection;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
@@ -134,14 +135,11 @@ async fn expand_game(
         .await?
         .join(&game.name);
     let mut transaction = begin_transaction(connection).await;
-    let archive_romfile_path = get_system_directory(&mut transaction, system)
+    let romfile_path = get_system_directory(&mut transaction, system)
         .await?
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
-    let archive_romfile = find_romfile_by_path(
-        &mut transaction,
-        archive_romfile_path.as_os_str().to_str().unwrap(),
-    )
-    .await;
+    let romfile =
+        find_romfile_by_path(&mut transaction, romfile_path.as_os_str().to_str().unwrap()).await;
     let roms = match merging {
         Merging::NonMerged => {
             find_roms_by_game_id_parents_no_parent_bioses(&mut transaction, game.id).await
@@ -175,7 +173,7 @@ async fn expand_game(
                 progress_bar,
                 rom,
                 &source_rom,
-                &archive_romfile,
+                &romfile,
                 &game_directory,
                 compression_level,
             )
@@ -185,12 +183,12 @@ async fn expand_game(
             return Ok(());
         }
     }
-    if let Some(romfile) = archive_romfile {
+    if let Some(romfile) = romfile {
         update_romfile(
             &mut transaction,
             romfile.id,
             &romfile.path,
-            archive_romfile_path.metadata().await.unwrap().len(),
+            romfile_path.metadata().unwrap().len(),
         )
         .await;
     }
@@ -207,14 +205,11 @@ async fn trim_game(
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", game.name));
     let mut transaction = begin_transaction(connection).await;
-    let archive_romfile_path = get_system_directory(&mut transaction, system)
+    let romfile_path = get_system_directory(&mut transaction, system)
         .await?
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
-    let archive_romfile = find_romfile_by_path(
-        &mut transaction,
-        archive_romfile_path.as_os_str().to_str().unwrap(),
-    )
-    .await;
+    let romfile =
+        find_romfile_by_path(&mut transaction, romfile_path.as_os_str().to_str().unwrap()).await;
     let roms = match merging {
         Merging::Split => find_roms_by_game_id_parents_only(&mut transaction, game.id).await,
         Merging::NonMerged => {
@@ -223,14 +218,14 @@ async fn trim_game(
         _ => bail!("Not possible"),
     };
     for rom in roms.iter().filter(|rom| rom.romfile_id.is_some()) {
-        delete_rom(&mut transaction, progress_bar, rom, &archive_romfile).await?;
+        delete_rom(&mut transaction, progress_bar, rom, &romfile).await?;
     }
-    if let Some(romfile) = archive_romfile {
+    if let Some(romfile) = romfile {
         update_romfile(
             &mut transaction,
             romfile.id,
             &romfile.path,
-            archive_romfile_path.metadata().await.unwrap().len(),
+            romfile.as_common()?.get_size().await?,
         )
         .await;
     }
@@ -243,15 +238,15 @@ async fn add_rom(
     progress_bar: &ProgressBar,
     rom: &Rom,
     source_rom: &Rom,
-    archive_romfile: &Option<Romfile>,
+    romfile: &Option<Romfile>,
     game_directory: &PathBuf,
     compression_level: usize,
 ) -> SimpleResult<()> {
     let source_romfile = find_romfile_by_id(transaction, source_rom.romfile_id.unwrap()).await;
-    if let Some(archive_romfile) = archive_romfile {
+    if let Some(archive_romfile) = romfile {
         if source_romfile.path.ends_with(ZIP_EXTENSION) {
             // both source and destination are archives
-            sevenzip::copy_files_between_archives(
+            copy_files_between_archives(
                 progress_bar,
                 &source_romfile.path,
                 &archive_romfile.path,
@@ -262,46 +257,46 @@ async fn add_rom(
             update_rom_romfile(transaction, rom.id, Some(archive_romfile.id)).await;
         } else {
             // source is directory and destination is archive
-            sevenzip::add_files_to_archive(
-                progress_bar,
-                &archive_romfile.path,
-                &[&source_rom.name],
-                &Path::new(&source_romfile.path).parent().unwrap(),
-                compression_level,
-                false,
-            )?;
-            if source_rom.name != rom.name {
-                sevenzip::rename_file_in_archive(
+            let original_romfile = CommonRomfile {
+                path: game_directory.join(&source_rom.name),
+            };
+            let archived_romfile = original_romfile
+                .to_archive(
                     progress_bar,
-                    &archive_romfile.path,
-                    &source_rom.name,
-                    &rom.name,
-                )?;
+                    game_directory,
+                    &Path::new(&archive_romfile.path).parent().unwrap(),
+                    Path::new(&archive_romfile.path)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                    &ArchiveType::Zip,
+                    compression_level,
+                    false,
+                )
+                .await?;
+            if source_rom.name != rom.name {
+                archived_romfile
+                    .rename_file(progress_bar, &rom.name)
+                    .await?;
             }
             update_rom_romfile(transaction, rom.id, Some(source_romfile.id)).await;
         }
     } else if source_romfile.path.ends_with(ZIP_EXTENSION) {
         // source is archive and destination is directory
-        let romfile_path = game_directory.join(&rom.name);
-        sevenzip::extract_files_from_archive(
-            progress_bar,
-            &source_romfile.path,
-            &[&source_rom.name],
-            game_directory,
-        )?;
-        if source_rom.name != rom.name {
-            rename_file(
-                progress_bar,
-                &game_directory.join(&source_rom.name),
-                &romfile_path,
-                true,
-            )
+        let archive_romfile = source_romfile.as_archive(source_rom)?;
+        let mut original_romfile = archive_romfile
+            .to_common(progress_bar, game_directory)
             .await?;
+        if source_rom.name != rom.name {
+            original_romfile = original_romfile
+                .rename(progress_bar, &game_directory.join(&rom.name), true)
+                .await?;
         }
         let romfile_id = create_romfile(
             transaction,
-            romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().await.unwrap().len(),
+            &original_romfile.to_string(),
+            original_romfile.get_size().await?,
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
@@ -312,7 +307,7 @@ async fn add_rom(
         let romfile_id = create_romfile(
             transaction,
             romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().await.unwrap().len(),
+            romfile_path.metadata().unwrap().len(),
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
@@ -324,13 +319,14 @@ async fn delete_rom(
     transaction: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     rom: &Rom,
-    archive_romfile: &Option<Romfile>,
+    romfile: &Option<Romfile>,
 ) -> SimpleResult<()> {
-    if let Some(archive_romfile) = archive_romfile {
-        sevenzip::remove_files_from_archive(progress_bar, &archive_romfile.path, &[&rom.name])?;
+    if let Some(romfile) = romfile {
+        let archive_romfile = romfile.as_archive(rom)?;
+        archive_romfile.delete_file(progress_bar).await?;
     } else {
         let romfile = find_romfile_by_id(transaction, rom.romfile_id.unwrap()).await;
-        remove_file(progress_bar, &romfile.path, false).await?;
+        romfile.as_common()?.delete(progress_bar, false).await?;
     }
     update_rom_romfile(transaction, rom.id, None).await;
     Ok(())

@@ -11,16 +11,17 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.16.0</h1>
+<h1 style="text-align: center;">oxyROMon 0.18.0</h1>
 
 ### Rusty ROM OrgaNizer
 
 oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
 It is designed with archiving in mind, as such it only supports original and lossless ROM formats.
+It can however export in various popular lossy formats, leaving the lossless ROM files untouched.
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
-Both console and arcade (WIP) systems are supported using Logiqx DAT files.
-The former requires No-Intro or Redump DAT files, the latter can use MAME or FBNeo DAT files.
+Console, computer and arcade (WIP) systems are supported using Logiqx DAT files.
+The first two require No-Intro or Redump DAT files, while the latter makes use MAME or FBNeo DAT files.
 
 <img 
     style="display: block; 
@@ -64,25 +65,18 @@ The build uses rustls by default, but you can also opt for openssl:
 
 ### Features
 
-| feature        | description                                                   | default |
-| -------------- | ------------------------------------------------------------- | ------- |
-| chd            | CHD support                                                   | x       |
-| cia            | CIA support                                                   | x       |
-| cso            | CSO support                                                   | x       |
-| ird            | IRD support                                                   | x       |
-| nsz            | NSZ support                                                   | x       |
-| rvz            | RVZ support                                                   | x       |
-| benchmark      | build the benchmark subcommand                                |         |
-| server         | build the server subcommand                                   |         |
-| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes                | x       |
-| use-native-tls | use the system OpenSSL library                                |         |
-| use-rustls     | use rustls                                                    | x       |
+| feature        | description                                    | default |
+| -------------- | ---------------------------------------------- | ------- |
+| server         | build the server subcommand                    |         |
+| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes | x       |
+| use-native-tls | use the system OpenSSL library                 |         |
+| use-rustls     | use rustls                                     | x       |
 
 ### Configuration
 
 Configuration is done from the command line and settings are stored in the SQLite database.
-The database itself is stored in `${data_dir}/oxyromon` as defined in the
-[dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
+This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
 
 Available settings:
 
@@ -155,22 +149,22 @@ ZIP_COMPRESSION_LEVEL = 9
 These should be in your `${PATH}` for extra features.
 
 - [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
-- [chdman](https://www.mamedev.org/release.html): CHD support (optional)
-- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support (optional)
-- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support (optional)
-- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support (optional)
-- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO support (optional)
-- [nsz](https://github.com/nicoboss/nsz): NSZ support (optional, needs [this PR](https://github.com/nicoboss/nsz/pull/131))
+- [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support
+- [chdman](https://www.mamedev.org/release.html): CHD support
+- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
+- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
+- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support
+- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
+- [nsz](https://github.com/nicoboss/nsz): NSZ support
+- [wit](https://wit.wiimm.de/): WBFS support
 
 ### TODO
 
 - Add actions to the web UI
-- Add an optional check of the ROMs after conversion
 - Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
 - Craft some unit tests for NSZ
-- Craft some unit tests for RVZ
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible and requested
 - Add a metadata scraper in the retroarch format
@@ -181,16 +175,18 @@ These should be in your `${PATH}` for extra features.
 
     Commands:
         config              Query and modify the oxyromon settings
+        info                Print system information
         import-dats         Parse and import Logiqx DAT files into oxyromon
         download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
         import-roms         Validate and import ROM files or directories into oxyromon
         sort-roms           Sort ROM files according to region and version preferences
         convert-roms        Convert ROM files between common formats
+        export-roms         Export ROM files to common formats
         rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
         check-roms          Check ROM files integrity
         purge-roms          Purge trashed, missing and orphan ROM files
         purge-systems       Purge systems
-        generate-playlists
+        generate-playlists  Generate M3U playlists for multi-disc games
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
         benchmark           Benchmark oxyromon
         server              Launch the backend server
@@ -216,11 +212,23 @@ The settings can be queried, modified and deleted from the command line.
         -r, --remove <KEY> <VALUE>  Remove an entry from a list
         -h, --help                  Print help information
 
+## oxyromon-info
+
+Print system information
+
+Prints the program version, installed dependencies and their version (when possible), as well as some basic system statistics.
+
+    Usage: oxyromon info
+
+    Options:
+    -h, --help  Print help
+
 ## oxyromon-import-dats
 
 Parse and import Logiqx DAT files into oxyromon
 
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
+ZIP files such as the No-Intro Love Pack can be imported directly without extracting them first.
 
 Supported console DAT providers:
 
@@ -296,8 +304,9 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
 Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
-In most cases the system is auto-detected, you will still be prompted for the system you want when importing JB folders. You can also force a system prompt to narrow the search.
-Most files will be moved as-is, with the exception of archives containing multiple games which are extracted.
+In most cases the system is auto-detected, however you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
+Systems that use a header definition require the `-s` flag to be passed to match ROM files which contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800 and Atari Lynx.
+Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
 
@@ -308,6 +317,7 @@ Supported console ROM formats:
 - CSO (Compressed ISO)
 - NSZ (Compressed NSP)
 - RVZ (Modern Dolphin format)
+- ZSO (LZ4 Compressed ISO)
 - JB folders (Extracted PS3 ISO)
 
 Supported arcade ROM formats:
@@ -323,11 +333,12 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system       Prompt for a system
-        -t, --trash        Trash invalid ROM files
-        -f, --force        Force import of existing ROM files
-        -a, --hash <HASH>  Set the hash algorithm [possible values: crc, md5, sha1]
-        -h, --help         Print help
+        -s, --system <SYSTEM>  Select systems by name
+        -t, --trash            Trash invalid ROM files
+        -f, --force            Force import of existing ROM files
+        -a, --hash <HASH>      Set the hash algorithm [possible values: crc, md5, sha1]
+        -u, --unattended       Skip ROM files that require human intervention
+        -h, --help             Print help
 
 ## oxyromon-sort-roms
 
@@ -415,9 +426,10 @@ Supported merging strategies:
 
 Convert ROM files between common formats
 
-ROMs can be converted back and forth between common formats and their original formats.
+ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter games by name, the matching string is not case sensitive and doesn't need to be the full game name.
+You may optionally filter games by name, the matching string is case-insensitive and doesn't need to be the full game name.
+Systems can also be selected the same way so as to avoid being prompted for them.
 
 Supported ROM formats:
 
@@ -425,18 +437,40 @@ Supported ROM formats:
 - CUE/BIN <-> CHD (Compressed Hunks of Data)
 - ISO <-> CHD (Compressed Hunks of Data)
 - ISO <-> CSO (Compressed ISO)
+- ISO <-> ZSO (LZ4 Compressed ISO)
 - ISO <-> RVZ (Modern Dolphin format)
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
+Warning: CHD for Dreamcast requires at least chdman 0.262 but some games will still have issues, see https://github.com/alucryd/oxyromon/issues/110
+
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:
-        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ]
+        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
         -n, --name <NAME>      Select games by name
+        -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
         -d, --diff             Print size differences
+        -c, --check            Check ROM files after conversion
         -h, --help             Print help information
+
+## oxyromon-export-roms
+
+Export ROM files to common formats
+
+Similar to `convert-roms`, however this one leaves your original ROM files untouched, thus allows the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
+
+Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO using bchunk.
+
+    Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
+
+    Options:
+        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, WBFS, ZSO]
+        -n, --name <NAME>            Select games by name
+        -s, --system <SYSTEM>        Select systems by name
+        -d, --directory <DIRECTORY>  Set the output directory
+        -h, --help                   Print help
 
 ## oxyromon-check-roms
 
@@ -465,8 +499,9 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
         -m, --missing  Delete missing ROM files from the database
         -o, --orphan   Delete ROM files without an associated ROM from the database
         -t, --trash    Physically delete ROM files from the trash directories
+        -f, --foreign  Physically delete ROM files unknown to the database
         -y, --yes      Automatically say yes to prompts
-        -h, --help     Print help information
+        -h, --help     Print help
 
 ## oxyromon-purge-systems
 

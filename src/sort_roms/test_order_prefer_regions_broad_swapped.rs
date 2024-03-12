@@ -1,6 +1,6 @@
 use super::*;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let game_a = Game {
@@ -9,6 +9,7 @@ async fn test() {
         description: String::from(""),
         comment: None,
         external_id: None,
+        device: false,
         bios: false,
         jbfolder: false,
         regions: String::from("US-EU-JP"),
@@ -25,6 +26,7 @@ async fn test() {
         description: String::from(""),
         comment: None,
         external_id: None,
+        device: false,
         bios: false,
         jbfolder: false,
         regions: String::from("US"),

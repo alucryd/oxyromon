@@ -1,3 +1,4 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::generate_playlists::DISC_REGEX;
@@ -5,8 +6,6 @@ use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
-use async_std::stream::StreamExt;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -20,6 +19,7 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
 use strum::VariantNames;
@@ -175,6 +175,7 @@ pub async fn get_regions(
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn sort_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -537,7 +538,11 @@ async fn sort_system(
         // prompt user for confirmation
         if answer_yes || confirm(true)? {
             for romfile_move in romfile_moves {
-                rename_file(progress_bar, &romfile_move.0.path, &romfile_move.1, true).await?;
+                romfile_move
+                    .0
+                    .as_common()?
+                    .rename(progress_bar, &romfile_move.1, true)
+                    .await?;
                 update_romfile(
                     &mut transaction,
                     romfile_move.0.id,
@@ -547,7 +552,7 @@ async fn sort_system(
                 .await;
                 // delete empty directories
                 let mut directory = Path::new(&romfile_move.0.path).parent().unwrap();
-                while directory.read_dir().await.unwrap().next().await.is_none() {
+                while directory.read_dir().unwrap().next().is_none() {
                     if directory == system_directory {
                         break;
                     } else {
@@ -952,11 +957,11 @@ mod test_order_prefer_versions_old_vanilla_vs_revision;
 mod test_path_archive_multiple_files;
 #[cfg(test)]
 mod test_path_archive_single_file;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_path_chd_multiple_tracks;
-#[cfg(all(test, feature = "chd"))]
+#[cfg(test)]
 mod test_path_chd_single_track;
-#[cfg(all(test, feature = "cso"))]
+#[cfg(test)]
 mod test_path_cso;
 #[cfg(test)]
 mod test_path_original;
@@ -964,7 +969,7 @@ mod test_path_original;
 mod test_path_playlist;
 #[cfg(test)]
 mod test_path_playlist_subfolder_alpha;
-#[cfg(all(test, feature = "rvz"))]
+#[cfg(test)]
 mod test_path_rvz;
 #[cfg(test)]
 mod test_path_subfolder_alpha_letter;

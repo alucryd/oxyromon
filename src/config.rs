@@ -3,18 +3,18 @@ use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::{Path, PathBuf};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use strum::{Display, EnumString, EnumVariantNames, VariantNames};
+use strum::{Display, EnumString, VariantNames};
 
 cfg_if! {
     if #[cfg(test)] {
-        use async_std::sync::Mutex;
+        use tokio::sync::Mutex;
 
         static mut ROM_DIRECTORY: Option<PathBuf> = None;
         static mut TMP_DIRECTORY: Option<PathBuf> = None;
@@ -31,7 +31,7 @@ cfg_if! {
     }
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,
@@ -39,7 +39,7 @@ pub enum HashAlgorithm {
     Sha1,
 }
 
-#[derive(Display, PartialEq, EnumString, EnumVariantNames)]
+#[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum RvzCompressionAlgorithm {
     None,
@@ -49,14 +49,14 @@ pub enum RvzCompressionAlgorithm {
     Lzma2,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum SubfolderScheme {
     None,
     Alpha,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum PreferredVersion {
     None,
@@ -64,7 +64,7 @@ pub enum PreferredVersion {
     Old,
 }
 
-#[derive(PartialEq, EnumString, EnumVariantNames)]
+#[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum PreferredRegion {
     None,
@@ -104,12 +104,12 @@ const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
 const LIST_SEPARATOR: &str = "|";
 
-#[cfg(feature = "chd")]
 pub static BIN_EXTENSION: &str = "bin";
 pub static CHD_EXTENSION: &str = "chd";
 pub static CIA_EXTENSION: &str = "cia";
 pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
+pub static DAT_EXTENSION: &str = "dat";
 pub static ISO_EXTENSION: &str = "iso";
 pub static M3U_EXTENSION: &str = "m3u";
 pub static NSP_EXTENSION: &str = "nsp";
@@ -119,12 +119,13 @@ pub static PUP_EXTENSION: &str = "pup";
 pub static RAP_EXTENSION: &str = "rap";
 pub static RVZ_EXTENSION: &str = "rvz";
 pub static SEVENZIP_EXTENSION: &str = "7z";
+pub static WBFS_EXTENSION: &str = "wbfs";
 pub static ZIP_EXTENSION: &str = "zip";
+pub static ZSO_EXTENSION: &str = "zso";
 
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
 
-#[cfg(feature = "ird")]
 pub static PS3_DISC_SFB: &str = "PS3_DISC.SFB";
 
 pub fn subcommand() -> Command {
@@ -458,7 +459,7 @@ cfg_if::cfg_if! {
                         None => {
                             let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
                                 Ok(tmp_directory) => PathBuf::from(tmp_directory),
-                                Err(_) => PathBuf::from(env::temp_dir())
+                                Err(_) => env::temp_dir()
                             };
                             set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
                             tmp_directory

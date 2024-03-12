@@ -1,7 +1,7 @@
 use super::*;
 use tempfile::NamedTempFile;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let db_file = NamedTempFile::new().unwrap();
@@ -18,6 +18,6 @@ async fn test() {
 
     // then
     assert_eq!(list.len(), 2);
-    assert_eq!(list.get(0).unwrap(), "item1");
+    assert_eq!(list.first().unwrap(), "item1");
     assert_eq!(list.get(1).unwrap(), "item2");
 }

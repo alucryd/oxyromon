@@ -3,18 +3,17 @@ use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
-use async_std::fs;
-use async_std::path::{Path, PathBuf};
-use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
-#[cfg(any(feature = "ird", feature = "benchmark"))]
 use tempfile::NamedTempFile;
 use tempfile::TempDir;
+use tokio::fs;
+use tokio::fs::File;
 
 lazy_static! {
     static ref SYSTEM_NAME_REGEX: Regex =
@@ -23,17 +22,16 @@ lazy_static! {
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
-        path.as_ref().canonicalize().await,
+        path.as_ref().canonicalize(),
         "Failed to get canonicalized path for \"{}\"",
         path.as_ref().as_os_str().to_str().unwrap()
     );
     Ok(canonicalized_path)
 }
 
-#[cfg(any(feature = "chd", feature = "cso", feature = "rvz"))]
-pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<fs::File> {
+pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<File> {
     let file = try_with!(
-        fs::File::open(path.as_ref()).await,
+        File::open(path.as_ref()).await,
         "Failed to open \"{}\"",
         path.as_ref().as_os_str().to_str().unwrap()
     );
@@ -60,7 +58,7 @@ pub async fn create_file<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     path: &P,
     quiet: bool,
-) -> SimpleResult<fs::File> {
+) -> SimpleResult<File> {
     if !quiet {
         progress_bar.println(format!(
             "Creating \"{}\"",
@@ -68,14 +66,13 @@ pub async fn create_file<P: AsRef<Path>>(
         ));
     }
     let file = try_with!(
-        fs::File::create(path).await,
+        File::create(path).await,
         "Failed to create \"{}\"",
         path.as_ref().as_os_str().to_str().unwrap()
     );
     Ok(file)
 }
 
-#[cfg(any(feature = "ird", feature = "benchmark"))]
 pub async fn create_tmp_file(connection: &mut SqliteConnection) -> SimpleResult<NamedTempFile> {
     let tmp_file = try_with!(
         NamedTempFile::new_in(get_tmp_directory(connection).await),
@@ -92,7 +89,7 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
-        if !new_directory.is_dir().await {
+        if !new_directory.is_dir() {
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
@@ -119,7 +116,7 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> SimpleResult<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
-        if !new_directory.is_dir().await {
+        if !new_directory.is_dir() {
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
@@ -168,7 +165,7 @@ pub async fn create_directory<P: AsRef<Path>>(
             path.as_ref().as_os_str().to_str().unwrap()
         ));
     }
-    if !path.as_ref().is_dir().await {
+    if !path.as_ref().is_dir() {
         try_with!(
             fs::create_dir_all(path).await,
             "Failed to create \"{}\"",
@@ -277,11 +274,7 @@ pub async fn compute_system_completion(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_complete(connection, system.id).await;
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
-        }
-    }
+    update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
     update_system_mark_complete(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
@@ -296,11 +289,7 @@ pub async fn compute_system_incompletion(
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
     update_games_by_system_id_mark_incomplete(connection, system.id).await;
-    cfg_if! {
-        if #[cfg(feature = "ird")] {
-            update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-        }
-    }
+    update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
     update_system_mark_incomplete(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();

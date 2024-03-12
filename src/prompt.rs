@@ -40,30 +40,6 @@ pub async fn prompt_for_systems(
         .collect())
 }
 
-pub async fn prompt_for_system(
-    connection: &mut SqliteConnection,
-    default: Option<usize>,
-) -> SimpleResult<System> {
-    let mut systems = find_systems(connection).await;
-    match systems.len() {
-        0 => bail!("No available system"),
-        1 => Ok(systems.remove(0)),
-        _ => {
-            let index = select(
-                &systems
-                    .iter()
-                    .map(|system| &system.name)
-                    .collect::<Vec<&String>>(),
-                "Please select a system",
-                default,
-                None,
-            )?;
-            Ok(systems.remove(index))
-        }
-    }
-}
-
-#[cfg(feature = "ird")]
 pub async fn prompt_for_system_like(
     connection: &mut SqliteConnection,
     default: Option<usize>,
@@ -110,7 +86,6 @@ pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> 
         .collect())
 }
 
-#[cfg(feature = "ird")]
 pub fn prompt_for_game(games: &[Game]) -> SimpleResult<Option<&Game>> {
     let index = select_opt(
         &games
@@ -124,7 +99,6 @@ pub fn prompt_for_game(games: &[Game]) -> SimpleResult<Option<&Game>> {
     Ok(index.map(|i| games.get(i).unwrap()))
 }
 
-#[cfg(feature = "ird")]
 pub fn prompt_for_rom(roms: &mut Vec<Rom>, default: Option<usize>) -> SimpleResult<Option<Rom>> {
     match roms.len() {
         0 => bail!("No available rom"),

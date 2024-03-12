@@ -2,7 +2,7 @@ use super::super::database::*;
 use super::*;
 use tempfile::NamedTempFile;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let db_file = NamedTempFile::new().unwrap();
@@ -19,5 +19,5 @@ async fn test() {
 
     // then
     assert_eq!(all_regions.len(), 1);
-    assert_eq!(all_regions.get(0).unwrap(), &Region::UnitedStates);
+    assert_eq!(all_regions.first().unwrap(), &Region::UnitedStates);
 }

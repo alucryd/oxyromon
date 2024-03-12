@@ -3,12 +3,13 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
-use futures::stream::TryStreamExt;
+use itertools::Itertools;
+use std::fs::DirEntry;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -60,13 +61,11 @@ async fn test() {
     // then
     let romfiles = find_romfiles(&mut connection).await;
     assert!(romfiles.is_empty());
-    let entries: Vec<fs::DirEntry> = system_directory
+    let entries: Vec<DirEntry> = system_directory
         .read_dir()
-        .await
         .unwrap()
         .map_ok(|entry| entry)
         .try_collect()
-        .await
         .unwrap();
     assert_eq!(entries.len(), 0);
 }

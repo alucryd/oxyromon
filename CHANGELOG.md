@@ -1,4 +1,27 @@
+# 0.18.0
+
+- Replace `async-std` with `tokio`
+- Add an `info` subcommand to display basic system and dependencies information
+- Only generate playlists for complete sets of games
+- Exit gracefully in most places when missing an external program
+- Use `7zz` instead of `7z` on mac
+- Don't silently delete files in `check-roms`
+- Add support for ZSO
+- Add optional dependency on bchunk
+- Allow filtering games by name in `check-roms`
+- Traits! Makes parts of the code actually reusable
+- Add an optional post-conversion check
+- Fix importing a couple more bogus DAT files
+- Accept ZIP files as input for `import-dats`
+- Add a `-u` flag to `import-roms` to skip user prompts
+- Add a `-s` flag to `convert-roms` to select systems by name 
+- Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
+- Add a `-f` flag in `purge-roms` to track and delete foreign files in the ROM directory
+- Add a new `export-roms` subcommand
+- Add support for WBFS in `export-roms`
+
 # 0.17.0
+
 - Clean temporary files immediately in `convert-roms`
 - Include Non-Redump DATs in the grouped subsystems
 - Don't create empty directories
@@ -6,6 +29,7 @@
 - Add support for importing CIA files (@leo60228)
 
 # 0.16.0
+
 - Use original names for PSN stuff
 - Add a language whitelist setting
 - Always name archives after the game name

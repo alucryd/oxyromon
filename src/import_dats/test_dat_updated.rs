@@ -1,11 +1,10 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::*;
-use async_std::fs;
-use async_std::path::PathBuf;
+use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
-#[async_std::test]
+#[tokio::test]
 async fn test() {
     // given
     let _guard = MUTEX.lock().await;
@@ -54,12 +53,13 @@ async fn test() {
         import_rom(
             &mut connection,
             &progress_bar,
-            Some(&system),
+            &Some(&system),
             &None,
             &romfile_path,
             &HashAlgorithm::Crc,
             true,
             true,
+            false,
         )
         .await
         .unwrap();
@@ -84,7 +84,7 @@ async fn test() {
     let systems = find_systems(&mut connection).await;
     assert_eq!(systems.len(), 1);
 
-    let system = systems.get(0).unwrap();
+    let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System");
 
     let games = find_games(&mut connection).await;
@@ -95,8 +95,8 @@ async fn test() {
     assert_eq!(roms.len(), 3);
     assert_eq!(romfiles.len(), 3);
 
-    let game = games.get(0).unwrap();
-    let rom = roms.get(0).unwrap();
+    let game = games.first().unwrap();
+    let rom = roms.first().unwrap();
     let romfile = romfiles.get(2).unwrap();
 
     assert_eq!(game.name, "Test Game (Asia)");
@@ -115,7 +115,7 @@ async fn test() {
 
     let game = games.get(2).unwrap();
     let rom = roms.get(1).unwrap();
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
 
     assert_eq!(game.name, "Updated Test Game (Japan)");
     assert_eq!(rom.name, "Test Game (Japan).rom");

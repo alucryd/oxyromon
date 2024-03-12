@@ -1,12 +1,13 @@
+use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
-use async_std::path::Path;
 use clap::Command;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::path::Path;
 use std::time::Duration;
 
 pub fn subcommand() -> Command {
@@ -38,7 +39,10 @@ async fn purge_system(
 
     for romfile in romfiles {
         let new_path = trash_directory.join(Path::new(&romfile.path).file_name().unwrap());
-        rename_file(progress_bar, &romfile.path, &new_path, false).await?;
+        romfile
+            .as_common()?
+            .rename(progress_bar, &new_path, false)
+            .await?;
         update_romfile(
             connection,
             romfile.id,

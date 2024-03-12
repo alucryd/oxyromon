@@ -11,7 +11,9 @@ use std::time::Duration;
 static MIGRATOR: Migrator = sqlx::migrate!();
 
 pub async fn establish_connection(url: &str) -> SqlitePool {
+    #[allow(clippy::needless_late_init)]
     let max_connections: u32;
+    #[allow(clippy::needless_late_init)]
     let locking_mode: &str;
     cfg_if! {
         if #[cfg(feature = "server")] {
@@ -197,6 +199,19 @@ pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, m
     .unwrap_or_else(|_| panic!("Error while updating system with id {} merging", merging));
 }
 
+pub async fn count_systems(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM systems
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting systems")
+    .count
+}
+
 pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
@@ -242,7 +257,6 @@ pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -
     .unwrap_or_else(|_| panic!("Error while finding systems with url {}", url))
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_systems_by_name_like(
     connection: &mut SqliteConnection,
     name: &str,
@@ -313,16 +327,16 @@ pub async fn create_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) -> i64 {
-    let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
-        INSERT INTO games (name, description, comment, bios, regions, system_id, parent_id, bios_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO games (name, description, comment, device, bios, regions, system_id, parent_id, bios_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         game_xml.name,
         game_xml.description,
         game_xml.comment,
-        bios,
+        game_xml.isdevice,
+        game_xml.isbios,
         regions,
         system_id,
         parent_id,
@@ -343,17 +357,17 @@ pub async fn update_game_from_xml(
     parent_id: Option<i64>,
     bios_id: Option<i64>,
 ) {
-    let bios = game_xml.isbios.is_some() && game_xml.isbios.as_ref().unwrap() == "yes";
     sqlx::query!(
         "
         UPDATE games
-        SET name = ?, description = ?, comment = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
+        SET name = ?, description = ?, comment = ?, device = ?, bios = ?, regions = ?, system_id = ?, parent_id = ?, bios_id = ?
         WHERE id = ?
         ",
         game_xml.name,
         game_xml.description,
         game_xml.comment,
-        bios,
+        game_xml.isdevice,
+        game_xml.isbios,
         regions,
         system_id,
         parent_id,
@@ -449,7 +463,6 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_complete(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_jbfolder_games_by_system_id_mark_complete(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -563,7 +576,6 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_incomplete(
     .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_jbfolder_games_by_system_id_mark_incomplete(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -617,7 +629,6 @@ pub async fn update_games_sorting(
         .rows_affected()
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jbfolder: bool) {
     sqlx::query!(
         "
@@ -646,6 +657,19 @@ pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, pl
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
+}
+
+pub async fn count_games(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM games
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting games")
+    .count
 }
 
 pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
@@ -681,7 +705,6 @@ pub async fn find_games_by_system_id(
     .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_wanted_games_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -888,7 +911,6 @@ pub async fn delete_game_by_name_and_system_id(
     });
 }
 
-#[cfg(feature = "ird")]
 pub async fn create_rom(
     connection: &mut SqliteConnection,
     name: &str,
@@ -945,7 +967,6 @@ pub async fn create_rom_from_xml(
     .last_insert_rowid()
 }
 
-#[cfg(feature = "ird")]
 pub async fn update_rom(
     connection: &mut SqliteConnection,
     id: i64,
@@ -1038,6 +1059,19 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .fetch_one(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
+}
+
+pub async fn count_roms(connection: &mut SqliteConnection) -> i32 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM roms
+        ",
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting roms")
+    .count
 }
 
 pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
@@ -2073,7 +2107,6 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     .count
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
@@ -2112,7 +2145,6 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     })
 }
 
-#[cfg(feature = "ird")]
 pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
@@ -2150,7 +2182,6 @@ pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     .count
 }
 
-#[cfg(feature = "ird")]
 pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
     connection: &mut SqliteConnection,
     size: u64,
@@ -2184,7 +2215,6 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_parent_id(
     })
 }
 
-#[cfg(feature = "ird")]
 pub async fn count_roms_with_romfile_by_size_and_md5_and_parent_id(
     connection: &mut SqliteConnection,
     size: u64,
