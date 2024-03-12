@@ -8,6 +8,10 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
+    if ctrtool::get_version().await.is_err() {
+        return;
+    }
+
     // given
     let _guard = MUTEX.lock().await;
 

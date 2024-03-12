@@ -49,7 +49,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
 ) -> SimpleResult<Vec<ArchiveInfo>> {
-    progress_bar.set_message("Parsing CIA");
+    progress_bar.set_message("Parsing cia");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -59,7 +59,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
         .arg(cia_path.as_ref())
         .output()
         .await
-        .expect("Failed to parse CIA");
+        .expect("Failed to parse cia");
 
     if !output.status.success()
         // error expected when using -p with non-homebrew titles
@@ -136,7 +136,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
         .current_dir(directory)
         .output()
         .await
-        .expect("Failed to extract archive");
+        .expect("Failed to extract cia");
 
     let stderr = String::from_utf8(output.stderr).unwrap();
 
