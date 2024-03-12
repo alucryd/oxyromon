@@ -1,15 +1,3 @@
-# 0.19.0
-- Traits! Makes parts of the code actually reusable
-- Add an optional post-conversion check
-- Fix importing a couple more bogus DAT files
-- Accept ZIP files as input for `import-dats`
-- Add a `-u` flag to `import-roms` to skip user prompts
-- Add a `-s` flag to `convert-roms` to select systems by name 
-- Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
-- Add a `-f` flag in `purge-roms` to track and delete foreign files in the ROM directory
-- Add a new `export-roms` subcommand
-- Update 
-
 # 0.18.0
 
 - Replace `async-std` with `tokio`
@@ -21,6 +9,15 @@
 - Add support for ZSO
 - Add optional dependency on bchunk
 - Allow filtering games by name in `check-roms`
+- Traits! Makes parts of the code actually reusable
+- Add an optional post-conversion check
+- Fix importing a couple more bogus DAT files
+- Accept ZIP files as input for `import-dats`
+- Add a `-u` flag to `import-roms` to skip user prompts
+- Add a `-s` flag to `convert-roms` to select systems by name 
+- Update the `-s` flag in `import-roms` to behave the same as in `convert-roms`
+- Add a `-f` flag in `purge-roms` to track and delete foreign files in the ROM directory
+- Add a new `export-roms` subcommand
 
 # 0.17.0
 
