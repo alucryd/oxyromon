@@ -108,7 +108,10 @@ pub async fn main(
             progress_bar.println("Custom system name requires a single DAT file");
             return Ok(());
         }
-        if find_system_by_name(connection, custom_name.unwrap()).await.is_some() {
+        if find_system_by_name(connection, custom_name.unwrap())
+            .await
+            .is_some()
+        {
             progress_bar.println("Custom system name must not match a known system name");
             return Ok(());
         }
@@ -649,6 +652,8 @@ pub async fn reimport_orphan_romfiles(
 mod test_dat;
 #[cfg(test)]
 mod test_dat_custom_name;
+#[cfg(test)]
+mod test_dat_custom_name_revert;
 #[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
