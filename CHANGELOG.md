@@ -1,3 +1,7 @@
+# 0.19.0
+
+- Add a `-n` flag to `import-dats` to override the system name
+
 # 0.18.0
 
 - Replace `async-std` with `tokio`

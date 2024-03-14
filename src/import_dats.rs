@@ -68,6 +68,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("NAME")
+                .short('n')
+                .long("name")
+                .help("Override the system name")
+                .required(false)
+                .num_args(1),
+        )
 }
 
 pub async fn main(
@@ -75,6 +83,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    let system_name = matches.get_one::<String>("NAME");
+
     let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
         .get_many::<PathBuf>("DATS")
         .unwrap()
@@ -93,17 +103,25 @@ pub async fn main(
         }
     }
 
+    if system_name.is_some() && dat_paths.len() > 1 {
+        progress_bar.println("Overriding the system name requires a single DAT file");
+        return Ok(());
+    }
+
     for dat_path in dat_paths {
         progress_bar.println(format!(
             "Processing \"{}\"",
             &dat_path.file_name().unwrap().to_str().unwrap()
         ));
-        let (datfile_xml, detector_xml) = parse_dat(
+        let (mut datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
             matches.get_flag("SKIP_HEADER"),
         )
         .await?;
+        if let Some(system_name) = system_name {
+            datfile_xml.system.name = system_name.to_string();
+        }
         if !matches.get_flag("INFO") {
             import_dat(
                 connection,
@@ -635,6 +653,8 @@ mod test_dat_mame;
 mod test_dat_outdated_forced;
 #[cfg(test)]
 mod test_dat_outdated_should_do_nothing;
+#[cfg(test)]
+mod test_dat_override_name;
 #[cfg(test)]
 mod test_dat_parent_clone;
 #[cfg(test)]
