@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO systems (name, custom_name, description, version, url, arcade)\n        VALUES (?, ?, ?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "6f7c5e7a1dc99958b3cd88efdcdb39661f1ea61b940fb0408a5001dc686c0d49"
+}

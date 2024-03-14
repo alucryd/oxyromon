@@ -217,10 +217,10 @@ async fn purge_foreign_romfiles(
 }
 
 #[cfg(test)]
+mod test_foreign;
+#[cfg(test)]
 mod test_missing;
 #[cfg(test)]
 mod test_orphans;
 #[cfg(test)]
 mod test_trashed;
-#[cfg(test)]
-mod test_foreign;

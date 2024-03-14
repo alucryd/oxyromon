@@ -72,7 +72,7 @@ pub fn subcommand() -> Command {
             Arg::new("NAME")
                 .short('n')
                 .long("name")
-                .help("Override the system name")
+                .help("Customize the system name")
                 .required(false)
                 .num_args(1),
         )
@@ -83,8 +83,6 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let system_name = matches.get_one::<String>("NAME");
-
     let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
         .get_many::<PathBuf>("DATS")
         .unwrap()
@@ -103,9 +101,17 @@ pub async fn main(
         }
     }
 
-    if system_name.is_some() && dat_paths.len() > 1 {
-        progress_bar.println("Overriding the system name requires a single DAT file");
-        return Ok(());
+    let custom_name = matches.get_one::<String>("NAME");
+
+    if custom_name.is_some() {
+        if dat_paths.len() > 1 {
+            progress_bar.println("Custom system name requires a single DAT file");
+            return Ok(());
+        }
+        if find_system_by_name(connection, custom_name.unwrap()).await.is_some() {
+            progress_bar.println("Custom system name must not match a known system name");
+            return Ok(());
+        }
     }
 
     for dat_path in dat_paths {
@@ -113,21 +119,19 @@ pub async fn main(
             "Processing \"{}\"",
             &dat_path.file_name().unwrap().to_str().unwrap()
         ));
-        let (mut datfile_xml, detector_xml) = parse_dat(
+        let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
             matches.get_flag("SKIP_HEADER"),
         )
         .await?;
-        if let Some(system_name) = system_name {
-            datfile_xml.system.name = system_name.to_string();
-        }
         if !matches.get_flag("INFO") {
             import_dat(
                 connection,
                 progress_bar,
                 &datfile_xml,
                 &detector_xml,
+                custom_name,
                 matches.get_flag("ARCADE"),
                 matches.get_flag("FORCE"),
             )
@@ -186,6 +190,7 @@ pub async fn import_dat(
     progress_bar: &ProgressBar,
     datfile_xml: &DatfileXml,
     detector_xml: &Option<DetectorXml>,
+    custom_name: Option<&String>,
     arcade: bool,
     force: bool,
 ) -> SimpleResult<()> {
@@ -198,6 +203,7 @@ pub async fn import_dat(
         &mut transaction,
         progress_bar,
         &datfile_xml.system,
+        custom_name,
         arcade,
         force,
     )
@@ -284,19 +290,21 @@ async fn create_or_update_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
     force: bool,
 ) -> Option<i64> {
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                update_system_from_xml(connection, system.id, system_xml, arcade).await;
+                update_system_from_xml(connection, system.id, system_xml, custom_name, arcade)
+                    .await;
                 Some(system.id)
             } else {
                 None
             }
         }
-        None => Some(create_system_from_xml(connection, system_xml, arcade).await),
+        None => Some(create_system_from_xml(connection, system_xml, custom_name, arcade).await),
     }
 }
 
@@ -640,6 +648,8 @@ pub async fn reimport_orphan_romfiles(
 #[cfg(test)]
 mod test_dat;
 #[cfg(test)]
+mod test_dat_custom_name;
+#[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
 mod test_dat_headered_duplicate_clrmamepro;
@@ -653,8 +663,6 @@ mod test_dat_mame;
 mod test_dat_outdated_forced;
 #[cfg(test)]
 mod test_dat_outdated_should_do_nothing;
-#[cfg(test)]
-mod test_dat_override_name;
 #[cfg(test)]
 mod test_dat_parent_clone;
 #[cfg(test)]

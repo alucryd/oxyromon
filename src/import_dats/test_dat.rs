@@ -29,6 +29,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
+        None,
         false,
         false,
     )

@@ -206,16 +206,21 @@ pub async fn get_system_directory(
     connection: &mut SqliteConnection,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let system_name = if get_bool(connection, "GROUP_SUBSYSTEMS").await {
-        SYSTEM_NAME_REGEX
-            .captures(&system.name)
-            .unwrap()
-            .get(2)
-            .unwrap()
-            .as_str()
-            .to_owned()
-    } else {
-        system.name.trim().to_owned()
+    let system_name = match &system.custom_name {
+        Some(custom_name) => custom_name.to_owned(),
+        None => {
+            if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+                SYSTEM_NAME_REGEX
+                    .captures(&system.name)
+                    .unwrap()
+                    .get(2)
+                    .unwrap()
+                    .as_str()
+                    .to_owned()
+            } else {
+                system.name.trim().to_owned()
+            }
+        }
     };
     let system_directory = get_rom_directory(connection).await.join(system_name);
     Ok(system_directory)
@@ -353,5 +358,7 @@ mod test_system_directory_no_group_subsystems;
 #[cfg(test)]
 mod test_system_directory_group_subsystems;
 
+#[cfg(test)]
+mod test_system_directory_custom_name;
 #[cfg(test)]
 mod test_system_directory_group_non_redump;

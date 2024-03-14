@@ -295,6 +295,7 @@ async fn download_redump_dat(
                     progress_bar,
                     &datfile_xml,
                     &detector_xml,
+                    None,
                     false,
                     force,
                 )

@@ -20,7 +20,7 @@ async fn test() {
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
     set_tmp_directory(PathBuf::from(tmp_directory.path()));
 
-    let dat_path = test_directory.join("Test System (20211124) (Headered) (Embedded).dat");
+    let dat_path = test_directory.join("Test System (20200721).dat");
     let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
     // when
@@ -29,7 +29,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
-        None,
+        Some(&String::from("Custom Test System")),
         false,
         false,
     )
@@ -41,12 +41,9 @@ async fn test() {
     assert_eq!(systems.len(), 1);
 
     let system = systems.first().unwrap();
-    assert_eq!(system.name, "Test System (Headered) (Embedded)");
+    assert_eq!(system.name, "Test System");
+    assert_eq!(system.custom_name, Some(String::from("Custom Test System")));
 
-    assert!(find_header_by_system_id(&mut connection, system.id)
-        .await
-        .is_some());
-
-    assert_eq!(find_games(&mut connection).await.len(), 1);
-    assert_eq!(find_roms(&mut connection).await.len(), 1);
+    assert_eq!(find_games(&mut connection).await.len(), 6);
+    assert_eq!(find_roms(&mut connection).await.len(), 8);
 }

@@ -42,6 +42,11 @@
         "name": "merging",
         "ordinal": 7,
         "type_info": "Int64"
+      },
+      {
+        "name": "custom_name",
+        "ordinal": 8,
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -55,7 +60,8 @@
       true,
       false,
       false,
-      false
+      false,
+      true
     ]
   },
   "hash": "51e99197eb918ba9849f524b9ab79c683bb202ec97d1aba98fd68a1c18027e5f"

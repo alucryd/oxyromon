@@ -7,6 +7,7 @@ async fn test() {
     let system = System {
         id: 1,
         name: String::from("Test System"),
+        custom_name: None,
         description: String::from(""),
         version: String::from(""),
         url: Some(String::from("")),

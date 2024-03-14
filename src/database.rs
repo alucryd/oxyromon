@@ -94,15 +94,17 @@ pub async fn close_connection(pool: &SqlitePool) {
 pub async fn create_system_from_xml(
     connection: &mut SqliteConnection,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
 ) -> i64 {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
-        INSERT INTO systems (name, description, version, url, arcade)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO systems (name, custom_name, description, version, url, arcade)
+        VALUES (?, ?, ?, ?, ?, ?)
         ",
         name,
+        custom_name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -118,16 +120,18 @@ pub async fn update_system_from_xml(
     connection: &mut SqliteConnection,
     id: i64,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
 ) {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
         UPDATE systems
-        SET name = ?, description = ?, version = ?, url = ?, arcade = ?
+        SET name = ?, custom_name = ?, description = ?, version = ?, url = ?, arcade = ?
         WHERE id = ?
         ",
         name,
+        custom_name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
