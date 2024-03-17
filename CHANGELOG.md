@@ -1,6 +1,7 @@
 # 0.19.0
 
 - Add a `-n` flag to `import-dats` to override the system name
+- Enhance the rom matching algorithm in `import-roms` to reduce prompts when multiple matches are found
 
 # 0.18.0
 

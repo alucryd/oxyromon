@@ -59,6 +59,7 @@ async fn test() {
         &mut connection,
         &progress_bar,
         &Some(&system),
+        &HashSet::new(),
         &romfile_path,
         &HashAlgorithm::Crc,
         true,
