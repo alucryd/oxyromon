@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.18.0</h1>
+<h1 style="text-align: center;">oxyROMon 0.19.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -451,6 +451,7 @@ Warning: CHD for Dreamcast requires at least chdman 0.262 but some games will st
         -n, --name <NAME>      Select games by name
         -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
+        -r, --recompress       Force conversion even if already in the selected format
         -d, --diff             Print size differences
         -c, --check            Check ROM files after conversion
         -h, --help             Print help information

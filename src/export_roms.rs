@@ -499,13 +499,7 @@ async fn to_archive(
                 .await?;
             let cue_bin_romfile = chd_romfile
                 .as_chd_with_cue(&cue_romfile.path)?
-                .to_cue_bin(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    &cue_romfile.as_common()?,
-                    &bin_roms,
-                    true,
-                )
+                .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, true)
                 .await?;
             for bin_romfile in cue_bin_romfile.bin_romfiles {
                 bin_romfile
@@ -841,12 +835,7 @@ async fn to_chd(
                             .map(|bin_iso_romfile| &bin_iso_romfile.path)
                             .collect::<Vec<&PathBuf>>(),
                     )?
-                    .to_chd(
-                        progress_bar,
-                        destination_directory,
-                        &Some(cue_romfile),
-                        &MediaType::Cd,
-                    )
+                    .to_chd(progress_bar, destination_directory, &MediaType::Cd)
                     .await?
             }
             None => {
@@ -854,7 +843,7 @@ async fn to_chd(
                     .first()
                     .unwrap()
                     .as_iso()?
-                    .to_chd(progress_bar, destination_directory, &None, &MediaType::Dvd)
+                    .to_chd(progress_bar, destination_directory, &MediaType::Dvd)
                     .await?
             }
         };
@@ -879,12 +868,7 @@ async fn to_chd(
                     .map(|romfile| &romfile.path)
                     .collect::<Vec<&String>>(),
             )?
-            .to_chd(
-                progress_bar,
-                destination_directory,
-                &Some(&cue_romfile.as_common()?),
-                &MediaType::Cd,
-            )
+            .to_chd(progress_bar, destination_directory, &MediaType::Cd)
             .await?;
     }
 
@@ -894,7 +878,7 @@ async fn to_chd(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_iso()?
-                .to_chd(progress_bar, destination_directory, &None, &MediaType::Dvd)
+                .to_chd(progress_bar, destination_directory, &MediaType::Dvd)
                 .await?;
         }
     }
@@ -908,7 +892,7 @@ async fn to_chd(
                 .as_xso()?
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_chd(progress_bar, destination_directory, &None, &MediaType::Dvd)
+                .to_chd(progress_bar, destination_directory, &MediaType::Dvd)
                 .await?;
         }
     }
@@ -922,7 +906,7 @@ async fn to_chd(
                 .as_xso()?
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_chd(progress_bar, destination_directory, &None, &MediaType::Dvd)
+                .to_chd(progress_bar, destination_directory, &MediaType::Dvd)
                 .await?;
         }
     }
@@ -1654,13 +1638,7 @@ async fn to_iso(
                 .first()
                 .unwrap()
                 .as_chd_with_cue(&cue_romfile.path)?
-                .to_cue_bin(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    &cue_romfile,
-                    &bin_roms,
-                    false,
-                )
+                .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
                 .await?
                 .to_iso(progress_bar, destination_directory)
                 .await?;
@@ -1859,13 +1837,7 @@ async fn to_original(
                 .first()
                 .unwrap()
                 .as_chd_with_cue(&cue_romfile.path)?
-                .to_cue_bin(
-                    progress_bar,
-                    destination_directory,
-                    &cue_romfile,
-                    &bin_roms,
-                    false,
-                )
+                .to_cue_bin(progress_bar, destination_directory, &bin_roms, false)
                 .await?;
             copy_file(
                 progress_bar,

@@ -83,6 +83,7 @@ async fn test_cue_bin_to_chd() {
         &progress_bar,
         roms_by_game_id,
         romfiles_by_id,
+        false,
         true,
         true,
         &HashAlgorithm::Crc,

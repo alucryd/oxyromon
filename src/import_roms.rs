@@ -802,7 +802,6 @@ async fn import_chd<P: AsRef<Path>>(
                 .to_cue_bin(
                     progress_bar,
                     &tmp_directory.path(),
-                    &cue_romfile,
                     &roms.iter().collect::<Vec<&Rom>>(),
                     true,
                 )

@@ -1,3 +1,15 @@
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::mem::drop;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+
+use clap::builder::PossibleValuesParser;
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use indicatif::{HumanBytes, ProgressBar};
+use rayon::prelude::*;
+use sqlx::sqlite::SqliteConnection;
+
 use super::chdman;
 use super::chdman::{AsChd, MediaType, ToChd};
 use super::common::*;
@@ -6,7 +18,7 @@ use super::database::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, ToRvz};
 use super::maxcso;
-use super::maxcso::{AsXso, ToXso};
+use super::maxcso::{AsXso, ToXso, XsoType};
 use super::model::*;
 use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
@@ -15,16 +27,6 @@ use super::sevenzip;
 use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
 use super::util::*;
 use super::SimpleResult;
-use clap::builder::PossibleValuesParser;
-use clap::{Arg, ArgAction, ArgMatches, Command};
-use indicatif::{HumanBytes, ProgressBar};
-use rayon::prelude::*;
-use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::mem::drop;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
@@ -62,6 +64,14 @@ pub fn subcommand() -> Command {
                 .short('a')
                 .long("all")
                 .help("Convert all systems/games")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("RECOMPRESS")
+                .short('r')
+                .long("recompress")
+                .help("Force conversion even if already in the selected format")
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
@@ -120,6 +130,7 @@ pub async fn main(
         Some("sha1") => HashAlgorithm::Sha1,
         Some(_) | None => bail!("Not possible"),
     };
+    let recompress = matches.get_flag("RECOMPRESS");
     let diff = matches.get_flag("DIFF");
     let check = matches.get_flag("CHECK");
 
@@ -258,6 +269,7 @@ pub async fn main(
                     roms_by_game_id,
                     games_by_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -276,6 +288,7 @@ pub async fn main(
                     roms_by_game_id,
                     games_by_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -290,6 +303,7 @@ pub async fn main(
                     progress_bar,
                     roms_by_game_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -302,6 +316,7 @@ pub async fn main(
                     progress_bar,
                     roms_by_game_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -314,6 +329,7 @@ pub async fn main(
                     progress_bar,
                     roms_by_game_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -332,6 +348,7 @@ pub async fn main(
                     progress_bar,
                     roms_by_game_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -347,6 +364,7 @@ pub async fn main(
                     progress_bar,
                     roms_by_game_id,
                     romfiles_by_id,
+                    recompress,
                     diff,
                     check,
                     &hash_algorithm,
@@ -371,6 +389,7 @@ async fn to_archive(
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -538,13 +557,7 @@ async fn to_archive(
             archive_romfiles.push(archive_romfile);
             let cue_bin_romfile = chd_romfile
                 .as_chd_with_cue(&cue_romfile.path)?
-                .to_cue_bin(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    &cue_romfile.as_common()?,
-                    &bin_roms,
-                    true,
-                )
+                .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, true)
                 .await?;
 
             for bin_romfile in cue_bin_romfile.bin_romfiles {
@@ -902,59 +915,107 @@ async fn to_archive(
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
 
+        let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
+        let romfile = romfiles_by_id
+            .get(&roms.first().unwrap().romfile_id.unwrap())
+            .unwrap();
+        let source_archive_type = romfile.as_archive(&roms.first().unwrap())?.archive_type;
+
+        let mut archive_romfiles_roms: Vec<(ArchiveRomfile, &Rom)> = Vec::new();
+
         for rom in roms {
-            let game = games_by_id.get(&rom.game_id).unwrap();
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            if source_archive_type != archive_type {
+                archive_romfiles_roms.push((
+                    romfile
+                        .as_archive(rom)?
+                        .to_archive(
+                            progress_bar,
+                            &tmp_directory.path(),
+                            &romfile.as_common()?.path.parent().unwrap(),
+                            &game.name,
+                            &archive_type,
+                            compression_level,
+                            solid,
+                        )
+                        .await?,
+                    rom,
+                ));
+            } else if recompress {
+                archive_romfiles_roms.push((
+                    romfile
+                        .as_archive(rom)?
+                        .to_archive(
+                            progress_bar,
+                            &tmp_directory.path(),
+                            &tmp_directory.path(),
+                            &game.name,
+                            &archive_type,
+                            compression_level,
+                            solid,
+                        )
+                        .await?,
+                    rom,
+                ));
+            }
+        }
 
-            let mut archive_romfile = romfile.as_archive(rom)?;
-
-            // skip archives that are the same type
-            if archive_romfile.archive_type == archive_type {
-                continue;
+        if let Some(archive_romfile_rom) = archive_romfiles_roms.first() {
+            if check {
+                let mut error = false;
+                for (archive_romfile, rom) in &archive_romfiles_roms {
+                    if archive_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[&rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                    {
+                        error = true;
+                        break;
+                    };
+                }
+                if error {
+                    progress_bar.println("Converted files don't match the original");
+                    if source_archive_type != archive_type {
+                        archive_romfile_rom
+                            .0
+                            .as_common()?
+                            .delete(progress_bar, false)
+                            .await?;
+                    }
+                    continue;
+                }
             }
 
-            archive_romfile = archive_romfile
-                .to_archive(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    &romfile.as_common()?.path.parent().unwrap(),
-                    &game.name,
-                    &archive_type,
-                    compression_level,
-                    solid,
+            if source_archive_type != archive_type {
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &archive_romfile_rom.0.as_common()?.to_string(),
+                    archive_romfile_rom.0.as_common()?.get_size().await?,
                 )
-                .await?;
-
-            if check
-                && archive_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
-                    .await
-                    .is_err()
-            {
-                progress_bar.println("Converted file doesn't match the original");
-                archive_romfile
+                .await;
+            } else {
+                romfile.as_common()?.delete(progress_bar, false).await?;
+                archive_romfile_rom
+                    .0
                     .as_common()?
-                    .delete(progress_bar, false)
+                    .rename(progress_bar, &romfile.path, false)
                     .await?;
-                continue;
-            };
 
-            update_romfile(
-                &mut transaction,
-                romfile.id,
-                &archive_romfile.as_common()?.to_string(),
-                archive_romfile.as_common()?.get_size().await?,
-            )
-            .await;
-
-            romfile.as_common()?.delete(progress_bar, false).await?;
-        }
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+        };
 
         commit_transaction(transaction).await;
     }
@@ -1152,6 +1213,7 @@ async fn to_chd(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -1216,6 +1278,18 @@ async fn to_chd(
                     .unwrap()
                     .path
                     .ends_with(ZSO_EXTENSION)
+            })
+        });
+
+    // partition CHDs
+    let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CHD_EXTENSION)
             })
         });
 
@@ -1289,7 +1363,6 @@ async fn to_chd(
                     .to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
-                        &Some(cue_romfile),
                         &MediaType::Cd,
                     )
                     .await?
@@ -1302,7 +1375,6 @@ async fn to_chd(
                     .to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
-                        &None,
                         &MediaType::Dvd,
                     )
                     .await?
@@ -1404,7 +1476,6 @@ async fn to_chd(
             .to_chd(
                 progress_bar,
                 &cue_romfile.as_common()?.path.parent().unwrap(),
-                &Some(&cue_romfile.as_common()?),
                 &MediaType::Cd,
             )
             .await?;
@@ -1464,7 +1535,6 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
-                    &None,
                     &MediaType::Dvd,
                 )
                 .await?;
@@ -1514,7 +1584,6 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
-                    &None,
                     &MediaType::Dvd,
                 )
                 .await?;
@@ -1564,7 +1633,6 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
-                    &None,
                     &MediaType::Dvd,
                 )
                 .await?;
@@ -1600,6 +1668,117 @@ async fn to_chd(
         commit_transaction(transaction).await;
     }
 
+    // convert CHDs
+    if recompress {
+        for roms in chds.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+
+            if roms.len() == 1 {
+                let romfile = romfiles_by_id
+                    .get(&roms.first().unwrap().romfile_id.unwrap())
+                    .unwrap();
+                let chd_romfile = romfile
+                    .as_chd()?
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_chd(progress_bar, &tmp_directory.path(), &MediaType::Dvd)
+                    .await?;
+
+                if check
+                    && chd_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[roms.first().unwrap()],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    chd_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    chd_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            } else {
+                let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+                    .into_par_iter()
+                    .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+
+                let mut romfiles: Vec<&Romfile> = bin_roms
+                    .par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .collect();
+                romfiles.dedup();
+
+                if romfiles.len() > 1 {
+                    bail!("Multiple CHDs found");
+                }
+
+                let romfile = romfiles.first().unwrap();
+                let cue_romfile = romfiles_by_id
+                    .get(&cue_roms.first().unwrap().romfile_id.unwrap())
+                    .unwrap()
+                    .as_common()?;
+
+                let chd_romfile = romfile
+                    .as_chd_with_cue(&cue_romfile.path)?
+                    .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
+                    .await?
+                    .to_chd(progress_bar, &tmp_directory.path(), &MediaType::Cd)
+                    .await?;
+
+                if check
+                    && chd_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &bin_roms,
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    chd_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    chd_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+
+            commit_transaction(transaction).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -1608,6 +1787,7 @@ async fn to_cso(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -1643,6 +1823,32 @@ async fn to_cso(
                         .unwrap()
                         .path
                         .ends_with(CHD_EXTENSION)
+                })
+        });
+
+    // partition ZSOs
+    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.len() == 1
+                && roms.par_iter().any(|rom| {
+                    romfiles_by_id
+                        .get(&rom.romfile_id.unwrap())
+                        .unwrap()
+                        .path
+                        .ends_with(ZSO_EXTENSION)
+                })
+        });
+
+    // partition CSOs
+    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.len() == 1
+                && roms.par_iter().any(|rom| {
+                    romfiles_by_id
+                        .get(&rom.romfile_id.unwrap())
+                        .unwrap()
+                        .path
+                        .ends_with(CSO_EXTENSION)
                 })
         });
 
@@ -1810,6 +2016,105 @@ async fn to_cso(
         commit_transaction(transaction).await;
     }
 
+    // convert ZSOs
+    for roms in zsos.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let cso_romfile = romfile
+                .as_xso()?
+                .to_iso(progress_bar, &tmp_directory.path())
+                .await?
+                .to_xso(
+                    progress_bar,
+                    &romfile.as_common()?.path.parent().unwrap(),
+                    &maxcso::XsoType::Cso,
+                )
+                .await?;
+            if check
+                && cso_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                cso_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&cso_romfile.path]).await?;
+            }
+            update_romfile(
+                &mut transaction,
+                romfile.id,
+                cso_romfile.path.as_os_str().to_str().unwrap(),
+                cso_romfile.path.metadata().unwrap().len(),
+            )
+            .await;
+            romfile.as_common()?.delete(progress_bar, false).await?;
+        }
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert CSOs
+    if recompress {
+        for roms in csos.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+
+            for rom in roms {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let cso_romfile = romfile
+                    .as_xso()?
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_xso(progress_bar, &tmp_directory.path(), &XsoType::Cso)
+                    .await?;
+
+                if check
+                    && cso_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    cso_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    cso_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+
+            commit_transaction(transaction).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -1818,6 +2123,7 @@ async fn to_nsz(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -1840,6 +2146,18 @@ async fn to_nsz(
                     .unwrap()
                     .path
                     .ends_with(NSP_EXTENSION)
+            })
+        });
+
+    // partition NSZs
+    let (nszs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(NSZ_EXTENSION)
             })
         });
 
@@ -1952,6 +2270,57 @@ async fn to_nsz(
         commit_transaction(transaction).await;
     }
 
+    // convert NSZs
+    if recompress {
+        for roms in nszs.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+
+            for rom in roms {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let nsz_romfile = romfile
+                    .as_nsz()?
+                    .to_nsp(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_nsz(progress_bar, &tmp_directory.path())
+                    .await?;
+
+                if check
+                    && nsz_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    nsz_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    nsz_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+
+            commit_transaction(transaction).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -1961,6 +2330,7 @@ async fn to_rvz(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -1986,6 +2356,18 @@ async fn to_rvz(
                     .unwrap()
                     .path
                     .ends_with(ISO_EXTENSION)
+            })
+        });
+
+    // partition RVZs
+    let (rvzs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(RVZ_EXTENSION)
             })
         });
 
@@ -2109,6 +2491,63 @@ async fn to_rvz(
         commit_transaction(transaction).await;
     }
 
+    // convert RVZs
+    if recompress {
+        for roms in rvzs.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+
+            for rom in roms {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let rvz_romfile = romfile
+                    .as_rvz()?
+                    .to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap())
+                    .await?
+                    .to_rvz(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        compression_algorithm,
+                        compression_level,
+                        block_size,
+                    )
+                    .await?;
+
+                if check
+                    && rvz_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    rvz_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    rvz_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+
+            commit_transaction(transaction).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -2117,6 +2556,7 @@ async fn to_zso(
     progress_bar: &ProgressBar,
     roms_by_game_id: HashMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    recompress: bool,
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
@@ -2152,6 +2592,32 @@ async fn to_zso(
                         .unwrap()
                         .path
                         .ends_with(CHD_EXTENSION)
+                })
+        });
+
+    // partition CSOs
+    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.len() == 1
+                && roms.par_iter().any(|rom| {
+                    romfiles_by_id
+                        .get(&rom.romfile_id.unwrap())
+                        .unwrap()
+                        .path
+                        .ends_with(CSO_EXTENSION)
+                })
+        });
+
+    // partition ZSOs
+    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.len() == 1
+                && roms.par_iter().any(|rom| {
+                    romfiles_by_id
+                        .get(&rom.romfile_id.unwrap())
+                        .unwrap()
+                        .path
+                        .ends_with(ZSO_EXTENSION)
                 })
         });
 
@@ -2319,6 +2785,104 @@ async fn to_zso(
         commit_transaction(transaction).await;
     }
 
+    // convert CSOs
+    for roms in csos.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        for rom in roms {
+            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            let zso_romfile = romfile
+                .as_xso()?
+                .to_iso(progress_bar, &tmp_directory.path())
+                .await?
+                .to_xso(
+                    progress_bar,
+                    &romfile.as_common()?.path.parent().unwrap(),
+                    &maxcso::XsoType::Zso,
+                )
+                .await?;
+            if check
+                && zso_romfile
+                    .check(
+                        &mut transaction,
+                        progress_bar,
+                        &None,
+                        &[rom],
+                        hash_algorithm,
+                    )
+                    .await
+                    .is_err()
+            {
+                progress_bar.println("Converted file doesn't match the original");
+                zso_romfile.as_common()?.delete(progress_bar, false).await?;
+                continue;
+            };
+            if diff {
+                print_diff(progress_bar, &[rom], &[&romfile.path], &[&zso_romfile.path]).await?;
+            }
+            update_romfile(
+                &mut transaction,
+                romfile.id,
+                zso_romfile.path.as_os_str().to_str().unwrap(),
+                zso_romfile.path.metadata().unwrap().len(),
+            )
+            .await;
+            romfile.as_common()?.delete(progress_bar, false).await?;
+        }
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert ZSOs
+    if recompress {
+        for roms in zsos.values() {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut transaction = begin_transaction(connection).await;
+
+            for rom in roms {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                let zso_romfile = romfile
+                    .as_xso()?
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_xso(progress_bar, &tmp_directory.path(), &XsoType::Zso)
+                    .await?;
+
+                if check
+                    && zso_romfile
+                        .check(
+                            &mut transaction,
+                            progress_bar,
+                            &None,
+                            &[rom],
+                            hash_algorithm,
+                        )
+                        .await
+                        .is_err()
+                {
+                    progress_bar.println("Converted file doesn't match the original");
+                    zso_romfile.as_common()?.delete(progress_bar, false).await?;
+                    continue;
+                } else {
+                    romfile.as_common()?.delete(progress_bar, false).await?;
+                    zso_romfile
+                        .as_common()?
+                        .rename(progress_bar, &romfile.path, false)
+                        .await?;
+                };
+
+                update_romfile(
+                    &mut transaction,
+                    romfile.id,
+                    &romfile.as_common()?.to_string(),
+                    romfile.as_common()?.get_size().await?,
+                )
+                .await;
+            }
+
+            commit_transaction(transaction).await;
+        }
+    }
     Ok(())
 }
 
@@ -2576,7 +3140,6 @@ async fn to_original(
                 .to_cue_bin(
                     progress_bar,
                     &cue_romfile.path.parent().unwrap(),
-                    &cue_romfile,
                     &bin_roms,
                     false,
                 )
@@ -2855,9 +3418,15 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
 #[cfg(test)]
 mod test_cso_to_chd;
 #[cfg(test)]
+mod test_cso_to_cso;
+#[cfg(test)]
 mod test_cso_to_iso;
 #[cfg(test)]
 mod test_cso_to_sevenzip_iso;
+#[cfg(test)]
+mod test_cso_to_zso;
+#[cfg(test)]
+mod test_iso_chd_to_chd;
 #[cfg(test)]
 mod test_iso_chd_to_cso;
 #[cfg(test)]
@@ -2874,6 +3443,8 @@ mod test_iso_to_cso;
 mod test_iso_to_rvz;
 #[cfg(test)]
 mod test_iso_to_zso;
+#[cfg(test)]
+mod test_multiple_tracks_chd_to_chd;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(test)]
@@ -2897,6 +3468,8 @@ mod test_original_to_zip_with_incorrect_name;
 #[cfg(test)]
 mod test_rvz_to_iso;
 #[cfg(test)]
+mod test_rvz_to_rvz;
+#[cfg(test)]
 mod test_rvz_to_sevenzip_iso;
 #[cfg(test)]
 mod test_sevenzip_iso_to_chd;
@@ -2909,16 +3482,24 @@ mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
 mod test_sevenzip_to_original;
 #[cfg(test)]
+mod test_sevenzip_to_sevenzip;
+#[cfg(test)]
 mod test_sevenzip_to_zip;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]
 mod test_zip_to_sevenzip;
 #[cfg(test)]
+mod test_zip_to_zip;
+#[cfg(test)]
 mod test_zip_to_zip_should_do_nothing;
 #[cfg(test)]
 mod test_zso_to_chd;
 #[cfg(test)]
+mod test_zso_to_cso;
+#[cfg(test)]
 mod test_zso_to_iso;
 #[cfg(test)]
 mod test_zso_to_sevenzip_iso;
+#[cfg(test)]
+mod test_zso_to_zso;

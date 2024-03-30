@@ -79,6 +79,7 @@ async fn test() {
         &progress_bar,
         roms_by_game_id,
         romfiles_by_id,
+        false,
         true,
         true,
         &HashAlgorithm::Crc,

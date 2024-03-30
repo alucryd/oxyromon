@@ -90,7 +90,7 @@ name = "oxyromon"
 path = "src/main.rs"
 
 [profile.dev]
-debug = 0
+debug = 1
 
 [profile.release]
 lto = true

@@ -29,16 +29,9 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.zip");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd"),
+        test_directory.join("Test Game (USA, Europe).rom.zip"),
         &romfile_path,
     )
     .await
@@ -57,25 +50,28 @@ async fn test() {
 
     let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_game_ids(&mut connection, &[games[0].id]).await;
-    let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
-    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
-    for rom in &roms {
-        let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
-        romfiles_by_id.insert(romfile.id, romfile);
-    }
+    let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
+    let old_mtime = fs::metadata(&romfile.path)
+        .await
+        .unwrap()
+        .modified()
+        .unwrap();
     let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
+    let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
+    let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
+    romfiles_by_id.insert(romfile.id, romfile);
 
     // when
     to_archive(
         &mut connection,
         &progress_bar,
-        sevenzip::ArchiveType::Sevenzip,
+        sevenzip::ArchiveType::Zip,
         &system,
         roms_by_game_id,
         games_by_id,
         romfiles_by_id,
-        false,
+        true,
         false,
         true,
         &HashAlgorithm::Crc,
@@ -87,31 +83,28 @@ async fn test() {
 
     // then
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    assert_eq!(roms.len(), 3);
+    assert_eq!(roms.len(), 1);
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
 
+    let rom = roms.first().unwrap();
+    assert_eq!(rom.name, "Test Game (USA, Europe).rom");
+
     let romfile = romfiles.first().unwrap();
+    let new_mtime = fs::metadata(&romfile.path)
+        .await
+        .unwrap()
+        .modified()
+        .unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe) (CUE BIN).7z")
+            .join("Test Game (USA, Europe).zip")
             .as_os_str()
             .to_str()
             .unwrap(),
     );
     assert!(Path::new(&romfile.path).is_file());
-
-    let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
     assert_eq!(rom.romfile_id, Some(romfile.id));
-    let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-    let rom = roms.get(2).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-
-    let archive_romfiles = sevenzip::parse(&progress_bar, &romfile.path).await.unwrap();
-    assert_eq!(archive_romfiles.len(), 3);
+    assert_ne!(old_mtime, new_mtime);
 }

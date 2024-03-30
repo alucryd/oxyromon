@@ -12,8 +12,8 @@ use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
-use super::SimpleResult;
 use super::util::*;
+use super::SimpleResult;
 
 const CHDMAN: &str = "chdman";
 
@@ -51,33 +51,21 @@ impl Check for ChdRomfile {
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\"", self.as_common()?.to_string()));
         let tmp_directory = create_tmp_directory(connection).await?;
-        match &self.cue_path {
-            Some(cue_path) => {
-                let cue_romfile = CommonRomfile {
-                    path: cue_path.clone(),
-                };
-                let cue_bin_romfile = self
-                    .to_cue_bin(
-                        progress_bar,
-                        &tmp_directory.path(),
-                        &cue_romfile,
-                        roms,
-                        true,
-                    )
-                    .await?;
-                for (rom, bin_romfile) in roms.iter().zip(cue_bin_romfile.bin_romfiles) {
-                    bin_romfile
-                        .check(connection, progress_bar, header, &[rom], hash_algorithm)
-                        .await?;
-                }
-            }
-            None => {
-                let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
-                iso_romfile
-                    .as_common()?
-                    .check(connection, progress_bar, header, roms, hash_algorithm)
+        if self.cue_path.is_some() {
+            let cue_bin_romfile = self
+                .to_cue_bin(progress_bar, &tmp_directory.path(), roms, true)
+                .await?;
+            for (rom, bin_romfile) in roms.iter().zip(cue_bin_romfile.bin_romfiles) {
+                bin_romfile
+                    .check(connection, progress_bar, header, &[rom], hash_algorithm)
                     .await?;
             }
+        } else {
+            let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
+            iso_romfile
+                .as_common()?
+                .check(connection, progress_bar, header, roms, hash_algorithm)
+                .await?;
         }
         Ok(())
     }
@@ -88,7 +76,6 @@ pub trait ToChd {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        cue_romfile: &Option<&CommonRomfile>,
         media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile>;
 }
@@ -98,7 +85,6 @@ impl ToChd for CueBinRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        cue_romfile: &Option<&CommonRomfile>,
         media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile> {
         let path = create_chd(
@@ -110,7 +96,7 @@ impl ToChd for CueBinRomfile {
         .await?;
         Ok(ChdRomfile {
             path,
-            cue_path: cue_romfile.map(|romfile| romfile.path.clone()),
+            cue_path: Some(self.cue_romfile.path.clone()),
         })
     }
 }
@@ -120,13 +106,12 @@ impl ToChd for IsoRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        cue_romfile: &Option<&CommonRomfile>,
         media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile> {
         let path = create_chd(progress_bar, &self.path, destination_directory, media_type).await?;
         Ok(ChdRomfile {
             path,
-            cue_path: cue_romfile.map(|romfile| romfile.path.clone()),
+            cue_path: None,
         })
     }
 }
@@ -136,7 +121,6 @@ impl ToCueBin for ChdRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        cue_romfile: &CommonRomfile,
         bin_roms: &[&Rom],
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile> {
@@ -147,6 +131,21 @@ impl ToCueBin for ChdRomfile {
             BIN_EXTENSION,
         )
         .await?;
+
+        let mut cue_path: Option<PathBuf> = None;
+        if destination_directory.as_ref() != self.cue_path.as_ref().unwrap().parent().unwrap() {
+            let new_cue_path = destination_directory
+                .as_ref()
+                .join(&self.cue_path.as_ref().unwrap().file_name().unwrap());
+            copy_file(
+                progress_bar,
+                &self.cue_path.as_ref().unwrap(),
+                &new_cue_path,
+                quiet,
+            )
+            .await?;
+            cue_path = Some(new_cue_path);
+        }
 
         if bin_roms.len() == 1 {
             let mut bin_romfile = CommonRomfile { path };
@@ -161,7 +160,7 @@ impl ToCueBin for ChdRomfile {
                 .await?;
             return Ok(CueBinRomfile {
                 cue_romfile: CommonRomfile {
-                    path: cue_romfile.path.clone(),
+                    path: cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
                 },
                 bin_romfiles: vec![bin_romfile],
             });
@@ -188,7 +187,9 @@ impl ToCueBin for ChdRomfile {
         remove_file(progress_bar, &path, quiet).await?;
 
         Ok(CueBinRomfile {
-            cue_romfile: cue_romfile.clone(),
+            cue_romfile: CommonRomfile {
+                path: cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
+            },
             bin_romfiles: bin_paths
                 .iter()
                 .map(|bin_path| CommonRomfile {
@@ -340,6 +341,11 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .as_ref()
         .join(path.as_ref().file_name().unwrap())
         .with_extension(extension);
+
+    progress_bar.println(format!(
+        "Extracting \"{}\"",
+        path.as_ref().file_name().unwrap().to_str().unwrap()
+    ));
 
     let mut command = Command::new(CHDMAN);
     command
