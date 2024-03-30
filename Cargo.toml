@@ -88,3 +88,11 @@ wiremock = "0.6.0"
 [[bin]]
 name = "oxyromon"
 path = "src/main.rs"
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"

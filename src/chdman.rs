@@ -1,17 +1,19 @@
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+use indicatif::ProgressBar;
+use regex::Regex;
+use sqlx::SqliteConnection;
+use tokio::io;
+use tokio::io::AsyncReadExt;
+use tokio::process::Command;
+
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
-use super::util::*;
 use super::SimpleResult;
-use indicatif::ProgressBar;
-use regex::Regex;
-use sqlx::SqliteConnection;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-use tokio::io;
-use tokio::io::AsyncReadExt;
-use tokio::process::Command;
+use super::util::*;
 
 const CHDMAN: &str = "chdman";
 
@@ -19,6 +21,12 @@ pub const MIN_DREAMCAST_VERSION: &str = "0.262";
 
 lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MediaType {
+    Cd,
+    Dvd,
 }
 
 pub struct ChdRomfile {
@@ -81,6 +89,7 @@ pub trait ToChd {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         cue_romfile: &Option<&CommonRomfile>,
+        media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile>;
 }
 
@@ -90,8 +99,15 @@ impl ToChd for CueBinRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         cue_romfile: &Option<&CommonRomfile>,
+        media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile> {
-        let path = create_chd(progress_bar, &self.cue_romfile.path, destination_directory).await?;
+        let path = create_chd(
+            progress_bar,
+            &self.cue_romfile.path,
+            destination_directory,
+            media_type,
+        )
+        .await?;
         Ok(ChdRomfile {
             path,
             cue_path: cue_romfile.map(|romfile| romfile.path.clone()),
@@ -105,8 +121,9 @@ impl ToChd for IsoRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         cue_romfile: &Option<&CommonRomfile>,
+        media_type: &MediaType,
     ) -> SimpleResult<ChdRomfile> {
-        let path = create_chd(progress_bar, &self.path, destination_directory).await?;
+        let path = create_chd(progress_bar, &self.path, destination_directory, media_type).await?;
         Ok(ChdRomfile {
             path,
             cue_path: cue_romfile.map(|romfile| romfile.path.clone()),
@@ -261,6 +278,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,
     destination_directory: &Q,
+    media_type: &MediaType,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating chd");
     progress_bar.set_style(get_none_progress_style());
@@ -277,7 +295,10 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     ));
 
     let output = Command::new(CHDMAN)
-        .arg("createcd")
+        .arg(match media_type {
+            MediaType::Cd => "createcd",
+            MediaType::Dvd => "createdvd",
+        })
         .arg("-i")
         .arg(romfile_path.as_ref())
         .arg("-o")
@@ -306,6 +327,8 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
+    let media_type = parse(progress_bar, path).await?;
+
     let cue_path = destination_directory
         .as_ref()
         .join(format!(
@@ -313,24 +336,32 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             path.as_ref().file_name().unwrap().to_str().unwrap()
         ))
         .with_extension(CUE_EXTENSION);
-    let bin_path = destination_directory
+    let iso_bin_path = destination_directory
         .as_ref()
         .join(path.as_ref().file_name().unwrap())
         .with_extension(extension);
 
-    let output = Command::new(CHDMAN)
-        .arg("extractcd")
+    let mut command = Command::new(CHDMAN);
+    command
+        .arg(match media_type {
+            MediaType::Cd => "extractcd",
+            MediaType::Dvd => "extractdvd",
+        })
         .arg("-i")
-        .arg(path.as_ref())
-        .arg("-o")
-        .arg(&cue_path)
-        .arg("-ob")
-        .arg(&bin_path)
-        .output()
-        .await
-        .expect("Failed to extract chd");
+        .arg(path.as_ref());
+    match media_type {
+        MediaType::Cd => command
+            .arg("-o")
+            .arg(&cue_path)
+            .arg("-ob")
+            .arg(&iso_bin_path),
+        MediaType::Dvd => command.arg("-o").arg(&iso_bin_path),
+    };
+    let output = command.output().await.expect("Failed to extract chd");
 
-    remove_file(progress_bar, &cue_path, true).await?;
+    if media_type == MediaType::Cd {
+        remove_file(progress_bar, &cue_path, true).await?;
+    }
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str());
@@ -339,7 +370,40 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
-    Ok(bin_path)
+    Ok(iso_bin_path)
+}
+
+async fn parse<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleResult<MediaType> {
+    progress_bar.set_message("Parsing chd");
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+    let output = Command::new(CHDMAN)
+        .arg("info")
+        .arg("-i")
+        .arg(path.as_ref())
+        .output()
+        .await
+        .expect("Failed to parse chd");
+
+    if !output.status.success() {
+        bail!(String::from_utf8(output.stderr).unwrap().as_str());
+    }
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let metadata: &str = stdout
+        .lines()
+        .find(|&line| line.starts_with("Metadata:"))
+        .unwrap();
+
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
+
+    Ok(if metadata.contains("DVD") {
+        MediaType::Dvd
+    } else {
+        MediaType::Cd
+    })
 }
 
 pub async fn get_version() -> SimpleResult<String> {

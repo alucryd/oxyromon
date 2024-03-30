@@ -2,6 +2,7 @@
 
 - Add a `-n` flag to `import-dats` to override the system name
 - Enhance the rom matching algorithm in `import-roms` to reduce prompts when multiple matches are found
+- Use `createcd/createdvd` and `extractcd/extractdvd` appropriately for CDs and DVDs
 
 # 0.18.0
 

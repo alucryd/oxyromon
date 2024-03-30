@@ -1,5 +1,5 @@
 use super::chdman;
-use super::chdman::{AsChd, ToChd};
+use super::chdman::{AsChd, MediaType, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -1253,7 +1253,7 @@ async fn to_chd(
             }
         }
 
-        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+        let (cue_roms, bin_iso_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .into_par_iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
@@ -1267,9 +1267,9 @@ async fn to_chd(
             );
         }
 
-        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
-        for rom in &bin_roms {
-            bin_romfiles.push(
+        let mut bin_iso_romfiles: Vec<CommonRomfile> = Vec::new();
+        for rom in &bin_iso_roms {
+            bin_iso_romfiles.push(
                 romfile
                     .as_archive(rom)?
                     .to_common(progress_bar, &tmp_directory.path())
@@ -1281,7 +1281,7 @@ async fn to_chd(
             Some(cue_romfile) => {
                 cue_romfile
                     .as_cue_bin(
-                        &bin_romfiles
+                        &bin_iso_romfiles
                             .iter()
                             .map(|bin_iso_romfile| &bin_iso_romfile.path)
                             .collect::<Vec<&PathBuf>>(),
@@ -1290,11 +1290,12 @@ async fn to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
                         &Some(cue_romfile),
+                        &MediaType::Cd,
                     )
                     .await?
             }
             None => {
-                bin_romfiles
+                bin_iso_romfiles
                     .first()
                     .unwrap()
                     .as_iso()?
@@ -1302,6 +1303,7 @@ async fn to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
                         &None,
+                        &MediaType::Dvd,
                     )
                     .await?
             }
@@ -1313,7 +1315,7 @@ async fn to_chd(
                     &mut transaction,
                     progress_bar,
                     &None,
-                    &bin_roms,
+                    &bin_iso_roms,
                     hash_algorithm,
                 )
                 .await
@@ -1403,6 +1405,7 @@ async fn to_chd(
                 progress_bar,
                 &cue_romfile.as_common()?.path.parent().unwrap(),
                 &Some(&cue_romfile.as_common()?),
+                &MediaType::Cd,
             )
             .await?;
 
@@ -1462,6 +1465,7 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &None,
+                    &MediaType::Dvd,
                 )
                 .await?;
             if check
@@ -1511,6 +1515,7 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &None,
+                    &MediaType::Dvd,
                 )
                 .await?;
             if check
@@ -1560,6 +1565,7 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &None,
+                    &MediaType::Dvd,
                 )
                 .await?;
             if diff {
