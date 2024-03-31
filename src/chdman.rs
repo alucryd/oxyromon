@@ -17,7 +17,7 @@ use super::SimpleResult;
 
 const CHDMAN: &str = "chdman";
 
-pub const MIN_DREAMCAST_VERSION: &str = "0.262";
+pub const MIN_DREAMCAST_VERSION: &str = "0.264";
 
 lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
