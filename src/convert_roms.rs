@@ -177,7 +177,6 @@ pub async fn main(
                 progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
                 continue;
             }
-            continue;
         }
 
         if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
