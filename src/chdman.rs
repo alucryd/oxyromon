@@ -1,23 +1,44 @@
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-
-use indicatif::ProgressBar;
-use regex::Regex;
-use sqlx::SqliteConnection;
-use tokio::io;
-use tokio::io::AsyncReadExt;
-use tokio::process::Command;
-
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
+use indicatif::ProgressBar;
+use regex::Regex;
+use sqlx::SqliteConnection;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+use strum::{Display, EnumString, VariantNames};
+use tokio::io;
+use tokio::io::AsyncReadExt;
+use tokio::process::Command;
 
 const CHDMAN: &str = "chdman";
 
+pub const CHD_HUNK_SIZE_RANGE: [usize; 2] = [16, 1048576];
 pub const MIN_DREAMCAST_VERSION: &str = "0.264";
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ChdCdCompressionAlgorithm {
+    None,
+    Cdfl,
+    Cdlz,
+    Cdzl,
+    Cdzs,
+}
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ChdDvdCompressionAlgorithm {
+    None,
+    Flac,
+    Huff,
+    Lzma,
+    Zlib,
+    Zstd,
+}
 
 lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
@@ -77,6 +98,8 @@ pub trait ToChd {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         media_type: &MediaType,
+        compression_algorithms: &[String],
+        hunk_size: &Option<usize>,
     ) -> SimpleResult<ChdRomfile>;
 }
 
@@ -86,12 +109,16 @@ impl ToChd for CueBinRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         media_type: &MediaType,
+        compression_algorithms: &[String],
+        hunk_size: &Option<usize>,
     ) -> SimpleResult<ChdRomfile> {
         let path = create_chd(
             progress_bar,
             &self.cue_romfile.path,
             destination_directory,
             media_type,
+            hunk_size,
+            compression_algorithms,
         )
         .await?;
         Ok(ChdRomfile {
@@ -107,8 +134,18 @@ impl ToChd for IsoRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
         media_type: &MediaType,
+        compression_algorithms: &[String],
+        hunk_size: &Option<usize>,
     ) -> SimpleResult<ChdRomfile> {
-        let path = create_chd(progress_bar, &self.path, destination_directory, media_type).await?;
+        let path = create_chd(
+            progress_bar,
+            &self.path,
+            destination_directory,
+            media_type,
+            hunk_size,
+            compression_algorithms,
+        )
+        .await?;
         Ok(ChdRomfile {
             path,
             cue_path: None,
@@ -280,6 +317,8 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     romfile_path: &P,
     destination_directory: &Q,
     media_type: &MediaType,
+    hunk_size: &Option<usize>,
+    compression_algorithms: &[String],
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating chd");
     progress_bar.set_style(get_none_progress_style());
@@ -295,7 +334,8 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         chd_path.file_name().unwrap().to_str().unwrap()
     ));
 
-    let output = Command::new(CHDMAN)
+    let mut command = Command::new(CHDMAN);
+    command
         .arg(match media_type {
             MediaType::Cd => "createcd",
             MediaType::Dvd => "createdvd",
@@ -303,10 +343,16 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg("-i")
         .arg(romfile_path.as_ref())
         .arg("-o")
-        .arg(&chd_path)
-        .output()
-        .await
-        .expect("Failed to create chd");
+        .arg(&chd_path);
+    if let Some(hunk_size) = hunk_size {
+        command.arg("--hunksize").arg(hunk_size.to_string());
+    }
+    if !compression_algorithms.is_empty() {
+        command
+            .arg("--compression")
+            .arg(compression_algorithms.join(","));
+    }
+    let output = command.output().await.expect("Failed to create chd");
 
     if !output.status.success() {
         bail!(String::from_utf8(output.stderr).unwrap().as_str())

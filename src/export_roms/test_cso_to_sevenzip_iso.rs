@@ -69,7 +69,7 @@ async fn test() {
         roms_by_game_id,
         romfiles_by_id,
         sevenzip::ArchiveType::Sevenzip,
-        1,
+        &None,
         false,
     )
     .await

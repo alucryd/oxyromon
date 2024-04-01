@@ -86,6 +86,10 @@ async fn test_cue_bin_to_chd() {
         &destination_directory,
         roms_by_game_id,
         romfiles_by_id,
+        &[],
+        &None,
+        &[],
+        &None,
     )
     .await
     .unwrap();

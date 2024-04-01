@@ -66,6 +66,10 @@ async fn test() {
         &destination_directory,
         roms_by_game_id,
         romfiles_by_id,
+        &[],
+        &None,
+        &[],
+        &None,
     )
     .await
     .unwrap();

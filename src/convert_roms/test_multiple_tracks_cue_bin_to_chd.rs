@@ -87,6 +87,10 @@ async fn test_cue_bin_to_chd() {
         true,
         true,
         &HashAlgorithm::Crc,
+        &[],
+        &None,
+        &[],
+        &None,
     )
     .await
     .unwrap();

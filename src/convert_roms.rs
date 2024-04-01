@@ -1,22 +1,10 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::mem::drop;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-
-use clap::builder::PossibleValuesParser;
-use clap::{Arg, ArgAction, ArgMatches, Command};
-use indicatif::{HumanBytes, ProgressBar};
-use rayon::prelude::*;
-use sqlx::sqlite::SqliteConnection;
-
 use super::chdman;
 use super::chdman::{AsChd, MediaType, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::dolphin;
-use super::dolphin::{AsRvz, ToRvz};
+use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::maxcso;
 use super::maxcso::{AsXso, ToXso, XsoType};
 use super::model::*;
@@ -27,6 +15,16 @@ use super::sevenzip;
 use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
 use super::util::*;
 use super::SimpleResult;
+use clap::builder::PossibleValuesParser;
+use clap::{Arg, ArgAction, ArgMatches, Command};
+use indicatif::{HumanBytes, ProgressBar};
+use rayon::prelude::*;
+use sqlx::sqlite::SqliteConnection;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::mem::drop;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
@@ -273,7 +271,7 @@ pub async fn main(
                     diff,
                     check,
                     &hash_algorithm,
-                    compression_level,
+                    &compression_level,
                     solid,
                 )
                 .await?
@@ -292,12 +290,18 @@ pub async fn main(
                     diff,
                     check,
                     &hash_algorithm,
-                    compression_level,
+                    &compression_level,
                     false,
                 )
                 .await?
             }
             "CHD" => {
+                let cd_compression_algorithms =
+                    get_list(connection, "CHD_CD_COMPRESSION_ALGORITHMS").await;
+                let cd_hunk_size = get_integer(connection, "CHD_CD_HUNK_SIZE").await;
+                let dvd_compression_algorithms =
+                    get_list(connection, "CHD_DVD_COMPRESSION_ALGORITHMS").await;
+                let dvd_hunk_size = get_integer(connection, "CHD_DVD_HUNK_SIZE").await;
                 to_chd(
                     connection,
                     progress_bar,
@@ -307,6 +311,10 @@ pub async fn main(
                     diff,
                     check,
                     &hash_algorithm,
+                    &cd_compression_algorithms,
+                    &cd_hunk_size,
+                    &dvd_compression_algorithms,
+                    &dvd_hunk_size,
                 )
                 .await?
             }
@@ -338,11 +346,15 @@ pub async fn main(
             }
             "RVZ" => {
                 let compression_algorithm = RvzCompressionAlgorithm::from_str(
-                    &get_string(connection, "RVZ_COMPRESSION_ALGORITHM").await,
+                    &get_string(connection, "RVZ_COMPRESSION_ALGORITHM")
+                        .await
+                        .unwrap(),
                 )
                 .unwrap();
-                let compression_level = get_integer(connection, "RVZ_COMPRESSION_LEVEL").await;
-                let block_size = get_integer(connection, "RVZ_BLOCK_SIZE").await;
+                let compression_level = get_integer(connection, "RVZ_COMPRESSION_LEVEL")
+                    .await
+                    .unwrap();
+                let block_size = get_integer(connection, "RVZ_BLOCK_SIZE").await.unwrap();
                 to_rvz(
                     connection,
                     progress_bar,
@@ -393,7 +405,7 @@ async fn to_archive(
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
-    compression_level: usize,
+    compression_level: &Option<usize>,
     solid: bool,
 ) -> SimpleResult<()> {
     // partition CHDs
@@ -1217,6 +1229,10 @@ async fn to_chd(
     diff: bool,
     check: bool,
     hash_algorithm: &HashAlgorithm,
+    cd_compression_algorithms: &[String],
+    cd_hunk_size: &Option<usize>,
+    dvd_compression_algorithms: &[String],
+    dvd_hunk_size: &Option<usize>,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
@@ -1364,6 +1380,8 @@ async fn to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
                         &MediaType::Cd,
+                        cd_compression_algorithms,
+                        cd_hunk_size,
                     )
                     .await?
             }
@@ -1376,6 +1394,8 @@ async fn to_chd(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
                         &MediaType::Dvd,
+                        dvd_compression_algorithms,
+                        dvd_hunk_size,
                     )
                     .await?
             }
@@ -1477,6 +1497,8 @@ async fn to_chd(
                 progress_bar,
                 &cue_romfile.as_common()?.path.parent().unwrap(),
                 &MediaType::Cd,
+                cd_compression_algorithms,
+                cd_hunk_size,
             )
             .await?;
 
@@ -1536,6 +1558,8 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &MediaType::Dvd,
+                    dvd_compression_algorithms,
+                    dvd_hunk_size,
                 )
                 .await?;
             if check
@@ -1585,6 +1609,8 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &MediaType::Dvd,
+                    dvd_compression_algorithms,
+                    dvd_hunk_size,
                 )
                 .await?;
             if check
@@ -1634,6 +1660,8 @@ async fn to_chd(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
                     &MediaType::Dvd,
+                    dvd_compression_algorithms,
+                    dvd_hunk_size,
                 )
                 .await?;
             if diff {
@@ -1682,7 +1710,13 @@ async fn to_chd(
                     .as_chd()?
                     .to_iso(progress_bar, &tmp_directory.path())
                     .await?
-                    .to_chd(progress_bar, &tmp_directory.path(), &MediaType::Dvd)
+                    .to_chd(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        &MediaType::Dvd,
+                        dvd_compression_algorithms,
+                        dvd_hunk_size,
+                    )
                     .await?;
 
                 if check
@@ -1740,7 +1774,13 @@ async fn to_chd(
                     .as_chd_with_cue(&cue_romfile.path)?
                     .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
                     .await?
-                    .to_chd(progress_bar, &tmp_directory.path(), &MediaType::Cd)
+                    .to_chd(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        &MediaType::Cd,
+                        cd_compression_algorithms,
+                        cd_hunk_size,
+                    )
                     .await?;
 
                 if check

@@ -97,6 +97,10 @@ Available settings:
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
 - `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
+- `CHD_CD_HUNK_SIZE`: The CHD hunk size in bytes for CDs, defaults to auto, valid range: `16-1048576`
+- `CHD_CD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for CDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`
+- `CHD_DVD_HUNK_SIZE`: The CHD hunk size in bytes for DVDs, defaults to auto, valid range: `16-1048576`
+- `CHD_DVD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for DVDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms

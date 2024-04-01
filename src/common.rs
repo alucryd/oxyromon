@@ -1,15 +1,3 @@
-use std::fs::File;
-use std::io;
-use std::io::prelude::*;
-use std::path::{Path, PathBuf};
-
-use digest::Digest;
-use indicatif::ProgressBar;
-use md5::Md5;
-use sha1::Sha1;
-use simple_error::SimpleResult;
-use sqlx::SqliteConnection;
-
 use super::config::*;
 use super::crc32::*;
 use super::database::*;
@@ -17,6 +5,16 @@ use super::model::Header;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use digest::Digest;
+use indicatif::ProgressBar;
+use md5::Md5;
+use sha1::Sha1;
+use simple_error::SimpleResult;
+use sqlx::SqliteConnection;
+use std::fs::File;
+use std::io;
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub struct CommonRomfile {

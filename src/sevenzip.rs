@@ -319,7 +319,7 @@ pub trait ToArchive {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: usize,
+        compression_level: &Option<usize>,
         solid: bool,
     ) -> SimpleResult<ArchiveRomfile>;
 }
@@ -332,7 +332,7 @@ impl ToArchive for CommonRomfile {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: usize,
+        compression_level: &Option<usize>,
         solid: bool,
     ) -> SimpleResult<ArchiveRomfile> {
         progress_bar.set_message(format!("Creating {}", archive_type));
@@ -354,16 +354,19 @@ impl ToArchive for CommonRomfile {
         ));
         let relative_path = self.path.strip_prefix(working_directory).unwrap();
 
-        let mut args = vec![format!("-mx={}", compression_level)];
-        if solid {
-            args.push(String::from("-ms=on"))
-        }
-        let output = Command::new(SEVENZIP)
+        let mut command = Command::new(SEVENZIP);
+        command
             .arg("a")
             .arg(&path)
             .arg(relative_path)
-            .args(args)
-            .current_dir(working_directory.as_ref())
+            .current_dir(working_directory.as_ref());
+        if let Some(compression_level) = compression_level {
+            command.arg(format!("-mx={}", compression_level));
+        }
+        if solid {
+            command.arg("-ms=on");
+        }
+        let output = command
             .output()
             .await
             .expect("Failed to add files to archive");
@@ -391,7 +394,7 @@ impl ToArchive for ArchiveRomfile {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: usize,
+        compression_level: &Option<usize>,
         solid: bool,
     ) -> SimpleResult<ArchiveRomfile> {
         let original_romfile = self.to_common(progress_bar, source_directory).await?;

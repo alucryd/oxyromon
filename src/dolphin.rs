@@ -9,6 +9,7 @@ use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
 
 cfg_if! {
@@ -21,6 +22,16 @@ cfg_if! {
 
 pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
 pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum RvzCompressionAlgorithm {
+    None,
+    Zstd,
+    Bzip,
+    Lzma,
+    Lzma2,
+}
 
 pub struct RvzRomfile {
     pub path: PathBuf,

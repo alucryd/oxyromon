@@ -71,7 +71,7 @@ async fn test() {
         false,
         true,
         &HashAlgorithm::Crc,
-        1,
+        &None,
         false,
     )
     .await

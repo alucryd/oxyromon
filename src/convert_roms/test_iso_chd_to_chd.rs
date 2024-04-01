@@ -80,6 +80,10 @@ async fn test() {
         true,
         true,
         &HashAlgorithm::Crc,
+        &[],
+        &None,
+        &[],
+        &None,
     )
     .await
     .unwrap();
