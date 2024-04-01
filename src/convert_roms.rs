@@ -1734,6 +1734,15 @@ async fn to_chd(
                     chd_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&chd_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     chd_romfile
                         .as_common()?
@@ -1798,6 +1807,15 @@ async fn to_chd(
                     chd_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&chd_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     chd_romfile
                         .as_common()?
@@ -2134,6 +2152,15 @@ async fn to_cso(
                     cso_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&cso_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     cso_romfile
                         .as_common()?
@@ -2340,6 +2367,15 @@ async fn to_nsz(
                     nsz_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&nsz_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     nsz_romfile
                         .as_common()?
@@ -2567,6 +2603,15 @@ async fn to_rvz(
                     rvz_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&rvz_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     rvz_romfile
                         .as_common()?
@@ -2903,6 +2948,15 @@ async fn to_zso(
                     zso_romfile.as_common()?.delete(progress_bar, false).await?;
                     continue;
                 } else {
+                    if diff {
+                        print_diff(
+                            progress_bar,
+                            &roms.iter().collect::<Vec<&Rom>>(),
+                            &[&romfile.path],
+                            &[&zso_romfile.path],
+                        )
+                        .await?;
+                    }
                     romfile.as_common()?.delete(progress_bar, false).await?;
                     zso_romfile
                         .as_common()?
