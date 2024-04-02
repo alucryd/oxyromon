@@ -446,7 +446,7 @@ Supported ROM formats:
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
 
-Warning: CHD for Dreamcast requires at least chdman 0.262 but some games will still have issues, see https://github.com/alucryd/oxyromon/issues/110
+Warning: CHD for Dreamcast requires at least chdman 0.264
 
     Usage: oxyromon convert-roms [OPTIONS]
 

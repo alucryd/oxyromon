@@ -6,6 +6,10 @@
 - Add a `-r` flag to convert-roms to recompress files that already match the target format
 - Add configuration options for chdman
 
+# 0.18.1
+- Bump minimum required chdman version to 0.264 for dreamcast
+- Fix dreamcast system being skipped even with the correct chdman version
+
 # 0.18.0
 
 - Replace `async-std` with `tokio`
