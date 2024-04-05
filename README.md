@@ -212,7 +212,8 @@ The settings can be queried, modified and deleted from the command line.
     Options:
         -l, --list                  Print the whole configuration
         -g, --get <KEY>             Print a single setting
-        -s, --set <KEY> <VALUE>     Configure a single setting
+        -s, --set <KEY> <VALUE>     Set a single setting
+        -u, --unset <KEY>           Unset a single setting
         -a, --add <KEY> <VALUE>     Add an entry to a list
         -r, --remove <KEY> <VALUE>  Remove an entry from a list
         -h, --help                  Print help information

@@ -100,6 +100,21 @@ const LISTS: &[&str] = &[
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
+const NULLABLES: &[&str] = &[
+    "CHD_CD_HUNK_SIZE",
+    "CHD_CD_COMPRESSION_ALGORITHMS",
+    "CHD_DVD_HUNK_SIZE",
+    "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "DISCARD_FLAGS",
+    "DISCARD_RELEASES",
+    "LANGUAGES",
+    "PREFER_FLAGS",
+    "REGIONS_ALL",
+    "REGIONS_ONE",
+    "SEVENZIP_COMPRESSION_LEVEL",
+    "ZIP_COMPRESSION_LEVEL",
+];
+
 const LIST_SEPARATOR: &str = "|";
 
 pub static BIN_EXTENSION: &str = "bin";
@@ -152,10 +167,20 @@ pub fn subcommand() -> Command {
             Arg::new("SET")
                 .short('s')
                 .long("set")
-                .help("Configure a single setting")
+                .help("Set a single setting")
                 .required(false)
                 .num_args(2)
                 .value_names(["KEY", "VALUE"])
+                .exclusive(true),
+        )
+        .arg(
+            Arg::new("UNSET")
+                .short('u')
+                .long("unset")
+                .help("Unset a single setting")
+                .required(false)
+                .num_args(1)
+                .value_name("KEY")
                 .exclusive(true),
         )
         .arg(
@@ -198,6 +223,8 @@ pub async fn main(
         {
             set_setting(connection, progress_bar, key, value).await?;
         };
+    } else if matches.contains_id("UNSET") {
+        unset_setting(connection, matches.get_one::<String>("UNSET").unwrap()).await?;
     } else if matches.contains_id("ADD") {
         if let [key, value] = matches
             .get_many::<String>("ADD")
@@ -260,6 +287,17 @@ async fn set_setting(
         }
     } else if LISTS.contains(&key) {
         println!("Lists can't be set directly, please use ADD or REMOVE instead");
+    } else {
+        println!("Unsupported setting");
+    }
+    Ok(())
+}
+
+async fn unset_setting(connection: &mut SqliteConnection, key: &str) -> SimpleResult<()> {
+    if NULLABLES.contains(&key) {
+        if let Some(setting) = find_setting_by_key(connection, key).await {
+            update_setting(connection, setting.id, None).await;
+        };
     } else {
         println!("Unsupported setting");
     }
