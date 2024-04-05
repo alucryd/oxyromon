@@ -500,6 +500,13 @@ async fn to_archive(
             let rom = roms.first().unwrap();
             let game = games_by_id.get(&rom.game_id).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let chd_romfile = match romfile.parent_id {
                 Some(parent_id) => {
                     let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
@@ -572,6 +579,13 @@ async fn to_archive(
             let romfile = romfiles_by_id
                 .get(&bin_roms.first().unwrap().romfile_id.unwrap())
                 .unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let chd_romfile = match romfile.parent_id {
                 Some(parent_id) => {
                     let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
@@ -2221,6 +2235,13 @@ async fn to_cso(
         let mut transaction = begin_transaction(connection).await;
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let chd_romfile = match romfile.parent_id {
                 Some(parent_id) => {
                     let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
@@ -3037,6 +3058,13 @@ async fn to_zso(
         let mut transaction = begin_transaction(connection).await;
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let chd_romfile = match romfile.parent_id {
                 Some(parent_id) => {
                     let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
@@ -3404,6 +3432,13 @@ async fn to_original(
             let romfile = romfiles_by_id
                 .get(&roms.first().unwrap().romfile_id.unwrap())
                 .unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let chd_romfile = match romfile.parent_id {
                 Some(parent_id) => {
                     let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
@@ -3460,6 +3495,13 @@ async fn to_original(
             }
 
             let romfile = romfiles.first().unwrap();
+            if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                .await
+                .is_empty()
+            {
+                progress_bar.println("CHD has children, skipping");
+                continue;
+            }
             let cue_romfile = romfiles_by_id
                 .get(&cue_roms.first().unwrap().romfile_id.unwrap())
                 .unwrap()
