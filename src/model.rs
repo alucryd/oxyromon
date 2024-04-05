@@ -111,6 +111,7 @@ pub struct Romfile {
     pub id: i64,
     pub path: String,
     pub size: i64,
+    pub parent_id: Option<i64>,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]

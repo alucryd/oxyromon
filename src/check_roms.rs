@@ -182,8 +182,18 @@ async fn check_system(
             });
             result = match cue_romfile {
                 Some(cue_romfile) => {
-                    romfile
-                        .as_chd_with_cue(&cue_romfile.path)?
+                    let chd_romfile = match romfile.parent_id {
+                        Some(parent_id) => {
+                            let parent_chd_romfile =
+                                find_romfile_by_id(&mut transaction, parent_id).await;
+                            romfile.as_chd_with_cue_and_parent(
+                                &cue_romfile.path,
+                                &parent_chd_romfile.path,
+                            )?
+                        }
+                        None => romfile.as_chd_with_cue(&cue_romfile.path)?,
+                    };
+                    chd_romfile
                         .check(
                             &mut transaction,
                             progress_bar,
@@ -194,8 +204,15 @@ async fn check_system(
                         .await
                 }
                 None => {
-                    romfile
-                        .as_chd()?
+                    let chd_romfile = match romfile.parent_id {
+                        Some(parent_id) => {
+                            let parent_chd_romfile =
+                                find_romfile_by_id(&mut transaction, parent_id).await;
+                            romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                        }
+                        None => romfile.as_chd()?,
+                    };
+                    chd_romfile
                         .check(
                             &mut transaction,
                             progress_bar,

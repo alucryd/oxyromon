@@ -792,6 +792,7 @@ async fn import_chd<P: AsRef<Path>>(
             let chd_romfile = ChdRomfile {
                 path: romfile_path.as_ref().to_path_buf(),
                 cue_path: Some(cue_path.clone()),
+                parent_path: None,
             };
             let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, cue_rom.game_id)
                 .await
@@ -862,6 +863,7 @@ async fn import_chd<P: AsRef<Path>>(
         let chd_romfile = ChdRomfile {
             path: romfile_path.as_ref().to_path_buf(),
             cue_path: None,
+            parent_path: None,
         };
         let iso_romfile = chd_romfile
             .to_iso(progress_bar, &tmp_directory.path())
@@ -1023,6 +1025,7 @@ async fn import_cia<P: AsRef<Path>>(
     Ok((new_system_ids, new_game_ids))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn import_cso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1071,6 +1074,7 @@ async fn import_cso<P: AsRef<Path>>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn import_nsz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1119,6 +1123,7 @@ async fn import_nsz<P: AsRef<Path>>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn import_rvz<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1167,6 +1172,7 @@ async fn import_rvz<P: AsRef<Path>>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn import_zso<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1547,11 +1553,7 @@ async fn find_rom_by_size_and_hash(
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
     // select the first rom from a game that's been previously imported during this session
-    } else if roms
-        .iter()
-        .find(|rom| game_ids.contains(&rom.game_id))
-        .is_some()
-    {
+    } else if roms.iter().any(|rom| game_ids.contains(&rom.game_id)) {
         let rom = roms
             .into_iter()
             .find(|rom| game_ids.contains(&rom.game_id))

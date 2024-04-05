@@ -64,6 +64,7 @@ pub enum PreferredRegion {
 }
 
 const BOOLEANS: &[&str] = &[
+    "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",

@@ -5,6 +5,7 @@
 - Use `createcd/createdvd` and `extractcd/extractdvd` appropriately for CDs and DVDs
 - Add a `-r` flag to convert-roms to recompress files that already match the target format
 - Add configuration options for chdman
+- Add support for CHD parents, enable via the `CHD_PARENTS` settings
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast

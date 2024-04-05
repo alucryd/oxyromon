@@ -5,6 +5,7 @@ use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
+use rayon::prelude::*;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
@@ -17,7 +18,7 @@ use tokio::fs::File;
 
 lazy_static! {
     static ref SYSTEM_NAME_REGEX: Regex =
-        Regex::new(r"^(Non-Redump - )?([^()]+)( \(.*\))?$").unwrap();
+        Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap();
 }
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
@@ -350,6 +351,38 @@ pub async fn compute_arcade_system_incompletion(
     update_system_mark_incomplete(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
+}
+
+pub async fn find_parent_chd_romfile_by_game(
+    connection: &mut SqliteConnection,
+    game: &Game,
+) -> Option<Romfile> {
+    let parent_game = match game.playlist_id {
+        Some(playlist_id) => {
+            let parent_game = find_first_game_by_playlist_id(connection, playlist_id).await;
+            if parent_game.id != game.id {
+                Some(parent_game)
+            } else {
+                None
+            }
+        }
+        None => None,
+    };
+    match parent_game {
+        Some(parent_game) => {
+            let roms = find_roms_with_romfile_by_game_ids(connection, &[parent_game.id]).await;
+            let mut romfile_ids = roms
+                .into_par_iter()
+                .map(|rom| rom.romfile_id.unwrap())
+                .collect::<Vec<i64>>();
+            romfile_ids.dedup();
+            find_romfiles_by_ids(connection, &romfile_ids)
+                .await
+                .into_par_iter()
+                .find_first(|romfile| romfile.path.ends_with(CHD_EXTENSION))
+        }
+        None => None,
+    }
 }
 
 #[cfg(test)]

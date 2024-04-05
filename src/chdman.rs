@@ -53,6 +53,7 @@ pub enum MediaType {
 pub struct ChdRomfile {
     pub path: PathBuf,
     pub cue_path: Option<PathBuf>,
+    pub parent_path: Option<PathBuf>,
 }
 
 impl AsCommon for ChdRomfile {
@@ -100,6 +101,7 @@ pub trait ToChd {
         media_type: &MediaType,
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
+        parent_romfile: &Option<ChdRomfile>,
     ) -> SimpleResult<ChdRomfile>;
 }
 
@@ -111,6 +113,7 @@ impl ToChd for CueBinRomfile {
         media_type: &MediaType,
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
+        parent_romfile: &Option<ChdRomfile>,
     ) -> SimpleResult<ChdRomfile> {
         let path = create_chd(
             progress_bar,
@@ -119,11 +122,13 @@ impl ToChd for CueBinRomfile {
             media_type,
             hunk_size,
             compression_algorithms,
+            parent_romfile,
         )
         .await?;
         Ok(ChdRomfile {
             path,
             cue_path: Some(self.cue_romfile.path.clone()),
+            parent_path: parent_romfile.as_ref().map(|romfile| romfile.path.clone()),
         })
     }
 }
@@ -136,6 +141,7 @@ impl ToChd for IsoRomfile {
         media_type: &MediaType,
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
+        parent_romfile: &Option<ChdRomfile>,
     ) -> SimpleResult<ChdRomfile> {
         let path = create_chd(
             progress_bar,
@@ -144,11 +150,13 @@ impl ToChd for IsoRomfile {
             media_type,
             hunk_size,
             compression_algorithms,
+            parent_romfile,
         )
         .await?;
         Ok(ChdRomfile {
             path,
             cue_path: None,
+            parent_path: parent_romfile.as_ref().map(|romfile| romfile.path.clone()),
         })
     }
 }
@@ -166,6 +174,7 @@ impl ToCueBin for ChdRomfile {
             &self.path,
             destination_directory,
             BIN_EXTENSION,
+            &self.parent_path,
         )
         .await?;
 
@@ -173,7 +182,7 @@ impl ToCueBin for ChdRomfile {
         if destination_directory.as_ref() != self.cue_path.as_ref().unwrap().parent().unwrap() {
             let new_cue_path = destination_directory
                 .as_ref()
-                .join(&self.cue_path.as_ref().unwrap().file_name().unwrap());
+                .join(self.cue_path.as_ref().unwrap().file_name().unwrap());
             copy_file(
                 progress_bar,
                 &self.cue_path.as_ref().unwrap(),
@@ -248,6 +257,7 @@ impl ToIso for ChdRomfile {
             &self.path,
             destination_directory,
             ISO_EXTENSION,
+            &self.parent_path,
         )
         .await?;
         Ok(IsoRomfile { path })
@@ -264,27 +274,113 @@ impl FromPath<ChdRomfile> for ChdRomfile {
         Ok(ChdRomfile {
             path,
             cue_path: None,
+            parent_path: None,
         })
     }
 }
 
-pub trait FromCuePath<T> {
-    fn from_cue_path<P: AsRef<Path>, Q: AsRef<Path>>(path: &P, cue_path: &Q) -> SimpleResult<T>;
+pub trait FromPathWithCueAndParent<T> {
+    fn from_path_with_cue<P: AsRef<Path>, Q: AsRef<Path>>(
+        path: &P,
+        cue_path: &Q,
+    ) -> SimpleResult<T>;
+    fn from_path_with_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+        path: &P,
+        parent_path: &Q,
+    ) -> SimpleResult<T>;
+    fn from_path_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+        path: &P,
+        cue_path: &Q,
+        parent_path: &R,
+    ) -> SimpleResult<T>;
 }
 
-impl FromCuePath<ChdRomfile> for ChdRomfile {
-    fn from_cue_path<P: AsRef<Path>, Q: AsRef<Path>>(
+impl FromPathWithCueAndParent<ChdRomfile> for ChdRomfile {
+    fn from_path_with_cue<P: AsRef<Path>, Q: AsRef<Path>>(
         path: &P,
         cue_path: &Q,
     ) -> SimpleResult<ChdRomfile> {
         let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != CHD_EXTENSION {
+        let cue_path = cue_path.as_ref().to_path_buf();
+        if path.extension().unwrap().to_str().unwrap().to_lowercase() != CHD_EXTENSION {
+            bail!("Not a valid chd");
+        }
+        if cue_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != CUE_EXTENSION
+        {
+            bail!("Not a valid cue");
+        }
+        Ok(ChdRomfile {
+            path,
+            cue_path: Some(cue_path),
+            parent_path: None,
+        })
+    }
+    fn from_path_with_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+        path: &P,
+        parent_path: &Q,
+    ) -> SimpleResult<ChdRomfile> {
+        let path = path.as_ref().to_path_buf();
+        let parent_path = parent_path.as_ref().to_path_buf();
+        if path.extension().unwrap().to_str().unwrap().to_lowercase() != CHD_EXTENSION {
+            bail!("Not a valid chd");
+        }
+        if parent_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != CHD_EXTENSION
+        {
             bail!("Not a valid chd");
         }
         Ok(ChdRomfile {
             path,
-            cue_path: Some(cue_path.as_ref().to_path_buf()),
+            cue_path: None,
+            parent_path: Some(parent_path),
+        })
+    }
+    fn from_path_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+        path: &P,
+        cue_path: &Q,
+        parent_path: &R,
+    ) -> SimpleResult<ChdRomfile> {
+        let path = path.as_ref().to_path_buf();
+        let cue_path = cue_path.as_ref().to_path_buf();
+        let parent_path = parent_path.as_ref().to_path_buf();
+        if path.extension().unwrap().to_str().unwrap().to_lowercase() != CHD_EXTENSION {
+            bail!("Not a valid chd");
+        }
+        if cue_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != CUE_EXTENSION
+        {
+            bail!("Not a valid cue");
+        }
+        if parent_path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != CHD_EXTENSION
+        {
+            bail!("Not a valid chd");
+        }
+        Ok(ChdRomfile {
+            path,
+            cue_path: Some(cue_path),
+            parent_path: Some(parent_path),
         })
     }
 }
@@ -292,6 +388,12 @@ impl FromCuePath<ChdRomfile> for ChdRomfile {
 pub trait AsChd {
     fn as_chd(&self) -> SimpleResult<ChdRomfile>;
     fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile>;
+    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile>;
+    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+        &self,
+        cue_path: &P,
+        parent_path: &Q,
+    ) -> SimpleResult<ChdRomfile>;
 }
 
 impl AsChd for Romfile {
@@ -299,7 +401,17 @@ impl AsChd for Romfile {
         ChdRomfile::from_path(&self.path)
     }
     fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_cue_path(&self.path, cue_path)
+        ChdRomfile::from_path_with_cue(&self.path, cue_path)
+    }
+    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_parent(&self.path, parent_path)
+    }
+    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+        &self,
+        cue_path: &P,
+        parent_path: &Q,
+    ) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_cue_and_parent(&self.path, cue_path, parent_path)
     }
 }
 
@@ -308,7 +420,17 @@ impl AsChd for CommonRomfile {
         ChdRomfile::from_path(&self.path)
     }
     fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_cue_path(&self.path, cue_path)
+        ChdRomfile::from_path_with_cue(&self.path, cue_path)
+    }
+    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_parent(&self.path, parent_path)
+    }
+    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+        &self,
+        cue_path: &P,
+        parent_path: &Q,
+    ) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_cue_and_parent(&self.path, cue_path, parent_path)
     }
 }
 
@@ -319,6 +441,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     media_type: &MediaType,
     hunk_size: &Option<usize>,
     compression_algorithms: &[String],
+    parent_romfile: &Option<ChdRomfile>,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Creating chd");
     progress_bar.set_style(get_none_progress_style());
@@ -333,6 +456,12 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         "Creating \"{}\"",
         chd_path.file_name().unwrap().to_str().unwrap()
     ));
+    if let Some(parent_romfile) = parent_romfile {
+        progress_bar.println(format!(
+            "Using parent \"{}\"",
+            parent_romfile.path.file_name().unwrap().to_str().unwrap()
+        ));
+    }
 
     let mut command = Command::new(CHDMAN);
     command
@@ -352,6 +481,9 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             .arg("--compression")
             .arg(compression_algorithms.join(","));
     }
+    if let Some(parent_romfile) = parent_romfile {
+        command.arg("-op").arg(&parent_romfile.path);
+    }
     let output = command.output().await.expect("Failed to create chd");
 
     if !output.status.success() {
@@ -369,6 +501,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     path: &P,
     destination_directory: &Q,
     extension: &str,
+    parent_romfile_path: &Option<PathBuf>,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting chd");
     progress_bar.set_style(get_none_progress_style());
@@ -392,6 +525,12 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         "Extracting \"{}\"",
         path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
+    if let Some(parent_romfile_path) = parent_romfile_path {
+        progress_bar.println(format!(
+            "Using parent \"{}\"",
+            parent_romfile_path.file_name().unwrap().to_str().unwrap()
+        ));
+    }
 
     let mut command = Command::new(CHDMAN);
     command
@@ -409,6 +548,9 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             .arg(&iso_bin_path),
         MediaType::Dvd => command.arg("-o").arg(&iso_bin_path),
     };
+    if let Some(parent_romfile_path) = parent_romfile_path {
+        command.arg("-ip").arg(parent_romfile_path);
+    }
     let output = command.output().await.expect("Failed to extract chd");
 
     if media_type == MediaType::Cd {

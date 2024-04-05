@@ -56,7 +56,7 @@ async fn test() {
         .unwrap()
         .modified()
         .unwrap();
-    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();

@@ -49,6 +49,7 @@ async fn test() {
         id: 1,
         path: String::from("romfile.cso"),
         size: 0,
+        parent_id: None,
     };
 
     // when

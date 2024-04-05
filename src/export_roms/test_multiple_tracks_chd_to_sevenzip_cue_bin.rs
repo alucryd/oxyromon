@@ -60,7 +60,7 @@ async fn test() {
         let romfile = find_romfile_by_id(&mut connection, rom.romfile_id.unwrap()).await;
         romfiles_by_id.insert(romfile.id, romfile);
     }
-    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
 
     let destination_directory = tmp_directory.join("destination");

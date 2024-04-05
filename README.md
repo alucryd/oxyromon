@@ -101,6 +101,7 @@ Available settings:
 - `CHD_CD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for CDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`
 - `CHD_DVD_HUNK_SIZE`: The CHD hunk size in bytes for DVDs, defaults to auto, valid range: `16-1048576`
 - `CHD_DVD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for DVDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`
+- `CHD_PARENTS`: Enables the CHD parents feature, needs playlists to have been generated, defaults to `false`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
@@ -524,6 +525,7 @@ This will wipe the system and all its ROMs from the database. All ROMs will be p
 Generate M3U playlists for multi-disc games
 
 This will generate playlists to be able to swap discs from within RetroArch. Limited to Redump only.
+The playlist information is also used to determine parents if you enable the CHD parents feature.
 
 Note: `sort-roms` will move them accordingly but if you use `convert-roms` you will need to run this command again at the moment.
 

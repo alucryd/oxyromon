@@ -17,6 +17,7 @@ use super::util::*;
 use super::SimpleResult;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use indexmap::map::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
@@ -176,16 +177,16 @@ pub async fn main(
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
 
-        if format == "CHD" && system.name.contains("Dreamcast") {
-            if chdman::get_version()
+        if format == "CHD"
+            && system.name.contains("Dreamcast")
+            && chdman::get_version()
                 .await?
                 .as_str()
                 .cmp(chdman::MIN_DREAMCAST_VERSION)
                 == Ordering::Less
-            {
-                progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
-                continue;
-            }
+        {
+            progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
+            continue;
         }
 
         if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
@@ -218,27 +219,27 @@ pub async fn main(
 
         let roms = find_roms_with_romfile_by_game_ids(
             connection,
-            &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
+            &games.par_iter().map(|game| game.id).collect::<Vec<i64>>(),
         )
         .await;
         let romfiles = find_romfiles_by_ids(
             connection,
-            roms.iter()
+            roms.par_iter()
                 .map(|rom| rom.romfile_id.unwrap())
                 .collect::<Vec<i64>>()
                 .as_slice(),
         )
         .await;
 
-        let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+        let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
         roms.into_iter().for_each(|rom| {
             let group = roms_by_game_id.entry(rom.game_id).or_default();
             group.push(rom);
         });
         let games_by_id: HashMap<i64, Game> =
-            games.into_iter().map(|game| (game.id, game)).collect();
+            games.into_par_iter().map(|game| (game.id, game)).collect();
         let romfiles_by_id: HashMap<i64, Romfile> = romfiles
-            .into_iter()
+            .into_par_iter()
             .map(|romfile| (romfile.id, romfile))
             .collect();
 
@@ -257,7 +258,7 @@ pub async fn main(
             }
             "7Z" => {
                 let compression_level = get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL").await;
-                let solid: bool = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION").await;
+                let solid = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION").await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -301,9 +302,11 @@ pub async fn main(
                 let dvd_compression_algorithms =
                     get_list(connection, "CHD_DVD_COMPRESSION_ALGORITHMS").await;
                 let dvd_hunk_size = get_integer(connection, "CHD_DVD_HUNK_SIZE").await;
+                let parents = get_bool(connection, "CHD_PARENTS").await;
                 to_chd(
                     connection,
                     progress_bar,
+                    games_by_id,
                     roms_by_game_id,
                     romfiles_by_id,
                     recompress,
@@ -314,6 +317,7 @@ pub async fn main(
                     &cd_hunk_size,
                     &dvd_compression_algorithms,
                     &dvd_hunk_size,
+                    parents,
                 )
                 .await?
             }
@@ -397,7 +401,7 @@ async fn to_archive(
     progress_bar: &ProgressBar,
     archive_type: sevenzip::ArchiveType,
     system: &System,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     games_by_id: HashMap<i64, Game>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
@@ -408,7 +412,7 @@ async fn to_archive(
     solid: bool,
 ) -> SimpleResult<()> {
     // partition CHDs
-    let (chds, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (mut chds, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -418,9 +422,20 @@ async fn to_archive(
                     .ends_with(CHD_EXTENSION)
             })
         });
+    // make sure children are converted before parents
+    chds.par_sort_by(|_, a, _, b| {
+        b.par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .any(|romfile| romfile.parent_id.is_some())
+            .cmp(
+                &a.par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .any(|romfile| romfile.parent_id.is_some()),
+            )
+    });
 
     // partition CSOs
-    let (csos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (csos, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -432,7 +447,7 @@ async fn to_archive(
         });
 
     // partition NSZs
-    let (nszs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (nszs, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -444,7 +459,7 @@ async fn to_archive(
         });
 
     // partition RVZs
-    let (rvzs, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (rvzs, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -456,7 +471,7 @@ async fn to_archive(
         });
 
     // partition ZSOs
-    let (zsos, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (zsos, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -468,7 +483,7 @@ async fn to_archive(
         });
 
     // partition archives
-    let (archives, roms_by_game_id): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let path = &romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap().path;
@@ -485,8 +500,14 @@ async fn to_archive(
             let rom = roms.first().unwrap();
             let game = games_by_id.get(&rom.game_id).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let archive_romfile = romfile
-                .as_chd()?
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd()?,
+            };
+            let archive_romfile = chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
                 .as_common()?
@@ -528,6 +549,7 @@ async fn to_archive(
                 archive_romfile.as_common()?.get_size().await?,
             )
             .await;
+            update_romfile_parent(&mut transaction, romfile.id, None).await;
 
             if diff {
                 print_diff(
@@ -542,14 +564,22 @@ async fn to_archive(
             romfile.as_common()?.delete(progress_bar, false).await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_par_iter()
+                .into_iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let cue_rom = cue_roms.first().unwrap();
             let game = games_by_id.get(&cue_rom.game_id).unwrap();
             let cue_romfile = romfiles_by_id.get(&cue_rom.romfile_id.unwrap()).unwrap();
-            let chd_romfile = romfiles_by_id
+            let romfile = romfiles_by_id
                 .get(&bin_roms.first().unwrap().romfile_id.unwrap())
                 .unwrap();
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile
+                        .as_chd_with_cue_and_parent(&cue_romfile.path, &parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd_with_cue(&cue_romfile.path)?,
+            };
 
             let mut archive_romfiles: Vec<ArchiveRomfile> = Vec::new();
             let destination_directory = Path::new(&cue_romfile.path).parent().unwrap();
@@ -567,7 +597,6 @@ async fn to_archive(
                 .await?;
             archive_romfiles.push(archive_romfile);
             let cue_bin_romfile = chd_romfile
-                .as_chd_with_cue(&cue_romfile.path)?
                 .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, true)
                 .await?;
 
@@ -619,7 +648,7 @@ async fn to_archive(
 
             update_romfile(
                 &mut transaction,
-                chd_romfile.id,
+                romfile.id,
                 &archive_romfiles.first().unwrap().as_common()?.to_string(),
                 archive_romfiles
                     .first()
@@ -629,21 +658,22 @@ async fn to_archive(
                     .await?,
             )
             .await;
-            update_rom_romfile(&mut transaction, cue_rom.id, Some(chd_romfile.id)).await;
+            update_romfile_parent(&mut transaction, romfile.id, None).await;
+            update_rom_romfile(&mut transaction, cue_rom.id, Some(romfile.id)).await;
             delete_romfile_by_id(&mut transaction, cue_romfile.id).await;
 
             if diff {
                 print_diff(
                     progress_bar,
                     &roms.iter().collect::<Vec<&Rom>>(),
-                    &[&cue_romfile.path, &chd_romfile.path],
+                    &[&cue_romfile.path, &romfile.path],
                     &[&archive_romfiles.first().unwrap().path],
                 )
                 .await?;
             }
 
             cue_romfile.as_common()?.delete(progress_bar, false).await?;
-            chd_romfile.as_common()?.delete(progress_bar, false).await?;
+            romfile.as_common()?.delete(progress_bar, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -930,7 +960,7 @@ async fn to_archive(
         let romfile = romfiles_by_id
             .get(&roms.first().unwrap().romfile_id.unwrap())
             .unwrap();
-        let source_archive_type = romfile.as_archive(&roms.first().unwrap())?.archive_type;
+        let source_archive_type = romfile.as_archive(roms.first().unwrap())?.archive_type;
 
         let mut archive_romfiles_roms: Vec<(ArchiveRomfile, &Rom)> = Vec::new();
 
@@ -1095,7 +1125,7 @@ async fn to_archive(
         } else {
             let game = games_by_id.get(&game_id).unwrap();
             roms = roms
-                .into_par_iter()
+                .into_iter()
                 .filter(|rom| {
                     let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                     !(romfile.path.ends_with(match archive_type {
@@ -1155,7 +1185,7 @@ async fn to_archive(
                     }
                     results.push(result);
                 }
-                if results.iter().any(|result| result.is_err()) {
+                if results.par_iter().any(|result| result.is_err()) {
                     continue;
                 }
             }
@@ -1219,10 +1249,12 @@ async fn to_archive(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn to_chd(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    games_by_id: HashMap<i64, Game>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
     diff: bool,
@@ -1232,9 +1264,10 @@ async fn to_chd(
     cd_hunk_size: &Option<usize>,
     dvd_compression_algorithms: &[String],
     dvd_hunk_size: &Option<usize>,
+    parents: bool,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -1243,7 +1276,7 @@ async fn to_chd(
         });
 
     // partition CUE/BINs
-    let (cue_bins, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (cue_bins, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1261,7 +1294,7 @@ async fn to_chd(
         });
 
     // partition ISOs
-    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1273,7 +1306,7 @@ async fn to_chd(
         });
 
     // partition CSOs
-    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1285,7 +1318,7 @@ async fn to_chd(
         });
 
     // partition ZSOs
-    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1297,7 +1330,7 @@ async fn to_chd(
         });
 
     // partition CHDs
-    let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (mut chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1307,6 +1340,17 @@ async fn to_chd(
                     .ends_with(CHD_EXTENSION)
             })
         });
+    // make sure children are converted before parents
+    chds.par_sort_by(|_, a, _, b| {
+        b.par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .any(|romfile| romfile.parent_id.is_some())
+            .cmp(
+                &a.par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .any(|romfile| romfile.parent_id.is_some()),
+            )
+    });
 
     // drop others
     drop(others);
@@ -1317,7 +1361,7 @@ async fn to_chd(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .collect();
         romfiles.dedup();
@@ -1342,19 +1386,26 @@ async fn to_chd(
             }
         }
 
+        let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
+        let parent_chd_romfile = if parents {
+            find_parent_chd_romfile_by_game(&mut transaction, game).await
+        } else {
+            None
+        };
+
         let (cue_roms, bin_iso_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-            .into_par_iter()
+            .into_iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
-        let mut cue_romfiles: Vec<CommonRomfile> = Vec::new();
-        for rom in &cue_roms {
-            cue_romfiles.push(
+        let cue_romfile = match cue_roms.first() {
+            Some(cue_rom) => Some(
                 romfile
-                    .as_archive(rom)?
+                    .as_archive(cue_rom)?
                     .to_common(progress_bar, &tmp_directory.path())
                     .await?,
-            );
-        }
+            ),
+            None => None,
+        };
 
         let mut bin_iso_romfiles: Vec<CommonRomfile> = Vec::new();
         for rom in &bin_iso_roms {
@@ -1366,7 +1417,7 @@ async fn to_chd(
             );
         }
 
-        let chd_romfile = match cue_romfiles.first() {
+        let chd_romfile = match cue_romfile.as_ref() {
             Some(cue_romfile) => {
                 cue_romfile
                     .as_cue_bin(
@@ -1381,6 +1432,9 @@ async fn to_chd(
                         &MediaType::Cd,
                         cd_compression_algorithms,
                         cd_hunk_size,
+                        &parent_chd_romfile
+                            .as_ref()
+                            .map(|romfile| romfile.as_chd().unwrap()),
                     )
                     .await?
             }
@@ -1395,6 +1449,9 @@ async fn to_chd(
                         &MediaType::Dvd,
                         dvd_compression_algorithms,
                         dvd_hunk_size,
+                        &parent_chd_romfile
+                            .as_ref()
+                            .map(|romfile| romfile.as_chd().unwrap()),
                     )
                     .await?
             }
@@ -1414,7 +1471,7 @@ async fn to_chd(
         {
             progress_bar.println("Converted file doesn't match the original");
             chd_romfile.as_common()?.delete(progress_bar, false).await?;
-            if let Some(cue_romfile) = cue_romfiles.first() {
+            if let Some(cue_romfile) = cue_romfile {
                 cue_romfile.delete(progress_bar, false).await?;
             }
             continue;
@@ -1422,7 +1479,7 @@ async fn to_chd(
 
         if diff {
             let mut new_paths = vec![&chd_romfile.path];
-            if let Some(cue_romfile) = cue_romfiles.first() {
+            if let Some(cue_romfile) = cue_romfile.as_ref() {
                 new_paths.push(&cue_romfile.path)
             }
             print_diff(
@@ -1434,7 +1491,7 @@ async fn to_chd(
             .await?;
         }
 
-        if let Some(cue_romfile) = cue_romfiles.first() {
+        if let Some(cue_romfile) = cue_romfile {
             let new_cue_path = Path::new(&romfile.path)
                 .parent()
                 .unwrap()
@@ -1466,6 +1523,12 @@ async fn to_chd(
             chd_romfile.as_common()?.get_size().await?,
         )
         .await;
+        update_romfile_parent(
+            &mut transaction,
+            romfile.id,
+            parent_chd_romfile.as_ref().map(|romfile| romfile.id),
+        )
+        .await;
         remove_file(progress_bar, &romfile.path, false).await?;
 
         commit_transaction(transaction).await;
@@ -1475,8 +1538,14 @@ async fn to_chd(
     for roms in cue_bins.values() {
         let mut transaction = begin_transaction(connection).await;
 
+        let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
+        let parent_chd_romfile = if parents {
+            find_parent_chd_romfile_by_game(&mut transaction, game).await
+        } else {
+            None
+        };
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-            .into_par_iter()
+            .into_iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
         let cue_romfile = romfiles_by_id
             .get(&cue_roms.first().unwrap().romfile_id.unwrap())
@@ -1498,6 +1567,9 @@ async fn to_chd(
                 &MediaType::Cd,
                 cd_compression_algorithms,
                 cd_hunk_size,
+                &parent_chd_romfile
+                    .as_ref()
+                    .map(|romfile| romfile.as_chd().unwrap()),
             )
             .await?;
 
@@ -1522,7 +1594,7 @@ async fn to_chd(
             let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
             let mut romfile_paths = romfiles_by_id
                 .iter()
-                .filter(|(&k, _)| bin_roms.iter().any(|&r| r.romfile_id.unwrap() == k))
+                .filter(|(&k, _)| bin_roms.par_iter().any(|&r| r.romfile_id.unwrap() == k))
                 .map(|(_, v)| &v.path)
                 .collect::<Vec<&String>>();
             romfile_paths.push(&cue_romfile.path);
@@ -1533,6 +1605,12 @@ async fn to_chd(
             &mut transaction,
             &chd_romfile.as_common()?.to_string(),
             chd_romfile.as_common()?.get_size().await?,
+        )
+        .await;
+        update_romfile_parent(
+            &mut transaction,
+            chd_romfile_id,
+            parent_chd_romfile.as_ref().map(|romfile| romfile.id),
         )
         .await;
         for bin_rom in bin_roms {
@@ -1550,6 +1628,12 @@ async fn to_chd(
         let mut transaction = begin_transaction(connection).await;
 
         for rom in roms {
+            let game = games_by_id.get(&rom.game_id).unwrap();
+            let parent_chd_romfile = if parents {
+                find_parent_chd_romfile_by_game(&mut transaction, game).await
+            } else {
+                None
+            };
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let chd_romfile = romfile
                 .as_iso()?
@@ -1559,6 +1643,9 @@ async fn to_chd(
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
+                    &parent_chd_romfile
+                        .as_ref()
+                        .map(|romfile| romfile.as_chd().unwrap()),
                 )
                 .await?;
             if check
@@ -1585,6 +1672,12 @@ async fn to_chd(
                 romfile.id,
                 &chd_romfile.as_common()?.to_string(),
                 chd_romfile.as_common()?.get_size().await?,
+            )
+            .await;
+            update_romfile_parent(
+                &mut transaction,
+                romfile.id,
+                parent_chd_romfile.as_ref().map(|romfile| romfile.id),
             )
             .await;
             romfile.as_common()?.delete(progress_bar, false).await?;
@@ -1599,6 +1692,12 @@ async fn to_chd(
         let mut transaction = begin_transaction(connection).await;
 
         for rom in roms {
+            let game = games_by_id.get(&rom.game_id).unwrap();
+            let parent_chd_romfile = if parents {
+                find_parent_chd_romfile_by_game(&mut transaction, game).await
+            } else {
+                None
+            };
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let chd_romfile = romfile
                 .as_xso()?
@@ -1610,6 +1709,9 @@ async fn to_chd(
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
+                    &parent_chd_romfile
+                        .as_ref()
+                        .map(|romfile| romfile.as_chd().unwrap()),
                 )
                 .await?;
             if check
@@ -1636,6 +1738,12 @@ async fn to_chd(
                 romfile.id,
                 &chd_romfile.as_common()?.to_string(),
                 chd_romfile.as_common()?.get_size().await?,
+            )
+            .await;
+            update_romfile_parent(
+                &mut transaction,
+                romfile.id,
+                parent_chd_romfile.as_ref().map(|romfile| romfile.id),
             )
             .await;
             romfile.as_common()?.delete(progress_bar, false).await?;
@@ -1650,6 +1758,12 @@ async fn to_chd(
         let mut transaction = begin_transaction(connection).await;
 
         for rom in roms {
+            let game = games_by_id.get(&rom.game_id).unwrap();
+            let parent_chd_romfile = if parents {
+                find_parent_chd_romfile_by_game(&mut transaction, game).await
+            } else {
+                None
+            };
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let chd_romfile = romfile
                 .as_xso()?
@@ -1661,6 +1775,9 @@ async fn to_chd(
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
+                    &parent_chd_romfile
+                        .as_ref()
+                        .map(|romfile| romfile.as_chd().unwrap()),
                 )
                 .await?;
             if diff {
@@ -1689,6 +1806,12 @@ async fn to_chd(
                 chd_romfile.as_common()?.get_size().await?,
             )
             .await;
+            update_romfile_parent(
+                &mut transaction,
+                romfile.id,
+                parent_chd_romfile.as_ref().map(|romfile| romfile.id),
+            )
+            .await;
             remove_file(progress_bar, &romfile.path, false).await?;
         }
 
@@ -1701,12 +1824,33 @@ async fn to_chd(
             let tmp_directory = create_tmp_directory(connection).await?;
             let mut transaction = begin_transaction(connection).await;
 
+            let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
+            let parent_chd_romfile = if parents {
+                find_parent_chd_romfile_by_game(&mut transaction, game).await
+            } else {
+                None
+            };
+
             if roms.len() == 1 {
                 let romfile = romfiles_by_id
                     .get(&roms.first().unwrap().romfile_id.unwrap())
                     .unwrap();
-                let chd_romfile = romfile
-                    .as_chd()?
+                if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                    .await
+                    .is_empty()
+                {
+                    progress_bar.println("CHD has children, skipping");
+                    continue;
+                }
+                let chd_romfile = match romfile.parent_id {
+                    Some(parent_id) => {
+                        let parent_chd_romfile =
+                            find_romfile_by_id(&mut transaction, parent_id).await;
+                        romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                    }
+                    None => romfile.as_chd()?,
+                };
+                let chd_romfile = chd_romfile
                     .to_iso(progress_bar, &tmp_directory.path())
                     .await?
                     .to_chd(
@@ -1715,6 +1859,9 @@ async fn to_chd(
                         &MediaType::Dvd,
                         dvd_compression_algorithms,
                         dvd_hunk_size,
+                        &parent_chd_romfile
+                            .as_ref()
+                            .map(|romfile| romfile.as_chd().unwrap()),
                     )
                     .await?;
 
@@ -1757,13 +1904,19 @@ async fn to_chd(
                     romfile.as_common()?.get_size().await?,
                 )
                 .await;
+                update_romfile_parent(
+                    &mut transaction,
+                    romfile.id,
+                    parent_chd_romfile.as_ref().map(|romfile| romfile.id),
+                )
+                .await;
             } else {
                 let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                    .into_par_iter()
+                    .into_iter()
                     .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
                 let mut romfiles: Vec<&Romfile> = bin_roms
-                    .par_iter()
+                    .iter()
                     .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
                     .collect();
                 romfiles.dedup();
@@ -1773,13 +1926,31 @@ async fn to_chd(
                 }
 
                 let romfile = romfiles.first().unwrap();
+                if !find_romfiles_by_parent_id(&mut transaction, romfile.id)
+                    .await
+                    .is_empty()
+                {
+                    progress_bar.println("CHD has children, skipping");
+                    continue;
+                }
                 let cue_romfile = romfiles_by_id
                     .get(&cue_roms.first().unwrap().romfile_id.unwrap())
                     .unwrap()
                     .as_common()?;
 
-                let chd_romfile = romfile
-                    .as_chd_with_cue(&cue_romfile.path)?
+                let chd_romfile = match romfile.parent_id {
+                    Some(parent_id) => {
+                        let parent_chd_romfile =
+                            find_romfile_by_id(&mut transaction, parent_id).await;
+                        romfile.as_chd_with_cue_and_parent(
+                            &cue_romfile.path,
+                            &parent_chd_romfile.path,
+                        )?
+                    }
+                    None => romfile.as_chd_with_cue(&cue_romfile.path)?,
+                };
+
+                let chd_romfile = chd_romfile
                     .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
                     .await?
                     .to_chd(
@@ -1788,6 +1959,9 @@ async fn to_chd(
                         &MediaType::Cd,
                         cd_compression_algorithms,
                         cd_hunk_size,
+                        &parent_chd_romfile
+                            .as_ref()
+                            .map(|romfile| romfile.as_chd().unwrap()),
                     )
                     .await?;
 
@@ -1830,6 +2004,12 @@ async fn to_chd(
                     romfile.as_common()?.get_size().await?,
                 )
                 .await;
+                update_romfile_parent(
+                    &mut transaction,
+                    romfile.id,
+                    parent_chd_romfile.as_ref().map(|romfile| romfile.id),
+                )
+                .await;
             }
 
             commit_transaction(transaction).await;
@@ -1839,10 +2019,11 @@ async fn to_chd(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn to_cso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
     diff: bool,
@@ -1850,7 +2031,7 @@ async fn to_cso(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -1859,7 +2040,7 @@ async fn to_cso(
         });
 
     // partition ISOs
-    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -1871,7 +2052,7 @@ async fn to_cso(
         });
 
     // partition CHDs
-    let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (mut chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.len() == 1
                 && roms.par_iter().any(|rom| {
@@ -1882,31 +2063,40 @@ async fn to_cso(
                         .ends_with(CHD_EXTENSION)
                 })
         });
+    // make sure children are converted before parents
+    chds.par_sort_by(|_, a, _, b| {
+        b.par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .any(|romfile| romfile.parent_id.is_some())
+            .cmp(
+                &a.par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .any(|romfile| romfile.parent_id.is_some()),
+            )
+    });
 
     // partition ZSOs
-    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(ZSO_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ZSO_EXTENSION)
+            })
         });
 
     // partition CSOs
-    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(CSO_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CSO_EXTENSION)
+            })
         });
 
     // drop others
@@ -1918,7 +2108,7 @@ async fn to_cso(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .collect();
         romfiles.dedup();
@@ -2031,8 +2221,14 @@ async fn to_cso(
         let mut transaction = begin_transaction(connection).await;
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let cso_romfile = romfile
-                .as_chd()?
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd()?,
+            };
+            let cso_romfile = chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
                 .to_xso(
@@ -2067,6 +2263,9 @@ async fn to_cso(
                 cso_romfile.as_common()?.get_size().await?,
             )
             .await;
+            if romfile.parent_id.is_some() {
+                update_romfile_parent(&mut transaction, romfile.id, None).await;
+            }
             romfile.as_common()?.delete(progress_bar, false).await?;
         }
 
@@ -2184,10 +2383,11 @@ async fn to_cso(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn to_nsz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
     diff: bool,
@@ -2195,7 +2395,7 @@ async fn to_nsz(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -2204,7 +2404,7 @@ async fn to_nsz(
         });
 
     // partition NSPs
-    let (nsps, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (nsps, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -2216,7 +2416,7 @@ async fn to_nsz(
         });
 
     // partition NSZs
-    let (nszs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (nszs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -2236,7 +2436,7 @@ async fn to_nsz(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .collect();
         romfiles.dedup();
@@ -2403,7 +2603,7 @@ async fn to_nsz(
 async fn to_rvz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
     diff: bool,
@@ -2414,7 +2614,7 @@ async fn to_rvz(
     block_size: usize,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -2423,7 +2623,7 @@ async fn to_rvz(
         });
 
     // partition ISOs
-    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -2435,7 +2635,7 @@ async fn to_rvz(
         });
 
     // partition RVZs
-    let (rvzs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (rvzs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -2455,7 +2655,7 @@ async fn to_rvz(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .collect();
         romfiles.dedup();
@@ -2635,10 +2835,11 @@ async fn to_rvz(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn to_zso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     recompress: bool,
     diff: bool,
@@ -2646,7 +2847,7 @@ async fn to_zso(
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -2655,7 +2856,7 @@ async fn to_zso(
         });
 
     // partition ISOs
-    let (isos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -2667,7 +2868,7 @@ async fn to_zso(
         });
 
     // partition CHDs
-    let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (mut chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.len() == 1
                 && roms.par_iter().any(|rom| {
@@ -2678,31 +2879,40 @@ async fn to_zso(
                         .ends_with(CHD_EXTENSION)
                 })
         });
+    // make sure children are converted before parents
+    chds.par_sort_by(|_, a, _, b| {
+        b.par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .any(|romfile| romfile.parent_id.is_some())
+            .cmp(
+                &a.par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .any(|romfile| romfile.parent_id.is_some()),
+            )
+    });
 
     // partition CSOs
-    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(CSO_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CSO_EXTENSION)
+            })
         });
 
     // partition ZSOs
-    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(ZSO_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ZSO_EXTENSION)
+            })
         });
 
     // drop others
@@ -2714,7 +2924,7 @@ async fn to_zso(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .collect();
         romfiles.dedup();
@@ -2827,8 +3037,14 @@ async fn to_zso(
         let mut transaction = begin_transaction(connection).await;
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let zso_romfile = romfile
-                .as_chd()?
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd()?,
+            };
+            let zso_romfile = chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
                 .to_xso(
@@ -2863,6 +3079,9 @@ async fn to_zso(
                 zso_romfile.as_common()?.get_size().await?,
             )
             .await;
+            if romfile.parent_id.is_some() {
+                update_romfile_parent(&mut transaction, romfile.id, None).await;
+            }
             romfile.as_common()?.delete(progress_bar, false).await?;
         }
 
@@ -2983,13 +3202,13 @@ async fn to_original(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    roms_by_game_id: HashMap<i64, Vec<Rom>>,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     check: bool,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
-    let (archives, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
@@ -2998,7 +3217,7 @@ async fn to_original(
         });
 
     // partition CHDs
-    let (chds, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (mut chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -3008,9 +3227,20 @@ async fn to_original(
                     .ends_with(CHD_EXTENSION)
             })
         });
+    // make sure children are converted before parents
+    chds.par_sort_by(|_, a, _, b| {
+        b.par_iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .any(|romfile| romfile.parent_id.is_some())
+            .cmp(
+                &a.par_iter()
+                    .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+                    .any(|romfile| romfile.parent_id.is_some()),
+            )
+    });
 
     // partition CSOs
-    let (csos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -3022,7 +3252,7 @@ async fn to_original(
         });
 
     // partition NSZs
-    let (nszs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (nszs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -3034,7 +3264,7 @@ async fn to_original(
         });
 
     // partition RVZs
-    let (rvzs, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (rvzs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -3046,7 +3276,7 @@ async fn to_original(
         });
 
     // partition ZSOs
-    let (zsos, others): (HashMap<i64, Vec<Rom>>, HashMap<i64, Vec<Rom>>) =
+    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
             roms.par_iter().any(|rom| {
                 romfiles_by_id
@@ -3070,7 +3300,7 @@ async fn to_original(
         let mut transaction = begin_transaction(connection).await;
 
         let mut romfiles: Vec<&Romfile> = roms
-            .par_iter()
+            .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
             .filter(|romfile| {
                 romfile.path.ends_with(SEVENZIP_EXTENSION) || romfile.path.ends_with(ZIP_EXTENSION)
@@ -3174,8 +3404,14 @@ async fn to_original(
             let romfile = romfiles_by_id
                 .get(&roms.first().unwrap().romfile_id.unwrap())
                 .unwrap();
-            let iso_romfile = romfile
-                .as_chd()?
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd()?,
+            };
+            let iso_romfile = chd_romfile
                 .to_iso(progress_bar, &romfile.as_common()?.path.parent().unwrap())
                 .await?;
 
@@ -3204,14 +3440,17 @@ async fn to_original(
                 iso_romfile.as_common()?.get_size().await?,
             )
             .await;
+            if romfile.parent_id.is_some() {
+                update_romfile_parent(&mut transaction, romfile.id, None).await;
+            }
             romfile.as_common()?.delete(progress_bar, false).await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_par_iter()
+                .into_iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
             let mut romfiles: Vec<&Romfile> = bin_roms
-                .par_iter()
+                .iter()
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
                 .collect();
             romfiles.dedup();
@@ -3220,16 +3459,20 @@ async fn to_original(
                 bail!("Multiple CHDs found");
             }
 
-            let chd_romfile = romfiles.first().unwrap();
+            let romfile = romfiles.first().unwrap();
             let cue_romfile = romfiles_by_id
                 .get(&cue_roms.first().unwrap().romfile_id.unwrap())
                 .unwrap()
                 .as_common()?;
-
-            let cue_bin_romfile = romfiles
-                .first()
-                .unwrap()
-                .as_chd_with_cue(&cue_romfile.path)?
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile
+                        .as_chd_with_cue_and_parent(&cue_romfile.path, &parent_chd_romfile.path)?
+                }
+                None => romfile.as_chd_with_cue(&cue_romfile.path)?,
+            };
+            let cue_bin_romfile = chd_romfile
                 .to_cue_bin(
                     progress_bar,
                     &cue_romfile.path.parent().unwrap(),
@@ -3284,8 +3527,8 @@ async fn to_original(
                 .await;
                 update_rom_romfile(&mut transaction, bin_rom.id, Some(romfile_id)).await;
             }
-            delete_romfile_by_id(&mut transaction, chd_romfile.id).await;
-            chd_romfile.as_common()?.delete(progress_bar, false).await?;
+            delete_romfile_by_id(&mut transaction, romfile.id).await;
+            romfile.as_common()?.delete(progress_bar, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -3488,7 +3731,7 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
     old_files: &[&P],
     new_files: &[&Q],
 ) -> SimpleResult<()> {
-    let original_size = roms.iter().map(|&r| r.size as u64).sum();
+    let original_size = roms.par_iter().map(|&r| r.size as u64).sum();
     let mut old_size = 0u64;
     for &old_file in old_files {
         old_size += try_with!(old_file.as_ref().metadata(), "Failed to read file metadata").len();
@@ -3508,6 +3751,10 @@ async fn print_diff<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
+#[cfg(test)]
+mod test_chd_parents_to_chd_should_not_touch_parent;
+#[cfg(test)]
+mod test_chd_parents_to_iso;
 #[cfg(test)]
 mod test_cso_to_chd;
 #[cfg(test)]
@@ -3530,6 +3777,8 @@ mod test_iso_chd_to_sevenzip_iso;
 mod test_iso_chd_to_zso;
 #[cfg(test)]
 mod test_iso_to_chd;
+#[cfg(test)]
+mod test_iso_to_chd_parents;
 #[cfg(test)]
 mod test_iso_to_cso;
 #[cfg(test)]

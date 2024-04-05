@@ -49,6 +49,7 @@ async fn test() {
         id: 1,
         path: String::from("42.rom"),
         size: 0,
+        parent_id: None,
     };
 
     // when
