@@ -166,7 +166,7 @@ These should be in your `${PATH}` for extra features.
 ### TODO
 
 - Add actions to the web UI
-- Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
+- Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
 - Craft some unit tests for NSZ
@@ -460,6 +460,7 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
         -r, --recompress       Force conversion even if already in the selected format
         -d, --diff             Print size differences
         -c, --check            Check ROM files after conversion
+        -p, --parents          Prompt for CHD parents
         -h, --help             Print help information
 
 ## oxyromon-export-roms

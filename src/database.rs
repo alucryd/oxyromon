@@ -2463,6 +2463,41 @@ pub async fn find_romfiles_by_system_id(
     ))
 }
 
+pub async fn find_romfiles_by_system_id_and_extension_and_no_parent_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    extension: &str,
+) -> Vec<Romfile> {
+    let path_like = format!("%.{}", extension);
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE id IN (
+            SELECT DISTINCT(romfile_id)
+            FROM roms
+            WHERE game_id IN (
+                SELECT id
+                FROM games
+                WHERE system_id = ?
+            )
+        )
+        AND path LIKE ?
+        AND parent_id IS NULL
+        ORDER BY path
+        ",
+        system_id,
+        path_like
+    )
+    .fetch_all(connection)
+    .await
+    .expect(&format!(
+        "Error while finding romfiles with system id {}",
+        system_id
+    ))
+}
+
 pub async fn find_romfiles_by_parent_id(
     connection: &mut SqliteConnection,
     parent_id: i64,
@@ -2515,9 +2550,9 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
         "
         SELECT *
         FROM romfiles
-        WHERE path LIKE \"%/Trash/%\"
+        WHERE path LIKE '%/Trash/%'
         ORDER BY path
-        ",
+        "
     )
     .fetch_all(connection)
     .await

@@ -90,6 +90,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("PARENTS")
+                .short('p')
+                .long("parents")
+                .help("Prompt for CHD parents")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -303,6 +311,7 @@ pub async fn main(
                     get_list(connection, "CHD_DVD_COMPRESSION_ALGORITHMS").await;
                 let dvd_hunk_size = get_integer(connection, "CHD_DVD_HUNK_SIZE").await;
                 let parents = get_bool(connection, "CHD_PARENTS").await;
+                let prompt_for_parents = matches.get_flag("PARENTS");
                 to_chd(
                     connection,
                     progress_bar,
@@ -318,6 +327,7 @@ pub async fn main(
                     &dvd_compression_algorithms,
                     &dvd_hunk_size,
                     parents,
+                    prompt_for_parents,
                 )
                 .await?
             }
@@ -1279,6 +1289,7 @@ async fn to_chd(
     dvd_compression_algorithms: &[String],
     dvd_hunk_size: &Option<usize>,
     parents: bool,
+    prompt_for_parents: bool,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -1401,7 +1412,9 @@ async fn to_chd(
         }
 
         let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
-        let parent_chd_romfile = if parents {
+        let parent_chd_romfile = if prompt_for_parents {
+            prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+        } else if parents {
             find_parent_chd_romfile_by_game(&mut transaction, game).await
         } else {
             None
@@ -1553,7 +1566,9 @@ async fn to_chd(
         let mut transaction = begin_transaction(connection).await;
 
         let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
-        let parent_chd_romfile = if parents {
+        let parent_chd_romfile = if prompt_for_parents {
+            prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+        } else if parents {
             find_parent_chd_romfile_by_game(&mut transaction, game).await
         } else {
             None
@@ -1643,7 +1658,9 @@ async fn to_chd(
 
         for rom in roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = if parents {
+            let parent_chd_romfile = if prompt_for_parents {
+                prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+            } else if parents {
                 find_parent_chd_romfile_by_game(&mut transaction, game).await
             } else {
                 None
@@ -1707,7 +1724,9 @@ async fn to_chd(
 
         for rom in roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = if parents {
+            let parent_chd_romfile = if prompt_for_parents {
+                prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+            } else if parents {
                 find_parent_chd_romfile_by_game(&mut transaction, game).await
             } else {
                 None
@@ -1773,7 +1792,9 @@ async fn to_chd(
 
         for rom in roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = if parents {
+            let parent_chd_romfile = if prompt_for_parents {
+                prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+            } else if parents {
                 find_parent_chd_romfile_by_game(&mut transaction, game).await
             } else {
                 None
@@ -1839,7 +1860,9 @@ async fn to_chd(
             let mut transaction = begin_transaction(connection).await;
 
             let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
-            let parent_chd_romfile = if parents {
+            let parent_chd_romfile = if prompt_for_parents {
+                prompt_for_parent_romfile(&mut transaction, game.system_id, CHD_EXTENSION).await?
+            } else if parents {
                 find_parent_chd_romfile_by_game(&mut transaction, game).await
             } else {
                 None

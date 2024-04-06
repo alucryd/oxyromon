@@ -95,6 +95,7 @@ async fn test_cue_bin_to_chd() {
         &[],
         &None,
         false,
+        false,
     )
     .await
     .unwrap();
