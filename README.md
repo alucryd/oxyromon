@@ -49,6 +49,18 @@ See all configuration options below.
 
 You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or detect and forget manually deleted ROMs.
 
+### Installation
+
+You can grab pre-compiled binaries for Lnux, Mac and Windows from the [release page](https://github.com/alucryd/oxyromon/releases).
+
+A docker image is also available on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon).
+
+If you happen to be using Arch Linux, there's a package in the [official repos](https://archlinux.org/packages/extra/x86_64/oxyromon/).
+
+It is also possible to install from crates.io using `cargo install oxyromon`.
+
+Finally if you're feeling adventurous, you can always build from source, instructions below.
+
 ### Compilation
 
 The CLI has no specific requirement, you can just:
