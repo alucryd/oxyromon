@@ -68,6 +68,7 @@ const BOOLEANS: &[&str] = &[
     "GROUP_SUBSYSTEMS",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
+    "RVZ_SCRUB",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
