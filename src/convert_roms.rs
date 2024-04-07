@@ -2727,6 +2727,7 @@ async fn to_rvz(
                 compression_algorithm,
                 compression_level,
                 block_size,
+                false,
             )
             .await?;
 
@@ -2777,6 +2778,7 @@ async fn to_rvz(
                     compression_algorithm,
                     compression_level,
                     block_size,
+                    false,
                 )
                 .await?;
             if check
@@ -2829,6 +2831,7 @@ async fn to_rvz(
                         compression_algorithm,
                         compression_level,
                         block_size,
+                        false,
                     )
                     .await?;
 

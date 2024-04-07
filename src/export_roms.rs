@@ -348,6 +348,7 @@ pub async fn main(
                     .await
                     .unwrap();
                 let block_size = get_integer(connection, "RVZ_BLOCK_SIZE").await.unwrap();
+                let scrub = get_bool(connection, "RVZ_SCRUB").await;
                 to_rvz(
                     connection,
                     progress_bar,
@@ -357,6 +358,7 @@ pub async fn main(
                     &compression_algorithm,
                     compression_level,
                     block_size,
+                    scrub,
                 )
                 .await?
             }
@@ -1233,6 +1235,7 @@ async fn to_rvz(
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
+    scrub: bool,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -1297,6 +1300,7 @@ async fn to_rvz(
                 compression_algorithm,
                 compression_level,
                 block_size,
+                scrub,
             )
             .await?;
     }
@@ -1313,6 +1317,7 @@ async fn to_rvz(
                     compression_algorithm,
                     compression_level,
                     block_size,
+                    scrub,
                 )
                 .await?;
         }
@@ -1322,13 +1327,30 @@ async fn to_rvz(
     for roms in rvzs.values() {
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            copy_file(
-                progress_bar,
-                &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
-                false,
-            )
-            .await?;
+            if scrub {
+                let tmp_directory = create_tmp_directory(connection).await?;
+                romfile
+                    .as_rvz()?
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .to_rvz(
+                        progress_bar,
+                        destination_directory,
+                        compression_algorithm,
+                        compression_level,
+                        block_size,
+                        scrub,
+                    )
+                    .await?;
+            } else {
+                copy_file(
+                    progress_bar,
+                    &romfile.path,
+                    &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                    false,
+                )
+                .await?;
+            }
         }
     }
 

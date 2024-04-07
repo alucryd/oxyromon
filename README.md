@@ -117,6 +117,7 @@ Available settings:
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
+- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
 - `SEVENZIP_COMPRESSION_LEVEL`: The 7Z compression level, defaults to `9`, valid range: `1-9`
 - `SEVENZIP_SOLID_COMPRESSION`: Toggles 7Z solid compression, defaults to `false`
 - `ZIP_COMPRESSION_LEVEL`: The ZIP compression level, defaults to `9`, valid range: `1-9`

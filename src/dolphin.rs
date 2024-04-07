@@ -142,6 +142,7 @@ pub trait ToRvz {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
+        scrub: bool,
     ) -> SimpleResult<RvzRomfile>;
 }
 
@@ -153,6 +154,7 @@ impl ToRvz for IsoRomfile {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
+        scrub: bool,
     ) -> SimpleResult<RvzRomfile> {
         progress_bar.set_message("Creating rvz");
         progress_bar.set_style(get_none_progress_style());
@@ -168,7 +170,8 @@ impl ToRvz for IsoRomfile {
             path.file_name().unwrap().to_str().unwrap()
         ));
 
-        let output = Command::new(DOLPHIN_TOOL)
+        let mut command = Command::new(DOLPHIN_TOOL);
+        command
             .arg("convert")
             .arg("-f")
             .arg("rvz")
@@ -181,10 +184,11 @@ impl ToRvz for IsoRomfile {
             .arg("-i")
             .arg(&self.path)
             .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .expect("Failed to create rvz");
+            .arg(&path);
+        if scrub {
+            command.arg("-s");
+        }
+        let output = command.output().await.expect("Failed to create rvz");
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
