@@ -87,9 +87,7 @@ pub async fn main(
     let mut systems: Vec<System> = Vec::new();
     if let Some(system_names) = matches.get_many::<String>("SYSTEM") {
         for system_name in system_names {
-            systems.append(
-                &mut find_systems_by_name_like(connection, &format!("%{}%", system_name)).await,
-            );
+            systems.append(&mut find_systems_by_name_like(connection, system_name).await);
         }
     }
     systems.dedup_by_key(|system| system.id);

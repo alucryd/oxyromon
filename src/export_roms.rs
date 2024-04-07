@@ -48,12 +48,12 @@ pub fn subcommand() -> Command {
                 .value_parser(PossibleValuesParser::new(ALL_FORMATS.iter())),
         )
         .arg(
-            Arg::new("NAME")
-                .short('n')
-                .long("name")
+            Arg::new("GAME")
+                .short('g')
+                .long("game")
                 .help("Select games by name")
                 .required(false)
-                .num_args(1),
+                .action(ArgAction::Append),
         )
         .arg(
             Arg::new("SYSTEM")
@@ -73,7 +73,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("1G1R")
-                .short('g')
+                .short('o')
                 .long("1g1r")
                 .help("Export 1G1R games only")
                 .required(false)
@@ -90,16 +90,13 @@ pub async fn main(
         Some(system_names) => {
             let mut systems: Vec<System> = Vec::new();
             for system_name in system_names {
-                systems.append(
-                    &mut find_systems_by_name_like(connection, &format!("%{}%", system_name)).await,
-                );
+                systems.append(&mut find_systems_by_name_like(connection, system_name).await);
             }
             systems.dedup_by_key(|system| system.id);
             systems
         }
         None => prompt_for_systems(connection, None, false, false).await?,
     };
-    let game_name = matches.get_one::<String>("NAME");
     let format = match matches.get_one::<String>("FORMAT") {
         Some(format) => format.as_str().to_owned(),
         None => ALL_FORMATS
@@ -189,14 +186,18 @@ pub async fn main(
             continue;
         }
 
-        let mut games = match game_name {
-            Some(game_name) => {
-                let games = find_games_with_romfiles_by_name_and_system_id(
-                    connection,
-                    &format!("%{}%", game_name),
-                    system.id,
-                )
-                .await;
+        let mut games = match matches.get_many::<String>("GAME") {
+            Some(game_names) => {
+                let mut games: Vec<Game> = Vec::new();
+                for game_name in game_names {
+                    games.append(
+                        &mut find_games_with_romfiles_by_name_and_system_id(
+                            connection, game_name, system.id,
+                        )
+                        .await,
+                    );
+                }
+                games.dedup_by_key(|game| game.id);
                 prompt_for_games(games, cfg!(test))?
             }
             None => find_games_with_romfiles_by_system_id(connection, system.id).await,
@@ -207,8 +208,8 @@ pub async fn main(
         }
 
         if games.is_empty() {
-            if game_name.is_some() {
-                progress_bar.println(format!("No game matching \"{}\"", game_name.unwrap()));
+            if matches.index_of("GAME").is_some() {
+                progress_bar.println("No matching game");
             }
             continue;
         }

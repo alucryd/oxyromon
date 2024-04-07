@@ -32,12 +32,12 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("NAME")
-                .short('n')
-                .long("name")
+            Arg::new("GAME")
+                .short('g')
+                .long("game")
                 .help("Select games by name")
                 .required(false)
-                .num_args(1),
+                .action(ArgAction::Append),
         )
         .arg(
             Arg::new("SIZE")
@@ -55,7 +55,6 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
-    let game_name = matches.get_one::<String>("NAME");
     let hash_algorithm = match find_setting_by_key(connection, "HASH_ALGORITHM")
         .await
         .unwrap()
@@ -69,11 +68,34 @@ pub async fn main(
     };
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
+        let games = match matches.get_many::<String>("GAME") {
+            Some(game_names) => {
+                let mut games: Vec<Game> = Vec::new();
+                for game_name in game_names {
+                    games.append(
+                        &mut find_games_with_romfiles_by_name_and_system_id(
+                            connection, game_name, system.id,
+                        )
+                        .await,
+                    );
+                }
+                games.dedup_by_key(|game| game.id);
+                prompt_for_games(games, cfg!(test))?
+            }
+            None => find_games_with_romfiles_by_system_id(connection, system.id).await,
+        };
+
+        if games.is_empty() {
+            if matches.index_of("GAME").is_some() {
+                progress_bar.println("No matching game");
+            }
+            continue;
+        }
         check_system(
             connection,
             progress_bar,
             &system,
-            &game_name,
+            games,
             matches.get_flag("SIZE"),
             &hash_algorithm,
         )
@@ -87,30 +109,10 @@ async fn check_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    game_name: &Option<&String>,
+    games: Vec<Game>,
     size: bool,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let games = match game_name {
-        Some(game_name) => {
-            let games = find_games_with_romfiles_by_name_and_system_id(
-                connection,
-                &format!("%{}%", game_name),
-                system.id,
-            )
-            .await;
-            prompt_for_games(games, cfg!(test))?
-        }
-        None => find_games_with_romfiles_by_system_id(connection, system.id).await,
-    };
-
-    if games.is_empty() {
-        if game_name.is_some() {
-            progress_bar.println(format!("No game matching \"{}\"", game_name.unwrap()));
-        }
-        return Ok(());
-    }
-
     let roms = find_roms_with_romfile_by_game_ids(
         connection,
         &games.iter().map(|game| game.id).collect::<Vec<i64>>(),

@@ -63,8 +63,8 @@ async fn test() {
         "ZIP",
         "-s",
         "Test System",
-        "-n",
-        "test gqme",
+        "-g",
+        "%test gqme%",
         "-d",
         destination_directory.as_os_str().to_str().unwrap(),
     ]);

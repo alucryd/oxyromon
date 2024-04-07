@@ -8,6 +8,9 @@
 - Add support for CHD parents, enable via the `CHD_PARENTS` settings
 - Add a `-u` flag to `config` to unset nullable settings
 - Add a `-p` flag to `convert-roms` to prompt for an optional CHD parent when converting to CHD 
+- Change `-s` in various subcommands to accept SQL wildcards
+- Change `-n` to `-g` (for game) in various subcommands and make it accept SQL wildcards
+- Change `-g` to `-o` (for one g one r) in various subcommands
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast

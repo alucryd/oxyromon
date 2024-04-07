@@ -50,7 +50,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("REGIONS_ONE")
-                .short('g')
+                .short('o')
                 .long("1g1r")
                 .help("Set the 1G1R regions to keep (ordered)")
                 .required(false)

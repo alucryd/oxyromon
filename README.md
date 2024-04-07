@@ -405,7 +405,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
                 Set the regions to keep (unordered)
             --subfolders <REGIONS_ALL_SUBFOLDERS>
                 Set the subfolders scheme for games [possible values: NONE, ALPHA]
-        -g, --1g1r <REGIONS_ONE>...
+        -o, --1g1r <REGIONS_ONE>...
                 Set the 1G1R regions to keep (ordered)
             --1g1r-subfolders <REGIONS_ONE_SUBFOLDERS>
                 Set the subfolders scheme for 1G1R games [possible values: NONE, ALPHA]
@@ -446,8 +446,8 @@ Convert ROM files between common formats
 
 ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter games by name, the matching string is case-insensitive and doesn't need to be the full game name.
-Systems can also be selected the same way so as to avoid being prompted for them.
+You may optionally filter games by name, the matching string is case-insensitive and can use SQL wildcards.
+Systems can also be selected the same way so as to avoid being prompted for them. Both systems and games flags can be passed multiple times.
 
 Supported ROM formats:
 
@@ -466,7 +466,7 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
 
     Options:
         -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
-        -n, --name <NAME>      Select games by name
+        -g, --game <GAME>      Select games by name
         -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
         -r, --recompress       Force conversion even if already in the selected format
@@ -487,9 +487,10 @@ Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 
 
     Options:
         -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, WBFS, ZSO]
-        -n, --name <NAME>            Select games by name
+        -g, --game <Game>            Select games by name
         -s, --system <SYSTEM>        Select systems by name
         -d, --directory <DIRECTORY>  Set the output directory
+        -o, --1g1r                   Export 1G1R games only
         -h, --help                   Print help
 
 ## oxyromon-check-roms
@@ -503,6 +504,7 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
 
     Options:
         -a, --all   Check all systems
+        -g, --game <GAME>  Select games by name
         -s, --size  Recalculate ROM file sizes
         -h, --help  Print help information
 
