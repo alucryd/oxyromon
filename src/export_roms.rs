@@ -22,6 +22,7 @@ use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
 use indicatif::ProgressBar;
+use phf::phf_map;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
@@ -34,6 +35,94 @@ const ALL_FORMATS: &[&str] = &[
     "ORIGINAL", "7Z", "CHD", "CSO", "ISO", "NSZ", "RVZ", "WBFS", "ZIP", "ZSO",
 ];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
+
+const NAMING_SCHEMES: &[&str] = &["BATOCERA"];
+
+static BATOCERA_SYSTEM_DIRECTORIES: phf::Map<&str, &str> = phf_map! {
+    "Acorn - Atom" => "atom",
+    "Amstrad - CPC" => "amstradcpc",
+    "Apple - IIe" => "apple2",
+    "Arduboy Inc - Arduboy" => "arduboy",
+    "Atari - 8-bit Family" => "atari800",
+    "Atari - 2600" => "atari2600",
+    "Atari - 5200" => "atari5200",
+    "Atari - 7800" => "atari7800",
+    "Atari - Jaguar" => "jaguar",
+    "Atari - Lynx" => "lynx",
+    "Atari - ST" => "atarist",
+    "Bally - Astrocade" => "astrocde",
+    "Bandai - WonderSwan" => "wswan",
+    "Bandai - WonderSwan Color" => "wswanc",
+    "Bit Corporation - Gamate" => "gamate",
+    "Casio - PV-1000" => "pv1000",
+    "Commodore - Amiga CD32" => "amigacd32",
+    "Commodore - Amiga CDTV" => "amigacdtv",
+    "Commodore - Commodore 64" => "c64",
+    "Coleco - ColecoVision" => "colecovision",
+    "Emerson - Arcadia 2001" => "arcadia",
+    "Entex - Adventure Vision" => "advision",
+    "Epoch - Super Cassette Vision" => "scv",
+    "Fairchild - Channel F" => "channelf",
+    "Funtech - Super Acan" => "supracan",
+    "GCE - Vectrex" => "vectrex",
+    "Interton - VC 4000" => "vc4000",
+    "Magnavox - Odyssey 2" => "o2em",
+    "Mattel - Intellivision" => "intellivision",
+    "Microsoft - MSX" => "msx1",
+    "Microsoft - MSX2" => "msx2",
+    "Microsoft - Xbox" => "xbox",
+    "Microsoft - Xbox 360" => "xbox360",
+    "NEC - PC Engine - TurboGrafx-16" => "pcengine",
+    "NEC - PC Engine CD & TurboGrafx CD" => "pcenginecd",
+    "NEC - PC Engine SuperGrafx" => "supergrafx",
+    "NEC - PC-88" => "pc88",
+    "NEC - PC-98" => "pc98",
+    "Nintendo - Family Computer Disk System" => "fds",
+    "Nintendo - Game & Watch" => "gameandwatch",
+    "Nintendo - GameCube" => "gc",
+    "Nintendo - Game Boy" => "gb",
+    "Nintendo - Game Boy Advance" => "gba",
+    "Nintendo - Game Boy Color" => "gbc",
+    "Nintendo - Nintendo 3DS" => "3ds",
+    "Nintendo - Nintendo 64" => "n64",
+    "Nintendo - Nintendo 64DD" => "n64dd",
+    "Nintendo - Nintendo DS" => "nds",
+    "Nintendo - Nintendo Entertainment System" => "nes",
+    "Nintendo - Pokemon Mini" => "pokemini",
+    "Nintendo - Satellaview" => "satellaview",
+    "Nintendo - Sufami Turbo" => "sufami",
+    "Nintendo - Super Nintendo Entertainment System" => "snes",
+    "Nintendo - Virtual Boy" => "virtualboy",
+    "Nintendo - Wii" => "wii",
+    "Nintendo - Wii U" => "wiiu",
+    "Panasonic - 3DO Interactive Multiplayer" => "3do",
+    "Philips - CD-i" => "cdi",
+    "Philips - Videopac+" => "videopacplus",
+    "Sega - 32X" => "sega32x",
+    "Sega - Dreamcast" => "dreamcast",
+    "Sega - Game Gear" => "gamegear",
+    "Sega - Master System - Mark III" => "mastersystem",
+    "Sega - Mega CD & Sega CD" => "segacd",
+    "Sega - Mega Drive - Genesis" => "megadrive",
+    "Sega - Saturn" => "saturn",
+    "Sega - SG-1000" => "sg1000",
+    "Sharp - X1" => "x1",
+    "Sharp - X68000" => "x68000",
+    "Sinclair - ZX Spectrum +3" => "zxspectrum",
+    "SNK - NeoGeo" => "neogeo",
+    "SNK - NeoGeo CD" => "neogeocd",
+    "SNK - NeoGeo Pocket" => "ngp",
+    "SNK - NeoGeo Pocket Color" => "ngpc",
+    "Sony - PlayStation" => "psx",
+    "Sony - PlayStation 2" => "ps2",
+    "Sony - PlayStation 3" => "ps3",
+    "Sony - PlayStation Portable" => "psp",
+    "Sony - PlayStation Vita" => "psvita",
+    "VTech - CreatiVision" => "creativision",
+    "VTech - V.Smile" => "vsmile",
+    "Watara - Supervision" => "supervision",
+    "Welback - Mega Duck" => "megaduck",
+};
 
 pub fn subcommand() -> Command {
     Command::new("export-roms")
@@ -79,6 +168,15 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("NAMING")
+                .short('n')
+                .long("naming")
+                .help("Set the system naming scheme")
+                .required(false)
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(NAMING_SCHEMES.iter())),
+        )
 }
 
 pub async fn main(
@@ -104,10 +202,12 @@ pub async fn main(
             .map(|&s| s.to_owned())
             .unwrap(),
     };
+    let naming_scheme = matches
+        .get_one::<String>("NAMING")
+        .map(|naming_scheme| naming_scheme.as_str().to_owned());
 
     let destination_directory =
         get_canonicalized_path(matches.get_one::<String>("DIRECTORY").unwrap()).await?;
-    create_directory(progress_bar, &destination_directory, true).await?;
 
     match format.as_str() {
         "7Z" | "ZIP" => {
@@ -186,6 +286,30 @@ pub async fn main(
             continue;
         }
 
+        let system_directory_name = match naming_scheme.as_ref() {
+            Some(naming_scheme) => match naming_scheme.as_str() {
+                "BATOCERA" => {
+                    let mut matches = BATOCERA_SYSTEM_DIRECTORIES
+                        .entries()
+                        .filter(|(key, _)| system.name.contains(*key))
+                        .collect::<Vec<(&&str, &&str)>>();
+                    if matches.is_empty() {
+                        progress_bar.println(format!(
+                            "{} isn't supported by naming scheme {}",
+                            &system.name, naming_scheme
+                        ));
+                        continue;
+                    }
+                    matches.sort_by(|a, b| a.0.len().cmp(&b.0.len()));
+                    matches.first().unwrap().1.to_string()
+                }
+                _ => bail!("Not possible"),
+            },
+            None => get_system_directory_name(connection, &system).await?,
+        };
+        let system_directory = destination_directory.join(system_directory_name);
+        create_directory(progress_bar, &system_directory, true).await?;
+
         let mut games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
                 let mut games: Vec<Game> = Vec::new();
@@ -245,7 +369,7 @@ pub async fn main(
                 to_original(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     &system,
                     games_by_id,
                     roms_by_game_id,
@@ -259,7 +383,7 @@ pub async fn main(
                 to_archive(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     &system,
                     games_by_id,
                     roms_by_game_id,
@@ -275,7 +399,7 @@ pub async fn main(
                 to_archive(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     &system,
                     games_by_id,
                     roms_by_game_id,
@@ -290,7 +414,7 @@ pub async fn main(
                 to_iso(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -306,7 +430,7 @@ pub async fn main(
                 to_chd(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     games_by_id,
                     roms_by_game_id,
                     romfiles_by_id,
@@ -321,7 +445,7 @@ pub async fn main(
                 to_cso(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -331,7 +455,7 @@ pub async fn main(
                 to_nsz(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -352,7 +476,7 @@ pub async fn main(
                 to_rvz(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                     &compression_algorithm,
@@ -366,7 +490,7 @@ pub async fn main(
                 to_wbfs(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -376,7 +500,7 @@ pub async fn main(
                 to_zso(
                     connection,
                     progress_bar,
-                    &destination_directory,
+                    &system_directory,
                     roms_by_game_id,
                     romfiles_by_id,
                 )
@@ -395,7 +519,7 @@ pub async fn main(
 async fn to_archive(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     system: &System,
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
@@ -494,7 +618,7 @@ async fn to_archive(
                 .to_archive(
                     progress_bar,
                     &tmp_directory.path(),
-                    destination_directory,
+                    system_directory,
                     &game.name,
                     &archive_type,
                     compression_level,
@@ -524,7 +648,7 @@ async fn to_archive(
                 .to_archive(
                     progress_bar,
                     &cue_romfile.as_common()?.path.parent().unwrap(),
-                    destination_directory,
+                    system_directory,
                     &game.name,
                     &archive_type,
                     compression_level,
@@ -539,7 +663,7 @@ async fn to_archive(
                     .to_archive(
                         progress_bar,
                         &tmp_directory.path(),
-                        destination_directory,
+                        system_directory,
                         &game.name,
                         &archive_type,
                         compression_level,
@@ -564,7 +688,7 @@ async fn to_archive(
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
-                destination_directory,
+                system_directory,
                 &game.name,
                 &archive_type,
                 compression_level,
@@ -587,7 +711,7 @@ async fn to_archive(
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
-                destination_directory,
+                system_directory,
                 &game.name,
                 &archive_type,
                 compression_level,
@@ -610,7 +734,7 @@ async fn to_archive(
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
-                destination_directory,
+                system_directory,
                 &game.name,
                 &archive_type,
                 compression_level,
@@ -633,7 +757,7 @@ async fn to_archive(
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
-                destination_directory,
+                system_directory,
                 &game.name,
                 &archive_type,
                 compression_level,
@@ -654,7 +778,7 @@ async fn to_archive(
                 copy_file(
                     progress_bar,
                     &archive_romfile.path,
-                    &destination_directory.join(archive_romfile.path.file_name().unwrap()),
+                    &system_directory.join(archive_romfile.path.file_name().unwrap()),
                     false,
                 )
                 .await?;
@@ -664,7 +788,7 @@ async fn to_archive(
                 .to_archive(
                     progress_bar,
                     &tmp_directory.path(),
-                    destination_directory,
+                    system_directory,
                     &game.name,
                     &archive_type,
                     compression_level,
@@ -685,7 +809,7 @@ async fn to_archive(
                 .to_archive(
                     progress_bar,
                     &romfile.as_common()?.path.parent().unwrap(),
-                    destination_directory,
+                    system_directory,
                     &game.name,
                     &archive_type,
                     compression_level,
@@ -714,7 +838,7 @@ async fn to_archive(
                     .to_archive(
                         progress_bar,
                         &romfile.as_common()?.path.parent().unwrap(),
-                        destination_directory,
+                        system_directory,
                         &game.name,
                         &archive_type,
                         compression_level,
@@ -731,7 +855,7 @@ async fn to_archive(
 async fn to_chd(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
@@ -885,7 +1009,7 @@ async fn to_chd(
                     )?
                     .to_chd(
                         progress_bar,
-                        destination_directory,
+                        system_directory,
                         &MediaType::Cd,
                         cd_compression_algorithms,
                         cd_hunk_size,
@@ -900,7 +1024,7 @@ async fn to_chd(
                     .as_iso()?
                     .to_chd(
                         progress_bar,
-                        destination_directory,
+                        system_directory,
                         &MediaType::Dvd,
                         dvd_compression_algorithms,
                         dvd_hunk_size,
@@ -934,7 +1058,7 @@ async fn to_chd(
             )?
             .to_chd(
                 progress_bar,
-                destination_directory,
+                system_directory,
                 &MediaType::Cd,
                 cd_compression_algorithms,
                 cd_hunk_size,
@@ -953,7 +1077,7 @@ async fn to_chd(
                 .as_iso()?
                 .to_chd(
                     progress_bar,
-                    destination_directory,
+                    system_directory,
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
@@ -976,7 +1100,7 @@ async fn to_chd(
                 .await?
                 .to_chd(
                     progress_bar,
-                    destination_directory,
+                    system_directory,
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
@@ -999,7 +1123,7 @@ async fn to_chd(
                 .await?
                 .to_chd(
                     progress_bar,
-                    destination_directory,
+                    system_directory,
                     &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
@@ -1016,7 +1140,7 @@ async fn to_chd(
             copy_file(
                 progress_bar,
                 &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                 false,
             )
             .await?;
@@ -1029,7 +1153,7 @@ async fn to_chd(
 async fn to_cso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -1103,7 +1227,7 @@ async fn to_cso(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+            .to_xso(progress_bar, system_directory, &maxcso::XsoType::Cso)
             .await?;
     }
 
@@ -1113,7 +1237,7 @@ async fn to_cso(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_iso()?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+                .to_xso(progress_bar, system_directory, &maxcso::XsoType::Cso)
                 .await?;
         }
     }
@@ -1133,7 +1257,7 @@ async fn to_cso(
             chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+                .to_xso(progress_bar, system_directory, &maxcso::XsoType::Cso)
                 .await?;
         }
     }
@@ -1145,7 +1269,7 @@ async fn to_cso(
             copy_file(
                 progress_bar,
                 &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                 false,
             )
             .await?;
@@ -1158,7 +1282,7 @@ async fn to_cso(
 async fn to_nsz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -1207,7 +1331,7 @@ async fn to_nsz(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_nsp()?
-            .to_nsz(progress_bar, destination_directory)
+            .to_nsz(progress_bar, system_directory)
             .await?;
     }
 
@@ -1217,7 +1341,7 @@ async fn to_nsz(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_nsp()?
-                .to_nsz(progress_bar, destination_directory)
+                .to_nsz(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1229,7 +1353,7 @@ async fn to_nsz(
 async fn to_rvz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     compression_algorithm: &RvzCompressionAlgorithm,
@@ -1296,7 +1420,7 @@ async fn to_rvz(
             .as_iso()?
             .to_rvz(
                 progress_bar,
-                destination_directory,
+                system_directory,
                 compression_algorithm,
                 compression_level,
                 block_size,
@@ -1313,7 +1437,7 @@ async fn to_rvz(
                 .as_iso()?
                 .to_rvz(
                     progress_bar,
-                    destination_directory,
+                    system_directory,
                     compression_algorithm,
                     compression_level,
                     block_size,
@@ -1335,7 +1459,7 @@ async fn to_rvz(
                     .await?
                     .to_rvz(
                         progress_bar,
-                        destination_directory,
+                        system_directory,
                         compression_algorithm,
                         compression_level,
                         block_size,
@@ -1346,7 +1470,7 @@ async fn to_rvz(
                 copy_file(
                     progress_bar,
                     &romfile.path,
-                    &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                    &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                     false,
                 )
                 .await?;
@@ -1361,7 +1485,7 @@ async fn to_rvz(
 async fn to_wbfs(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -1422,7 +1546,7 @@ async fn to_wbfs(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
-            .to_wbfs(progress_bar, destination_directory)
+            .to_wbfs(progress_bar, system_directory)
             .await?;
     }
 
@@ -1432,7 +1556,7 @@ async fn to_wbfs(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_iso()?
-                .to_wbfs(progress_bar, destination_directory)
+                .to_wbfs(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1446,7 +1570,7 @@ async fn to_wbfs(
                 .as_rvz()?
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_wbfs(progress_bar, destination_directory)
+                .to_wbfs(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1457,7 +1581,7 @@ async fn to_wbfs(
 async fn to_zso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -1531,7 +1655,7 @@ async fn to_zso(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+            .to_xso(progress_bar, system_directory, &maxcso::XsoType::Zso)
             .await?;
     }
 
@@ -1541,7 +1665,7 @@ async fn to_zso(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_iso()?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+                .to_xso(progress_bar, system_directory, &maxcso::XsoType::Zso)
                 .await?;
         }
     }
@@ -1561,7 +1685,7 @@ async fn to_zso(
             chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+                .to_xso(progress_bar, system_directory, &maxcso::XsoType::Zso)
                 .await?;
         }
     }
@@ -1573,7 +1697,7 @@ async fn to_zso(
             copy_file(
                 progress_bar,
                 &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                 false,
             )
             .await?;
@@ -1586,7 +1710,7 @@ async fn to_zso(
 async fn to_iso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> SimpleResult<()> {
@@ -1682,7 +1806,7 @@ async fn to_iso(
             let romfile = romfiles.first().unwrap();
             romfile
                 .as_archive(rom)?
-                .to_common(progress_bar, destination_directory)
+                .to_common(progress_bar, system_directory)
                 .await?;
         } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
@@ -1700,7 +1824,7 @@ async fn to_iso(
                 .await?;
             cue_romfile
                 .as_cue_bin(&[bin_romfile.path])?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1727,7 +1851,7 @@ async fn to_iso(
                     .map(|romfile| &romfile.path)
                     .collect::<Vec<&String>>(),
             )?
-            .to_iso(progress_bar, destination_directory)
+            .to_iso(progress_bar, system_directory)
             .await?;
     }
 
@@ -1748,9 +1872,7 @@ async fn to_iso(
                 }
                 None => romfile.as_chd()?,
             };
-            chd_romfile
-                .to_iso(progress_bar, destination_directory)
-                .await?;
+            chd_romfile.to_iso(progress_bar, system_directory).await?;
         } else if roms.len() == 2 {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .into_iter()
@@ -1780,7 +1902,7 @@ async fn to_iso(
             chd_romfile
                 .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
                 .await?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1795,7 +1917,7 @@ async fn to_iso(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_xso()?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1810,7 +1932,7 @@ async fn to_iso(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_xso()?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -1821,7 +1943,7 @@ async fn to_iso(
             copy_file(
                 progress_bar,
                 &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                 false,
             )
             .await?;
@@ -1834,7 +1956,7 @@ async fn to_iso(
 async fn to_original(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
+    system_directory: &PathBuf,
     system: &System,
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
@@ -1934,12 +2056,12 @@ async fn to_original(
         for rom in &roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
             if system.arcade {
-                let destination_directory = destination_directory.join(&game.name);
+                let destination_directory = system_directory.join(&game.name);
                 create_directory(progress_bar, &destination_directory, true).await?;
             }
             romfile
                 .as_archive(rom)?
-                .to_common(progress_bar, &destination_directory)
+                .to_common(progress_bar, &system_directory)
                 .await?;
         }
     }
@@ -1961,9 +2083,7 @@ async fn to_original(
                 }
                 None => romfile.as_chd()?,
             };
-            chd_romfile
-                .to_iso(progress_bar, destination_directory)
-                .await?;
+            chd_romfile.to_iso(progress_bar, system_directory).await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .into_iter()
@@ -1990,12 +2110,12 @@ async fn to_original(
                 None => romfile.as_chd_with_cue(&cue_romfile.path)?,
             };
             chd_romfile
-                .to_cue_bin(progress_bar, destination_directory, &bin_roms, false)
+                .to_cue_bin(progress_bar, system_directory, &bin_roms, false)
                 .await?;
             copy_file(
                 progress_bar,
                 &cue_romfile.path,
-                &destination_directory.join(cue_romfile.path.file_name().unwrap()),
+                &system_directory.join(cue_romfile.path.file_name().unwrap()),
                 false,
             )
             .await?;
@@ -2012,7 +2132,7 @@ async fn to_original(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_xso()?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -2027,7 +2147,7 @@ async fn to_original(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_nsz()?
-                .to_nsp(progress_bar, destination_directory)
+                .to_nsp(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -2042,7 +2162,7 @@ async fn to_original(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_rvz()?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -2057,7 +2177,7 @@ async fn to_original(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             romfile
                 .as_xso()?
-                .to_iso(progress_bar, destination_directory)
+                .to_iso(progress_bar, system_directory)
                 .await?;
         }
     }
@@ -2068,7 +2188,7 @@ async fn to_original(
             copy_file(
                 progress_bar,
                 &romfile.path,
-                &destination_directory.join(romfile.as_common()?.path.file_name().unwrap()),
+                &system_directory.join(romfile.as_common()?.path.file_name().unwrap()),
                 false,
             )
             .await?;

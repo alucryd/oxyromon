@@ -58,8 +58,7 @@ import {
   unfilteredSystems,
 } from "./store.js";
 
-const endpoint = "/graphql";
-const graphQLClient = new GraphQLClient(endpoint);
+const graphQLClient = new GraphQLClient(`${window.location.origin}/graphql`);
 
 function paginate(array, page, pageSize) {
   const start = pageSize * (page - 1);

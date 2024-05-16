@@ -76,6 +76,7 @@ async fn test() {
 
     // then
     assert!(destination_directory
+        .join("Test System")
         .join("Test Game (USA, Europe).zip")
         .is_file());
 }

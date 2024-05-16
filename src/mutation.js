@@ -1,7 +1,6 @@
 import { GraphQLClient, gql } from "graphql-request";
 
-const endpoint = "/graphql";
-const graphQLClient = new GraphQLClient(endpoint);
+const graphQLClient = new GraphQLClient(`${window.location.origin}/graphql`);
 
 export async function addToList(key, value) {
   const mutation = gql`

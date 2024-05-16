@@ -203,11 +203,11 @@ pub async fn remove_directory<P: AsRef<Path>>(
     Ok(())
 }
 
-pub async fn get_system_directory(
+pub async fn get_system_directory_name(
     connection: &mut SqliteConnection,
     system: &System,
-) -> SimpleResult<PathBuf> {
-    let system_name = match &system.custom_name {
+) -> SimpleResult<String> {
+    let system_directory_name = match &system.custom_name {
         Some(custom_name) => custom_name.to_owned(),
         None => {
             if get_bool(connection, "GROUP_SUBSYSTEMS").await {
@@ -223,7 +223,17 @@ pub async fn get_system_directory(
             }
         }
     };
-    let system_directory = get_rom_directory(connection).await.join(system_name);
+    Ok(system_directory_name)
+}
+
+pub async fn get_system_directory(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> SimpleResult<PathBuf> {
+    let system_directory_name = get_system_directory_name(connection, system).await?;
+    let system_directory = get_rom_directory(connection)
+        .await
+        .join(system_directory_name);
     Ok(system_directory)
 }
 

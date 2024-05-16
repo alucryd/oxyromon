@@ -341,6 +341,7 @@ async fn create_or_update_games(
         .par_iter()
         .partition(|game_xml| game_xml.cloneof.is_none() && game_xml.romof.is_none());
     for game_xml in &parent_games_xml {
+        log::debug!("Processing {}", &game_xml.name);
         let game = find_game_by_name_and_bios_and_system_id(
             connection,
             &game_xml.name,

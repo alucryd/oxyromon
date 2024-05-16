@@ -56,8 +56,8 @@ async fn test() {
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
 
-    let destination_directory = tmp_directory.join("destination");
-    create_directory(&progress_bar, &destination_directory, true)
+    let system_directory = tmp_directory.join("destination");
+    create_directory(&progress_bar, &system_directory, true)
         .await
         .unwrap();
 
@@ -65,7 +65,7 @@ async fn test() {
     to_chd(
         &mut connection,
         &progress_bar,
-        &destination_directory,
+        &system_directory,
         games_by_id,
         roms_by_game_id,
         romfiles_by_id,
@@ -78,7 +78,7 @@ async fn test() {
     .unwrap();
 
     // then
-    assert!(destination_directory
+    assert!(system_directory
         .join("Test Game (USA, Europe).chd")
         .is_file());
 }
