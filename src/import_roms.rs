@@ -1703,9 +1703,8 @@ async fn move_to_trash<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     romfile_path: &P,
 ) -> SimpleResult<()> {
-    let new_path = get_rom_directory(connection)
-        .await
-        .join("Trash")
+    let new_path = get_trash_directory(connection, None)
+        .await?
         .join(romfile_path.as_ref().file_name().unwrap());
     rename_file(progress_bar, romfile_path, &new_path, false).await?;
     match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
