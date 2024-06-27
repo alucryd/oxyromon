@@ -13,6 +13,7 @@
 - Change `-g` to `-o` (for one g one r) in various subcommands
 - Add an option to scrub RVZ in `export-roms`
 - Fix reimporting an orphan archive containing multiple files or a CHD ROM in `import-dats` and `download-dats`
+- Sort CHD parent prompt by distance
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast

@@ -71,7 +71,7 @@ impl Check for ChdRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.as_common()?.to_string()));
+        progress_bar.println(format!("Checking \"{}\"", self.as_common()?));
         let tmp_directory = create_tmp_directory(connection).await?;
         if self.cue_path.is_some() {
             let cue_bin_romfile = self
@@ -484,6 +484,9 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     if let Some(parent_romfile) = parent_romfile {
         command.arg("-op").arg(&parent_romfile.path);
     }
+
+    log::debug!("{:?}", command);
+
     let output = command.output().await.expect("Failed to create chd");
 
     if !output.status.success() {
@@ -551,6 +554,9 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     if let Some(parent_romfile_path) = parent_romfile_path {
         command.arg("-ip").arg(parent_romfile_path);
     }
+
+    log::debug!("{:?}", command);
+
     let output = command.output().await.expect("Failed to extract chd");
 
     if media_type == MediaType::Cd {

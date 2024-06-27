@@ -21,45 +21,45 @@ enable-asm = ["md-5/asm", "sha1/asm"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types"]
 
 [dependencies]
-async-graphql = { version = "7.0.3", features = [
+async-graphql = { version = "7.0.6", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-axum = { version = "7.0.3", optional = true }
+async-graphql-axum = { version = "7.0.6", optional = true }
 axum = { version = "0.7.5", default-features = false, features = [
     "http2",
     "tokio",
     "ws",
 ], optional = true }
 cfg-if = "1.0.0"
-clap = "4.5.4"
-crc32fast = "1.4.0"
+clap = "4.5.7"
+crc32fast = "1.4.2"
 dialoguer = "0.11.0"
 digest = { version = "0.10.7", features = ["std"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"
 env_logger = "0.11.3"
-flate2 = "1.0.28"
+flate2 = "1.0.30"
 futures = "0.3.30"
 http-types = { version = "2.12.0", optional = true }
 indexmap = { version = "2.2.6", default-features = false, features = ["std", "rayon"] }
 indicatif = { version = "0.17.8", features = ["rayon"] }
 itertools = "0.12.1"
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 log = "0.4.21"
 md-5 = "0.10.6"
 num-derive = "0.4.2"
-num-traits = "0.2.18"
+num-traits = "0.2.19"
 once_cell = "1.19.0"
 phf = { version = "0.11.2", features = ["macros"] }
 quick-xml = { version = "0.31.0", features = ["serialize"] }
 rayon = "1.10.0"
-regex = "1.10.4"
-reqwest = { version = "0.12.3", default-features = false }
-rust-embed = { version = "8.3.0", features = ["compression"] }
-serde = { version = "1.0.197", features = ["derive"] }
+regex = "1.10.5"
+reqwest = { version = "0.12.5", default-features = false }
+rust-embed = { version = "8.4.0", features = ["compression"] }
+serde = { version = "1.0.203", features = ["derive"] }
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
-simple-error = "0.3.0"
+simple-error = "0.3.1"
 sqlx = { version = "0.7.4", default-features = false, features = [
     "macros",
     "migrate",
@@ -67,9 +67,9 @@ sqlx = { version = "0.7.4", default-features = false, features = [
     "sqlite",
 ] }
 strsim = "0.11.1"
-strum = { version = "0.26.2", features = ["derive"] }
+strum = { version = "0.26.3", features = ["derive"] }
 tempfile = "3.10.1"
-tokio = { version = "1.37.0", features = [
+tokio = { version = "1.38.0", features = [
     "fs",
     "io-std",
     "io-util",
@@ -84,7 +84,7 @@ walkdir = "2.5.0"
 zip = { version = "0.6.6", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0.115"
+serde_json = "1.0.118"
 wiremock = "0.6.0"
 
 [[bin]]

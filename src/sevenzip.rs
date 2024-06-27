@@ -235,7 +235,7 @@ impl Check for ArchiveRomfile {
     ) -> SimpleResult<()> {
         progress_bar.println(format!(
             "Checking \"{}\" ({})",
-            self.as_common()?.to_string(),
+            self.as_common()?,
             self.file_path
         ));
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {

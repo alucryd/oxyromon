@@ -2457,10 +2457,7 @@ pub async fn find_romfiles_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .expect(&format!(
-        "Error while finding romfiles with system id {}",
-        system_id
-    ))
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with system id {}", system_id))
 }
 
 pub async fn find_romfiles_by_system_id_and_extension_and_no_parent_id(
@@ -2492,10 +2489,7 @@ pub async fn find_romfiles_by_system_id_and_extension_and_no_parent_id(
     )
     .fetch_all(connection)
     .await
-    .expect(&format!(
-        "Error while finding romfiles with system id {}",
-        system_id
-    ))
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with system id {}", system_id))
 }
 
 pub async fn find_romfiles_by_parent_id(
@@ -2514,10 +2508,7 @@ pub async fn find_romfiles_by_parent_id(
     )
     .fetch_all(connection)
     .await
-    .expect(&format!(
-        "Error while finding romfiles with parent id {}",
-        parent_id
-    ))
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with parent id {}", parent_id))
 }
 
 pub async fn find_orphan_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {

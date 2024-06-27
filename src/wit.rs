@@ -5,7 +5,7 @@ use super::SimpleResult;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 use tokio::process::Command;
 
@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 pub struct WbfsRomfile {
-    pub path: PathBuf,
+    // pub path: PathBuf,
 }
 
 pub trait ToWbfs {
@@ -60,7 +60,7 @@ impl ToWbfs for IsoRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(WbfsRomfile { path })
+        Ok(WbfsRomfile {})
     }
 }
 

@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import { faGear } from "@fortawesome/free-solid-svg-icons";
   import "bootstrap/dist/css/bootstrap.min.css";
   import Fa from "svelte-fa";

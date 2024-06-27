@@ -4,6 +4,7 @@ use dialoguer::{Confirm, MultiSelect, Select};
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::path::PathBuf;
+use strsim::jaro_winkler;
 
 pub async fn prompt_for_systems(
     connection: &mut SqliteConnection,
@@ -148,12 +149,20 @@ pub fn prompt_for_rom_game_system(
 
 pub async fn prompt_for_parent_romfile(
     connection: &mut SqliteConnection,
-    system_id: i64,
+    game: &Game,
     extension: &str,
 ) -> SimpleResult<Option<Romfile>> {
-    let mut romfiles =
-        find_romfiles_by_system_id_and_extension_and_no_parent_id(connection, system_id, extension)
-            .await;
+    let mut romfiles = find_romfiles_by_system_id_and_extension_and_no_parent_id(
+        connection,
+        game.system_id,
+        extension,
+    )
+    .await;
+    romfiles.sort_by(|a, b| {
+        jaro_winkler(&b.path, &game.name)
+            .partial_cmp(&jaro_winkler(&a.path, &game.name))
+            .unwrap()
+    });
     let index = match romfiles.len() {
         0 => None,
         _ => select_opt(

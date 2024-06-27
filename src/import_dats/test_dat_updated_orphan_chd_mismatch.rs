@@ -66,7 +66,8 @@ async fn test() {
     .await
     .unwrap();
 
-    let dat_path = test_directory.join("Test System (20240626) (Multiple Orphan Roms Mismatch).dat");
+    let dat_path =
+        test_directory.join("Test System (20240626) (Multiple Orphan Roms Mismatch).dat");
     let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
 
     // when

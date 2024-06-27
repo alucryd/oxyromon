@@ -503,7 +503,7 @@ async fn to_archive(
                 .await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_iter()
+                .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let cue_rom = cue_roms.first().unwrap();
             let game = games_by_id.get(&cue_rom.game_id).unwrap();
@@ -694,16 +694,13 @@ async fn to_archive(
                 .await?;
         } else {
             let game = games_by_id.get(&game_id).unwrap();
-            roms = roms
-                .into_iter()
-                .filter(|rom| {
-                    let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                    !(romfile.path.ends_with(match archive_type {
-                        sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                        sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
-                    }))
-                })
-                .collect();
+            roms.retain(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                !(romfile.path.ends_with(match archive_type {
+                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                }))
+            });
             let romfiles = roms
                 .iter()
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
@@ -851,7 +848,7 @@ async fn to_chd(
         let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
 
         let (cue_roms, bin_iso_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-            .into_iter()
+            .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
         let cue_romfile = match cue_roms.first() {
@@ -916,7 +913,7 @@ async fn to_chd(
         let game = games_by_id.get(&roms.first().unwrap().game_id).unwrap();
         let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-            .into_iter()
+            .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
         let cue_romfile = romfiles_by_id
             .get(&cue_roms.first().unwrap().romfile_id.unwrap())
@@ -1686,7 +1683,7 @@ async fn to_iso(
                 .await?;
         } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_iter()
+                .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
@@ -1708,7 +1705,7 @@ async fn to_iso(
     // export CUE/BIN
     for roms in cue_bins.values() {
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-            .into_iter()
+            .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
         if bin_roms.len() > 1 {
             continue;
@@ -1753,7 +1750,7 @@ async fn to_iso(
                 .await?;
         } else if roms.len() == 2 {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_iter()
+                .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let mut romfiles: Vec<&Romfile> = bin_roms
                 .iter()
@@ -1966,7 +1963,7 @@ async fn to_original(
                 .await?;
         } else {
             let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .into_iter()
+                .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let mut romfiles: Vec<&Romfile> = bin_roms
                 .iter()
