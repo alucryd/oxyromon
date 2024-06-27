@@ -1058,6 +1058,7 @@ async fn to_archive(
             }
 
             if source_archive_type != archive_type {
+                romfile.as_common()?.delete(progress_bar, false).await?;
                 update_romfile(
                     &mut transaction,
                     romfile.id,
@@ -3893,6 +3894,8 @@ mod test_sevenzip_to_original;
 mod test_sevenzip_to_sevenzip;
 #[cfg(test)]
 mod test_sevenzip_to_zip;
+#[cfg(test)]
+mod test_sevenzip_to_zip_multiple_files;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]
