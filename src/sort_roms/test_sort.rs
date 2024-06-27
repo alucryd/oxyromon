@@ -32,8 +32,8 @@ async fn test() {
     let romfile_names = vec![
         "Test Game (Asia).rom",
         "Test Game (Japan).rom",
-        "Test Game (USA, Europe).rom",
         "Test Game (USA, Europe) (Beta).rom",
+        "Test Game (USA, Europe).rom",
     ];
     for romfile_name in &romfile_names {
         let romfile_path = tmp_directory.join(romfile_name);

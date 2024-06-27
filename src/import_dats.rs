@@ -68,6 +68,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("NAME")
+                .short('n')
+                .long("name")
+                .help("Customize the system name")
+                .required(false)
+                .num_args(1),
+        )
 }
 
 pub async fn main(
@@ -93,6 +101,22 @@ pub async fn main(
         }
     }
 
+    let custom_name = matches.get_one::<String>("NAME");
+
+    if custom_name.is_some() {
+        if dat_paths.len() > 1 {
+            progress_bar.println("Custom system name requires a single DAT file");
+            return Ok(());
+        }
+        if find_system_by_name(connection, custom_name.unwrap())
+            .await
+            .is_some()
+        {
+            progress_bar.println("Custom system name must not match a known system name");
+            return Ok(());
+        }
+    }
+
     for dat_path in dat_paths {
         progress_bar.println(format!(
             "Processing \"{}\"",
@@ -110,6 +134,7 @@ pub async fn main(
                 progress_bar,
                 &datfile_xml,
                 &detector_xml,
+                custom_name,
                 matches.get_flag("ARCADE"),
                 matches.get_flag("FORCE"),
             )
@@ -168,6 +193,7 @@ pub async fn import_dat(
     progress_bar: &ProgressBar,
     datfile_xml: &DatfileXml,
     detector_xml: &Option<DetectorXml>,
+    custom_name: Option<&String>,
     arcade: bool,
     force: bool,
 ) -> SimpleResult<()> {
@@ -180,6 +206,7 @@ pub async fn import_dat(
         &mut transaction,
         progress_bar,
         &datfile_xml.system,
+        custom_name,
         arcade,
         force,
     )
@@ -220,6 +247,7 @@ pub async fn import_dat(
     // reimport orphan romfiles
     if !orphan_romfile_ids.is_empty() {
         progress_bar.println("Processing orphan romfiles");
+        orphan_romfile_ids.dedup();
         reimport_orphan_romfiles(
             &mut transaction,
             progress_bar,
@@ -266,19 +294,21 @@ async fn create_or_update_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
     force: bool,
 ) -> Option<i64> {
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                update_system_from_xml(connection, system.id, system_xml, arcade).await;
+                update_system_from_xml(connection, system.id, system_xml, custom_name, arcade)
+                    .await;
                 Some(system.id)
             } else {
                 None
             }
         }
-        None => Some(create_system_from_xml(connection, system_xml, arcade).await),
+        None => Some(create_system_from_xml(connection, system_xml, custom_name, arcade).await),
     }
 }
 
@@ -598,29 +628,48 @@ pub async fn reimport_orphan_romfiles(
     orphan_romfile_ids: Vec<i64>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let system = Some(find_system_by_id(connection, system_id).await);
+    let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id).await;
         delete_romfile_by_id(connection, romfile_id).await;
-        import_rom(
-            connection,
-            progress_bar,
-            &system.as_ref(),
-            &header,
-            &Path::new(&romfile.path),
-            hash_algorithm,
-            true,
-            false,
-            false,
-        )
-        .await?;
+        let romfile_path = Path::new(&romfile.path);
+        if romfile_path.is_file() {
+            let (_, game_ids) = import_rom(
+                connection,
+                progress_bar,
+                &Some(&system),
+                &header,
+                &romfile_path,
+                hash_algorithm,
+                false,
+                false,
+                false,
+            )
+            .await?;
+            if game_ids.is_empty() {
+                let new_path = get_trash_directory(connection, Some(&system))
+                    .await?
+                    .join(romfile_path.file_name().unwrap().to_str().unwrap());
+                rename_file(progress_bar, &romfile.path, &new_path, false).await?;
+                create_romfile(
+                    connection,
+                    new_path.as_os_str().to_str().unwrap(),
+                    new_path.metadata().unwrap().len(),
+                )
+                .await;
+            }
+        }
     }
     Ok(())
 }
 
 #[cfg(test)]
 mod test_dat;
+#[cfg(test)]
+mod test_dat_custom_name;
+#[cfg(test)]
+mod test_dat_custom_name_revert;
 #[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
@@ -639,6 +688,14 @@ mod test_dat_outdated_should_do_nothing;
 mod test_dat_parent_clone;
 #[cfg(test)]
 mod test_dat_updated;
+#[cfg(test)]
+mod test_dat_updated_orphan_archive;
+#[cfg(test)]
+mod test_dat_updated_orphan_archive_mismatch;
+#[cfg(test)]
+mod test_dat_updated_orphan_chd;
+#[cfg(test)]
+mod test_dat_updated_orphan_chd_mismatch;
 #[cfg(test)]
 mod test_regions_france_germany;
 #[cfg(test)]

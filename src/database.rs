@@ -94,15 +94,17 @@ pub async fn close_connection(pool: &SqlitePool) {
 pub async fn create_system_from_xml(
     connection: &mut SqliteConnection,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
 ) -> i64 {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
-        INSERT INTO systems (name, description, version, url, arcade)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO systems (name, custom_name, description, version, url, arcade)
+        VALUES (?, ?, ?, ?, ?, ?)
         ",
         name,
+        custom_name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -118,16 +120,18 @@ pub async fn update_system_from_xml(
     connection: &mut SqliteConnection,
     id: i64,
     system_xml: &SystemXml,
+    custom_name: Option<&String>,
     arcade: bool,
 ) {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
         UPDATE systems
-        SET name = ?, description = ?, version = ?, url = ?, arcade = ?
+        SET name = ?, custom_name = ?, description = ?, version = ?, url = ?, arcade = ?
         WHERE id = ?
         ",
         name,
+        custom_name,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -885,6 +889,26 @@ pub async fn find_games_with_romfiles_by_name_and_system_id(
     .fetch_all(connection)
     .await
     .expect("Error while finding games with romfiles")
+}
+
+pub async fn find_first_game_by_playlist_id(
+    connection: &mut SqliteConnection,
+    playlist_id: i64,
+) -> Game {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE playlist_id = ?
+        ORDER BY name
+        LIMIT 1
+        ",
+        playlist_id,
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while finding first game by playlist id")
 }
 
 pub async fn delete_game_by_name_and_system_id(
@@ -2360,6 +2384,25 @@ pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &s
     .unwrap_or_else(|_| panic!("Error while updating romfile with id {}", id));
 }
 
+pub async fn update_romfile_parent(
+    connection: &mut SqliteConnection,
+    id: i64,
+    parent_id: Option<i64>,
+) {
+    sqlx::query!(
+        "
+        UPDATE romfiles
+        SET parent_id = ?
+        WHERE id = ?
+        ",
+        parent_id,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating romfile with id {}", id));
+}
+
 pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
     sqlx::query_as!(
         Romfile,
@@ -2380,6 +2423,7 @@ pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]
     SELECT *
     FROM romfiles
     WHERE id IN ({})
+    ORDER BY path
     ",
         ids.iter().join(",")
     );
@@ -2407,12 +2451,64 @@ pub async fn find_romfiles_by_system_id(
                 WHERE system_id = ?
             )
         )
+        ORDER BY path
         ",
         system_id,
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with system id {}", system_id))
+}
+
+pub async fn find_romfiles_by_system_id_and_extension_and_no_parent_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    extension: &str,
+) -> Vec<Romfile> {
+    let path_like = format!("%.{}", extension);
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE id IN (
+            SELECT DISTINCT(romfile_id)
+            FROM roms
+            WHERE game_id IN (
+                SELECT id
+                FROM games
+                WHERE system_id = ?
+            )
+        )
+        AND path LIKE ?
+        AND parent_id IS NULL
+        ORDER BY path
+        ",
+        system_id,
+        path_like
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with system id {}", system_id))
+}
+
+pub async fn find_romfiles_by_parent_id(
+    connection: &mut SqliteConnection,
+    parent_id: i64,
+) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE parent_id = ?
+        ORDER BY path
+        ",
+        parent_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding romfiles with parent id {}", parent_id))
 }
 
 pub async fn find_orphan_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
@@ -2436,7 +2532,7 @@ pub async fn find_orphan_romfiles(connection: &mut SqliteConnection) -> Vec<Romf
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .expect("Error while finding orphan romfiles")
 }
 
 pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Romfile> {
@@ -2445,9 +2541,9 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
         "
         SELECT *
         FROM romfiles
-        WHERE path LIKE \"%/Trash/%\"
+        WHERE path LIKE '%/Trash/%'
         ORDER BY path
-        ",
+        "
     )
     .fetch_all(connection)
     .await
@@ -2468,6 +2564,7 @@ pub async fn find_playlists_by_system_id(
             FROM games
             WHERE system_id = ?
         )
+        ORDER BY path
         ",
         system_id,
     )

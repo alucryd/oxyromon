@@ -16,6 +16,7 @@ extern crate env_logger;
 extern crate futures;
 #[cfg(feature = "server")]
 extern crate http_types;
+extern crate indexmap;
 extern crate indicatif;
 #[macro_use]
 extern crate lazy_static;

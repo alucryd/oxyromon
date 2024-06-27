@@ -16,7 +16,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::io::BufWriter;
 
 lazy_static! {
-    pub static ref DISC_REGEX: Regex = Regex::new(r" \(Disc \d+\).*").unwrap();
+    pub static ref DISC_REGEX: Regex = Regex::new(r" \(Disc \d+\)").unwrap();
 }
 
 pub fn subcommand() -> Command {

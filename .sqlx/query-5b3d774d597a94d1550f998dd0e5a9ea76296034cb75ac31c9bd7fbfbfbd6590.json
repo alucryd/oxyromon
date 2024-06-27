@@ -17,6 +17,11 @@
         "name": "size",
         "ordinal": 2,
         "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Int64"
       }
     ],
     "parameters": {
@@ -25,7 +30,8 @@
     "nullable": [
       false,
       false,
-      false
+      false,
+      true
     ]
   },
   "hash": "5b3d774d597a94d1550f998dd0e5a9ea76296034cb75ac31c9bd7fbfbfbd6590"

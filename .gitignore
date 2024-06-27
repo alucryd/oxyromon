@@ -3,6 +3,7 @@
 .env
 .env.*
 !.env.example
+.idea
 .vscode
 
 # rust
@@ -14,6 +15,7 @@ target
 lcov.info
 dist
 *.profraw
+.cargo
 
 # javascript
 node_modules

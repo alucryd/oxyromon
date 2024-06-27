@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.18.1</h1>
+<h1 style="text-align: center;">oxyROMon 0.19.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -48,6 +48,18 @@ Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list before
 See all configuration options below.
 
 You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or detect and forget manually deleted ROMs.
+
+### Installation
+
+You can grab pre-compiled binaries for Lnux, Mac and Windows from the [release page](https://github.com/alucryd/oxyromon/releases).
+
+A docker image is also available on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon).
+
+If you happen to be using Arch Linux, there's a package in the [official repos](https://archlinux.org/packages/extra/x86_64/oxyromon/).
+
+It is also possible to install from crates.io using `cargo install oxyromon`.
+
+Finally if you're feeling adventurous, you can always build from source, instructions below.
 
 ### Compilation
 
@@ -97,9 +109,15 @@ Available settings:
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
 - `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
+- `CHD_CD_HUNK_SIZE`: The CHD hunk size in bytes for CDs, defaults to auto, valid range: `16-1048576`
+- `CHD_CD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for CDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`
+- `CHD_DVD_HUNK_SIZE`: The CHD hunk size in bytes for DVDs, defaults to auto, valid range: `16-1048576`
+- `CHD_DVD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for DVDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`
+- `CHD_PARENTS`: Enables the CHD parents feature, needs playlists to have been generated, defaults to `false`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
+- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
 - `SEVENZIP_COMPRESSION_LEVEL`: The 7Z compression level, defaults to `9`, valid range: `1-9`
 - `SEVENZIP_SOLID_COMPRESSION`: Toggles 7Z solid compression, defaults to `false`
 - `ZIP_COMPRESSION_LEVEL`: The ZIP compression level, defaults to `9`, valid range: `1-9`
@@ -161,7 +179,7 @@ These should be in your `${PATH}` for extra features.
 ### TODO
 
 - Add actions to the web UI
-- Find a way to automatically download No-Intro DAT files (just made harder by asking users to click on a color...)
+- Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
 - Craft some unit tests for NSZ
@@ -207,7 +225,8 @@ The settings can be queried, modified and deleted from the command line.
     Options:
         -l, --list                  Print the whole configuration
         -g, --get <KEY>             Print a single setting
-        -s, --set <KEY> <VALUE>     Configure a single setting
+        -s, --set <KEY> <VALUE>     Set a single setting
+        -u, --unset <KEY>           Unset a single setting
         -a, --add <KEY> <VALUE>     Add an entry to a list
         -r, --remove <KEY> <VALUE>  Remove an entry from a list
         -h, --help                  Print help information
@@ -387,7 +406,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
                 Set the regions to keep (unordered)
             --subfolders <REGIONS_ALL_SUBFOLDERS>
                 Set the subfolders scheme for games [possible values: NONE, ALPHA]
-        -g, --1g1r <REGIONS_ONE>...
+        -o, --1g1r <REGIONS_ONE>...
                 Set the 1G1R regions to keep (ordered)
             --1g1r-subfolders <REGIONS_ONE_SUBFOLDERS>
                 Set the subfolders scheme for 1G1R games [possible values: NONE, ALPHA]
@@ -428,8 +447,8 @@ Convert ROM files between common formats
 
 ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter games by name, the matching string is case-insensitive and doesn't need to be the full game name.
-Systems can also be selected the same way so as to avoid being prompted for them.
+You may optionally filter games by name, the matching string is case-insensitive and can use SQL wildcards.
+Systems can also be selected the same way so as to avoid being prompted for them. Both systems and games flags can be passed multiple times.
 
 Supported ROM formats:
 
@@ -448,11 +467,13 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
 
     Options:
         -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
-        -n, --name <NAME>      Select games by name
+        -g, --game <GAME>      Select games by name
         -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
+        -r, --recompress       Force conversion even if already in the selected format
         -d, --diff             Print size differences
         -c, --check            Check ROM files after conversion
+        -p, --parents          Prompt for CHD parents
         -h, --help             Print help information
 
 ## oxyromon-export-roms
@@ -467,9 +488,10 @@ Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 
 
     Options:
         -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, WBFS, ZSO]
-        -n, --name <NAME>            Select games by name
+        -g, --game <Game>            Select games by name
         -s, --system <SYSTEM>        Select systems by name
         -d, --directory <DIRECTORY>  Set the output directory
+        -o, --1g1r                   Export 1G1R games only
         -h, --help                   Print help
 
 ## oxyromon-check-roms
@@ -483,6 +505,7 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
 
     Options:
         -a, --all   Check all systems
+        -g, --game <GAME>  Select games by name
         -s, --size  Recalculate ROM file sizes
         -h, --help  Print help information
 
@@ -519,6 +542,7 @@ This will wipe the system and all its ROMs from the database. All ROMs will be p
 Generate M3U playlists for multi-disc games
 
 This will generate playlists to be able to swap discs from within RetroArch. Limited to Redump only.
+The playlist information is also used to determine parents if you enable the CHD parents feature.
 
 Note: `sort-roms` will move them accordingly but if you use `convert-roms` you will need to run this command again at the moment.
 

@@ -56,7 +56,7 @@ async fn test() {
     romfiles_by_id.insert(romfile.id, romfile);
 
     let matches =
-        subcommand().get_matches_from(&["convert-roms", "-f", "ZIP", "-n", "test game", "-a"]);
+        subcommand().get_matches_from(&["convert-roms", "-f", "ZIP", "-g", "%test game%", "-a"]);
 
     // when
     main(&mut connection, &matches, &progress_bar)

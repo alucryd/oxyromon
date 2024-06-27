@@ -7,6 +7,7 @@ async fn test() {
     let system = System {
         id: 1,
         name: String::from("Test System"),
+        custom_name: None,
         description: String::from(""),
         version: String::from(""),
         url: Some(String::from("")),
@@ -48,6 +49,7 @@ async fn test() {
         id: 1,
         path: String::from("romfile.7z"),
         size: 0,
+        parent_id: None,
     };
 
     // when

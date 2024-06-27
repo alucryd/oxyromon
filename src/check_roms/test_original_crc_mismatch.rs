@@ -55,12 +55,14 @@ async fn test() {
     file.write_all(b"00000000").await.unwrap();
     file.sync_all().await.unwrap();
 
+    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+
     // when
     check_system(
         &mut connection,
         &progress_bar,
         &system,
-        &None,
+        games,
         false,
         &HashAlgorithm::Crc,
     )

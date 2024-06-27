@@ -29,6 +29,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
+        None,
         false,
         false,
     )
@@ -74,6 +75,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
+        None,
         false,
         false,
     )
@@ -97,7 +99,7 @@ async fn test() {
 
     let game = games.first().unwrap();
     let rom = roms.first().unwrap();
-    let romfile = romfiles.get(2).unwrap();
+    let romfile = romfiles.get(1).unwrap();
 
     assert_eq!(game.name, "Test Game (Asia)");
     assert_eq!(rom.name, "Test Game (Asia).rom");
@@ -106,7 +108,7 @@ async fn test() {
 
     let game = games.get(1).unwrap();
     let rom = roms.get(2).unwrap();
-    let romfile = romfiles.get(1).unwrap();
+    let romfile = romfiles.get(2).unwrap();
 
     assert_eq!(game.name, "Test Game (USA, Europe)");
     assert_eq!(rom.name, "Updated Test Game (USA, Europe).rom");

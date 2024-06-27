@@ -5,6 +5,7 @@ use super::model::Header;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use core::fmt;
 use digest::Digest;
 use indicatif::ProgressBar;
 use md5::Md5;
@@ -52,9 +53,9 @@ impl CommonFile for CommonRomfile {
     }
 }
 
-impl ToString for CommonRomfile {
-    fn to_string(&self) -> String {
-        self.path.as_os_str().to_str().unwrap().to_string()
+impl fmt::Display for CommonRomfile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.path.as_os_str().to_str().unwrap())
     }
 }
 
@@ -267,7 +268,7 @@ impl Check for CommonRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.to_string()));
+        progress_bar.println(format!("Checking \"{}\"", self));
         let (hash, size) = self
             .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
             .await?;
@@ -350,7 +351,6 @@ pub trait ToCueBin {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-        cue_romfile: &CommonRomfile,
         bin_roms: &[&Rom],
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile>;

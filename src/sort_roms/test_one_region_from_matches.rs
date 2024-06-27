@@ -12,7 +12,7 @@ async fn test() {
     let key = "REGIONS_ONE";
 
     add_to_list(&mut connection, key, "US").await;
-    let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-g", "EU"]);
+    let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-o", "EU"]);
 
     // when
     let all_regions = get_regions(&mut connection, &matches, key).await;

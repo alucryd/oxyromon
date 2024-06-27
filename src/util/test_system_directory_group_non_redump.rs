@@ -22,6 +22,7 @@ async fn test() {
     let system = System {
         id: 1,
         name: String::from("Non-Redump - Sony - PlayStation Portable"),
+        custom_name: None,
         description: String::from(""),
         version: String::from(""),
         url: None,

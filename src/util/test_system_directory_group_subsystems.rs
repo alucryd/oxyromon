@@ -22,6 +22,7 @@ async fn test() {
     let system = System {
         id: 1,
         name: String::from("Nintendo - Nintendo 64 (BigEndian)"),
+        custom_name: None,
         description: String::from(""),
         version: String::from(""),
         url: None,

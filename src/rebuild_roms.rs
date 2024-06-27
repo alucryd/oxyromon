@@ -103,7 +103,7 @@ async fn rebuild_system(
                 system,
                 &game,
                 merging,
-                compression_level,
+                &compression_level,
             )
             .await?;
         }
@@ -128,7 +128,7 @@ async fn expand_game(
     system: &System,
     game: &Game,
     merging: Merging,
-    compression_level: usize,
+    compression_level: &Option<usize>,
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", game.name));
     let game_directory = get_system_directory(connection, system)
@@ -240,7 +240,7 @@ async fn add_rom(
     source_rom: &Rom,
     romfile: &Option<Romfile>,
     game_directory: &PathBuf,
-    compression_level: usize,
+    compression_level: &Option<usize>,
 ) -> SimpleResult<()> {
     let source_romfile = find_romfile_by_id(transaction, source_rom.romfile_id.unwrap()).await;
     if let Some(archive_romfile) = romfile {

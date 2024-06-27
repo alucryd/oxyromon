@@ -50,7 +50,7 @@ pub fn subcommand() -> Command {
         )
         .arg(
             Arg::new("REGIONS_ONE")
-                .short('g')
+                .short('o')
                 .long("1g1r")
                 .help("Set the 1G1R regions to keep (ordered)")
                 .required(false)
@@ -104,20 +104,30 @@ pub async fn main(
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
     let prefer_parents = get_bool(connection, "PREFER_PARENTS").await;
     let preferred_regions =
-        PreferredRegion::from_str(&get_string(connection, "PREFER_REGIONS").await).unwrap();
+        PreferredRegion::from_str(&get_string(connection, "PREFER_REGIONS").await.unwrap())
+            .unwrap();
     let preferred_versions =
-        PreferredVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await).unwrap();
+        PreferredVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await.unwrap())
+            .unwrap();
     let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
     let all_regions_subfolders = SubfolderScheme::from_str(
         matches
             .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
-            .unwrap_or(&get_string(connection, "REGIONS_ALL_SUBFOLDERS").await),
+            .unwrap_or(
+                &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
+                    .await
+                    .unwrap(),
+            ),
     )
     .unwrap();
     let one_regions_subfolders = SubfolderScheme::from_str(
         matches
             .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
-            .unwrap_or(&get_string(connection, "REGIONS_ONE_SUBFOLDERS").await),
+            .unwrap_or(
+                &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
+                    .await
+                    .unwrap(),
+            ),
     )
     .unwrap();
     let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;

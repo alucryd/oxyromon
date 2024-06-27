@@ -45,7 +45,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
@@ -63,6 +63,7 @@ async fn test() {
 
     // when
     to_original(
+        &mut connection,
         &progress_bar,
         &destination_directory,
         &system,

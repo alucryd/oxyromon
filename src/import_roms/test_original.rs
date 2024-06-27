@@ -47,6 +47,7 @@ async fn test() {
         &progress_bar,
         &Some(&system),
         &None,
+        &HashSet::new(),
         &romfile_path,
         &HashAlgorithm::Crc,
         true,

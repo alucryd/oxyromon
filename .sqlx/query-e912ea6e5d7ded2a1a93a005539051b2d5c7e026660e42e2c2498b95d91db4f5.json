@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT DISTINCT(playlist_id)\n            FROM games\n            WHERE system_id = ?\n        )\n        ",
+  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT DISTINCT(playlist_id)\n            FROM games\n            WHERE system_id = ?\n        )\n        ORDER BY path\n        ",
   "describe": {
     "columns": [
       {
@@ -17,6 +17,11 @@
         "name": "size",
         "ordinal": 2,
         "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Int64"
       }
     ],
     "parameters": {
@@ -25,8 +30,9 @@
     "nullable": [
       false,
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "b7076483078dc1b82cb413f40148ec712fa2f547948c6319f5ea0151faf3b9e8"
+  "hash": "e912ea6e5d7ded2a1a93a005539051b2d5c7e026660e42e2c2498b95d91db4f5"
 }

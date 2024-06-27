@@ -62,7 +62,7 @@ async fn test() -> Result<()> {
         "sort-roms",
         "-a",
         "-y",
-        "-g",
+        "-o",
         "US",
         "-r",
         "JP",
