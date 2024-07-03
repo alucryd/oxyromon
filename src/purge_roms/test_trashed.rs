@@ -45,7 +45,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-g", "JP"]);
+    let matches = sort_roms::subcommand().get_matches_from(&["sort-roms", "-a", "-y", "-o", "JP"]);
     sort_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();

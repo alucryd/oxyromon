@@ -13,16 +13,16 @@
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe) (Disc 1)" region="EUR" />
 		<release name="Test Game (USA, Europe) (Disc 1)" region="USA" />
-		<rom name="Test Game (USA, Europe) (Disc 1).iso" size="256" crc="9a02c446"
-			md5="2ca8c278de8c3f40fbb26abf2502535a" sha1="e4b1f2833e45ea943d9cf0034a22f139635012a2"
+		<rom name="Test Game (USA, Europe) (Disc 1).iso" size="1404928" crc="c1a7b0f3"
+			md5="b7c46ad9c0e61196e17d873bf0f12d31" sha1="dfe2be946e95aafed6f6f39e9a85a6d5a8ec9723"
 			status="verified" />
 	</game>
 	<game name="Test Game (USA, Europe) (Disc 2)">
 		<description>Test Game (USA, Europe)</description>
 		<release name="Test Game (USA, Europe) (Disc 2)" region="EUR" />
 		<release name="Test Game (USA, Europe) (Disc 2)" region="USA" />
-		<rom name="Test Game (USA, Europe) (Disc 2).iso" size="256" crc="aa14c82e"
-			md5="fd4647c89c2c90cfa355a95809f3b4f7" sha1="e11bc9899ec80059d0e916c5875747e6253613eb"
+		<rom name="Test Game (USA, Europe) (Disc 2).iso" size="1404928" crc="7c90a3b4"
+			md5="348b83fd0943b33ea119d8845c380371" sha1="d17145c9f089aa38f7604a084b1a371f8a4e7fe6"
 			status="verified" />
 	</game>
 </datafile>

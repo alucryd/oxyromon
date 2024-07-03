@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM games\n        WHERE name = ?\n        AND device = ?\n        AND system_id = ?\n        ",
+  "query": "\n        SELECT *\n        FROM games\n        WHERE playlist_id = ?\n        ORDER BY name\n        LIMIT 1\n        ",
   "describe": {
     "columns": [
       {
@@ -80,7 +80,7 @@
       }
     ],
     "parameters": {
-      "Right": 3
+      "Right": 1
     },
     "nullable": [
       false,
@@ -100,5 +100,5 @@
       false
     ]
   },
-  "hash": "2eefddd54bd8f34e89f44922571fc2d1bb77629c1860da2b647d02bf8e1e995a"
+  "hash": "87563c026d75595205e24f4067250c53a09c603eb299f55409093777d6f5ee6e"
 }

@@ -1,3 +1,24 @@
+# 0.19.0
+
+- Add a `-n` flag to `import-dats` to override the system name
+- Enhance the rom matching algorithm in `import-roms` to reduce prompts when multiple matches are found
+- Use `createcd/createdvd` and `extractcd/extractdvd` appropriately for CDs and DVDs
+- Add a `-r` flag to `convert-roms` to recompress files that already match the target format
+- Add configuration options for chdman
+- Add support for CHD parents, enable via the `CHD_PARENTS` settings
+- Add a `-u` flag to `config` to unset nullable settings
+- Add a `-p` flag to `convert-roms` to prompt for an optional CHD parent when converting to CHD 
+- Change `-s` in various subcommands to accept SQL wildcards
+- Change `-n` to `-g` (for game) in various subcommands and make it accept SQL wildcards
+- Change `-g` to `-o` (for one g one r) in various subcommands
+- Add an option to scrub RVZ in `export-roms`
+- Fix reimporting an orphan archive containing multiple files or a CHD ROM in `import-dats` and `download-dats`
+- Sort CHD parent prompt by distance
+- Fix converting archives to another archive format
+- Fix an issue where converting an archive back to original would only delete the archive
+- Support `7zz` and `7z` on all systems, in that order
+- Improve the IRD game matching prompt when the IRD game name is all caps and the Redump name is not
+
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast
 - Fix dreamcast system being skipped even with the correct chdman version

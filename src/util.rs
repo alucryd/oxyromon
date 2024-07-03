@@ -5,7 +5,9 @@ use super::progress::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
+use rayon::prelude::*;
 use regex::Regex;
+use simple_error::SimpleError;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
@@ -14,10 +16,11 @@ use tempfile::NamedTempFile;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
+use which::which;
 
 lazy_static! {
     static ref SYSTEM_NAME_REGEX: Regex =
-        Regex::new(r"^(Non-Redump - )?([^()]+)( \(.*\))?$").unwrap();
+        Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap();
 }
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
@@ -206,16 +209,21 @@ pub async fn get_system_directory(
     connection: &mut SqliteConnection,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let system_name = if get_bool(connection, "GROUP_SUBSYSTEMS").await {
-        SYSTEM_NAME_REGEX
-            .captures(&system.name)
-            .unwrap()
-            .get(2)
-            .unwrap()
-            .as_str()
-            .to_owned()
-    } else {
-        system.name.trim().to_owned()
+    let system_name = match &system.custom_name {
+        Some(custom_name) => custom_name.to_owned(),
+        None => {
+            if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+                SYSTEM_NAME_REGEX
+                    .captures(&system.name)
+                    .unwrap()
+                    .get(2)
+                    .unwrap()
+                    .as_str()
+                    .to_owned()
+            } else {
+                system.name.trim().to_owned()
+            }
+        }
     };
     let system_directory = get_rom_directory(connection).await.join(system_name);
     Ok(system_directory)
@@ -240,6 +248,17 @@ pub async fn get_trash_directory(
         None => get_rom_directory(connection).await.join("Trash"),
     };
     Ok(trash_directory)
+}
+
+pub fn get_executable_path(executables: &[&str]) -> SimpleResult<PathBuf> {
+    let path = executables
+        .iter()
+        .find_map(|executable| which(executable).ok());
+    if let Some(path) = path {
+        Ok(path)
+    } else {
+        Err(SimpleError::new("No executable in path"))
+    }
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {
@@ -347,11 +366,45 @@ pub async fn compute_arcade_system_incompletion(
     progress_bar.disable_steady_tick();
 }
 
+pub async fn find_parent_chd_romfile_by_game(
+    connection: &mut SqliteConnection,
+    game: &Game,
+) -> Option<Romfile> {
+    let parent_game = match game.playlist_id {
+        Some(playlist_id) => {
+            let parent_game = find_first_game_by_playlist_id(connection, playlist_id).await;
+            if parent_game.id != game.id {
+                Some(parent_game)
+            } else {
+                None
+            }
+        }
+        None => None,
+    };
+    match parent_game {
+        Some(parent_game) => {
+            let roms = find_roms_with_romfile_by_game_ids(connection, &[parent_game.id]).await;
+            let mut romfile_ids = roms
+                .into_par_iter()
+                .map(|rom| rom.romfile_id.unwrap())
+                .collect::<Vec<i64>>();
+            romfile_ids.dedup();
+            find_romfiles_by_ids(connection, &romfile_ids)
+                .await
+                .into_par_iter()
+                .find_first(|romfile| romfile.path.ends_with(CHD_EXTENSION))
+        }
+        None => None,
+    }
+}
+
 #[cfg(test)]
 mod test_system_directory_no_group_subsystems;
 
 #[cfg(test)]
 mod test_system_directory_group_subsystems;
 
+#[cfg(test)]
+mod test_system_directory_custom_name;
 #[cfg(test)]
 mod test_system_directory_group_non_redump;

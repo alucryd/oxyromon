@@ -1,5 +1,6 @@
+use super::chdman::{ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE};
 use super::database::*;
-use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
+use super::dolphin::{RvzCompressionAlgorithm, RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use super::SimpleResult;
@@ -39,16 +40,6 @@ pub enum HashAlgorithm {
     Sha1,
 }
 
-#[derive(Display, PartialEq, EnumString, VariantNames)]
-#[strum(serialize_all = "lowercase")]
-pub enum RvzCompressionAlgorithm {
-    None,
-    Zstd,
-    Bzip,
-    Lzma,
-    Lzma2,
-}
-
 #[derive(PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum SubfolderScheme {
@@ -73,9 +64,11 @@ pub enum PreferredRegion {
 }
 
 const BOOLEANS: &[&str] = &[
+    "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "PREFER_PARENTS",
     "REGIONS_ONE_STRICT",
+    "RVZ_SCRUB",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
@@ -86,7 +79,13 @@ const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
     "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,
 };
+const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
+    "CHD_CD_COMPRESSION_ALGORITHMS" => ChdCdCompressionAlgorithm::VARIANTS,
+    "CHD_DVD_COMPRESSION_ALGORITHMS" => ChdDvdCompressionAlgorithm::VARIANTS,
+};
 const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
+    "CHD_CD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
+    "CHD_DVD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
     "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
     "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
     "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
@@ -101,6 +100,21 @@ const LISTS: &[&str] = &[
     "REGIONS_ONE",
 ];
 const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
+
+const NULLABLES: &[&str] = &[
+    "CHD_CD_HUNK_SIZE",
+    "CHD_CD_COMPRESSION_ALGORITHMS",
+    "CHD_DVD_HUNK_SIZE",
+    "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "DISCARD_FLAGS",
+    "DISCARD_RELEASES",
+    "LANGUAGES",
+    "PREFER_FLAGS",
+    "REGIONS_ALL",
+    "REGIONS_ONE",
+    "SEVENZIP_COMPRESSION_LEVEL",
+    "ZIP_COMPRESSION_LEVEL",
+];
 
 const LIST_SEPARATOR: &str = "|";
 
@@ -154,10 +168,20 @@ pub fn subcommand() -> Command {
             Arg::new("SET")
                 .short('s')
                 .long("set")
-                .help("Configure a single setting")
+                .help("Set a single setting")
                 .required(false)
                 .num_args(2)
                 .value_names(["KEY", "VALUE"])
+                .exclusive(true),
+        )
+        .arg(
+            Arg::new("UNSET")
+                .short('u')
+                .long("unset")
+                .help("Unset a single setting")
+                .required(false)
+                .num_args(1)
+                .value_name("KEY")
                 .exclusive(true),
         )
         .arg(
@@ -200,6 +224,8 @@ pub async fn main(
         {
             set_setting(connection, progress_bar, key, value).await?;
         };
+    } else if matches.contains_id("UNSET") {
+        unset_setting(connection, matches.get_one::<String>("UNSET").unwrap()).await?;
     } else if matches.contains_id("ADD") {
         if let [key, value] = matches
             .get_many::<String>("ADD")
@@ -268,6 +294,17 @@ async fn set_setting(
     Ok(())
 }
 
+async fn unset_setting(connection: &mut SqliteConnection, key: &str) -> SimpleResult<()> {
+    if NULLABLES.contains(&key) {
+        if let Some(setting) = find_setting_by_key(connection, key).await {
+            update_setting(connection, setting.id, None).await;
+        };
+    } else {
+        println!("Unsupported setting");
+    }
+    Ok(())
+}
+
 pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
     find_setting_by_key(connection, key)
         .await
@@ -287,14 +324,12 @@ pub async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool)
     };
 }
 
-pub async fn get_integer(connection: &mut SqliteConnection, key: &str) -> usize {
+pub async fn get_integer(connection: &mut SqliteConnection, key: &str) -> Option<usize> {
     find_setting_by_key(connection, key)
         .await
         .unwrap()
         .value
-        .unwrap()
-        .parse()
-        .unwrap()
+        .map(|value| value.parse().unwrap())
 }
 
 async fn set_integer(connection: &mut SqliteConnection, key: &str, value: usize) {
@@ -328,13 +363,26 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
         } else {
             println!("Value already in list");
         }
+    } else if CHOICE_LISTS.keys().any(|&s| s == key) {
+        if CHOICE_LISTS.get(key).unwrap().contains(&value) {
+            let mut list = get_list(connection, key).await;
+            if !list.contains(&String::from(value)) {
+                list.push(value.to_owned());
+                list.sort();
+                set_list(connection, key, &list).await;
+            } else {
+                println!("Value already in list");
+            }
+        } else {
+            println!("Valid choices: {:?}", CHOICE_LISTS.get(key).unwrap());
+        }
     } else {
         println!("Only list settings are supported");
     }
 }
 
 pub async fn remove_from_list(connection: &mut SqliteConnection, key: &str, value: &str) {
-    if LISTS.contains(&key) {
+    if LISTS.contains(&key) || CHOICE_LISTS.keys().any(|&s| s == key) {
         let mut list = get_list(connection, key).await;
         if list.contains(&String::from(value)) {
             list.remove(list.iter().position(|v| v == value).unwrap());
@@ -383,12 +431,8 @@ pub async fn set_directory<P: AsRef<Path>>(
     };
 }
 
-pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> String {
-    find_setting_by_key(connection, key)
-        .await
-        .unwrap()
-        .value
-        .unwrap()
+pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> Option<String> {
+    find_setting_by_key(connection, key).await.unwrap().value
 }
 
 pub async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {

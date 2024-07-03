@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path LIKE \"%/Trash/%\"\n        ORDER BY path\n        ",
+  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE parent_id = ?\n        ORDER BY path\n        ",
   "describe": {
     "columns": [
       {
@@ -17,16 +17,22 @@
         "name": "size",
         "ordinal": 2,
         "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Int64"
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "f3ff1aa3dee226609e68186b45580ca6972aced2158b2f9204b9626bb8d3b968"
+  "hash": "80ab20c8593f1b4cde6f3b3101e7db2132b4082711418d84a07e5113cbc4f903"
 }

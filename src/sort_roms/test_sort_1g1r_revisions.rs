@@ -32,10 +32,10 @@ async fn test() {
         .unwrap();
 
     let romfile_names = vec![
-        "Test Game (Japan).rom",
         "Test Game (USA, Europe).rom",
-        "Test Game (USA, Europe) (Beta).rom",
+        "Test Game (Japan).rom",
         "Test Game (USA) (Rev 1).rom",
+        "Test Game (USA, Europe) (Beta).rom",
     ];
     for romfile_name in &romfile_names {
         let romfile_path = tmp_directory.join(romfile_name);
@@ -84,8 +84,8 @@ async fn test() {
     let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
     assert_eq!(4, romfiles.len());
 
-    let one_regions_indices = vec![1];
-    let trash_indices = vec![0, 2, 3];
+    let one_regions_indices = vec![0];
+    let trash_indices = vec![1, 2, 3];
 
     for i in one_regions_indices {
         let romfile = romfiles.get(i).unwrap();

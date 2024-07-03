@@ -51,7 +51,12 @@ async fn test() {
     let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_game_ids(&mut connection, &[games[0].id]).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
-    let mut roms_by_game_id: HashMap<i64, Vec<Rom>> = HashMap::new();
+    let old_mtime = fs::metadata(&romfile.path)
+        .await
+        .unwrap()
+        .modified()
+        .unwrap();
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -67,9 +72,10 @@ async fn test() {
         games_by_id,
         romfiles_by_id,
         false,
+        false,
         true,
         &HashAlgorithm::Crc,
-        1,
+        &None,
         false,
     )
     .await
@@ -85,6 +91,11 @@ async fn test() {
     assert_eq!(rom.name, "Test Game (USA, Europe).rom");
 
     let romfile = romfiles.first().unwrap();
+    let new_mtime = fs::metadata(&romfile.path)
+        .await
+        .unwrap()
+        .modified()
+        .unwrap();
     assert_eq!(
         romfile.path,
         system_directory
@@ -95,4 +106,5 @@ async fn test() {
     );
     assert!(Path::new(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
+    assert_eq!(old_mtime, new_mtime);
 }

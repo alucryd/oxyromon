@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT DISTINCT(romfile_id)\n            FROM roms\n            WHERE game_id IN (\n                SELECT id\n                FROM games\n                WHERE system_id = ?\n            )\n        )\n        ",
+  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path LIKE '%/Trash/%'\n        ORDER BY path\n        ",
   "describe": {
     "columns": [
       {
@@ -17,16 +17,22 @@
         "name": "size",
         "ordinal": 2,
         "type_info": "Int64"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Int64"
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 0
     },
     "nullable": [
       false,
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "0f14cf5e8d2fab4ef93be721a6994b753cbb5564effc3091ecddaba6b8def6a4"
+  "hash": "45102b42bb20c899c6d24b05f28a1085fdf81c749b90ccd7b0b9a7e74e5e7a6a"
 }

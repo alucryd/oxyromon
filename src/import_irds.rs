@@ -96,8 +96,11 @@ pub async fn main(
 
         if !matches.get_flag("INFO") {
             games.sort_by(|a, b| {
-                jaro_winkler(&b.name, &irdfile.game_name)
-                    .partial_cmp(&jaro_winkler(&a.name, &irdfile.game_name))
+                jaro_winkler(&b.name.to_lowercase(), &irdfile.game_name.to_lowercase())
+                    .partial_cmp(&jaro_winkler(
+                        &a.name.to_lowercase(),
+                        &irdfile.game_name.to_lowercase(),
+                    ))
                     .unwrap()
             });
             if let Some(game) = prompt_for_game(&games)? {

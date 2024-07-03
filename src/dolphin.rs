@@ -4,23 +4,26 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
 
-cfg_if! {
-    if #[cfg(windows)] {
-        const DOLPHIN_TOOL: &str = "DolphinTool.exe";
-    } else {
-        const DOLPHIN_TOOL: &str = "dolphin-tool";
-    }
-}
-
+pub const DOLPHIN_TOOL_EXECUTABLES: &[&str] = &["dolphin-tool", "DolphinTool"];
 pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
 pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum RvzCompressionAlgorithm {
+    None,
+    Zstd,
+    Bzip,
+    Lzma,
+    Lzma2,
+}
 
 pub struct RvzRomfile {
     pub path: PathBuf,
@@ -69,7 +72,7 @@ impl Check for RvzRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.as_common()?.to_string()));
+        progress_bar.println(format!("Checking \"{}\"", self.as_common()?));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
         iso_romfile
@@ -100,7 +103,7 @@ impl ToIso for RvzRomfile {
             .join(self.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(DOLPHIN_TOOL)
+        let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
             .arg("convert")
             .arg("-f")
             .arg("iso")
@@ -131,6 +134,7 @@ pub trait ToRvz {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
+        scrub: bool,
     ) -> SimpleResult<RvzRomfile>;
 }
 
@@ -142,6 +146,7 @@ impl ToRvz for IsoRomfile {
         compression_algorithm: &RvzCompressionAlgorithm,
         compression_level: usize,
         block_size: usize,
+        scrub: bool,
     ) -> SimpleResult<RvzRomfile> {
         progress_bar.set_message("Creating rvz");
         progress_bar.set_style(get_none_progress_style());
@@ -157,7 +162,8 @@ impl ToRvz for IsoRomfile {
             path.file_name().unwrap().to_str().unwrap()
         ));
 
-        let output = Command::new(DOLPHIN_TOOL)
+        let mut command = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?);
+        command
             .arg("convert")
             .arg("-f")
             .arg("rvz")
@@ -170,10 +176,11 @@ impl ToRvz for IsoRomfile {
             .arg("-i")
             .arg(&self.path)
             .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .expect("Failed to create rvz");
+            .arg(&path);
+        if scrub {
+            command.arg("-s");
+        }
+        let output = command.output().await.expect("Failed to create rvz");
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -209,7 +216,9 @@ impl AsRvz for Romfile {
 
 pub async fn get_version() -> SimpleResult<String> {
     let output = try_with!(
-        Command::new(DOLPHIN_TOOL).output().await,
+        Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
+            .output()
+            .await,
         "Failed to spawn dolphin"
     );
     // dolphin doesn't advertize any version
