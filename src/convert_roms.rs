@@ -3368,7 +3368,7 @@ async fn to_original(
         let romfile = romfiles.first().unwrap();
         let roms: Vec<&Rom> = roms
             .iter()
-            .filter(|rom| rom.romfile_id.unwrap() == rom.id)
+            .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
             .collect();
 
         let destination_directory = match system.arcade {

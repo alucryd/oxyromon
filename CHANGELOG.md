@@ -15,6 +15,7 @@
 - Fix reimporting an orphan archive containing multiple files or a CHD ROM in `import-dats` and `download-dats`
 - Sort CHD parent prompt by distance
 - Fix converting archives to another archive format
+- Fix an issue where converting an archive back to original would only delete the archive
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast
