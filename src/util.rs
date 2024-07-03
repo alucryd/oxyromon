@@ -7,6 +7,7 @@ use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
 use regex::Regex;
+use simple_error::SimpleError;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
@@ -250,15 +251,14 @@ pub async fn get_trash_directory(
 }
 
 pub fn get_executable_path(executables: &[&str]) -> SimpleResult<PathBuf> {
-    let path = try_with!(
-        executables
-            .iter()
-            .map(|executable| which(executable))
-            .find(|path| path.is_ok())
-            .unwrap(),
-        "No executable in path"
-    );
-    Ok(path)
+    let path = executables
+        .iter()
+        .find_map(|executable| which(executable).ok());
+    if let Some(path) = path {
+        Ok(path)
+    } else {
+        Err(SimpleError::new("No executable in path"))
+    }
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {
