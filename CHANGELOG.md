@@ -16,6 +16,7 @@
 - Sort CHD parent prompt by distance
 - Fix converting archives to another archive format
 - Fix an issue where converting an archive back to original would only delete the archive
+- Support `7zz` and `7z` on all systems, in that order
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast

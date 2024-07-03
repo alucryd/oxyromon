@@ -15,6 +15,7 @@ use tempfile::NamedTempFile;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
+use which::which;
 
 lazy_static! {
     static ref SYSTEM_NAME_REGEX: Regex =
@@ -246,6 +247,18 @@ pub async fn get_trash_directory(
         None => get_rom_directory(connection).await.join("Trash"),
     };
     Ok(trash_directory)
+}
+
+pub fn get_executable_path(executables: &[&str]) -> SimpleResult<PathBuf> {
+    let path = try_with!(
+        executables
+            .iter()
+            .map(|executable| which(executable))
+            .find(|path| path.is_ok())
+            .unwrap(),
+        "No executable in path"
+    );
+    Ok(path)
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {

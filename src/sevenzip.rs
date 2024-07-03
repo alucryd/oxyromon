@@ -4,7 +4,6 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;
@@ -17,14 +16,7 @@ use strum::{Display, EnumString};
 use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
-cfg_if! {
-    if #[cfg(macos)] {
-        const SEVENZIP: &str = "7zz";
-    } else {
-        const SEVENZIP: &str = "7z";
-    }
-}
-
+pub const SEVENZIP_EXECUTABLES: &[&str] = &["7zz", "7z"];
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 
@@ -69,7 +61,7 @@ impl ArchiveFile for ArchiveRomfile {
             &self.file_path, new_file_path
         ));
 
-        let output = Command::new(SEVENZIP)
+        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("rn")
             .arg(&self.path)
             .arg(&self.file_path)
@@ -99,7 +91,7 @@ impl ArchiveFile for ArchiveRomfile {
 
         progress_bar.println(format!("Deleting \"{}\"", &self.file_path));
 
-        let output = Command::new(SEVENZIP)
+        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
             .arg(&self.path)
             .arg(&self.file_path)
@@ -130,7 +122,7 @@ impl AsCommon for ArchiveRomfile {
 
 impl Size for ArchiveRomfile {
     async fn get_size(&self) -> SimpleResult<u64> {
-        let output = Command::new(SEVENZIP)
+        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("l")
             .arg("-slt")
             .arg(&self.path)
@@ -196,7 +188,7 @@ impl Hash for ArchiveRomfile {
                 Ok(hash_and_size)
             }
             false => {
-                let output = Command::new(SEVENZIP)
+                let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
                     .arg("l")
                     .arg("-slt")
                     .arg(&self.path)
@@ -288,7 +280,7 @@ impl ToCommon for ArchiveRomfile {
 
         progress_bar.println(format!("Extracting \"{}\"", &self.file_path));
 
-        let output = Command::new(SEVENZIP)
+        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("x")
             .arg(&self.path)
             .arg(&self.file_path)
@@ -354,7 +346,7 @@ impl ToArchive for CommonRomfile {
         ));
         let relative_path = self.path.strip_prefix(working_directory).unwrap();
 
-        let mut command = Command::new(SEVENZIP);
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command
             .arg("a")
             .arg(&path)
@@ -439,7 +431,7 @@ pub async fn parse<P: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let output = Command::new(SEVENZIP)
+    let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
         .arg("l")
         .arg("-slt")
         .arg(path.as_ref())
@@ -536,7 +528,12 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
 }
 
 pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(Command::new(SEVENZIP).output().await, "Failed to spawn 7z");
+    let output = try_with!(
+        Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+            .output()
+            .await,
+        "Failed to spawn executable"
+    );
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

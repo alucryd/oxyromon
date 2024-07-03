@@ -4,7 +4,6 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
-use cfg_if::cfg_if;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
@@ -12,14 +11,7 @@ use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
 
-cfg_if! {
-    if #[cfg(windows)] {
-        const DOLPHIN_TOOL: &str = "DolphinTool.exe";
-    } else {
-        const DOLPHIN_TOOL: &str = "dolphin-tool";
-    }
-}
-
+pub const DOLPHIN_TOOL_EXECUTABLES: &[&str] = &["dolphin-tool", "DolphinTool"];
 pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
 pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
 
@@ -111,7 +103,7 @@ impl ToIso for RvzRomfile {
             .join(self.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(DOLPHIN_TOOL)
+        let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
             .arg("convert")
             .arg("-f")
             .arg("iso")
@@ -170,7 +162,7 @@ impl ToRvz for IsoRomfile {
             path.file_name().unwrap().to_str().unwrap()
         ));
 
-        let mut command = Command::new(DOLPHIN_TOOL);
+        let mut command = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?);
         command
             .arg("convert")
             .arg("-f")
@@ -224,7 +216,9 @@ impl AsRvz for Romfile {
 
 pub async fn get_version() -> SimpleResult<String> {
     let output = try_with!(
-        Command::new(DOLPHIN_TOOL).output().await,
+        Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
+            .output()
+            .await,
         "Failed to spawn dolphin"
     );
     // dolphin doesn't advertize any version
