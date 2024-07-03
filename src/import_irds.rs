@@ -172,13 +172,13 @@ pub async fn parse_ird<R: io::Read>(reader: &mut R) -> SimpleResult<(Irdfile, Ve
     let mut regions_count = [0u8];
     reader.read_exact(&mut regions_count).unwrap();
     let regions_count = regions_count[0] as usize;
-    // let mut regions_hashes: Vec<String> = Vec::with_capacity(regions_count);
-    // while regions_hashes.len() < regions_count {
-    //     let mut region_hash = [0u8; 16];
-    //     reader.read_exact(&mut region_hash).unwrap();
-    //     #[allow(clippy::format_collect)]
-    //     regions_hashes.push(region_hash.iter().map(|b| format!("{:02x}", b)).collect());
-    // }
+    let mut regions_hashes: Vec<String> = Vec::with_capacity(regions_count);
+    while regions_hashes.len() < regions_count {
+        let mut region_hash = [0u8; 16];
+        reader.read_exact(&mut region_hash).unwrap();
+        #[allow(clippy::format_collect)]
+        regions_hashes.push(region_hash.iter().map(|b| format!("{:02x}", b)).collect());
+    }
 
     // parse file hashes
     let mut files_count = [0u8; 4];
@@ -213,7 +213,7 @@ pub async fn parse_ird<R: io::Read>(reader: &mut R) -> SimpleResult<(Irdfile, Ve
                 .to_string(),
             app_version: str::from_utf8(&app_version).unwrap().trim_end().to_string(),
             regions_count,
-            // regions_hashes,
+            regions_hashes,
             files_count,
             files_hashes,
         },

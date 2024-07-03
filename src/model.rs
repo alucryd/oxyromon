@@ -233,7 +233,7 @@ pub struct Irdfile {
     pub game_version: String,
     pub app_version: String,
     pub regions_count: usize,
-    // pub regions_hashes: Vec<String>,
+    pub regions_hashes: Vec<String>,
     pub files_count: usize,
     pub files_hashes: HashMap<u64, String>,
 }
