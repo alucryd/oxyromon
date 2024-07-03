@@ -159,8 +159,11 @@ pub async fn prompt_for_parent_romfile(
     )
     .await;
     romfiles.sort_by(|a, b| {
-        jaro_winkler(&b.path, &game.name)
-            .partial_cmp(&jaro_winkler(&a.path, &game.name))
+        jaro_winkler(&b.path.to_lowercase(), &game.name.to_lowercase())
+            .partial_cmp(&jaro_winkler(
+                &a.path.to_lowercase(),
+                &game.name.to_lowercase(),
+            ))
             .unwrap()
     });
     let index = match romfiles.len() {

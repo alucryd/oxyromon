@@ -17,6 +17,7 @@
 - Fix converting archives to another archive format
 - Fix an issue where converting an archive back to original would only delete the archive
 - Support `7zz` and `7z` on all systems, in that order
+- Improve the IRD game matching prompt when the IRD game name is all caps and the Redump name is not
 
 # 0.18.1
 - Bump minimum required chdman version to 0.264 for dreamcast
