@@ -3,7 +3,7 @@ FROM archlinux
 WORKDIR /usr/src/oxyromon
 COPY . .
 RUN sed 's/^SigLevel    =.*/SigLevel = Never/' -i /etc/pacman.conf && \
-    pacman -Syu --noconfirm base-devel bchunk cdrtools dolphin-emu mame-tools maxcso p7zip rustup wit yarn && \
+    pacman -Syu --noconfirm base-devel bchunk dolphin-emu libcdio mame-tools maxcso p7zip rustup wit yarn && \
     rustup toolchain install stable && \
     cargo install \
     --features server \

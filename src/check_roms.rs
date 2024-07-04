@@ -22,7 +22,7 @@ use std::path::Path;
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
-        .about("Check ROM files integrity")
+        .about("Check ROM files' integrity")
         .arg(
             Arg::new("ALL")
                 .short('a')

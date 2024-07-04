@@ -2,7 +2,7 @@ FROM alpine
 
 WORKDIR /usr/src/oxyromon
 COPY . .
-RUN apk add --no-cache build-base dolphin-emu musl-dev 7zip rustup yarn && \
+RUN apk add --no-cache build-base dolphin-emu libcdio-tools musl-dev 7zip rustup yarn && \
     rustup-init -y && \
     source /root/.cargo/env && \
     cargo install \
