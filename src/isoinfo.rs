@@ -1,9 +1,11 @@
 use super::progress::*;
 use super::SimpleResult;
+use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660Reader, ISODirectory, ISOFile, ISO9660};
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::collections::HashMap;
+use std::fs::File;
 use std::path::Path;
 use std::time::Duration;
 use tokio::process::Command;
@@ -41,6 +43,13 @@ pub async fn parse_iso<P: AsRef<Path>>(
     progress_bar.set_message("Parsing ISO header");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+    let file = File::open(iso_path).unwrap();
+    let iso = ISO9660::new(file).unwrap();
+    for entry in iso.root().contents() {
+        let mode = entry.as_ref().unwrap().mode();
+        println!("{}", entry.unwrap().identifier());
+    }
 
     let output = Command::new(ISOINFO)
         .arg("-i")

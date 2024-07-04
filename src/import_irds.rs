@@ -1,16 +1,17 @@
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
-use super::isoinfo;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
+use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660Reader, ISODirectory, ISOFile, ISO9660};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
+use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -226,6 +227,41 @@ pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, V
     ))
 }
 
+fn walk_directory<T: ISO9660Reader>(
+    directory: &ISODirectory<T>,
+    prefix: &str,
+) -> HashMap<String, Vec<ISOFile<T>>> {
+    let mut files: HashMap<String, Vec<ISOFile<T>>> = HashMap::new();
+    let mut directories: Vec<ISODirectory<T>> = Vec::new();
+    for entry in directory.contents() {
+        if let Ok(entry) = entry {
+            match entry {
+                DirectoryEntry::Directory(directory) => {
+                    if directory.identifier != "." && directory.identifier != ".." {
+                        directories.push(directory);
+                    }
+                }
+                DirectoryEntry::File(file) => {
+                    let path = format!("{}{}", prefix, file.identifier);
+                    if files.contains_key(&path) {
+                        files.get_mut(&path).unwrap().push(file);
+                    } else {
+                        files.insert(path, Vec::from([file]));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    for directory in directories {
+        files.extend(walk_directory(
+            &directory,
+            &format!("{}{}/", prefix, directory.identifier),
+        ));
+    }
+    files
+}
+
 pub async fn import_ird(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -245,7 +281,9 @@ pub async fn import_ird(
     let mut transaction = begin_transaction(connection).await;
 
     // parse ISO header
-    let files = isoinfo::parse_iso(progress_bar, &header_file.path()).await?;
+    let file = File::open(&header_file.path()).unwrap();
+    let iso = ISO9660::new(file).unwrap();
+    let files = walk_directory(iso.root(), "");
 
     if files.len() != irdfile.files_count {
         bail!(
@@ -258,20 +296,22 @@ pub async fn import_ird(
     // convert files into roms
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     for file in files {
+        let size = file.1.iter().map(|file| file.size()).sum::<u32>() as i64;
+        let location = file.1.first().unwrap().header().extent_loc as u64;
         match find_rom_by_name_and_game_id(&mut transaction, &file.0, game.id).await {
             Some(rom) => {
                 update_rom(
                     &mut transaction,
                     rom.id,
                     &file.0,
-                    file.1 .0,
-                    irdfile.files_hashes.get(&file.1 .1).unwrap(),
+                    size,
+                    irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
                 .await;
-                if file.1 .0 != rom.size
-                    || irdfile.files_hashes.get(&file.1 .1).unwrap() != rom.md5.as_ref().unwrap()
+                if size != rom.size
+                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap()
                 {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);
@@ -284,8 +324,8 @@ pub async fn import_ird(
                 create_rom(
                     &mut transaction,
                     &file.0,
-                    file.1 .0,
-                    irdfile.files_hashes.get(&file.1 .1).unwrap(),
+                    size,
+                    irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
