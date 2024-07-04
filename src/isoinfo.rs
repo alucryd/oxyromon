@@ -3,25 +3,24 @@ use super::SimpleResult;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::collections::HashMap;
 use std::path::Path;
 use std::time::Duration;
 use tokio::process::Command;
 
-const ISOINFO: &str = "isoinfo";
+const ISOINFO: &str = "iso-info";
 
 lazy_static! {
-    static ref DIRECTORY_REGEX: Regex = Regex::new(r"^Directory listing of /(.+)$").unwrap();
-    static ref FILE_REGEX: Regex = Regex::new(
-        r"^-[rwx-]{9}\s+[0-9]\s+[0-9]\s+[0-9]\s+([0-9]+).*\[\s*([0-9]+) [0-9]{2}\] ([^;]+).*$"
-    )
-    .unwrap();
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.[\d\w]+").unwrap();
+    static ref DIRECTORY_REGEX: Regex = Regex::new(r"^/(.+):$").unwrap();
+    static ref FILE_REGEX: Regex =
+        Regex::new(r"^\s+-\s+\[.*\s+(\d+)\]\s+(\d+)\s+.*\s+(.+)$").unwrap();
+    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
 }
 
 pub async fn get_version() -> SimpleResult<String> {
     let output = try_with!(
-        Command::new(ISOINFO).arg("-version").output().await,
-        "Failed to spawn isoinfo"
+        Command::new(ISOINFO).arg("--version").output().await,
+        "Failed to spawn iso-info"
     );
 
     let stdout = String::from_utf8(output.stdout).unwrap();
@@ -38,7 +37,7 @@ pub async fn get_version() -> SimpleResult<String> {
 pub async fn parse_iso<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     iso_path: &P,
-) -> SimpleResult<Vec<(String, i64, u64)>> {
+) -> SimpleResult<HashMap<String, (i64, u64)>> {
     progress_bar.set_message("Parsing ISO header");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -46,8 +45,9 @@ pub async fn parse_iso<P: AsRef<Path>>(
     let output = Command::new(ISOINFO)
         .arg("-i")
         .arg(iso_path.as_ref())
-        .arg("-J")
         .arg("-l")
+        .arg("--no-header")
+        .arg("--quiet")
         .output()
         .await
         .expect("Failed to parse ISO header");
@@ -56,7 +56,7 @@ pub async fn parse_iso<P: AsRef<Path>>(
         bail!(String::from_utf8(output.stderr).unwrap().as_str())
     }
 
-    let mut files: Vec<(String, i64, u64)> = Vec::new();
+    let mut files: HashMap<String, (i64, u64)> = HashMap::new();
     let mut directory = "";
 
     for line in String::from_utf8(output.stdout).unwrap().lines() {
@@ -64,11 +64,14 @@ pub async fn parse_iso<P: AsRef<Path>>(
             directory = line_match.get(1).unwrap().as_str();
         }
         if let Some(line_match) = FILE_REGEX.captures(line) {
-            files.push((
-                format!("{}{}", directory, line_match.get(3).unwrap().as_str()),
-                line_match.get(1).unwrap().as_str().parse().unwrap(),
-                line_match.get(2).unwrap().as_str().parse().unwrap(),
-            ));
+            let path = format!("{}{}", directory, line_match.get(3).unwrap().as_str());
+            let size: i64 = line_match.get(2).unwrap().as_str().parse().unwrap();
+            let start: u64 = line_match.get(1).unwrap().as_str().parse().unwrap();
+            if let Some(file) = files.get(&path) {
+                files.insert(path, (file.0 + size, file.1));
+            } else {
+                files.insert(path, (size, start));
+            }
         }
     }
 

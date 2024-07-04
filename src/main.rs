@@ -42,6 +42,7 @@ extern crate tempfile;
 extern crate tokio;
 extern crate vec_drain_where;
 extern crate walkdir;
+extern crate which;
 
 mod bchunk;
 mod benchmark;

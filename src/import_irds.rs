@@ -13,6 +13,7 @@ use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
+use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 use std::str::FromStr;
@@ -68,17 +69,7 @@ pub async fn main(
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
 
     for ird_path in ird_paths {
-        let mut reader = get_reader_sync(&ird_path)?;
-        let mut magic = [0u8; 2];
-        reader.read_exact(&mut magic).unwrap();
-        try_with!(reader.rewind(), "Failed to rewind file");
-
-        let (irdfile, mut header) = if magic == GZIP_MAGIC {
-            let mut decoder = GzDecoder::new(&mut reader);
-            parse_ird(&mut decoder).await?
-        } else {
-            parse_ird(&mut reader).await?
-        };
+        let (irdfile, mut header) = parse_ird(ird_path).await?;
 
         progress_bar.println(format!("IRD Version: {}", &irdfile.version));
         progress_bar.println(format!("Game ID: {}", &irdfile.game_id));
@@ -119,7 +110,18 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_ird<R: io::Read>(reader: &mut R) -> SimpleResult<(Irdfile, Vec<u8>)> {
+pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
+    let mut reader = get_reader_sync(&ird_path)?;
+    let mut magic = [0u8; 2];
+    reader.read_exact(&mut magic).unwrap();
+    drop(reader);
+
+    let mut reader = if magic == GZIP_MAGIC {
+        Box::new(GzDecoder::new(get_reader_sync(&ird_path)?)) as Box<dyn Read>
+    } else {
+        Box::new(get_reader_sync(&ird_path)?) as Box<dyn Read>
+    };
+
     // parse magic
     let mut magic = [0u8; 4];
     reader.read_exact(&mut magic).unwrap();
@@ -262,14 +264,14 @@ pub async fn import_ird(
                     &mut transaction,
                     rom.id,
                     &file.0,
-                    file.1,
-                    irdfile.files_hashes.get(&file.2).unwrap(),
+                    file.1 .0,
+                    irdfile.files_hashes.get(&file.1 .1).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
                 .await;
-                if file.1 != rom.size
-                    || irdfile.files_hashes.get(&file.2).unwrap() != rom.md5.as_ref().unwrap()
+                if file.1 .0 != rom.size
+                    || irdfile.files_hashes.get(&file.1 .1).unwrap() != rom.md5.as_ref().unwrap()
                 {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);
@@ -282,8 +284,8 @@ pub async fn import_ird(
                 create_rom(
                     &mut transaction,
                     &file.0,
-                    file.1,
-                    irdfile.files_hashes.get(&file.2).unwrap(),
+                    file.1 .0,
+                    irdfile.files_hashes.get(&file.1 .1).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
@@ -312,3 +314,6 @@ pub async fn import_ird(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_ird;

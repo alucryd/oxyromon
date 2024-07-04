@@ -72,7 +72,7 @@ pub async fn main(
     progress_bar.println(format!("  chdman: {}", chdman_version));
     progress_bar.println(format!("  ctrtool: {}", ctrtool_version));
     progress_bar.println(format!("  dolphin: {}", dolphin_version));
-    progress_bar.println(format!("  isoinfo: {}", isoinfo_version));
+    progress_bar.println(format!("  iso-info: {}", isoinfo_version));
     progress_bar.println(format!("  maxcso: {}", maxcso_version));
     progress_bar.println(format!("  nsz: {}", nsz_version));
     progress_bar.println(format!("  wit: {}", wit_version));
