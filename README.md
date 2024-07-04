@@ -17,11 +17,11 @@
 
 oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
-It is designed with archiving in mind, as such it only supports original and lossless ROM formats.
-It can however export in various popular lossy formats, leaving the lossless ROM files untouched.
+It is designed with archiving in mind, so it only supports original and lossless ROM formats.
+It can, however, export in various popular lossy formats, leaving the lossless ROM files untouched.
 Sorting can be done in regions mode, in so-called 1G1R mode, or both.
-Console, computer and arcade (WIP) systems are supported using Logiqx DAT files.
-The first two require No-Intro or Redump DAT files, while the latter makes use MAME or FBNeo DAT files.
+Console, computer, and arcade (WIP) systems are supported using Logiqx DAT files.
+The first two require No-Intro or Redump DAT files, while the latter uses MAME or FBNeo DAT files.
 
 <img 
     style="display: block; 
@@ -35,15 +35,15 @@ The first two require No-Intro or Redump DAT files, while the latter makes use M
 ### Quick start
 
 To create and manage a new system, you need a Logiqx DAT file.
-Cartridge based consoles and older computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
-CD based ones can be downloaded from [Redump](http://redump.org/).
-Alternatively the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
-MAME DATs can be found on [Progetto-Snaps](https://www.progettosnaps.net/index.php). FBNeo DATs are a bit harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
+Cartridge-based consoles and older computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
+CD-based ones can be downloaded from [Redump](http://redump.org/).
+Alternatively, the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
+MAME DATs can be found on [Progetto-Snaps](https://www.progettosnaps.net/index.php). FBNeo DATs are harder to find; [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
 
 Manually downloaded DATs are then imported using the `import-dats` subcommand.
-Once a system has been created, you can start importing ROMs using the `import-roms` subcommand.
+Once a system has been created, you can import ROMs using the `import-roms` subcommand.
 Imported ROMs that check out will be placed in the main folder of their respective system.
-They can then be sorted using the `sort-roms` subcommand according to your configuration.
+Then, the ROMs can be sorted using the `sort-roms` subcommand according to your configuration.
 Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list beforehand.
 See all configuration options below.
 
@@ -51,19 +51,19 @@ You can also convert ROMs between various formats using the `convert-roms` subco
 
 ### Installation
 
-You can grab pre-compiled binaries for Lnux, Mac and Windows from the [release page](https://github.com/alucryd/oxyromon/releases).
+You can grab pre-compiled Linux, Mac, and Windows binaries from the [release page](https://github.com/alucryd/oxyromon/releases).
 
 A docker image is also available on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon).
 
-If you happen to be using Arch Linux, there's a package in the [official repos](https://archlinux.org/packages/extra/x86_64/oxyromon/).
+If you use Arch Linux, there's a package in the [official repos](https://archlinux.org/packages/extra/x86_64/oxyromon/).
 
 It is also possible to install from crates.io using `cargo install oxyromon`.
 
-Finally if you're feeling adventurous, you can always build from source, instructions below.
+Finally, if you're feeling adventurous, you can always build from the source, as shown in the instructions below.
 
 ### Compilation
 
-The CLI has no specific requirement, you can just:
+The CLI has no specific requirement, and you can just:
 
     cargo build --release
 
@@ -71,7 +71,7 @@ For the web UI, you will also need yarn:
 
     cargo build --release --features server
 
-The build uses rustls by default, but you can also opt for openssl:
+The build uses rustls by default, but you can also opt for OpenSSL:
 
     cargo build --no-default-features --features use-native-tls
 
@@ -86,7 +86,7 @@ The build uses rustls by default, but you can also opt for openssl:
 
 ### Configuration
 
-Configuration is done from the command line and settings are stored in the SQLite database.
+Configuration is done from the command line, and settings are stored in the SQLite database.
 The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
 
@@ -184,7 +184,7 @@ These should be in your `${PATH}` for extra features.
 - Craft some unit tests for arcade systems
 - Craft some unit tests for NSZ
 - Craft some unit tests for IRD and PS3 in general
-- Support rebuilding PS3 ISOs using IRD files, if possible and requested
+- Support rebuilding PS3 ISOs using IRD files, if possible, and requested
 - Add a metadata scraper in the retroarch format
 
 ## oxyromon
@@ -202,7 +202,7 @@ These should be in your `${PATH}` for extra features.
         export-roms         Export ROM files to common formats
         rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
         check-roms          Check ROM files integrity
-        purge-roms          Purge trashed, missing and orphan ROM files
+        purge-roms          Purge trashed, missing, and orphan ROM files
         purge-systems       Purge systems
         generate-playlists  Generate M3U playlists for multi-disc games
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
@@ -218,7 +218,7 @@ These should be in your `${PATH}` for extra features.
 
 Query and modify the oxyromon settings
 
-The settings can be queried, modified and deleted from the command line.
+The settings can be queried, modified, and deleted from the command line.
 
     Usage: oxyromon config [OPTIONS]
 
@@ -278,8 +278,8 @@ If not provided, oxyromon will use its own fallback header definition.
 
 Download No-Intro and Redump DAT files and import them into oxyromon
 
-Redump ofers direct downloads, but no summary, whereas No-Intro offers a summary
-but no direct downloads. For now the No-intro counterpart will only tell you if
+Redump offers direct downloads, but no summary, whereas No-Intro offers a summary
+but no direct downloads. For now, the No-intro counterpart will only tell you if
 an update is available, but the Redump one is able to download brand new dats
 and update those you've already imported.
 
@@ -304,7 +304,7 @@ Supported DAT providers:
 Parse and import PlayStation 3 IRD files into oxyromon
 
 IRD files allow validation of extracted PS3 ISOs, a.k.a. JB folders.
-Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE` directories.
+Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA`, and `PS3_UPDATE` directories.
 
 Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
 
@@ -323,8 +323,8 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
 Validate and import ROM files or directories into oxyromon
 
 ROM files that match against the database will be placed in the base directory of the system they belong to.
-In most cases the system is auto-detected, however you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
-Systems that use a header definition require the `-s` flag to be passed to match ROM files which contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800 and Atari Lynx.
+In most cases the system is auto-detected, however, you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
+Systems that use a header definition require the `-s` flag to be passed to match ROM files that contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800, and Atari Lynx.
 Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
 
 Supported console ROM formats:
@@ -379,16 +379,16 @@ Supported arcade modes:
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
-Regions are set via the `REGIONS_ALL` setting, and can overriden via the CLI `-g` flag.
+Regions are set via the `REGIONS_ALL` setting and can overridden via the CLI `-g` flag.
 
 In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
 precedence.
-Regions are set via the `REGIONS_ONE` setting, and can overriden via the CLI `-r` flag.
+Regions are set via the `REGIONS_ONE` setting, and can overridden via the CLI `-r` flag.
 
 In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
 directory.
 
-1G1R and hybrid modes have an addtional knob you can turn via `REGIONS_ONE_STRICT`.
+1G1R and hybrid modes have an additional knob you can turn via `REGIONS_ONE_STRICT`.
 Setting it to false will elect the first available ROM you possess following your region preferences.
 Setting to true will elect ROMs following region preferences regardless of whether you actually posses the ROM or not.
 
@@ -423,7 +423,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
 
 Rebuild arcade ROM sets according to the selected strategy
 
-ROM sets can be rebuilt using the popular merging strategies.
+ROM sets can be rebuilt using popular merging strategies.
 
 Supported merging strategies:
 
@@ -448,7 +448,7 @@ Convert ROM files between common formats
 ROMs can be converted back and forth between reversible formats and their original formats.
 Invoking this command will convert all eligible roms for some or all systems.
 You may optionally filter games by name, the matching string is case-insensitive and can use SQL wildcards.
-Systems can also be selected the same way so as to avoid being prompted for them. Both systems and games flags can be passed multiple times.
+Systems can also be selected the same way so as to avoid being prompted for them. Both systems and game flags can be passed multiple times.
 
 Supported ROM formats:
 
@@ -480,7 +480,7 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
 
 Export ROM files to common formats
 
-Similar to `convert-roms`, however this one leaves your original ROM files untouched, thus allows the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
+Similar to `convert-roms`, however, this one leaves your original ROM files untouched, thus allowing the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
 
 Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO using bchunk.
 
@@ -496,7 +496,7 @@ Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 
 
 ## oxyromon-check-roms
 
-Check ROM files integrity
+Check ROM files' integrity
 
 This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
 File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
@@ -511,10 +511,10 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
 
 ## oxyromon-purge-roms
 
-Purge trashed, missing and orphan ROM files
+Purge trashed, missing, and orphan ROM files
 
 This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
-with a ROM, as well as physically delete all files in the `Trash` subdirectories.
+with a ROM, as well as physically deleting all files in the `Trash` subdirectories.
 
     Usage: oxyromon purge-roms [OPTIONS]
 
@@ -530,7 +530,7 @@ with a ROM, as well as physically delete all files in the `Trash` subdirectories
 
 Purge systems
 
-This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterwards.
+This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterward.
 
     Usage: oxyromon purge-systems
 
@@ -556,7 +556,7 @@ Note: `sort-roms` will move them accordingly but if you use `convert-roms` you w
 
 Parse and import PlayStation 3 IRD files into oxyromon
 
-One of the most common way PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
+One of the most common ways PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
 
 Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehand. Please make sure it has `PlayStation 3` in the name if you don't go with Redump.
 
