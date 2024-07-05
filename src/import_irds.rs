@@ -11,9 +11,9 @@ use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
-use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::str;
 use std::str::FromStr;
@@ -268,9 +268,6 @@ pub async fn import_ird(
     irdfile: &Irdfile,
     header: &mut [u8],
 ) -> SimpleResult<()> {
-    let mut header_file = create_tmp_file(connection).await?;
-    header_file.write_all(header).unwrap();
-
     let mut roms = find_roms_by_game_id_no_parents(connection, game.id).await;
     let parent_rom = prompt_for_rom(&mut roms, None)?;
     if parent_rom.is_none() {
@@ -280,8 +277,7 @@ pub async fn import_ird(
     let mut transaction = begin_transaction(connection).await;
 
     // parse ISO header
-    let file = File::open(&header_file.path()).unwrap();
-    let iso = ISO9660::new(file).unwrap();
+    let iso = ISO9660::new(Cursor::new(header)).unwrap();
     let files = walk_directory(iso.root(), "");
 
     if files.len() != irdfile.files_count {
