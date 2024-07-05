@@ -378,11 +378,11 @@ Supported arcade modes:
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
-Regions are set via the `REGIONS_ALL` setting, and can be overridden via the CLI `-r` flag.
+Regions are set via the `REGIONS_ALL` setting and can be overridden via the CLI `-r` flag.
 
 In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
 precedence.
-Regions are set via the `REGIONS_ONE` setting, and can be overridden via the CLI `-o` flag.
+Regions are set via the `REGIONS_ONE` setting and can be overridden via the CLI `-o` flag.
 
 In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
 directory.
