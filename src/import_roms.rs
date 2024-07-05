@@ -77,6 +77,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("EXTRACT")
+                .short('x')
+                .long("extract")
+                .help("Extract top-level archives before importing their contents")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -121,6 +129,22 @@ pub async fn main(
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     for romfile_path in matches.get_many::<PathBuf>("ROMS").unwrap() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut romfile_path = get_canonicalized_path(&romfile_path).await?;
+        let romfile_extension = romfile_path
+            .extension()
+            .unwrap_or(&OsString::new())
+            .to_str()
+            .unwrap()
+            .to_lowercase();
+        if matches.get_flag("EXTRACT") && ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
+            for archive_romfile in sevenzip::parse(progress_bar, &romfile_path).await? {
+                archive_romfile
+                    .to_common(progress_bar, &tmp_directory.path())
+                    .await?;
+            }
+            romfile_path = tmp_directory.path().to_path_buf();
+        }
         for system in &systems {
             if let Some(system) = system {
                 progress_bar.println(format!("Searching in \"{}\"", &system.name));
@@ -129,7 +153,6 @@ pub async fn main(
                 Some(system) => find_header_by_system_id(connection, system.id).await,
                 None => None,
             };
-            let romfile_path = get_canonicalized_path(&romfile_path).await?;
             if romfile_path.is_dir() {
                 if romfile_path.join(PS3_DISC_SFB).is_file() {
                     progress_bar.println(format!(
@@ -1761,5 +1784,7 @@ mod test_sevenzip_single_file_headered;
 mod test_single_track_chd;
 #[cfg(test)]
 mod test_zip_single_file;
+#[cfg(test)]
+mod test_zip_single_file_extract;
 #[cfg(test)]
 mod test_zso;
