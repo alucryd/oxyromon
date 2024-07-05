@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.19.0</h1>
+<h1 style="text-align: center;">oxyROMon 0.20.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -179,7 +179,6 @@ These should be in your `${PATH}` for extra features.
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
-- [isoinfo](https://sourceforge.net/projects/cdrtools/): IRD support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
 - [nsz](https://github.com/nicoboss/nsz): NSZ support
 - [wit](https://wit.wiimm.de/): WBFS support
@@ -387,11 +386,11 @@ Supported arcade modes:
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
-Regions are set via the `REGIONS_ALL` setting and can overridden via the CLI `-g` flag.
+Regions are set via the `REGIONS_ALL` setting and can be overridden via the CLI `-r` flag.
 
 In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
 precedence.
-Regions are set via the `REGIONS_ONE` setting, and can overridden via the CLI `-r` flag.
+Regions are set via the `REGIONS_ONE` setting and can be overridden via the CLI `-o` flag.
 
 In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
 directory.

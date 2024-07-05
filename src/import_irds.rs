@@ -1,11 +1,11 @@
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
-use super::isoinfo;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
 use super::SimpleResult;
+use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660Reader, ISODirectory, ISOFile, ISO9660};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
@@ -13,7 +13,8 @@ use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::io::Cursor;
+use std::path::{Path, PathBuf};
 use std::str;
 use std::str::FromStr;
 use strsim::jaro_winkler;
@@ -68,17 +69,7 @@ pub async fn main(
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
 
     for ird_path in ird_paths {
-        let mut reader = get_reader_sync(&ird_path)?;
-        let mut magic = [0u8; 2];
-        reader.read_exact(&mut magic).unwrap();
-        try_with!(reader.rewind(), "Failed to rewind file");
-
-        let (irdfile, mut header) = if magic == GZIP_MAGIC {
-            let mut decoder = GzDecoder::new(&mut reader);
-            parse_ird(&mut decoder).await?
-        } else {
-            parse_ird(&mut reader).await?
-        };
+        let (irdfile, mut header) = parse_ird(ird_path).await?;
 
         progress_bar.println(format!("IRD Version: {}", &irdfile.version));
         progress_bar.println(format!("Game ID: {}", &irdfile.game_id));
@@ -119,7 +110,18 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_ird<R: io::Read>(reader: &mut R) -> SimpleResult<(Irdfile, Vec<u8>)> {
+pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
+    let mut reader = get_reader_sync(&ird_path)?;
+    let mut magic = [0u8; 2];
+    reader.read_exact(&mut magic).unwrap();
+    drop(reader);
+
+    let mut reader = if magic == GZIP_MAGIC {
+        Box::new(GzDecoder::new(get_reader_sync(&ird_path)?)) as Box<dyn Read>
+    } else {
+        Box::new(get_reader_sync(&ird_path)?) as Box<dyn Read>
+    };
+
     // parse magic
     let mut magic = [0u8; 4];
     reader.read_exact(&mut magic).unwrap();
@@ -224,6 +226,41 @@ pub async fn parse_ird<R: io::Read>(reader: &mut R) -> SimpleResult<(Irdfile, Ve
     ))
 }
 
+fn walk_directory<T: ISO9660Reader>(
+    directory: &ISODirectory<T>,
+    prefix: &str,
+) -> HashMap<String, Vec<ISOFile<T>>> {
+    let mut files: HashMap<String, Vec<ISOFile<T>>> = HashMap::new();
+    let mut directories: Vec<ISODirectory<T>> = Vec::new();
+    for entry in directory.contents() {
+        if let Ok(entry) = entry {
+            match entry {
+                DirectoryEntry::Directory(directory) => {
+                    if directory.identifier != "." && directory.identifier != ".." {
+                        directories.push(directory);
+                    }
+                }
+                DirectoryEntry::File(file) => {
+                    let path = format!("{}{}", prefix, file.identifier);
+                    if files.contains_key(&path) {
+                        files.get_mut(&path).unwrap().push(file);
+                    } else {
+                        files.insert(path, Vec::from([file]));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    for directory in directories {
+        files.extend(walk_directory(
+            &directory,
+            &format!("{}{}/", prefix, directory.identifier),
+        ));
+    }
+    files
+}
+
 pub async fn import_ird(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -231,9 +268,6 @@ pub async fn import_ird(
     irdfile: &Irdfile,
     header: &mut [u8],
 ) -> SimpleResult<()> {
-    let mut header_file = create_tmp_file(connection).await?;
-    header_file.write_all(header).unwrap();
-
     let mut roms = find_roms_by_game_id_no_parents(connection, game.id).await;
     let parent_rom = prompt_for_rom(&mut roms, None)?;
     if parent_rom.is_none() {
@@ -243,7 +277,8 @@ pub async fn import_ird(
     let mut transaction = begin_transaction(connection).await;
 
     // parse ISO header
-    let files = isoinfo::parse_iso(progress_bar, &header_file.path()).await?;
+    let iso = ISO9660::new(Cursor::new(header)).unwrap();
+    let files = walk_directory(iso.root(), "");
 
     if files.len() != irdfile.files_count {
         bail!(
@@ -256,20 +291,22 @@ pub async fn import_ird(
     // convert files into roms
     let mut orphan_romfile_ids: Vec<i64> = Vec::new();
     for file in files {
+        let size = file.1.iter().map(|file| file.size()).sum::<u32>() as i64;
+        let location = file.1.first().unwrap().header().extent_loc as u64;
         match find_rom_by_name_and_game_id(&mut transaction, &file.0, game.id).await {
             Some(rom) => {
                 update_rom(
                     &mut transaction,
                     rom.id,
                     &file.0,
-                    file.1,
-                    irdfile.files_hashes.get(&file.2).unwrap(),
+                    size,
+                    irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
                 .await;
-                if file.1 != rom.size
-                    || irdfile.files_hashes.get(&file.2).unwrap() != rom.md5.as_ref().unwrap()
+                if size != rom.size
+                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap()
                 {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);
@@ -282,8 +319,8 @@ pub async fn import_ird(
                 create_rom(
                     &mut transaction,
                     &file.0,
-                    file.1,
-                    irdfile.files_hashes.get(&file.2).unwrap(),
+                    size,
+                    irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
                 )
@@ -312,3 +349,6 @@ pub async fn import_ird(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_ird;

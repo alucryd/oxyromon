@@ -42,6 +42,7 @@ extern crate tempfile;
 extern crate tokio;
 extern crate vec_drain_where;
 extern crate walkdir;
+extern crate which;
 
 mod bchunk;
 mod benchmark;
@@ -61,7 +62,6 @@ mod import_dats;
 mod import_irds;
 mod import_roms;
 mod info;
-mod isoinfo;
 mod maxcso;
 mod model;
 #[cfg(feature = "server")]
