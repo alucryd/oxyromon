@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.19.0</h1>
+<h1 style="text-align: center;">oxyROMon 0.20.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -171,7 +171,6 @@ These should be in your `${PATH}` for extra features.
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
-- [iso-info](https://www.gnu.org/software/libcdio/): IRD support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
 - [nsz](https://github.com/nicoboss/nsz): NSZ support
 - [wit](https://wit.wiimm.de/): WBFS support

@@ -3,7 +3,6 @@ use super::chdman;
 use super::ctrtool;
 use super::database::*;
 use super::dolphin;
-use super::isoinfo;
 use super::maxcso;
 use super::nsz;
 use super::progress::*;
@@ -49,10 +48,6 @@ pub async fn main(
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
     };
-    let isoinfo_version = match isoinfo::get_version().await {
-        Ok(version) => format!("found ({})", version),
-        Err(_) => String::from("not found"),
-    };
     let maxcso_version = match maxcso::get_version().await {
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
@@ -72,7 +67,6 @@ pub async fn main(
     progress_bar.println(format!("  chdman: {}", chdman_version));
     progress_bar.println(format!("  ctrtool: {}", ctrtool_version));
     progress_bar.println(format!("  dolphin: {}", dolphin_version));
-    progress_bar.println(format!("  iso-info: {}", isoinfo_version));
     progress_bar.println(format!("  maxcso: {}", maxcso_version));
     progress_bar.println(format!("  nsz: {}", nsz_version));
     progress_bar.println(format!("  wit: {}", wit_version));

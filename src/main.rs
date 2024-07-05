@@ -62,7 +62,6 @@ mod import_dats;
 mod import_irds;
 mod import_roms;
 mod info;
-mod isoinfo;
 mod maxcso;
 mod model;
 #[cfg(feature = "server")]
