@@ -11,7 +11,7 @@ use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
     Command::new("purge-roms")
-        .about("Purge trashed, missing and orphan ROM files")
+        .about("Purge trashed, missing, and orphan ROM files")
         .arg(
             Arg::new("MISSING")
                 .short('m')

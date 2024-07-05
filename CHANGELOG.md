@@ -1,3 +1,7 @@
+# 0.20.0
+
+- Dump `isoinfo` in favor of the native `cdfs` crate to parse IRD ISO headers
+
 # 0.19.0
 
 - Add a `-n` flag to `import-dats` to override the system name
@@ -20,6 +24,7 @@
 - Improve the IRD game matching prompt when the IRD game name is all caps and the Redump name is not
 
 # 0.18.1
+
 - Bump minimum required chdman version to 0.264 for dreamcast
 - Fix dreamcast system being skipped even with the correct chdman version
 
