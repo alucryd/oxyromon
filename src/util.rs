@@ -12,7 +12,6 @@ use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use tempfile::NamedTempFile;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
@@ -74,14 +73,6 @@ pub async fn create_file<P: AsRef<Path>>(
         path.as_ref().as_os_str().to_str().unwrap()
     );
     Ok(file)
-}
-
-pub async fn create_tmp_file(connection: &mut SqliteConnection) -> SimpleResult<NamedTempFile> {
-    let tmp_file = try_with!(
-        NamedTempFile::new_in(get_tmp_directory(connection).await),
-        "Failed to create temp file"
-    );
-    Ok(tmp_file)
 }
 
 pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(

@@ -116,6 +116,11 @@ const NULLABLES: &[&str] = &[
     "ZIP_COMPRESSION_LEVEL",
 ];
 
+const SORTED_LISTS: &[&str] = &[
+    "CHD_CD_COMPRESSION_ALGORITHMS",
+    "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "REGIONS_ONE",
+];
 const LIST_SEPARATOR: &str = "|";
 
 pub static BIN_EXTENSION: &str = "bin";
@@ -356,7 +361,7 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
         let mut list = get_list(connection, key).await;
         if !list.contains(&String::from(value)) {
             list.push(value.to_owned());
-            if key != "REGIONS_ONE" {
+            if !SORTED_LISTS.contains(&key) {
                 list.sort();
             }
             set_list(connection, key, &list).await;
@@ -368,7 +373,9 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
             let mut list = get_list(connection, key).await;
             if !list.contains(&String::from(value)) {
                 list.push(value.to_owned());
-                list.sort();
+                if !SORTED_LISTS.contains(&key) {
+                    list.sort();
+                }
                 set_list(connection, key, &list).await;
             } else {
                 println!("Value already in list");

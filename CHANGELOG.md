@@ -2,6 +2,7 @@
 
 - Dump `isoinfo` in favor of the native `cdfs` crate to parse IRD ISO headers
 - Add a `-x` flag to `import-roms` to extract top-level archives before importing their contents
+- Allow ordering CHD compression algorithms
 
 # 0.19.0
 
