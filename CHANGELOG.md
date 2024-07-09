@@ -3,6 +3,7 @@
 - Dump `isoinfo` in favor of the native `cdfs` crate to parse IRD ISO headers
 - Add a `-x` flag to `import-roms` to extract top-level archives before importing their contents
 - Allow ordering CHD compression algorithms
+- Use the new `splitbin` feature in chdman 0.265 and higher, fixes Dreamcast CHD imports
 
 # 0.19.0
 
