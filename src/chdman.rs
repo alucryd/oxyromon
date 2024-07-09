@@ -7,6 +7,7 @@ use super::SimpleResult;
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;
+use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
@@ -18,6 +19,7 @@ const CHDMAN: &str = "chdman";
 
 pub const CHD_HUNK_SIZE_RANGE: [usize; 2] = [16, 1048576];
 pub const MIN_DREAMCAST_VERSION: &str = "0.264";
+pub const MIN_SPLITBIN_VERSION: &str = "0.265";
 
 #[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
@@ -169,12 +171,16 @@ impl ToCueBin for ChdRomfile {
         bin_roms: &[&Rom],
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile> {
+        let split = bin_roms.len() > 1
+            && (get_version().await?.as_str().cmp(MIN_SPLITBIN_VERSION) == Ordering::Equal
+                || get_version().await?.as_str().cmp(MIN_SPLITBIN_VERSION) == Ordering::Greater);
         let path = extract_chd(
             progress_bar,
             &self.path,
             destination_directory,
             BIN_EXTENSION,
             &self.parent_path,
+            split,
         )
         .await?;
 
@@ -213,24 +219,42 @@ impl ToCueBin for ChdRomfile {
         }
 
         let mut bin_paths: Vec<PathBuf> = Vec::new();
-        let mut bin_file = open_file(&path).await?;
 
-        for bin_rom in bin_roms {
-            progress_bar.set_length(bin_rom.size as u64);
+        if split {
+            for (i, bin_rom) in bin_roms.iter().enumerate() {
+                let source_path = destination_directory.as_ref().join(
+                    &path
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_owned()
+                        .replace("%t", &(i + 1).to_string()),
+                );
+                let destination_path = destination_directory.as_ref().join(&bin_rom.name);
+                rename_file(progress_bar, &source_path, &destination_path, quiet).await?;
+                bin_paths.push(destination_path);
+            }
+        } else {
+            let mut bin_file = open_file(&path).await?;
 
-            let split_bin_path = destination_directory.as_ref().join(&bin_rom.name);
-            let mut split_bin_file = create_file(progress_bar, &split_bin_path, quiet).await?;
+            for bin_rom in bin_roms {
+                progress_bar.set_length(bin_rom.size as u64);
 
-            let mut handle = (&mut bin_file).take(bin_rom.size as u64);
+                let split_bin_path = destination_directory.as_ref().join(&bin_rom.name);
+                let mut split_bin_file = create_file(progress_bar, &split_bin_path, quiet).await?;
 
-            io::copy(&mut handle, &mut split_bin_file)
-                .await
-                .expect("Failed to copy data");
+                let mut handle = (&mut bin_file).take(bin_rom.size as u64);
 
-            bin_paths.push(split_bin_path);
+                io::copy(&mut handle, &mut split_bin_file)
+                    .await
+                    .expect("Failed to copy data");
+
+                bin_paths.push(split_bin_path);
+            }
+
+            remove_file(progress_bar, &path, quiet).await?;
         }
-
-        remove_file(progress_bar, &path, quiet).await?;
 
         Ok(CueBinRomfile {
             cue_romfile: CommonRomfile {
@@ -258,6 +282,7 @@ impl ToIso for ChdRomfile {
             destination_directory,
             ISO_EXTENSION,
             &self.parent_path,
+            false,
         )
         .await?;
         Ok(IsoRomfile { path })
@@ -505,6 +530,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     destination_directory: &Q,
     extension: &str,
     parent_romfile_path: &Option<PathBuf>,
+    split: bool,
 ) -> SimpleResult<PathBuf> {
     progress_bar.set_message("Extracting chd");
     progress_bar.set_style(get_none_progress_style());
@@ -522,7 +548,11 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     let iso_bin_path = destination_directory
         .as_ref()
         .join(path.as_ref().file_name().unwrap())
-        .with_extension(extension);
+        .with_extension(if split {
+            format!("%t.{}", extension)
+        } else {
+            extension.to_owned()
+        });
 
     progress_bar.println(format!(
         "Extracting \"{}\"",
@@ -553,6 +583,9 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     };
     if let Some(parent_romfile_path) = parent_romfile_path {
         command.arg("-ip").arg(parent_romfile_path);
+    }
+    if split {
+        command.arg("-sb");
     }
 
     log::debug!("{:?}", command);
