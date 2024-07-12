@@ -67,6 +67,14 @@ The CLI has no specific requirement, and you can just:
 
     cargo build --release
 
+For Windows, asm-hashes don't work with MSVC toolchain at the moment so you need to build without it:
+
+    cargo build --release --no-default-features --features use-rustls
+    
+You can also target GNU to solve the asm-hashes issue:
+
+    cargo build --release --target x86_64-pc-windows-gnu
+
 For the web UI, you will also need yarn:
 
     cargo build --release --features server
