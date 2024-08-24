@@ -203,7 +203,7 @@ pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, m
     .unwrap_or_else(|_| panic!("Error while updating system with id {} merging", merging));
 }
 
-pub async fn count_systems(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_systems(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -663,7 +663,7 @@ pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, pl
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn count_games(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_games(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -1085,7 +1085,7 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
 }
 
-pub async fn count_roms(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_roms(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -1523,7 +1523,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5(
     connection: &mut SqliteConnection,
     size: u64,
     md5: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -1553,7 +1553,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
     size: u64,
     md5: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -1797,7 +1797,7 @@ pub async fn count_roms_with_romfile_by_size_and_sha1(
     connection: &mut SqliteConnection,
     size: u64,
     sha1: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
     sqlx::query!(
@@ -1828,7 +1828,7 @@ pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
     size: u64,
     sha1: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
     sqlx::query!(
@@ -2073,7 +2073,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc(
     connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
     sqlx::query!(
@@ -2103,7 +2103,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     size: u64,
     crc: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
     sqlx::query!(
@@ -2175,7 +2175,7 @@ pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     size: u64,
     md5: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -2244,7 +2244,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_parent_id(
     size: u64,
     md5: &str,
     parent_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
