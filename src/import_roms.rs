@@ -1712,6 +1712,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
                 connection,
                 romfile_path.as_ref().as_os_str().to_str().unwrap(),
                 romfile_path.as_ref().metadata().unwrap().len(),
+                RomfileType::Romfile,
             )
             .await
         }
@@ -1745,6 +1746,7 @@ async fn move_to_trash<P: AsRef<Path>>(
                 connection,
                 new_path.as_os_str().to_str().unwrap(),
                 new_path.metadata().unwrap().len(),
+                RomfileType::Romfile,
             )
             .await;
         }

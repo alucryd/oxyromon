@@ -2351,15 +2351,22 @@ pub async fn delete_rom_by_name_and_game_id(
     });
 }
 
-pub async fn create_romfile(connection: &mut SqliteConnection, path: &str, size: u64) -> i64 {
+pub async fn create_romfile(
+    connection: &mut SqliteConnection,
+    path: &str,
+    size: u64,
+    romfile_type: RomfileType,
+) -> i64 {
     let size = i64::try_from(size).unwrap();
+    let romfile_type = romfile_type as i8;
     sqlx::query!(
         "
-        INSERT INTO romfiles (path, size)
-        VALUES (?, ?)
+        INSERT INTO romfiles (path, size, romfile_type)
+        VALUES (?, ?, ?)
         ",
         path,
         size,
+        romfile_type,
     )
     .execute(connection)
     .await

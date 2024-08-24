@@ -162,6 +162,7 @@ async fn process_system(
                         connection,
                         playlist_path.as_os_str().to_str().unwrap(),
                         playlist_path.metadata().unwrap().len(),
+                        RomfileType::Playlist,
                     )
                     .await
                 }

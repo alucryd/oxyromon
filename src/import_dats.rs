@@ -656,6 +656,7 @@ pub async fn reimport_orphan_romfiles(
                     connection,
                     new_path.as_os_str().to_str().unwrap(),
                     new_path.metadata().unwrap().len(),
+                    RomfileType::Romfile,
                 )
                 .await;
             }

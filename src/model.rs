@@ -105,6 +105,15 @@ pub struct Rom {
     pub parent_id: Option<i64>,
 }
 
+#[derive(FromPrimitive, Type)]
+#[cfg_attr(feature = "server", derive(Clone, Copy, Enum, Eq, PartialEq))]
+#[repr(i8)]
+pub enum RomfileType {
+    Romfile = 0,
+    Playlist = 1,
+    Patch = 2,
+}
+
 #[derive(FromRow, PartialEq, Eq)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct Romfile {
@@ -112,6 +121,7 @@ pub struct Romfile {
     pub path: String,
     pub size: i64,
     pub parent_id: Option<i64>,
+    pub romfile_type: i64,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]

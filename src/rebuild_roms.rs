@@ -297,6 +297,7 @@ async fn add_rom(
             transaction,
             &original_romfile.to_string(),
             original_romfile.get_size().await?,
+            RomfileType::Romfile,
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
@@ -308,6 +309,7 @@ async fn add_rom(
             transaction,
             romfile_path.as_os_str().to_str().unwrap(),
             romfile_path.metadata().unwrap().len(),
+            RomfileType::Romfile,
         )
         .await;
         update_rom_romfile(transaction, rom.id, Some(romfile_id)).await;
