@@ -57,6 +57,7 @@ mod database;
 mod dolphin;
 mod download_dats;
 mod export_roms;
+mod flips;
 mod generate_playlists;
 mod import_dats;
 mod import_irds;
@@ -82,6 +83,7 @@ mod util;
 #[cfg(feature = "server")]
 mod validator;
 mod wit;
+mod xdelta3;
 
 use cfg_if::cfg_if;
 use clap::Command;

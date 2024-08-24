@@ -13,10 +13,6 @@ use tokio::process::Command;
 
 const NSZ: &str = "nsz";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
-
 pub struct NspRomfile {
     pub path: PathBuf,
 }
