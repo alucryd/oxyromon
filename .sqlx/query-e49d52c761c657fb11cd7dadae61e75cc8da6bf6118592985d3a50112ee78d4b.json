@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM patches\n        WHERE rom_id = ?\n        ORDER BY \"index\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "index",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "rom_id",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "romfile_id",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e49d52c761c657fb11cd7dadae61e75cc8da6bf6118592985d3a50112ee78d4b"
+}

@@ -124,12 +124,14 @@ const SORTED_LISTS: &[&str] = &[
 const LIST_SEPARATOR: &str = "|";
 
 pub static BIN_EXTENSION: &str = "bin";
+pub static BPS_EXTENSION: &str = "bps";
 pub static CHD_EXTENSION: &str = "chd";
 pub static CIA_EXTENSION: &str = "cia";
 pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
 pub static DAT_EXTENSION: &str = "dat";
 pub static ISO_EXTENSION: &str = "iso";
+pub static IPS_EXTENSION: &str = "ips";
 pub static M3U_EXTENSION: &str = "m3u";
 pub static NSP_EXTENSION: &str = "nsp";
 pub static NSZ_EXTENSION: &str = "nsz";
@@ -139,6 +141,7 @@ pub static RAP_EXTENSION: &str = "rap";
 pub static RVZ_EXTENSION: &str = "rvz";
 pub static SEVENZIP_EXTENSION: &str = "7z";
 pub static WBFS_EXTENSION: &str = "wbfs";
+pub static XDELTA_EXTENSION: &str = "xdelta";
 pub static ZIP_EXTENSION: &str = "zip";
 pub static ZSO_EXTENSION: &str = "zso";
 

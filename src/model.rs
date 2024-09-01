@@ -105,6 +105,16 @@ pub struct Rom {
     pub parent_id: Option<i64>,
 }
 
+#[derive(FromRow)]
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+pub struct Patch {
+    pub id: i64,
+    pub name: String,
+    pub index: i64,
+    pub rom_id: i64,
+    pub romfile_id: i64,
+}
+
 #[derive(FromPrimitive, Type)]
 #[cfg_attr(feature = "server", derive(Clone, Copy, Enum, Eq, PartialEq))]
 #[repr(i8)]

@@ -34,7 +34,7 @@ cdfs = { version = "0.2.3", default-features = false }
 cfg-if = "1.0.0"
 clap = "4.5.16"
 crc32fast = "1.4.2"
-dialoguer = "0.11.0"
+dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
 digest = { version = "0.10.7", features = ["std"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"

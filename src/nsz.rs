@@ -5,7 +5,6 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
-use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;

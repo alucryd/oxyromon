@@ -2351,6 +2351,70 @@ pub async fn delete_rom_by_name_and_game_id(
     });
 }
 
+pub async fn create_patch(
+    connection: &mut SqliteConnection,
+    name: &str,
+    index: i64,
+    rom_id: i64,
+    romfile_id: i64,
+) -> i64 {
+    sqlx::query!(
+        "
+        INSERT INTO patches (name, \"index\", rom_id, romfile_id)
+        VALUES (?, ?, ?, ?)
+        ",
+        name,
+        index,
+        rom_id,
+        romfile_id,
+    )
+    .execute(connection)
+    .await
+    .expect("Error while creating patch")
+    .last_insert_rowid()
+}
+
+pub async fn update_patch(
+    connection: &mut SqliteConnection,
+    id: i64,
+    name: &str,
+    index: i64,
+    rom_id: i64,
+    romfile_id: i64,
+) {
+    sqlx::query!(
+        "
+        UPDATE patches 
+        SET name = ?, \"index\" = ?, rom_id = ?, romfile_id = ?
+        WHERE id = ?
+        ",
+        name,
+        index,
+        rom_id,
+        romfile_id,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating patch with id {}", id));
+}
+
+pub async fn find_patches_by_rom_id(connection: &mut SqliteConnection, rom_id: i64) -> Vec<Patch> {
+    sqlx::query_as!(
+        Patch,
+        "
+        SELECT *
+        FROM patches
+        WHERE rom_id = ?
+        ORDER BY \"index\"
+        ",
+        rom_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding patches with rom id {}", rom_id))
+}
+
 pub async fn create_romfile(
     connection: &mut SqliteConnection,
     path: &str,

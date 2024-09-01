@@ -1,6 +1,6 @@
 use super::database::*;
 use super::model::*;
-use dialoguer::{Confirm, MultiSelect, Select};
+use dialoguer::{Confirm, Editor, FuzzySelect, MultiSelect};
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::path::PathBuf;
@@ -40,6 +40,29 @@ pub async fn prompt_for_systems(
         .filter(|(i, _)| indices.contains(i))
         .map(|(_, system)| system)
         .collect())
+}
+
+pub async fn prompt_for_system(
+    connection: &mut SqliteConnection,
+    default: Option<usize>,
+) -> SimpleResult<System> {
+    let mut systems = find_systems(connection).await;
+    match systems.len() {
+        0 => bail!("No available system"),
+        1 => Ok(systems.remove(0)),
+        _ => {
+            let index = select(
+                &systems
+                    .iter()
+                    .map(|system| &system.name)
+                    .collect::<Vec<&String>>(),
+                "Please select a system",
+                default,
+                None,
+            )?;
+            Ok(systems.remove(index))
+        }
+    }
 }
 
 pub async fn prompt_for_system_like(
@@ -188,6 +211,17 @@ pub async fn prompt_for_parent_romfile(
     Ok(index.map(|index| romfiles.remove(index)))
 }
 
+pub fn prompt_for_name_not_in_list(prompt: &str, list: &[&str]) -> SimpleResult<Option<String>> {
+    let mut name;
+    loop {
+        name = editor(prompt)?;
+        if name.is_none() || !list.contains(&name.as_ref().unwrap().as_str()) {
+            break;
+        }
+    }
+    Ok(name)
+}
+
 pub fn confirm(default: bool) -> SimpleResult<bool> {
     Ok(try_with!(
         Confirm::new()
@@ -198,13 +232,20 @@ pub fn confirm(default: bool) -> SimpleResult<bool> {
     ))
 }
 
+pub fn editor(prompt: &str) -> SimpleResult<Option<String>> {
+    Ok(try_with!(
+        Editor::new().edit(prompt),
+        "Failed to get user input"
+    ))
+}
+
 pub fn select<T: ToString>(
     items: &[T],
     prompt: &str,
     default: Option<usize>,
     max_length: Option<usize>,
 ) -> SimpleResult<usize> {
-    let mut select = Select::new();
+    let mut select = FuzzySelect::new();
     select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
         select = select.default(default);
@@ -221,7 +262,7 @@ pub fn select_opt<T: ToString>(
     default: Option<usize>,
     max_length: Option<usize>,
 ) -> SimpleResult<Option<usize>> {
-    let mut select = Select::new();
+    let mut select = FuzzySelect::new();
     select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
         select = select.default(default);

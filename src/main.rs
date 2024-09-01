@@ -61,6 +61,7 @@ mod flips;
 mod generate_playlists;
 mod import_dats;
 mod import_irds;
+mod import_patches;
 mod import_roms;
 mod info;
 mod maxcso;
@@ -108,6 +109,7 @@ async fn main() -> SimpleResult<()> {
         import_dats::subcommand(),
         download_dats::subcommand(),
         import_irds::subcommand(),
+        import_patches::subcommand(),
         import_roms::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
@@ -192,6 +194,14 @@ async fn main() -> SimpleResult<()> {
                 import_irds::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("import-irds").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("import-patches") => {
+                import_patches::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("import-patches").unwrap(),
                     &progress_bar,
                 )
                 .await?
