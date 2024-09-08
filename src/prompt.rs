@@ -111,23 +111,29 @@ pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> 
         .collect())
 }
 
-pub fn prompt_for_game(games: &[Game]) -> SimpleResult<Option<&Game>> {
-    let index = select_opt(
-        &games
-            .iter()
-            .map(|game| &game.name)
-            .collect::<Vec<&String>>(),
-        "Please select a game",
-        None,
-        Some(10),
-    )?;
-    Ok(index.map(|i| games.get(i).unwrap()))
+pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> SimpleResult<Option<&Game>> {
+    match games.len() {
+        0 => bail!("No available rom"),
+        1 => Ok(games.get(0)),
+        _ => {
+            let index = select_opt(
+                &games
+                    .iter()
+                    .map(|game| &game.name)
+                    .collect::<Vec<&String>>(),
+                "Please select a game",
+                default,
+                Some(10),
+            )?;
+            Ok(index.map(|i| games.get(i).unwrap()))
+        }
+    }
 }
 
-pub fn prompt_for_rom(roms: &mut Vec<Rom>, default: Option<usize>) -> SimpleResult<Option<Rom>> {
+pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> SimpleResult<Option<&Rom>> {
     match roms.len() {
         0 => bail!("No available rom"),
-        1 => Ok(Some(roms.remove(0))),
+        1 => Ok(roms.get(0)),
         _ => {
             let index = select_opt(
                 &roms.iter().map(|rom| &rom.name).collect::<Vec<&String>>(),
@@ -135,7 +141,7 @@ pub fn prompt_for_rom(roms: &mut Vec<Rom>, default: Option<usize>) -> SimpleResu
                 default,
                 Some(10),
             )?;
-            Ok(index.map(|i| roms.remove(i)))
+            Ok(index.map(|i| roms.get(i).unwrap()))
         }
     }
 }
@@ -211,15 +217,8 @@ pub async fn prompt_for_parent_romfile(
     Ok(index.map(|index| romfiles.remove(index)))
 }
 
-pub fn prompt_for_name_not_in_list(prompt: &str, list: &[&str]) -> SimpleResult<Option<String>> {
-    let mut name;
-    loop {
-        name = editor(prompt)?;
-        if name.is_none() || !list.contains(&name.as_ref().unwrap().as_str()) {
-            break;
-        }
-    }
-    Ok(name)
+pub fn prompt_for_name(prompt: &str) -> SimpleResult<Option<String>> {
+    Ok(editor(prompt)?)
 }
 
 pub fn confirm(default: bool) -> SimpleResult<bool> {

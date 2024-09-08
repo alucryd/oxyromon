@@ -86,7 +86,7 @@ pub async fn main(
                     ))
                     .unwrap()
             });
-            if let Some(game) = prompt_for_game(&games)? {
+            if let Some(game) = prompt_for_game(&games, None)? {
                 if game.jbfolder && !matches.get_flag("FORCE") {
                     progress_bar.println("IRD already exists");
                     continue;
