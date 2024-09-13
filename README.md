@@ -171,9 +171,11 @@ These should be in your `${PATH}` for extra features.
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
+- [flips](https://github.com/Alcaro/Flips): BPS and IPS support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
 - [nsz](https://github.com/nicoboss/nsz): NSZ support
 - [wit](https://wit.wiimm.de/): WBFS support
+- [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
 
 ### TODO
 
@@ -191,20 +193,21 @@ These should be in your `${PATH}` for extra features.
     Usage: oxyromon [COMMAND]
 
     Commands:
-        config              Query and modify the oxyromon settings
         info                Print system information
+        config              Query and modify the oxyromon settings
         import-dats         Parse and import Logiqx DAT files into oxyromon
         download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
+        import-irds         Parse and import PlayStation 3 IRD files into oxyromon
+        import-patches      Import patch files into oxyromon
         import-roms         Validate and import ROM files or directories into oxyromon
         sort-roms           Sort ROM files according to region and version preferences
         convert-roms        Convert ROM files between common formats
         export-roms         Export ROM files to common formats
         rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
-        check-roms          Check ROM files integrity
+        check-roms          Check ROM files' integrity
         purge-roms          Purge trashed, missing, and orphan ROM files
         purge-systems       Purge systems
         generate-playlists  Generate M3U playlists for multi-disc games
-        import-irds         Parse and import PlayStation 3 IRD files into oxyromon
         benchmark           Benchmark oxyromon
         server              Launch the backend server
         help                Print this message or the help of the given subcommand(s)
@@ -358,6 +361,22 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         -u, --unattended       Skip ROM files that require human intervention
         -x, --extract          Extract top-level archives before importing their contents
         -h, --help             Print help
+
+## oxyromon-import-patches
+
+Import patch files into oxyromon
+
+Supported formats are BPS, IPS and XDELTA. Patches are named after the ROM files following the RetroArch softpatching naming convention.
+
+    Usage: oxyromon import-patches [OPTIONS] <PATCHES>...
+
+    Arguments:
+    <PATCHES>...  Set the patch files to import
+
+    Options:
+    -n, --name   Customize patch names
+    -f, --force  Force import of already imported patch files
+    -h, --help   Print help
 
 ## oxyromon-sort-roms
 

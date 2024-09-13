@@ -200,4 +200,10 @@ pub async fn import_patch<P: AsRef<Path>>(
 }
 
 #[cfg(test)]
+mod test_bps;
+#[cfg(test)]
+mod test_bps_ips;
+#[cfg(test)]
 mod test_ips;
+#[cfg(test)]
+mod test_xdelta;
