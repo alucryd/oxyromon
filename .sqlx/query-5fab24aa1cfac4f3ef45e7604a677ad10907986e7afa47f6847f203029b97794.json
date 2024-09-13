@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE games\n        SET complete = true\n        WHERE system_id = ?\n        AND complete = false\n        AND NOT EXISTS (\n            SELECT 1\n            FROM roms AS r\n            WHERE r.game_id = games.id\n            AND r.romfile_id IS NULL\n            AND r.parent_id IS NULL\n        )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "5fab24aa1cfac4f3ef45e7604a677ad10907986e7afa47f6847f203029b97794"
+}
