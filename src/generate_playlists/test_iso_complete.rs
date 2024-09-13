@@ -77,6 +77,7 @@ async fn test() {
     let playlist_path = system_directory.join("Test Game (USA, Europe).m3u");
     assert_eq!(playlist.path, playlist_path.as_os_str().to_str().unwrap());
     assert!(playlist_path.is_file());
+    assert_eq!(playlist.romfile_type, RomfileType::Playlist as i64);
 
     let lines = fs::read_to_string(playlist_path)
         .await

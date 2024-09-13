@@ -217,16 +217,20 @@ async fn sort_system(
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
-    let romfiles_by_id: HashMap<i64, Romfile> = romfiles
+    let mut romfiles_by_id: HashMap<i64, Romfile> = romfiles
         .into_iter()
         .map(|romfile| (romfile.id, romfile))
         .collect();
 
-    let playlists = find_playlists_by_system_id(connection, system.id).await;
-    let playlists_by_id: HashMap<i64, Romfile> = playlists
-        .into_iter()
-        .map(|romfile| (romfile.id, romfile))
-        .collect();
+    let patch_romfiles = find_patch_romfiles_by_system_id(connection, system.id).await;
+    for romfile in patch_romfiles {
+        romfiles_by_id.insert(romfile.id, romfile);
+    }
+
+    let playlist_romfiles = find_playlist_romfiles_by_system_id(connection, system.id).await;
+    for romfile in playlist_romfiles {
+        romfiles_by_id.insert(romfile.id, romfile);
+    }
 
     // 1G1R mode
     if !system.arcade && !one_regions.is_empty() {
@@ -429,7 +433,6 @@ async fn sort_system(
             all_regions_games,
             &system_directory,
             &romfiles_by_id,
-            &playlists_by_id,
             all_regions_subfolders,
         )
         .await?,
@@ -452,7 +455,6 @@ async fn sort_system(
             one_region_games,
             &one_region_directory,
             &romfiles_by_id,
-            &playlists_by_id,
             one_regions_subfolders,
         )
         .await?,
@@ -484,7 +486,6 @@ async fn sort_system(
             incomplete_one_region_games,
             &system_directory,
             &romfiles_by_id,
-            &playlists_by_id,
             one_regions_subfolders,
         )
         .await?,
@@ -496,7 +497,6 @@ async fn sort_system(
             incomplete_all_regions_games,
             &system_directory,
             &romfiles_by_id,
-            &playlists_by_id,
             all_regions_subfolders,
         )
         .await?,
@@ -519,7 +519,6 @@ async fn sort_system(
             ignored_games,
             &trash_directory,
             &romfiles_by_id,
-            &playlists_by_id,
             &SubfolderScheme::None,
         )
         .await?,
@@ -600,7 +599,6 @@ async fn sort_games<'a, P: AsRef<Path>>(
     games: Vec<Game>,
     directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
-    playlists_by_id: &'a HashMap<i64, Romfile>,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<Vec<(&'a Romfile, String)>> {
     let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
@@ -637,11 +635,21 @@ async fn sort_games<'a, P: AsRef<Path>>(
                     .unwrap(),
             );
             if romfile.path != new_romfile_path {
-                romfile_moves.push((romfile, new_romfile_path))
+                let patches = find_patches_by_rom_id(connection, rom.id).await;
+                for patch in patches {
+                    let patch_romfile = romfiles_by_id.get(&patch.romfile_id).unwrap();
+                    let new_patch_path = PathBuf::from(&new_romfile_path)
+                        .with_extension(PathBuf::from(&patch_romfile.path).extension().unwrap());
+                    romfile_moves.push((
+                        patch_romfile,
+                        new_patch_path.as_os_str().to_str().unwrap().to_string(),
+                    ));
+                }
+                romfile_moves.push((romfile, new_romfile_path));
             }
         }
         if game.playlist_id.is_some() {
-            let playlist = playlists_by_id.get(&game.playlist_id.unwrap()).unwrap();
+            let playlist = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
             let new_playlist_path = String::from(
                 compute_new_playlist_path(&game, directory, subfolders)
                     .await?
@@ -650,7 +658,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
                     .unwrap(),
             );
             if playlist.path != new_playlist_path {
-                romfile_moves.push((playlist, new_playlist_path))
+                romfile_moves.push((playlist, new_playlist_path));
             }
         }
     }

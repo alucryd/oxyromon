@@ -6,7 +6,7 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "path",
@@ -16,12 +16,17 @@
       {
         "name": "size",
         "ordinal": 2,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "parent_id",
         "ordinal": 3,
-        "type_info": "Int64"
+        "type_info": "Integer"
+      },
+      {
+        "name": "romfile_type",
+        "ordinal": 4,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -31,7 +36,8 @@
       false,
       false,
       false,
-      true
+      true,
+      false
     ]
   },
   "hash": "bbafa2927f3e33bc537537f97f2b7b779157f91f452a3f56904f93e56a577d9b"

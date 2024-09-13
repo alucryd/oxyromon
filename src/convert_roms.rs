@@ -1230,6 +1230,7 @@ async fn to_archive(
                             .as_common()?
                             .get_size()
                             .await?,
+                        RomfileType::Romfile,
                     )
                     .await
                 }
@@ -1529,6 +1530,7 @@ async fn to_chd(
                 &mut transaction,
                 &new_cue_romfile.to_string(),
                 new_cue_romfile.get_size().await?,
+                RomfileType::Romfile,
             )
             .await;
             update_rom_romfile(
@@ -1633,6 +1635,7 @@ async fn to_chd(
             &mut transaction,
             &chd_romfile.as_common()?.to_string(),
             chd_romfile.as_common()?.get_size().await?,
+            RomfileType::Romfile,
         )
         .await;
         update_romfile_parent(
@@ -3433,6 +3436,7 @@ async fn to_original(
                 &mut transaction,
                 &common_romfile.to_string(),
                 common_romfile.path.metadata().unwrap().len(),
+                RomfileType::Romfile,
             )
             .await;
             update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
@@ -3590,6 +3594,7 @@ async fn to_original(
                     &mut transaction,
                     &bin_romfile.to_string(),
                     bin_romfile.get_size().await?,
+                    RomfileType::Romfile,
                 )
                 .await;
                 update_rom_romfile(&mut transaction, bin_rom.id, Some(romfile_id)).await;

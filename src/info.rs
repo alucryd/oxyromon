@@ -3,11 +3,13 @@ use super::chdman;
 use super::ctrtool;
 use super::database::*;
 use super::dolphin;
+use super::flips;
 use super::maxcso;
 use super::nsz;
 use super::progress::*;
 use super::sevenzip;
 use super::wit;
+use super::xdelta3;
 use super::SimpleResult;
 use clap::Command;
 use indicatif::ProgressBar;
@@ -48,6 +50,10 @@ pub async fn main(
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
     };
+    let flips_version = match flips::get_version().await {
+        Ok(version) => format!("found ({})", version),
+        Err(_) => String::from("not found"),
+    };
     let maxcso_version = match maxcso::get_version().await {
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
@@ -60,6 +66,10 @@ pub async fn main(
         Ok(version) => format!("found ({})", version),
         Err(_) => String::from("not found"),
     };
+    let xdelta3_version = match xdelta3::get_version().await {
+        Ok(version) => format!("found ({})", version),
+        Err(_) => String::from("not found"),
+    };
 
     progress_bar.println("Dependencies:");
     progress_bar.println(format!("  7-zip: {}", sevenzip_version));
@@ -67,9 +77,11 @@ pub async fn main(
     progress_bar.println(format!("  chdman: {}", chdman_version));
     progress_bar.println(format!("  ctrtool: {}", ctrtool_version));
     progress_bar.println(format!("  dolphin: {}", dolphin_version));
+    progress_bar.println(format!("  flips: {}", flips_version));
     progress_bar.println(format!("  maxcso: {}", maxcso_version));
     progress_bar.println(format!("  nsz: {}", nsz_version));
     progress_bar.println(format!("  wit: {}", wit_version));
+    progress_bar.println(format!("  xdelta3: {}", xdelta3_version));
     progress_bar.println("");
 
     let system_count = count_systems(connection).await;

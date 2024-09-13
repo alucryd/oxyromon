@@ -50,6 +50,7 @@ async fn test() {
         path: String::from("romfile.chd"),
         size: 0,
         parent_id: None,
+        romfile_type: RomfileType::Romfile as i64,
     };
 
     // when
