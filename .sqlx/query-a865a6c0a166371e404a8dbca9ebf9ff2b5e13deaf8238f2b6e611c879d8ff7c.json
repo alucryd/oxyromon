@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM patches\n            WHERE rom_id IN (\n                SELECT id\n                FROM roms\n                WHERE game_id IN (\n                    SELECT id\n                    FROM games\n                    WHERE system_id = ?\n                )\n            )\n        )\n        ORDER BY path\n        ",
+  "query": "\n        SELECT rf.*\n        FROM romfiles rf\n        JOIN patches p ON p.romfile_id = rf.id\n        JOIN roms r ON r.id = p.rom_id\n        JOIN games g ON g.id = r.game_id\n        WHERE g.system_id = ?\n        ORDER BY rf.path;\n        ",
   "describe": {
     "columns": [
       {
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "183c4a4ab0063371bbcd010e322cbc355d76d8500499eaf130c89e2d10d4ab19"
+  "hash": "a865a6c0a166371e404a8dbca9ebf9ff2b5e13deaf8238f2b6e611c879d8ff7c"
 }

@@ -151,7 +151,7 @@ pub async fn update_system_mark_complete(connection: &mut SqliteConnection, id: 
         WHERE id = ?
         AND complete = false
         AND NOT EXISTS (
-            SELECT g.id
+            SELECT 1
             FROM games g
             WHERE g.system_id = systems.id
             AND g.complete = false
@@ -173,7 +173,7 @@ pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id
         WHERE id = ?
         AND complete = true
         AND EXISTS (
-            SELECT g.id
+            SELECT 1
             FROM games g
             WHERE g.system_id = systems.id
             AND g.complete = false
@@ -395,7 +395,7 @@ pub async fn update_games_by_system_id_mark_complete(
         AND complete = false
         AND jbfolder = false
         AND NOT EXISTS (
-            SELECT r.id
+            SELECT 1
             FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
@@ -419,7 +419,7 @@ pub async fn update_split_games_by_system_id_mark_complete(
         WHERE system_id = ?
         AND complete = false
         AND NOT EXISTS (
-            SELECT r.id
+            SELECT 1
             FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
@@ -444,14 +444,14 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_complete(
         WHERE system_id = ?
         AND complete = false
         AND NOT EXISTS (
-            SELECT r1.id
+            SELECT 1
             FROM roms AS r1
             WHERE r1.game_id = games.id
             AND r1.romfile_id IS NULL
             AND (
                 r1.parent_id IS NULL
                 OR EXISTS (
-                    SELECT r2.id
+                    SELECT 1
                     FROM roms AS r2
                     JOIN games AS g ON g.id = r2.game_id
                     WHERE r2.id = r1.parent_id
@@ -479,8 +479,8 @@ pub async fn update_jbfolder_games_by_system_id_mark_complete(
         AND complete = false
         AND jbfolder = true
         AND NOT EXISTS (
-            SELECT r.id
-            FROM roms r
+            SELECT 1
+            FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
             AND r.parent_id IS NOT NULL
@@ -508,7 +508,7 @@ pub async fn update_games_by_system_id_mark_incomplete(
         AND complete = true
         AND jbfolder = false
         AND EXISTS (
-            SELECT r.id
+            SELECT 1
             FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
@@ -532,7 +532,7 @@ pub async fn update_split_games_by_system_id_mark_incomplete(
         WHERE system_id = ?
         AND complete = true
         AND EXISTS (
-            SELECT r.id
+            SELECT 1
             FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
@@ -557,14 +557,14 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_incomplete(
         WHERE system_id = ?
         AND complete = true
         AND EXISTS (
-            SELECT r1.id
+            SELECT 1
             FROM roms AS r1
             WHERE r1.game_id = games.id
             AND r1.romfile_id IS NULL
             AND (
                 r1.parent_id IS NULL
                 OR EXISTS (
-                    SELECT r2.id
+                    SELECT 1
                     FROM roms AS r2
                     JOIN games AS g ON g.id = r2.game_id
                     WHERE r2.id = r1.parent_id
@@ -592,8 +592,8 @@ pub async fn update_jbfolder_games_by_system_id_mark_incomplete(
         AND complete = true
         AND jbfolder = true
         AND EXISTS (
-            SELECT r.id
-            FROM roms r
+            SELECT 1
+            FROM roms AS r
             WHERE r.game_id = games.id
             AND r.romfile_id IS NULL
             AND r.parent_id IS NOT NULL
@@ -1246,7 +1246,7 @@ pub async fn find_roms_with_romfile_by_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NOT NULL
@@ -1289,7 +1289,7 @@ pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NOT NULL
@@ -1348,7 +1348,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1381,7 +1381,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
     let md5 = md5.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1392,7 +1392,10 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
         ",
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1416,7 +1419,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
     let md5 = md5.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1428,7 +1431,10 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
         ",
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1453,7 +1459,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
     let md5 = md5.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1466,7 +1472,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
         name.replace('\'', "''"),
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1491,7 +1500,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
     let md5 = md5.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1505,7 +1514,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
         name.replace('\'', "''"),
         size,
         md5,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1622,7 +1634,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1655,7 +1667,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
     let sha1 = sha1.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1666,7 +1678,10 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
         ",
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1690,7 +1705,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
     let sha1 = sha1.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1702,7 +1717,10 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
         ",
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1727,7 +1745,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
     let sha1 = sha1.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1740,7 +1758,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
         name.replace('\'', "''"),
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1765,7 +1786,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
     let sha1 = sha1.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1779,7 +1800,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
         name.replace('\'', "''"),
         size,
         sha1,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -1898,7 +1922,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1931,7 +1955,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
     let crc = crc.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1942,7 +1966,10 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
         ",
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -1966,7 +1993,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
     let crc = crc.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -1978,7 +2005,10 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
         ",
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -2003,7 +2033,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
     let crc = crc.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -2016,7 +2046,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
         name.replace('\'', "''"),
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
     );
     sqlx::query_as::<_, Rom>(&sql)
         .fetch_all(connection)
@@ -2041,7 +2074,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
     let crc = crc.to_lowercase();
     let sql = format!(
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -2055,7 +2088,10 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
         name.replace('\'', "''"),
         size,
         crc,
-        game_names.iter().map(|game_name| format!("'{}'", game_name.replace('\'', "''"))).join(","),
+        game_names
+            .iter()
+            .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
+            .join(","),
         system_id,
     );
     sqlx::query_as::<_, Rom>(&sql)
@@ -2143,7 +2179,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     sqlx::query_as!(
         Rom,
         "
-        SELECT r.id, r.name, r.bios, r.size, r.crc, r.md5, r.sha1, r.rom_status, r.game_id, r.romfile_id, r.parent_id
+        SELECT r.*
         FROM roms AS r
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NULL
@@ -2656,22 +2692,13 @@ pub async fn find_patch_romfiles_by_system_id(
     sqlx::query_as!(
         Romfile,
         "
-        SELECT *
-        FROM romfiles
-        WHERE id IN (
-            SELECT romfile_id
-            FROM patches
-            WHERE rom_id IN (
-                SELECT id
-                FROM roms
-                WHERE game_id IN (
-                    SELECT id
-                    FROM games
-                    WHERE system_id = ?
-                )
-            )
-        )
-        ORDER BY path
+        SELECT rf.*
+        FROM romfiles rf
+        JOIN patches p ON p.romfile_id = rf.id
+        JOIN roms r ON r.id = p.rom_id
+        JOIN games g ON g.id = r.game_id
+        WHERE g.system_id = ?
+        ORDER BY rf.path;
         ",
         system_id,
     )
