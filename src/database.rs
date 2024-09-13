@@ -203,7 +203,7 @@ pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, m
     .unwrap_or_else(|_| panic!("Error while updating system with id {} merging", merging));
 }
 
-pub async fn count_systems(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_systems(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -663,7 +663,7 @@ pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, pl
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn count_games(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_games(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -1085,7 +1085,7 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
 }
 
-pub async fn count_roms(connection: &mut SqliteConnection) -> i32 {
+pub async fn count_roms(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "
         SELECT COUNT(id) AS 'count!'
@@ -1523,7 +1523,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5(
     connection: &mut SqliteConnection,
     size: u64,
     md5: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -1553,7 +1553,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
     size: u64,
     md5: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -1797,7 +1797,7 @@ pub async fn count_roms_with_romfile_by_size_and_sha1(
     connection: &mut SqliteConnection,
     size: u64,
     sha1: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
     sqlx::query!(
@@ -1828,7 +1828,7 @@ pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
     size: u64,
     sha1: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
     sqlx::query!(
@@ -2073,7 +2073,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc(
     connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
     sqlx::query!(
@@ -2103,7 +2103,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     size: u64,
     crc: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
     sqlx::query!(
@@ -2175,7 +2175,7 @@ pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     size: u64,
     md5: &str,
     system_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -2244,7 +2244,7 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_parent_id(
     size: u64,
     md5: &str,
     parent_id: i64,
-) -> i32 {
+) -> i64 {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
     sqlx::query!(
@@ -2351,15 +2351,86 @@ pub async fn delete_rom_by_name_and_game_id(
     });
 }
 
-pub async fn create_romfile(connection: &mut SqliteConnection, path: &str, size: u64) -> i64 {
-    let size = i64::try_from(size).unwrap();
+pub async fn create_patch(
+    connection: &mut SqliteConnection,
+    name: &str,
+    index: i64,
+    rom_id: i64,
+    romfile_id: i64,
+) -> i64 {
     sqlx::query!(
         "
-        INSERT INTO romfiles (path, size)
-        VALUES (?, ?)
+        INSERT INTO patches (name, \"index\", rom_id, romfile_id)
+        VALUES (?, ?, ?, ?)
+        ",
+        name,
+        index,
+        rom_id,
+        romfile_id,
+    )
+    .execute(connection)
+    .await
+    .expect("Error while creating patch")
+    .last_insert_rowid()
+}
+
+pub async fn update_patch(
+    connection: &mut SqliteConnection,
+    id: i64,
+    name: &str,
+    index: i64,
+    rom_id: i64,
+    romfile_id: i64,
+) {
+    sqlx::query!(
+        "
+        UPDATE patches 
+        SET name = ?, \"index\" = ?, rom_id = ?, romfile_id = ?
+        WHERE id = ?
+        ",
+        name,
+        index,
+        rom_id,
+        romfile_id,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating patch with id {}", id));
+}
+
+pub async fn find_patches_by_rom_id(connection: &mut SqliteConnection, rom_id: i64) -> Vec<Patch> {
+    sqlx::query_as!(
+        Patch,
+        "
+        SELECT *
+        FROM patches
+        WHERE rom_id = ?
+        ORDER BY \"index\"
+        ",
+        rom_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding patches with rom id {}", rom_id))
+}
+
+pub async fn create_romfile(
+    connection: &mut SqliteConnection,
+    path: &str,
+    size: u64,
+    romfile_type: RomfileType,
+) -> i64 {
+    let size = i64::try_from(size).unwrap();
+    let romfile_type = romfile_type as i8;
+    sqlx::query!(
+        "
+        INSERT INTO romfiles (path, size, romfile_type)
+        VALUES (?, ?, ?)
         ",
         path,
         size,
+        romfile_type,
     )
     .execute(connection)
     .await
@@ -2550,7 +2621,7 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_playlists_by_system_id(
+pub async fn find_playlist_romfiles_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Romfile> {
@@ -2570,7 +2641,48 @@ pub async fn find_playlists_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding playlist romfiles with system id {}",
+            system_id
+        )
+    })
+}
+
+pub async fn find_patch_romfiles_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE id IN (
+            SELECT romfile_id
+            FROM patches
+            WHERE rom_id IN (
+                SELECT id
+                FROM roms
+                WHERE game_id IN (
+                    SELECT id
+                    FROM games
+                    WHERE system_id = ?
+                )
+            )
+        )
+        ORDER BY path
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding patch romfiles with system id {}",
+            system_id
+        )
+    })
 }
 
 pub async fn find_romfile_by_path(

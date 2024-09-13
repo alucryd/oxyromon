@@ -32,6 +32,15 @@ pub trait CommonFile {
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
 }
 
+pub trait PatchFile {
+    async fn patch<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        romfile: &CommonRomfile,
+        destination_directory: &P,
+    ) -> SimpleResult<CommonRomfile>;
+}
+
 impl CommonFile for CommonRomfile {
     async fn rename<P: AsRef<Path>>(
         &self,

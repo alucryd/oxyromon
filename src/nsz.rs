@@ -5,17 +5,12 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
-use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::process::Command;
 
 const NSZ: &str = "nsz";
-
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
 
 pub struct NspRomfile {
     pub path: PathBuf,

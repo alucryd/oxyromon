@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE id IN (\n            SELECT romfile_id\n            FROM patches\n            WHERE rom_id IN (\n                SELECT id\n                FROM roms\n                WHERE game_id IN (\n                    SELECT id\n                    FROM games\n                    WHERE system_id = ?\n                )\n            )\n        )\n        ORDER BY path\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "path",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "romfile_type",
+        "ordinal": 4,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "183c4a4ab0063371bbcd010e322cbc355d76d8500499eaf130c89e2d10d4ab19"
+}

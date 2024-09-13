@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO patches (name, \"index\", rom_id, romfile_id)\n        VALUES (?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "2ee7eb6ccb1bb4a3fdcff99f5af9e1c9e5a0f5dc386e2537dafc5769330ef708"
+}

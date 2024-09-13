@@ -16,7 +16,6 @@ use std::io::prelude::*;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::str;
-use std::str::FromStr;
 use strsim::jaro_winkler;
 
 const GZIP_MAGIC: &[u8] = &[31, 139];
@@ -58,14 +57,7 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
-    let system = prompt_for_system_like(
-        connection,
-        matches
-            .get_one::<String>("SYSTEM")
-            .map(|s| FromStr::from_str(s).expect("Failed to parse number")),
-        "%PlayStation 3%",
-    )
-    .await?;
+    let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
 
     for ird_path in ird_paths {
@@ -94,7 +86,7 @@ pub async fn main(
                     ))
                     .unwrap()
             });
-            if let Some(game) = prompt_for_game(&games)? {
+            if let Some(game) = prompt_for_game(&games, None)? {
                 if game.jbfolder && !matches.get_flag("FORCE") {
                     progress_bar.println("IRD already exists");
                     continue;

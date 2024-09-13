@@ -6,7 +6,7 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "name",
@@ -21,7 +21,7 @@
       {
         "name": "size",
         "ordinal": 3,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "crc",
@@ -46,17 +46,17 @@
       {
         "name": "game_id",
         "ordinal": 8,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "romfile_id",
         "ordinal": 9,
-        "type_info": "Int64"
+        "type_info": "Integer"
       },
       {
         "name": "parent_id",
         "ordinal": 10,
-        "type_info": "Int64"
+        "type_info": "Integer"
       }
     ],
     "parameters": {
