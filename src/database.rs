@@ -2621,7 +2621,7 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
     .expect("Error while finding romfiles in trash")
 }
 
-pub async fn find_playlists_by_system_id(
+pub async fn find_playlist_romfiles_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Romfile> {
@@ -2641,7 +2641,48 @@ pub async fn find_playlists_by_system_id(
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding romfiles in trash")
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding playlist romfiles with system id {}",
+            system_id
+        )
+    })
+}
+
+pub async fn find_patch_romfiles_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT *
+        FROM romfiles
+        WHERE id IN (
+            SELECT romfile_id
+            FROM patches
+            WHERE rom_id IN (
+                SELECT id
+                FROM roms
+                WHERE game_id IN (
+                    SELECT id
+                    FROM games
+                    WHERE system_id = ?
+                )
+            )
+        )
+        ORDER BY path
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| {
+        panic!(
+            "Error while finding patch romfiles with system id {}",
+            system_id
+        )
+    })
 }
 
 pub async fn find_romfile_by_path(
