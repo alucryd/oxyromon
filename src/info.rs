@@ -76,7 +76,7 @@ pub async fn main(
     progress_bar.println(format!("  bchunk: {}", bchunk_version));
     progress_bar.println(format!("  chdman: {}", chdman_version));
     progress_bar.println(format!("  ctrtool: {}", ctrtool_version));
-    progress_bar.println(format!("  dolphin: {}", dolphin_version));
+    progress_bar.println(format!("  dolphin-tool: {}", dolphin_version));
     progress_bar.println(format!("  flips: {}", flips_version));
     progress_bar.println(format!("  maxcso: {}", maxcso_version));
     progress_bar.println(format!("  nsz: {}", nsz_version));

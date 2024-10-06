@@ -165,7 +165,7 @@ pub async fn main(
         }
         "RVZ" => {
             if dolphin::get_version().await.is_err() {
-                progress_bar.println("Please install dolphin");
+                progress_bar.println("Please install dolphin-tool");
                 return Ok(());
             }
         }
@@ -3703,7 +3703,7 @@ async fn to_original(
     // convert RVZs
     for roms in rvzs.values() {
         if dolphin::get_version().await.is_err() {
-            progress_bar.println("Please install dolphin");
+            progress_bar.println("Please install dolphin-tool");
             break;
         }
 
