@@ -1,7 +1,7 @@
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{FromRow, Type};
 use std::collections::HashMap;
 
@@ -147,25 +147,30 @@ pub struct ProfileXml {
     pub systems: Vec<SystemXml>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "datafile")]
 pub struct DatfileXml {
-    #[serde(alias = "header")]
+    #[serde(rename = "header")]
     pub system: SystemXml,
-    #[serde(alias = "game", alias = "machine", default)]
+    #[serde(rename = "game", alias = "machine", default)]
     pub games: Vec<GameXml>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "header")]
 pub struct SystemXml {
     pub name: String,
     pub description: String,
     pub version: String,
-    #[serde(alias = "clrmamepro", default)]
+    pub date: String,
+    pub author: String,
+    #[serde(rename = "clrmamepro", default)]
     pub clrmamepros: Vec<ClrMameProXml>,
     pub url: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "clrmamepro")]
 pub struct ClrMameProXml {
     #[serde(rename = "@header")]
     pub header: Option<String>,
@@ -179,7 +184,8 @@ where
     Ok(s == "yes")
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "game")]
 pub struct GameXml {
     #[serde(rename = "@name")]
     pub name: String,
@@ -193,7 +199,7 @@ pub struct GameXml {
     pub isdevice: bool,
     #[serde(rename = "@isbios", deserialize_with = "string_to_bool", default)]
     pub isbios: bool,
-    #[serde(alias = "rom", default)]
+    #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
 }
 
@@ -205,7 +211,8 @@ where
     s.parse::<i64>().or_else(|_| Ok(0))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "rom")]
 pub struct RomXml {
     #[serde(rename = "@name")]
     pub name: String,

@@ -5,6 +5,7 @@ extern crate async_graphql_axum;
 #[cfg(feature = "server")]
 extern crate axum;
 extern crate cfg_if;
+extern crate chrono;
 #[macro_use]
 extern crate clap;
 extern crate crc32fast;
@@ -52,6 +53,7 @@ mod common;
 mod config;
 mod convert_roms;
 mod crc32;
+mod create_dats;
 mod ctrtool;
 mod database;
 mod dolphin;
@@ -106,6 +108,7 @@ async fn main() -> SimpleResult<()> {
     let mut subcommands = vec![
         info::subcommand(),
         config::subcommand(),
+        create_dats::subcommand(),
         import_dats::subcommand(),
         download_dats::subcommand(),
         import_irds::subcommand(),
@@ -170,6 +173,13 @@ async fn main() -> SimpleResult<()> {
                 config::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("config").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("create-dats") => {
+                create_dats::main(
+                    matches.subcommand_matches("create-dats").unwrap(),
                     &progress_bar,
                 )
                 .await?
