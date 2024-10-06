@@ -219,9 +219,9 @@ pub async fn get_version() -> SimpleResult<String> {
         Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
             .output()
             .await,
-        "Failed to spawn dolphin"
+        "Failed to spawn dolphin-tool"
     );
-    // dolphin doesn't advertize any version
+    // dolphin-tool doesn't advertize any version
     String::from_utf8(output.stderr).unwrap();
     let version = String::from("unknown");
     Ok(version)

@@ -257,7 +257,7 @@ async fn check_system(
                 .await;
         } else if RVZ_EXTENSION == romfile_extension {
             if dolphin::get_version().await.is_err() {
-                progress_bar.println("Please install dolphin");
+                progress_bar.println("Please install dolphin-tool");
                 break;
             }
             result = romfile

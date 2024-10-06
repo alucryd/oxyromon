@@ -380,7 +380,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if RVZ_EXTENSION == romfile_extension {
         if dolphin::get_version().await.is_err() {
-            progress_bar.println("Please install dolphin");
+            progress_bar.println("Please install dolphin-tool");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_rvz(
