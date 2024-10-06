@@ -35,31 +35,23 @@ impl AsCommon for RvzRomfile {
     }
 }
 
-impl Hash for RvzRomfile {
+impl HashAndSize for RvzRomfile {
     async fn get_hash_and_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> simple_error::SimpleResult<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
-        let hash_and_size = iso_romfile
+        let (hash, size) = iso_romfile
             .as_common()?
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
+            .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
             .await?;
         iso_romfile.as_common()?.delete(progress_bar, true).await?;
-        Ok(hash_and_size)
+        Ok((hash, size))
     }
 }
 

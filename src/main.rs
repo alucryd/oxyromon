@@ -179,6 +179,7 @@ async fn main() -> SimpleResult<()> {
             }
             Some("create-dats") => {
                 create_dats::main(
+                    &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("create-dats").unwrap(),
                     &progress_bar,
                 )

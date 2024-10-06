@@ -1,3 +1,5 @@
+use super::common::*;
+use super::config::*;
 use super::model::*;
 use super::SimpleResult;
 use chrono::prelude::*;
@@ -6,9 +8,11 @@ use indicatif::ProgressBar;
 use quick_xml::se;
 use rust_embed::RustEmbed;
 use serde::Serialize;
+use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str;
+use walkdir::WalkDir;
 
 #[derive(RustEmbed)]
 #[folder = "data/"]
@@ -47,7 +51,7 @@ pub fn subcommand() -> Command {
             Arg::new("VERSION")
                 .short('v')
                 .long("version")
-                .help("Customize the DAT description")
+                .help("Customize the DAT version")
                 .required(false)
                 .num_args(1),
         )
@@ -59,9 +63,21 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(1),
         )
+        .arg(
+            Arg::new("URL")
+                .short('u')
+                .long("url")
+                .help("Customize the DAT URL")
+                .required(false)
+                .num_args(1),
+        )
 }
 
-pub async fn main(matches: &ArgMatches, progress_bar: &ProgressBar) -> SimpleResult<()> {
+pub async fn main(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches,
+    progress_bar: &ProgressBar,
+) -> SimpleResult<()> {
     let directories = matches
         .get_many::<PathBuf>("DIRECTORIES")
         .unwrap()
@@ -69,12 +85,14 @@ pub async fn main(matches: &ArgMatches, progress_bar: &ProgressBar) -> SimpleRes
         .collect::<Vec<PathBuf>>();
     for directory in directories {
         create_dat(
+            connection,
+            progress_bar,
             directory,
             matches.get_one::<String>("NAME"),
             matches.get_one::<String>("DESCRIPTION"),
             matches.get_one::<String>("VERSION"),
             matches.get_one::<String>("AUTHOR"),
-            progress_bar,
+            matches.get_one::<String>("URL"),
         )
         .await?;
     }
@@ -82,12 +100,14 @@ pub async fn main(matches: &ArgMatches, progress_bar: &ProgressBar) -> SimpleRes
 }
 
 pub async fn create_dat<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     directory: P,
     name: Option<&String>,
     description: Option<&String>,
     version: Option<&String>,
     author: Option<&String>,
-    progress_bar: &ProgressBar,
+    url: Option<&String>,
 ) -> SimpleResult<()> {
     let system_xml = SystemXml {
         name: name.map(String::to_owned).unwrap_or(
@@ -105,12 +125,68 @@ pub async fn create_dat<P: AsRef<Path>>(
             .unwrap_or(format!("{}", Local::now().format("%Y%m%d"))),
         date: format!("{}", Local::now().format("%Y%m%d")),
         author: author.map(String::to_owned).unwrap_or_default(),
+        url: url.map(String::to_owned),
         clrmamepros: Vec::new(),
-        url: None,
     };
+
+    let mut games_xml: Vec<GameXml> = Vec::new();
+    let walker = WalkDir::new(&directory).into_iter();
+    for entry in walker.filter_map(|e| e.ok()) {
+        if entry.path().is_file() {
+            let romfile = CommonRomfile::from_path(&entry.path())?;
+            let rom_xml = RomXml {
+                name: romfile
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                size: romfile.get_size().await? as i64,
+                crc: Some(
+                    romfile
+                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Crc)
+                        .await?
+                        .0,
+                ),
+                md5: Some(
+                    romfile
+                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Md5)
+                        .await?
+                        .0,
+                ),
+                sha1: Some(
+                    romfile
+                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Sha1)
+                        .await?
+                        .0,
+                ),
+                merge: None,
+                status: None,
+            };
+            let game_xml = GameXml {
+                name: romfile
+                    .path
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                description: String::new(),
+                roms: vec![rom_xml],
+                isbios: false,
+                isdevice: false,
+                cloneof: None,
+                romof: None,
+                comment: None,
+            };
+            games_xml.push(game_xml);
+        }
+    }
+
     let datfile_xml = DatfileXml {
         system: system_xml,
-        games: Vec::new(),
+        games: games_xml,
     };
 
     let mut buffer = String::new();

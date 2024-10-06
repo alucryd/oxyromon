@@ -143,76 +143,49 @@ impl Size for ArchiveRomfile {
             .unwrap();
         Ok(u64::from_str(size).unwrap())
     }
-
-    async fn get_headered_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Header,
-    ) -> SimpleResult<u64> {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let original_file = self.to_common(progress_bar, &tmp_directory).await?;
-        let size = original_file
-            .get_headered_size(connection, progress_bar, header)
-            .await?;
-        original_file.delete(progress_bar, true).await?;
-        Ok(size)
-    }
 }
 
-impl Hash for ArchiveRomfile {
+impl HashAndSize for ArchiveRomfile {
     async fn get_hash_and_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<(String, u64)> {
-        match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
-            true => {
-                let tmp_directory = create_tmp_directory(connection).await?;
-                let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
-                let hash_and_size = common_romfile
-                    .get_hash_and_size(
-                        connection,
-                        progress_bar,
-                        header,
-                        position,
-                        total,
-                        hash_algorithm,
-                    )
-                    .await?;
-                remove_file(progress_bar, &common_romfile.path, true).await?;
-                Ok(hash_and_size)
-            }
-            false => {
-                let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-                    .arg("l")
-                    .arg("-slt")
-                    .arg(&self.path)
-                    .arg(&self.file_path)
-                    .output()
-                    .await
-                    .expect("Failed to parse archive");
+        if hash_algorithm == &HashAlgorithm::Crc {
+            let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+                .arg("l")
+                .arg("-slt")
+                .arg(&self.path)
+                .arg(&self.file_path)
+                .output()
+                .await
+                .expect("Failed to parse archive");
 
-                if !output.status.success() {
-                    bail!(String::from_utf8(output.stderr).unwrap().as_str());
-                }
-
-                let stdout = String::from_utf8(output.stdout).unwrap();
-                let hash = stdout
-                    .lines()
-                    .find(|&line| line.starts_with("CRC ="))
-                    .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
-                    .unwrap()
-                    .to_string()
-                    .to_lowercase();
-                let size = self.get_size().await?;
-                Ok((hash, size))
+            if !output.status.success() {
+                bail!(String::from_utf8(output.stderr).unwrap().as_str());
             }
+
+            let stdout = String::from_utf8(output.stdout).unwrap();
+            let hash = stdout
+                .lines()
+                .find(|&line| line.starts_with("CRC ="))
+                .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
+                .unwrap()
+                .to_string()
+                .to_lowercase();
+            let size = self.get_size().await?;
+            return Ok((hash, size));
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
+        let (hash, size) = common_romfile
+            .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
+            .await?;
+        remove_file(progress_bar, &common_romfile.path, true).await?;
+        Ok((hash, size))
     }
 }
 
@@ -240,7 +213,7 @@ impl Check for ArchiveRomfile {
             }
             false => {
                 let (hash, size) = self
-                    .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
                 if size != roms[0].size as u64 {
                     bail!("Size mismatch");

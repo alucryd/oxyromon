@@ -190,14 +190,25 @@ pub struct GameXml {
     #[serde(rename = "@name")]
     pub name: String,
     pub description: String,
+    #[serde(skip_serializing)]
     pub comment: Option<String>,
-    #[serde(rename = "@cloneof")]
+    #[serde(rename = "@cloneof", skip_serializing)]
     pub cloneof: Option<String>,
-    #[serde(rename = "@romof")]
+    #[serde(rename = "@romof", skip_serializing)]
     pub romof: Option<String>,
-    #[serde(rename = "@isdevice", deserialize_with = "string_to_bool", default)]
+    #[serde(
+        rename = "@isdevice",
+        deserialize_with = "string_to_bool",
+        default,
+        skip_serializing
+    )]
     pub isdevice: bool,
-    #[serde(rename = "@isbios", deserialize_with = "string_to_bool", default)]
+    #[serde(
+        rename = "@isbios",
+        deserialize_with = "string_to_bool",
+        default,
+        skip_serializing
+    )]
     pub isbios: bool,
     #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
@@ -216,7 +227,7 @@ where
 pub struct RomXml {
     #[serde(rename = "@name")]
     pub name: String,
-    #[serde(rename = "@merge")]
+    #[serde(rename = "@merge", skip_serializing)]
     pub merge: Option<String>,
     #[serde(rename = "@size", deserialize_with = "empty_string_to_zero")]
     pub size: i64,
@@ -226,7 +237,7 @@ pub struct RomXml {
     pub md5: Option<String>,
     #[serde(rename = "@sha1")]
     pub sha1: Option<String>,
-    #[serde(rename = "@status")]
+    #[serde(rename = "@status", skip_serializing)]
     pub status: Option<String>,
 }
 
