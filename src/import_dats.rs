@@ -87,7 +87,7 @@ pub async fn main(
         .get_many::<PathBuf>("DATS")
         .unwrap()
         .cloned()
-        .partition(|path| path.extension().unwrap().to_str().unwrap() == ZIP_EXTENSION);
+        .partition(|path| path.extension().unwrap().to_str().unwrap().to_lowercase() == ZIP_EXTENSION);
 
     let tmp_directory = create_tmp_directory(connection).await?;
     for zip_path in zip_paths {
@@ -153,7 +153,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
 ) -> SimpleResult<(DatfileXml, Option<DetectorXml>)> {
     let datfile_xml: DatfileXml = try_with!(
         de::from_reader(&mut get_reader_sync(dat_path)?),
-        "Failed to parse DAT file"
+        "Failed to deserialize DAT file"
     );
 
     // print information

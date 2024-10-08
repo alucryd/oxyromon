@@ -98,16 +98,102 @@ pub trait ToCommon {
     ) -> SimpleResult<CommonRomfile>;
 }
 
-pub trait HeaderedFile {
+pub trait Size {
+    async fn get_size(&self) -> SimpleResult<u64>;
+}
+
+impl Size for CommonRomfile {
+    async fn get_size(&self) -> SimpleResult<u64> {
+        Ok(self.path.metadata().unwrap().len())
+    }
+}
+
+pub trait HashAndSize {
+    async fn get_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)>;
+}
+
+impl HashAndSize for CommonRomfile {
+    async fn get_hash_and_size(
+        &self,
+        _connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)> {
+        progress_bar.reset();
+        progress_bar.set_message(format!(
+            "Computing {} ({}/{})",
+            hash_algorithm, position, total
+        ));
+
+        let mut file = open_file_sync(&self.path)?;
+        let hash = match hash_algorithm {
+            HashAlgorithm::Crc => {
+                let mut digest = Crc32::new();
+                try_with!(
+                    io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
+                    "Failed to copy data"
+                );
+                format!("{:08x}", digest.finalize()).to_lowercase()
+            }
+            HashAlgorithm::Md5 => {
+                let mut digest = Md5::new();
+                try_with!(
+                    io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
+                    "Failed to copy data"
+                );
+                format!("{:032x}", digest.finalize()).to_lowercase()
+            }
+            HashAlgorithm::Sha1 => {
+                let mut digest = Sha1::new();
+                try_with!(
+                    io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
+                    "Failed to copy data"
+                );
+                format!("{:040x}", digest.finalize()).to_lowercase()
+            }
+        };
+        let size = self.get_size().await?;
+
+        progress_bar.set_message("");
+
+        Ok((hash, size))
+    }
+}
+
+pub trait HeaderedHashAndSize {
     async fn get_file_and_header_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         header: &Header,
     ) -> SimpleResult<(File, u64)>;
+    async fn get_headered_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Header,
+    ) -> SimpleResult<u64>;
+    async fn get_headered_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Header,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)>;
 }
 
-impl HeaderedFile for CommonRomfile {
+impl HeaderedHashAndSize for CommonRomfile {
     async fn get_file_and_header_size(
         &self,
         connection: &mut SqliteConnection,
@@ -146,24 +232,6 @@ impl HeaderedFile for CommonRomfile {
 
         Ok((file, header_size))
     }
-}
-
-pub trait Size {
-    async fn get_size(&self) -> SimpleResult<u64>;
-
-    async fn get_headered_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Header,
-    ) -> SimpleResult<u64>;
-}
-
-impl Size for CommonRomfile {
-    async fn get_size(&self) -> SimpleResult<u64> {
-        Ok(self.path.metadata().unwrap().len())
-    }
-
     async fn get_headered_size(
         &self,
         connection: &mut SqliteConnection,
@@ -175,37 +243,18 @@ impl Size for CommonRomfile {
             .await?;
         Ok(file.metadata().unwrap().len() - header_size)
     }
-}
-
-pub trait Hash {
-    async fn get_hash_and_size(
+    async fn get_headered_hash_and_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
-        position: usize,
-        total: usize,
-        hash_algorithm: &HashAlgorithm,
-    ) -> SimpleResult<(String, u64)>;
-}
-
-impl Hash for CommonRomfile {
-    async fn get_hash_and_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Option<Header>,
+        header: &Header,
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<(String, u64)> {
-        let size = match header {
-            Some(header) => {
-                self.get_headered_size(connection, progress_bar, header)
-                    .await?
-            }
-            None => self.get_size().await?,
-        };
+        let size = self
+            .get_headered_size(connection, progress_bar, header)
+            .await?;
 
         progress_bar.reset();
         progress_bar.set_message(format!(
@@ -215,14 +264,10 @@ impl Hash for CommonRomfile {
         progress_bar.set_style(get_bytes_progress_style());
         progress_bar.set_length(size);
 
-        let mut file = match header {
-            Some(header) => {
-                self.get_file_and_header_size(connection, progress_bar, header)
-                    .await?
-                    .0
-            }
-            None => open_file_sync(&self.path)?,
-        };
+        let mut file = self
+            .get_file_and_header_size(connection, progress_bar, header)
+            .await?
+            .0;
         let hash = match hash_algorithm {
             HashAlgorithm::Crc => {
                 let mut digest = Crc32::new();
@@ -278,9 +323,25 @@ impl Check for CommonRomfile {
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\"", self));
-        let (hash, size) = self
-            .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
-            .await?;
+        let (hash, size) = match header {
+            Some(header) => {
+                self.get_headered_hash_and_size(
+                    connection,
+                    progress_bar,
+                    header,
+                    1,
+                    1,
+                    hash_algorithm,
+                )
+                .await?
+            }
+            None => {
+                let (hash, size) = self
+                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                    .await?;
+                (hash, size)
+            }
+        };
         if size != roms[0].size as u64 {
             bail!("Size mismatch");
         };

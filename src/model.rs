@@ -1,7 +1,7 @@
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{FromRow, Type};
 use std::collections::HashMap;
 
@@ -147,25 +147,30 @@ pub struct ProfileXml {
     pub systems: Vec<SystemXml>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "datafile")]
 pub struct DatfileXml {
-    #[serde(alias = "header")]
+    #[serde(rename = "header")]
     pub system: SystemXml,
-    #[serde(alias = "game", alias = "machine", default)]
+    #[serde(rename = "game", alias = "machine", default)]
     pub games: Vec<GameXml>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "header")]
 pub struct SystemXml {
     pub name: String,
     pub description: String,
     pub version: String,
-    #[serde(alias = "clrmamepro", default)]
+    pub date: Option<String>,
+    pub author: String,
+    #[serde(rename = "clrmamepro", default)]
     pub clrmamepros: Vec<ClrMameProXml>,
     pub url: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "clrmamepro")]
 pub struct ClrMameProXml {
     #[serde(rename = "@header")]
     pub header: Option<String>,
@@ -179,21 +184,33 @@ where
     Ok(s == "yes")
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "game")]
 pub struct GameXml {
     #[serde(rename = "@name")]
     pub name: String,
     pub description: String,
+    #[serde(skip_serializing)]
     pub comment: Option<String>,
-    #[serde(rename = "@cloneof")]
+    #[serde(rename = "@cloneof", skip_serializing)]
     pub cloneof: Option<String>,
-    #[serde(rename = "@romof")]
+    #[serde(rename = "@romof", skip_serializing)]
     pub romof: Option<String>,
-    #[serde(rename = "@isdevice", deserialize_with = "string_to_bool", default)]
+    #[serde(
+        rename = "@isdevice",
+        deserialize_with = "string_to_bool",
+        default,
+        skip_serializing
+    )]
     pub isdevice: bool,
-    #[serde(rename = "@isbios", deserialize_with = "string_to_bool", default)]
+    #[serde(
+        rename = "@isbios",
+        deserialize_with = "string_to_bool",
+        default,
+        skip_serializing
+    )]
     pub isbios: bool,
-    #[serde(alias = "rom", default)]
+    #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
 }
 
@@ -205,11 +222,12 @@ where
     s.parse::<i64>().or_else(|_| Ok(0))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
+#[serde(rename = "rom")]
 pub struct RomXml {
     #[serde(rename = "@name")]
     pub name: String,
-    #[serde(rename = "@merge")]
+    #[serde(rename = "@merge", skip_serializing)]
     pub merge: Option<String>,
     #[serde(rename = "@size", deserialize_with = "empty_string_to_zero")]
     pub size: i64,
@@ -219,7 +237,7 @@ pub struct RomXml {
     pub md5: Option<String>,
     #[serde(rename = "@sha1")]
     pub sha1: Option<String>,
-    #[serde(rename = "@status")]
+    #[serde(rename = "@status", skip_serializing)]
     pub status: Option<String>,
 }
 

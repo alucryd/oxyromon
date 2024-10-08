@@ -32,31 +32,23 @@ impl AsCommon for NszRomfile {
     }
 }
 
-impl Hash for NszRomfile {
+impl HashAndSize for NszRomfile {
     async fn get_hash_and_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        header: &Option<Header>,
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> simple_error::SimpleResult<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
-        let hash_and_size = nsp_romfile
+        let (hash, size) = nsp_romfile
             .as_common()?
-            .get_hash_and_size(
-                connection,
-                progress_bar,
-                header,
-                position,
-                total,
-                hash_algorithm,
-            )
+            .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
             .await?;
         nsp_romfile.as_common()?.delete(progress_bar, true).await?;
-        Ok(hash_and_size)
+        Ok((hash, size))
     }
 }
 

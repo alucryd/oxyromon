@@ -5,6 +5,7 @@
 - Allow ordering CHD compression algorithms
 - Use the new `splitbin` feature in chdman 0.265 and higher, fixes Dreamcast CHD imports
 - Add a new `import-patches` subcommand
+- Add a new `create-dats` subcommand
 
 # 0.19.0
 
