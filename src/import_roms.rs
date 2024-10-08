@@ -623,9 +623,10 @@ async fn import_archive<P: AsRef<Path>>(
 
         let (hash, size) = match header {
             Some(header) => {
-                archive_romfile
-                    .to_common(progress_bar, &tmp_directory)
-                    .await?
+                let romfile = archive_romfile
+                    .to_common(progress_bar, &tmp_directory.path())
+                    .await?;
+                let (hash, size) = romfile
                     .get_headered_hash_and_size(
                         connection,
                         progress_bar,
@@ -634,7 +635,9 @@ async fn import_archive<P: AsRef<Path>>(
                         1,
                         hash_algorithm,
                     )
-                    .await?
+                    .await?;
+                remove_file(progress_bar, &romfile.path, true).await?;
+                (hash, size)
             }
             None => {
                 archive_romfile
@@ -647,7 +650,7 @@ async fn import_archive<P: AsRef<Path>>(
         let mut game_names: Vec<&str> = Vec::new();
         game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
         if let Some(path) = path.parent() {
-            let game_name = path.as_os_str().to_str().unwrap();
+            let game_name = path.file_name().unwrap().to_str().unwrap();
             if !game_name.is_empty() {
                 game_names.push(game_name);
             }
