@@ -634,13 +634,18 @@ async fn parse<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleRe
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
-    if metadata.contains("CHT2") || metadata.contains("CHGD") {
+    if metadata.contains("CHCD")
+        || metadata.contains("CHGD")
+        || metadata.contains("CHGT")
+        || metadata.contains("CHT2")
+        || metadata.contains("CHTR")
+    {
         return Ok(MediaType::Cd);
     }
     if metadata.contains("DVD") {
         return Ok(MediaType::Dvd);
     }
-    if metadata.contains("GDDD") {
+    if metadata.contains("GDDD") || metadata.contains("GDDI") {
         return Ok(MediaType::Hd);
     }
     if metadata.contains("AVAV") || metadata.contains("AVLD") {
