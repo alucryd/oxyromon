@@ -11,8 +11,10 @@ use quick_xml::de;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
+use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
+use simple_error::SimpleError;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
 use std::path::Path;
@@ -278,15 +280,27 @@ pub async fn import_dat(
 }
 
 fn get_regions_from_game_name(name: &str) -> SimpleResult<String> {
-    let name = try_with!(
-        NoIntroName::try_parse(name),
-        "Failed to parse no-intro name"
-    );
-    for token in name.iter() {
-        if let NoIntroToken::Region(_, regions) = token {
-            return Ok(Region::to_normalized_region_string(regions));
+    match NoIntroName::try_parse(name) {
+        Ok(v) => {
+            for token in v.iter() {
+                if let NoIntroToken::Region(_, regions) = token {
+                    return Ok(Region::to_normalized_region_string(regions));
+                }
+            }
         }
-    }
+        Err(_) => match TOSECName::try_parse(name) {
+            Ok(v) => {
+                for token in v.iter() {
+                    if let TOSECToken::Region(_, regions) = token {
+                        return Ok(Region::to_normalized_region_string(regions));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(SimpleError::with("Failed to parse name", e));
+            }
+        },
+    };
     Ok(String::from(""))
 }
 
