@@ -42,6 +42,24 @@ pub enum ChdDvdCompressionAlgorithm {
     Zstd,
 }
 
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ChdHdCompressionAlgorithm {
+    None,
+    Flac,
+    Huff,
+    Lzma,
+    Zlib,
+    Zstd,
+}
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ChdLdCompressionAlgorithm {
+    None,
+    Avhu,
+}
+
 lazy_static! {
     static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
 }
@@ -50,6 +68,8 @@ lazy_static! {
 pub enum MediaType {
     Cd,
     Dvd,
+    Hd,
+    Ld,
 }
 
 pub struct ChdRomfile {
@@ -475,6 +495,8 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(match media_type {
             MediaType::Cd => "createcd",
             MediaType::Dvd => "createdvd",
+            MediaType::Hd => "createhd",
+            MediaType::Ld => "createld",
         })
         .arg("-i")
         .arg(romfile_path.as_ref())
@@ -527,7 +549,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             path.as_ref().file_name().unwrap().to_str().unwrap()
         ))
         .with_extension(CUE_EXTENSION);
-    let iso_bin_path = destination_directory
+    let bin_path = destination_directory
         .as_ref()
         .join(path.as_ref().file_name().unwrap())
         .with_extension(if split {
@@ -552,16 +574,14 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .arg(match media_type {
             MediaType::Cd => "extractcd",
             MediaType::Dvd => "extractdvd",
+            MediaType::Hd => "extracthd",
+            MediaType::Ld => "extractld",
         })
         .arg("-i")
         .arg(path.as_ref());
     match media_type {
-        MediaType::Cd => command
-            .arg("-o")
-            .arg(&cue_path)
-            .arg("-ob")
-            .arg(&iso_bin_path),
-        MediaType::Dvd => command.arg("-o").arg(&iso_bin_path),
+        MediaType::Cd => command.arg("-o").arg(&cue_path).arg("-ob").arg(&bin_path),
+        MediaType::Dvd | MediaType::Hd | MediaType::Ld => command.arg("-o").arg(&bin_path),
     };
     if let Some(parent_romfile_path) = parent_romfile_path {
         command.arg("-ip").arg(parent_romfile_path);
@@ -585,7 +605,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
-    Ok(iso_bin_path)
+    Ok(bin_path)
 }
 
 async fn parse<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleResult<MediaType> {
@@ -614,11 +634,19 @@ async fn parse<P: AsRef<Path>>(progress_bar: &ProgressBar, path: &P) -> SimpleRe
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 
-    Ok(if metadata.contains("DVD") {
-        MediaType::Dvd
-    } else {
-        MediaType::Cd
-    })
+    if metadata.contains("CHT2") || metadata.contains("CHGD") {
+        return Ok(MediaType::Cd);
+    }
+    if metadata.contains("DVD") {
+        return Ok(MediaType::Dvd);
+    }
+    if metadata.contains("GDDD") {
+        return Ok(MediaType::Hd);
+    }
+    if metadata.contains("AVAV") || metadata.contains("AVLD") {
+        return Ok(MediaType::Ld);
+    }
+    bail!("Unknown CHD type");
 }
 
 pub async fn get_version() -> SimpleResult<String> {

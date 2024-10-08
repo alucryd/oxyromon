@@ -1,4 +1,7 @@
-use super::chdman::{ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE};
+use super::chdman::{
+    ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, ChdHdCompressionAlgorithm,
+    ChdLdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE,
+};
 use super::database::*;
 use super::dolphin::{RvzCompressionAlgorithm, RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
@@ -82,10 +85,14 @@ const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
 const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
     "CHD_CD_COMPRESSION_ALGORITHMS" => ChdCdCompressionAlgorithm::VARIANTS,
     "CHD_DVD_COMPRESSION_ALGORITHMS" => ChdDvdCompressionAlgorithm::VARIANTS,
+    "CHD_HD_COMPRESSION_ALGORITHMS" => ChdHdCompressionAlgorithm::VARIANTS,
+    "CHD_LD_COMPRESSION_ALGORITHMS" => ChdLdCompressionAlgorithm::VARIANTS,
 };
 const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
     "CHD_CD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
     "CHD_DVD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
+    "CHD_HD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
+    "CHD_LD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
     "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
     "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
     "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
