@@ -466,14 +466,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
         path: sfb_romfile_path,
     };
     let (md5, size) = original_romfile
-        .get_hash_and_size(
-            &mut transaction,
-            progress_bar,
-            &None,
-            1,
-            1,
-            &HashAlgorithm::Md5,
-        )
+        .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &HashAlgorithm::Md5)
         .await?;
     if let Some((sfb_rom, game)) = find_sfb_rom_by_md5(
         &mut transaction,
@@ -499,14 +492,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     path: entry.path().to_path_buf(),
                 };
                 let (md5, size) = original_romfile
-                    .get_hash_and_size(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        1,
-                        1,
-                        &HashAlgorithm::Md5,
-                    )
+                    .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &HashAlgorithm::Md5)
                     .await?;
 
                 let rom: Option<&Rom>;
@@ -635,15 +621,36 @@ async fn import_archive<P: AsRef<Path>>(
             romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
         ));
 
-        let (hash, size) = archive_romfile
-            .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
-            .await?;
+        let (hash, size) = match header {
+            Some(header) => {
+                let romfile = archive_romfile
+                    .to_common(progress_bar, &tmp_directory.path())
+                    .await?;
+                let (hash, size) = romfile
+                    .get_headered_hash_and_size(
+                        connection,
+                        progress_bar,
+                        header,
+                        1,
+                        1,
+                        hash_algorithm,
+                    )
+                    .await?;
+                remove_file(progress_bar, &romfile.path, true).await?;
+                (hash, size)
+            }
+            None => {
+                archive_romfile
+                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                    .await?
+            }
+        };
 
         let path = Path::new(&archive_romfile.path);
         let mut game_names: Vec<&str> = Vec::new();
         game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
         if let Some(path) = path.parent() {
-            let game_name = path.as_os_str().to_str().unwrap();
+            let game_name = path.file_name().unwrap().to_str().unwrap();
             if !game_name.is_empty() {
                 game_names.push(game_name);
             }
@@ -794,7 +801,7 @@ async fn import_chd<P: AsRef<Path>>(
             path: cue_path.clone(),
         };
         let (hash, size) = cue_romfile
-            .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
             .await?;
         if let Some((cue_rom, game, system)) = find_rom_by_size_and_hash(
             connection,
@@ -832,10 +839,12 @@ async fn import_chd<P: AsRef<Path>>(
             let total = cue_bin_romfile.bin_romfiles.len();
             let mut hashes: Vec<String> = Vec::new();
             for (i, bin_romfile) in cue_bin_romfile.bin_romfiles.into_iter().enumerate() {
-                let (hash, _) = bin_romfile
-                    .get_hash_and_size(connection, progress_bar, &None, i, total, hash_algorithm)
-                    .await?;
-                hashes.push(hash);
+                hashes.push(
+                    bin_romfile
+                        .get_hash_and_size(connection, progress_bar, i, total, hash_algorithm)
+                        .await?
+                        .0,
+                );
                 bin_romfile.delete(progress_bar, true).await?;
             }
 
@@ -896,7 +905,7 @@ async fn import_chd<P: AsRef<Path>>(
             .await?;
         let (hash, size) = iso_romfile
             .as_common()?
-            .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
             .await?;
         iso_romfile.as_common()?.delete(progress_bar, true).await?;
         if let Some((rom, game, system)) = find_rom_by_size_and_hash(
@@ -971,7 +980,7 @@ async fn import_cia<P: AsRef<Path>>(
             path: extracted_path,
         };
         let (hash, size) = extracted_romfile
-            .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
             .await?;
         extracted_romfile.delete(progress_bar, true).await?;
 
@@ -1064,7 +1073,7 @@ async fn import_cso<P: AsRef<Path>>(
 ) -> SimpleResult<Option<[i64; 2]>> {
     let cso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
     let (hash, size) = cso_romfile
-        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1113,7 +1122,7 @@ async fn import_nsz<P: AsRef<Path>>(
 ) -> SimpleResult<Option<[i64; 2]>> {
     let nsz_romfile = nsz::NszRomfile::from_path(romfile_path)?;
     let (hash, size) = nsz_romfile
-        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1162,7 +1171,7 @@ async fn import_rvz<P: AsRef<Path>>(
 ) -> SimpleResult<Option<[i64; 2]>> {
     let rvz_romfile = dolphin::RvzRomfile::from_path(romfile_path)?;
     let (hash, size) = rvz_romfile
-        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1211,7 +1220,7 @@ async fn import_zso<P: AsRef<Path>>(
 ) -> SimpleResult<Option<[i64; 2]>> {
     let zso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
     let (hash, size) = zso_romfile
-        .get_hash_and_size(connection, progress_bar, &None, 1, 1, hash_algorithm)
+        .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
     if let Some((rom, game, system)) = find_rom_by_size_and_hash(
         connection,
@@ -1262,9 +1271,18 @@ async fn import_other<P: AsRef<Path>>(
     let original_romfile = CommonRomfile {
         path: romfile_path.as_ref().to_path_buf(),
     };
-    let (hash, size) = original_romfile
-        .get_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
-        .await?;
+    let (hash, size) = match header {
+        Some(header) => {
+            original_romfile
+                .get_headered_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
+                .await?
+        }
+        None => {
+            original_romfile
+                .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                .await?
+        }
+    };
     if let Some((rom, game, system)) = find_rom_by_size_and_hash(
         connection,
         progress_bar,

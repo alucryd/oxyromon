@@ -203,6 +203,7 @@ These should be in your `${PATH}` for extra features.
     Commands:
         info                Print system information
         config              Query and modify the oxyromon settings
+        create-dats         Create DAT files from directories
         import-dats         Parse and import Logiqx DAT files into oxyromon
         download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
         import-irds         Parse and import PlayStation 3 IRD files into oxyromon
@@ -308,6 +309,30 @@ Supported DAT providers:
           -a, --all      Import all systems
           -f, --force    Force import of outdated DAT files
           -h, --help     Print help information
+
+## oxyromon-create-dats
+
+Create DAT files from directories
+
+This makes it possible to build DAT files from scratch, they can be subsequently imported into oxyromon or any other tool.
+If no customization is specified, name and description are set to the directory name, and version is set to the creation datetime (No-Intro style).
+Each game name is set to the file name stripped of its extension, all 3 checksums are computed.
+
+Note: Any file in the directory is processed as is, and directories are ignored. It is necessary to use original uncompressed file formats if you plan to import the generated DAT file and use oxyromon's `convert-roms`/`export-roms` commands.
+
+    Usage: oxyromon create-dats [OPTIONS] <DIRECTORIES>...
+
+    Arguments:
+    <DIRECTORIES>...  Set the directories to process
+
+    Options:
+    -n, --name <NAME>                Customize the DAT name
+    -d, --description <DESCRIPTION>  Customize the DAT description
+    -v, --version <VERSION>          Customize the DAT version
+    -a, --author <AUTHOR>            Customize the DAT author
+    -u, --url <URL>                  Customize the DAT URL
+    -o, --output <OUTPUT>            Customize the output directory
+    -h, --help                       Print help
 
 ## oxyromon-import-irds
 
