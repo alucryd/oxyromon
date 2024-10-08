@@ -162,7 +162,7 @@ pub struct SystemXml {
     pub name: String,
     pub description: String,
     pub version: String,
-    pub date: String,
+    pub date: Option<String>,
     pub author: String,
     #[serde(rename = "clrmamepro", default)]
     pub clrmamepros: Vec<ClrMameProXml>,

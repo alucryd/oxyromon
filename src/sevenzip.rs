@@ -177,15 +177,16 @@ impl HashAndSize for ArchiveRomfile {
                 .to_string()
                 .to_lowercase();
             let size = self.get_size().await?;
-            return Ok((hash, size));
+            Ok((hash, size))
+        } else {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let (hash, size) = self
+                .to_common(progress_bar, &tmp_directory)
+                .await?
+                .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
+                .await?;
+            Ok((hash, size))
         }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
-        let (hash, size) = common_romfile
-            .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
-            .await?;
-        remove_file(progress_bar, &common_romfile.path, true).await?;
-        Ok((hash, size))
     }
 }
 
