@@ -64,7 +64,7 @@ impl ArchiveFile for ArchiveRomfile {
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("rn")
             .arg(&self.path)
-            .arg(&self.file_path)
+            .arg(&self.file_path.replace("-", "?").replace("@", "?"))
             .arg(new_file_path)
             .output()
             .await
@@ -94,7 +94,7 @@ impl ArchiveFile for ArchiveRomfile {
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
             .arg(&self.path)
-            .arg(&self.file_path)
+            .arg(&self.file_path.replace("-", "?").replace("@", "?"))
             .output()
             .await
             .expect("Failed to remove files from archive");
@@ -126,7 +126,7 @@ impl Size for ArchiveRomfile {
             .arg("l")
             .arg("-slt")
             .arg(&self.path)
-            .arg(&self.file_path)
+            .arg(&self.file_path.replace("-", "?").replace("@", "?"))
             .output()
             .await
             .expect("Failed to parse archive");
@@ -159,7 +159,7 @@ impl HashAndSize for ArchiveRomfile {
                 .arg("l")
                 .arg("-slt")
                 .arg(&self.path)
-                .arg(&self.file_path)
+                .arg(&self.file_path.replace("-", "?").replace("@", "?"))
                 .output()
                 .await
                 .expect("Failed to parse archive");
@@ -257,7 +257,7 @@ impl ToCommon for ArchiveRomfile {
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("x")
             .arg(&self.path)
-            .arg(&self.file_path)
+            .arg(&self.file_path.replace("-", "?").replace("@", "?"))
             .current_dir(directory.as_ref())
             .output()
             .await

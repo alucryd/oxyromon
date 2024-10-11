@@ -1812,4 +1812,6 @@ mod test_zip_single_file;
 #[cfg(test)]
 mod test_zip_single_file_extract;
 #[cfg(test)]
+mod test_zip_special_characters;
+#[cfg(test)]
 mod test_zso;
