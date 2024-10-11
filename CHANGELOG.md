@@ -6,6 +6,7 @@
 - Use the new `splitbin` feature in chdman 0.265 and higher, fixes Dreamcast CHD imports
 - Add a new `import-patches` subcommand
 - Add a new `create-dats` subcommand
+- Fix special chars handling in 7z
 
 # 0.19.0
 
