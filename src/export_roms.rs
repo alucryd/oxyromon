@@ -2032,7 +2032,7 @@ async fn to_original(
     // export RVZs
     for roms in rvzs.values() {
         if dolphin::get_version().await.is_err() {
-            progress_bar.println("Please install -tool");
+            progress_bar.println("Please install dolphin-tool");
             break;
         }
         for rom in roms {
