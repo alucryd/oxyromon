@@ -1,12 +1,11 @@
-use std::env;
-use std::path::PathBuf;
-
-use tempfile::{NamedTempFile, TempDir};
-use tokio::fs;
-
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use relative_path::PathExt;
+use std::env;
+use std::path::PathBuf;
+use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
 
 #[tokio::test]
 async fn test() {
@@ -75,11 +74,20 @@ async fn test() {
     }
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
-    let old_mtime = fs::metadata(&romfiles_by_id.values().next().unwrap().path)
-        .await
-        .unwrap()
-        .modified()
-        .unwrap();
+    let old_mtime = fs::metadata(
+        &romfiles_by_id
+            .values()
+            .next()
+            .unwrap()
+            .as_common(&mut connection)
+            .await
+            .unwrap()
+            .path,
+    )
+    .await
+    .unwrap()
+    .modified()
+    .unwrap();
 
     // when
     to_chd(
@@ -109,7 +117,7 @@ async fn test() {
     assert_eq!(romfiles.len(), 2);
 
     let romfile = romfiles.first().unwrap();
-    let new_mtime = fs::metadata(&romfile.path)
+    let new_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
         .await
         .unwrap()
         .modified()
@@ -118,11 +126,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).chd")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_ne!(old_mtime, new_mtime);
 
     let romfile = romfiles.get(1).unwrap();
@@ -130,9 +138,9 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).cue")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
 }

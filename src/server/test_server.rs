@@ -1,5 +1,3 @@
-extern crate serde_json;
-
 use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
 use super::super::database::*;
 use super::super::import_dats;
@@ -9,6 +7,7 @@ use super::super::util::*;
 use super::*;
 use async_graphql::Result;
 use indicatif::ProgressBar;
+use relative_path::PathExt;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
@@ -173,7 +172,7 @@ async fn test() -> Result<()> {
                         "name": "Test Game (USA, Europe).rom",
                         "romfile": {
                             "id": 1,
-                            "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().as_os_str().to_str().unwrap()),
+                            "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().relative_to(&rom_directory).unwrap().as_str()),
                             "size": 256
                         },
                         "game": {

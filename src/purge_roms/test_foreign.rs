@@ -1,7 +1,7 @@
 use super::super::config::{set_rom_directory, MUTEX};
 use super::super::database::*;
 use super::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 

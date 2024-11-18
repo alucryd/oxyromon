@@ -47,9 +47,7 @@ pub async fn main(
     let rom_file_path = Path::new(&rom_directory).join(".oxyromon");
     let tmp_file_path = Path::new(&tmp_directory).join(".oxyromon");
 
-    let original_romfile_tmpdir = CommonRomfile {
-        path: tmp_file_path.to_path_buf(),
-    };
+    let original_romfile_tmpdir = CommonRomfile::from_path(&tmp_file_path)?;
 
     let mb_count = 1024;
     // TODO: make this into a setting

@@ -4,7 +4,7 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::sort_roms;
 use super::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 

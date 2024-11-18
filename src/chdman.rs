@@ -200,7 +200,7 @@ impl ToCueBin for ChdRomfile {
         }
 
         if bin_roms.len() == 1 {
-            let mut bin_romfile = CommonRomfile { path };
+            let mut bin_romfile = CommonRomfile::from_path(&path)?;
             bin_romfile = bin_romfile
                 .rename(
                     progress_bar,
@@ -211,9 +211,9 @@ impl ToCueBin for ChdRomfile {
                 )
                 .await?;
             return Ok(CueBinRomfile {
-                cue_romfile: CommonRomfile {
-                    path: cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
-                },
+                cue_romfile: CommonRomfile::from_path(
+                    &cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
+                )?,
                 bin_romfiles: vec![bin_romfile],
             });
         }
@@ -223,8 +223,7 @@ impl ToCueBin for ChdRomfile {
         if split {
             for (i, bin_rom) in bin_roms.iter().enumerate() {
                 let source_path = destination_directory.as_ref().join(
-                    &path
-                        .file_name()
+                    path.file_name()
                         .unwrap()
                         .to_str()
                         .unwrap()
@@ -257,14 +256,12 @@ impl ToCueBin for ChdRomfile {
         }
 
         Ok(CueBinRomfile {
-            cue_romfile: CommonRomfile {
-                path: cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
-            },
+            cue_romfile: CommonRomfile::from_path(
+                &cue_path.unwrap_or(self.cue_path.as_ref().unwrap().clone()),
+            )?,
             bin_romfiles: bin_paths
                 .iter()
-                .map(|bin_path| CommonRomfile {
-                    path: bin_path.clone(),
-                })
+                .map(|bin_path| CommonRomfile::from_path(&bin_path).unwrap())
                 .collect(),
         })
     }
@@ -412,50 +409,35 @@ impl FromPathWithCueAndParent<ChdRomfile> for ChdRomfile {
 
 pub trait AsChd {
     fn as_chd(&self) -> SimpleResult<ChdRomfile>;
-    fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile>;
-    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile>;
-    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+    fn as_chd_with_cue(&self, cue_romfile: &CommonRomfile) -> SimpleResult<ChdRomfile>;
+    fn as_chd_with_parent(&self, parent_romfile: &ChdRomfile) -> SimpleResult<ChdRomfile>;
+    fn as_chd_with_cue_and_parent(
         &self,
-        cue_path: &P,
-        parent_path: &Q,
+        cue_romfile: &CommonRomfile,
+        parent_romfile: &ChdRomfile,
     ) -> SimpleResult<ChdRomfile>;
-}
-
-impl AsChd for Romfile {
-    fn as_chd(&self) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path(&self.path)
-    }
-    fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_cue(&self.path, cue_path)
-    }
-    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_parent(&self.path, parent_path)
-    }
-    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
-        &self,
-        cue_path: &P,
-        parent_path: &Q,
-    ) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_cue_and_parent(&self.path, cue_path, parent_path)
-    }
 }
 
 impl AsChd for CommonRomfile {
     fn as_chd(&self) -> SimpleResult<ChdRomfile> {
         ChdRomfile::from_path(&self.path)
     }
-    fn as_chd_with_cue<P: AsRef<Path>>(&self, cue_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_cue(&self.path, cue_path)
+    fn as_chd_with_cue(&self, cue_romfile: &CommonRomfile) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_cue(&self.path, &cue_romfile.path)
     }
-    fn as_chd_with_parent<P: AsRef<Path>>(&self, parent_path: &P) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_parent(&self.path, parent_path)
+    fn as_chd_with_parent(&self, parent_romfile: &ChdRomfile) -> SimpleResult<ChdRomfile> {
+        ChdRomfile::from_path_with_parent(&self.path, &parent_romfile.path)
     }
-    fn as_chd_with_cue_and_parent<P: AsRef<Path>, Q: AsRef<Path>>(
+    fn as_chd_with_cue_and_parent(
         &self,
-        cue_path: &P,
-        parent_path: &Q,
+        cue_romfile: &CommonRomfile,
+        parent_romfile: &ChdRomfile,
     ) -> SimpleResult<ChdRomfile> {
-        ChdRomfile::from_path_with_cue_and_parent(&self.path, cue_path, parent_path)
+        ChdRomfile::from_path_with_cue_and_parent(
+            &self.path,
+            &cue_romfile.path,
+            &parent_romfile.path,
+        )
     }
 }
 

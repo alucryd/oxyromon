@@ -10,7 +10,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::HashMap;
+use std::collections::hash_map::{Entry, HashMap};
 use std::io;
 use std::io::prelude::*;
 use std::io::Cursor;
@@ -224,24 +224,22 @@ fn walk_directory<T: ISO9660Reader>(
 ) -> HashMap<String, Vec<ISOFile<T>>> {
     let mut files: HashMap<String, Vec<ISOFile<T>>> = HashMap::new();
     let mut directories: Vec<ISODirectory<T>> = Vec::new();
-    for entry in directory.contents() {
-        if let Ok(entry) = entry {
-            match entry {
-                DirectoryEntry::Directory(directory) => {
-                    if directory.identifier != "." && directory.identifier != ".." {
-                        directories.push(directory);
-                    }
+    for entry in directory.contents().flatten() {
+        match entry {
+            DirectoryEntry::Directory(directory) => {
+                if directory.identifier != "." && directory.identifier != ".." {
+                    directories.push(directory);
                 }
-                DirectoryEntry::File(file) => {
-                    let path = format!("{}{}", prefix, file.identifier);
-                    if files.contains_key(&path) {
-                        files.get_mut(&path).unwrap().push(file);
-                    } else {
-                        files.insert(path, Vec::from([file]));
-                    }
-                }
-                _ => {}
             }
+            DirectoryEntry::File(file) => {
+                let path = format!("{}{}", prefix, file.identifier);
+                if let Entry::Vacant(e) = files.entry(path.clone()) {
+                    e.insert(Vec::from([file]));
+                } else {
+                    files.get_mut(&path).unwrap().push(file);
+                }
+            }
+            _ => {}
         }
     }
     for directory in directories {
@@ -260,8 +258,8 @@ pub async fn import_ird(
     irdfile: &Irdfile,
     header: &mut [u8],
 ) -> SimpleResult<()> {
-    let mut roms = find_roms_by_game_id_no_parents(connection, game.id).await;
-    let parent_rom = prompt_for_rom(&mut roms, None)?;
+    let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
+    let parent_rom = prompt_for_rom(&roms, None)?;
     if parent_rom.is_none() {
         return Ok(());
     }

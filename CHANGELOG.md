@@ -7,6 +7,8 @@
 - Add a new `import-patches` subcommand
 - Add a new `create-dats` subcommand
 - Fix special chars handling in 7z
+- Make the ROM directory portable by storing relative paths internally
+- Optimize the database upon exiting
 
 # 0.19.0
 

@@ -193,7 +193,7 @@ pub trait AsXso {
     fn as_xso(&self) -> SimpleResult<XsoRomfile>;
 }
 
-impl AsXso for Romfile {
+impl AsXso for CommonRomfile {
     fn as_xso(&self) -> SimpleResult<XsoRomfile> {
         XsoRomfile::from_path(&self.path)
     }

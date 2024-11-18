@@ -295,17 +295,13 @@ async fn main() -> SimpleResult<()> {
             Some("server") => {
                 cfg_if! {
                     if #[cfg(feature = "server")] {
-                        server::main(pool, matches.subcommand_matches("server").unwrap()).await?
+                        server::main(db_file, matches.subcommand_matches("server").unwrap()).await?
                     }
                 }
             }
             _ => (),
         }
-        cfg_if! {
-            if #[cfg(not(feature = "server"))] {
-                close_connection(&pool).await;
-            }
-        }
+        close_connection(&pool).await;
     }
 
     Ok(())

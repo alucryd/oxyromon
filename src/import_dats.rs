@@ -1,3 +1,4 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
@@ -89,7 +90,9 @@ pub async fn main(
         .get_many::<PathBuf>("DATS")
         .unwrap()
         .cloned()
-        .partition(|path| path.extension().unwrap().to_str().unwrap().to_lowercase() == ZIP_EXTENSION);
+        .partition(|path| {
+            path.extension().unwrap().to_str().unwrap().to_lowercase() == ZIP_EXTENSION
+        });
 
     let tmp_directory = create_tmp_directory(connection).await?;
     for zip_path in zip_paths {
@@ -645,16 +648,18 @@ pub async fn reimport_orphan_romfiles(
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
     for romfile_id in orphan_romfile_ids {
-        let romfile = find_romfile_by_id(connection, romfile_id).await;
+        let romfile = find_romfile_by_id(connection, romfile_id)
+            .await
+            .as_common(connection)
+            .await?;
         delete_romfile_by_id(connection, romfile_id).await;
-        let romfile_path = Path::new(&romfile.path);
-        if romfile_path.is_file() {
+        if romfile.path.is_file() {
             let (_, game_ids) = import_rom(
                 connection,
                 progress_bar,
                 &Some(&system),
                 &header,
-                &romfile_path,
+                &romfile.path,
                 hash_algorithm,
                 false,
                 false,
@@ -664,15 +669,12 @@ pub async fn reimport_orphan_romfiles(
             if game_ids.is_empty() {
                 let new_path = get_trash_directory(connection, Some(&system))
                     .await?
-                    .join(romfile_path.file_name().unwrap().to_str().unwrap());
-                rename_file(progress_bar, &romfile.path, &new_path, false).await?;
-                create_romfile(
-                    connection,
-                    new_path.as_os_str().to_str().unwrap(),
-                    new_path.metadata().unwrap().len(),
-                    RomfileType::Romfile,
-                )
-                .await;
+                    .join(romfile.path.file_name().unwrap().to_str().unwrap());
+                romfile
+                    .rename(progress_bar, &new_path, false)
+                    .await?
+                    .create(connection, RomfileType::Romfile)
+                    .await?;
             }
         }
     }

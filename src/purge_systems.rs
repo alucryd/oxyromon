@@ -40,16 +40,12 @@ async fn purge_system(
     for romfile in romfiles {
         let new_path = trash_directory.join(Path::new(&romfile.path).file_name().unwrap());
         romfile
-            .as_common()?
+            .as_common(connection)
+            .await?
             .rename(progress_bar, &new_path, false)
+            .await?
+            .update(connection, romfile.id)
             .await?;
-        update_romfile(
-            connection,
-            romfile.id,
-            new_path.as_os_str().to_str().unwrap(),
-            romfile.size as u64,
-        )
-        .await;
     }
 
     progress_bar.println("Deleting system");

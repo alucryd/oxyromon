@@ -200,7 +200,7 @@ pub trait AsRvz {
     fn as_rvz(&self) -> SimpleResult<RvzRomfile>;
 }
 
-impl AsRvz for Romfile {
+impl AsRvz for CommonRomfile {
     fn as_rvz(&self) -> SimpleResult<RvzRomfile> {
         RvzRomfile::from_path(&self.path)
     }

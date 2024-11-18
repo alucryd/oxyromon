@@ -5,7 +5,7 @@ use super::super::import_roms;
 use super::*;
 use itertools::Itertools;
 use std::fs::DirEntry;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 

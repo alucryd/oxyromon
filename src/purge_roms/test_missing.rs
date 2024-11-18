@@ -5,7 +5,7 @@ use super::super::import_roms;
 use super::*;
 use itertools::Itertools;
 use std::fs::DirEntry;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -47,7 +47,11 @@ async fn test() {
         .unwrap();
 
     let romfiles = find_romfiles(&mut connection).await;
-    remove_file(&progress_bar, &Path::new(&romfiles[0].path), false)
+    romfiles[0]
+        .as_common(&mut connection)
+        .await
+        .unwrap()
+        .delete(&progress_bar, false)
         .await
         .unwrap();
 

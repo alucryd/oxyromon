@@ -32,7 +32,12 @@ axum = { version = "0.7.7", default-features = false, features = [
 ], optional = true }
 cdfs = { version = "0.2.3", default-features = false }
 cfg-if = "1.0.0"
-chrono = { version = "0.4.38", default-features = false, features = ["std", "alloc", "now", "clock"] }
+chrono = { version = "0.4.38", default-features = false, features = [
+    "std",
+    "alloc",
+    "now",
+    "clock",
+] }
 clap = "4.5.19"
 crc32fast = "1.4.2"
 dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
@@ -59,6 +64,7 @@ phf = { version = "0.11.2", features = ["macros"] }
 quick-xml = { version = "0.36.2", features = ["serialize"] }
 rayon = "1.10.0"
 regex = "1.11.0"
+relative-path = "1.9.3"
 reqwest = { version = "0.12.8", default-features = false }
 rust-embed = { version = "8.5.0", features = ["compression"] }
 serde = { version = "1.0.210", features = ["derive"] }

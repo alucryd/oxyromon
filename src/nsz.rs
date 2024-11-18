@@ -198,12 +198,6 @@ pub trait AsNsp {
     fn as_nsp(&self) -> SimpleResult<NspRomfile>;
 }
 
-impl AsNsp for Romfile {
-    fn as_nsp(&self) -> SimpleResult<NspRomfile> {
-        NspRomfile::from_path(&self.path)
-    }
-}
-
 impl AsNsp for CommonRomfile {
     fn as_nsp(&self) -> SimpleResult<NspRomfile> {
         NspRomfile::from_path(&self.path)
@@ -214,7 +208,7 @@ pub trait AsNsz {
     fn as_nsz(&self) -> SimpleResult<NszRomfile>;
 }
 
-impl AsNsz for Romfile {
+impl AsNsz for CommonRomfile {
     fn as_nsz(&self) -> SimpleResult<NszRomfile> {
         NszRomfile::from_path(&self.path)
     }

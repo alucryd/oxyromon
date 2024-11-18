@@ -12,13 +12,13 @@ use super::nsz;
 use super::nsz::AsNsz;
 use super::prompt::*;
 use super::sevenzip;
+use super::sevenzip::AsArchive;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
-use std::path::Path;
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
@@ -140,7 +140,7 @@ async fn check_system(
     let mut errors = 0;
 
     for romfile in &romfiles {
-        let romfile_path = get_canonicalized_path(&romfile.path).await?;
+        let romfile_path = romfile.as_common(&mut transaction).await?.path;
         let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
         let romfile_roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
@@ -188,12 +188,21 @@ async fn check_system(
                         Some(parent_id) => {
                             let parent_chd_romfile =
                                 find_romfile_by_id(&mut transaction, parent_id).await;
-                            romfile.as_chd_with_cue_and_parent(
-                                &cue_romfile.path,
-                                &parent_chd_romfile.path,
-                            )?
+                            romfile
+                                .as_common(&mut transaction)
+                                .await?
+                                .as_chd_with_cue_and_parent(
+                                    &cue_romfile.as_common(&mut transaction).await?,
+                                    &parent_chd_romfile
+                                        .as_common(&mut transaction)
+                                        .await?
+                                        .as_chd()?,
+                                )?
                         }
-                        None => romfile.as_chd_with_cue(&cue_romfile.path)?,
+                        None => romfile
+                            .as_common(&mut transaction)
+                            .await?
+                            .as_chd_with_cue(&cue_romfile.as_common(&mut transaction).await?)?,
                     };
                     chd_romfile
                         .check(
@@ -210,9 +219,17 @@ async fn check_system(
                         Some(parent_id) => {
                             let parent_chd_romfile =
                                 find_romfile_by_id(&mut transaction, parent_id).await;
-                            romfile.as_chd_with_parent(&parent_chd_romfile.path)?
+                            romfile
+                                .as_common(&mut transaction)
+                                .await?
+                                .as_chd_with_parent(
+                                    &parent_chd_romfile
+                                        .as_common(&mut transaction)
+                                        .await?
+                                        .as_chd()?,
+                                )?
                         }
-                        None => romfile.as_chd()?,
+                        None => romfile.as_common(&mut transaction).await?.as_chd()?,
                     };
                     chd_romfile
                         .check(
@@ -231,6 +248,8 @@ async fn check_system(
                 break;
             }
             result = romfile
+                .as_common(&mut transaction)
+                .await?
                 .as_xso()?
                 .check(
                     &mut transaction,
@@ -246,6 +265,8 @@ async fn check_system(
                 break;
             }
             result = romfile
+                .as_common(&mut transaction)
+                .await?
                 .as_nsz()?
                 .check(
                     &mut transaction,
@@ -261,6 +282,8 @@ async fn check_system(
                 break;
             }
             result = romfile
+                .as_common(&mut transaction)
+                .await?
                 .as_rvz()?
                 .check(
                     &mut transaction,
@@ -276,6 +299,8 @@ async fn check_system(
                 break;
             }
             result = romfile
+                .as_common(&mut transaction)
+                .await?
                 .as_xso()?
                 .check(
                     &mut transaction,
@@ -287,7 +312,8 @@ async fn check_system(
                 .await;
         } else {
             result = romfile
-                .as_common()?
+                .as_common(&mut transaction)
+                .await?
                 .check(
                     &mut transaction,
                     progress_bar,
@@ -302,13 +328,11 @@ async fn check_system(
             errors += 1;
             move_to_trash(&mut transaction, progress_bar, system, romfile).await?;
         } else if size {
-            update_romfile(
-                &mut transaction,
-                romfile.id,
-                &romfile.path,
-                Path::new(&romfile.path).metadata().unwrap().len(),
-            )
-            .await;
+            romfile
+                .as_common(&mut transaction)
+                .await?
+                .update(&mut transaction, romfile.id)
+                .await?;
         }
     }
 
@@ -334,7 +358,11 @@ async fn check_archive(
     roms: Vec<&Rom>,
     hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
-    let archive_romfiles = sevenzip::parse(progress_bar, &romfile.path).await?;
+    let archive_romfiles = romfile
+        .as_common(connection)
+        .await?
+        .as_archives(progress_bar)
+        .await?;
     if archive_romfiles.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
     }
@@ -356,20 +384,21 @@ async fn move_to_trash(
     system: &System,
     romfile: &Romfile,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, Some(system))
-        .await?
-        .join(Path::new(&romfile.path).file_name().unwrap());
+    let new_path = get_trash_directory(connection, Some(system)).await?.join(
+        romfile
+            .as_common(connection)
+            .await?
+            .path
+            .file_name()
+            .unwrap(),
+    );
     romfile
-        .as_common()?
+        .as_common(connection)
+        .await?
         .rename(progress_bar, &new_path, false)
+        .await?
+        .update(connection, romfile.id)
         .await?;
-    update_romfile(
-        connection,
-        romfile.id,
-        new_path.as_os_str().to_str().unwrap(),
-        romfile.size as u64,
-    )
-    .await;
     Ok(())
 }
 

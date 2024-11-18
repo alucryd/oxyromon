@@ -1,6 +1,5 @@
 use super::common::*;
 use super::config::*;
-use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
 use lazy_static::lazy_static;
@@ -32,7 +31,10 @@ impl PatchFile for XdeltaRomfile {
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> simple_error::SimpleResult<CommonRomfile> {
-        progress_bar.set_message(format!("Applying \"{}\"", &self.as_common()?));
+        progress_bar.set_message(format!(
+            "Applying \"{}\"",
+            &self.path.file_name().unwrap().to_str().unwrap()
+        ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -67,7 +69,7 @@ impl PatchFile for XdeltaRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(CommonRomfile { path })
+        CommonRomfile::from_path(&path)
     }
 }
 
@@ -86,7 +88,7 @@ pub trait AsXdelta {
     fn as_xdelta(&self) -> SimpleResult<XdeltaRomfile>;
 }
 
-impl AsXdelta for Romfile {
+impl AsXdelta for CommonRomfile {
     fn as_xdelta(&self) -> SimpleResult<XdeltaRomfile> {
         XdeltaRomfile::from_path(&self.path)
     }

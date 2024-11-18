@@ -3,6 +3,7 @@ use super::super::generate_playlists;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use relative_path::PathExt;
 use std::env;
 use std::path::Path;
 use tempfile::{NamedTempFile, TempDir};
@@ -113,11 +114,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (Disc 1).chd")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
     assert!(romfile.parent_id.is_none());
 
@@ -129,11 +130,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (Disc 2).chd")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
     assert_eq!(romfile.parent_id, Some(parent_romfile_id));
 }
