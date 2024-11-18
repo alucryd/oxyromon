@@ -103,16 +103,16 @@ pub async fn import_patch<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let system = prompt_for_system(connection, None).await?;
     let system_directory = get_system_directory(connection, &system).await?;
-    let mut games = find_games_with_romfiles_by_system_id(connection, system.id).await;
-    let game = match prompt_for_game(&mut games, None)? {
+    let games = find_games_with_romfiles_by_system_id(connection, system.id).await;
+    let game = match prompt_for_game(&games, None)? {
         Some(game) => game,
         None => {
             progress_bar.println("Skipping patch");
             return Ok(());
         }
     };
-    let mut roms = find_roms_by_game_id_no_parents(connection, game.id).await;
-    let rom = match prompt_for_rom(&mut roms, None)? {
+    let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
+    let rom = match prompt_for_rom(&roms, None)? {
         Some(rom) => rom,
         None => {
             progress_bar.println("Skipping patch");
@@ -145,7 +145,7 @@ pub async fn import_patch<P: AsRef<Path>>(
     .to_string();
 
     let existing_patches = find_patches_by_rom_id(connection, rom.id).await;
-    if existing_patches.len() > 0 {
+    if !existing_patches.is_empty() {
         extension = format!("{}{}", extension, existing_patches.len());
     }
 
@@ -162,29 +162,19 @@ pub async fn import_patch<P: AsRef<Path>>(
         if force {
             CommonRomfile::from_path(patch_path)?
                 .rename(progress_bar, &romfile_path, false)
+                .await?
+                .update(connection, patch.romfile_id)
                 .await?;
-            update_romfile(
-                connection,
-                patch.romfile_id,
-                romfile_path.as_os_str().to_str().unwrap(),
-                romfile_path.metadata().unwrap().len(),
-            )
-            .await;
         } else {
             progress_bar.println("Name already exists, skipping patch");
         }
     } else {
         let mut transaction = begin_transaction(connection).await;
-        CommonRomfile::from_path(patch_path)?
+        let romfile_id = CommonRomfile::from_path(patch_path)?
             .rename(progress_bar, &romfile_path, false)
+            .await?
+            .create(&mut transaction, RomfileType::Romfile)
             .await?;
-        let romfile_id = create_romfile(
-            &mut transaction,
-            romfile_path.as_os_str().to_str().unwrap(),
-            romfile_path.metadata().unwrap().len(),
-            RomfileType::Romfile,
-        )
-        .await;
         create_patch(
             &mut transaction,
             &patch_name,

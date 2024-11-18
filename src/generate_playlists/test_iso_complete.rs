@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use relative_path::PathExt;
 use std::env;
 use std::path::Path;
 use tempfile::{NamedTempFile, TempDir};
@@ -75,7 +76,10 @@ async fn test() {
 
     let playlist = find_romfile_by_id(&mut connection, playlist_id.unwrap()).await;
     let playlist_path = system_directory.join("Test Game (USA, Europe).m3u");
-    assert_eq!(playlist.path, playlist_path.as_os_str().to_str().unwrap());
+    assert_eq!(
+        playlist.path,
+        playlist_path.relative_to(&rom_directory).unwrap().as_str()
+    );
     assert!(playlist_path.is_file());
     assert_eq!(playlist.romfile_type, RomfileType::Playlist as i64);
 

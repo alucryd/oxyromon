@@ -9,6 +9,7 @@ use core::fmt;
 use digest::Digest;
 use indicatif::ProgressBar;
 use md5::Md5;
+use relative_path::{PathExt, RelativePathBuf};
 use sha1::Sha1;
 use simple_error::SimpleResult;
 use sqlx::SqliteConnection;
@@ -23,6 +24,10 @@ pub struct CommonRomfile {
 }
 
 pub trait CommonFile {
+    async fn get_relative_path(
+        &self,
+        connection: &mut SqliteConnection,
+    ) -> SimpleResult<RelativePathBuf>;
     async fn rename<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -42,6 +47,18 @@ pub trait PatchFile {
 }
 
 impl CommonFile for CommonRomfile {
+    async fn get_relative_path(
+        &self,
+        connection: &mut SqliteConnection,
+    ) -> SimpleResult<RelativePathBuf> {
+        let rom_directory = get_rom_directory(connection).await;
+        let relative_path = try_with!(
+            self.path.relative_to(rom_directory),
+            "Failed to convert \"{}\"to relative path",
+            &self.path.as_os_str().to_str().unwrap()
+        );
+        Ok(relative_path)
+    }
     async fn rename<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -51,9 +68,7 @@ impl CommonFile for CommonRomfile {
         if self.path != new_path.as_ref() {
             rename_file(progress_bar, &self.path, new_path, quiet).await?;
         }
-        Ok(CommonRomfile {
-            path: new_path.as_ref().to_path_buf(),
-        })
+        CommonRomfile::from_path(new_path)
     }
 
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
@@ -80,14 +95,19 @@ impl FromPath<CommonRomfile> for CommonRomfile {
     }
 }
 
-pub trait AsCommon {
-    fn as_common(&self) -> SimpleResult<CommonRomfile>;
+pub trait AsCommonRelative {
+    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile>;
 }
 
-impl AsCommon for Romfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
+impl AsCommonRelative for Romfile {
+    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile> {
+        let rom_directory = get_rom_directory(connection).await;
+        CommonRomfile::from_path(&rom_directory.join(&self.path))
     }
+}
+
+pub trait AsCommon {
+    fn as_common(&self) -> SimpleResult<CommonRomfile>;
 }
 
 pub trait ToCommon {
@@ -399,12 +419,6 @@ pub trait AsIso {
     fn as_iso(&self) -> SimpleResult<IsoRomfile>;
 }
 
-impl AsIso for Romfile {
-    fn as_iso(&self) -> SimpleResult<IsoRomfile> {
-        IsoRomfile::from_path(&self.path)
-    }
-}
-
 impl AsIso for CommonRomfile {
     fn as_iso(&self) -> SimpleResult<IsoRomfile> {
         IsoRomfile::from_path(&self.path)
@@ -454,12 +468,10 @@ impl FromBinPaths<CueBinRomfile> for CueBinRomfile {
             }
         }
         Ok(CueBinRomfile {
-            cue_romfile: CommonRomfile { path },
+            cue_romfile: CommonRomfile::from_path(&path)?,
             bin_romfiles: bin_paths
                 .iter()
-                .map(|bin_path| CommonRomfile {
-                    path: bin_path.as_ref().to_path_buf(),
-                })
+                .map(|bin_path| CommonRomfile::from_path(bin_path).unwrap())
                 .collect(),
         })
     }
@@ -469,14 +481,35 @@ pub trait AsCueBin {
     fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile>;
 }
 
-impl AsCueBin for Romfile {
+impl AsCueBin for CommonRomfile {
     fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile> {
         CueBinRomfile::from_bin_paths(&self.path, bin_paths)
     }
 }
 
-impl AsCueBin for CommonRomfile {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile> {
-        CueBinRomfile::from_bin_paths(&self.path, bin_paths)
+pub trait Persist {
+    async fn create(
+        &self,
+        connection: &mut SqliteConnection,
+        romfile_type: RomfileType,
+    ) -> SimpleResult<i64>;
+    async fn update(&self, connection: &mut SqliteConnection, id: i64) -> SimpleResult<()>;
+}
+
+impl Persist for CommonRomfile {
+    async fn create(
+        &self,
+        connection: &mut SqliteConnection,
+        romfile_type: RomfileType,
+    ) -> SimpleResult<i64> {
+        let path = &self.get_relative_path(connection).await?;
+        let size = self.get_size().await?;
+        Ok(create_romfile(connection, path.as_str(), size, romfile_type).await)
+    }
+    async fn update(&self, connection: &mut SqliteConnection, id: i64) -> SimpleResult<()> {
+        let path = &self.get_relative_path(connection).await?;
+        let size = self.get_size().await?;
+        update_romfile(connection, id, path.as_str(), size).await;
+        Ok(())
     }
 }

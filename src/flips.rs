@@ -1,5 +1,4 @@
 use super::common::*;
-use super::model::*;
 use super::progress::*;
 use super::SimpleResult;
 use std::path::{Path, PathBuf};
@@ -29,13 +28,16 @@ impl AsCommon for XpsRomfile {
 }
 
 impl PatchFile for XpsRomfile {
-    async fn patch<P: AsRef<std::path::Path>>(
+    async fn patch<P: AsRef<Path>>(
         &self,
         progress_bar: &indicatif::ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> simple_error::SimpleResult<CommonRomfile> {
-        progress_bar.set_message(format!("Applying \"{}\"", &self.as_common()?));
+        progress_bar.set_message(format!(
+            "Applying \"{}\"",
+            &self.path.file_name().unwrap().to_str().unwrap()
+        ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -69,7 +71,7 @@ impl PatchFile for XpsRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(CommonRomfile { path })
+        CommonRomfile::from_path(&path)
     }
 }
 
@@ -86,7 +88,7 @@ pub trait AsXps {
     fn as_xps(&self) -> SimpleResult<XpsRomfile>;
 }
 
-impl AsXps for Romfile {
+impl AsXps for CommonRomfile {
     fn as_xps(&self) -> SimpleResult<XpsRomfile> {
         XpsRomfile::from_path(&self.path)
     }

@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use relative_path::PathExt;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -96,11 +97,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (CUE BIN).7z")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
 
     let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
@@ -112,6 +113,12 @@ async fn test() {
     assert_eq!(rom.name, "Test Game (USA, Europe).cue");
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
-    let archive_romfiles = sevenzip::parse(&progress_bar, &romfile.path).await.unwrap();
+    let archive_romfiles = romfile
+        .as_common(&mut connection)
+        .await
+        .unwrap()
+        .as_archives(&progress_bar)
+        .await
+        .unwrap();
     assert_eq!(archive_romfiles.len(), 3);
 }

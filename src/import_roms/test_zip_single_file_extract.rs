@@ -1,6 +1,7 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
+use relative_path::PathExt;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -41,8 +42,11 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = subcommand()
-        .get_matches_from(&["import-roms", "-x", romfile_path.as_os_str().to_str().unwrap()]);
+    let matches = subcommand().get_matches_from(&[
+        "import-roms",
+        "-x",
+        romfile_path.as_os_str().to_str().unwrap(),
+    ]);
 
     // when
     main(&mut connection, &matches, &progress_bar)
@@ -77,10 +81,10 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).rom")
-            .as_os_str()
-            .to_str()
-            .unwrap(),
+            .relative_to(&rom_directory)
+            .unwrap()
+            .as_str(),
     );
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
 }

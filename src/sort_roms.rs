@@ -549,24 +549,27 @@ async fn sort_system(
             for romfile_move in romfile_moves {
                 romfile_move
                     .0
-                    .as_common()?
+                    .as_common(&mut transaction)
+                    .await?
                     .rename(progress_bar, &romfile_move.1, true)
+                    .await?
+                    .update(&mut transaction, romfile_move.0.id)
                     .await?;
-                update_romfile(
-                    &mut transaction,
-                    romfile_move.0.id,
-                    &romfile_move.1,
-                    romfile_move.0.size as u64,
-                )
-                .await;
                 // delete empty directories
-                let mut directory = Path::new(&romfile_move.0.path).parent().unwrap();
+                let mut directory = romfile_move
+                    .0
+                    .as_common(&mut transaction)
+                    .await?
+                    .path
+                    .parent()
+                    .unwrap()
+                    .to_path_buf();
                 while directory.read_dir().unwrap().next().is_none() {
                     if directory == system_directory {
                         break;
                     } else {
                         remove_directory(progress_bar, &directory, true).await?;
-                        directory = directory.parent().unwrap();
+                        directory = directory.parent().unwrap().to_path_buf();
                     }
                 }
             }

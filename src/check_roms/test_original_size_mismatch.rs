@@ -2,7 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -48,7 +48,7 @@ async fn test() {
     let romfile = find_romfiles(&mut connection).await.remove(0);
     let file = fs::OpenOptions::new()
         .write(true)
-        .open(&romfile.path)
+        .open(rom_directory.path().join(&romfile.path))
         .await
         .unwrap();
     file.set_len(512).await.unwrap();
@@ -73,5 +73,5 @@ async fn test() {
 
     let romfile = romfiles.remove(0);
     assert!(romfile.path.contains("/Trash/"));
-    assert!(Path::new(&romfile.path).is_file());
+    assert!(&rom_directory.path().join(&romfile.path).is_file());
 }

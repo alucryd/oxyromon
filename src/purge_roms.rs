@@ -1,3 +1,4 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::prompt::*;
@@ -5,8 +6,8 @@ use super::util::*;
 use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
+use relative_path::PathExt;
 use sqlx::sqlite::SqliteConnection;
-use std::path::Path;
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -92,7 +93,7 @@ async fn purge_missing_romfiles(
     let mut count = 0;
 
     for romfile in romfiles {
-        if !Path::new(&romfile.path).is_file() {
+        if !romfile.as_common(connection).await?.path.is_file() {
             delete_romfile_by_id(connection, romfile.id).await;
             count += 1;
         }
@@ -128,9 +129,12 @@ async fn purge_trashed_romfiles(
             let mut transaction = begin_transaction(connection).await;
 
             for romfile in &romfiles {
-                let romfile_path = Path::new(&romfile.path);
-                if romfile_path.is_file() {
-                    remove_file(progress_bar, &romfile_path, false).await?;
+                if romfile.as_common(&mut transaction).await?.path.is_file() {
+                    romfile
+                        .as_common(&mut transaction)
+                        .await?
+                        .delete(progress_bar, false)
+                        .await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
                     count += 1;
                 }
@@ -167,9 +171,12 @@ async fn purge_orphan_romfiles(
             let mut transaction = begin_transaction(connection).await;
 
             for romfile in &romfiles {
-                let romfile_path = Path::new(&romfile.path);
-                if romfile_path.is_file() {
-                    remove_file(progress_bar, &romfile_path, false).await?;
+                if romfile.as_common(&mut transaction).await?.path.is_file() {
+                    romfile
+                        .as_common(&mut transaction)
+                        .await?
+                        .delete(progress_bar, false)
+                        .await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
                     count += 1;
                 }
@@ -197,11 +204,17 @@ async fn purge_foreign_romfiles(
     let mut count = 0;
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
-            let path = entry.path().as_os_str().to_str().unwrap().to_string();
-            if find_romfile_by_path(connection, &path).await.is_none() {
-                progress_bar.println(format!("Delete \"{}\"?", path));
+            let relative_path = try_with!(
+                entry.path().relative_to(rom_directory),
+                "Failed to retrieve relative path"
+            );
+            if find_romfile_by_path(connection, relative_path.as_str())
+                .await
+                .is_none()
+            {
+                progress_bar.println(format!("Delete \"{}\"?", relative_path.as_str()));
                 if answer_yes || confirm(true)? {
-                    remove_file(progress_bar, &path, false).await?;
+                    remove_file(progress_bar, &entry.path(), false).await?;
                     count += 1;
                 }
             }

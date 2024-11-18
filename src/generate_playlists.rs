@@ -1,3 +1,4 @@
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::download_dats::REDUMP_SYSTEM_URL;
@@ -113,7 +114,12 @@ async fn process_system(
             continue;
         }
 
-        let mut playlist_path = PathBuf::from(&existing_romfiles.first().unwrap().path);
+        let mut playlist_path = existing_romfiles
+            .first()
+            .unwrap()
+            .as_common(connection)
+            .await?
+            .path;
         playlist_path.set_file_name(&playlist_name);
         let playlist_file = File::create(&playlist_path)
             .await
@@ -145,26 +151,20 @@ async fn process_system(
                 .await
             {
                 Some(playlist) => {
-                    update_romfile(
-                        connection,
-                        playlist.id,
-                        playlist_path.as_os_str().to_str().unwrap(),
-                        playlist_path.metadata().unwrap().len(),
-                    )
-                    .await;
+                    playlist
+                        .as_common(connection)
+                        .await?
+                        .update(connection, playlist.id)
+                        .await?;
                     if playlist.path != playlist_path.as_os_str().to_str().unwrap() {
                         remove_file(progress_bar, &playlist.path, true).await?;
                     }
                     playlist.id
                 }
                 None => {
-                    create_romfile(
-                        connection,
-                        playlist_path.as_os_str().to_str().unwrap(),
-                        playlist_path.metadata().unwrap().len(),
-                        RomfileType::Playlist,
-                    )
-                    .await
+                    CommonRomfile::from_path(&playlist_path)?
+                        .create(connection, RomfileType::Playlist)
+                        .await?
                 }
             };
         for game in games {

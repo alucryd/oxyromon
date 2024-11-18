@@ -114,7 +114,7 @@ pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> 
 pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> SimpleResult<Option<&Game>> {
     match games.len() {
         0 => bail!("No available rom"),
-        1 => Ok(games.get(0)),
+        1 => Ok(games.first()),
         _ => {
             let index = select_opt(
                 &games
@@ -133,7 +133,7 @@ pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> SimpleResult<O
 pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> SimpleResult<Option<&Rom>> {
     match roms.len() {
         0 => bail!("No available rom"),
-        1 => Ok(roms.get(0)),
+        1 => Ok(roms.first()),
         _ => {
             let index = select_opt(
                 &roms.iter().map(|rom| &rom.name).collect::<Vec<&String>>(),
@@ -218,7 +218,7 @@ pub async fn prompt_for_parent_romfile(
 }
 
 pub fn prompt_for_name(prompt: &str) -> SimpleResult<Option<String>> {
-    Ok(editor(prompt)?)
+    editor(prompt)
 }
 
 pub fn confirm(default: bool) -> SimpleResult<bool> {

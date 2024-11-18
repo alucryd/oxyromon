@@ -3,6 +3,7 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::util::*;
 use super::*;
+use relative_path::PathExt;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -94,11 +95,11 @@ async fn test() {
                     String::from("#")
                 })
                 .join(&romfile_names.get(i).unwrap())
-                .as_os_str()
-                .to_str()
-                .unwrap(),
+                .relative_to(&rom_directory)
+                .unwrap()
+                .as_str(),
             &romfile.path
         );
-        assert!(Path::new(&romfile.path).is_file());
+        assert!(rom_directory.path().join(&romfile.path).is_file());
     }
 }
