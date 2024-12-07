@@ -19,7 +19,6 @@ use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
-use std::path::PathBuf;
 use tokio::net::TcpListener;
 use tokio::select;
 use tokio::signal::ctrl_c;
@@ -109,8 +108,7 @@ async fn run(address: &str, port: &str) -> SimpleResult<()> {
     Ok(())
 }
 
-pub async fn main(db_file: PathBuf, matches: &ArgMatches) -> SimpleResult<()> {
-    let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
+pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     POOL.set(pool).expect("Failed to set database pool");
 
     select! {

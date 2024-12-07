@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 pub struct WbfsRomfile {
-    // pub path: PathBuf,
+    romfile: CommonRomfile,
 }
 
 pub trait ToWbfs {
@@ -39,14 +39,14 @@ impl ToWbfs for IsoRomfile {
 
         let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap())
+            .join(self.romfile.path.file_name().unwrap())
             .with_extension(WBFS_EXTENSION);
 
         let output = Command::new(WIT)
             .arg("COPY")
             .arg("--wbfs")
             .arg("--source")
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .arg("--dest")
             .arg(&path)
             .output()
@@ -60,7 +60,9 @@ impl ToWbfs for IsoRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(WbfsRomfile {})
+        Ok(WbfsRomfile {
+            romfile: CommonRomfile::from_path(&path)?,
+        })
     }
 }
 

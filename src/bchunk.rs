@@ -61,7 +61,7 @@ impl ToIso for CueBinRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(IsoRomfile { path })
+        CommonRomfile::from_path(&path)?.as_iso()
     }
 }
 

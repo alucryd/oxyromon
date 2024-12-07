@@ -6,7 +6,7 @@ use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
@@ -26,13 +26,7 @@ pub enum RvzCompressionAlgorithm {
 }
 
 pub struct RvzRomfile {
-    pub path: PathBuf,
-}
-
-impl AsCommon for RvzRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
+    pub romfile: CommonRomfile,
 }
 
 impl HashAndSize for RvzRomfile {
@@ -47,10 +41,10 @@ impl HashAndSize for RvzRomfile {
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
         let (hash, size) = iso_romfile
-            .as_common()?
+            .romfile
             .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
             .await?;
-        iso_romfile.as_common()?.delete(progress_bar, true).await?;
+        iso_romfile.romfile.delete(progress_bar, true).await?;
         Ok((hash, size))
     }
 }
@@ -64,11 +58,11 @@ impl Check for RvzRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.as_common()?));
+        progress_bar.println(format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
         iso_romfile
-            .as_common()?
+            .romfile
             .check(connection, progress_bar, header, roms, hash_algorithm)
             .await?;
         Ok(())
@@ -87,12 +81,12 @@ impl ToIso for RvzRomfile {
 
         progress_bar.println(format!(
             "Extracting \"{}\"",
-            self.path.file_name().unwrap().to_str().unwrap()
+            self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
 
         let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap())
+            .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
         let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
@@ -100,7 +94,7 @@ impl ToIso for RvzRomfile {
             .arg("-f")
             .arg("iso")
             .arg("-i")
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .arg("-o")
             .arg(&path)
             .output()
@@ -114,7 +108,7 @@ impl ToIso for RvzRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(IsoRomfile { path })
+        CommonRomfile::from_path(&path)?.as_iso()
     }
 }
 
@@ -146,7 +140,7 @@ impl ToRvz for IsoRomfile {
 
         let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap())
+            .join(self.romfile.path.file_name().unwrap())
             .with_extension(RVZ_EXTENSION);
 
         progress_bar.println(format!(
@@ -166,7 +160,7 @@ impl ToRvz for IsoRomfile {
             .arg("-b")
             .arg((block_size * 1024).to_string())
             .arg("-i")
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .arg("-o")
             .arg(&path);
         if scrub {
@@ -181,28 +175,28 @@ impl ToRvz for IsoRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(RvzRomfile { path })
-    }
-}
-
-impl FromPath<RvzRomfile> for RvzRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<RvzRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != RVZ_EXTENSION {
-            bail!("Not a valid rvz");
-        }
-        Ok(RvzRomfile { path })
+        CommonRomfile::from_path(&path)?.as_rvz()
     }
 }
 
 pub trait AsRvz {
-    fn as_rvz(&self) -> SimpleResult<RvzRomfile>;
+    fn as_rvz(self) -> SimpleResult<RvzRomfile>;
 }
 
 impl AsRvz for CommonRomfile {
-    fn as_rvz(&self) -> SimpleResult<RvzRomfile> {
-        RvzRomfile::from_path(&self.path)
+    fn as_rvz(self) -> SimpleResult<RvzRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != RVZ_EXTENSION
+        {
+            bail!("Not a valid rvz");
+        }
+        Ok(RvzRomfile { romfile: self })
     }
 }
 

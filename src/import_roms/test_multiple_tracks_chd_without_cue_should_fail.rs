@@ -44,7 +44,7 @@ async fn test() {
         &progress_bar,
         &Some(&system),
         &HashSet::new(),
-        &romfile_path,
+        CommonRomfile::from_path(&romfile_path).unwrap(),
         &HashAlgorithm::Crc,
         true,
         false,

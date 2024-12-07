@@ -192,8 +192,8 @@ async fn check_system(
                                 .as_common(&mut transaction)
                                 .await?
                                 .as_chd_with_cue_and_parent(
-                                    &cue_romfile.as_common(&mut transaction).await?,
-                                    &parent_chd_romfile
+                                    cue_romfile.as_common(&mut transaction).await?,
+                                    parent_chd_romfile
                                         .as_common(&mut transaction)
                                         .await?
                                         .as_chd()?,
@@ -202,7 +202,7 @@ async fn check_system(
                         None => romfile
                             .as_common(&mut transaction)
                             .await?
-                            .as_chd_with_cue(&cue_romfile.as_common(&mut transaction).await?)?,
+                            .as_chd_with_cue(cue_romfile.as_common(&mut transaction).await?)?,
                     };
                     chd_romfile
                         .check(
@@ -223,7 +223,7 @@ async fn check_system(
                                 .as_common(&mut transaction)
                                 .await?
                                 .as_chd_with_parent(
-                                    &parent_chd_romfile
+                                    parent_chd_romfile
                                         .as_common(&mut transaction)
                                         .await?
                                         .as_chd()?,
@@ -369,7 +369,7 @@ async fn check_archive(
     for archive_romfile in archive_romfiles {
         let rom = roms
             .iter()
-            .find(|rom| rom.name == archive_romfile.file_path)
+            .find(|rom| rom.name == archive_romfile.path)
             .unwrap();
         archive_romfile
             .check(connection, progress_bar, header, &[rom], hash_algorithm)

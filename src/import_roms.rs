@@ -1,13 +1,17 @@
+use crate::chdman::AsChd;
+
 use super::chdman;
-use super::chdman::ChdRomfile;
 use super::common::*;
 use super::config::*;
 use super::ctrtool;
 use super::database::*;
 use super::dolphin;
+use super::dolphin::AsRvz;
 use super::maxcso;
+use super::maxcso::AsXso;
 use super::model::*;
 use super::nsz;
+use super::nsz::AsNsz;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
@@ -128,17 +132,17 @@ pub async fn main(
     let mut system_ids: HashSet<i64> = HashSet::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
-    for romfile_path in matches.get_many::<PathBuf>("ROMS").unwrap() {
+    for path in matches.get_many::<PathBuf>("ROMS").unwrap() {
         let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfile_path = get_canonicalized_path(&romfile_path).await?;
-        let romfile_extension = romfile_path
+        let mut path = get_canonicalized_path(&path).await?;
+        let extension = path
             .extension()
             .unwrap_or(&OsString::new())
             .to_str()
             .unwrap()
             .to_lowercase();
-        if matches.get_flag("EXTRACT") && ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
-            for archive_romfile in CommonRomfile::from_path(&romfile_path)?
+        if matches.get_flag("EXTRACT") && ARCHIVE_EXTENSIONS.contains(&extension.as_str()) {
+            for archive_romfile in CommonRomfile::from_path(&path)?
                 .as_archives(progress_bar)
                 .await?
             {
@@ -146,7 +150,7 @@ pub async fn main(
                     .to_common(progress_bar, &tmp_directory.path())
                     .await?;
             }
-            romfile_path = tmp_directory.path().to_path_buf();
+            path = tmp_directory.path().to_path_buf();
         }
         for system in &systems {
             if let Some(system) = system {
@@ -156,40 +160,26 @@ pub async fn main(
                 Some(system) => find_header_by_system_id(connection, system.id).await,
                 None => None,
             };
-            if romfile_path.is_dir() {
-                if romfile_path.join(PS3_DISC_SFB).is_file() {
+            if path.is_dir() {
+                if path.join(PS3_DISC_SFB).is_file() {
                     progress_bar.println(format!(
                         "Processing \"{}\"",
-                        &romfile_path.file_name().unwrap().to_str().unwrap()
+                        &path.file_name().unwrap().to_str().unwrap()
                     ));
                     match system.as_ref() {
                         Some(system) => {
-                            import_jbfolder(
-                                connection,
-                                progress_bar,
-                                system,
-                                &romfile_path,
-                                trash,
-                                unattended,
-                            )
-                            .await?
+                            import_jbfolder(connection, progress_bar, system, &path, unattended)
+                                .await?
                         }
                         None => {
                             let system =
                                 prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
-                            import_jbfolder(
-                                connection,
-                                progress_bar,
-                                &system,
-                                &romfile_path,
-                                trash,
-                                unattended,
-                            )
-                            .await?;
+                            import_jbfolder(connection, progress_bar, &system, &path, unattended)
+                                .await?;
                         }
                     }
                 } else {
-                    let walker = WalkDir::new(&romfile_path).into_iter();
+                    let walker = WalkDir::new(&path).into_iter();
                     for entry in walker.filter_map(|e| e.ok()) {
                         if entry.path().is_file() {
                             let (new_system_ids, new_game_ids) = import_rom(
@@ -215,7 +205,7 @@ pub async fn main(
                     progress_bar,
                     &system.as_ref(),
                     &header,
-                    &romfile_path,
+                    &path,
                     &hash_algorithm,
                     trash,
                     force,
@@ -247,7 +237,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     header: &Option<Header>,
-    romfile_path: &P,
+    path: &P,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     force: bool,
@@ -255,7 +245,7 @@ pub async fn import_rom<P: AsRef<Path>>(
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     progress_bar.println(format!(
         "Processing \"{}\"",
-        romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+        path.as_ref().file_name().unwrap().to_str().unwrap()
     ));
 
     let mut transaction = begin_transaction(connection).await;
@@ -263,20 +253,23 @@ pub async fn import_rom<P: AsRef<Path>>(
     let mut game_ids: HashSet<i64> = HashSet::new();
 
     // abort if the romfile is already in the database
-    if !force
-        && find_romfile_by_path(
-            &mut transaction,
-            romfile_path.as_ref().as_os_str().to_str().unwrap(),
-        )
-        .await
-        .is_some()
-    {
-        progress_bar.println("Already in database");
-        return Ok((system_ids, game_ids));
+    let romfile = CommonRomfile::from_path(path)?;
+    if let Ok(relative_path) = romfile.get_relative_path(&mut transaction).await {
+        if !force
+            && find_romfile_by_path(
+                &mut transaction,
+                relative_path.as_os_str().to_str().unwrap(),
+            )
+            .await
+            .is_some()
+        {
+            progress_bar.println("Already in database");
+            return Ok((system_ids, game_ids));
+        }
     }
 
-    let romfile_extension = romfile_path
-        .as_ref()
+    let romfile_extension = romfile
+        .path
         .extension()
         .unwrap_or(&OsString::new())
         .to_str()
@@ -294,7 +287,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system,
             header,
             &game_ids,
-            &romfile_path,
+            romfile,
             &romfile_extension,
             hash_algorithm,
             trash,
@@ -313,7 +306,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -333,7 +326,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -351,7 +344,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -371,7 +364,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -391,7 +384,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -411,7 +404,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             progress_bar,
             system,
             &game_ids,
-            &romfile_path,
+            romfile,
             hash_algorithm,
             trash,
             unattended,
@@ -427,7 +420,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         system,
         header,
         &game_ids,
-        &romfile_path,
+        romfile,
         hash_algorithm,
         trash,
         unattended,
@@ -447,11 +440,10 @@ async fn import_jbfolder<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    folder_path: &P,
-    trash: bool,
+    path: &P,
     unattended: bool,
 ) -> SimpleResult<()> {
-    let sfb_romfile_path = folder_path.as_ref().join(PS3_DISC_SFB);
+    let sfb_romfile_path = path.as_ref().join(PS3_DISC_SFB);
 
     // abort if the romfile is already in the database
     if find_romfile_by_path(connection, sfb_romfile_path.as_os_str().to_str().unwrap())
@@ -481,7 +473,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     {
         let system_directory = get_system_directory(&mut transaction, system).await?;
 
-        let walker = WalkDir::new(folder_path.as_ref()).into_iter();
+        let walker = WalkDir::new(path.as_ref()).into_iter();
         for entry in walker.filter_map(|e| e.ok()) {
             if entry.path().is_file() {
                 progress_bar.println(format!(
@@ -576,10 +568,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
             }
         }
     } else {
-        if trash {
-            move_to_trash(&mut transaction, progress_bar, &folder_path).await?;
-        }
-        return Ok(());
+        progress_bar.println("No match");
     }
 
     commit_transaction(transaction).await;
@@ -588,22 +577,20 @@ async fn import_jbfolder<P: AsRef<Path>>(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_archive<P: AsRef<Path>>(
+async fn import_archive(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     header: &Option<Header>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     romfile_extension: &str,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let archive_romfiles = CommonRomfile::from_path(romfile_path)?
-        .as_archives(progress_bar)
-        .await?;
+    let archive_romfiles = romfile.as_archives(progress_bar).await?;
     let romfiles_count = archive_romfiles.len();
 
     let mut roms_games_systems_archive_romfiles: Vec<(
@@ -618,8 +605,14 @@ async fn import_archive<P: AsRef<Path>>(
     for archive_romfile in archive_romfiles {
         progress_bar.println(format!(
             "Processing \"{} ({})\"",
-            &archive_romfile.file_path,
-            romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+            &archive_romfile.path,
+            archive_romfile
+                .romfile
+                .path
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
         ));
 
         let (hash, size) = match header {
@@ -647,16 +640,27 @@ async fn import_archive<P: AsRef<Path>>(
             }
         };
 
-        let path = Path::new(&archive_romfile.path);
         let mut game_names: Vec<&str> = Vec::new();
-        game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
-        if let Some(path) = path.parent() {
-            let game_name = path.file_name().unwrap().to_str().unwrap();
-            if !game_name.is_empty() {
-                game_names.push(game_name);
+        game_names.push(
+            archive_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
+
+        let rom_path = Path::new(&archive_romfile.path);
+        if let Some(path) = rom_path.parent() {
+            if let Some(file_name) = path.file_name() {
+                let game_name = file_name.to_str().unwrap();
+                if !game_name.is_empty() {
+                    game_names.push(game_name);
+                }
             }
         }
-        let rom_name = path.file_name().unwrap().to_str();
+        let rom_name = rom_path.file_name().unwrap().to_str();
 
         match find_rom_by_size_and_hash(
             connection,
@@ -679,7 +683,7 @@ async fn import_archive<P: AsRef<Path>>(
             }
             None => {
                 if trash && romfiles_count == 1 {
-                    move_to_trash(connection, progress_bar, romfile_path).await?;
+                    move_to_trash(connection, progress_bar, &romfile).await?;
                 }
             }
         }
@@ -708,7 +712,7 @@ async fn import_archive<P: AsRef<Path>>(
             let system_directory = get_system_directory(connection, system).await?;
 
             for (rom, _game, _system, archive_romfile) in &roms_games_systems_archive_romfiles {
-                if archive_romfile.file_path != rom.name {
+                if archive_romfile.path != rom.name {
                     archive_romfile.rename_file(progress_bar, &rom.name).await?;
                 }
             }
@@ -734,7 +738,7 @@ async fn import_archive<P: AsRef<Path>>(
             };
 
             // move file
-            rename_file(progress_bar, romfile_path, &new_path, false).await?;
+            romfile.rename(progress_bar, &new_path, false).await?;
 
             // persist in database
             create_or_update_romfile(
@@ -779,22 +783,19 @@ async fn import_archive<P: AsRef<Path>>(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_chd<P: AsRef<Path>>(
+async fn import_chd(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
 
-    let cue_path = romfile_path
-        .as_ref()
-        .to_path_buf()
-        .with_extension(CUE_EXTENSION);
+    let cue_path = romfile.path.to_path_buf().with_extension(CUE_EXTENSION);
 
     if cue_path.is_file() {
         progress_bar.println("CUE file found");
@@ -816,11 +817,7 @@ async fn import_chd<P: AsRef<Path>>(
         )
         .await?
         {
-            let chd_romfile = ChdRomfile {
-                path: romfile_path.as_ref().to_path_buf(),
-                cue_path: Some(cue_path.clone()),
-                parent_path: None,
-            };
+            let chd_romfile = romfile.as_chd_with_cue(cue_romfile)?;
             let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, cue_rom.game_id)
                 .await
                 .into_iter()
@@ -857,7 +854,7 @@ async fn import_chd<P: AsRef<Path>>(
             }) {
                 progress_bar.println("CRC mismatch");
                 if trash {
-                    move_to_trash(connection, progress_bar, romfile_path).await?;
+                    move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
                 }
                 return Ok(None);
             }
@@ -868,11 +865,13 @@ async fn import_chd<P: AsRef<Path>>(
             let new_chd_path = new_cue_path.with_extension(CHD_EXTENSION);
 
             // move cue and chd if needed
-            cue_romfile
+            chd_romfile
+                .cue_romfile
+                .unwrap()
                 .rename(progress_bar, &new_cue_path, false)
                 .await?;
             chd_romfile
-                .as_common()?
+                .romfile
                 .rename(progress_bar, &new_chd_path, false)
                 .await?;
 
@@ -888,25 +887,21 @@ async fn import_chd<P: AsRef<Path>>(
             Ok(Some([system.id, game.id]))
         } else {
             if trash {
-                move_to_trash(connection, progress_bar, &cue_romfile.path).await?;
+                move_to_trash(connection, progress_bar, &cue_romfile).await?;
             }
             Ok(None)
         }
     } else {
         progress_bar.println("CUE file not found");
-        let chd_romfile = ChdRomfile {
-            path: romfile_path.as_ref().to_path_buf(),
-            cue_path: None,
-            parent_path: None,
-        };
+        let chd_romfile = romfile.as_chd()?;
         let iso_romfile = chd_romfile
             .to_iso(progress_bar, &tmp_directory.path())
             .await?;
         let (hash, size) = iso_romfile
-            .as_common()?
+            .romfile
             .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
             .await?;
-        iso_romfile.as_common()?.delete(progress_bar, true).await?;
+        iso_romfile.romfile.delete(progress_bar, true).await?;
         if let Some((rom, game, system)) = find_rom_by_size_and_hash(
             connection,
             progress_bar,
@@ -929,7 +924,7 @@ async fn import_chd<P: AsRef<Path>>(
 
             // move CHD if needed
             chd_romfile
-                .as_common()?
+                .romfile
                 .rename(progress_bar, &new_chd_path, false)
                 .await?;
 
@@ -939,7 +934,7 @@ async fn import_chd<P: AsRef<Path>>(
             Ok(Some([system.id, game.id]))
         } else {
             if trash {
-                move_to_trash(connection, progress_bar, romfile_path).await?;
+                move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
             }
             Ok(None)
         }
@@ -947,18 +942,18 @@ async fn import_chd<P: AsRef<Path>>(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_cia<P: AsRef<Path>>(
+async fn import_cia(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let cia_infos = ctrtool::parse_cia(progress_bar, romfile_path).await?;
+    let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
 
     let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &ctrtool::ArchiveInfo)> =
         Vec::new();
@@ -966,13 +961,13 @@ async fn import_cia<P: AsRef<Path>>(
     let mut new_game_ids: HashSet<i64> = HashSet::new();
 
     let extracted_files =
-        ctrtool::extract_files_from_cia(progress_bar, romfile_path, &tmp_directory.path()).await?;
+        ctrtool::extract_files_from_cia(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
     for (cia_info, extracted_path) in cia_infos.iter().zip(extracted_files) {
         progress_bar.println(format!(
             "Processing \"{} ({})\"",
             &cia_info.path,
-            romfile_path.as_ref().file_name().unwrap().to_str().unwrap()
+            romfile.path.file_name().unwrap().to_str().unwrap()
         ));
 
         let extracted_romfile = CommonRomfile::from_path(&extracted_path)?;
@@ -983,7 +978,7 @@ async fn import_cia<P: AsRef<Path>>(
 
         let path = Path::new(&cia_info.path);
         let mut game_names: Vec<&str> = Vec::new();
-        game_names.push(romfile_path.as_ref().file_stem().unwrap().to_str().unwrap());
+        game_names.push(romfile.path.file_stem().unwrap().to_str().unwrap());
         if let Some(path) = path.parent() {
             let game_name = path.as_os_str().to_str().unwrap();
             if !game_name.is_empty() {
@@ -1033,7 +1028,7 @@ async fn import_cia<P: AsRef<Path>>(
             let new_path = system_directory.join(format!("{}.cia", &game.name));
 
             // move file
-            rename_file(progress_bar, romfile_path, &new_path, false).await?;
+            romfile.rename(progress_bar, &new_path, false).await?;
 
             // persist in database
             create_or_update_romfile(
@@ -1051,24 +1046,24 @@ async fn import_cia<P: AsRef<Path>>(
     }
 
     if trash {
-        move_to_trash(connection, progress_bar, romfile_path).await?;
+        move_to_trash(connection, progress_bar, &romfile).await?;
     }
 
     Ok((new_system_ids, new_game_ids))
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_cso<P: AsRef<Path>>(
+async fn import_cso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let cso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
+    let cso_romfile = romfile.as_xso()?;
     let (hash, size) = cso_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1092,7 +1087,7 @@ async fn import_cso<P: AsRef<Path>>(
             .with_extension(CSO_EXTENSION);
         // move CSO if needed
         cso_romfile
-            .as_common()?
+            .romfile
             .rename(progress_bar, &new_path, false)
             .await?;
         // persist in database
@@ -1100,24 +1095,24 @@ async fn import_cso<P: AsRef<Path>>(
         Ok(Some([system.id, game.id]))
     } else {
         if trash {
-            move_to_trash(connection, progress_bar, romfile_path).await?;
+            move_to_trash(connection, progress_bar, &cso_romfile.romfile).await?;
         }
         Ok(None)
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_nsz<P: AsRef<Path>>(
+async fn import_nsz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let nsz_romfile = nsz::NszRomfile::from_path(romfile_path)?;
+    let nsz_romfile = romfile.as_nsz()?;
     let (hash, size) = nsz_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1141,7 +1136,7 @@ async fn import_nsz<P: AsRef<Path>>(
             .with_extension(NSZ_EXTENSION);
         // move NSZ if needed
         nsz_romfile
-            .as_common()?
+            .romfile
             .rename(progress_bar, &new_nsz_path, false)
             .await?;
         // persist in database
@@ -1149,24 +1144,24 @@ async fn import_nsz<P: AsRef<Path>>(
         Ok(Some([system.id, game.id]))
     } else {
         if trash {
-            move_to_trash(connection, progress_bar, romfile_path).await?;
+            move_to_trash(connection, progress_bar, &nsz_romfile.romfile).await?;
         }
         Ok(None)
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_rvz<P: AsRef<Path>>(
+async fn import_rvz(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let rvz_romfile = dolphin::RvzRomfile::from_path(romfile_path)?;
+    let rvz_romfile = romfile.as_rvz()?;
     let (hash, size) = rvz_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1190,7 +1185,7 @@ async fn import_rvz<P: AsRef<Path>>(
             .with_extension(RVZ_EXTENSION);
         // move RVZ if needed
         rvz_romfile
-            .as_common()?
+            .romfile
             .rename(progress_bar, &new_rvz_path, false)
             .await?;
         // persist in database
@@ -1198,24 +1193,24 @@ async fn import_rvz<P: AsRef<Path>>(
         Ok(Some([system.id, game.id]))
     } else {
         if trash {
-            move_to_trash(connection, progress_bar, romfile_path).await?;
+            move_to_trash(connection, progress_bar, &rvz_romfile.romfile).await?;
         }
         Ok(None)
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_zso<P: AsRef<Path>>(
+async fn import_zso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let zso_romfile = maxcso::XsoRomfile::from_path(romfile_path)?;
+    let zso_romfile = romfile.as_xso()?;
     let (hash, size) = zso_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1239,7 +1234,7 @@ async fn import_zso<P: AsRef<Path>>(
             .with_extension(ZSO_EXTENSION);
         // move ZSO if needed
         zso_romfile
-            .as_common()?
+            .romfile
             .rename(progress_bar, &new_zso_path, false)
             .await?;
         // persist in database
@@ -1247,33 +1242,32 @@ async fn import_zso<P: AsRef<Path>>(
         Ok(Some([system.id, game.id]))
     } else {
         if trash {
-            move_to_trash(connection, progress_bar, romfile_path).await?;
+            move_to_trash(connection, progress_bar, &zso_romfile.romfile).await?;
         }
         Ok(None)
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_other<P: AsRef<Path>>(
+async fn import_other(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     header: &Option<Header>,
     game_ids: &HashSet<i64>,
-    romfile_path: &P,
+    romfile: CommonRomfile,
     hash_algorithm: &HashAlgorithm,
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let original_romfile = CommonRomfile::from_path(&romfile_path)?;
     let (hash, size) = match header {
         Some(header) => {
-            original_romfile
+            romfile
                 .get_headered_hash_and_size(connection, progress_bar, header, 1, 1, hash_algorithm)
                 .await?
         }
         None => {
-            original_romfile
+            romfile
                 .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                 .await?
         }
@@ -1302,15 +1296,13 @@ async fn import_other<P: AsRef<Path>>(
             new_path = system_directory.join(&rom.name);
         }
         // move file if needed
-        original_romfile
-            .rename(progress_bar, &new_path, false)
-            .await?;
+        romfile.rename(progress_bar, &new_path, false).await?;
         // persist in database
         create_or_update_romfile(connection, &new_path, &[&rom]).await?;
         Ok(Some([system.id, game.id]))
     } else {
         if trash {
-            move_to_trash(connection, progress_bar, romfile_path).await?;
+            move_to_trash(connection, progress_bar, &romfile).await?;
         }
         Ok(None)
     }
@@ -1711,7 +1703,8 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let romfile = CommonRomfile::from_path(&romfile_path)?;
     let relative_path = romfile.get_relative_path(connection).await?;
-    let existing_romfile = find_romfile_by_path(connection, relative_path.as_str()).await;
+    let existing_romfile =
+        find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap()).await;
     let romfile_id = match existing_romfile {
         Some(existing_romfile) => {
             romfile.update(connection, existing_romfile.id).await?;
@@ -1725,27 +1718,21 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
     Ok(())
 }
 
-async fn move_to_trash<P: AsRef<Path>>(
+async fn move_to_trash(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    romfile_path: &P,
+    romfile: &CommonRomfile,
 ) -> SimpleResult<()> {
     let new_path = get_trash_directory(connection, None)
         .await?
-        .join(romfile_path.as_ref().file_name().unwrap());
-    rename_file(progress_bar, romfile_path, &new_path, false).await?;
+        .join(romfile.path.file_name().unwrap());
+    let new_romfile = romfile.rename(progress_bar, &new_path, false).await?;
     match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
         Some(romfile) => {
-            romfile
-                .as_common(connection)
-                .await?
-                .update(connection, romfile.id)
-                .await?;
+            new_romfile.update(connection, romfile.id).await?;
         }
         None => {
-            CommonRomfile::from_path(&new_path)?
-                .create(connection, RomfileType::Romfile)
-                .await?;
+            new_romfile.create(connection, RomfileType::Romfile).await?;
         }
     }
     Ok(())

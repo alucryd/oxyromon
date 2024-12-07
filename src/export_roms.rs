@@ -1,13 +1,13 @@
 use super::bchunk;
 use super::chdman;
-use super::chdman::{AsChd, MediaType, ToChd};
+use super::chdman::{AsChd, ToChd};
 use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::maxcso;
-use super::maxcso::{AsXso, ToXso};
+use super::maxcso::{AsXso, ToXso, XsoType};
 use super::model::*;
 use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
@@ -490,14 +490,14 @@ async fn to_archive(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_parent(&parent_chd_romfile)?
+                        .as_chd_with_parent(parent_chd_romfile)?
                 }
                 None => romfile.as_common(connection).await?.as_chd()?,
             };
             chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .as_common()?
+                .romfile
                 .to_archive(
                     progress_bar,
                     &tmp_directory.path(),
@@ -532,17 +532,26 @@ async fn to_archive(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_cue_and_parent(&cue_romfile, &parent_chd_romfile)?
+                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
                 }
                 None => romfile
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(&cue_romfile)?,
+                    .as_chd_with_cue(cue_romfile)?,
             };
-            cue_romfile
+            chd_romfile
+                .cue_romfile
+                .as_ref()
+                .unwrap()
                 .to_archive(
                     progress_bar,
-                    &cue_romfile.path.parent().unwrap(),
+                    &chd_romfile
+                        .cue_romfile
+                        .as_ref()
+                        .unwrap()
+                        .path
+                        .parent()
+                        .unwrap(),
                     destination_directory,
                     &game.name,
                     &archive_type,
@@ -581,7 +590,7 @@ async fn to_archive(
             .as_xso()?
             .to_iso(progress_bar, &tmp_directory.path())
             .await?
-            .as_common()?
+            .romfile
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
@@ -606,7 +615,7 @@ async fn to_archive(
             .as_nsz()?
             .to_nsp(progress_bar, &tmp_directory.path())
             .await?
-            .as_common()?
+            .romfile
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
@@ -631,7 +640,7 @@ async fn to_archive(
             .as_rvz()?
             .to_iso(progress_bar, &tmp_directory.path())
             .await?
-            .as_common()?
+            .romfile
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
@@ -656,7 +665,7 @@ async fn to_archive(
             .as_xso()?
             .to_iso(progress_bar, &tmp_directory.path())
             .await?
-            .as_common()?
+            .romfile
             .to_archive(
                 progress_bar,
                 &tmp_directory.path(),
@@ -680,8 +689,8 @@ async fn to_archive(
             if archive_romfile.archive_type == archive_type {
                 copy_file(
                     progress_bar,
-                    &archive_romfile.path,
-                    &destination_directory.join(archive_romfile.path.file_name().unwrap()),
+                    &archive_romfile.romfile.path,
+                    &destination_directory.join(archive_romfile.romfile.path.file_name().unwrap()),
                     false,
                 )
                 .await?;
@@ -907,27 +916,14 @@ async fn to_chd(
         match cue_romfile {
             Some(cue_romfile) => {
                 cue_romfile
-                    .as_cue_bin(
-                        &bin_iso_romfiles
-                            .iter()
-                            .map(|bin_iso_romfile| &bin_iso_romfile.path)
-                            .collect::<Vec<&PathBuf>>(),
-                    )?
+                    .as_cue_bin(bin_iso_romfiles)?
                     .to_chd(
                         progress_bar,
                         destination_directory,
-                        &MediaType::Cd,
                         cd_compression_algorithms,
                         cd_hunk_size,
-                        &match parent_chd_romfile.as_ref() {
-                            Some(romfile) => Some(
-                                romfile
-                                    .as_common(connection)
-                                    .await
-                                    .unwrap()
-                                    .as_chd()
-                                    .unwrap(),
-                            ),
+                        match parent_chd_romfile.as_ref() {
+                            Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                             None => None,
                         },
                     )
@@ -935,24 +931,16 @@ async fn to_chd(
             }
             None => {
                 bin_iso_romfiles
-                    .first()
+                    .pop()
                     .unwrap()
                     .as_iso()?
                     .to_chd(
                         progress_bar,
                         destination_directory,
-                        &MediaType::Dvd,
                         dvd_compression_algorithms,
                         dvd_hunk_size,
-                        &match parent_chd_romfile.as_ref() {
-                            Some(romfile) => Some(
-                                romfile
-                                    .as_common(connection)
-                                    .await
-                                    .unwrap()
-                                    .as_chd()
-                                    .unwrap(),
-                            ),
+                        match parent_chd_romfile.as_ref() {
+                            Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                             None => None,
                         },
                     )
@@ -970,34 +958,28 @@ async fn to_chd(
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
         let cue_romfile = romfiles_by_id
             .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap();
-        let bin_romfiles = bin_roms
-            .iter()
-            .map(|bin_rom| romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap())
-            .collect::<Vec<&Romfile>>();
-        let mut bin_paths: Vec<PathBuf> = Vec::new();
-        for bin_romfile in &bin_romfiles {
-            bin_paths.push(bin_romfile.as_common(connection).await?.path);
+            .unwrap()
+            .as_common(connection)
+            .await?;
+        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        for bin_rom in &bin_roms {
+            bin_romfiles.push(
+                romfiles_by_id
+                    .get(&bin_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(connection)
+                    .await?,
+            );
         }
         cue_romfile
-            .as_common(connection)
-            .await?
-            .as_cue_bin(&bin_paths)?
+            .as_cue_bin(bin_romfiles)?
             .to_chd(
                 progress_bar,
                 destination_directory,
-                &MediaType::Cd,
                 cd_compression_algorithms,
                 cd_hunk_size,
-                &match parent_chd_romfile.as_ref() {
-                    Some(romfile) => Some(
-                        romfile
-                            .as_common(connection)
-                            .await
-                            .unwrap()
-                            .as_chd()
-                            .unwrap(),
-                    ),
+                match parent_chd_romfile.as_ref() {
+                    Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                     None => None,
                 },
             )
@@ -1017,18 +999,10 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     destination_directory,
-                    &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
-                    &match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(
-                            romfile
-                                .as_common(connection)
-                                .await
-                                .unwrap()
-                                .as_chd()
-                                .unwrap(),
-                        ),
+                    match parent_chd_romfile.as_ref() {
+                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                         None => None,
                     },
                 )
@@ -1052,18 +1026,10 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     destination_directory,
-                    &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
-                    &match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(
-                            romfile
-                                .as_common(connection)
-                                .await
-                                .unwrap()
-                                .as_chd()
-                                .unwrap(),
-                        ),
+                    match parent_chd_romfile.as_ref() {
+                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                         None => None,
                     },
                 )
@@ -1087,18 +1053,10 @@ async fn to_chd(
                 .to_chd(
                     progress_bar,
                     destination_directory,
-                    &MediaType::Dvd,
                     dvd_compression_algorithms,
                     dvd_hunk_size,
-                    &match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(
-                            romfile
-                                .as_common(connection)
-                                .await
-                                .unwrap()
-                                .as_chd()
-                                .unwrap(),
-                        ),
+                    match parent_chd_romfile.as_ref() {
+                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
                         None => None,
                     },
                 )
@@ -1209,7 +1167,7 @@ async fn to_cso(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+            .to_xso(progress_bar, destination_directory, XsoType::Cso)
             .await?;
     }
 
@@ -1221,7 +1179,7 @@ async fn to_cso(
                 .as_common(connection)
                 .await?
                 .as_iso()?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+                .to_xso(progress_bar, destination_directory, XsoType::Cso)
                 .await?;
         }
     }
@@ -1241,14 +1199,14 @@ async fn to_cso(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_parent(&parent_chd_romfile)?
+                        .as_chd_with_parent(parent_chd_romfile)?
                 }
                 None => romfile.as_common(connection).await?.as_chd()?,
             };
             chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Cso)
+                .to_xso(progress_bar, destination_directory, XsoType::Cso)
                 .await?;
         }
     }
@@ -1678,7 +1636,7 @@ async fn to_zso(
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+            .to_xso(progress_bar, destination_directory, XsoType::Zso)
             .await?;
     }
 
@@ -1690,7 +1648,7 @@ async fn to_zso(
                 .as_common(connection)
                 .await?
                 .as_iso()?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+                .to_xso(progress_bar, destination_directory, XsoType::Zso)
                 .await?;
         }
     }
@@ -1710,14 +1668,14 @@ async fn to_zso(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_parent(&parent_chd_romfile)?
+                        .as_chd_with_parent(parent_chd_romfile)?
                 }
                 None => romfile.as_common(connection).await?.as_chd()?,
             };
             chd_romfile
                 .to_iso(progress_bar, &tmp_directory.path())
                 .await?
-                .to_xso(progress_bar, destination_directory, &maxcso::XsoType::Zso)
+                .to_xso(progress_bar, destination_directory, XsoType::Zso)
                 .await?;
         }
     }
@@ -1868,7 +1826,7 @@ async fn to_iso(
                 .to_common(progress_bar, &tmp_directory.path())
                 .await?;
             cue_romfile
-                .as_cue_bin(&[bin_romfile.path])?
+                .as_cue_bin(vec![bin_romfile])?
                 .to_iso(progress_bar, destination_directory)
                 .await?;
         }
@@ -1884,19 +1842,21 @@ async fn to_iso(
         }
         let cue_romfile = romfiles_by_id
             .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap();
-        let bin_romfiles = bin_roms
-            .iter()
-            .map(|bin_rom| romfiles_by_id.get(&bin_rom.romfile_id.unwrap()).unwrap())
-            .collect::<Vec<&Romfile>>();
-        let mut bin_paths: Vec<PathBuf> = Vec::new();
-        for bin_romfile in &bin_romfiles {
-            bin_paths.push(bin_romfile.as_common(connection).await?.path);
+            .unwrap()
+            .as_common(connection)
+            .await?;
+        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        for bin_rom in &bin_roms {
+            bin_romfiles.push(
+                romfiles_by_id
+                    .get(&bin_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(connection)
+                    .await?,
+            );
         }
         cue_romfile
-            .as_common(connection)
-            .await?
-            .as_cue_bin(&bin_paths)?
+            .as_cue_bin(bin_romfiles)?
             .to_iso(progress_bar, destination_directory)
             .await?;
     }
@@ -1921,7 +1881,7 @@ async fn to_iso(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_parent(&parent_chd_romfile)?
+                        .as_chd_with_parent(parent_chd_romfile)?
                 }
                 None => romfile.as_common(connection).await?.as_chd()?,
             };
@@ -1957,12 +1917,12 @@ async fn to_iso(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_cue_and_parent(&cue_romfile, &parent_chd_romfile)?
+                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
                 }
                 None => romfile
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(&cue_romfile)?,
+                    .as_chd_with_cue(cue_romfile)?,
             };
             chd_romfile
                 .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
@@ -2164,7 +2124,7 @@ async fn to_original(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_parent(&parent_chd_romfile)?
+                        .as_chd_with_parent(parent_chd_romfile)?
                 }
                 None => romfile.as_common(connection).await?.as_chd()?,
             };
@@ -2199,20 +2159,28 @@ async fn to_original(
                     romfile
                         .as_common(connection)
                         .await?
-                        .as_chd_with_cue_and_parent(&cue_romfile, &parent_chd_romfile)?
+                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
                 }
                 None => romfile
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(&cue_romfile)?,
+                    .as_chd_with_cue(cue_romfile)?,
             };
             chd_romfile
                 .to_cue_bin(progress_bar, destination_directory, &bin_roms, false)
                 .await?;
             copy_file(
                 progress_bar,
-                &cue_romfile.path,
-                &destination_directory.join(cue_romfile.path.file_name().unwrap()),
+                &chd_romfile.cue_romfile.as_ref().unwrap().path,
+                &destination_directory.join(
+                    chd_romfile
+                        .cue_romfile
+                        .as_ref()
+                        .unwrap()
+                        .path
+                        .file_name()
+                        .unwrap(),
+                ),
                 false,
             )
             .await?;

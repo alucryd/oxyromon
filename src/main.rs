@@ -295,7 +295,8 @@ async fn main() -> SimpleResult<()> {
             Some("server") => {
                 cfg_if! {
                     if #[cfg(feature = "server")] {
-                        server::main(db_file, matches.subcommand_matches("server").unwrap()).await?
+                        let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
+                        server::main(pool, matches.subcommand_matches("server").unwrap()).await?
                     }
                 }
             }
