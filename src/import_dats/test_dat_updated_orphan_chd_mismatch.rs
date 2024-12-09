@@ -38,17 +38,17 @@ async fn test() {
 
     let system = find_systems(&mut connection).await.remove(0);
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
+    let cue_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
-        test_directory.join(&romfile_path.file_name().unwrap().to_str().unwrap()),
-        &romfile_path.as_os_str().to_str().unwrap(),
+        test_directory.join(&cue_romfile_path.file_name().unwrap().to_str().unwrap()),
+        &cue_romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
+    let chd_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
     fs::copy(
-        test_directory.join(&romfile_path.file_name().unwrap().to_str().unwrap()),
-        &romfile_path.as_os_str().to_str().unwrap(),
+        test_directory.join(&chd_romfile_path.file_name().unwrap().to_str().unwrap()),
+        &chd_romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
@@ -57,7 +57,20 @@ async fn test() {
         &progress_bar,
         &Some(&system),
         &None,
-        &romfile_path,
+        &cue_romfile_path,
+        &HashAlgorithm::Crc,
+        true,
+        true,
+        false,
+    )
+    .await
+    .unwrap();
+    import_rom(
+        &mut connection,
+        &progress_bar,
+        &Some(&system),
+        &None,
+        &chd_romfile_path,
         &HashAlgorithm::Crc,
         true,
         true,

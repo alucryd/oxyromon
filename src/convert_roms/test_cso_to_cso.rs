@@ -2,9 +2,8 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -91,7 +90,7 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (ISO).iso");
 
     let romfile = romfiles.first().unwrap();
     let new_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
@@ -102,10 +101,12 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).cso")
-            .relative_to(&rom_directory)
+            .join("Test Game (USA, Europe) (ISO).cso")
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));

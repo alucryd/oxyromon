@@ -6,7 +6,6 @@ use super::util::*;
 use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
-use relative_path::PathExt;
 use sqlx::sqlite::SqliteConnection;
 use walkdir::WalkDir;
 
@@ -205,14 +204,17 @@ async fn purge_foreign_romfiles(
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
             let relative_path = try_with!(
-                entry.path().relative_to(rom_directory),
+                entry.path().strip_prefix(rom_directory),
                 "Failed to retrieve relative path"
             );
-            if find_romfile_by_path(connection, relative_path.as_str())
+            if find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap())
                 .await
                 .is_none()
             {
-                progress_bar.println(format!("Delete \"{}\"?", relative_path.as_str()));
+                progress_bar.println(format!(
+                    "Delete \"{}\"?",
+                    relative_path.as_os_str().to_str().unwrap()
+                ));
                 if answer_yes || confirm(true)? {
                     remove_file(progress_bar, &entry.path(), false).await?;
                     count += 1;

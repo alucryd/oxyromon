@@ -59,7 +59,7 @@ async fn test() {
         .unwrap();
 
     // then
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     assert_eq!(games.len(), 1);
 
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;

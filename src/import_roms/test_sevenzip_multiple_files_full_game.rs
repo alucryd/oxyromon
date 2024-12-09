@@ -1,7 +1,6 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
-use relative_path::PathExt;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -49,7 +48,7 @@ async fn test() {
         &Some(&system),
         &None,
         &HashSet::new(),
-        &romfile_path,
+        CommonRomfile::from_path(&romfile_path).unwrap(),
         romfile_path.extension().unwrap().to_str().unwrap(),
         &HashAlgorithm::Crc,
         true,
@@ -82,24 +81,26 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (CUE BIN).7z")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
     let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 02).bin");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
     let rom = roms.get(2).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN).cue");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));
 }

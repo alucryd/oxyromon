@@ -1,9 +1,8 @@
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -57,7 +56,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
     let old_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
@@ -86,6 +85,10 @@ async fn test() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         false,
         false,
     )
@@ -99,7 +102,7 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (ISO).iso");
 
     let romfile = romfiles.first().unwrap();
     let new_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
@@ -110,10 +113,12 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
-            .relative_to(&rom_directory)
+            .join("Test Game (USA, Europe) (ISO).chd")
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));

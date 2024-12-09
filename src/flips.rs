@@ -1,7 +1,8 @@
 use super::common::*;
 use super::progress::*;
 use super::SimpleResult;
-use std::path::{Path, PathBuf};
+use indicatif::ProgressBar;
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 use strum::{Display, EnumString};
@@ -17,26 +18,20 @@ pub enum XpsType {
 }
 
 pub struct XpsRomfile {
-    pub path: PathBuf,
+    pub romfile: CommonRomfile,
     pub xps_type: XpsType,
-}
-
-impl AsCommon for XpsRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
 }
 
 impl PatchFile for XpsRomfile {
     async fn patch<P: AsRef<Path>>(
         &self,
-        progress_bar: &indicatif::ProgressBar,
+        progress_bar: &ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> simple_error::SimpleResult<CommonRomfile> {
         progress_bar.set_message(format!(
             "Applying \"{}\"",
-            &self.path.file_name().unwrap().to_str().unwrap()
+            &self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -52,7 +47,7 @@ impl PatchFile for XpsRomfile {
 
         let output = Command::new(FLIPS)
             .arg("--apply")
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .arg(&romfile.path)
             .arg(&path)
             .output()
@@ -75,22 +70,28 @@ impl PatchFile for XpsRomfile {
     }
 }
 
-impl FromPath<XpsRomfile> for XpsRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<XpsRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        let xps_type = try_with!(XpsType::from_str(&extension), "Not a valid xps");
-        Ok(XpsRomfile { path, xps_type })
-    }
-}
-
 pub trait AsXps {
-    fn as_xps(&self) -> SimpleResult<XpsRomfile>;
+    fn as_xps(self) -> SimpleResult<XpsRomfile>;
 }
 
 impl AsXps for CommonRomfile {
-    fn as_xps(&self) -> SimpleResult<XpsRomfile> {
-        XpsRomfile::from_path(&self.path)
+    fn as_xps(self) -> SimpleResult<XpsRomfile> {
+        let xps_type = try_with!(
+            XpsType::from_str(
+                &self
+                    .path
+                    .extension()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_lowercase()
+            ),
+            "Not a valid xps"
+        );
+        Ok(XpsRomfile {
+            romfile: self,
+            xps_type,
+        })
     }
 }
 

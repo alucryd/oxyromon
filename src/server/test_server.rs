@@ -7,7 +7,6 @@ use super::super::util::*;
 use super::*;
 use async_graphql::Result;
 use indicatif::ProgressBar;
-use relative_path::PathExt;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
@@ -172,7 +171,7 @@ async fn test() -> Result<()> {
                         "name": "Test Game (USA, Europe).rom",
                         "romfile": {
                             "id": 1,
-                            "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().relative_to(&rom_directory).unwrap().as_str()),
+                            "path": format!("{}/Test Game (USA, Europe).rom", get_one_region_directory(&mut connection, &system).await.unwrap().strip_prefix(&rom_directory).unwrap().as_os_str().to_str().unwrap()),
                             "size": 256
                         },
                         "game": {

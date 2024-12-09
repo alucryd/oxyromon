@@ -90,7 +90,7 @@ async fn rebuild_system(
         return Ok(());
     }
 
-    let games = find_games_with_romfiles_by_system_id(connection, system.id).await;
+    let games = find_complete_games_by_system_id(connection, system.id).await;
 
     if (system.merging == Merging::Split as i64 || system.merging == Merging::NonMerged as i64)
         && (merging == Merging::NonMerged || merging == Merging::FullNonMerged)

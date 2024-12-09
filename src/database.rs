@@ -79,7 +79,7 @@ pub async fn rollback_transaction(transaction: Transaction<'_, Sqlite>) {
         .expect("Failed to rollback transaction");
 }
 
-pub async fn close_connection(pool: &SqlitePool) {
+pub async fn optimize_database(pool: SqlitePool) {
     pool.execute(
         "
             PRAGMA incremental_vacuum;
@@ -840,7 +840,7 @@ pub async fn find_game_by_name_and_bios_and_system_id(
     })
 }
 
-pub async fn find_games_with_romfiles_by_system_id(
+pub async fn find_complete_games_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Game> {
@@ -850,21 +850,17 @@ pub async fn find_games_with_romfiles_by_system_id(
         SELECT *
         FROM games
         WHERE system_id = ?
-        AND id IN (
-            SELECT DISTINCT(game_id)
-            FROM roms
-            WHERE romfile_id IS NOT NULL
-        )
+        AND complete = true
         ORDER BY name
         ",
         system_id,
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding games with romfiles")
+    .expect("Error while finding complete games")
 }
 
-pub async fn find_games_with_romfiles_by_name_and_system_id(
+pub async fn find_complete_games_by_name_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     system_id: i64,
@@ -876,11 +872,7 @@ pub async fn find_games_with_romfiles_by_name_and_system_id(
         FROM games
         WHERE name LIKE ?
         AND system_id = ?
-        AND id IN (
-            SELECT DISTINCT(game_id)
-            FROM roms
-            WHERE romfile_id IS NOT NULL
-        )
+        AND complete = TRUE
         ORDER BY name
         ",
         name,
@@ -888,7 +880,7 @@ pub async fn find_games_with_romfiles_by_name_and_system_id(
     )
     .fetch_all(connection)
     .await
-    .expect("Error while finding games with romfiles")
+    .expect("Error while finding complete games")
 }
 
 pub async fn find_first_game_by_playlist_id(

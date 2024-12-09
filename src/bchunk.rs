@@ -1,5 +1,5 @@
 use super::common::*;
-use super::config::*;
+use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
@@ -61,7 +61,7 @@ impl ToIso for CueBinRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(IsoRomfile { path })
+        CommonRomfile::from_path(&path)?.as_iso()
     }
 }
 

@@ -6,30 +6,18 @@ use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 use tokio::process::Command;
 
 const NSZ: &str = "nsz";
 
 pub struct NspRomfile {
-    pub path: PathBuf,
-}
-
-impl AsCommon for NspRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
+    pub romfile: CommonRomfile,
 }
 
 pub struct NszRomfile {
-    pub path: PathBuf,
-}
-
-impl AsCommon for NszRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
+    pub romfile: CommonRomfile,
 }
 
 impl HashAndSize for NszRomfile {
@@ -44,10 +32,10 @@ impl HashAndSize for NszRomfile {
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
         let (hash, size) = nsp_romfile
-            .as_common()?
+            .romfile
             .get_hash_and_size(connection, progress_bar, position, total, hash_algorithm)
             .await?;
-        nsp_romfile.as_common()?.delete(progress_bar, true).await?;
+        nsp_romfile.romfile.delete(progress_bar, true).await?;
         Ok((hash, size))
     }
 }
@@ -61,11 +49,11 @@ impl Check for NszRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.as_common()?));
+        progress_bar.println(format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
         nsp_romfile
-            .as_common()?
+            .romfile
             .check(connection, progress_bar, header, roms, hash_algorithm)
             .await?;
         Ok(())
@@ -92,12 +80,12 @@ impl ToNsp for NszRomfile {
 
         progress_bar.println(format!(
             "Extracting \"{}\"",
-            self.path.file_name().unwrap().to_str().unwrap()
+            self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
 
         let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap())
+            .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSP_EXTENSION);
 
         let output = Command::new(NSZ)
@@ -105,7 +93,7 @@ impl ToNsp for NszRomfile {
             .arg("-F")
             .arg("-o")
             .arg(destination_directory.as_ref())
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .output()
             .await
             .expect("Failed to extract nsz");
@@ -117,7 +105,7 @@ impl ToNsp for NszRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(NspRomfile { path })
+        CommonRomfile::from_path(&path)?.as_nsp()
     }
 }
 
@@ -141,7 +129,7 @@ impl ToNsz for NspRomfile {
 
         let path = destination_directory
             .as_ref()
-            .join(self.path.file_name().unwrap())
+            .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSZ_EXTENSION);
 
         progress_bar.println(format!(
@@ -156,7 +144,7 @@ impl ToNsz for NspRomfile {
             .arg("-P")
             .arg("-o")
             .arg(destination_directory.as_ref())
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .output()
             .await
             .expect("Failed to create nsz");
@@ -168,49 +156,49 @@ impl ToNsz for NspRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(NszRomfile { path })
-    }
-}
-
-impl FromPath<NspRomfile> for NspRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<NspRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != NSP_EXTENSION {
-            bail!("Not a valid rvz");
-        }
-        Ok(NspRomfile { path })
-    }
-}
-
-impl FromPath<NszRomfile> for NszRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<NszRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != NSZ_EXTENSION {
-            bail!("Not a valid rvz");
-        }
-        Ok(NszRomfile { path })
+        CommonRomfile::from_path(&path)?.as_nsz()
     }
 }
 
 pub trait AsNsp {
-    fn as_nsp(&self) -> SimpleResult<NspRomfile>;
+    fn as_nsp(self) -> SimpleResult<NspRomfile>;
 }
 
 impl AsNsp for CommonRomfile {
-    fn as_nsp(&self) -> SimpleResult<NspRomfile> {
-        NspRomfile::from_path(&self.path)
+    fn as_nsp(self) -> SimpleResult<NspRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != NSP_EXTENSION
+        {
+            bail!("Not a valid nsp");
+        }
+        Ok(NspRomfile { romfile: self })
     }
 }
 
 pub trait AsNsz {
-    fn as_nsz(&self) -> SimpleResult<NszRomfile>;
+    fn as_nsz(self) -> SimpleResult<NszRomfile>;
 }
 
 impl AsNsz for CommonRomfile {
-    fn as_nsz(&self) -> SimpleResult<NszRomfile> {
-        NszRomfile::from_path(&self.path)
+    fn as_nsz(self) -> SimpleResult<NszRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != NSZ_EXTENSION
+        {
+            bail!("Not a valid nsz");
+        }
+        Ok(NszRomfile { romfile: self })
     }
 }
 

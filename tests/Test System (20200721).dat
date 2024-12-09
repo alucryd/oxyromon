@@ -19,23 +19,23 @@
 	</game>
 	<game name="Test Game (USA, Europe) (ISO)">
 		<description>Test Game (USA, Europe)</description>
-		<release name="Test Game (USA, Europe)" region="EUR" />
-		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Test Game (USA, Europe).iso" size="358400" crc="68b66ab6"
+		<release name="Test Game (USA, Europe) (ISO)" region="EUR" />
+		<release name="Test Game (USA, Europe) (ISO)" region="USA" />
+		<rom name="Test Game (USA, Europe) (ISO).iso" size="358400" crc="68b66ab6"
 			md5="08b3b81e017d1c562c3252598aff275c" sha1="762a227d4d157c20e671b53041741ba6c22c552b"
 			status="verified" />
 	</game>
 	<game name="Test Game (USA, Europe) (CUE BIN)">
 		<description>Test Game (USA, Europe)</description>
-		<release name="Test Game (USA, Europe)" region="EUR" />
-		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Test Game (USA, Europe).cue" size="233" crc="f5dce27c"
-			md5="988bb22f6fd2794685aab2c971fc4cfa" sha1="805472646c45b4ba44a7137ef1a37d3274e2b9b8"
+		<release name="Test Game (USA, Europe) (CUE BIN)" region="EUR" />
+		<release name="Test Game (USA, Europe) (CUE BIN)" region="USA" />
+		<rom name="Test Game (USA, Europe) (CUE BIN).cue" size="253" crc="684b9584"
+			md5="df5961b97c0058dfa30806a46c9a021f" sha1="56165ac669ef442147643f70ae0c011a33fffc05"
 			status="verified" />
-		<rom name="Test Game (USA, Europe) (Track 01).bin" size="20309520" crc="9fe63aa2"
+		<rom name="Test Game (USA, Europe) (CUE BIN) (Track 01).bin" size="20309520" crc="9fe63aa2"
 			md5="d4b799c30a4e1939fd02686c4deb8ab8" sha1="c19c6189ffc93a266d13b25e72368037b4a6ad1e"
 			status="verified" />
-		<rom name="Test Game (USA, Europe) (Track 02).bin" size="7914480" crc="b979500c"
+		<rom name="Test Game (USA, Europe) (CUE BIN) (Track 02).bin" size="7914480" crc="b979500c"
 			md5="a25a2c129b7100092cc40e9b6e176a63" sha1="9ac3f1a11d434d186466917f1c7955bf7670c910"
 			status="verified" />
 	</game>

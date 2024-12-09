@@ -9,14 +9,14 @@
 		<author>Maxime Gauduin</author>
 		<url>www.no-intro.org</url>
 	</header>
-	<game name="Test Game (USA, Europe)">
+	<game name="Test Game (USA, Europe) (CUE BIN)">
 		<description>Test Game (USA, Europe)</description>
-		<release name="Test Game (USA, Europe)" region="EUR" />
-		<release name="Test Game (USA, Europe)" region="USA" />
-		<rom name="Test Game (USA, Europe).cue" size="130" crc="150b10b7"
-			md5="8a3fb10ca3e2ae0cb7e8b84905be37f9" sha1="cac69402af32e51087bc87bd95ec9501e0796264"
+		<release name="Test Game (USA, Europe) (CUE BIN)" region="EUR" />
+		<release name="Test Game (USA, Europe) (CUE BIN)" region="USA" />
+		<rom name="Test Game (USA, Europe) (CUE BIN).cue" size="140" crc="ec3f1b9a"
+			md5="8b48c925dd5eab669c2a1feeb1b65a3b" sha1="57e3fe49e337dccf5fb8d3c8409caf85c03785a2"
 			status="verified" />
-		<rom name="Test Game (USA, Europe) (Track 01).bin" size="20309520" crc="9fe63aa2"
+		<rom name="Test Game (USA, Europe) (CUE BIN) (Track 01).bin" size="20309520" crc="9fe63aa2"
 			md5="d4b799c30a4e1939fd02686c4deb8ab8" sha1="c19c6189ffc93a266d13b25e72368037b4a6ad1e"
 			status="verified" />
 	</game>
