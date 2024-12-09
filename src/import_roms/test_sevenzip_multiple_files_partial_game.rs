@@ -80,7 +80,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe) (Track 01).bin")
+            .join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
@@ -90,7 +90,7 @@ async fn test() {
     assert!(rom_directory.path().join(&romfile.path).is_file());
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
@@ -98,7 +98,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).cue")
+            .join("Test Game (USA, Europe) (CUE BIN).cue")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
@@ -108,7 +108,7 @@ async fn test() {
     assert!(rom_directory.path().join(&romfile.path).is_file());
 
     let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN).cue");
     assert_eq!(rom.game_id, game.id);
     assert_eq!(rom.romfile_id, Some(romfile.id));
 }

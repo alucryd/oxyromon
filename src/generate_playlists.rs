@@ -2,6 +2,7 @@ use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::download_dats::REDUMP_SYSTEM_URL;
+use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;

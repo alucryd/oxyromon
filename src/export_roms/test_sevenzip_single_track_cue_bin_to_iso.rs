@@ -74,6 +74,6 @@ async fn test() {
 
     // then
     assert!(destination_directory
-        .join("Test Game (USA, Europe).iso")
+        .join("Test Game (USA, Europe) (CUE BIN).iso")
         .is_file());
 }

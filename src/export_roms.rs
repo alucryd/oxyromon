@@ -1,6 +1,6 @@
 use super::bchunk;
 use super::chdman;
-use super::chdman::{AsChd, ToChd};
+use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -8,6 +8,7 @@ use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::maxcso;
 use super::maxcso::{AsXso, ToXso, XsoType};
+use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
@@ -165,16 +166,15 @@ pub async fn main(
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
 
-        if format == "CHD" && system.name.contains("Dreamcast") {
-            if chdman::get_version()
+        if format == "CHD"
+            && system.name.contains("Dreamcast")
+            && chdman::get_version()
                 .await?
                 .as_str()
                 .cmp(chdman::MIN_DREAMCAST_VERSION)
                 == Ordering::Less
-            {
-                progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
-                continue;
-            }
+        {
+            progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
             continue;
         }
 
@@ -191,7 +191,7 @@ pub async fn main(
                 let mut games: Vec<Game> = Vec::new();
                 for game_name in game_names {
                     games.append(
-                        &mut find_games_with_romfiles_by_name_and_system_id(
+                        &mut find_complete_games_by_name_and_system_id(
                             connection, game_name, system.id,
                         )
                         .await,
@@ -200,7 +200,7 @@ pub async fn main(
                 games.dedup_by_key(|game| game.id);
                 prompt_for_games(games, cfg!(test))?
             }
-            None => find_games_with_romfiles_by_system_id(connection, system.id).await,
+            None => find_complete_games_by_system_id(connection, system.id).await,
         };
 
         if matches.get_flag("1G1R") {
@@ -255,7 +255,7 @@ pub async fn main(
             }
             "7Z" => {
                 let compression_level = get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL").await;
-                let solid: bool = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION").await;
+                let solid = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION").await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -476,94 +476,122 @@ async fn to_archive(
     // export CHDs
     for roms in chds.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
-        if roms.len() == 1 {
-            let rom = roms.first().unwrap();
-            let game = games_by_id.get(&rom.game_id).unwrap();
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)?
-                }
-                None => romfile.as_common(connection).await?.as_chd()?,
-            };
-            chd_romfile
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .romfile
-                .to_archive(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    destination_directory,
-                    &game.name,
-                    &archive_type,
-                    compression_level,
-                    solid,
-                )
-                .await?;
-        } else {
-            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .iter()
-                .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-            let cue_rom = cue_roms.first().unwrap();
-            let game = games_by_id.get(&cue_rom.game_id).unwrap();
-            let cue_romfile = romfiles_by_id
-                .get(&cue_rom.romfile_id.unwrap())
-                .unwrap()
-                .as_common(connection)
-                .await?;
-            let romfile = romfiles_by_id
-                .get(&bin_roms.first().unwrap().romfile_id.unwrap())
-                .unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
-                }
-                None => romfile
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let game = games_by_id.get(&bin_roms.first().unwrap().game_id).unwrap();
+        let romfile = romfiles_by_id
+            .get(&bin_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap();
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(cue_romfile)?,
-            };
-            chd_romfile
-                .cue_romfile
-                .as_ref()
-                .unwrap()
-                .to_archive(
-                    progress_bar,
-                    &chd_romfile
-                        .cue_romfile
-                        .as_ref()
-                        .unwrap()
-                        .path
-                        .parent()
-                        .unwrap(),
-                    destination_directory,
-                    &game.name,
-                    &archive_type,
-                    compression_level,
-                    solid,
-                )
-                .await?;
-            let cue_bin_romfile = chd_romfile
-                .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, true)
-                .await?;
-            for bin_romfile in cue_bin_romfile.bin_romfiles {
-                bin_romfile
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        match chd_romfile.chd_type {
+            ChdType::Cd => {
+                if chd_romfile.track_count > 1
+                    && chdman::get_version()
+                        .await?
+                        .as_str()
+                        .cmp(chdman::MIN_SPLITBIN_VERSION)
+                        == Ordering::Less
+                {
+                    progress_bar.println(format!(
+                    "Older chdman versions don't support splitbin, please update to {} or newer",
+                    chdman::MIN_SPLITBIN_VERSION
+                ));
+                    continue;
+                }
+                let cue_rom = cue_roms.first().unwrap();
+                let cue_romfile = romfiles_by_id
+                    .get(&cue_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(connection)
+                    .await?;
+                let cue_bin_romfile = chd_romfile
+                    .to_cue_bin(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        Some(cue_romfile),
+                        &bin_roms,
+                        true,
+                    )
+                    .await?;
+                cue_bin_romfile
+                    .cue_romfile
+                    .to_archive(
+                        progress_bar,
+                        &cue_bin_romfile.cue_romfile.path.parent().unwrap(),
+                        destination_directory,
+                        &game.name,
+                        &archive_type,
+                        compression_level,
+                        solid,
+                    )
+                    .await?;
+                for bin_romfile in cue_bin_romfile.bin_romfiles {
+                    bin_romfile
+                        .to_archive(
+                            progress_bar,
+                            &tmp_directory.path(),
+                            destination_directory,
+                            &game.name,
+                            &archive_type,
+                            compression_level,
+                            solid,
+                        )
+                        .await?;
+                }
+            }
+            ChdType::Dvd => {
+                chd_romfile
+                    .to_iso(progress_bar, &tmp_directory.path())
+                    .await?
+                    .romfile
+                    .to_archive(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        destination_directory,
+                        &game.name,
+                        &archive_type,
+                        compression_level,
+                        solid,
+                    )
+                    .await?;
+            }
+            ChdType::Hd => {
+                chd_romfile
+                    .to_rdsk(progress_bar, &tmp_directory.path())
+                    .await?
+                    .romfile
+                    .to_archive(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        destination_directory,
+                        &game.name,
+                        &archive_type,
+                        compression_level,
+                        solid,
+                    )
+                    .await?;
+            }
+            ChdType::Ld => {
+                chd_romfile
+                    .to_riff(progress_bar, &tmp_directory.path())
+                    .await?
+                    .romfile
                     .to_archive(
                         progress_bar,
                         &tmp_directory.path(),
@@ -587,7 +615,8 @@ async fn to_archive(
         romfile
             .as_common(connection)
             .await?
-            .as_xso()?
+            .as_xso()
+            .await?
             .to_iso(progress_bar, &tmp_directory.path())
             .await?
             .romfile
@@ -662,7 +691,8 @@ async fn to_archive(
         romfile
             .as_common(connection)
             .await?
-            .as_xso()?
+            .as_xso()
+            .await?
             .to_iso(progress_bar, &tmp_directory.path())
             .await?
             .romfile
@@ -988,101 +1018,110 @@ async fn to_chd(
 
     // export ISOs
     for roms in isos.values() {
-        for rom in roms {
-            let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_iso()?
-                .to_chd(
-                    progress_bar,
-                    destination_directory,
-                    dvd_compression_algorithms,
-                    dvd_hunk_size,
-                    match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
-                        None => None,
-                    },
-                )
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
+        romfile
+            .as_common(connection)
+            .await?
+            .as_iso()?
+            .to_chd(
+                progress_bar,
+                destination_directory,
+                dvd_compression_algorithms,
+                dvd_hunk_size,
+                match parent_chd_romfile.as_ref() {
+                    Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
+                    None => None,
+                },
+            )
+            .await?;
     }
 
     // export CSOs
     for roms in csos.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
-        for rom in roms {
-            let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .to_chd(
-                    progress_bar,
-                    destination_directory,
-                    dvd_compression_algorithms,
-                    dvd_hunk_size,
-                    match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
-                        None => None,
-                    },
-                )
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, &tmp_directory.path())
+            .await?
+            .to_chd(
+                progress_bar,
+                destination_directory,
+                dvd_compression_algorithms,
+                dvd_hunk_size,
+                match parent_chd_romfile.as_ref() {
+                    Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
+                    None => None,
+                },
+            )
+            .await?;
     }
 
     // export ZSOs
     for roms in zsos.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
-        for rom in roms {
-            let game = games_by_id.get(&rom.game_id).unwrap();
-            let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .to_chd(
-                    progress_bar,
-                    destination_directory,
-                    dvd_compression_algorithms,
-                    dvd_hunk_size,
-                    match parent_chd_romfile.as_ref() {
-                        Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
-                        None => None,
-                    },
-                )
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let parent_chd_romfile = find_parent_chd_romfile_by_game(connection, game).await;
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, &tmp_directory.path())
+            .await?
+            .to_chd(
+                progress_bar,
+                destination_directory,
+                dvd_compression_algorithms,
+                dvd_hunk_size,
+                match parent_chd_romfile.as_ref() {
+                    Some(romfile) => Some(romfile.as_common(connection).await.unwrap()),
+                    None => None,
+                },
+            )
+            .await?;
     }
 
     // export CHDs
     for roms in chds.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            copy_file(
-                progress_bar,
-                &romfile.as_common(connection).await?.path,
-                &destination_directory.join(
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
+        let bin_roms: Vec<&Rom> = roms
+            .iter()
+            .filter(|rom| !rom.name.ends_with(CUE_EXTENSION))
+            .collect();
+        let mut romfiles: Vec<&Romfile> = bin_roms
+            .iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+        if romfiles.len() > 1 {
+            bail!("Multiple CHDs found");
         }
+        let romfile = romfiles.first().unwrap();
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     Ok(())
@@ -1119,14 +1158,13 @@ async fn to_cso(
     // partition CHDs
     let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(CHD_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CHD_EXTENSION)
+            })
         });
 
     // partition CSOs
@@ -1141,25 +1179,29 @@ async fn to_cso(
             })
         });
 
+    // partition ZSOs
+    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(ZSO_EXTENSION)
+            })
+        });
+
     // drop others
     drop(others);
 
     // export archives
     for roms in archives.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfiles: Vec<&Romfile> = roms
-            .iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .collect();
-        romfiles.dedup();
-        if romfiles.len() > 1 {
-            bail!("Multiple archives found");
-        }
         if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
             continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
-        let romfile = romfiles.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
             .as_common(connection)
             .await?
@@ -1173,63 +1215,88 @@ async fn to_cso(
 
     // export ISOs
     for roms in isos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_iso()?
-                .to_xso(progress_bar, destination_directory, XsoType::Cso)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_iso()?
+            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .await?;
     }
 
     // export CHDs
     for roms in chds.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)?
-                }
-                None => romfile.as_common(connection).await?.as_chd()?,
-            };
-            chd_romfile
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .to_xso(progress_bar, destination_directory, XsoType::Cso)
-                .await?;
+        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
+            continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
+                    .as_common(connection)
+                    .await?
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        if chd_romfile.chd_type != ChdType::Dvd {
+            continue;
+        }
+        chd_romfile
+            .to_iso(progress_bar, &tmp_directory.path())
+            .await?
+            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .await?;
+    }
+
+    // export ZSOs
+    for roms in zsos.values() {
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     // export CSOs
     for roms in csos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            copy_file(
-                progress_bar,
-                &romfile.as_common(connection).await?.path,
-                &destination_directory.join(
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     Ok(())
@@ -1268,20 +1335,12 @@ async fn to_nsz(
 
     // export archives
     for roms in archives.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfiles: Vec<&Romfile> = roms
-            .iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .collect();
-        romfiles.dedup();
-        if romfiles.len() > 1 {
-            bail!("Multiple archives found");
-        }
         if roms.len() > 1 || !roms.first().unwrap().name.ends_with(NSP_EXTENSION) {
             continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
-        let romfile = romfiles.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
             .as_common(connection)
             .await?
@@ -1295,15 +1354,14 @@ async fn to_nsz(
 
     // export NSPs
     for roms in nsps.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_nsp()?
-                .to_nsz(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_nsp()?
+            .to_nsz(progress_bar, destination_directory)
+            .await?;
     }
 
     Ok(())
@@ -1359,20 +1417,12 @@ async fn to_rvz(
 
     // export archives
     for roms in archives.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfiles: Vec<&Romfile> = roms
-            .iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .collect();
-        romfiles.dedup();
-        if romfiles.len() > 1 {
-            bail!("Multiple archives found");
-        }
         if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
             continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
-        let romfile = romfiles.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
             .as_common(connection)
             .await?
@@ -1393,12 +1443,35 @@ async fn to_rvz(
 
     // export ISOs
     for roms in isos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_iso()?
+            .to_rvz(
+                progress_bar,
+                destination_directory,
+                compression_algorithm,
+                compression_level,
+                block_size,
+                scrub,
+            )
+            .await?;
+    }
+
+    // export RVZs
+    for roms in rvzs.values() {
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        if scrub {
+            let tmp_directory = create_tmp_directory(connection).await?;
             romfile
                 .as_common(connection)
                 .await?
-                .as_iso()?
+                .as_rvz()?
+                .to_iso(progress_bar, &tmp_directory.path())
+                .await?
                 .to_rvz(
                     progress_bar,
                     destination_directory,
@@ -1408,46 +1481,21 @@ async fn to_rvz(
                     scrub,
                 )
                 .await?;
-        }
-    }
-
-    // export RVZs
-    for roms in rvzs.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            if scrub {
-                let tmp_directory = create_tmp_directory(connection).await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_rvz()?
-                    .to_iso(progress_bar, &tmp_directory.path())
-                    .await?
-                    .to_rvz(
-                        progress_bar,
-                        destination_directory,
-                        compression_algorithm,
-                        compression_level,
-                        block_size,
-                        scrub,
-                    )
-                    .await?;
-            } else {
-                copy_file(
-                    progress_bar,
-                    &romfile.as_common(connection).await?.path,
-                    &destination_directory.join(
-                        romfile
-                            .as_common(connection)
-                            .await?
-                            .path
-                            .file_name()
-                            .unwrap(),
-                    ),
-                    false,
-                )
-                .await?;
-            }
+        } else {
+            copy_file(
+                progress_bar,
+                &romfile.as_common(connection).await?.path,
+                &destination_directory.join(
+                    romfile
+                        .as_common(connection)
+                        .await?
+                        .path
+                        .file_name()
+                        .unwrap(),
+                ),
+                false,
+            )
+            .await?;
         }
     }
 
@@ -1500,20 +1548,12 @@ async fn to_wbfs(
 
     // export archives
     for roms in archives.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfiles: Vec<&Romfile> = roms
-            .iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .collect();
-        romfiles.dedup();
-        if romfiles.len() > 1 {
-            bail!("Multiple archives found");
-        }
         if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
             continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
-        let romfile = romfiles.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
             .as_common(connection)
             .await?
@@ -1527,31 +1567,29 @@ async fn to_wbfs(
 
     // export ISOs
     for roms in isos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_iso()?
-                .to_wbfs(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_iso()?
+            .to_wbfs(progress_bar, destination_directory)
+            .await?;
     }
 
     // export RVZs
     for roms in rvzs.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_rvz()?
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .to_wbfs(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_rvz()?
+            .to_iso(progress_bar, &tmp_directory.path())
+            .await?
+            .to_wbfs(progress_bar, destination_directory)
+            .await?;
     }
 
     Ok(())
@@ -1588,14 +1626,13 @@ async fn to_zso(
     // partition CHDs
     let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         others.into_iter().partition(|(_, roms)| {
-            roms.len() == 1
-                && roms.par_iter().any(|rom| {
-                    romfiles_by_id
-                        .get(&rom.romfile_id.unwrap())
-                        .unwrap()
-                        .path
-                        .ends_with(CHD_EXTENSION)
-                })
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CHD_EXTENSION)
+            })
         });
 
     // partition ZSOs
@@ -1615,20 +1652,12 @@ async fn to_zso(
 
     // export archives
     for roms in archives.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut romfiles: Vec<&Romfile> = roms
-            .iter()
-            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-            .collect();
-        romfiles.dedup();
-        if romfiles.len() > 1 {
-            bail!("Multiple archives found");
-        }
         if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
             continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
-        let romfile = romfiles.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
             .as_common(connection)
             .await?
@@ -1642,63 +1671,68 @@ async fn to_zso(
 
     // export ISOs
     for roms in isos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_iso()?
-                .to_xso(progress_bar, destination_directory, XsoType::Zso)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_iso()?
+            .to_xso(progress_bar, destination_directory, XsoType::Zso)
+            .await?;
     }
 
     // export CHDs
     for roms in chds.values() {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)?
-                }
-                None => romfile.as_common(connection).await?.as_chd()?,
-            };
-            chd_romfile
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
-                .to_xso(progress_bar, destination_directory, XsoType::Zso)
-                .await?;
+        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
+            continue;
         }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
+                    .as_common(connection)
+                    .await?
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        if chd_romfile.chd_type != ChdType::Dvd {
+            continue;
+        }
+        chd_romfile
+            .to_iso(progress_bar, &tmp_directory.path())
+            .await?
+            .to_xso(progress_bar, destination_directory, XsoType::Zso)
+            .await?;
     }
 
     // export ZSOs
     for roms in zsos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            copy_file(
-                progress_bar,
-                &romfile.as_common(connection).await?.path,
-                &destination_directory.join(
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     Ok(())
@@ -1867,68 +1901,63 @@ async fn to_iso(
             progress_bar.println("Please install chdman");
             break;
         }
-        if roms.len() == 1 {
-            let romfile = romfiles_by_id
-                .get(&roms.first().unwrap().romfile_id.unwrap())
-                .unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)?
-                }
-                None => romfile.as_common(connection).await?.as_chd()?,
-            };
-            chd_romfile
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        } else if roms.len() == 2 {
-            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .iter()
-                .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-            let mut romfiles: Vec<&Romfile> = bin_roms
-                .iter()
-                .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                .collect();
-            romfiles.dedup();
-            if romfiles.len() > 1 {
-                bail!("Multiple CHDs found");
-            }
-            let tmp_directory = create_tmp_directory(connection).await?;
-            let romfile = romfiles.first().unwrap();
-            let cue_romfile = romfiles_by_id
-                .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-                .unwrap()
-                .as_common(connection)
-                .await?;
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
-                }
-                None => romfile
+        if roms.len() > 2 {
+            continue;
+        }
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let mut romfiles: Vec<&Romfile> = bin_roms
+            .iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+        if romfiles.len() > 1 {
+            bail!("Multiple CHDs found");
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let romfile = romfiles.first().unwrap();
+        let cue_romfile = romfiles_by_id
+            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?;
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(cue_romfile)?,
-            };
-            chd_romfile
-                .to_cue_bin(progress_bar, &tmp_directory.path(), &bin_roms, false)
-                .await?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        match chd_romfile.chd_type {
+            ChdType::Cd => {
+                chd_romfile
+                    .to_cue_bin(
+                        progress_bar,
+                        &tmp_directory.path(),
+                        Some(cue_romfile),
+                        &bin_roms,
+                        false,
+                    )
+                    .await?
+                    .to_iso(progress_bar, destination_directory)
+                    .await?;
+            }
+            ChdType::Dvd => {
+                chd_romfile
+                    .to_iso(progress_bar, destination_directory)
+                    .await?;
+            }
+            ChdType::Hd | ChdType::Ld => continue,
         }
     }
 
@@ -1938,15 +1967,15 @@ async fn to_iso(
             progress_bar.println("Please install maxcso");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
     }
 
     // export ZSOs
@@ -1955,35 +1984,34 @@ async fn to_iso(
             progress_bar.println("Please install maxcso");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
     }
 
     for roms in isos.values() {
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            copy_file(
-                progress_bar,
-                &romfile.as_common(connection).await?.path,
-                &destination_directory.join(
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        copy_file(
+            progress_bar,
+            &romfile.as_common(connection).await?.path,
+            &destination_directory.join(
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .path
+                    .file_name()
+                    .unwrap(),
+            ),
+            false,
+        )
+        .await?;
     }
 
     Ok(())
@@ -2087,7 +2115,7 @@ async fn to_original(
         let romfile = romfiles.first().unwrap();
         let roms: Vec<&Rom> = roms
             .iter()
-            .filter(|rom| rom.romfile_id.unwrap() == rom.id)
+            .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
             .collect();
         for rom in &roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
@@ -2110,80 +2138,93 @@ async fn to_original(
             progress_bar.println("Please install chdman");
             break;
         }
-        if roms.len() == 1 {
-            let romfile = romfiles_by_id
-                .get(&roms.first().unwrap().romfile_id.unwrap())
-                .unwrap();
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)?
-                }
-                None => romfile.as_common(connection).await?.as_chd()?,
-            };
-            chd_romfile
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        } else {
-            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
-                .iter()
-                .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-            let mut romfiles: Vec<&Romfile> = bin_roms
-                .iter()
-                .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
-                .collect();
-            romfiles.dedup();
-            if romfiles.len() > 1 {
-                bail!("Multiple CHDs found");
-            }
-            let romfile = romfiles.first().unwrap();
-            let cue_romfile = romfiles_by_id
-                .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-                .unwrap()
-                .as_common(connection)
-                .await?;
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                        .await
-                        .as_common(connection)
-                        .await?
-                        .as_chd()?;
-                    romfile
-                        .as_common(connection)
-                        .await?
-                        .as_chd_with_cue_and_parent(cue_romfile, parent_chd_romfile)?
-                }
-                None => romfile
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let mut romfiles: Vec<&Romfile> = bin_roms
+            .iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+        if romfiles.len() > 1 {
+            bail!("Multiple CHDs found");
+        }
+        let romfile = romfiles.first().unwrap();
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
                     .as_common(connection)
                     .await?
-                    .as_chd_with_cue(cue_romfile)?,
-            };
-            chd_romfile
-                .to_cue_bin(progress_bar, destination_directory, &bin_roms, false)
-                .await?;
-            copy_file(
-                progress_bar,
-                &chd_romfile.cue_romfile.as_ref().unwrap().path,
-                &destination_directory.join(
-                    chd_romfile
-                        .cue_romfile
-                        .as_ref()
-                        .unwrap()
-                        .path
-                        .file_name()
-                        .unwrap(),
-                ),
-                false,
-            )
-            .await?;
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        match chd_romfile.chd_type {
+            ChdType::Cd => {
+                if chd_romfile.track_count > 1
+                    && chdman::get_version()
+                        .await?
+                        .as_str()
+                        .cmp(chdman::MIN_SPLITBIN_VERSION)
+                        == Ordering::Less
+                {
+                    progress_bar.println(format!(
+                    "Older chdman versions don't support splitbin, please update to {} or newer",
+                    chdman::MIN_SPLITBIN_VERSION
+                ));
+                    continue;
+                }
+                let cue_romfile = match cue_roms.first() {
+                    Some(cue_rom) => Some(
+                        romfiles_by_id
+                            .get(&cue_rom.romfile_id.unwrap())
+                            .unwrap()
+                            .as_common(connection)
+                            .await?,
+                    ),
+                    None => None,
+                };
+                let cue_bin_romfile = chd_romfile
+                    .to_cue_bin(
+                        progress_bar,
+                        destination_directory,
+                        cue_romfile,
+                        &bin_roms,
+                        false,
+                    )
+                    .await?;
+                cue_bin_romfile
+                    .cue_romfile
+                    .rename(
+                        progress_bar,
+                        &destination_directory
+                            .join(cue_bin_romfile.cue_romfile.path.file_name().unwrap()),
+                        false,
+                    )
+                    .await?;
+            }
+            ChdType::Dvd => {
+                chd_romfile
+                    .to_iso(progress_bar, destination_directory)
+                    .await?;
+            }
+            ChdType::Hd => {
+                chd_romfile
+                    .to_rdsk(progress_bar, destination_directory)
+                    .await?;
+            }
+            ChdType::Ld => {
+                chd_romfile
+                    .to_riff(progress_bar, destination_directory)
+                    .await?;
+            }
         }
     }
 
@@ -2193,15 +2234,15 @@ async fn to_original(
             progress_bar.println("Please install maxcso");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
     }
 
     // export NSZs
@@ -2210,15 +2251,14 @@ async fn to_original(
             progress_bar.println("Please install nsz");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_nsz()?
-                .to_nsp(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_nsz()?
+            .to_nsp(progress_bar, destination_directory)
+            .await?;
     }
 
     // export RVZs
@@ -2227,15 +2267,14 @@ async fn to_original(
             progress_bar.println("Please install dolphin-tool");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_rvz()?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_rvz()?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
     }
 
     // export ZSOs
@@ -2244,17 +2283,18 @@ async fn to_original(
             progress_bar.println("Please install maxcso");
             break;
         }
-        for rom in roms {
-            let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            romfile
-                .as_common(connection)
-                .await?
-                .as_xso()?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
-        }
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        romfile
+            .as_common(connection)
+            .await?
+            .as_xso()
+            .await?
+            .to_iso(progress_bar, destination_directory)
+            .await?;
     }
 
+    // export others
     for roms in others.values() {
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();

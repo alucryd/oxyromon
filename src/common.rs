@@ -1,6 +1,7 @@
 use super::config::*;
 use super::crc32::*;
 use super::database::*;
+use super::mimetype::*;
 use super::model::Header;
 use super::model::*;
 use super::progress::*;
@@ -418,6 +419,7 @@ pub trait ToCueBin {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
+        cue_romfile: Option<CommonRomfile>,
         bin_roms: &[&Rom],
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile>;

@@ -1,5 +1,6 @@
 use super::config::*;
 use super::database::*;
+use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::SimpleResult;

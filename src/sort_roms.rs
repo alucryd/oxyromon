@@ -2,6 +2,7 @@ use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::generate_playlists::DISC_REGEX;
+use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;

@@ -1,6 +1,7 @@
-use crate::chdman::AsChd;
+use crate::chdman::{AsChd, ChdType};
 
 use super::chdman;
+use super::chdman::{ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::ctrtool;
@@ -9,6 +10,7 @@ use super::dolphin;
 use super::dolphin::AsRvz;
 use super::maxcso;
 use super::maxcso::AsXso;
+use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::AsNsz;
@@ -22,6 +24,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::Path;
@@ -135,13 +138,11 @@ pub async fn main(
     for path in matches.get_many::<PathBuf>("ROMS").unwrap() {
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut path = get_canonicalized_path(&path).await?;
-        let extension = path
-            .extension()
-            .unwrap_or(&OsString::new())
-            .to_str()
-            .unwrap()
-            .to_lowercase();
-        if matches.get_flag("EXTRACT") && ARCHIVE_EXTENSIONS.contains(&extension.as_str()) {
+        let mimetype = get_mimetype(&path).await?;
+        if matches.get_flag("EXTRACT")
+            && mimetype.is_some()
+            && ARCHIVE_EXTENSIONS.contains(&mimetype.as_ref().unwrap().extension())
+        {
             for archive_romfile in CommonRomfile::from_path(&path)?
                 .as_archives(progress_bar)
                 .await?
@@ -268,15 +269,19 @@ pub async fn import_rom<P: AsRef<Path>>(
         }
     }
 
-    let romfile_extension = romfile
-        .path
-        .extension()
-        .unwrap_or(&OsString::new())
-        .to_str()
-        .unwrap()
-        .to_lowercase();
+    let mimetype = get_mimetype(&romfile.path).await?;
+    let extension = match mimetype {
+        Some(mimetype) => mimetype.extension().to_string(),
+        None => romfile
+            .path
+            .extension()
+            .unwrap_or(&OsString::new())
+            .to_str()
+            .unwrap()
+            .to_lowercase(),
+    };
 
-    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str()) {
+    if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) {
         if sevenzip::get_version().await.is_err() {
             progress_bar.println("Please install sevenzip");
             return Ok((system_ids, game_ids));
@@ -288,7 +293,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             header,
             &game_ids,
             romfile,
-            &romfile_extension,
+            &extension,
             hash_algorithm,
             trash,
             unattended,
@@ -296,7 +301,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         .await?;
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
-    } else if CHD_EXTENSION == romfile_extension {
+    } else if CHD_EXTENSION == extension {
         if chdman::get_version().await.is_err() {
             progress_bar.println("Please install chdman");
             return Ok((system_ids, game_ids));
@@ -316,7 +321,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if CIA_EXTENSION == romfile_extension {
+    } else if CIA_EXTENSION == extension {
         if ctrtool::get_version().await.is_err() {
             progress_bar.println("Please install ctrtool");
             return Ok((system_ids, game_ids));
@@ -334,7 +339,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         .await?;
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
-    } else if CSO_EXTENSION == romfile_extension {
+    } else if CSO_EXTENSION == extension {
         if maxcso::get_version().await.is_err() {
             progress_bar.println("Please install maxcso");
             return Ok((system_ids, game_ids));
@@ -354,7 +359,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if NSZ_EXTENSION == romfile_extension {
+    } else if NSZ_EXTENSION == extension {
         if nsz::get_version().await.is_err() {
             progress_bar.println("Please install nsz");
             return Ok((system_ids, game_ids));
@@ -374,7 +379,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if RVZ_EXTENSION == romfile_extension {
+    } else if RVZ_EXTENSION == extension {
         if dolphin::get_version().await.is_err() {
             progress_bar.println("Please install dolphin-tool");
             return Ok((system_ids, game_ids));
@@ -394,7 +399,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if ZSO_EXTENSION == romfile_extension {
+    } else if ZSO_EXTENSION == extension {
         if maxcso::get_version().await.is_err() {
             progress_bar.println("Please install maxcso");
             return Ok((system_ids, game_ids));
@@ -794,149 +799,232 @@ async fn import_chd(
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
+    let chd_romfile = romfile.as_chd().await?;
 
-    let cue_path = romfile.path.to_path_buf().with_extension(CUE_EXTENSION);
-
-    if cue_path.is_file() {
-        progress_bar.println("CUE file found");
-        let cue_romfile = CommonRomfile::from_path(&cue_path)?;
-        let (hash, size) = cue_romfile
-            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
-            .await?;
-        if let Some((cue_rom, game, system)) = find_rom_by_size_and_hash(
-            connection,
-            progress_bar,
-            size,
-            &hash,
-            system,
-            game_ids,
-            Vec::new(),
-            None,
-            hash_algorithm,
-            unattended,
-        )
-        .await?
-        {
-            let chd_romfile = romfile.as_chd_with_cue(cue_romfile)?;
-            let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, cue_rom.game_id)
-                .await
-                .into_iter()
-                .filter(|rom| rom.id != cue_rom.id)
-                .collect();
+    match chd_romfile.chd_type {
+        ChdType::Cd => {
+            if chd_romfile.track_count > 1
+                && chdman::get_version()
+                    .await?
+                    .as_str()
+                    .cmp(chdman::MIN_SPLITBIN_VERSION)
+                    == Ordering::Less
+            {
+                progress_bar.println(format!(
+                    "Older chdman versions don't support splitbin, please update to {} or newer",
+                    chdman::MIN_SPLITBIN_VERSION
+                ));
+                return Ok(None);
+            }
             let cue_bin_romfile = chd_romfile
-                .to_cue_bin(
-                    progress_bar,
-                    &tmp_directory.path(),
-                    &roms.iter().collect::<Vec<&Rom>>(),
-                    true,
-                )
+                .to_cue_bin(progress_bar, &tmp_directory.path(), None, &[], true)
                 .await?;
 
-            let total = cue_bin_romfile.bin_romfiles.len();
-            let mut hashes: Vec<String> = Vec::new();
-            for (i, bin_romfile) in cue_bin_romfile.bin_romfiles.into_iter().enumerate() {
-                hashes.push(
-                    bin_romfile
-                        .get_hash_and_size(connection, progress_bar, i, total, hash_algorithm)
-                        .await?
-                        .0,
-                );
-                bin_romfile.delete(progress_bar, true).await?;
+            let mut roms_games_systems: Vec<Option<(Rom, Game, System)>> = Vec::new();
+            for bin_romfile in &cue_bin_romfile.bin_romfiles {
+                let (hash, size) = bin_romfile
+                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                    .await?;
+                roms_games_systems.push(
+                    find_rom_by_size_and_hash(
+                        connection,
+                        progress_bar,
+                        size,
+                        &hash,
+                        system,
+                        game_ids,
+                        Vec::new(),
+                        None,
+                        hash_algorithm,
+                        unattended,
+                    )
+                    .await?,
+                )
             }
+            let roms = roms_games_systems
+                .iter()
+                .filter(|rom_game_system| rom_game_system.is_some())
+                .map(|rom_game_system| &rom_game_system.as_ref().unwrap().0)
+                .collect::<Vec<&Rom>>();
+            let mut games = roms_games_systems
+                .iter()
+                .filter(|rom_game_system| rom_game_system.is_some())
+                .map(|rom_game_system| &rom_game_system.as_ref().unwrap().1)
+                .collect::<Vec<&Game>>();
+            games.dedup_by_key(|game| game.id);
+            let mut systems = roms_games_systems
+                .iter()
+                .filter(|rom_game_system| rom_game_system.is_some())
+                .map(|rom_game_system| &rom_game_system.as_ref().unwrap().2)
+                .collect::<Vec<&System>>();
+            systems.dedup_by_key(|system| system.id);
 
-            if roms.iter().enumerate().any(|(i, rom)| {
-                &hashes[i]
-                    != match hash_algorithm {
-                        HashAlgorithm::Crc => rom.crc.as_ref().unwrap(),
-                        HashAlgorithm::Md5 => rom.md5.as_ref().unwrap(),
-                        HashAlgorithm::Sha1 => rom.sha1.as_ref().unwrap(),
-                    }
-            }) {
+            if roms.len() == cue_bin_romfile.bin_romfiles.len()
+                && games.len() == 1
+                && systems.len() == 1
+            {
+                let system = systems.first().unwrap();
+                let system_directory = get_system_directory(connection, system).await?;
+
+                let game = games.first().unwrap();
+                let new_chd_path =
+                    system_directory.join(format!("{}.{}", game.name, CHD_EXTENSION));
+
+                // move chd if needed
+                chd_romfile
+                    .romfile
+                    .rename(progress_bar, &new_chd_path, false)
+                    .await?;
+
+                // persist in database
+                create_or_update_romfile(connection, &new_chd_path, &roms).await?;
+
+                Ok(Some([system.id, game.id]))
+            } else {
                 progress_bar.println("CRC mismatch");
                 if trash {
                     move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
                 }
-                return Ok(None);
+                Ok(None)
             }
-
-            let system_directory = get_system_directory(connection, &system).await?;
-
-            let new_cue_path = system_directory.join(&cue_rom.name);
-            let new_chd_path = new_cue_path.with_extension(CHD_EXTENSION);
-
-            // move cue and chd if needed
-            chd_romfile
-                .cue_romfile
-                .unwrap()
-                .rename(progress_bar, &new_cue_path, false)
-                .await?;
-            chd_romfile
-                .romfile
-                .rename(progress_bar, &new_chd_path, false)
-                .await?;
-
-            // persist in database
-            create_or_update_romfile(connection, &new_cue_path, &[&cue_rom]).await?;
-            create_or_update_romfile(
-                connection,
-                &new_chd_path,
-                &roms.iter().collect::<Vec<&Rom>>(),
-            )
-            .await?;
-
-            Ok(Some([system.id, game.id]))
-        } else {
-            if trash {
-                move_to_trash(connection, progress_bar, &cue_romfile).await?;
-            }
-            Ok(None)
         }
-    } else {
-        progress_bar.println("CUE file not found");
-        let chd_romfile = romfile.as_chd()?;
-        let iso_romfile = chd_romfile
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?;
-        let (hash, size) = iso_romfile
-            .romfile
-            .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
-            .await?;
-        iso_romfile.romfile.delete(progress_bar, true).await?;
-        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
-            connection,
-            progress_bar,
-            size,
-            &hash,
-            system,
-            game_ids,
-            Vec::new(),
-            None,
-            hash_algorithm,
-            unattended,
-        )
-        .await?
-        {
-            let system_directory = get_system_directory(connection, &system).await?;
-
-            let new_chd_path = system_directory
-                .join(&rom.name)
-                .with_extension(CHD_EXTENSION);
-
-            // move CHD if needed
-            chd_romfile
-                .romfile
-                .rename(progress_bar, &new_chd_path, false)
+        ChdType::Dvd => {
+            let iso_romfile = chd_romfile
+                .to_iso(progress_bar, &tmp_directory.path())
                 .await?;
+            let (hash, size) = iso_romfile
+                .romfile
+                .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                .await?;
+            iso_romfile.romfile.delete(progress_bar, true).await?;
+            if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                connection,
+                progress_bar,
+                size,
+                &hash,
+                system,
+                game_ids,
+                Vec::new(),
+                None,
+                hash_algorithm,
+                unattended,
+            )
+            .await?
+            {
+                let system_directory = get_system_directory(connection, &system).await?;
 
-            // persist in database
-            create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+                let new_chd_path = system_directory
+                    .join(&rom.name)
+                    .with_extension(CHD_EXTENSION);
 
-            Ok(Some([system.id, game.id]))
-        } else {
-            if trash {
-                move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+                // move CHD if needed
+                chd_romfile
+                    .romfile
+                    .rename(progress_bar, &new_chd_path, false)
+                    .await?;
+
+                // persist in database
+                create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+
+                Ok(Some([system.id, game.id]))
+            } else {
+                if trash {
+                    move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+                }
+                Ok(None)
             }
-            Ok(None)
+        }
+        ChdType::Hd => {
+            let rdsk_romfile = chd_romfile
+                .to_rdsk(progress_bar, &tmp_directory.path())
+                .await?;
+            let (hash, size) = rdsk_romfile
+                .romfile
+                .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                .await?;
+            rdsk_romfile.romfile.delete(progress_bar, true).await?;
+            if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                connection,
+                progress_bar,
+                size,
+                &hash,
+                system,
+                game_ids,
+                Vec::new(),
+                None,
+                hash_algorithm,
+                unattended,
+            )
+            .await?
+            {
+                let system_directory = get_system_directory(connection, &system).await?;
+
+                let new_chd_path = system_directory
+                    .join(&rom.name)
+                    .with_extension(CHD_EXTENSION);
+
+                // move CHD if needed
+                chd_romfile
+                    .romfile
+                    .rename(progress_bar, &new_chd_path, false)
+                    .await?;
+
+                // persist in database
+                create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+
+                Ok(Some([system.id, game.id]))
+            } else {
+                if trash {
+                    move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+                }
+                Ok(None)
+            }
+        }
+        ChdType::Ld => {
+            let riff_romfile = chd_romfile
+                .to_riff(progress_bar, &tmp_directory.path())
+                .await?;
+            let (hash, size) = riff_romfile
+                .romfile
+                .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                .await?;
+            riff_romfile.romfile.delete(progress_bar, true).await?;
+            if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                connection,
+                progress_bar,
+                size,
+                &hash,
+                system,
+                game_ids,
+                Vec::new(),
+                None,
+                hash_algorithm,
+                unattended,
+            )
+            .await?
+            {
+                let system_directory = get_system_directory(connection, &system).await?;
+
+                let new_chd_path = system_directory
+                    .join(&rom.name)
+                    .with_extension(CHD_EXTENSION);
+
+                // move CHD if needed
+                chd_romfile
+                    .romfile
+                    .rename(progress_bar, &new_chd_path, false)
+                    .await?;
+
+                // persist in database
+                create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+
+                Ok(Some([system.id, game.id]))
+            } else {
+                if trash {
+                    move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+                }
+                Ok(None)
+            }
         }
     }
 }
@@ -1063,7 +1151,7 @@ async fn import_cso(
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let cso_romfile = romfile.as_xso()?;
+    let cso_romfile = romfile.as_xso().await?;
     let (hash, size) = cso_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1210,7 +1298,7 @@ async fn import_zso(
     trash: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let zso_romfile = romfile.as_xso()?;
+    let zso_romfile = romfile.as_xso().await?;
     let (hash, size) = zso_romfile
         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
         .await?;
@@ -1746,8 +1834,6 @@ mod test_cso;
 mod test_iso_chd;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
-#[cfg(test)]
-mod test_multiple_tracks_chd_without_cue_should_fail;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

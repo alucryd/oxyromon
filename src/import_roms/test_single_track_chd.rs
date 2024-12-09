@@ -30,13 +30,6 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).cue");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Single Track).cue"),
-        &romfile_path.as_os_str().to_str().unwrap(),
-    )
-    .await
-    .unwrap();
     let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).chd");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Single Track).chd"),
@@ -66,9 +59,9 @@ async fn test() {
 
     // then
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    assert_eq!(roms.len(), 2);
+    assert_eq!(roms.len(), 1);
     let romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 2);
+    assert_eq!(romfiles.len(), 1);
     let games = find_games_by_ids(
         &mut connection,
         roms.iter()
@@ -80,36 +73,18 @@ async fn test() {
     assert_eq!(games.len(), 1);
 
     let game = games.first().unwrap();
-    assert_eq!(game.name, "Test Game (USA, Europe)");
+    assert_eq!(game.name, "Test Game (USA, Europe) (CUE BIN)");
     assert_eq!(game.system_id, system.id);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     assert_eq!(rom.game_id, game.id);
 
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
-            .strip_prefix(&rom_directory)
-            .unwrap()
-            .as_os_str()
-            .to_str()
-            .unwrap(),
-    );
-    assert!(rom_directory.path().join(&romfile.path).is_file());
-    assert_eq!(rom.romfile_id, Some(romfile.id));
-
-    let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
-    assert_eq!(rom.game_id, game.id);
-
-    let romfile = romfiles.get(1).unwrap();
-    assert_eq!(
-        romfile.path,
-        system_directory
-            .join("Test Game (USA, Europe).cue")
+            .join("Test Game (USA, Europe) (CUE BIN).chd")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()

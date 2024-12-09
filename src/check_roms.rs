@@ -7,6 +7,7 @@ use super::dolphin;
 use super::dolphin::AsRvz;
 use super::maxcso;
 use super::maxcso::AsXso;
+use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::AsNsz;
@@ -73,7 +74,7 @@ pub async fn main(
                 let mut games: Vec<Game> = Vec::new();
                 for game_name in game_names {
                     games.append(
-                        &mut find_games_with_romfiles_by_name_and_system_id(
+                        &mut find_complete_games_by_name_and_system_id(
                             connection, game_name, system.id,
                         )
                         .await,
@@ -82,7 +83,7 @@ pub async fn main(
                 games.dedup_by_key(|game| game.id);
                 prompt_for_games(games, cfg!(test))?
             }
-            None => find_games_with_romfiles_by_system_id(connection, system.id).await,
+            None => find_complete_games_by_system_id(connection, system.id).await,
         };
 
         if games.is_empty() {
@@ -169,79 +170,32 @@ async fn check_system(
                 progress_bar.println("Please install chdman");
                 break;
             }
-            let game = games
-                .iter()
-                .find(|game| game.id == romfile_roms.first().unwrap().game_id)
-                .unwrap();
-            let cue_rom = roms
-                .iter()
-                .find(|rom| rom.game_id == game.id && rom.name.ends_with(CUE_EXTENSION));
-            let cue_romfile = cue_rom.map(|cue_rom| {
-                romfiles
-                    .iter()
-                    .find(|romfile| romfile.id == cue_rom.romfile_id.unwrap())
-                    .unwrap()
-            });
-            result = match cue_romfile {
-                Some(cue_romfile) => {
-                    let chd_romfile = match romfile.parent_id {
-                        Some(parent_id) => {
-                            let parent_chd_romfile =
-                                find_romfile_by_id(&mut transaction, parent_id).await;
-                            romfile
+            let chd_romfile = match romfile.parent_id {
+                Some(parent_id) => {
+                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
+                    romfile
+                        .as_common(&mut transaction)
+                        .await?
+                        .as_chd_with_parent(
+                            parent_chd_romfile
                                 .as_common(&mut transaction)
                                 .await?
-                                .as_chd_with_cue_and_parent(
-                                    cue_romfile.as_common(&mut transaction).await?,
-                                    parent_chd_romfile
-                                        .as_common(&mut transaction)
-                                        .await?
-                                        .as_chd()?,
-                                )?
-                        }
-                        None => romfile
-                            .as_common(&mut transaction)
-                            .await?
-                            .as_chd_with_cue(cue_romfile.as_common(&mut transaction).await?)?,
-                    };
-                    chd_romfile
-                        .check(
-                            &mut transaction,
-                            progress_bar,
-                            &header,
-                            &romfile_roms,
-                            hash_algorithm,
+                                .as_chd()
+                                .await?,
                         )
-                        .await
+                        .await?
                 }
-                None => {
-                    let chd_romfile = match romfile.parent_id {
-                        Some(parent_id) => {
-                            let parent_chd_romfile =
-                                find_romfile_by_id(&mut transaction, parent_id).await;
-                            romfile
-                                .as_common(&mut transaction)
-                                .await?
-                                .as_chd_with_parent(
-                                    parent_chd_romfile
-                                        .as_common(&mut transaction)
-                                        .await?
-                                        .as_chd()?,
-                                )?
-                        }
-                        None => romfile.as_common(&mut transaction).await?.as_chd()?,
-                    };
-                    chd_romfile
-                        .check(
-                            &mut transaction,
-                            progress_bar,
-                            &header,
-                            &romfile_roms,
-                            hash_algorithm,
-                        )
-                        .await
-                }
+                None => romfile.as_common(&mut transaction).await?.as_chd().await?,
             };
+            result = chd_romfile
+                .check(
+                    &mut transaction,
+                    progress_bar,
+                    &header,
+                    &romfile_roms,
+                    hash_algorithm,
+                )
+                .await;
         } else if CSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
                 progress_bar.println("Please install maxcso");
@@ -250,7 +204,8 @@ async fn check_system(
             result = romfile
                 .as_common(&mut transaction)
                 .await?
-                .as_xso()?
+                .as_xso()
+                .await?
                 .check(
                     &mut transaction,
                     progress_bar,
@@ -301,7 +256,8 @@ async fn check_system(
             result = romfile
                 .as_common(&mut transaction)
                 .await?
-                .as_xso()?
+                .as_xso()
+                .await?
                 .check(
                     &mut transaction,
                     progress_bar,

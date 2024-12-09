@@ -1,5 +1,5 @@
 use super::common::*;
-use super::config::*;
+use super::mimetype::*;
 use super::progress::*;
 use super::SimpleResult;
 use lazy_static::lazy_static;

@@ -1,6 +1,5 @@
 use super::database::*;
 use super::model::*;
-use super::server::POOL;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
 use futures::stream::TryStreamExt;
@@ -9,15 +8,14 @@ use num_traits::FromPrimitive;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::region::Region;
+use sqlx::SqlitePool;
 use std::collections::HashMap;
 
 #[ComplexObject]
 impl System {
-    async fn header(&self) -> Result<Option<Header>> {
-        Ok(
-            find_header_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), self.id)
-                .await,
-        )
+    async fn header(&self, ctx: &Context<'_>) -> Result<Option<Header>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_header_by_system_id(&mut pool.acquire().await.unwrap(), self.id).await)
     }
 }
 
@@ -50,6 +48,7 @@ impl Rom {
     }
 
     async fn ignored(&self, ctx: &Context<'_>, system_id: i64) -> Result<bool> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
         let system_loader = ctx.data_unchecked::<DataLoader<SystemLoader>>();
         let system = system_loader.load_one(system_id).await?.unwrap();
 
@@ -78,7 +77,7 @@ impl Rom {
                     self.parent_id.unwrap()
                 );
                 let row: (bool,) = sqlx::query_as(&sql)
-                    .fetch_one(&mut *POOL.get().unwrap().acquire().await.unwrap())
+                    .fetch_one(&mut *pool.acquire().await.unwrap())
                     .await?;
                 row.0
             }
@@ -88,7 +87,9 @@ impl Rom {
     }
 }
 
-pub struct SystemLoader;
+pub struct SystemLoader {
+    pub pool: SqlitePool,
+}
 
 impl Loader<i64> for SystemLoader {
     type Value = System;
@@ -104,14 +105,16 @@ impl Loader<i64> for SystemLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|system: System| (system.id, system))
             .try_collect()
             .await?)
     }
 }
 
-pub struct GameLoader;
+pub struct GameLoader {
+    pub pool: SqlitePool,
+}
 
 impl Loader<i64> for GameLoader {
     type Value = Game;
@@ -127,14 +130,16 @@ impl Loader<i64> for GameLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|game: Game| (game.id, game))
             .try_collect()
             .await?)
     }
 }
 
-pub struct RomfileLoader;
+pub struct RomfileLoader {
+    pub pool: SqlitePool,
+}
 
 impl Loader<i64> for RomfileLoader {
     type Value = Romfile;
@@ -150,7 +155,7 @@ impl Loader<i64> for RomfileLoader {
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(&query)
-            .fetch(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|romfile: Romfile| (romfile.id, romfile))
             .try_collect()
             .await?)
@@ -161,20 +166,20 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn settings(&self) -> Result<Vec<Setting>> {
+    async fn settings(&self, ctx: &Context<'_>) -> Result<Vec<Setting>> {
         log::debug!("query::get settings()");
-        Ok(find_settings(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_settings(&mut pool.acquire().await.unwrap()).await)
     }
 
-    async fn systems(&self) -> Result<Vec<System>> {
-        Ok(find_systems(&mut POOL.get().unwrap().acquire().await.unwrap()).await)
+    async fn systems(&self, ctx: &Context<'_>) -> Result<Vec<System>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_systems(&mut pool.acquire().await.unwrap()).await)
     }
 
-    async fn games(&self, system_id: i64) -> Result<Vec<Game>> {
-        Ok(
-            find_games_by_system_id(&mut POOL.get().unwrap().acquire().await.unwrap(), system_id)
-                .await,
-        )
+    async fn games(&self, ctx: &Context<'_>, system_id: i64) -> Result<Vec<Game>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_games_by_system_id(&mut pool.acquire().await.unwrap(), system_id).await)
     }
 
     async fn game_information(&self, game_name: String) -> Result<GameInformation> {
@@ -223,17 +228,13 @@ impl QueryRoot {
         })
     }
 
-    async fn roms(&self, game_id: i64) -> Result<Vec<Rom>> {
-        Ok(
-            find_roms_by_game_id_parents(
-                &mut POOL.get().unwrap().acquire().await.unwrap(),
-                game_id,
-            )
-            .await,
-        )
+    async fn roms(&self, ctx: &Context<'_>, game_id: i64) -> Result<Vec<Rom>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_roms_by_game_id_parents(&mut pool.acquire().await.unwrap(), game_id).await)
     }
 
-    async fn total_original_size(&self, system_id: i64) -> Result<i64> {
+    async fn total_original_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
         let sql = format!(
             "
                 SELECT COALESCE(SUM(r.size), 0)
@@ -245,12 +246,13 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
     }
 
-    async fn one_region_original_size(&self, system_id: i64) -> Result<i64> {
+    async fn one_region_original_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
         let sql = format!(
             "
                 SELECT COALESCE(SUM(r.size), 0)
@@ -263,12 +265,13 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
     }
 
-    async fn total_actual_size(&self, system_id: i64) -> Result<i64> {
+    async fn total_actual_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
@@ -283,12 +286,13 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
     }
 
-    async fn one_region_actual_size(&self, system_id: i64) -> Result<i64> {
+    async fn one_region_actual_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
         let sql = format!(
             "
                 SELECT COALESCE(SUM(rf.size), 0)
@@ -304,7 +308,7 @@ impl QueryRoot {
             system_id
         );
         let row: (i64,) = sqlx::query_as(&sql)
-            .fetch_one(&mut *POOL.get().unwrap().acquire().await.unwrap())
+            .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
     }

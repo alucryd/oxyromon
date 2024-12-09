@@ -38,17 +38,17 @@ async fn test_cue_bin_to_chd() {
     .await
     .unwrap();
     romfile_paths.push(romfile_path);
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Track 01).bin");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Track 01).bin"),
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
         &romfile_path,
     )
     .await
     .unwrap();
     romfile_paths.push(romfile_path);
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Track 02).bin");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Track 02).bin"),
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin"),
         &romfile_path,
     )
     .await
@@ -68,7 +68,7 @@ async fn test_cue_bin_to_chd() {
             .unwrap();
     }
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -94,6 +94,10 @@ async fn test_cue_bin_to_chd() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         false,
         false,
     )
@@ -110,7 +114,7 @@ async fn test_cue_bin_to_chd() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
+            .join("Test Game (USA, Europe) (CUE BIN).chd")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
@@ -120,20 +124,20 @@ async fn test_cue_bin_to_chd() {
     assert!(rom_directory.path().join(&romfile.path).is_file());
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 01).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     assert_eq!(rom.romfile_id, Some(romfile.id));
     let rom = roms.get(1).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe) (Track 02).bin");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN) (Track 02).bin");
     assert_eq!(rom.romfile_id, Some(romfile.id));
 
     let rom = roms.get(2).unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).cue");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (CUE BIN).cue");
 
     let romfile = romfiles.get(1).unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).cue")
+            .join("Test Game (USA, Europe) (CUE BIN).cue")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()

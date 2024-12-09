@@ -38,25 +38,28 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
+    let cue_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
-        &romfile_path,
+        &cue_romfile_path,
     )
     .await
     .unwrap();
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
+    let chd_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd"),
-        &romfile_path,
+        &chd_romfile_path,
     )
     .await
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
 
-    let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+    let matches = import_roms::subcommand().get_matches_from(&[
+        "import-roms",
+        chd_romfile_path.as_os_str().to_str().unwrap(),
+        cue_romfile_path.as_os_str().to_str().unwrap(),
+    ]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -88,6 +91,6 @@ async fn test() {
 
     // then
     assert!(!destination_directory
-        .join("Test Game (USA, Europe).cso")
+        .join("Test Game (USA, Europe) (CUE BIN).cso")
         .is_file());
 }

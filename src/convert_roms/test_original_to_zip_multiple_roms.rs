@@ -70,11 +70,11 @@ async fn test() {
     to_archive(
         &mut connection,
         &progress_bar,
-        sevenzip::ArchiveType::Zip,
         &system,
-        roms_by_game_id,
         games_by_id,
+        roms_by_game_id,
         romfiles_by_id,
+        sevenzip::ArchiveType::Zip,
         false,
         false,
         true,

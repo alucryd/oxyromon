@@ -40,9 +40,9 @@ async fn test() {
     .await
     .unwrap();
     romfile_paths.push(romfile_path);
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Track 01).bin");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Track 01).bin"),
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
         &romfile_path,
     )
     .await
@@ -86,6 +86,6 @@ async fn test() {
 
     // then
     assert!(destination_directory
-        .join("Test Game (USA, Europe).iso")
+        .join("Test Game (USA, Europe) (CUE BIN).iso")
         .is_file());
 }

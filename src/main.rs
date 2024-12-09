@@ -2,6 +2,7 @@
 extern crate async_graphql;
 #[cfg(feature = "server")]
 extern crate async_graphql_axum;
+extern crate async_once_cell;
 #[cfg(feature = "server")]
 extern crate axum;
 extern crate cfg_if;
@@ -19,13 +20,13 @@ extern crate futures;
 extern crate http_types;
 extern crate indexmap;
 extern crate indicatif;
+extern crate infer;
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
 extern crate md5;
 extern crate num_derive;
 extern crate num_traits;
-extern crate once_cell;
 extern crate phf;
 extern crate quick_xml;
 extern crate rayon;
@@ -67,6 +68,7 @@ mod import_patches;
 mod import_roms;
 mod info;
 mod maxcso;
+mod mimetype;
 mod model;
 #[cfg(feature = "server")]
 mod mutation;
@@ -295,14 +297,13 @@ async fn main() -> SimpleResult<()> {
             Some("server") => {
                 cfg_if! {
                     if #[cfg(feature = "server")] {
-                        let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
-                        server::main(pool, matches.subcommand_matches("server").unwrap()).await?
+                        server::main(pool.clone(), matches.subcommand_matches("server").unwrap()).await?
                     }
                 }
             }
             _ => (),
         }
-        close_connection(&pool).await;
+        optimize_database(pool).await;
     }
 
     Ok(())

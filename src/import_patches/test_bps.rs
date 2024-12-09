@@ -1,3 +1,4 @@
+use super::super::config::*;
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
@@ -61,7 +62,7 @@ async fn test() {
         &mut connection,
         &progress_bar,
         &patch_path,
-        &PatchFormat::Bps,
+        &PatchType::Bps,
         false,
         false,
     )

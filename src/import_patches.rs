@@ -1,6 +1,6 @@
 use super::common::*;
-use super::config::*;
 use super::database::*;
+use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
@@ -8,14 +8,13 @@ use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
+use strum::{Display, EnumString};
 
-const BPS_MAGIC: &[u8] = &[66, 80, 83, 49];
-const IPS_MAGIC: &[u8] = &[80, 65, 84, 67, 72];
-const XDELTA_MAGIC: &[u8] = &[214, 195, 196];
-
-pub enum PatchFormat {
+#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
+#[strum(serialize_all = "lowercase")]
+pub enum PatchType {
     Bps,
     Ips,
     Xdelta,
@@ -77,33 +76,25 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_patch<P: AsRef<Path>>(patch_path: &P) -> SimpleResult<Option<PatchFormat>> {
-    let mut reader = get_reader_sync(&patch_path)?;
-    let mut magic = [0u8; 5];
-    reader.read_exact(&mut magic).unwrap();
-    if &magic[0..3] == BPS_MAGIC {
-        return Ok(Some(PatchFormat::Bps));
-    }
-    if &magic[0..4] == IPS_MAGIC {
-        return Ok(Some(PatchFormat::Ips));
-    }
-    if &magic[0..2] == XDELTA_MAGIC {
-        return Ok(Some(PatchFormat::Xdelta));
-    }
-    Ok(None)
+pub async fn parse_patch<P: AsRef<Path>>(path: &P) -> SimpleResult<Option<PatchType>> {
+    let mimetype = get_mimetype(path).await?;
+    Ok(match mimetype {
+        Some(mimetype) => PatchType::from_str(mimetype.extension()).ok(),
+        None => None,
+    })
 }
 
 pub async fn import_patch<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     patch_path: &P,
-    patch_format: &PatchFormat,
+    patch_format: &PatchType,
     name: bool,
     force: bool,
 ) -> SimpleResult<()> {
     let system = prompt_for_system(connection, None).await?;
     let system_directory = get_system_directory(connection, &system).await?;
-    let games = find_games_with_romfiles_by_system_id(connection, system.id).await;
+    let games = find_complete_games_by_system_id(connection, system.id).await;
     let game = match prompt_for_game(&games, None)? {
         Some(game) => game,
         None => {
@@ -138,9 +129,9 @@ pub async fn import_patch<P: AsRef<Path>>(
     };
 
     let mut extension = match patch_format {
-        PatchFormat::Bps => BPS_EXTENSION,
-        PatchFormat::Ips => IPS_EXTENSION,
-        PatchFormat::Xdelta => XDELTA_EXTENSION,
+        PatchType::Bps => BPS_EXTENSION,
+        PatchType::Ips => IPS_EXTENSION,
+        PatchType::Xdelta => XDELTA_EXTENSION,
     }
     .to_string();
 

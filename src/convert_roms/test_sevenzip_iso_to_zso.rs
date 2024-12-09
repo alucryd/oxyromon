@@ -85,13 +85,13 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (ISO).iso");
 
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).zso")
+            .join("Test Game (USA, Europe) (ISO).zso")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()

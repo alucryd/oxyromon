@@ -1,5 +1,6 @@
 use super::common::*;
 use super::config::*;
+use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
@@ -167,26 +168,22 @@ impl ToXso for IsoRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        CommonRomfile::from_path(&path)?.as_xso()
+        CommonRomfile::from_path(&path)?.as_xso().await
     }
 }
 
 pub trait AsXso {
-    fn as_xso(self) -> SimpleResult<XsoRomfile>;
+    async fn as_xso(self) -> SimpleResult<XsoRomfile>;
 }
 
 impl AsXso for CommonRomfile {
-    fn as_xso(self) -> SimpleResult<XsoRomfile> {
+    async fn as_xso(self) -> SimpleResult<XsoRomfile> {
+        let mimetype = get_mimetype(&self.path).await?;
+        if mimetype.is_none() {
+            bail!("Not a valid xso");
+        }
         let xso_type = try_with!(
-            XsoType::from_str(
-                &self
-                    .path
-                    .extension()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_lowercase()
-            ),
+            XsoType::from_str(mimetype.unwrap().extension()),
             "Not a valid xso"
         );
         Ok(XsoRomfile {

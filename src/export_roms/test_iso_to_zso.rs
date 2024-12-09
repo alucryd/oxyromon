@@ -79,6 +79,6 @@ async fn test() {
 
     // then
     assert!(destination_directory
-        .join("Test Game (USA, Europe).zso")
+        .join("Test Game (USA, Europe) (ISO).zso")
         .is_file());
 }

@@ -56,7 +56,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
     let old_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
@@ -85,6 +85,10 @@ async fn test() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         false,
         false,
     )
@@ -98,7 +102,7 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).iso");
+    assert_eq!(rom.name, "Test Game (USA, Europe) (ISO).iso");
 
     let romfile = romfiles.first().unwrap();
     let new_mtime = fs::metadata(&romfile.as_common(&mut connection).await.unwrap().path)
@@ -109,7 +113,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
+            .join("Test Game (USA, Europe) (ISO).chd")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
