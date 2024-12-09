@@ -1,6 +1,7 @@
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
+use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
@@ -18,8 +19,6 @@ use std::path::{Path, PathBuf};
 use std::str;
 use strsim::jaro_winkler;
 
-const GZIP_MAGIC: &[u8] = &[31, 139];
-const IRD_MAGIC: &[u8] = &[51, 73, 82, 68];
 const IRD_VERSION: u8 = 9;
 
 pub fn subcommand() -> Command {
@@ -102,53 +101,50 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
-    let mut reader = get_reader_sync(&ird_path)?;
-    let mut magic = [0u8; 2];
-    reader.read_exact(&mut magic).unwrap();
-    drop(reader);
+pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
+    let mimetype = get_mimetype(path).await?;
 
-    let mut reader = if magic == GZIP_MAGIC {
-        Box::new(GzDecoder::new(get_reader_sync(&ird_path)?)) as Box<dyn Read>
-    } else {
-        Box::new(get_reader_sync(&ird_path)?) as Box<dyn Read>
-    };
-
-    // parse magic
-    let mut magic = [0u8; 4];
-    reader.read_exact(&mut magic).unwrap();
-
-    if magic != IRD_MAGIC {
+    if mimetype.is_none() {
         bail!("Not an IRD file");
     }
 
-    // parse version
+    let mut reader = match mimetype.unwrap().extension() {
+        GZ_EXTENSION => Box::new(GzDecoder::new(get_reader_sync(&path)?)) as Box<dyn Read>,
+        IRD_EXTENSION => Box::new(get_reader_sync(&path)?) as Box<dyn Read>,
+        _ => bail!("Not an IRD file"),
+    };
+
+    // read magic
+    let mut magic = [0u8; 4];
+    reader.read_exact(&mut magic).unwrap();
+
+    // read version
     let mut version = [0u8];
     reader.read_exact(&mut version).unwrap();
 
-    // parse game id
+    // read game id
     let mut game_id = [0u8; 9];
     reader.read_exact(&mut game_id).unwrap();
 
-    // parse game name
+    // read game name
     let mut game_name_length = [0u8];
     reader.read_exact(&mut game_name_length).unwrap();
     let mut game_name = vec![0u8; game_name_length[0] as usize];
     reader.read_exact(&mut game_name).unwrap();
 
-    // parse update version
+    // read update version
     let mut update_version = [0u8; 4];
     reader.read_exact(&mut update_version).unwrap();
 
-    // parse game version
+    // read game version
     let mut game_version = [0u8; 5];
     reader.read_exact(&mut game_version).unwrap();
 
-    // parse app version
+    // read app version
     let mut app_version = [0u8; 5];
     reader.read_exact(&mut app_version).unwrap();
 
-    // parse header
+    // read header
     let mut gzipped_header_length = [0u8; 4];
     reader.read_exact(&mut gzipped_header_length).unwrap();
     let gzipped_header_length = u32::from_le_bytes(gzipped_header_length);
@@ -158,14 +154,14 @@ pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, V
     let mut header: Vec<u8> = Vec::new();
     gzipped_header_decoder.read_to_end(&mut header).unwrap();
 
-    // parse footer
+    // read footer
     let mut footer_length = [0u8; 4];
     reader.read_exact(&mut footer_length).unwrap();
     let footer_length = u32::from_le_bytes(footer_length);
     let mut footer = vec![0u8; footer_length as usize];
     reader.read_exact(&mut footer).unwrap();
 
-    // parse region hashes
+    // read region hashes
     let mut regions_count = [0u8];
     reader.read_exact(&mut regions_count).unwrap();
     let regions_count = regions_count[0] as usize;
@@ -177,7 +173,7 @@ pub async fn parse_ird<P: AsRef<Path>>(ird_path: &P) -> SimpleResult<(Irdfile, V
         regions_hashes.push(region_hash.iter().map(|b| format!("{:02x}", b)).collect());
     }
 
-    // parse file hashes
+    // read file hashes
     let mut files_count = [0u8; 4];
     reader.read_exact(&mut files_count).unwrap();
     let files_count = u32::from_le_bytes(files_count) as usize;

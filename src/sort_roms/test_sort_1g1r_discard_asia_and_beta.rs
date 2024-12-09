@@ -3,7 +3,6 @@ use super::super::import_dats;
 use super::super::import_roms;
 use super::super::util::*;
 use super::*;
-use relative_path::PathExt;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -94,9 +93,11 @@ async fn test() {
         assert_eq!(
             &system_directory
                 .join(&romfile_names.get(i).unwrap())
-                .relative_to(&rom_directory)
+                .strip_prefix(&rom_directory)
                 .unwrap()
-                .as_str(),
+                .as_os_str()
+                .to_str()
+                .unwrap(),
             &romfile.path
         );
         assert!(rom_directory.path().join(&romfile.path).is_file());
@@ -108,9 +109,11 @@ async fn test() {
             &system_directory
                 .join("1G1R")
                 .join(&romfile_names.get(i).unwrap())
-                .relative_to(&rom_directory)
+                .strip_prefix(&rom_directory)
                 .unwrap()
-                .as_str(),
+                .as_os_str()
+                .to_str()
+                .unwrap(),
             &romfile.path
         );
         assert!(rom_directory.path().join(&romfile.path).is_file());
@@ -122,9 +125,11 @@ async fn test() {
             &system_directory
                 .join("Trash")
                 .join(&romfile_names.get(i).unwrap())
-                .relative_to(&rom_directory)
+                .strip_prefix(&rom_directory)
                 .unwrap()
-                .as_str(),
+                .as_os_str()
+                .to_str()
+                .unwrap(),
             &romfile.path
         );
         assert!(rom_directory.path().join(&romfile.path).is_file());

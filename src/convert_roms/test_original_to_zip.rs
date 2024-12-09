@@ -2,8 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -49,7 +48,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms =
         find_roms_with_romfile_by_game_ids(&mut connection, &[games.first().unwrap().id]).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
@@ -63,11 +62,11 @@ async fn test() {
     to_archive(
         &mut connection,
         &progress_bar,
-        sevenzip::ArchiveType::Zip,
         &system,
-        roms_by_game_id,
         games_by_id,
+        roms_by_game_id,
         romfiles_by_id,
+        sevenzip::ArchiveType::Zip,
         false,
         false,
         true,
@@ -92,9 +91,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).zip")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));

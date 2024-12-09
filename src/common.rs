@@ -1,6 +1,7 @@
 use super::config::*;
 use super::crc32::*;
 use super::database::*;
+use super::mimetype::*;
 use super::model::Header;
 use super::model::*;
 use super::progress::*;
@@ -9,7 +10,6 @@ use core::fmt;
 use digest::Digest;
 use indicatif::ProgressBar;
 use md5::Md5;
-use relative_path::{PathExt, RelativePathBuf};
 use sha1::Sha1;
 use simple_error::SimpleResult;
 use sqlx::SqliteConnection;
@@ -24,10 +24,7 @@ pub struct CommonRomfile {
 }
 
 pub trait CommonFile {
-    async fn get_relative_path(
-        &self,
-        connection: &mut SqliteConnection,
-    ) -> SimpleResult<RelativePathBuf>;
+    async fn get_relative_path(&self, connection: &mut SqliteConnection) -> SimpleResult<&Path>;
     async fn rename<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -47,13 +44,10 @@ pub trait PatchFile {
 }
 
 impl CommonFile for CommonRomfile {
-    async fn get_relative_path(
-        &self,
-        connection: &mut SqliteConnection,
-    ) -> SimpleResult<RelativePathBuf> {
+    async fn get_relative_path(&self, connection: &mut SqliteConnection) -> SimpleResult<&Path> {
         let rom_directory = get_rom_directory(connection).await;
         let relative_path = try_with!(
-            self.path.relative_to(rom_directory),
+            self.path.strip_prefix(rom_directory),
             "Failed to convert \"{}\"to relative path",
             &self.path.as_os_str().to_str().unwrap()
         );
@@ -95,19 +89,15 @@ impl FromPath<CommonRomfile> for CommonRomfile {
     }
 }
 
-pub trait AsCommonRelative {
+pub trait AsCommon {
     async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile>;
 }
 
-impl AsCommonRelative for Romfile {
+impl AsCommon for Romfile {
     async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile> {
         let rom_directory = get_rom_directory(connection).await;
         CommonRomfile::from_path(&rom_directory.join(&self.path))
     }
-}
-
-pub trait AsCommon {
-    fn as_common(&self) -> SimpleResult<CommonRomfile>;
 }
 
 pub trait ToCommon {
@@ -387,13 +377,7 @@ impl Check for CommonRomfile {
 }
 
 pub struct IsoRomfile {
-    pub path: PathBuf,
-}
-
-impl AsCommon for IsoRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
+    pub romfile: CommonRomfile,
 }
 
 pub trait ToIso {
@@ -404,24 +388,24 @@ pub trait ToIso {
     ) -> SimpleResult<IsoRomfile>;
 }
 
-impl FromPath<IsoRomfile> for IsoRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<IsoRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != ISO_EXTENSION {
-            bail!("Not a valid iso");
-        }
-        Ok(IsoRomfile { path })
-    }
-}
-
 pub trait AsIso {
-    fn as_iso(&self) -> SimpleResult<IsoRomfile>;
+    fn as_iso(self) -> SimpleResult<IsoRomfile>;
 }
 
 impl AsIso for CommonRomfile {
-    fn as_iso(&self) -> SimpleResult<IsoRomfile> {
-        IsoRomfile::from_path(&self.path)
+    fn as_iso(self) -> SimpleResult<IsoRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != ISO_EXTENSION
+        {
+            bail!("Not a valid iso");
+        }
+        Ok(IsoRomfile { romfile: self })
     }
 }
 
@@ -435,55 +419,46 @@ pub trait ToCueBin {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
+        cue_romfile: Option<CommonRomfile>,
         bin_roms: &[&Rom],
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile>;
 }
 
-pub trait FromBinPaths<T> {
-    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(path: &P, bin_paths: &[Q])
-        -> SimpleResult<T>;
+pub trait AsCueBin {
+    fn as_cue_bin(self, bin_romfiles: Vec<CommonRomfile>) -> SimpleResult<CueBinRomfile>;
 }
 
-impl FromBinPaths<CueBinRomfile> for CueBinRomfile {
-    fn from_bin_paths<P: AsRef<Path>, Q: AsRef<Path>>(
-        path: &P,
-        bin_paths: &[Q],
-    ) -> SimpleResult<CueBinRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != CUE_EXTENSION {
+impl AsCueBin for CommonRomfile {
+    fn as_cue_bin(self, bin_romfiles: Vec<CommonRomfile>) -> SimpleResult<CueBinRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != CUE_EXTENSION
+        {
             bail!("Not a valid cue");
         }
-        for bin_path in bin_paths {
-            let bin_path = bin_path.as_ref().to_path_buf();
-            let extension = bin_path
+        for bin_romfile in &bin_romfiles {
+            if bin_romfile
+                .path
                 .extension()
                 .unwrap()
                 .to_str()
                 .unwrap()
-                .to_lowercase();
-            if extension != BIN_EXTENSION {
+                .to_lowercase()
+                != BIN_EXTENSION
+            {
                 bail!("Not a valid bin");
             }
         }
         Ok(CueBinRomfile {
-            cue_romfile: CommonRomfile::from_path(&path)?,
-            bin_romfiles: bin_paths
-                .iter()
-                .map(|bin_path| CommonRomfile::from_path(bin_path).unwrap())
-                .collect(),
+            cue_romfile: self,
+            bin_romfiles,
         })
-    }
-}
-
-pub trait AsCueBin {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile>;
-}
-
-impl AsCueBin for CommonRomfile {
-    fn as_cue_bin<P: AsRef<Path>>(&self, bin_paths: &[P]) -> SimpleResult<CueBinRomfile> {
-        CueBinRomfile::from_bin_paths(&self.path, bin_paths)
     }
 }
 
@@ -504,12 +479,18 @@ impl Persist for CommonRomfile {
     ) -> SimpleResult<i64> {
         let path = &self.get_relative_path(connection).await?;
         let size = self.get_size().await?;
-        Ok(create_romfile(connection, path.as_str(), size, romfile_type).await)
+        Ok(create_romfile(
+            connection,
+            path.as_os_str().to_str().unwrap(),
+            size,
+            romfile_type,
+        )
+        .await)
     }
     async fn update(&self, connection: &mut SqliteConnection, id: i64) -> SimpleResult<()> {
         let path = &self.get_relative_path(connection).await?;
         let size = self.get_size().await?;
-        update_romfile(connection, id, path.as_str(), size).await;
+        update_romfile(connection, id, path.as_os_str().to_str().unwrap(), size).await;
         Ok(())
     }
 }

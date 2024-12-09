@@ -54,7 +54,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
@@ -86,6 +86,6 @@ async fn test() {
 
     // then
     assert!(destination_directory
-        .join("Test Game (USA, Europe).chd")
+        .join("Test Game (USA, Europe) (ISO).chd")
         .is_file());
 }

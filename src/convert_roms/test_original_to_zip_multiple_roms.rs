@@ -2,8 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -71,11 +70,11 @@ async fn test() {
     to_archive(
         &mut connection,
         &progress_bar,
-        sevenzip::ArchiveType::Zip,
         &system,
-        roms_by_game_id,
         games_by_id,
+        roms_by_game_id,
         romfiles_by_id,
+        sevenzip::ArchiveType::Zip,
         false,
         false,
         true,
@@ -97,9 +96,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (DLC).zip")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
 

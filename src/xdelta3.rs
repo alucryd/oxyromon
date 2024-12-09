@@ -1,10 +1,9 @@
 use super::common::*;
-use super::config::*;
+use super::mimetype::*;
 use super::progress::*;
 use super::SimpleResult;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::process::Command;
 
@@ -15,13 +14,7 @@ lazy_static! {
 }
 
 pub struct XdeltaRomfile {
-    pub path: PathBuf,
-}
-
-impl AsCommon for XdeltaRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
-    }
+    pub romfile: CommonRomfile,
 }
 
 impl PatchFile for XdeltaRomfile {
@@ -33,7 +26,7 @@ impl PatchFile for XdeltaRomfile {
     ) -> simple_error::SimpleResult<CommonRomfile> {
         progress_bar.set_message(format!(
             "Applying \"{}\"",
-            &self.path.file_name().unwrap().to_str().unwrap()
+            &self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -52,7 +45,7 @@ impl PatchFile for XdeltaRomfile {
             .arg("-s")
             .arg(&romfile.path)
             .arg(&path)
-            .arg(&self.path)
+            .arg(&self.romfile.path)
             .output()
             .await
             .unwrap_or_else(|_| {
@@ -73,24 +66,24 @@ impl PatchFile for XdeltaRomfile {
     }
 }
 
-impl FromPath<XdeltaRomfile> for XdeltaRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<XdeltaRomfile> {
-        let path = path.as_ref().to_path_buf();
-        let extension = path.extension().unwrap().to_str().unwrap().to_lowercase();
-        if extension != XDELTA_EXTENSION {
-            bail!("Not a valid xdelta");
-        }
-        Ok(XdeltaRomfile { path })
-    }
-}
-
 pub trait AsXdelta {
-    fn as_xdelta(&self) -> SimpleResult<XdeltaRomfile>;
+    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile>;
 }
 
 impl AsXdelta for CommonRomfile {
-    fn as_xdelta(&self) -> SimpleResult<XdeltaRomfile> {
-        XdeltaRomfile::from_path(&self.path)
+    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != XDELTA_EXTENSION
+        {
+            bail!("Not a valid xdelta");
+        }
+        Ok(XdeltaRomfile { romfile: self })
     }
 }
 

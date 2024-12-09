@@ -1,4 +1,7 @@
-use super::chdman::{ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE};
+use super::chdman::{
+    ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, ChdHdCompressionAlgorithm,
+    ChdLdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE,
+};
 use super::database::*;
 use super::dolphin::{RvzCompressionAlgorithm, RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
@@ -24,7 +27,7 @@ cfg_if! {
             pub static ref MUTEX: Mutex<i32> = Mutex::new(0);
         }
     } else {
-        use once_cell::sync::OnceCell;
+        use async_once_cell::OnceCell;
         use std::env;
 
         static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
@@ -82,10 +85,14 @@ const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
 const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
     "CHD_CD_COMPRESSION_ALGORITHMS" => ChdCdCompressionAlgorithm::VARIANTS,
     "CHD_DVD_COMPRESSION_ALGORITHMS" => ChdDvdCompressionAlgorithm::VARIANTS,
+    "CHD_HD_COMPRESSION_ALGORITHMS" => ChdHdCompressionAlgorithm::VARIANTS,
+    "CHD_LD_COMPRESSION_ALGORITHMS" => ChdLdCompressionAlgorithm::VARIANTS,
 };
 const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
     "CHD_CD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
     "CHD_DVD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
+    "CHD_HD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
+    "CHD_LD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
     "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
     "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
     "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
@@ -124,26 +131,18 @@ const SORTED_LISTS: &[&str] = &[
 const LIST_SEPARATOR: &str = "|";
 
 pub static BIN_EXTENSION: &str = "bin";
-pub static BPS_EXTENSION: &str = "bps";
-pub static CHD_EXTENSION: &str = "chd";
 pub static CIA_EXTENSION: &str = "cia";
-pub static CSO_EXTENSION: &str = "cso";
 pub static CUE_EXTENSION: &str = "cue";
 pub static DAT_EXTENSION: &str = "dat";
-pub static ISO_EXTENSION: &str = "iso";
-pub static IPS_EXTENSION: &str = "ips";
 pub static M3U_EXTENSION: &str = "m3u";
 pub static NSP_EXTENSION: &str = "nsp";
 pub static NSZ_EXTENSION: &str = "nsz";
 pub static PKG_EXTENSION: &str = "pkg";
 pub static PUP_EXTENSION: &str = "pup";
 pub static RAP_EXTENSION: &str = "rap";
-pub static RVZ_EXTENSION: &str = "rvz";
 pub static SEVENZIP_EXTENSION: &str = "7z";
 pub static WBFS_EXTENSION: &str = "wbfs";
-pub static XDELTA_EXTENSION: &str = "xdelta";
 pub static ZIP_EXTENSION: &str = "zip";
-pub static ZSO_EXTENSION: &str = "zso";
 
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
@@ -481,50 +480,40 @@ cfg_if::cfg_if! {
             }
         }
     } else {
-        pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
-            match ROM_DIRECTORY.get() {
+        async fn init_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
+            match get_directory(connection, "ROM_DIRECTORY").await {
                 Some(rom_directory) => rom_directory,
                 None => {
-                    let rom_directory = match get_directory(connection, "ROM_DIRECTORY").await {
-                        Some(rom_directory) => rom_directory,
-                        None => {
-                            let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
-                                Ok(rom_directory) => PathBuf::from(rom_directory),
-                                Err(_) => dirs::home_dir().map(PathBuf::from).unwrap().join("Emulation")
-                            };
-                            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
-                            rom_directory
-                        }
+                    let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
+                        Ok(rom_directory) => PathBuf::from(rom_directory),
+                        Err(_) => dirs::home_dir().map(PathBuf::from).unwrap().join("Emulation")
                     };
-                    ROM_DIRECTORY
-                        .set(rom_directory)
-                        .expect("Failed to set rom directory");
-                    ROM_DIRECTORY.get().unwrap()
+                    set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+                    rom_directory
+                }
+            }
+        }
+
+        pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
+            ROM_DIRECTORY.get_or_init(init_rom_directory(connection)).await
+        }
+
+        async fn init_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
+            match get_directory(connection, "TMP_DIRECTORY").await {
+                Some(tmp_directory) => tmp_directory,
+                None => {
+                    let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
+                        Ok(tmp_directory) => PathBuf::from(tmp_directory),
+                        Err(_) => env::temp_dir()
+                    };
+                    set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+                    tmp_directory
                 }
             }
         }
 
         pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
-            match TMP_DIRECTORY.get() {
-                Some(tmp_directory) => tmp_directory,
-                None => {
-                    let tmp_directory = match get_directory(connection, "TMP_DIRECTORY").await {
-                        Some(tmp_directory) => tmp_directory,
-                        None => {
-                            let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
-                                Ok(tmp_directory) => PathBuf::from(tmp_directory),
-                                Err(_) => env::temp_dir()
-                            };
-                            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
-                            tmp_directory
-                        }
-                    };
-                    TMP_DIRECTORY
-                        .set(tmp_directory)
-                        .expect("Failed to set tmp directory");
-                    TMP_DIRECTORY.get().unwrap()
-                }
-            }
+            TMP_DIRECTORY.get_or_init(init_tmp_directory(connection)).await
         }
     }
 }

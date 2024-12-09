@@ -3,8 +3,7 @@ use super::super::generate_playlists;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{env, time::SystemTime};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -65,7 +64,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     for game in &games {
@@ -92,13 +91,17 @@ async fn test() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         true,
         false,
     )
     .await
     .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     let mut romfiles_mtimes: Vec<SystemTime> = Vec::new();
@@ -138,6 +141,10 @@ async fn test() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         true,
         false,
     )
@@ -158,9 +165,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (Disc 1).chd")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
@@ -187,9 +196,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe) (Disc 2).chd")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));

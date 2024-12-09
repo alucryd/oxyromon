@@ -33,8 +33,8 @@ pub enum ArchiveType {
 }
 
 pub struct ArchiveRomfile {
-    pub path: PathBuf,
-    pub file_path: String,
+    pub romfile: CommonRomfile,
+    pub path: String,
     pub archive_type: ArchiveType,
 }
 
@@ -42,7 +42,7 @@ pub trait ArchiveFile {
     async fn rename_file(
         &self,
         progress_bar: &ProgressBar,
-        new_file_path: &str,
+        new_path: &str,
     ) -> SimpleResult<ArchiveRomfile>;
     async fn delete_file(&self, progress_bar: &ProgressBar) -> SimpleResult<()>;
 }
@@ -51,21 +51,18 @@ impl ArchiveFile for ArchiveRomfile {
     async fn rename_file(
         &self,
         progress_bar: &ProgressBar,
-        new_file_path: &str,
+        new_path: &str,
     ) -> SimpleResult<ArchiveRomfile> {
         progress_bar.set_message("Renaming file in archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
-        progress_bar.println(format!(
-            "Renaming \"{}\" to \"{}\"",
-            &self.file_path, new_file_path
-        ));
+        progress_bar.println(format!("Renaming \"{}\" to \"{}\"", &self.path, new_path));
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("rn")
-            .arg(&self.path)
-            .arg(self.file_path.replace("-", "?").replace("@", "?"))
-            .arg(new_file_path)
+            .arg(&self.romfile.path)
+            .arg(self.path.replace("-", "?").replace("@", "?"))
+            .arg(new_path)
             .output()
             .await
             .expect("Failed to rename file in archive");
@@ -78,8 +75,8 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.disable_steady_tick();
 
         Ok(ArchiveRomfile {
-            path: self.path.clone(),
-            file_path: new_file_path.to_string(),
+            romfile: self.romfile.clone(),
+            path: new_path.to_string(),
             archive_type: self.archive_type,
         })
     }
@@ -89,12 +86,12 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!("Deleting \"{}\"", &self.file_path));
+        progress_bar.println(format!("Deleting \"{}\"", &self.path));
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
-            .arg(&self.path)
-            .arg(self.file_path.replace("-", "?").replace("@", "?"))
+            .arg(&self.romfile.path)
+            .arg(self.path.replace("-", "?").replace("@", "?"))
             .output()
             .await
             .expect("Failed to remove files from archive");
@@ -106,22 +103,11 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        if self
-            .as_common()?
-            .as_archives(progress_bar)
-            .await?
-            .is_empty()
-        {
-            self.as_common()?.delete(progress_bar, false).await?;
+        if self.romfile.as_archives(progress_bar).await?.is_empty() {
+            self.romfile.delete(progress_bar, false).await?;
         }
 
         Ok(())
-    }
-}
-
-impl AsCommon for ArchiveRomfile {
-    fn as_common(&self) -> SimpleResult<CommonRomfile> {
-        CommonRomfile::from_path(&self.path)
     }
 }
 
@@ -130,8 +116,8 @@ impl Size for ArchiveRomfile {
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("l")
             .arg("-slt")
-            .arg(&self.path)
-            .arg(self.file_path.replace("-", "?").replace("@", "?"))
+            .arg(&self.romfile.path)
+            .arg(self.path.replace("-", "?").replace("@", "?"))
             .output()
             .await
             .expect("Failed to parse archive");
@@ -163,8 +149,8 @@ impl HashAndSize for ArchiveRomfile {
             let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
                 .arg("l")
                 .arg("-slt")
-                .arg(&self.path)
-                .arg(self.file_path.replace("-", "?").replace("@", "?"))
+                .arg(&self.romfile.path)
+                .arg(self.path.replace("-", "?").replace("@", "?"))
                 .output()
                 .await
                 .expect("Failed to parse archive");
@@ -204,11 +190,7 @@ impl Check for ArchiveRomfile {
         roms: &[&Rom],
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
-        progress_bar.println(format!(
-            "Checking \"{}\" ({})",
-            self.as_common()?,
-            self.file_path
-        ));
+        progress_bar.println(format!("Checking \"{}\" ({})", &self.romfile, &self.path));
         match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;
@@ -257,12 +239,12 @@ impl ToCommon for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!("Extracting \"{}\"", &self.file_path));
+        progress_bar.println(format!("Extracting \"{}\"", &self.path));
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("x")
-            .arg(&self.path)
-            .arg(self.file_path.replace("-", "?").replace("@", "?"))
+            .arg(&self.romfile.path)
+            .arg(self.path.replace("-", "?").replace("@", "?"))
             .current_dir(directory.as_ref())
             .output()
             .await
@@ -275,7 +257,7 @@ impl ToCommon for ArchiveRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        CommonRomfile::from_path(&directory.as_ref().join(&self.file_path))
+        CommonRomfile::from_path(&directory.as_ref().join(&self.path))
     }
 }
 
@@ -308,12 +290,9 @@ impl ToArchive for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!(
-            "Compressing \"{}\"",
-            &self.path.as_os_str().to_str().unwrap()
-        ));
+        progress_bar.println(format!("Compressing \"{}\"", &self));
 
-        let path = destination_directory.as_ref().join(format!(
+        let archive_path = destination_directory.as_ref().join(format!(
             "{}.{}",
             archive_name,
             match archive_type {
@@ -321,13 +300,13 @@ impl ToArchive for CommonRomfile {
                 ArchiveType::Zip => ZIP_EXTENSION,
             }
         ));
-        let relative_path = self.path.strip_prefix(working_directory).unwrap();
+        let path = self.path.strip_prefix(working_directory).unwrap();
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command
             .arg("a")
-            .arg(&path)
-            .arg(relative_path)
+            .arg(&archive_path)
+            .arg(path)
             .current_dir(working_directory.as_ref());
         if let Some(compression_level) = compression_level {
             command.arg(format!("-mx={}", compression_level));
@@ -348,8 +327,8 @@ impl ToArchive for CommonRomfile {
         progress_bar.disable_steady_tick();
 
         Ok(ArchiveRomfile {
-            path,
-            file_path: relative_path.as_os_str().to_str().unwrap().to_string(),
+            romfile: CommonRomfile::from_path(&archive_path)?,
+            path: path.as_os_str().to_str().unwrap().to_string(),
             archive_type: *archive_type,
         })
     }
@@ -384,18 +363,18 @@ impl ToArchive for ArchiveRomfile {
 }
 
 pub trait AsArchive {
-    fn as_archive(&self, rom: &Rom) -> SimpleResult<ArchiveRomfile>;
+    fn as_archive(self, rom: &Rom) -> SimpleResult<ArchiveRomfile>;
     async fn as_archives(&self, progress_bar: &ProgressBar) -> SimpleResult<Vec<ArchiveRomfile>>;
 }
 
 impl AsArchive for CommonRomfile {
-    fn as_archive(&self, rom: &Rom) -> SimpleResult<ArchiveRomfile> {
+    fn as_archive(self, rom: &Rom) -> SimpleResult<ArchiveRomfile> {
         let path = PathBuf::from(&self.path);
         let extension = path.extension().unwrap().to_str().unwrap();
         let archive_type = try_with!(ArchiveType::from_str(extension), "Not a valid archive");
         Ok(ArchiveRomfile {
-            path,
-            file_path: rom.name.clone(),
+            romfile: self,
+            path: rom.name.clone(),
             archive_type,
         })
     }
@@ -417,7 +396,7 @@ impl AsArchive for CommonRomfile {
         }
 
         let stdout = String::from_utf8(output.stdout).unwrap();
-        let file_paths: Vec<&str> = stdout
+        let paths: Vec<&str> = stdout
             .lines()
             .filter(|&line| line.starts_with("Path ="))
             .skip(1) // the first line is the archive itself
@@ -432,11 +411,11 @@ impl AsArchive for CommonRomfile {
             .unwrap()
             .to_lowercase();
         let archive_type = try_with!(ArchiveType::from_str(&extension), "Not a valid archive");
-        let archived_romfiles: Vec<ArchiveRomfile> = file_paths
+        let archived_romfiles: Vec<ArchiveRomfile> = paths
             .into_iter()
-            .map(|file_path| ArchiveRomfile {
-                path: self.path.clone(),
-                file_path: file_path.to_string(),
+            .map(|path| ArchiveRomfile {
+                romfile: self.clone(),
+                path: path.to_string(),
                 archive_type,
             })
             .collect();

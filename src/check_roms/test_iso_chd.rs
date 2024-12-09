@@ -45,7 +45,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
 
     // when
     check_system(

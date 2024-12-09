@@ -1,7 +1,6 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
-use relative_path::PathExt;
 use std::env;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
@@ -61,7 +60,7 @@ async fn test() {
         &progress_bar,
         &Some(&system),
         &HashSet::new(),
-        &romfile_path,
+        CommonRomfile::from_path(&romfile_path).unwrap(),
         &HashAlgorithm::Crc,
         true,
         false,
@@ -101,9 +100,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).cia")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom_0.romfile_id, Some(romfile.id));

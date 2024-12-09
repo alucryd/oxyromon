@@ -14,19 +14,11 @@ use axum::{
 use clap::{Arg, ArgMatches, Command};
 use http_types::mime::{BYTE_STREAM, HTML};
 use http_types::Mime;
-use lazy_static::lazy_static;
-use once_cell::sync::OnceCell;
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
-use std::path::PathBuf;
 use tokio::net::TcpListener;
-use tokio::select;
-use tokio::signal::ctrl_c;
-
-lazy_static! {
-    pub static ref POOL: OnceCell<SqlitePool> = OnceCell::new();
-}
+use tokio::{select, signal};
 
 #[derive(RustEmbed)]
 #[folder = "target/assets"]
@@ -89,11 +81,49 @@ async fn serve_asset(Path(path): Path<String>) -> Response<Body> {
     }
 }
 
-async fn run(address: &str, port: &str) -> SimpleResult<()> {
+async fn shutdown_signal(pool: SqlitePool) {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    select! {
+        _ = ctrl_c => {
+            optimize_database(pool).await;
+        },
+        _ = terminate => {
+            optimize_database(pool).await;
+        },
+    }
+}
+
+pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
-        .data(DataLoader::new(SystemLoader, tokio::task::spawn))
-        .data(DataLoader::new(GameLoader, tokio::task::spawn))
-        .data(DataLoader::new(RomfileLoader, tokio::task::spawn))
+        .data(DataLoader::new(
+            SystemLoader { pool: pool.clone() },
+            tokio::task::spawn,
+        ))
+        .data(DataLoader::new(
+            GameLoader { pool: pool.clone() },
+            tokio::task::spawn,
+        ))
+        .data(DataLoader::new(
+            RomfileLoader { pool: pool.clone() },
+            tokio::task::spawn,
+        ))
+        .data(pool.clone())
         .finish();
 
     let app = Router::new()
@@ -101,24 +131,19 @@ async fn run(address: &str, port: &str) -> SimpleResult<()> {
         .route("/*path", get(serve_asset))
         .route("/", get(serve_index));
 
-    let listener = TcpListener::bind(format!("{}:{}", address, port))
+    let listener = TcpListener::bind(format!(
+        "{}:{}",
+        matches.get_one::<String>("ADDRESS").unwrap(),
+        matches.get_one::<String>("PORT").unwrap()
+    ))
+    .await
+    .unwrap();
+
+    serve(listener, app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal(pool))
         .await
         .unwrap();
-    serve(listener, app.into_make_service()).await.unwrap();
 
-    Ok(())
-}
-
-pub async fn main(db_file: PathBuf, matches: &ArgMatches) -> SimpleResult<()> {
-    let pool = establish_connection(db_file.as_os_str().to_str().unwrap()).await;
-    POOL.set(pool).expect("Failed to set database pool");
-
-    select! {
-        Ok(()) = ctrl_c() => {
-            close_connection(POOL.get().unwrap()).await;
-        }
-        Ok(()) = run(matches.get_one::<String>("ADDRESS").unwrap(), matches.get_one::<String>("PORT").unwrap()) => {}
-    }
     Ok(())
 }
 

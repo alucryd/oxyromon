@@ -1,8 +1,8 @@
+use super::super::config::*;
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -69,7 +69,7 @@ async fn test() {
         &mut connection,
         &progress_bar,
         &bps_path,
-        &PatchFormat::Bps,
+        &PatchType::Bps,
         false,
         false,
     )
@@ -79,7 +79,7 @@ async fn test() {
         &mut connection,
         &progress_bar,
         &ips_path,
-        &PatchFormat::Ips,
+        &PatchType::Ips,
         false,
         false,
     )
@@ -105,9 +105,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).bps")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(patch.romfile_id, romfile.id);
@@ -122,9 +124,11 @@ async fn test() {
         romfile.path,
         system_directory
             .join("Test Game (USA, Europe).ips1")
-            .relative_to(&rom_directory)
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(patch.romfile_id, romfile.id);

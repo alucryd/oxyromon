@@ -1,9 +1,8 @@
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use relative_path::PathExt;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -38,17 +37,17 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
+    let cue_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
-        &romfile_path,
+        &cue_romfile_path,
     )
     .await
     .unwrap();
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
+    let chd_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd"),
-        &romfile_path,
+        &chd_romfile_path,
     )
     .await
     .unwrap();
@@ -58,13 +57,16 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+    let matches = import_roms::subcommand().get_matches_from(&[
+        "import-roms",
+        chd_romfile_path.as_os_str().to_str().unwrap(),
+        cue_romfile_path.as_os_str().to_str().unwrap(),
+    ]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let games = find_games_with_romfiles_by_system_id(&mut connection, system.id).await;
+    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -104,6 +106,10 @@ async fn test() {
         &None,
         &[],
         &None,
+        &[],
+        &None,
+        &[],
+        &None,
         false,
         false,
     )
@@ -125,10 +131,12 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).chd")
-            .relative_to(&rom_directory)
+            .join("Test Game (USA, Europe) (CUE BIN).chd")
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_ne!(old_mtime, new_mtime);
@@ -137,10 +145,12 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).cue")
-            .relative_to(&rom_directory)
+            .join("Test Game (USA, Europe) (CUE BIN).cue")
+            .strip_prefix(&rom_directory)
             .unwrap()
-            .as_str(),
+            .as_os_str()
+            .to_str()
+            .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
 }
