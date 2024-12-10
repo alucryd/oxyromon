@@ -12,6 +12,8 @@
 - Add support for CHD HD and LD formats
 - Allow importing multi-track CHDs without a CUE file (requires chdman 0.265+)
 - Use mimetype infering using file magic where possible
+- Add support for `disk` tags in the MAME CHDs DAT
+- Apply `GROUP_SUBSYSTEMS` to custom system names as well
 
 # 0.19.0
 
