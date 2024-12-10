@@ -210,7 +210,7 @@ pub struct GameXml {
         skip_serializing
     )]
     pub isbios: bool,
-    #[serde(rename = "rom", default)]
+    #[serde(rename = "rom", alias = "disk", default)]
     pub roms: Vec<RomXml>,
 }
 

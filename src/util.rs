@@ -202,7 +202,19 @@ pub async fn get_system_directory(
     system: &System,
 ) -> SimpleResult<PathBuf> {
     let system_name = match &system.custom_name {
-        Some(custom_name) => custom_name.to_owned(),
+        Some(custom_name) => {
+            if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+                SYSTEM_NAME_REGEX
+                    .captures(&custom_name)
+                    .unwrap()
+                    .get(2)
+                    .unwrap()
+                    .as_str()
+                    .to_owned()
+            } else {
+                custom_name.to_owned()
+            }
+        }
         None => {
             if get_bool(connection, "GROUP_SUBSYSTEMS").await {
                 SYSTEM_NAME_REGEX
