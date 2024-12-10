@@ -52,13 +52,18 @@ async fn test() {
         parent_id: None,
         romfile_type: RomfileType::Romfile as i64,
     };
+    let extension = Path::new(&romfile.path)
+        .extension()
+        .unwrap()
+        .to_str()
+        .unwrap();
 
     // when
     let path = compute_new_romfile_path(
         &system,
         &game,
         &rom,
-        &romfile,
+        extension,
         &test_directory,
         &SubfolderScheme::None,
     )
