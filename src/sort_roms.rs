@@ -19,7 +19,6 @@ use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::Duration;
@@ -215,7 +214,7 @@ async fn sort_system(
     let mut ignored_games: Vec<Game> = Vec::new();
     let mut incomplete_all_regions_games: Vec<Game> = Vec::new();
     let mut incomplete_one_region_games: Vec<Game> = Vec::new();
-    let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
+    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = Vec::new();
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
     let mut romfiles_by_id: HashMap<i64, Romfile> = romfiles
@@ -541,7 +540,7 @@ async fn sort_system(
                     .unwrap()
                     .to_str()
                     .unwrap(),
-                romfile_move.1
+                romfile_move.1.as_os_str().to_str().unwrap()
             ));
         }
 
@@ -601,11 +600,11 @@ async fn sort_games<'a, P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     system: &System,
     games: Vec<Game>,
-    directory: &P,
+    destination_directory: &P,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
     subfolders: &SubfolderScheme,
-) -> SimpleResult<Vec<(&'a Romfile, String)>> {
-    let mut romfile_moves: Vec<(&Romfile, String)> = Vec::new();
+) -> SimpleResult<Vec<(&'a Romfile, PathBuf)>> {
+    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = Vec::new();
 
     let roms = find_roms_with_romfile_by_game_ids(
         connection,
@@ -631,38 +630,41 @@ async fn sort_games<'a, P: AsRef<Path>>(
         };
         for rom in roms {
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let new_romfile_path = String::from(
-                compute_new_romfile_path(system, &game, rom, romfile, directory, subfolders)
-                    .await?
-                    .as_os_str()
-                    .to_str()
-                    .unwrap(),
-            );
-            if romfile.path != new_romfile_path {
+            let extension = Path::new(&romfile.path)
+                .extension()
+                .unwrap()
+                .to_str()
+                .unwrap();
+            let new_romfile_path = compute_new_romfile_path(
+                system,
+                &game,
+                rom,
+                extension,
+                destination_directory,
+                subfolders,
+            )
+            .await?;
+            if romfile.as_common(connection).await?.path != new_romfile_path {
                 let patches = find_patches_by_rom_id(connection, rom.id).await;
                 for patch in patches {
                     let patch_romfile = romfiles_by_id.get(&patch.romfile_id).unwrap();
-                    let new_patch_path = PathBuf::from(&new_romfile_path)
-                        .with_extension(PathBuf::from(&patch_romfile.path).extension().unwrap());
-                    romfile_moves.push((
-                        patch_romfile,
-                        new_patch_path.as_os_str().to_str().unwrap().to_string(),
-                    ));
+                    let patch_extension = Path::new(&romfile.path)
+                        .extension()
+                        .unwrap()
+                        .to_str()
+                        .unwrap();
+                    let new_patch_romfile_path = new_romfile_path.with_extension(patch_extension);
+                    romfile_moves.push((patch_romfile, new_patch_romfile_path));
                 }
                 romfile_moves.push((romfile, new_romfile_path));
             }
         }
         if game.playlist_id.is_some() {
-            let playlist = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
-            let new_playlist_path = String::from(
-                compute_new_playlist_path(&game, directory, subfolders)
-                    .await?
-                    .as_os_str()
-                    .to_str()
-                    .unwrap(),
-            );
-            if playlist.path != new_playlist_path {
-                romfile_moves.push((playlist, new_playlist_path));
+            let playlist_romfile = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
+            let new_playlist_romfile_path =
+                compute_new_playlist_path(&game, destination_directory, subfolders).await?;
+            if playlist_romfile.as_common(connection).await?.path != new_playlist_romfile_path {
+                romfile_moves.push((playlist_romfile, new_playlist_romfile_path));
             }
         }
     }
@@ -862,37 +864,29 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
     system: &System,
     game: &Game,
     rom: &Rom,
-    romfile: &Romfile,
-    directory: &P,
+    extension: &str,
+    destination_directory: &P,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
-    let romfile_path = Path::new(&romfile.path);
-    let romfile_extension = romfile_path
-        .extension()
-        .unwrap_or(&OsString::new())
-        .to_str()
-        .unwrap()
-        .to_lowercase();
     let mut new_romfile_path: PathBuf;
-
-    if ARCHIVE_EXTENSIONS.contains(&romfile_extension.as_str())
-        || romfile_extension == CHD_EXTENSION
-        || romfile_extension == CSO_EXTENSION
-        || romfile_extension == RVZ_EXTENSION
+    if ARCHIVE_EXTENSIONS.contains(&extension)
+        || extension == CHD_EXTENSION
+        || extension == CSO_EXTENSION
+        || extension == RVZ_EXTENSION
     {
-        new_romfile_path = directory.as_ref().to_path_buf();
+        new_romfile_path = destination_directory.as_ref().to_path_buf();
         if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
-        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, &romfile_extension));
+        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, extension));
     } else if system.arcade || game.jbfolder {
-        new_romfile_path = directory.as_ref().to_path_buf();
+        new_romfile_path = destination_directory.as_ref().to_path_buf();
         if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         }
         new_romfile_path = new_romfile_path.join(&game.name).join(&rom.name);
     } else {
-        new_romfile_path = directory.as_ref().to_path_buf();
+        new_romfile_path = destination_directory.as_ref().to_path_buf();
         if subfolders == &SubfolderScheme::Alpha {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
         }
@@ -903,10 +897,10 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
 
 async fn compute_new_playlist_path<P: AsRef<Path>>(
     game: &Game,
-    directory: &P,
+    destination_directory: &P,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
-    let mut new_playlist_path: PathBuf = directory.as_ref().to_path_buf();
+    let mut new_playlist_path: PathBuf = destination_directory.as_ref().to_path_buf();
     if subfolders == &SubfolderScheme::Alpha {
         new_playlist_path = new_playlist_path.join(compute_alpha_subfolder(&game.name));
     }
