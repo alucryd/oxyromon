@@ -30,7 +30,6 @@ async fn test() {
         &detector_xml,
         Some(&String::from("Custom Test System")),
         false,
-        false,
     )
     .await
     .unwrap();
@@ -42,7 +41,6 @@ async fn test() {
         &datfile_xml,
         &detector_xml,
         None,
-        false,
         true,
     )
     .await

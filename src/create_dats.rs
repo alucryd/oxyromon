@@ -147,10 +147,10 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         date: Some(system_date.clone()),
         author: author.map(String::to_owned).unwrap_or_default(),
         url: url.map(String::to_owned),
-        clrmamepros: Vec::new(),
+        clrmamepros: vec![],
     };
 
-    let mut games_xml: Vec<GameXml> = Vec::new();
+    let mut games_xml: Vec<GameXml> = vec![];
     let walker = WalkDir::new(&input_directory).into_iter();
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
@@ -211,6 +211,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     let datfile_xml = DatfileXml {
         system: system_xml,
         games: games_xml,
+        machines: vec![],
     };
 
     let mut buffer = String::new();

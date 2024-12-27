@@ -29,7 +29,7 @@ async fn test_cue_bin_to_chd() {
         .await
         .unwrap();
 
-    let mut romfile_paths: Vec<PathBuf> = Vec::new();
+    let mut romfile_paths: Vec<PathBuf> = vec![];
     let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
@@ -89,7 +89,6 @@ async fn test_cue_bin_to_chd() {
         false,
         true,
         true,
-        &HashAlgorithm::Crc,
         &[],
         &None,
         &[],

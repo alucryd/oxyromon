@@ -184,10 +184,10 @@ impl QueryRoot {
 
     async fn game_information(&self, game_name: String) -> Result<GameInformation> {
         let mut title: String = String::new();
-        let mut regions: Vec<String> = Vec::new();
-        let mut languages: Vec<String> = Vec::new();
+        let mut regions: Vec<String> = vec![];
+        let mut languages: Vec<String> = vec![];
         let mut release: Option<String> = None;
-        let mut flags: Vec<String> = Vec::new();
+        let mut flags: Vec<String> = vec![];
 
         if let Ok(name) = NoIntroName::try_parse(&game_name) {
             for token in name.iter() {

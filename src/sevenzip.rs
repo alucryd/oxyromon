@@ -188,37 +188,47 @@ impl Check for ArchiveRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-        hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\" ({})", &self.romfile, &self.path));
-        match header.is_some() || hash_algorithm != &HashAlgorithm::Crc {
+        let rom = roms[0];
+        let hash_algorithm: HashAlgorithm;
+        if rom.crc.is_some() {
+            hash_algorithm = HashAlgorithm::Crc;
+        } else if rom.md5.is_some() {
+            hash_algorithm = HashAlgorithm::Md5;
+        } else if rom.sha1.is_some() {
+            hash_algorithm = HashAlgorithm::Sha1;
+        } else {
+            bail!("Not possible")
+        }
+        match header.is_some() || hash_algorithm != HashAlgorithm::Crc {
             true => {
                 let tmp_directory = create_tmp_directory(connection).await?;
                 let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
                 common_romfile
-                    .check(connection, progress_bar, header, roms, hash_algorithm)
+                    .check(connection, progress_bar, header, roms)
                     .await?;
             }
             false => {
                 let (hash, size) = self
-                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                    .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                     .await?;
                 if size != roms[0].size as u64 {
                     bail!("Size mismatch");
                 };
                 match hash_algorithm {
                     HashAlgorithm::Crc => {
-                        if &hash != roms[0].crc.as_ref().unwrap() {
+                        if &hash != rom.crc.as_ref().unwrap() {
                             bail!("Checksum mismatch");
                         }
                     }
                     HashAlgorithm::Md5 => {
-                        if &hash != roms[0].md5.as_ref().unwrap() {
+                        if &hash != rom.md5.as_ref().unwrap() {
                             bail!("Checksum mismatch");
                         }
                     }
                     HashAlgorithm::Sha1 => {
-                        if &hash != roms[0].sha1.as_ref().unwrap() {
+                        if &hash != rom.sha1.as_ref().unwrap() {
                             bail!("Checksum mismatch");
                         }
                     }

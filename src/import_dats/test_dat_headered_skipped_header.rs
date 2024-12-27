@@ -31,7 +31,6 @@ async fn test() {
         &detector_xml,
         None,
         false,
-        false,
     )
     .await
     .unwrap();

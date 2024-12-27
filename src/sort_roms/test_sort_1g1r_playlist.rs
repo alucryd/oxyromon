@@ -47,7 +47,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let mut romfile_names: Vec<String> = Vec::new();
+    let mut romfile_names: Vec<String> = vec![];
     for i in 1..=2 {
         romfile_names.push(format!("Test Game (USA, Europe) (Disc {}).iso", i));
     }

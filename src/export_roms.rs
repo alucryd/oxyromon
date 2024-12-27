@@ -89,7 +89,7 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
         Some(system_names) => {
-            let mut systems: Vec<System> = Vec::new();
+            let mut systems: Vec<System> = vec![];
             for system_name in system_names {
                 systems.append(&mut find_systems_by_name_like(connection, system_name).await);
             }
@@ -188,7 +188,7 @@ pub async fn main(
 
         let mut games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
-                let mut games: Vec<Game> = Vec::new();
+                let mut games: Vec<Game> = vec![];
                 for game_name in game_names {
                     games.append(
                         &mut find_complete_games_by_name_and_system_id(
@@ -931,7 +931,7 @@ async fn to_chd(
             None => None,
         };
 
-        let mut bin_iso_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut bin_iso_romfiles: Vec<CommonRomfile> = vec![];
         for rom in &bin_iso_roms {
             bin_iso_romfiles.push(
                 romfile
@@ -991,7 +991,7 @@ async fn to_chd(
             .unwrap()
             .as_common(connection)
             .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
         for bin_rom in &bin_roms {
             bin_romfiles.push(
                 romfiles_by_id
@@ -1879,7 +1879,7 @@ async fn to_iso(
             .unwrap()
             .as_common(connection)
             .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
         for bin_rom in &bin_roms {
             bin_romfiles.push(
                 romfiles_by_id

@@ -136,7 +136,6 @@ impl Check for ChdRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-        hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
@@ -147,7 +146,7 @@ impl Check for ChdRomfile {
                     .await?;
                 for (rom, bin_romfile) in roms.iter().zip(cue_bin_romfile.bin_romfiles) {
                     bin_romfile
-                        .check(connection, progress_bar, header, &[rom], hash_algorithm)
+                        .check(connection, progress_bar, header, &[rom])
                         .await?;
                 }
             }
@@ -155,21 +154,21 @@ impl Check for ChdRomfile {
                 let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
                 iso_romfile
                     .romfile
-                    .check(connection, progress_bar, header, roms, hash_algorithm)
+                    .check(connection, progress_bar, header, roms)
                     .await?;
             }
             ChdType::Hd => {
                 let rdsk_romfile = self.to_rdsk(progress_bar, &tmp_directory.path()).await?;
                 rdsk_romfile
                     .romfile
-                    .check(connection, progress_bar, header, roms, hash_algorithm)
+                    .check(connection, progress_bar, header, roms)
                     .await?;
             }
             ChdType::Ld => {
                 let riff_romfile = self.to_riff(progress_bar, &tmp_directory.path()).await?;
                 riff_romfile
                     .romfile
-                    .check(connection, progress_bar, header, roms, hash_algorithm)
+                    .check(connection, progress_bar, header, roms)
                     .await?;
             }
         }
@@ -325,7 +324,7 @@ impl ToCueBin for ChdRomfile {
         )
         .await?;
 
-        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
 
         if split {
             for i in 0..self.track_count {

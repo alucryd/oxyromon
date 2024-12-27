@@ -47,14 +47,13 @@ impl Check for NszRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-        hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
         nsp_romfile
             .romfile
-            .check(connection, progress_bar, header, roms, hash_algorithm)
+            .check(connection, progress_bar, header, roms)
             .await?;
         Ok(())
     }

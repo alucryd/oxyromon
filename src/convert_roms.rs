@@ -107,7 +107,7 @@ pub async fn main(
 ) -> SimpleResult<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
         Some(system_names) => {
-            let mut systems: Vec<System> = Vec::new();
+            let mut systems: Vec<System> = vec![];
             for system_name in system_names {
                 systems.append(&mut find_systems_by_name_like(connection, system_name).await);
             }
@@ -122,17 +122,6 @@ pub async fn main(
             .get(select(ALL_FORMATS, "Please select a format", None, None)?)
             .map(|&s| s.to_owned())
             .unwrap(),
-    };
-    let hash_algorithm = match find_setting_by_key(connection, "HASH_ALGORITHM")
-        .await
-        .unwrap()
-        .value
-        .as_deref()
-    {
-        Some("crc") => HashAlgorithm::Crc,
-        Some("md5") => HashAlgorithm::Md5,
-        Some("sha1") => HashAlgorithm::Sha1,
-        Some(_) | None => bail!("Not possible"),
     };
     let recompress = matches.get_flag("RECOMPRESS");
     let diff = matches.get_flag("DIFF");
@@ -204,7 +193,7 @@ pub async fn main(
 
         let games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
-                let mut games: Vec<Game> = Vec::new();
+                let mut games: Vec<Game> = vec![];
                 for game_name in game_names {
                     games.append(
                         &mut find_complete_games_by_name_and_system_id(
@@ -261,7 +250,6 @@ pub async fn main(
                     roms_by_game_id,
                     romfiles_by_id,
                     check,
-                    &hash_algorithm,
                 )
                 .await?
             }
@@ -279,7 +267,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                     &compression_level,
                     solid,
                 )
@@ -298,7 +285,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                     &compression_level,
                     false,
                 )
@@ -328,7 +314,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                     &cd_compression_algorithms,
                     &cd_hunk_size,
                     &dvd_compression_algorithms,
@@ -351,7 +336,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                 )
                 .await?
             }
@@ -364,7 +348,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                 )
                 .await?
             }
@@ -387,7 +370,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                     &compression_algorithm,
                     compression_level,
                     block_size,
@@ -403,7 +385,6 @@ pub async fn main(
                     recompress,
                     diff,
                     check,
-                    &hash_algorithm,
                 )
                 .await?
             }
@@ -428,7 +409,6 @@ async fn to_archive(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
     compression_level: &Option<usize>,
     solid: bool,
 ) -> SimpleResult<()> {
@@ -577,7 +557,7 @@ async fn to_archive(
                     )
                     .await?;
 
-                let mut archive_romfiles: Vec<ArchiveRomfile> = Vec::new();
+                let mut archive_romfiles: Vec<ArchiveRomfile> = vec![];
                 let archive_romfile = cue_bin_romfile
                     .cue_romfile
                     .to_archive(
@@ -612,13 +592,7 @@ async fn to_archive(
                     let roms = [cue_roms.as_slice(), bin_roms.as_slice()].concat();
                     for (archive_romfile, rom) in archive_romfiles.iter().zip(roms) {
                         if archive_romfile
-                            .check(
-                                &mut transaction,
-                                progress_bar,
-                                &None,
-                                &[rom],
-                                hash_algorithm,
-                            )
+                            .check(&mut transaction, progress_bar, &None, &[rom])
                             .await
                             .is_err()
                         {
@@ -687,7 +661,6 @@ async fn to_archive(
                             progress_bar,
                             &None,
                             &[bin_roms.first().unwrap()],
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -738,7 +711,6 @@ async fn to_archive(
                             progress_bar,
                             &None,
                             &[bin_roms.first().unwrap()],
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -789,7 +761,6 @@ async fn to_archive(
                             progress_bar,
                             &None,
                             &[bin_roms.first().unwrap()],
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -847,13 +818,7 @@ async fn to_archive(
 
         if check
             && archive_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -907,13 +872,7 @@ async fn to_archive(
 
         if check
             && archive_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -967,13 +926,7 @@ async fn to_archive(
 
         if check
             && archive_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -1027,13 +980,7 @@ async fn to_archive(
 
         if check
             && archive_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -1075,7 +1022,7 @@ async fn to_archive(
             .await?
             .as_archive(roms.first().unwrap())?
             .archive_type;
-        let mut archive_romfiles_roms: Vec<(ArchiveRomfile, &Rom)> = Vec::new();
+        let mut archive_romfiles_roms: Vec<(ArchiveRomfile, &Rom)> = vec![];
         for rom in roms {
             let archive_romfile = romfile.as_common(&mut transaction).await?.as_archive(rom)?;
             if source_archive_type != archive_type {
@@ -1116,13 +1063,7 @@ async fn to_archive(
                 let mut error = false;
                 for (archive_romfile, rom) in &archive_romfiles_roms {
                     if archive_romfile
-                        .check(
-                            &mut transaction,
-                            progress_bar,
-                            &None,
-                            &[rom],
-                            hash_algorithm,
-                        )
+                        .check(&mut transaction, progress_bar, &None, &[rom])
                         .await
                         .is_err()
                     {
@@ -1199,13 +1140,7 @@ async fn to_archive(
 
             if check
                 && archive_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -1253,7 +1188,7 @@ async fn to_archive(
                 .iter()
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
                 .collect::<Vec<&Romfile>>();
-            let mut archive_romfiles: Vec<ArchiveRomfile> = Vec::new();
+            let mut archive_romfiles: Vec<ArchiveRomfile> = vec![];
             for romfile in &romfiles {
                 let common_romfile = romfile.as_common(&mut transaction).await?;
                 let archive_romfile = common_romfile
@@ -1274,16 +1209,10 @@ async fn to_archive(
             }
 
             if check {
-                let mut results: Vec<SimpleResult<()>> = Vec::new();
+                let mut results: Vec<SimpleResult<()>> = vec![];
                 for (archive_romfile, rom) in archive_romfiles.iter().zip(&roms) {
                     let result = archive_romfile
-                        .check(
-                            &mut transaction,
-                            progress_bar,
-                            &None,
-                            &[rom],
-                            hash_algorithm,
-                        )
+                        .check(&mut transaction, progress_bar, &None, &[rom])
                         .await;
                     if result.is_err() {
                         progress_bar.println("Converted file doesn't match the original");
@@ -1314,7 +1243,7 @@ async fn to_archive(
             };
 
             if diff {
-                let mut common_romfiles: Vec<CommonRomfile> = Vec::new();
+                let mut common_romfiles: Vec<CommonRomfile> = vec![];
                 for romfile in romfiles {
                     common_romfiles.push(romfile.as_common(&mut transaction).await?)
                 }
@@ -1362,7 +1291,6 @@ async fn to_chd(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
     cd_compression_algorithms: &[String],
     cd_hunk_size: &Option<usize>,
     dvd_compression_algorithms: &[String],
@@ -1563,13 +1491,7 @@ async fn to_chd(
             };
             if check
                 && chd_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -1617,7 +1539,7 @@ async fn to_chd(
                 .as_archive(cue_roms.first().unwrap())?
                 .to_common(progress_bar, &tmp_directory.path())
                 .await?;
-            let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+            let mut bin_romfiles: Vec<CommonRomfile> = vec![];
             for rom in &bin_roms {
                 bin_romfiles.push(
                     romfile
@@ -1648,13 +1570,7 @@ async fn to_chd(
                 .await?;
             if check
                 && chd_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &bin_roms,
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &bin_roms)
                     .await
                     .is_err()
             {
@@ -1732,7 +1648,7 @@ async fn to_chd(
             .unwrap()
             .as_common(&mut transaction)
             .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
         for bin_rom in &bin_roms {
             bin_romfiles.push(
                 romfiles_by_id
@@ -1758,13 +1674,7 @@ async fn to_chd(
 
         if check
             && chd_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &bin_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &bin_roms)
                 .await
                 .is_err()
         {
@@ -1841,13 +1751,7 @@ async fn to_chd(
             .await?;
         if check
             && chd_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -1910,13 +1814,7 @@ async fn to_chd(
             .await?;
         if check
             && chd_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -1988,13 +1886,7 @@ async fn to_chd(
         }
         if check
             && chd_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2074,13 +1966,7 @@ async fn to_chd(
             };
             if check
                 && chd_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -2264,7 +2150,6 @@ async fn to_chd(
                         progress_bar,
                         &None,
                         &[roms.first().unwrap()],
-                        hash_algorithm,
                     )
                     .await
                     .is_err()
@@ -2313,7 +2198,6 @@ async fn to_cso(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -2409,13 +2293,7 @@ async fn to_cso(
 
         if check
             && cso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2458,13 +2336,7 @@ async fn to_cso(
             .await?;
         if check
             && cso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2538,13 +2410,7 @@ async fn to_cso(
             .await?;
         if check
             && cso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2592,13 +2458,7 @@ async fn to_cso(
             .await?;
         if check
             && cso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2641,13 +2501,7 @@ async fn to_cso(
 
             if check
                 && new_cso_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -2689,7 +2543,6 @@ async fn to_nsz(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -2749,13 +2602,7 @@ async fn to_nsz(
 
         if check
             && nsz_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2794,13 +2641,7 @@ async fn to_nsz(
             .await?;
         if check
             && nsz_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -2842,13 +2683,7 @@ async fn to_nsz(
 
             if check
                 && new_nsz_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -2890,7 +2725,6 @@ async fn to_rvz(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
@@ -2957,13 +2791,7 @@ async fn to_rvz(
 
         if check
             && rvz_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3009,13 +2837,7 @@ async fn to_rvz(
             .await?;
         if check
             && rvz_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3065,13 +2887,7 @@ async fn to_rvz(
 
                 if check
                     && new_rvz_romfile
-                        .check(
-                            &mut transaction,
-                            progress_bar,
-                            &None,
-                            &[rom],
-                            hash_algorithm,
-                        )
+                        .check(&mut transaction, progress_bar, &None, &[rom])
                         .await
                         .is_err()
                 {
@@ -3114,7 +2930,6 @@ async fn to_zso(
     recompress: bool,
     diff: bool,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -3210,13 +3025,7 @@ async fn to_zso(
 
         if check
             && zso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3259,13 +3068,7 @@ async fn to_zso(
             .await?;
         if check
             && zso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3337,13 +3140,7 @@ async fn to_zso(
             .await?;
         if check
             && zso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3390,13 +3187,7 @@ async fn to_zso(
             .await?;
         if check
             && zso_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3438,13 +3229,7 @@ async fn to_zso(
 
             if check
                 && new_zso_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
             {
@@ -3483,7 +3268,6 @@ async fn to_original(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     check: bool,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
@@ -3617,7 +3401,7 @@ async fn to_original(
                 .to_path_buf(),
         };
 
-        let mut common_romfiles: Vec<CommonRomfile> = Vec::new();
+        let mut common_romfiles: Vec<CommonRomfile> = vec![];
         for rom in &roms {
             common_romfiles.push(
                 archive_romfiles
@@ -3637,13 +3421,7 @@ async fn to_original(
                 .collect::<Vec<(&CommonRomfile, &&Rom)>>()
             {
                 if common_romfile
-                    .check(
-                        &mut transaction,
-                        progress_bar,
-                        &None,
-                        &[rom],
-                        hash_algorithm,
-                    )
+                    .check(&mut transaction, progress_bar, &None, &[rom])
                     .await
                     .is_err()
                 {
@@ -3763,13 +3541,7 @@ async fn to_original(
                         .collect::<Vec<(&CommonRomfile, &&Rom)>>()
                     {
                         if bin_romfile
-                            .check(
-                                &mut transaction,
-                                progress_bar,
-                                &None,
-                                &[bin_rom],
-                                hash_algorithm,
-                            )
+                            .check(&mut transaction, progress_bar, &None, &[bin_rom])
                             .await
                             .is_err()
                         {
@@ -3825,7 +3597,6 @@ async fn to_original(
                             progress_bar,
                             &None,
                             &roms.iter().collect::<Vec<&Rom>>(),
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -3857,7 +3628,6 @@ async fn to_original(
                             progress_bar,
                             &None,
                             &roms.iter().collect::<Vec<&Rom>>(),
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -3889,7 +3659,6 @@ async fn to_original(
                             progress_bar,
                             &None,
                             &roms.iter().collect::<Vec<&Rom>>(),
-                            hash_algorithm,
                         )
                         .await
                         .is_err()
@@ -3930,13 +3699,7 @@ async fn to_original(
         if check
             && iso_romfile
                 .romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -3971,13 +3734,7 @@ async fn to_original(
         if check
             && nsp_romfile
                 .romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -4012,13 +3769,7 @@ async fn to_original(
         if check
             && iso_romfile
                 .romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {
@@ -4053,13 +3804,7 @@ async fn to_original(
         if check
             && iso_romfile
                 .romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &None,
-                    &[rom],
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &None, &[rom])
                 .await
                 .is_err()
         {

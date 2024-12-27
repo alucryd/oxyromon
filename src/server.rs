@@ -76,7 +76,7 @@ async fn serve_asset(Path(path): Path<String>) -> Response<Body> {
         }
         None => Response::builder()
             .status(StatusCode::NOT_FOUND)
-            .body(Body::from(Vec::new()))
+            .body(Body::from(vec![]))
             .unwrap(),
     }
 }

@@ -140,7 +140,6 @@ oxyromon config -l
 DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
-HASH_ALGORITHM = crc
 PREFER_FLAGS =
 PREFER_PARENTS = true
 PREFER_REGIONS = none
@@ -282,7 +281,6 @@ If not provided, oxyromon will use its own fallback header definition.
         -i, --info         Show the DAT information and exit
         -s, --skip-header  Skip parsing the header even if the system has one
         -f, --force        Force import of outdated DAT files
-        -a, --arcade       Enable arcade mode
         -h, --help         Print help information
 
 ## oxyromon-download-dats
@@ -390,7 +388,6 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         -s, --system <SYSTEM>  Select systems by name
         -t, --trash            Trash invalid ROM files
         -f, --force            Force import of existing ROM files
-        -a, --hash <HASH>      Set the hash algorithm [possible values: crc, md5, sha1]
         -u, --unattended       Skip ROM files that require human intervention
         -x, --extract          Extract top-level archives before importing their contents
         -h, --help             Print help

@@ -1,4 +1,3 @@
-use super::config::HashAlgorithm;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::mimetype::*;
@@ -151,7 +150,7 @@ pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> SimpleResult<(Irdfile, Vec<u
     let mut gzipped_header = vec![0u8; gzipped_header_length as usize];
     reader.read_exact(&mut gzipped_header).unwrap();
     let mut gzipped_header_decoder = GzDecoder::new(io::Cursor::new(gzipped_header));
-    let mut header: Vec<u8> = Vec::new();
+    let mut header: Vec<u8> = vec![];
     gzipped_header_decoder.read_to_end(&mut header).unwrap();
 
     // read footer
@@ -219,7 +218,7 @@ fn walk_directory<T: ISO9660Reader>(
     prefix: &str,
 ) -> HashMap<String, Vec<ISOFile<T>>> {
     let mut files: HashMap<String, Vec<ISOFile<T>>> = HashMap::new();
-    let mut directories: Vec<ISODirectory<T>> = Vec::new();
+    let mut directories: Vec<ISODirectory<T>> = vec![];
     for entry in directory.contents().flatten() {
         match entry {
             DirectoryEntry::Directory(directory) => {
@@ -275,7 +274,7 @@ pub async fn import_ird(
     }
 
     // convert files into roms
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     for file in files {
         let size = file.1.iter().map(|file| file.size()).sum::<u32>() as i64;
         let location = file.1.first().unwrap().header().extent_loc as u64;
@@ -326,7 +325,6 @@ pub async fn import_ird(
             progress_bar,
             game.system_id,
             orphan_romfile_ids,
-            &HashAlgorithm::Md5,
         )
         .await?;
     }

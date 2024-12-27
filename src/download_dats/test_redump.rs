@@ -28,7 +28,7 @@ async fn test() {
     set_tmp_directory(PathBuf::from(tmp_directory.path()));
 
     let zip_path = test_directory.join("Test System (20200721).zip");
-    let mut zip_data = Vec::new();
+    let mut zip_data = vec![];
     open_file(&zip_path)
         .await
         .unwrap()

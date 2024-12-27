@@ -30,7 +30,6 @@ async fn test() {
         &detector_xml,
         None,
         false,
-        false,
     )
     .await
     .unwrap();
@@ -45,7 +44,6 @@ async fn test() {
         &datfile_xml,
         &detector_xml,
         None,
-        false,
         true,
     )
     .await

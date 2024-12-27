@@ -14,7 +14,7 @@ use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use strum::{Display, EnumString, VariantNames};
+use strum::{Display, EnumIter, EnumString, VariantNames};
 
 cfg_if! {
     if #[cfg(test)] {
@@ -35,7 +35,7 @@ cfg_if! {
     }
 }
 
-#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[derive(Display, PartialEq, EnumIter, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,
@@ -75,7 +75,6 @@ const BOOLEANS: &[&str] = &[
     "SEVENZIP_SOLID_COMPRESSION",
 ];
 const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
-    "HASH_ALGORITHM" => HashAlgorithm::VARIANTS,
     "PREFER_REGIONS" => PreferredRegion::VARIANTS,
     "PREFER_VERSIONS" => PreferredVersion::VARIANTS,
     "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
@@ -352,9 +351,9 @@ pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<Strin
     match find_setting_by_key(connection, key).await {
         Some(setting) => match setting.value {
             Some(value) => value.split(LIST_SEPARATOR).map(|s| s.to_owned()).collect(),
-            None => Vec::new(),
+            None => vec![],
         },
-        None => Vec::new(),
+        None => vec![],
     }
 }
 
