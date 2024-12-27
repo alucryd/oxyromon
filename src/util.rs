@@ -205,7 +205,7 @@ pub async fn get_system_directory(
         Some(custom_name) => {
             if get_bool(connection, "GROUP_SUBSYSTEMS").await {
                 SYSTEM_NAME_REGEX
-                    .captures(&custom_name)
+                    .captures(custom_name)
                     .unwrap()
                     .get(2)
                     .unwrap()

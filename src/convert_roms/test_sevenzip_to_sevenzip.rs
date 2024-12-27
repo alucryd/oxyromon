@@ -74,7 +74,6 @@ async fn test() {
         true,
         false,
         true,
-        &HashAlgorithm::Crc,
         &None,
         false,
     )

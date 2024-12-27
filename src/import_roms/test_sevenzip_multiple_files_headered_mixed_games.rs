@@ -51,7 +51,6 @@ async fn test() {
         &HashSet::new(),
         CommonRomfile::from_path(&romfile_path).unwrap(),
         romfile_path.extension().unwrap().to_str().unwrap(),
-        &HashAlgorithm::Crc,
         true,
         false,
     )

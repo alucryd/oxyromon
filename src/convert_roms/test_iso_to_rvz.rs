@@ -74,7 +74,6 @@ async fn test() {
         false,
         true,
         true,
-        &HashAlgorithm::Crc,
         &RvzCompressionAlgorithm::Zstd,
         5,
         128,

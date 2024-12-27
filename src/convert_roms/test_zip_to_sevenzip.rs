@@ -69,7 +69,6 @@ async fn test() {
         false,
         false,
         true,
-        &HashAlgorithm::Crc,
         &None,
         false,
     )

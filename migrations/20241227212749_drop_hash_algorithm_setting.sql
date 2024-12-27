@@ -1,0 +1,2 @@
+DELETE FROM settings
+WHERE "key" = 'HASH_ALGORITHM';

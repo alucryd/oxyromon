@@ -31,7 +31,6 @@ async fn test() {
         &detector_xml,
         None,
         false,
-        false,
     )
     .await
     .unwrap();
@@ -53,7 +52,6 @@ async fn test() {
             &Some(&system),
             &None,
             &romfile_path,
-            &HashAlgorithm::Crc,
             true,
             true,
             false,
@@ -72,7 +70,6 @@ async fn test() {
         &datfile_xml,
         &detector_xml,
         None,
-        false,
         false,
     )
     .await

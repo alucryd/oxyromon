@@ -86,7 +86,6 @@ async fn test() {
         false,
         true,
         true,
-        &HashAlgorithm::Crc,
         &[],
         &None,
         &[],
@@ -104,7 +103,7 @@ async fn test() {
     let games = find_complete_games_by_system_id(&mut connection, system.id).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
-    let mut romfiles_mtimes: Vec<SystemTime> = Vec::new();
+    let mut romfiles_mtimes: Vec<SystemTime> = vec![];
     for game in &games {
         let roms = find_roms_with_romfile_by_game_ids(&mut connection, &[game.id]).await;
         for rom in &roms {
@@ -136,7 +135,6 @@ async fn test() {
         true,
         true,
         true,
-        &HashAlgorithm::Crc,
         &[],
         &None,
         &[],

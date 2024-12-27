@@ -93,7 +93,7 @@ async fn process_system(
         )
         .await;
 
-        let mut existing_romfiles: Vec<&Romfile> = Vec::new();
+        let mut existing_romfiles: Vec<&Romfile> = vec![];
 
         for extension in [
             CHD_EXTENSION,

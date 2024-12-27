@@ -209,12 +209,12 @@ async fn sort_system(
     progress_bar.println(format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
-    let mut all_regions_games: Vec<Game> = Vec::new();
-    let mut one_region_games: Vec<Game> = Vec::new();
-    let mut ignored_games: Vec<Game> = Vec::new();
-    let mut incomplete_all_regions_games: Vec<Game> = Vec::new();
-    let mut incomplete_one_region_games: Vec<Game> = Vec::new();
-    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = Vec::new();
+    let mut all_regions_games: Vec<Game> = vec![];
+    let mut one_region_games: Vec<Game> = vec![];
+    let mut ignored_games: Vec<Game> = vec![];
+    let mut incomplete_all_regions_games: Vec<Game> = vec![];
+    let mut incomplete_one_region_games: Vec<Game> = vec![];
+    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = vec![];
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
     let mut romfiles_by_id: HashMap<i64, Romfile> = romfiles
@@ -249,7 +249,7 @@ async fn sort_system(
             if clone_games_by_parent_id.contains_key(&parent_game.id) {
                 games = clone_games_by_parent_id.remove(&parent_game.id).unwrap();
             } else {
-                games = Vec::new();
+                games = vec![];
             }
             games.push(parent_game);
             // put newer releases first
@@ -375,7 +375,7 @@ async fn sort_system(
     }
 
     if print_wanted {
-        let mut all_incomplete_games: Vec<&Game> = Vec::new();
+        let mut all_incomplete_games: Vec<&Game> = vec![];
         all_incomplete_games.extend(incomplete_all_regions_games.iter());
         all_incomplete_games.extend(incomplete_one_region_games.iter());
         all_incomplete_games.sort_by_key(|game| &game.name);
@@ -604,7 +604,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
     romfiles_by_id: &'a HashMap<i64, Romfile>,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<Vec<(&'a Romfile, PathBuf)>> {
-    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = Vec::new();
+    let mut romfile_moves: Vec<(&Romfile, PathBuf)> = vec![];
 
     let roms = find_roms_with_romfile_by_game_ids(
         connection,

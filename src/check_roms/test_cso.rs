@@ -57,16 +57,9 @@ async fn test() {
     let games = find_complete_games_by_system_id(&mut connection, system.id).await;
 
     // when
-    check_system(
-        &mut connection,
-        &progress_bar,
-        &system,
-        games,
-        false,
-        &HashAlgorithm::Crc,
-    )
-    .await
-    .unwrap();
+    check_system(&mut connection, &progress_bar, &system, games, false)
+        .await
+        .unwrap();
 
     // then
     let mut romfiles = find_romfiles(&mut connection).await;

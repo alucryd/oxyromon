@@ -29,7 +29,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let mut romfile_paths: Vec<PathBuf> = Vec::new();
+    let mut romfile_paths: Vec<PathBuf> = vec![];
     let romfile_path = tmp_directory.join("UP0001-BLUS00001.pkg");
     fs::copy(test_directory.join("UP0001-BLUS00001.pkg"), &romfile_path)
         .await

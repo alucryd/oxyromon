@@ -152,8 +152,10 @@ pub struct ProfileXml {
 pub struct DatfileXml {
     #[serde(rename = "header")]
     pub system: SystemXml,
-    #[serde(rename = "game", alias = "machine", default)]
+    #[serde(rename = "game", default)]
     pub games: Vec<GameXml>,
+    #[serde(rename = "machine", default)]
+    pub machines: Vec<GameXml>,
 }
 
 #[derive(Deserialize, Serialize)]

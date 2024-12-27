@@ -56,22 +56,11 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
-    let hash_algorithm = match find_setting_by_key(connection, "HASH_ALGORITHM")
-        .await
-        .unwrap()
-        .value
-        .as_deref()
-    {
-        Some("crc") => HashAlgorithm::Crc,
-        Some("md5") => HashAlgorithm::Md5,
-        Some("sha1") => HashAlgorithm::Sha1,
-        Some(_) | None => bail!("Not possible"),
-    };
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
         let games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
-                let mut games: Vec<Game> = Vec::new();
+                let mut games: Vec<Game> = vec![];
                 for game_name in game_names {
                     games.append(
                         &mut find_complete_games_by_name_and_system_id(
@@ -98,7 +87,6 @@ pub async fn main(
             &system,
             games,
             matches.get_flag("SIZE"),
-            &hash_algorithm,
         )
         .await?;
         progress_bar.println("");
@@ -112,7 +100,6 @@ async fn check_system(
     system: &System,
     games: Vec<Game>,
     size: bool,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let roms = find_roms_with_romfile_by_game_ids(
         connection,
@@ -162,7 +149,6 @@ async fn check_system(
                 &header,
                 romfile,
                 romfile_roms,
-                hash_algorithm,
             )
             .await;
         } else if CHD_EXTENSION == romfile_extension {
@@ -188,13 +174,7 @@ async fn check_system(
                 None => romfile.as_common(&mut transaction).await?.as_chd().await?,
             };
             result = chd_romfile
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         } else if CSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
@@ -206,13 +186,7 @@ async fn check_system(
                 .await?
                 .as_xso()
                 .await?
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         } else if NSZ_EXTENSION == romfile_extension {
             if nsz::get_version().await.is_err() {
@@ -223,13 +197,7 @@ async fn check_system(
                 .as_common(&mut transaction)
                 .await?
                 .as_nsz()?
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         } else if RVZ_EXTENSION == romfile_extension {
             if dolphin::get_version().await.is_err() {
@@ -240,13 +208,7 @@ async fn check_system(
                 .as_common(&mut transaction)
                 .await?
                 .as_rvz()?
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         } else if ZSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
@@ -258,25 +220,13 @@ async fn check_system(
                 .await?
                 .as_xso()
                 .await?
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         } else {
             result = romfile
                 .as_common(&mut transaction)
                 .await?
-                .check(
-                    &mut transaction,
-                    progress_bar,
-                    &header,
-                    &romfile_roms,
-                    hash_algorithm,
-                )
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
         }
 
@@ -312,7 +262,6 @@ async fn check_archive(
     header: &Option<Header>,
     romfile: &Romfile,
     roms: Vec<&Rom>,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let archive_romfiles = romfile
         .as_common(connection)
@@ -328,7 +277,7 @@ async fn check_archive(
             .find(|rom| rom.name == archive_romfile.path)
             .unwrap();
         archive_romfile
-            .check(connection, progress_bar, header, &[rom], hash_algorithm)
+            .check(connection, progress_bar, header, &[rom])
             .await?;
     }
     Ok(())

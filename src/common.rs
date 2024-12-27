@@ -223,7 +223,7 @@ impl HeaderedHashAndSize for CommonRomfile {
             "Failed to read into buffer"
         );
 
-        let mut matches: Vec<bool> = Vec::new();
+        let mut matches: Vec<bool> = vec![];
         for rule in rules {
             let start_byte = rule.start_byte as usize;
             let hex_values: Vec<String> = buffer[start_byte..]
@@ -319,7 +319,6 @@ pub trait Check {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-        hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()>;
 }
 
@@ -330,9 +329,19 @@ impl Check for CommonRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-        hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\"", self));
+        let rom = roms[0];
+        let hash_algorithm: HashAlgorithm;
+        if rom.crc.is_some() {
+            hash_algorithm = HashAlgorithm::Crc;
+        } else if rom.md5.is_some() {
+            hash_algorithm = HashAlgorithm::Md5;
+        } else if rom.sha1.is_some() {
+            hash_algorithm = HashAlgorithm::Sha1;
+        } else {
+            bail!("Not possible")
+        }
         let (hash, size) = match header {
             Some(header) => {
                 self.get_headered_hash_and_size(
@@ -341,33 +350,33 @@ impl Check for CommonRomfile {
                     header,
                     1,
                     1,
-                    hash_algorithm,
+                    &hash_algorithm,
                 )
                 .await?
             }
             None => {
                 let (hash, size) = self
-                    .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
+                    .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                     .await?;
                 (hash, size)
             }
         };
-        if size != roms[0].size as u64 {
+        if size != rom.size as u64 {
             bail!("Size mismatch");
         };
         match hash_algorithm {
             HashAlgorithm::Crc => {
-                if &hash != roms[0].crc.as_ref().unwrap() {
+                if &hash != rom.crc.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }
             HashAlgorithm::Md5 => {
-                if &hash != roms[0].md5.as_ref().unwrap() {
+                if &hash != rom.md5.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }
             HashAlgorithm::Sha1 => {
-                if &hash != roms[0].sha1.as_ref().unwrap() {
+                if &hash != rom.sha1.as_ref().unwrap() {
                     bail!("Checksum mismatch");
                 }
             }

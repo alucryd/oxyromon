@@ -31,7 +31,6 @@ async fn test() {
         &detector_xml,
         Some(&String::from("Custom Test System")),
         false,
-        false,
     )
     .await
     .unwrap();

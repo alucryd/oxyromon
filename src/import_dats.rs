@@ -64,14 +64,6 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("ARCADE")
-                .short('a')
-                .long("arcade")
-                .help("Enable arcade mode")
-                .required(false)
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("NAME")
                 .short('n')
                 .long("name")
@@ -140,7 +132,6 @@ pub async fn main(
                 &datfile_xml,
                 &detector_xml,
                 custom_name,
-                matches.get_flag("ARCADE"),
                 matches.get_flag("FORCE"),
             )
             .await?;
@@ -199,7 +190,6 @@ pub async fn import_dat(
     datfile_xml: &DatfileXml,
     detector_xml: &Option<DetectorXml>,
     custom_name: Option<&String>,
-    arcade: bool,
     force: bool,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing system");
@@ -212,7 +202,7 @@ pub async fn import_dat(
         progress_bar,
         &datfile_xml.system,
         custom_name,
-        arcade,
+        !datfile_xml.machines.is_empty(),
         force,
     )
     .await
@@ -230,7 +220,7 @@ pub async fn import_dat(
     progress_bar.set_style(get_count_progress_style());
     progress_bar.set_length(datfile_xml.games.len() as u64);
 
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     progress_bar.println("Deleting old games");
     orphan_romfile_ids
         .append(&mut delete_old_games(&mut transaction, &datfile_xml.games, system_id).await);
@@ -238,9 +228,13 @@ pub async fn import_dat(
     orphan_romfile_ids.append(
         &mut create_or_update_games(
             &mut transaction,
-            &datfile_xml.games,
+            if !datfile_xml.machines.is_empty() {
+                &datfile_xml.machines
+            } else {
+                &datfile_xml.games
+            },
             system_id,
-            arcade,
+            !datfile_xml.machines.is_empty(),
             progress_bar,
         )
         .await?,
@@ -258,7 +252,6 @@ pub async fn import_dat(
             progress_bar,
             system_id,
             orphan_romfile_ids,
-            &HashAlgorithm::Crc,
         )
         .await?;
     }
@@ -354,7 +347,7 @@ async fn create_or_update_games(
     arcade: bool,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<Vec<i64>> {
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     let (mut parent_games_xml, mut child_games_xml): (Vec<&GameXml>, Vec<&GameXml>) = games_xml
         .par_iter()
         .partition(|game_xml| game_xml.cloneof.is_none() && game_xml.romof.is_none());
@@ -514,7 +507,7 @@ async fn create_or_update_roms(
     mut bios: bool,
     game_id: i64,
 ) -> Vec<i64> {
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     for rom_xml in roms_xml {
         // skip nodump roms
         if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
@@ -596,7 +589,7 @@ async fn delete_old_games(
     games_xml: &[GameXml],
     system_id: i64,
 ) -> Vec<i64> {
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     let game_names_xml: Vec<&String> = games_xml.iter().map(|game_xml| &game_xml.name).collect();
     let games: Vec<Game> = find_games_by_system_id(connection, system_id)
         .await
@@ -626,7 +619,7 @@ async fn delete_old_roms(
             .into_par_iter()
             .map(|rom| (rom.name, rom.romfile_id))
             .collect();
-    let mut orphan_romfile_ids: Vec<i64> = Vec::new();
+    let mut orphan_romfile_ids: Vec<i64> = vec![];
     for (rom_name, rom_romfile_id) in &rom_names_romfile_ids {
         if !roms_xml.iter().any(|rom_xml| &rom_xml.name == rom_name) {
             delete_rom_by_name_and_game_id(connection, rom_name, game_id).await;
@@ -643,7 +636,6 @@ pub async fn reimport_orphan_romfiles(
     progress_bar: &ProgressBar,
     system_id: i64,
     orphan_romfile_ids: Vec<i64>,
-    hash_algorithm: &HashAlgorithm,
 ) -> SimpleResult<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
@@ -660,7 +652,6 @@ pub async fn reimport_orphan_romfiles(
                 &Some(&system),
                 &header,
                 &romfile.path,
-                hash_algorithm,
                 false,
                 false,
                 false,

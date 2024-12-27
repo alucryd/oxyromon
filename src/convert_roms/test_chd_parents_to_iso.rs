@@ -86,7 +86,6 @@ async fn test() {
         false,
         true,
         true,
-        &HashAlgorithm::Crc,
         &[],
         &None,
         &[],
@@ -121,7 +120,6 @@ async fn test() {
         roms_by_game_id,
         romfiles_by_id,
         false,
-        &HashAlgorithm::Crc,
     )
     .await
     .unwrap();
