@@ -630,20 +630,36 @@ async fn import_archive(
             }
             let rom_name = rom_path.file_name().unwrap().to_str();
 
-            if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+            let mut rom_game_system = find_rom_by_size_and_hash(
                 connection,
                 progress_bar,
                 size,
                 &hash,
                 system,
                 game_ids,
-                game_names,
+                game_names.as_slice(),
                 rom_name,
                 &hash_algorithm,
                 unattended,
             )
-            .await?
-            {
+            .await?;
+            // MAME's CHD DATs have no size information
+            if rom_game_system.is_none() && hash_algorithm == HashAlgorithm::Sha1 {
+                rom_game_system = find_rom_by_size_and_hash(
+                    connection,
+                    progress_bar,
+                    0,
+                    &hash,
+                    system,
+                    game_ids,
+                    game_names.as_slice(),
+                    rom_name,
+                    &hash_algorithm,
+                    unattended,
+                )
+                .await?;
+            }
+            if let Some((rom, game, system)) = rom_game_system {
                 matched = true;
                 new_system_ids.insert(system.id);
                 new_game_ids.insert(game.id);
@@ -794,7 +810,7 @@ async fn import_chd(
                         &hash,
                         system,
                         game_ids,
-                        vec![],
+                        &[],
                         None,
                         &hash_algorithm,
                         unattended,
@@ -867,7 +883,7 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
-                    vec![],
+                    &[],
                     None,
                     &hash_algorithm,
                     unattended,
@@ -907,20 +923,36 @@ async fn import_chd(
                     .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                     .await?;
                 rdsk_romfile.romfile.delete(progress_bar, true).await?;
-                if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                let mut rom_game_system = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
                     &hash,
                     system,
                     game_ids,
-                    vec![],
+                    &[],
                     None,
                     &hash_algorithm,
                     unattended,
                 )
-                .await?
-                {
+                .await?;
+                // MAME's CHD DATs have no size information
+                if rom_game_system.is_none() && hash_algorithm == HashAlgorithm::Sha1 {
+                    rom_game_system = find_rom_by_size_and_hash(
+                        connection,
+                        progress_bar,
+                        0,
+                        &hash,
+                        system,
+                        game_ids,
+                        &[],
+                        None,
+                        &hash_algorithm,
+                        unattended,
+                    )
+                    .await?;
+                }
+                if let Some((rom, game, system)) = rom_game_system {
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     let new_chd_path = system_directory
@@ -954,20 +986,36 @@ async fn import_chd(
                     .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                     .await?;
                 riff_romfile.romfile.delete(progress_bar, true).await?;
-                if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                let mut rom_game_system = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
                     &hash,
                     system,
                     game_ids,
-                    vec![],
+                    &[],
                     None,
                     &hash_algorithm,
                     unattended,
                 )
-                .await?
-                {
+                .await?;
+                // MAME's CHD DATs have no size information
+                if rom_game_system.is_none() && hash_algorithm == HashAlgorithm::Sha1 {
+                    rom_game_system = find_rom_by_size_and_hash(
+                        connection,
+                        progress_bar,
+                        0,
+                        &hash,
+                        system,
+                        game_ids,
+                        &[],
+                        None,
+                        &hash_algorithm,
+                        unattended,
+                    )
+                    .await?;
+                }
+                if let Some((rom, game, system)) = rom_game_system {
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     let new_chd_path = system_directory
@@ -1046,7 +1094,7 @@ async fn import_cia(
                 &hash,
                 system,
                 game_ids,
-                game_names,
+                game_names.as_slice(),
                 rom_name,
                 &hash_algorithm,
                 unattended,
@@ -1128,7 +1176,7 @@ async fn import_cso(
             &hash,
             system,
             game_ids,
-            vec![],
+            &[],
             None,
             &hash_algorithm,
             unattended,
@@ -1177,7 +1225,7 @@ async fn import_nsz(
             &hash,
             system,
             game_ids,
-            vec![],
+            &[],
             None,
             &hash_algorithm,
             unattended,
@@ -1226,7 +1274,7 @@ async fn import_rvz(
             &hash,
             system,
             game_ids,
-            vec![],
+            &[],
             None,
             &hash_algorithm,
             unattended,
@@ -1275,7 +1323,7 @@ async fn import_zso(
             &hash,
             system,
             game_ids,
-            vec![],
+            &[],
             None,
             &hash_algorithm,
             unattended,
@@ -1340,7 +1388,7 @@ async fn import_other(
             &hash,
             system,
             game_ids,
-            vec![],
+            &[],
             None,
             &hash_algorithm,
             unattended,
@@ -1377,7 +1425,7 @@ async fn find_rom_by_size_and_hash(
     hash: &str,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    game_names: Vec<&str>,
+    game_names: &[&str],
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
     unattended: bool,
@@ -1395,7 +1443,7 @@ async fn find_rom_by_size_and_hash(
                         rom_name.unwrap(),
                         size,
                         hash,
-                        &game_names,
+                        game_names,
                         system.id,
                     )
                     .await
@@ -1407,7 +1455,7 @@ async fn find_rom_by_size_and_hash(
                         rom_name.unwrap(),
                         size,
                         hash,
-                        &game_names,
+                        game_names,
                     )
                     .await
                     .into_iter()
@@ -1421,7 +1469,7 @@ async fn find_rom_by_size_and_hash(
                         rom_name.unwrap(),
                         size,
                         hash,
-                        &game_names,
+                        game_names,
                         system.id,
                     )
                     .await
@@ -1433,7 +1481,7 @@ async fn find_rom_by_size_and_hash(
                         rom_name.unwrap(),
                         size,
                         hash,
-                        &game_names,
+                        game_names,
                     )
                     .await
                     .into_iter()
@@ -1447,7 +1495,7 @@ async fn find_rom_by_size_and_hash(
                     rom_name.unwrap(),
                     size,
                     hash,
-                    &game_names,
+                    game_names,
                     system.id,
                 )
                 .await
@@ -1459,7 +1507,7 @@ async fn find_rom_by_size_and_hash(
                         rom_name.unwrap(),
                         size,
                         hash,
-                        &game_names,
+                        game_names,
                     )
                     .await
                     .into_iter()
@@ -1475,21 +1523,14 @@ async fn find_rom_by_size_and_hash(
             HashAlgorithm::Crc => {
                 if let Some(system) = system {
                     find_roms_without_romfile_by_size_and_crc_and_game_names_and_system_id(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
-                        system.id,
+                        connection, size, hash, game_names, system.id,
                     )
                     .await
                     .into_iter()
                     .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_size_and_crc_and_game_names(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
+                        connection, size, hash, game_names,
                     )
                     .await
                     .into_iter()
@@ -1499,21 +1540,14 @@ async fn find_rom_by_size_and_hash(
             HashAlgorithm::Md5 => {
                 if let Some(system) = system {
                     find_roms_without_romfile_by_size_and_md5_and_game_names_and_system_id(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
-                        system.id,
+                        connection, size, hash, game_names, system.id,
                     )
                     .await
                     .into_iter()
                     .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_size_and_md5_and_game_names(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
+                        connection, size, hash, game_names,
                     )
                     .await
                     .into_iter()
@@ -1523,21 +1557,14 @@ async fn find_rom_by_size_and_hash(
             HashAlgorithm::Sha1 => {
                 if let Some(system) = system {
                     find_roms_without_romfile_by_size_and_sha1_and_game_names_and_system_id(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
-                        system.id,
+                        connection, size, hash, game_names, system.id,
                     )
                     .await
                     .into_iter()
                     .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_size_and_sha1_and_game_names(
-                        connection,
-                        size,
-                        hash,
-                        &game_names,
+                        connection, size, hash, game_names,
                     )
                     .await
                     .into_iter()

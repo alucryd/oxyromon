@@ -264,13 +264,16 @@ Supported console DAT providers:
 - No-Intro
 - Redump
 
+Note: Some systems require a header definition to be placed alongside the DAT file.
+If not provided, oxyromon will use its own fallback header definition.
+
 Supported arcade DAT providers:
 
 - MAME
-- FBNeo
 
-Note: Some systems require a header definition to be placed alongside the DAT file.
-If not provided, oxyromon will use its own fallback header definition.
+Note: MAME DATs are commonly found as separate files for ROMs, CHDs, and others.
+It is recommended to turn `GROUP_SUBSYSTEMS` on and give them custom names like `MAME (ROMs)`, `MAME (CHDs)`, etc...
+That way they will be physically grouped in a single `MAME` folder and work in MAME out of the box.
 
     Usage: oxyromon import-dats [OPTIONS] <DATS>...
 

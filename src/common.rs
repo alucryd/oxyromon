@@ -361,7 +361,7 @@ impl Check for CommonRomfile {
                 (hash, size)
             }
         };
-        if size != rom.size as u64 {
+        if rom.size > 0 && size != rom.size as u64 {
             bail!("Size mismatch");
         };
         match hash_algorithm {

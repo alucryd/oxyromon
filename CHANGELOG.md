@@ -17,6 +17,7 @@
 - Autodetect MAME DATs as arcade and remove the `-a` flag in the `import-dats` subcommand
 - Iterate over all hash algorithms when matching and checking roms in all subcommands
 - Remove the `HASH_ALGORITHM` setting
+- Support DATs with no size information like MAME CHDs
 
 # 0.19.0
 

@@ -213,7 +213,7 @@ impl Check for ArchiveRomfile {
                 let (hash, size) = self
                     .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                     .await?;
-                if size != roms[0].size as u64 {
+                if rom.size > 0 && size != rom.size as u64 {
                     bail!("Size mismatch");
                 };
                 match hash_algorithm {

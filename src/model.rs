@@ -231,7 +231,7 @@ pub struct RomXml {
     pub name: String,
     #[serde(rename = "@merge", skip_serializing)]
     pub merge: Option<String>,
-    #[serde(rename = "@size", deserialize_with = "empty_string_to_zero")]
+    #[serde(rename = "@size", default, deserialize_with = "empty_string_to_zero")]
     pub size: i64,
     #[serde(rename = "@crc")]
     pub crc: Option<String>,
