@@ -1367,7 +1367,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
     connection: &mut SqliteConnection,
     size: u64,
     md5: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
@@ -1404,7 +1404,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
     connection: &mut SqliteConnection,
     size: u64,
     md5: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
@@ -1445,7 +1445,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
     name: &str,
     size: u64,
     md5: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let md5 = md5.to_lowercase();
@@ -1485,7 +1485,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
     name: &str,
     size: u64,
     md5: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
@@ -1653,7 +1653,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
     connection: &mut SqliteConnection,
     size: u64,
     sha1: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
@@ -1690,7 +1690,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
     connection: &mut SqliteConnection,
     size: u64,
     sha1: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
@@ -1731,7 +1731,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
     name: &str,
     size: u64,
     sha1: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let sha1 = sha1.to_lowercase();
@@ -1771,7 +1771,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
     name: &str,
     size: u64,
     sha1: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
@@ -1941,7 +1941,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
     connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
@@ -1978,7 +1978,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
     connection: &mut SqliteConnection,
     size: u64,
     crc: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
@@ -2019,7 +2019,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
     name: &str,
     size: u64,
     crc: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
     let crc = crc.to_lowercase();
@@ -2059,7 +2059,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
     name: &str,
     size: u64,
     crc: &str,
-    game_names: &Vec<&str>,
+    game_names: &[&str],
     system_id: i64,
 ) -> Vec<Rom> {
     let size = i64::try_from(size).unwrap();
