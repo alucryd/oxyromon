@@ -365,7 +365,7 @@ Most files are moved as-is, with the exception of archives containing multiple g
 
 Supported console ROM formats:
 
-- All No-Intro and Redump supported formats
+- All No-Intro and Redump supported file formats
 - 7Z and ZIP archives
 - CHD (Compressed Hunks of Data)
 - CIA (Installable 3DS title)
@@ -377,10 +377,11 @@ Supported console ROM formats:
 
 Supported arcade ROM formats:
 
+- Uncompressed file formats
 - ZIP archives
-- Uncompressed folders
+- CHD (Compressed Hunks of Data)
 
-Note: Importing a CHD containing multiple partitions requires the matching CUE file from Redump.
+Note: When importing MAME CHDs and uncompressed disk formats, please make sure to select the `sha1` hash algorithm explicitly.
 
     Usage: oxyromon import-roms [OPTIONS] <ROMS>...
 
@@ -393,6 +394,7 @@ Note: Importing a CHD containing multiple partitions requires the matching CUE f
         -f, --force            Force import of existing ROM files
         -u, --unattended       Skip ROM files that require human intervention
         -x, --extract          Extract top-level archives before importing their contents
+        -a, --hash <HASH>      Specify a hash algorithm [possible values: crc, md5, sha1]
         -h, --help             Print help
 
 ## oxyromon-import-patches
