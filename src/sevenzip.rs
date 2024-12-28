@@ -5,11 +5,12 @@ use super::progress::*;
 use super::util::*;
 use super::SimpleResult;
 use indicatif::ProgressBar;
+use itertools::izip;
 use regex::Regex;
 use sqlx::SqliteConnection;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 use strum::{Display, EnumString};
@@ -36,6 +37,8 @@ pub struct ArchiveRomfile {
     pub romfile: CommonRomfile,
     pub path: String,
     pub archive_type: ArchiveType,
+    pub size: u64,
+    pub crc: String,
 }
 
 pub trait ArchiveFile {
@@ -78,6 +81,8 @@ impl ArchiveFile for ArchiveRomfile {
             romfile: self.romfile.clone(),
             path: new_path.to_string(),
             archive_type: self.archive_type,
+            size: self.size,
+            crc: self.crc.clone(),
         })
     }
 
@@ -103,7 +108,12 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        if self.romfile.as_archives(progress_bar).await?.is_empty() {
+        if self
+            .romfile
+            .as_archive(progress_bar, None)
+            .await?
+            .is_empty()
+        {
             self.romfile.delete(progress_bar, false).await?;
         }
 
@@ -112,27 +122,22 @@ impl ArchiveFile for ArchiveRomfile {
 }
 
 impl Size for ArchiveRomfile {
-    async fn get_size(&self) -> SimpleResult<u64> {
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-            .arg("l")
-            .arg("-slt")
-            .arg(&self.romfile.path)
-            .arg(self.path.replace("-", "?").replace("@", "?"))
-            .output()
-            .await
-            .expect("Failed to parse archive");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str());
+    async fn get_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+    ) -> SimpleResult<u64> {
+        if self.size > 0 {
+            Ok(self.size)
+        } else {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let size = self
+                .to_common(progress_bar, &tmp_directory)
+                .await?
+                .get_size(connection, progress_bar)
+                .await?;
+            Ok(size)
         }
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let size: &str = stdout
-            .lines()
-            .find(|&line| line.starts_with("Size ="))
-            .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
-            .unwrap();
-        Ok(u64::from_str(size).unwrap())
     }
 }
 
@@ -145,30 +150,8 @@ impl HashAndSize for ArchiveRomfile {
         total: usize,
         hash_algorithm: &HashAlgorithm,
     ) -> SimpleResult<(String, u64)> {
-        if hash_algorithm == &HashAlgorithm::Crc {
-            let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-                .arg("l")
-                .arg("-slt")
-                .arg(&self.romfile.path)
-                .arg(self.path.replace("-", "?").replace("@", "?"))
-                .output()
-                .await
-                .expect("Failed to parse archive");
-
-            if !output.status.success() {
-                bail!(String::from_utf8(output.stderr).unwrap().as_str());
-            }
-
-            let stdout = String::from_utf8(output.stdout).unwrap();
-            let hash = stdout
-                .lines()
-                .find(|&line| line.starts_with("CRC ="))
-                .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
-                .unwrap()
-                .to_string()
-                .to_lowercase();
-            let size = self.get_size().await?;
-            Ok((hash, size))
+        if hash_algorithm == &HashAlgorithm::Crc && !self.crc.is_empty() && self.size > 0 {
+            Ok((self.crc.clone(), self.size))
         } else {
             let tmp_directory = create_tmp_directory(connection).await?;
             let (hash, size) = self
@@ -190,51 +173,11 @@ impl Check for ArchiveRomfile {
         roms: &[&Rom],
     ) -> SimpleResult<()> {
         progress_bar.println(format!("Checking \"{}\" ({})", &self.romfile, &self.path));
-        let rom = roms[0];
-        let hash_algorithm: HashAlgorithm;
-        if rom.crc.is_some() {
-            hash_algorithm = HashAlgorithm::Crc;
-        } else if rom.md5.is_some() {
-            hash_algorithm = HashAlgorithm::Md5;
-        } else if rom.sha1.is_some() {
-            hash_algorithm = HashAlgorithm::Sha1;
-        } else {
-            bail!("Not possible")
-        }
-        match header.is_some() || hash_algorithm != HashAlgorithm::Crc {
-            true => {
-                let tmp_directory = create_tmp_directory(connection).await?;
-                let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
-                common_romfile
-                    .check(connection, progress_bar, header, roms)
-                    .await?;
-            }
-            false => {
-                let (hash, size) = self
-                    .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
-                    .await?;
-                if rom.size > 0 && size != rom.size as u64 {
-                    bail!("Size mismatch");
-                };
-                match hash_algorithm {
-                    HashAlgorithm::Crc => {
-                        if &hash != rom.crc.as_ref().unwrap() {
-                            bail!("Checksum mismatch");
-                        }
-                    }
-                    HashAlgorithm::Md5 => {
-                        if &hash != rom.md5.as_ref().unwrap() {
-                            bail!("Checksum mismatch");
-                        }
-                    }
-                    HashAlgorithm::Sha1 => {
-                        if &hash != rom.sha1.as_ref().unwrap() {
-                            bail!("Checksum mismatch");
-                        }
-                    }
-                }
-            }
-        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
+        common_romfile
+            .check(connection, progress_bar, header, roms)
+            .await?;
         Ok(())
     }
 }
@@ -340,6 +283,8 @@ impl ToArchive for CommonRomfile {
             romfile: CommonRomfile::from_path(&archive_path)?,
             path: path.as_os_str().to_str().unwrap().to_string(),
             archive_type: *archive_type,
+            size: 0,
+            crc: String::new(),
         })
     }
 }
@@ -373,45 +318,72 @@ impl ToArchive for ArchiveRomfile {
 }
 
 pub trait AsArchive {
-    fn as_archive(self, rom: &Rom) -> SimpleResult<ArchiveRomfile>;
-    async fn as_archives(&self, progress_bar: &ProgressBar) -> SimpleResult<Vec<ArchiveRomfile>>;
+    async fn parse_archive(
+        &self,
+        progress_bar: &ProgressBar,
+        rom: Option<&Rom>,
+    ) -> SimpleResult<Vec<(String, u64, String)>>;
+    async fn as_archive(
+        &self,
+        progress_bar: &ProgressBar,
+        rom: Option<&Rom>,
+    ) -> SimpleResult<Vec<ArchiveRomfile>>;
 }
 
 impl AsArchive for CommonRomfile {
-    fn as_archive(self, rom: &Rom) -> SimpleResult<ArchiveRomfile> {
-        let path = PathBuf::from(&self.path);
-        let extension = path.extension().unwrap().to_str().unwrap();
-        let archive_type = try_with!(ArchiveType::from_str(extension), "Not a valid archive");
-        Ok(ArchiveRomfile {
-            romfile: self,
-            path: rom.name.clone(),
-            archive_type,
-        })
-    }
-    async fn as_archives(&self, progress_bar: &ProgressBar) -> SimpleResult<Vec<ArchiveRomfile>> {
+    async fn parse_archive(
+        &self,
+        progress_bar: &ProgressBar,
+        rom: Option<&Rom>,
+    ) -> SimpleResult<Vec<(String, u64, String)>> {
         progress_bar.set_message("Parsing archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-            .arg("l")
-            .arg("-slt")
-            .arg(&self.path)
-            .output()
-            .await
-            .expect("Failed to parse archive");
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
+        command.arg("l").arg("-slt").arg(&self.path);
+        if let Some(rom) = rom {
+            command.arg(&rom.name);
+        }
+        let output = command.output().await.expect("Failed to parse archive");
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str());
         }
 
         let stdout = String::from_utf8(output.stdout).unwrap();
-        let paths: Vec<&str> = stdout
+        let paths: Vec<String> = stdout
             .lines()
             .filter(|&line| line.starts_with("Path ="))
             .skip(1) // the first line is the archive itself
-            .map(|line| line.split('=').last().unwrap().trim()) // keep only the rhs
+            .map(|line| line.split('=').last().unwrap().trim().to_string()) // keep only the rhs
             .collect();
+        let sizes: Vec<u64> = stdout
+            .lines()
+            .filter(|&line| line.starts_with("Size ="))
+            .map(|line| line.split('=').last().unwrap().trim().parse().unwrap()) // keep only the rhs
+            .collect();
+        let crcs: Vec<String> = stdout
+            .lines()
+            .filter(|&line| line.starts_with("CRC ="))
+            .map(|line| line.split('=').last().unwrap().trim().to_lowercase()) // keep only the rhs
+            .collect();
+
+        progress_bar.set_message("");
+        progress_bar.disable_steady_tick();
+
+        Ok(izip!(paths, sizes, crcs).collect())
+    }
+    async fn as_archive(
+        &self,
+        progress_bar: &ProgressBar,
+        rom: Option<&Rom>,
+    ) -> SimpleResult<Vec<ArchiveRomfile>> {
+        progress_bar.set_message("Parsing archive");
+        progress_bar.set_style(get_none_progress_style());
+        progress_bar.enable_steady_tick(Duration::from_millis(100));
+
+        let paths_sizes_crcs = self.parse_archive(progress_bar, rom).await?;
 
         let extension = self
             .path
@@ -421,12 +393,14 @@ impl AsArchive for CommonRomfile {
             .unwrap()
             .to_lowercase();
         let archive_type = try_with!(ArchiveType::from_str(&extension), "Not a valid archive");
-        let archived_romfiles: Vec<ArchiveRomfile> = paths
+        let archived_romfiles: Vec<ArchiveRomfile> = paths_sizes_crcs
             .into_iter()
-            .map(|path| ArchiveRomfile {
+            .map(|(path, size, crc)| ArchiveRomfile {
                 romfile: self.clone(),
                 path: path.to_string(),
                 archive_type,
+                size,
+                crc,
             })
             .collect();
 

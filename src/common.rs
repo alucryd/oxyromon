@@ -109,11 +109,19 @@ pub trait ToCommon {
 }
 
 pub trait Size {
-    async fn get_size(&self) -> SimpleResult<u64>;
+    async fn get_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+    ) -> SimpleResult<u64>;
 }
 
 impl Size for CommonRomfile {
-    async fn get_size(&self) -> SimpleResult<u64> {
+    async fn get_size(
+        &self,
+        _connection: &mut SqliteConnection,
+        _progress_bar: &ProgressBar,
+    ) -> SimpleResult<u64> {
         Ok(self.path.metadata().unwrap().len())
     }
 }
@@ -132,7 +140,7 @@ pub trait HashAndSize {
 impl HashAndSize for CommonRomfile {
     async fn get_hash_and_size(
         &self,
-        _connection: &mut SqliteConnection,
+        connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         position: usize,
         total: usize,
@@ -171,7 +179,7 @@ impl HashAndSize for CommonRomfile {
                 format!("{:040x}", digest.finalize()).to_lowercase()
             }
         };
-        let size = self.get_size().await?;
+        let size = self.get_size(connection, progress_bar).await?;
 
         progress_bar.set_message("");
 
@@ -475,19 +483,26 @@ pub trait Persist {
     async fn create(
         &self,
         connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
         romfile_type: RomfileType,
     ) -> SimpleResult<i64>;
-    async fn update(&self, connection: &mut SqliteConnection, id: i64) -> SimpleResult<()>;
+    async fn update(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        id: i64,
+    ) -> SimpleResult<()>;
 }
 
 impl Persist for CommonRomfile {
     async fn create(
         &self,
         connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
         romfile_type: RomfileType,
     ) -> SimpleResult<i64> {
         let path = &self.get_relative_path(connection).await?;
-        let size = self.get_size().await?;
+        let size = self.get_size(connection, progress_bar).await?;
         Ok(create_romfile(
             connection,
             path.as_os_str().to_str().unwrap(),
@@ -496,9 +511,14 @@ impl Persist for CommonRomfile {
         )
         .await)
     }
-    async fn update(&self, connection: &mut SqliteConnection, id: i64) -> SimpleResult<()> {
+    async fn update(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        id: i64,
+    ) -> SimpleResult<()> {
         let path = &self.get_relative_path(connection).await?;
-        let size = self.get_size().await?;
+        let size = self.get_size(connection, progress_bar).await?;
         update_romfile(connection, id, path.as_os_str().to_str().unwrap(), size).await;
         Ok(())
     }

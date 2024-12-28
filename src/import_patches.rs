@@ -154,7 +154,7 @@ pub async fn import_patch<P: AsRef<Path>>(
             CommonRomfile::from_path(patch_path)?
                 .rename(progress_bar, &romfile_path, false)
                 .await?
-                .update(connection, patch.romfile_id)
+                .update(connection, progress_bar, patch.romfile_id)
                 .await?;
         } else {
             progress_bar.println("Name already exists, skipping patch");
@@ -164,7 +164,7 @@ pub async fn import_patch<P: AsRef<Path>>(
         let romfile_id = CommonRomfile::from_path(patch_path)?
             .rename(progress_bar, &romfile_path, false)
             .await?
-            .create(&mut transaction, RomfileType::Romfile)
+            .create(&mut transaction, progress_bar, RomfileType::Romfile)
             .await?;
         create_patch(
             &mut transaction,

@@ -714,7 +714,13 @@ async fn to_archive(
         for rom in roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-            let archive_romfile = romfile.as_common(connection).await?.as_archive(rom)?;
+            let archive_romfile = romfile
+                .as_common(connection)
+                .await?
+                .as_archive(progress_bar, Some(rom))
+                .await?
+                .pop()
+                .unwrap();
             // skip archives that are the same type
             if archive_romfile.archive_type == archive_type {
                 copy_file(
@@ -920,11 +926,14 @@ async fn to_chd(
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
         let cue_romfile = match cue_roms.first() {
-            Some(cue_rom) => Some(
+            Some(&cue_rom) => Some(
                 romfile
                     .as_common(connection)
                     .await?
-                    .as_archive(cue_rom)?
+                    .as_archive(progress_bar, Some(cue_rom))
+                    .await?
+                    .first()
+                    .unwrap()
                     .to_common(progress_bar, &tmp_directory.path())
                     .await?,
             ),
@@ -932,12 +941,15 @@ async fn to_chd(
         };
 
         let mut bin_iso_romfiles: Vec<CommonRomfile> = vec![];
-        for rom in &bin_iso_roms {
+        for rom in bin_iso_roms {
             bin_iso_romfiles.push(
                 romfile
                     .as_common(connection)
                     .await?
-                    .as_archive(rom)?
+                    .as_archive(progress_bar, Some(rom))
+                    .await?
+                    .first()
+                    .unwrap()
                     .to_common(progress_bar, &tmp_directory.path())
                     .await?,
             );
@@ -1205,7 +1217,10 @@ async fn to_cso(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
@@ -1344,7 +1359,10 @@ async fn to_nsz(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_nsp()?
@@ -1426,7 +1444,10 @@ async fn to_rvz(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
@@ -1557,7 +1578,10 @@ async fn to_wbfs(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
@@ -1661,7 +1685,10 @@ async fn to_zso(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, &tmp_directory.path())
             .await?
             .as_iso()?
@@ -1838,25 +1865,36 @@ async fn to_iso(
             romfile
                 .as_common(connection)
                 .await?
-                .as_archive(rom)?
+                .as_archive(progress_bar, Some(rom))
+                .await?
+                .first()
+                .unwrap()
                 .to_common(progress_bar, destination_directory)
                 .await?;
         } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
-            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            let (mut cue_roms, mut bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
+            let cue_rom = cue_roms.pop().unwrap();
             let cue_romfile = romfile
                 .as_common(connection)
                 .await?
-                .as_archive(cue_roms.first().unwrap())?
+                .as_archive(progress_bar, Some(cue_rom))
+                .await?
+                .first()
+                .unwrap()
                 .to_common(progress_bar, &tmp_directory.path())
                 .await?;
+            let bin_rom = bin_roms.pop().unwrap();
             let bin_romfile = romfile
                 .as_common(connection)
                 .await?
-                .as_archive(bin_roms.first().unwrap())?
+                .as_archive(progress_bar, Some(bin_rom))
+                .await?
+                .first()
+                .unwrap()
                 .to_common(progress_bar, &tmp_directory.path())
                 .await?;
             cue_romfile
@@ -2126,7 +2164,10 @@ async fn to_original(
             romfile
                 .as_common(connection)
                 .await?
-                .as_archive(rom)?
+                .as_archive(progress_bar, Some(rom))
+                .await?
+                .first()
+                .unwrap()
                 .to_common(progress_bar, &destination_directory)
                 .await?;
         }

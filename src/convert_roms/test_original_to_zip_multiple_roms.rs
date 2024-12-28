@@ -107,7 +107,7 @@ async fn test() {
         .as_common(&mut connection)
         .await
         .unwrap()
-        .as_archives(&progress_bar)
+        .as_archive(&progress_bar, None)
         .await
         .unwrap();
     assert_eq!(archive_romfiles.len(), 2);

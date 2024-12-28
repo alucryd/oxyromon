@@ -155,7 +155,7 @@ async fn process_system(
                     playlist
                         .as_common(connection)
                         .await?
-                        .update(connection, playlist.id)
+                        .update(connection, progress_bar, playlist.id)
                         .await?;
                     if playlist.path != playlist_path.as_os_str().to_str().unwrap() {
                         remove_file(progress_bar, &playlist.path, true).await?;
@@ -164,7 +164,7 @@ async fn process_system(
                 }
                 None => {
                     CommonRomfile::from_path(&playlist_path)?
-                        .create(connection, RomfileType::Playlist)
+                        .create(connection, progress_bar, RomfileType::Playlist)
                         .await?
                 }
             };

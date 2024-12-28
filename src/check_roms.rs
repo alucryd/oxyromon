@@ -237,7 +237,7 @@ async fn check_system(
             romfile
                 .as_common(&mut transaction)
                 .await?
-                .update(&mut transaction, romfile.id)
+                .update(&mut transaction, progress_bar, romfile.id)
                 .await?;
         }
     }
@@ -266,7 +266,7 @@ async fn check_archive(
     let archive_romfiles = romfile
         .as_common(connection)
         .await?
-        .as_archives(progress_bar)
+        .as_archive(progress_bar, None)
         .await?;
     if archive_romfiles.len() != roms.len() {
         bail!("Archive contains a different number of ROM files");
@@ -302,7 +302,7 @@ async fn move_to_trash(
         .await?
         .rename(progress_bar, &new_path, false)
         .await?
-        .update(connection, romfile.id)
+        .update(connection, progress_bar, romfile.id)
         .await?;
     Ok(())
 }
