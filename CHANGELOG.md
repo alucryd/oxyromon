@@ -18,6 +18,7 @@
 - Iterate over all hash algorithms when matching and checking roms in all subcommands
 - Remove the `HASH_ALGORITHM` setting
 - Support DATs with no size information like MAME CHDs
+- Parse CHDs SHA1 information and match against it first where applicable
 
 # 0.19.0
 

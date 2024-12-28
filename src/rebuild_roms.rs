@@ -187,7 +187,7 @@ async fn expand_game(
         romfile
             .as_common(&mut transaction)
             .await?
-            .update(&mut transaction, romfile.id)
+            .update(&mut transaction, progress_bar, romfile.id)
             .await?;
     }
     commit_transaction(transaction).await;
@@ -222,7 +222,7 @@ async fn trim_game(
         romfile
             .as_common(&mut transaction)
             .await?
-            .update(&mut transaction, romfile.id)
+            .update(&mut transaction, progress_bar, romfile.id)
             .await?;
     }
     commit_transaction(transaction).await;
@@ -282,7 +282,10 @@ async fn add_rom(
         let mut original_romfile = source_romfile
             .as_common(connection)
             .await?
-            .as_archive(source_rom)?
+            .as_archive(progress_bar, Some(source_rom))
+            .await?
+            .first()
+            .unwrap()
             .to_common(progress_bar, game_directory)
             .await?;
         if source_rom.name != rom.name {
@@ -291,7 +294,7 @@ async fn add_rom(
                 .await?;
         }
         let romfile_id = original_romfile
-            .create(connection, RomfileType::Romfile)
+            .create(connection, progress_bar, RomfileType::Romfile)
             .await?;
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
     } else {
@@ -299,7 +302,7 @@ async fn add_rom(
         let romfile_path = game_directory.join(&rom.name);
         copy_file(progress_bar, &source_romfile.path, &romfile_path, false).await?;
         let romfile_id = CommonRomfile::from_path(&romfile_path)?
-            .create(connection, RomfileType::Romfile)
+            .create(connection, progress_bar, RomfileType::Romfile)
             .await?;
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
     }
@@ -316,7 +319,10 @@ async fn delete_rom(
         romfile
             .as_common(connection)
             .await?
-            .as_archive(rom)?
+            .as_archive(progress_bar, Some(rom))
+            .await?
+            .first()
+            .unwrap()
             .delete_file(progress_bar)
             .await?;
     } else {

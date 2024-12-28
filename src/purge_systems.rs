@@ -44,7 +44,7 @@ async fn purge_system(
             .await?
             .rename(progress_bar, &new_path, false)
             .await?
-            .update(connection, romfile.id)
+            .update(connection, progress_bar, romfile.id)
             .await?;
     }
 

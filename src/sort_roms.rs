@@ -553,7 +553,7 @@ async fn sort_system(
                     .await?
                     .rename(progress_bar, &romfile_move.1, true)
                     .await?
-                    .update(&mut transaction, romfile_move.0.id)
+                    .update(&mut transaction, progress_bar, romfile_move.0.id)
                     .await?;
                 // delete empty directories
                 let mut directory = romfile_move

@@ -165,7 +165,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
             progress_bar.println(format!("Processing \"{}\"", &rom_name));
             let rom_xml = RomXml {
                 name: rom_name,
-                size: romfile.get_size().await? as i64,
+                size: romfile.get_size(connection, progress_bar).await? as i64,
                 crc: Some(
                     romfile
                         .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Crc)

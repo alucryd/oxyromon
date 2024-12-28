@@ -1,7 +1,6 @@
 use crate::chdman::{AsChd, ChdType};
 
 use super::chdman;
-use super::chdman::{ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::ctrtool;
@@ -132,7 +131,7 @@ pub async fn main(
             && ARCHIVE_EXTENSIONS.contains(&mimetype.as_ref().unwrap().extension())
         {
             for archive_romfile in CommonRomfile::from_path(&path)?
-                .as_archives(progress_bar)
+                .as_archive(progress_bar, None)
                 .await?
             {
                 archive_romfile
@@ -541,7 +540,8 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     rename_file(progress_bar, &entry.path(), &new_path, false).await?;
 
                     // persist in database
-                    create_or_update_romfile(&mut transaction, &new_path, &[rom]).await?;
+                    create_or_update_romfile(&mut transaction, progress_bar, &new_path, &[rom])
+                        .await?;
 
                     // remove directories if empty
                     let mut directory = entry.path().parent().unwrap();
@@ -585,7 +585,7 @@ async fn import_archive(
         hash_variants.iter().collect()
     };
 
-    let archive_romfiles = romfile.as_archives(progress_bar).await?;
+    let archive_romfiles = romfile.as_archive(progress_bar, None).await?;
     let romfiles_count = archive_romfiles.len();
 
     let mut roms_games_systems_archive_romfiles: Vec<(
@@ -755,6 +755,7 @@ async fn import_archive(
             // persist in database
             create_or_update_romfile(
                 connection,
+                progress_bar,
                 &new_path,
                 &roms_games_systems_archive_romfiles
                     .iter()
@@ -788,7 +789,7 @@ async fn import_archive(
         copy_file(progress_bar, &original_romfile.path, &new_path, false).await?;
 
         // persist in database
-        create_or_update_romfile(connection, &new_path, &[&rom]).await?;
+        create_or_update_romfile(connection, progress_bar, &new_path, &[&rom]).await?;
     }
 
     Ok((new_system_ids, new_game_ids))
@@ -810,7 +811,7 @@ async fn import_chd(
     let hash_algorithms = if hash_algorithm.is_some() {
         vec![hash_algorithm.as_ref().unwrap()]
     } else {
-        hash_variants.iter().collect()
+        hash_variants.iter().rev().collect() // reverse iterator so SHA1 is tried first
     };
     let chd_romfile = romfile.as_chd().await?;
     match chd_romfile.chd_type {
@@ -890,7 +891,7 @@ async fn import_chd(
                     .await?;
 
                 // persist in database
-                create_or_update_romfile(connection, &new_chd_path, &roms).await?;
+                create_or_update_romfile(connection, progress_bar, &new_chd_path, &roms).await?;
 
                 Ok(Some([system.id, game.id]))
             } else {
@@ -902,15 +903,10 @@ async fn import_chd(
             }
         }
         ChdType::Dvd => {
-            let iso_romfile = chd_romfile
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?;
             for hash_algorithm in &hash_algorithms {
-                let (hash, size) = iso_romfile
-                    .romfile
+                let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                iso_romfile.romfile.delete(progress_bar, true).await?;
                 if let Some((rom, game, system)) = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
@@ -938,7 +934,8 @@ async fn import_chd(
                         .await?;
 
                     // persist in database
-                    create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+                    create_or_update_romfile(connection, progress_bar, &new_chd_path, &[&rom])
+                        .await?;
 
                     return Ok(Some([system.id, game.id]));
                 }
@@ -949,15 +946,10 @@ async fn import_chd(
             Ok(None)
         }
         ChdType::Hd => {
-            let rdsk_romfile = chd_romfile
-                .to_rdsk(progress_bar, &tmp_directory.path())
-                .await?;
             for hash_algorithm in &hash_algorithms {
-                let (hash, size) = rdsk_romfile
-                    .romfile
+                let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                rdsk_romfile.romfile.delete(progress_bar, true).await?;
                 let mut rom_game_system = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
@@ -1001,7 +993,8 @@ async fn import_chd(
                         .await?;
 
                     // persist in database
-                    create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+                    create_or_update_romfile(connection, progress_bar, &new_chd_path, &[&rom])
+                        .await?;
 
                     return Ok(Some([system.id, game.id]));
                 }
@@ -1012,15 +1005,10 @@ async fn import_chd(
             Ok(None)
         }
         ChdType::Ld => {
-            let riff_romfile = chd_romfile
-                .to_riff(progress_bar, &tmp_directory.path())
-                .await?;
             for hash_algorithm in &hash_algorithms {
-                let (hash, size) = riff_romfile
-                    .romfile
+                let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                riff_romfile.romfile.delete(progress_bar, true).await?;
                 let mut rom_game_system = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
@@ -1064,7 +1052,8 @@ async fn import_chd(
                         .await?;
 
                     // persist in database
-                    create_or_update_romfile(connection, &new_chd_path, &[&rom]).await?;
+                    create_or_update_romfile(connection, progress_bar, &new_chd_path, &[&rom])
+                        .await?;
 
                     return Ok(Some([system.id, game.id]));
                 }
@@ -1170,6 +1159,7 @@ async fn import_cia(
             // persist in database
             create_or_update_romfile(
                 connection,
+                progress_bar,
                 &new_path,
                 &roms_games_systems_cia_infos
                     .iter()
@@ -1228,7 +1218,7 @@ async fn import_cso(
                 .rename(progress_bar, &new_path, false)
                 .await?;
             // persist in database
-            create_or_update_romfile(connection, &new_path, &[&rom]).await?;
+            create_or_update_romfile(connection, progress_bar, &new_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
         }
     }
@@ -1277,7 +1267,7 @@ async fn import_nsz(
                 .rename(progress_bar, &new_nsz_path, false)
                 .await?;
             // persist in database
-            create_or_update_romfile(connection, &new_nsz_path, &[&rom]).await?;
+            create_or_update_romfile(connection, progress_bar, &new_nsz_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
         }
     }
@@ -1326,7 +1316,7 @@ async fn import_rvz(
                 .rename(progress_bar, &new_rvz_path, false)
                 .await?;
             // persist in database
-            create_or_update_romfile(connection, &new_rvz_path, &[&rom]).await?;
+            create_or_update_romfile(connection, progress_bar, &new_rvz_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
         }
     }
@@ -1375,7 +1365,7 @@ async fn import_zso(
                 .rename(progress_bar, &new_zso_path, false)
                 .await?;
             // persist in database
-            create_or_update_romfile(connection, &new_zso_path, &[&rom]).await?;
+            create_or_update_romfile(connection, progress_bar, &new_zso_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
         }
     }
@@ -1466,7 +1456,7 @@ async fn import_other(
             // move file if needed
             romfile.rename(progress_bar, &new_path, false).await?;
             // persist in database
-            create_or_update_romfile(connection, &new_path, &[&rom]).await?;
+            create_or_update_romfile(connection, progress_bar, &new_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
         }
     }
@@ -1845,6 +1835,7 @@ async fn find_sfb_rom_by_md5(
 
 async fn create_or_update_romfile<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
     romfile_path: &P,
     roms: &[&Rom],
 ) -> SimpleResult<()> {
@@ -1854,10 +1845,16 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
         find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap()).await;
     let romfile_id = match existing_romfile {
         Some(existing_romfile) => {
-            romfile.update(connection, existing_romfile.id).await?;
+            romfile
+                .update(connection, progress_bar, existing_romfile.id)
+                .await?;
             existing_romfile.id
         }
-        None => romfile.create(connection, RomfileType::Romfile).await?,
+        None => {
+            romfile
+                .create(connection, progress_bar, RomfileType::Romfile)
+                .await?
+        }
     };
     for rom in roms {
         update_rom_romfile(connection, rom.id, Some(romfile_id)).await;
@@ -1876,10 +1873,14 @@ async fn move_to_trash(
     let new_romfile = romfile.rename(progress_bar, &new_path, false).await?;
     match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
         Some(romfile) => {
-            new_romfile.update(connection, romfile.id).await?;
+            new_romfile
+                .update(connection, progress_bar, romfile.id)
+                .await?;
         }
         None => {
-            new_romfile.create(connection, RomfileType::Romfile).await?;
+            new_romfile
+                .create(connection, progress_bar, RomfileType::Romfile)
+                .await?;
         }
     }
     Ok(())

@@ -649,7 +649,7 @@ pub async fn reimport_orphan_romfiles(
                 romfile
                     .rename(progress_bar, &new_path, false)
                     .await?
-                    .create(connection, RomfileType::Romfile)
+                    .create(connection, progress_bar, RomfileType::Romfile)
                     .await?;
             }
         }

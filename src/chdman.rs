@@ -125,8 +125,111 @@ impl AsRdsk for CommonRomfile {
 pub struct ChdRomfile {
     pub romfile: CommonRomfile,
     pub parent_romfile: Option<CommonRomfile>,
-    pub track_count: usize,
     pub chd_type: ChdType,
+    pub size: u64,
+    pub sha1: String,
+    pub track_count: usize,
+}
+
+impl Size for ChdRomfile {
+    async fn get_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+    ) -> SimpleResult<u64> {
+        if self.size > 0 {
+            Ok(self.size)
+        } else {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            match self.chd_type {
+                ChdType::Cd => {
+                    bail!("Not possible")
+                }
+                ChdType::Dvd => {
+                    let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
+                    Ok(iso_romfile
+                        .romfile
+                        .get_size(connection, progress_bar)
+                        .await?)
+                }
+                ChdType::Hd => {
+                    let rdsk_romfile = self.to_rdsk(progress_bar, &tmp_directory.path()).await?;
+                    Ok(rdsk_romfile
+                        .romfile
+                        .get_size(connection, progress_bar)
+                        .await?)
+                }
+                ChdType::Ld => {
+                    let riff_romfile = self.to_riff(progress_bar, &tmp_directory.path()).await?;
+                    Ok(riff_romfile
+                        .romfile
+                        .get_size(connection, progress_bar)
+                        .await?)
+                }
+            }
+        }
+    }
+}
+
+impl HashAndSize for ChdRomfile {
+    async fn get_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)> {
+        if hash_algorithm == &HashAlgorithm::Sha1 && !self.sha1.is_empty() && self.size > 0 {
+            Ok((self.sha1.clone(), self.size))
+        } else {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            match self.chd_type {
+                ChdType::Cd => {
+                    bail!("Not possible")
+                }
+                ChdType::Dvd => {
+                    let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
+                    Ok(iso_romfile
+                        .romfile
+                        .get_hash_and_size(
+                            connection,
+                            progress_bar,
+                            position,
+                            total,
+                            hash_algorithm,
+                        )
+                        .await?)
+                }
+                ChdType::Hd => {
+                    let rdsk_romfile = self.to_rdsk(progress_bar, &tmp_directory.path()).await?;
+                    Ok(rdsk_romfile
+                        .romfile
+                        .get_hash_and_size(
+                            connection,
+                            progress_bar,
+                            position,
+                            total,
+                            hash_algorithm,
+                        )
+                        .await?)
+                }
+                ChdType::Ld => {
+                    let riff_romfile = self.to_riff(progress_bar, &tmp_directory.path()).await?;
+                    Ok(riff_romfile
+                        .romfile
+                        .get_hash_and_size(
+                            connection,
+                            progress_bar,
+                            position,
+                            total,
+                            hash_algorithm,
+                        )
+                        .await?)
+                }
+            }
+        }
+    }
 }
 
 impl Check for ChdRomfile {
@@ -210,8 +313,10 @@ impl ToChd for CueBinRomfile {
         Ok(ChdRomfile {
             romfile: CommonRomfile::from_path(&path)?,
             parent_romfile,
-            track_count: self.bin_romfiles.len(),
             chd_type,
+            size: 0,
+            sha1: String::new(),
+            track_count: self.bin_romfiles.len(),
         })
     }
 }
@@ -239,8 +344,10 @@ impl ToChd for IsoRomfile {
         Ok(ChdRomfile {
             romfile: CommonRomfile::from_path(&path)?,
             parent_romfile,
-            track_count: 1,
             chd_type,
+            size: 0,
+            sha1: String::new(),
+            track_count: 1,
         })
     }
 }
@@ -268,8 +375,10 @@ impl ToChd for RiffRomfile {
         Ok(ChdRomfile {
             romfile: CommonRomfile::from_path(&path)?,
             parent_romfile,
-            track_count: 1,
             chd_type,
+            size: 0,
+            sha1: String::new(),
+            track_count: 1,
         })
     }
 }
@@ -297,8 +406,10 @@ impl ToChd for RdskRomfile {
         Ok(ChdRomfile {
             romfile: CommonRomfile::from_path(&path)?,
             parent_romfile,
-            track_count: 1,
             chd_type,
+            size: 0,
+            sha1: String::new(),
+            track_count: 1,
         })
     }
 }
@@ -427,22 +538,95 @@ impl ToRdsk for ChdRomfile {
 }
 
 pub trait AsChd {
+    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, usize)>;
     async fn as_chd(self) -> SimpleResult<ChdRomfile>;
     async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile>;
 }
 
 impl AsChd for CommonRomfile {
+    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, usize)> {
+        let output = Command::new(CHDMAN)
+            .arg("info")
+            .arg("-i")
+            .arg(&self.path)
+            .output()
+            .await
+            .expect("Failed to parse chd");
+
+        if !output.status.success() {
+            bail!(String::from_utf8(output.stderr).unwrap().as_str());
+        }
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+
+        let metadata: &str = stdout
+            .lines()
+            .find(|&line| line.starts_with("Metadata:"))
+            .unwrap();
+
+        if metadata.contains("CHCD")
+            || metadata.contains("CHGD")
+            || metadata.contains("CHGT")
+            || metadata.contains("CHT2")
+            || metadata.contains("CHTR")
+        {
+            let track_count = stdout
+                .lines()
+                .filter(|&line| line.trim().starts_with("TRACK:"))
+                .count();
+            return Ok((ChdType::Cd, 0, String::new(), track_count));
+        }
+
+        let size: u64 = try_with!(
+            stdout
+                .lines()
+                .find(|&line| line.starts_with("Logical size:"))
+                .unwrap()
+                .split(":")
+                .last()
+                .unwrap()
+                .trim()
+                .split(" ")
+                .next()
+                .unwrap()
+                .replace(",", "")
+                .parse(),
+            "Failed to parse size"
+        );
+        let sha1 = stdout
+            .lines()
+            .find(|&line| line.starts_with("Data SHA1:"))
+            .unwrap()
+            .split(":")
+            .last()
+            .unwrap()
+            .trim()
+            .to_string();
+
+        if metadata.contains("DVD") {
+            return Ok((ChdType::Dvd, size, sha1, 1));
+        }
+        if metadata.contains("GDDD") || metadata.contains("GDDI") {
+            return Ok((ChdType::Hd, size, sha1, 1));
+        }
+        if metadata.contains("AVAV") || metadata.contains("AVLD") {
+            return Ok((ChdType::Ld, size, sha1, 1));
+        }
+        bail!("Unknown CHD type");
+    }
     async fn as_chd(self) -> SimpleResult<ChdRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, track_count) = parse(&self.path).await?;
+        let (chd_type, size, sha1, track_count) = self.parse_chd().await?;
         Ok(ChdRomfile {
             romfile: self,
             parent_romfile: None,
-            track_count,
             chd_type,
+            size,
+            sha1,
+            track_count,
         })
     }
     async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile> {
@@ -450,12 +634,14 @@ impl AsChd for CommonRomfile {
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, track_count) = parse(&self.path).await?;
+        let (chd_type, size, sha1, track_count) = self.parse_chd().await?;
         Ok(ChdRomfile {
             romfile: self,
             parent_romfile: Some(parent_romfile.romfile),
-            track_count,
             chd_type,
+            size,
+            sha1,
+            track_count,
         })
     }
 }
@@ -612,49 +798,6 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.disable_steady_tick();
 
     Ok((bin_path, cue_path))
-}
-
-async fn parse<P: AsRef<Path>>(path: &P) -> SimpleResult<(ChdType, usize)> {
-    let output = Command::new(CHDMAN)
-        .arg("info")
-        .arg("-i")
-        .arg(path.as_ref())
-        .output()
-        .await
-        .expect("Failed to parse chd");
-
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str());
-    }
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let metadata: &str = stdout
-        .lines()
-        .find(|&line| line.starts_with("Metadata:"))
-        .unwrap();
-
-    if metadata.contains("CHCD")
-        || metadata.contains("CHGD")
-        || metadata.contains("CHGT")
-        || metadata.contains("CHT2")
-        || metadata.contains("CHTR")
-    {
-        let track_count = stdout
-            .lines()
-            .filter(|&line| line.trim().starts_with("TRACK:"))
-            .count();
-        return Ok((ChdType::Cd, track_count));
-    }
-    if metadata.contains("DVD") {
-        return Ok((ChdType::Dvd, 1));
-    }
-    if metadata.contains("GDDD") || metadata.contains("GDDI") {
-        return Ok((ChdType::Hd, 1));
-    }
-    if metadata.contains("AVAV") || metadata.contains("AVLD") {
-        return Ok((ChdType::Ld, 1));
-    }
-    bail!("Unknown CHD type");
 }
 
 pub async fn get_version() -> SimpleResult<String> {
