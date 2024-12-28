@@ -41,7 +41,8 @@ async fn test() {
 
     let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System (MAME)");
+    assert_eq!(system.arcade, true);
 
-    assert_eq!(find_games(&mut connection).await.len(), 6);
-    assert_eq!(find_roms(&mut connection).await.len(), 8);
+    assert_eq!(find_games(&mut connection).await.len(), 1);
+    assert_eq!(find_roms(&mut connection).await.len(), 1);
 }

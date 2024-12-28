@@ -674,6 +674,8 @@ mod test_dat_headered_skipped_header;
 #[cfg(test)]
 mod test_dat_mame;
 #[cfg(test)]
+mod test_dat_mame_chd;
+#[cfg(test)]
 mod test_dat_outdated_forced;
 #[cfg(test)]
 mod test_dat_outdated_should_do_nothing;

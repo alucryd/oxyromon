@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (MAME CHD)</name>
+		<description>Test System (MAME CHD)</description>
+		<version>20241228</version>
+		<date>20241228</date>
+		<author>Maxime Gauduin</author>
+		<url>www.no-intro.org</url>
+	</header>
+	<machine name="Test Game (USA, Europe)">
+		<description>Test Game (USA, Europe)</description>
+		<release name="Test Game (USA, Europe)" region="EUR" />
+		<release name="Test Game (USA, Europe)" region="USA" />
+		<disk name="Test Game (USA, Europe)" sha1="9d255710c87c3286542d357820d828807cc6ca07" status="verified" />
+	</machine>
+</datafile>

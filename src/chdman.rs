@@ -128,6 +128,7 @@ pub struct ChdRomfile {
     pub chd_type: ChdType,
     pub size: u64,
     pub sha1: String,
+    pub chd_sha1: String,
     pub track_count: usize,
 }
 
@@ -316,6 +317,7 @@ impl ToChd for CueBinRomfile {
             chd_type,
             size: 0,
             sha1: String::new(),
+            chd_sha1: String::new(),
             track_count: self.bin_romfiles.len(),
         })
     }
@@ -347,6 +349,7 @@ impl ToChd for IsoRomfile {
             chd_type,
             size: 0,
             sha1: String::new(),
+            chd_sha1: String::new(),
             track_count: 1,
         })
     }
@@ -378,6 +381,7 @@ impl ToChd for RiffRomfile {
             chd_type,
             size: 0,
             sha1: String::new(),
+            chd_sha1: String::new(),
             track_count: 1,
         })
     }
@@ -409,6 +413,7 @@ impl ToChd for RdskRomfile {
             chd_type,
             size: 0,
             sha1: String::new(),
+            chd_sha1: String::new(),
             track_count: 1,
         })
     }
@@ -538,13 +543,13 @@ impl ToRdsk for ChdRomfile {
 }
 
 pub trait AsChd {
-    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, usize)>;
+    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, String, usize)>;
     async fn as_chd(self) -> SimpleResult<ChdRomfile>;
     async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile>;
 }
 
 impl AsChd for CommonRomfile {
-    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, usize)> {
+    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, String, usize)> {
         let output = Command::new(CHDMAN)
             .arg("info")
             .arg("-i")
@@ -564,6 +569,16 @@ impl AsChd for CommonRomfile {
             .find(|&line| line.starts_with("Metadata:"))
             .unwrap();
 
+        let sha1 = stdout
+            .lines()
+            .find(|&line| line.starts_with("SHA1:"))
+            .unwrap()
+            .split(":")
+            .last()
+            .unwrap()
+            .trim()
+            .to_string();
+
         if metadata.contains("CHCD")
             || metadata.contains("CHGD")
             || metadata.contains("CHGT")
@@ -574,7 +589,7 @@ impl AsChd for CommonRomfile {
                 .lines()
                 .filter(|&line| line.trim().starts_with("TRACK:"))
                 .count();
-            return Ok((ChdType::Cd, 0, String::new(), track_count));
+            return Ok((ChdType::Cd, 0, String::new(), sha1, track_count));
         }
 
         let size: u64 = try_with!(
@@ -593,7 +608,7 @@ impl AsChd for CommonRomfile {
                 .parse(),
             "Failed to parse size"
         );
-        let sha1 = stdout
+        let data_sha1 = stdout
             .lines()
             .find(|&line| line.starts_with("Data SHA1:"))
             .unwrap()
@@ -604,13 +619,13 @@ impl AsChd for CommonRomfile {
             .to_string();
 
         if metadata.contains("DVD") {
-            return Ok((ChdType::Dvd, size, sha1, 1));
+            return Ok((ChdType::Dvd, size, data_sha1, sha1, 1));
         }
         if metadata.contains("GDDD") || metadata.contains("GDDI") {
-            return Ok((ChdType::Hd, size, sha1, 1));
+            return Ok((ChdType::Hd, size, data_sha1, sha1, 1));
         }
         if metadata.contains("AVAV") || metadata.contains("AVLD") {
-            return Ok((ChdType::Ld, size, sha1, 1));
+            return Ok((ChdType::Ld, size, data_sha1, sha1, 1));
         }
         bail!("Unknown CHD type");
     }
@@ -619,13 +634,14 @@ impl AsChd for CommonRomfile {
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, size, sha1, track_count) = self.parse_chd().await?;
+        let (chd_type, size, sha1, chd_sha1, track_count) = self.parse_chd().await?;
         Ok(ChdRomfile {
             romfile: self,
             parent_romfile: None,
             chd_type,
             size,
             sha1,
+            chd_sha1,
             track_count,
         })
     }
@@ -634,13 +650,14 @@ impl AsChd for CommonRomfile {
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, size, sha1, track_count) = self.parse_chd().await?;
+        let (chd_type, size, sha1, chd_sha1, track_count) = self.parse_chd().await?;
         Ok(ChdRomfile {
             romfile: self,
             parent_romfile: Some(parent_romfile.romfile),
             chd_type,
             size,
             sha1,
+            chd_sha1,
             track_count,
         })
     }

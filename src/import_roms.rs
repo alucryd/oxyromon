@@ -533,7 +533,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                         continue;
                     }
 
-                    // put arcade roms in subdirectories as their names aren't unique
+                    // put JB files in subdirectories
                     let new_path = system_directory.join(&game.name).join(&rom.name);
 
                     // move file if needed
@@ -659,7 +659,7 @@ async fn import_archive(
             }
             let rom_name = rom_path.file_name().unwrap().to_str();
 
-            let mut rom_game_system = find_rom_by_size_and_hash(
+            let rom_game_system = find_rom_by_size_and_hash(
                 connection,
                 progress_bar,
                 size,
@@ -672,22 +672,6 @@ async fn import_archive(
                 unattended,
             )
             .await?;
-            // MAME's CHD DATs have no size information
-            if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
-                rom_game_system = find_rom_by_size_and_hash(
-                    connection,
-                    progress_bar,
-                    0,
-                    &hash,
-                    system,
-                    game_ids,
-                    game_names.as_slice(),
-                    rom_name,
-                    hash_algorithm,
-                    unattended,
-                )
-                .await?;
-            }
             if let Some((rom, game, system)) = rom_game_system {
                 matched = true;
                 new_system_ids.insert(system.id);
@@ -963,13 +947,13 @@ async fn import_chd(
                     unattended,
                 )
                 .await?;
-                // MAME's CHD DATs have no size information
+                // MAME's CHD DATs have no size information and use the CHD SHA1
                 if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
                     rom_game_system = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         0,
-                        &hash,
+                        &chd_romfile.chd_sha1,
                         system,
                         game_ids,
                         &[],
@@ -982,9 +966,18 @@ async fn import_chd(
                 if let Some((rom, game, system)) = rom_game_system {
                     let system_directory = get_system_directory(connection, &system).await?;
 
-                    let new_chd_path = system_directory
-                        .join(&rom.name)
-                        .with_extension(CHD_EXTENSION);
+                    // put MAME CHDs in a subdirectory
+                    let new_chd_path = if system.arcade {
+                        let game = find_game_by_id(connection, rom.game_id).await;
+                        system_directory
+                            .join(game.name)
+                            .join(&rom.name)
+                            .with_extension(CHD_EXTENSION)
+                    } else {
+                        system_directory
+                            .join(&rom.name)
+                            .with_extension(CHD_EXTENSION)
+                    };
 
                     // move CHD if needed
                     chd_romfile
@@ -1022,13 +1015,13 @@ async fn import_chd(
                     unattended,
                 )
                 .await?;
-                // MAME's CHD DATs have no size information
+                // MAME's CHD DATs have no size information and use the CHD SHA1
                 if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
                     rom_game_system = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         0,
-                        &hash,
+                        &chd_romfile.chd_sha1,
                         system,
                         game_ids,
                         &[],
@@ -1041,9 +1034,18 @@ async fn import_chd(
                 if let Some((rom, game, system)) = rom_game_system {
                     let system_directory = get_system_directory(connection, &system).await?;
 
-                    let new_chd_path = system_directory
-                        .join(&rom.name)
-                        .with_extension(CHD_EXTENSION);
+                    // put MAME CHDs in a subdirectory
+                    let new_chd_path = if system.arcade {
+                        let game = find_game_by_id(connection, rom.game_id).await;
+                        system_directory
+                            .join(game.name)
+                            .join(&rom.name)
+                            .with_extension(CHD_EXTENSION)
+                    } else {
+                        system_directory
+                            .join(&rom.name)
+                            .with_extension(CHD_EXTENSION)
+                    };
 
                     // move CHD if needed
                     chd_romfile
@@ -1414,7 +1416,7 @@ async fn import_other(
                     .await?
             }
         };
-        let mut rom_game_system = find_rom_by_size_and_hash(
+        let rom_game_system = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1427,22 +1429,6 @@ async fn import_other(
             unattended,
         )
         .await?;
-        // MAME's CHD DATs have no size information
-        if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
-            rom_game_system = find_rom_by_size_and_hash(
-                connection,
-                progress_bar,
-                0,
-                &hash,
-                system,
-                game_ids,
-                &[],
-                None,
-                hash_algorithm,
-                unattended,
-            )
-            .await?;
-        }
         if let Some((rom, game, system)) = rom_game_system {
             let system_directory = get_system_directory(connection, &system).await?;
             let new_path;
@@ -1892,6 +1878,10 @@ mod test_cia;
 mod test_cso;
 #[cfg(test)]
 mod test_iso_chd;
+#[cfg(test)]
+mod test_mame;
+#[cfg(test)]
+mod test_mame_chd;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
 #[cfg(test)]
