@@ -868,30 +868,38 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
     destination_directory: &P,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
-    let mut new_romfile_path: PathBuf;
-    if ARCHIVE_EXTENSIONS.contains(&extension)
-        || extension == CHD_EXTENSION
-        || extension == CSO_EXTENSION
-        || extension == RVZ_EXTENSION
-    {
-        new_romfile_path = destination_directory.as_ref().to_path_buf();
-        if subfolders == &SubfolderScheme::Alpha {
+    let mut non_original_extensions = vec![
+        CHD_EXTENSION,
+        CSO_EXTENSION,
+        NSZ_EXTENSION,
+        RVZ_EXTENSION,
+        ZSO_EXTENSION,
+    ];
+    non_original_extensions.append(&mut ARCHIVE_EXTENSIONS.to_vec());
+
+    let mut new_romfile_path: PathBuf = destination_directory.as_ref().to_path_buf();
+
+    // subfolders
+    if subfolders == &SubfolderScheme::Alpha {
+        if non_original_extensions.contains(&extension) || system.arcade || game.jbfolder {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
-        }
-        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, extension));
-    } else if system.arcade || game.jbfolder {
-        new_romfile_path = destination_directory.as_ref().to_path_buf();
-        if subfolders == &SubfolderScheme::Alpha {
-            new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
-        }
-        new_romfile_path = new_romfile_path.join(&game.name).join(&rom.name);
-    } else {
-        new_romfile_path = destination_directory.as_ref().to_path_buf();
-        if subfolders == &SubfolderScheme::Alpha {
+        } else {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
         }
+    }
+
+    // arcade and jbfolder in subdirectories
+    if system.arcade || game.jbfolder {
+        new_romfile_path = new_romfile_path.join(&game.name);
+    }
+
+    // file name
+    if non_original_extensions.contains(&extension) {
+        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, extension));
+    } else {
         new_romfile_path = new_romfile_path.join(&rom.name);
     }
+
     Ok(new_romfile_path)
 }
 
