@@ -888,8 +888,8 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
         }
     }
 
-    // arcade and jbfolder in subdirectories
-    if system.arcade || game.jbfolder {
+    // arcade and jbfolder in subdirectories unless they are archives
+    if system.arcade && !ARCHIVE_EXTENSIONS.contains(&extension) || game.jbfolder {
         new_romfile_path = new_romfile_path.join(&game.name);
     }
 
