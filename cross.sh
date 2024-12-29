@@ -28,8 +28,6 @@ for target in x86_64-pc-windows-gnu; do
     cargo clean
 done
 
-export CROSS_CONTAINER_ENGINE=docker
-
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
     yarn install
     yarn build

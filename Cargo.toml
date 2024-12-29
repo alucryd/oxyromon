@@ -31,7 +31,7 @@ axum = { version = "0.7.9", default-features = false, features = [
     "tokio",
     "ws",
 ], optional = true }
-cdfs = { version = "0.2.3", default-features = false }
+cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.0"
 chrono = { version = "0.4.39", default-features = false, features = [
     "std",
