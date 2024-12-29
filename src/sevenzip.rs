@@ -63,8 +63,9 @@ impl ArchiveFile for ArchiveRomfile {
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("rn")
+            .arg("--")
             .arg(&self.romfile.path)
-            .arg(self.path.replace("-", "?").replace("@", "?"))
+            .arg(&self.path)
             .arg(new_path)
             .output()
             .await
@@ -95,8 +96,9 @@ impl ArchiveFile for ArchiveRomfile {
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
+            .arg("--")
             .arg(&self.romfile.path)
-            .arg(self.path.replace("-", "?").replace("@", "?"))
+            .arg(&self.path)
             .output()
             .await
             .expect("Failed to remove files from archive");
@@ -196,8 +198,9 @@ impl ToCommon for ArchiveRomfile {
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("x")
+            .arg("--")
             .arg(&self.romfile.path)
-            .arg(self.path.replace("-", "?").replace("@", "?"))
+            .arg(&self.path)
             .current_dir(directory.as_ref())
             .output()
             .await
@@ -256,17 +259,18 @@ impl ToArchive for CommonRomfile {
         let path = self.path.strip_prefix(working_directory).unwrap();
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command
-            .arg("a")
-            .arg(&archive_path)
-            .arg(path)
-            .current_dir(working_directory.as_ref());
+        command.arg("a");
         if let Some(compression_level) = compression_level {
             command.arg(format!("-mx={}", compression_level));
         }
         if solid {
             command.arg("-ms=on");
         }
+        command
+            .arg("--")
+            .arg(&archive_path)
+            .arg(path)
+            .current_dir(working_directory.as_ref());
         let output = command
             .output()
             .await
@@ -341,7 +345,7 @@ impl AsArchive for CommonRomfile {
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command.arg("l").arg("-slt").arg(&self.path);
+        command.arg("l").arg("-slt").arg("--").arg(&self.path);
         if let Some(rom) = rom {
             command.arg(&rom.name);
         }
