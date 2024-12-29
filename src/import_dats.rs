@@ -155,7 +155,11 @@ pub async fn parse_dat<P: AsRef<Path>>(
     // print information
     progress_bar.println(format!("System: {}", datfile_xml.system.name));
     progress_bar.println(format!("Version: {}", datfile_xml.system.version));
-    progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
+    if !datfile_xml.machines.is_empty() {
+        progress_bar.println(format!("Games: {}", datfile_xml.machines.len()));
+    } else {
+        progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
+    }
 
     let mut detector_xml = None;
     if !skip_header {
@@ -218,7 +222,11 @@ pub async fn import_dat(
 
     // persist games
     progress_bar.set_style(get_count_progress_style());
-    progress_bar.set_length(datfile_xml.games.len() as u64);
+    if !datfile_xml.machines.is_empty() {
+        progress_bar.set_length(datfile_xml.machines.len() as u64);
+    } else {
+        progress_bar.set_length(datfile_xml.games.len() as u64);
+    }
 
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     progress_bar.println("Deleting old games");
