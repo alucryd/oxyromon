@@ -10,7 +10,7 @@ license = "GPL-3.0+"
 name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
-version = "0.20.0-beta"
+version = "0.20.0"
 rust-version = "1.75.0"
 
 [features]
