@@ -891,7 +891,7 @@ async fn import_chd(
                 let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+                let mut rom_game_system = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
@@ -903,8 +903,24 @@ async fn import_chd(
                     hash_algorithm,
                     unattended,
                 )
-                .await?
-                {
+                .await?;
+                // MAME's CHD DATs have no size information and use the CHD SHA1
+                if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
+                    rom_game_system = find_rom_by_size_and_hash(
+                        connection,
+                        progress_bar,
+                        0,
+                        &chd_romfile.chd_sha1,
+                        system,
+                        game_ids,
+                        &[],
+                        None,
+                        hash_algorithm,
+                        unattended,
+                    )
+                    .await?;
+                }
+                if let Some((rom, game, system)) = rom_game_system {
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     let new_chd_path = system_directory
@@ -1882,6 +1898,8 @@ mod test_iso_chd;
 mod test_mame;
 #[cfg(test)]
 mod test_mame_chd;
+#[cfg(test)]
+mod test_mame_mixed;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
 #[cfg(test)]

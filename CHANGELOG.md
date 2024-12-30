@@ -1,3 +1,7 @@
+# 0.20.1
+
+- Fix an import issue with Progetto MAME DATs
+
 # 0.20.0
 
 - Dump `isoinfo` in favor of the native `cdfs` crate to parse IRD ISO headers
