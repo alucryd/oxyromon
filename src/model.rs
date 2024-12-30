@@ -212,8 +212,10 @@ pub struct GameXml {
         skip_serializing
     )]
     pub isbios: bool,
-    #[serde(rename = "rom", alias = "disk", default)]
+    #[serde(rename = "rom", default)]
     pub roms: Vec<RomXml>,
+    #[serde(rename = "disk", default)]
+    pub disks: Vec<RomXml>,
 }
 
 fn empty_string_to_zero<'de, D>(deserializer: D) -> Result<i64, D::Error>

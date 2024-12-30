@@ -198,6 +198,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
                 name: game_name.clone(),
                 description: game_name.clone(),
                 roms: vec![rom_xml],
+                disks: vec![],
                 isbios: false,
                 isdevice: false,
                 cloneof: None,
