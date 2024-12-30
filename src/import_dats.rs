@@ -532,7 +532,7 @@ async fn create_or_update_roms(
         }
         // find parent rom if needed
         let mut parent_id = None;
-        if rom_xml.merge.is_some() {
+        if rom_xml.merge.is_some() && rom_xml.crc.is_some() {
             let game = find_game_by_id(connection, game_id).await;
             let parent_rom = if let Some(parent_id) = game.parent_id {
                 find_rom_by_size_and_crc_and_game_id(
@@ -570,7 +570,7 @@ async fn create_or_update_roms(
             Some(rom) => {
                 update_rom_from_xml(connection, rom.id, rom_xml, bios, game_id, parent_id).await;
                 if rom_xml.size != rom.size
-                    || rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap()
+                    || rom_xml.crc.is_some() && rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap()
                 {
                     if let Some(romfile_id) = rom.romfile_id {
                         orphan_romfile_ids.push(romfile_id);

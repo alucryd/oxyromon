@@ -400,7 +400,7 @@ async fn sort_system(
                     "{} ({}) [{}]",
                     rom.name,
                     game.name,
-                    rom.crc.as_ref().unwrap()
+                    rom.crc.as_ref().unwrap_or(rom.sha1.as_ref().unwrap())
                 ));
             }
         } else {
