@@ -125,20 +125,22 @@ pub async fn main(
     for path in matches.get_many::<PathBuf>("ROMS").unwrap() {
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut path = get_canonicalized_path(&path).await?;
-        let mimetype = get_mimetype(&path).await?;
-        if matches.get_flag("EXTRACT")
-            && mimetype.is_some()
-            && ARCHIVE_EXTENSIONS.contains(&mimetype.as_ref().unwrap().extension())
-        {
-            for archive_romfile in CommonRomfile::from_path(&path)?
-                .as_archive(progress_bar, None)
-                .await?
+        if !path.is_dir() {
+            let mimetype = get_mimetype(&path).await?;
+            if matches.get_flag("EXTRACT")
+                && mimetype.is_some()
+                && ARCHIVE_EXTENSIONS.contains(&mimetype.as_ref().unwrap().extension())
             {
-                archive_romfile
-                    .to_common(progress_bar, &tmp_directory.path())
-                    .await?;
+                for archive_romfile in CommonRomfile::from_path(&path)?
+                    .as_archive(progress_bar, None)
+                    .await?
+                {
+                    archive_romfile
+                        .to_common(progress_bar, &tmp_directory.path())
+                        .await?;
+                }
+                path = tmp_directory.path().to_path_buf();
             }
-            path = tmp_directory.path().to_path_buf();
         }
         for system in &systems {
             if let Some(system) = system {
