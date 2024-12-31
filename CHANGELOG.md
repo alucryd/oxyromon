@@ -2,6 +2,7 @@
 
 - Fix an import issue with Progetto MAME DATs
 - Leave arcade CHDs untouched in `convert-roms` and `rebuild-roms`
+- Fix a regression preventing directory imports
 
 # 0.20.0
 
