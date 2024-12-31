@@ -64,7 +64,7 @@ async fn test() {
         &system,
         &game,
         &rom,
-        extension,
+        Some(extension),
         &test_directory,
         &SubfolderScheme::Alpha,
     )
