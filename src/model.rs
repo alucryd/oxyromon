@@ -95,6 +95,7 @@ pub struct Rom {
     pub id: i64,
     pub name: String,
     pub bios: bool,
+    pub disk: bool,
     pub size: i64,
     pub crc: Option<String>,
     pub md5: Option<String>,

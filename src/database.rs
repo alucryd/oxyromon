@@ -956,6 +956,7 @@ pub async fn create_rom_from_xml(
     connection: &mut SqliteConnection,
     rom_xml: &RomXml,
     bios: bool,
+    disk: bool,
     game_id: i64,
     parent_id: Option<i64>,
 ) -> i64 {
@@ -964,11 +965,12 @@ pub async fn create_rom_from_xml(
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
     sqlx::query!(
         "
-        INSERT INTO roms (name, bios, size, crc, md5, sha1, rom_status, game_id, parent_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO roms (name, bios, disk, size, crc, md5, sha1, rom_status, game_id, parent_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ",
         rom_xml.name,
         bios,
+        disk,
         rom_xml.size,
         crc,
         md5,
@@ -1015,6 +1017,7 @@ pub async fn update_rom_from_xml(
     id: i64,
     rom_xml: &RomXml,
     bios: bool,
+    disk: bool,
     game_id: i64,
     parent_id: Option<i64>,
 ) {
@@ -1024,11 +1027,12 @@ pub async fn update_rom_from_xml(
     sqlx::query!(
         "
         UPDATE roms
-        SET name = ?, bios = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?, parent_id = ?
+        SET name = ?, bios = ?, disk = ?, size = ?, crc = ?, md5 = ?, sha1 = ?, rom_status = ?, game_id = ?, parent_id = ?
         WHERE id = ?
         ",
         rom_xml.name,
         bios,
+        disk,
         rom_xml.size,
         crc,
         md5,
