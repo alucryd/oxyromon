@@ -57,6 +57,11 @@
         "name": "crc",
         "ordinal": 10,
         "type_info": "Text"
+      },
+      {
+        "name": "disk",
+        "ordinal": 11,
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -73,7 +78,8 @@
       true,
       true,
       false,
-      true
+      true,
+      false
     ]
   },
   "hash": "8776895fa04c2bca3abe6c79b6cd5d58d68d287e5b10b93a567132b1fe447e79"

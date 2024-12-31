@@ -140,13 +140,15 @@ async fn expand_game(
         .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
     let romfile =
         find_romfile_by_path(&mut transaction, romfile_path.as_os_str().to_str().unwrap()).await;
-    let roms = match merging {
+    let mut roms = match merging {
         Merging::NonMerged => {
             find_roms_by_game_id_parents_no_parent_bioses(&mut transaction, game.id).await
         }
         Merging::FullNonMerged => find_roms_by_game_id_parents(&mut transaction, game.id).await,
         _ => bail!("Not possible"),
     };
+    // skip CHDs
+    roms.retain(|rom| !rom.disk);
     for rom in roms.iter().filter(|rom| rom.romfile_id.is_none()) {
         let mut source_rom: Option<Rom> = None;
         if let Some(parent_id) = rom.parent_id {

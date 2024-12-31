@@ -494,6 +494,10 @@ async fn to_archive(
 
     // convert CHDs
     for roms in chds.values() {
+        // leave arcade CHDs untouched
+        if roms.iter().any(|rom| rom.disk) {
+            continue;
+        }
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut transaction = begin_transaction(connection).await;
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
@@ -3535,6 +3539,10 @@ async fn to_original(
 
     // convert CHDs
     for roms in chds.values() {
+        // leave arcade CHDs untouched
+        if roms.iter().any(|rom| rom.disk) {
+            continue;
+        }
         if chdman::get_version().await.is_err() {
             progress_bar.println("Please install chdman");
             break;

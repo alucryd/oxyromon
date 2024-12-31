@@ -36,6 +36,7 @@ async fn test() {
         id: 1,
         name: String::from("rom name.iso"),
         bios: false,
+        disk: false,
         size: 1,
         crc: Some(String::from("")),
         md5: Some(String::from("")),
