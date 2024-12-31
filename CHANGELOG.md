@@ -3,6 +3,7 @@
 - Fix an import issue with Progetto MAME DATs
 - Leave arcade CHDs untouched in `convert-roms` and `rebuild-roms`
 - Fix a regression preventing directory imports
+- Fix a crash in `sort-roms` when ROMs have no extension
 
 # 0.20.0
 

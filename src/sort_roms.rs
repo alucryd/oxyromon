@@ -632,9 +632,7 @@ async fn sort_games<'a, P: AsRef<Path>>(
             let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
             let extension = Path::new(&romfile.path)
                 .extension()
-                .unwrap()
-                .to_str()
-                .unwrap();
+                .map(|extension| extension.to_str().unwrap());
             let new_romfile_path = compute_new_romfile_path(
                 system,
                 &game,
@@ -864,7 +862,7 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
     system: &System,
     game: &Game,
     rom: &Rom,
-    extension: &str,
+    extension: Option<&str>,
     destination_directory: &P,
     subfolders: &SubfolderScheme,
 ) -> SimpleResult<PathBuf> {
@@ -881,7 +879,10 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
 
     // subfolders
     if subfolders == &SubfolderScheme::Alpha {
-        if non_original_extensions.contains(&extension) || system.arcade || game.jbfolder {
+        if extension.is_some() && non_original_extensions.contains(extension.as_ref().unwrap())
+            || system.arcade
+            || game.jbfolder
+        {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&game.name));
         } else {
             new_romfile_path = new_romfile_path.join(compute_alpha_subfolder(&rom.name));
@@ -889,13 +890,18 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
     }
 
     // arcade and jbfolder in subdirectories unless they are archives
-    if system.arcade && !ARCHIVE_EXTENSIONS.contains(&extension) || game.jbfolder {
+    if system.arcade
+        && extension.is_some()
+        && !ARCHIVE_EXTENSIONS.contains(extension.as_ref().unwrap())
+        || game.jbfolder
+    {
         new_romfile_path = new_romfile_path.join(&game.name);
     }
 
     // file name
-    if non_original_extensions.contains(&extension) {
-        new_romfile_path = new_romfile_path.join(format!("{}.{}", &game.name, extension));
+    if extension.is_some() && non_original_extensions.contains(extension.as_ref().unwrap()) {
+        new_romfile_path =
+            new_romfile_path.join(format!("{}.{}", &game.name, extension.as_ref().unwrap()));
     } else {
         new_romfile_path = new_romfile_path.join(&rom.name);
     }
