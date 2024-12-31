@@ -891,8 +891,8 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
 
     // arcade and jbfolder in subdirectories unless they are archives
     if system.arcade
-        && extension.is_some()
-        && !ARCHIVE_EXTENSIONS.contains(extension.as_ref().unwrap())
+        && (extension.is_none()
+            || extension.is_some() && !ARCHIVE_EXTENSIONS.contains(extension.as_ref().unwrap()))
         || game.jbfolder
     {
         new_romfile_path = new_romfile_path.join(&game.name);
@@ -900,8 +900,13 @@ async fn compute_new_romfile_path<P: AsRef<Path>>(
 
     // file name
     if extension.is_some() && non_original_extensions.contains(extension.as_ref().unwrap()) {
-        new_romfile_path =
-            new_romfile_path.join(format!("{}.{}", &game.name, extension.as_ref().unwrap()));
+        if system.arcade && !ARCHIVE_EXTENSIONS.contains(extension.as_ref().unwrap()) {
+            new_romfile_path =
+                new_romfile_path.join(format!("{}.{}", &rom.name, extension.as_ref().unwrap()));
+        } else {
+            new_romfile_path =
+                new_romfile_path.join(format!("{}.{}", &game.name, extension.as_ref().unwrap()));
+        }
     } else {
         new_romfile_path = new_romfile_path.join(&rom.name);
     }
