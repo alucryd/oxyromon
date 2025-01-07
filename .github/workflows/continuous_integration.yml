@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit yarn
+        run: sudo apt-get install bchunk dolphin-emu liblz4-1 libuv1 libzopfli1 mame-tools wit yarn
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install rust toolchain

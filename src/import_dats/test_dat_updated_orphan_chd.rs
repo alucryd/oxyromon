@@ -1,11 +1,19 @@
+use super::super::chdman;
 use super::super::database::*;
 use super::*;
+use std::cmp::Ordering;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
+    if let Ok(version) = chdman::get_version().await {
+        if version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less {
+            return;
+        }
+    }
+
     // given
     let _guard = MUTEX.lock().await;
 

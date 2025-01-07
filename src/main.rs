@@ -141,7 +141,7 @@ async fn main() -> SimpleResult<()> {
     if matches.subcommand().is_some() {
         dotenv().ok();
 
-        let mut builder = Builder::from_env("OXYROMON_LOG");
+        let mut builder = Builder::from_env("OXYROMON_LOG_LEVEL");
         if matches.subcommand_name().unwrap() != "server" {
             // log to stdout for interactive commands because indicatif uses stderr
             builder.target(Target::Stdout);

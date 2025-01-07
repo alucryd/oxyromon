@@ -1,6 +1,5 @@
-use crate::chdman::{AsChd, ChdType};
-
 use super::chdman;
+use super::chdman::{AsChd, ChdType};
 use super::common::*;
 use super::config::*;
 use super::ctrtool;
