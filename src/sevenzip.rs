@@ -196,15 +196,18 @@ impl ToCommon for ArchiveRomfile {
 
         progress_bar.println(format!("Extracting \"{}\"", &self.path));
 
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
+        command
             .arg("x")
+            .arg("-aoa")
             .arg("--")
             .arg(&self.romfile.path)
             .arg(&self.path)
-            .current_dir(directory.as_ref())
-            .output()
-            .await
-            .expect("Failed to extract archive");
+            .current_dir(directory.as_ref());
+
+        log::debug!("{:?}", command);
+
+        let output = command.output().await.expect("Failed to extract archive");
 
         if !output.status.success() {
             bail!(String::from_utf8(output.stderr).unwrap().as_str())
@@ -349,6 +352,9 @@ impl AsArchive for CommonRomfile {
         if let Some(rom) = rom {
             command.arg(&rom.name);
         }
+
+        log::debug!("{:?}", command);
+
         let output = command.output().await.expect("Failed to parse archive");
 
         if !output.status.success() {
@@ -360,17 +366,17 @@ impl AsArchive for CommonRomfile {
             .lines()
             .filter(|&line| line.starts_with("Path ="))
             .skip(1) // the first line is the archive itself
-            .map(|line| line.split('=').last().unwrap().trim().to_string()) // keep only the rhs
+            .map(|line| line.to_string().split_off(7)) // keep only the rhs
             .collect();
         let sizes: Vec<u64> = stdout
             .lines()
             .filter(|&line| line.starts_with("Size ="))
-            .map(|line| line.split('=').last().unwrap().trim().parse().unwrap()) // keep only the rhs
+            .map(|line| line.to_string().split_off(7).parse().unwrap()) // keep only the rhs
             .collect();
         let crcs: Vec<String> = stdout
             .lines()
             .filter(|&line| line.starts_with("CRC ="))
-            .map(|line| line.split('=').last().unwrap().trim().to_lowercase()) // keep only the rhs
+            .map(|line| line.to_string().split_off(6).to_lowercase()) // keep only the rhs
             .collect();
 
         progress_bar.set_message("");

@@ -66,6 +66,7 @@ export const pageSize = writable(20);
 
 export const completeFilter = writable(true);
 export const incompleteFilter = writable(true);
+export const wantedFilter = writable(true);
 export const ignoredFilter = writable(true);
 export const oneRegionFilter = writable(false);
 export const nameFilter = writable("");

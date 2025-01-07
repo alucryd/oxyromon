@@ -9,6 +9,12 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
+    if let Ok(version) = chdman::get_version().await {
+        if version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less {
+            return;
+        }
+    }
+
     // given
     let _guard = MUTEX.lock().await;
 

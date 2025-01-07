@@ -270,13 +270,7 @@ pub async fn import_dat(
     get_trash_directory(&mut transaction, Some(&system)).await?;
 
     // update games and systems completion
-    if system.arcade {
-        compute_arcade_system_completion(&mut transaction, progress_bar, &system).await;
-        compute_arcade_system_incompletion(&mut transaction, progress_bar, &system).await;
-    } else {
-        compute_system_completion(&mut transaction, progress_bar, &system).await;
-        compute_system_incompletion(&mut transaction, progress_bar, &system).await;
-    }
+    compute_system_completion(&mut transaction, progress_bar, &system).await;
 
     commit_transaction(transaction).await;
 

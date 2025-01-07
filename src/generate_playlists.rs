@@ -71,7 +71,10 @@ async fn process_system(
         });
 
     for (playlist_name, games) in grouped_games.into_iter() {
-        if games.iter().any(|game| !game.complete) {
+        if games
+            .iter()
+            .any(|game| game.completion != Completion::Full as i64)
+        {
             continue;
         }
 

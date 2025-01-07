@@ -128,7 +128,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
 
     let app = Router::new()
         .route("/graphql", post_service(GraphQL::new(schema)))
-        .route("/*path", get(serve_asset))
+        .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index));
 
     let listener = TcpListener::bind(format!(

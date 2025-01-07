@@ -296,76 +296,25 @@ pub async fn compute_system_completion(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_complete(connection, system.id).await;
-    update_jbfolder_games_by_system_id_mark_complete(connection, system.id).await;
-    update_system_mark_complete(connection, system.id).await;
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
-}
-
-pub async fn compute_system_incompletion(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    system: &System,
-) {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    update_games_by_system_id_mark_incomplete(connection, system.id).await;
-    update_jbfolder_games_by_system_id_mark_incomplete(connection, system.id).await;
-    update_system_mark_incomplete(connection, system.id).await;
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
-}
-
-pub async fn compute_arcade_system_completion(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    system: &System,
-) {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    let merging = Merging::from_i64(system.merging).unwrap();
-    match merging {
-        Merging::Split => {
-            update_split_games_by_system_id_mark_complete(connection, system.id).await;
+    if system.arcade {
+        let merging = Merging::from_i64(system.merging).unwrap();
+        match merging {
+            Merging::Split => {
+                update_split_games_completion_by_system_id(connection, system.id).await;
+            }
+            Merging::NonMerged | Merging::Merged => {
+                update_non_merged_and_merged_games_completion_by_system_id(connection, system.id)
+                    .await;
+            }
+            Merging::FullNonMerged | Merging::FullMerged => {
+                update_games_completion_by_system_id(connection, system.id).await;
+            }
         }
-        Merging::NonMerged | Merging::Merged => {
-            update_non_merged_and_merged_games_by_system_id_mark_complete(connection, system.id)
-                .await;
-        }
-        Merging::FullNonMerged | Merging::FullMerged => {
-            update_games_by_system_id_mark_complete(connection, system.id).await;
-        }
+    } else {
+        update_games_completion_by_system_id(connection, system.id).await;
+        update_jbfolder_games_completion_by_system_id(connection, system.id).await;
     }
-    update_system_mark_complete(connection, system.id).await;
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
-}
-
-pub async fn compute_arcade_system_incompletion(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    system: &System,
-) {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
-    let merging = Merging::from_i64(system.merging).unwrap();
-    match merging {
-        Merging::Split => {
-            update_split_games_by_system_id_mark_incomplete(connection, system.id).await;
-        }
-        Merging::NonMerged | Merging::Merged => {
-            update_non_merged_and_merged_games_by_system_id_mark_incomplete(connection, system.id)
-                .await;
-        }
-        Merging::FullNonMerged | Merging::FullMerged => {
-            update_games_by_system_id_mark_incomplete(connection, system.id).await;
-        }
-    }
-    update_system_mark_incomplete(connection, system.id).await;
+    update_system_completion(connection, system.id).await;
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 }

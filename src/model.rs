@@ -26,7 +26,7 @@ pub struct System {
     pub description: String,
     pub version: String,
     pub url: Option<String>,
-    pub complete: bool,
+    pub completion: i64,
     pub arcade: bool,
     pub merging: i64,
 }
@@ -57,6 +57,15 @@ pub enum Sorting {
     Ignored = 2,
 }
 
+#[derive(FromPrimitive, Type)]
+#[cfg_attr(feature = "server", derive(Clone, Copy, Enum, Eq, PartialEq))]
+#[repr(i8)]
+pub enum Completion {
+    None = 0,
+    Partial = 1,
+    Full = 2,
+}
+
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
@@ -71,7 +80,7 @@ pub struct Game {
     pub jbfolder: bool,
     pub regions: String,
     pub sorting: i64,
-    pub complete: bool,
+    pub completion: i64,
     pub system_id: i64,
     pub parent_id: Option<i64>,
     pub bios_id: Option<i64>,
