@@ -117,7 +117,7 @@ async fn rebuild_system(
     }
 
     update_system_merging(connection, system.id, merging).await;
-    compute_arcade_system_completion(connection, progress_bar, system).await;
+    compute_system_completion(connection, progress_bar, system).await;
 
     Ok(())
 }

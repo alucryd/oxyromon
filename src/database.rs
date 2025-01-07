@@ -143,48 +143,34 @@ pub async fn update_system_from_xml(
     .unwrap_or_else(|_| panic!("Error while updating system with id {}", id));
 }
 
-pub async fn update_system_mark_complete(connection: &mut SqliteConnection, id: i64) {
+pub async fn update_system_completion(connection: &mut SqliteConnection, id: i64) {
     sqlx::query!(
         "
         UPDATE systems
-        SET complete = true
-        WHERE id = ?
-        AND complete = false
-        AND NOT EXISTS (
+        SET completion = CASE
+        WHEN NOT EXISTS (
             SELECT 1
-            FROM games g
-            WHERE g.system_id = systems.id
-            AND g.complete = false
-            AND g.sorting != 2
-        )
+            FROM games
+            WHERE games.system_id = systems.id
+            AND games.completion != 0
+            AND games.sorting != 2
+        ) THEN 0
+        WHEN NOT EXISTS (
+            SELECT 1
+            FROM games
+            WHERE games.system_id = systems.id
+            AND games.completion != 2
+            AND games.sorting != 2
+        ) THEN 2
+        ELSE 1
+        END
+        WHERE id = ?
         ",
         id,
     )
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while marking system with id {} as complete", id));
-}
-
-pub async fn update_system_mark_incomplete(connection: &mut SqliteConnection, id: i64) {
-    sqlx::query!(
-        "
-        UPDATE systems
-        SET complete = false
-        WHERE id = ?
-        AND complete = true
-        AND EXISTS (
-            SELECT 1
-            FROM games g
-            WHERE g.system_id = systems.id
-            AND g.complete = false
-            AND g.sorting != 2
-        )
-        ",
-        id,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while marking system with id {} as incomplete", id));
 }
 
 pub async fn update_system_merging(connection: &mut SqliteConnection, id: i64, merging: Merging) {
@@ -383,23 +369,30 @@ pub async fn update_game_from_xml(
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn update_games_by_system_id_mark_complete(
+pub async fn update_games_completion_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) {
     sqlx::query!(
         "
         UPDATE games
-        SET complete = true
+        SET completion = CASE
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NOT NULL
+            ) THEN 0
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NULL
+            ) THEN 2
+            ELSE 1
+        END
         WHERE system_id = ?
-        AND complete = false
         AND jbfolder = false
-        AND NOT EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-        )
         ",
         system_id,
     )
@@ -408,23 +401,31 @@ pub async fn update_games_by_system_id_mark_complete(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-pub async fn update_split_games_by_system_id_mark_complete(
+pub async fn update_split_games_completion_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) {
     sqlx::query!(
         "
         UPDATE games
-        SET complete = true
+        SET completion = CASE
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NOT NULL
+                AND roms.parent_id IS NULL
+            ) THEN 0
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NULL
+                AND roms.parent_id IS NULL
+            ) THEN 2
+            ELSE 1
+        END
         WHERE system_id = ?
-        AND complete = false
-        AND NOT EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-            AND r.parent_id IS NULL
-        )
         ",
         system_id,
     )
@@ -433,32 +434,49 @@ pub async fn update_split_games_by_system_id_mark_complete(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-pub async fn update_non_merged_and_merged_games_by_system_id_mark_complete(
+pub async fn update_non_merged_and_merged_games_completion_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) {
     sqlx::query!(
         "
         UPDATE games
-        SET complete = true
-        WHERE system_id = ?
-        AND complete = false
-        AND NOT EXISTS (
-            SELECT 1
-            FROM roms AS r1
-            WHERE r1.game_id = games.id
-            AND r1.romfile_id IS NULL
-            AND (
-                r1.parent_id IS NULL
-                OR EXISTS (
-                    SELECT 1
-                    FROM roms AS r2
-                    JOIN games AS g ON g.id = r2.game_id
-                    WHERE r2.id = r1.parent_id
-                    AND g.bios = false
+        SET completion = CASE
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms AS r1
+                WHERE r1.game_id = games.id
+                AND r1.romfile_id IS NOT NULL
+                AND (
+                    r1.parent_id IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM roms AS r2
+                        JOIN games AS g ON g.id = r2.game_id
+                        WHERE r2.id = r1.parent_id
+                        AND g.bios = false
+                    )
                 )
-            )
-        )
+            ) THEN 0
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms AS r1
+                WHERE r1.game_id = games.id
+                AND r1.romfile_id IS NULL
+                AND (
+                    r1.parent_id IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM roms AS r2
+                        JOIN games AS g ON g.id = r2.game_id
+                        WHERE r2.id = r1.parent_id
+                        AND g.bios = false
+                    )
+                )
+            ) THEN 2
+            ELSE 1
+        END
+        WHERE system_id = ?
         ",
         system_id,
     )
@@ -467,146 +485,44 @@ pub async fn update_non_merged_and_merged_games_by_system_id_mark_complete(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-pub async fn update_jbfolder_games_by_system_id_mark_complete(
+pub async fn update_jbfolder_games_completion_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) {
     sqlx::query!(
         "
         UPDATE games
-        SET complete = true
+        SET completion = CASE
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NOT NULL
+                AND roms.parent_id IS NOT NULL
+                AND roms.name NOT LIKE 'PS3_CONTENT/%'
+                AND roms.name NOT LIKE 'PS3_EXTRA/%'
+                AND roms.name NOT LIKE 'PS3_UPDATE/%'
+            ) THEN 0
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NULL
+                AND roms.parent_id IS NOT NULL
+                AND roms.name NOT LIKE 'PS3_CONTENT/%'
+                AND roms.name NOT LIKE 'PS3_EXTRA/%'
+                AND roms.name NOT LIKE 'PS3_UPDATE/%'
+            ) THEN 2
+            ELSE 1
+        END
         WHERE system_id = ?
-        AND complete = false
         AND jbfolder = true
-        AND NOT EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-            AND r.parent_id IS NOT NULL
-            AND r.name NOT LIKE 'PS3_CONTENT/%'
-            AND r.name NOT LIKE 'PS3_EXTRA/%'
-            AND r.name NOT LIKE 'PS3_UPDATE/%'
-        )
         ",
         system_id,
     )
     .execute(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while marking game as complete"));
-}
-
-pub async fn update_games_by_system_id_mark_incomplete(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-) {
-    sqlx::query!(
-        "
-        UPDATE games
-        SET complete = false
-        WHERE system_id = ?
-        AND complete = true
-        AND jbfolder = false
-        AND EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-        )
-        ",
-        system_id,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
-}
-
-pub async fn update_split_games_by_system_id_mark_incomplete(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-) {
-    sqlx::query!(
-        "
-        UPDATE games
-        SET complete = false
-        WHERE system_id = ?
-        AND complete = true
-        AND EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-            AND r.parent_id IS NULL
-        )
-        ",
-        system_id,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
-}
-
-pub async fn update_non_merged_and_merged_games_by_system_id_mark_incomplete(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-) {
-    sqlx::query!(
-        "
-        UPDATE games
-        SET complete = false
-        WHERE system_id = ?
-        AND complete = true
-        AND EXISTS (
-            SELECT 1
-            FROM roms AS r1
-            WHERE r1.game_id = games.id
-            AND r1.romfile_id IS NULL
-            AND (
-                r1.parent_id IS NULL
-                OR EXISTS (
-                    SELECT 1
-                    FROM roms AS r2
-                    JOIN games AS g ON g.id = r2.game_id
-                    WHERE r2.id = r1.parent_id
-                    AND g.bios = false
-                )
-            )
-        )
-        ",
-        system_id,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
-}
-
-pub async fn update_jbfolder_games_by_system_id_mark_incomplete(
-    connection: &mut SqliteConnection,
-    system_id: i64,
-) {
-    sqlx::query!(
-        "
-        UPDATE games
-        SET complete = false
-        WHERE system_id = ?
-        AND complete = true
-        AND jbfolder = true
-        AND EXISTS (
-            SELECT 1
-            FROM roms AS r
-            WHERE r.game_id = games.id
-            AND r.romfile_id IS NULL
-            AND r.parent_id IS NOT NULL
-            AND r.name NOT LIKE 'PS3_CONTENT/%'
-            AND r.name NOT LIKE 'PS3_EXTRA/%'
-            AND r.name NOT LIKE 'PS3_UPDATE/%'
-        )
-        ",
-        system_id,
-    )
-    .execute(connection)
-    .await
-    .unwrap_or_else(|_| panic!("Error while marking games as incomplete"));
 }
 
 pub async fn update_games_sorting(
@@ -850,7 +766,7 @@ pub async fn find_complete_games_by_system_id(
         SELECT *
         FROM games
         WHERE system_id = ?
-        AND complete = true
+        AND completion = 2
         ORDER BY name
         ",
         system_id,
@@ -872,7 +788,7 @@ pub async fn find_complete_games_by_name_and_system_id(
         FROM games
         WHERE name LIKE ?
         AND system_id = ?
-        AND complete = TRUE
+        AND completion = 2
         ORDER BY name
         ",
         name,

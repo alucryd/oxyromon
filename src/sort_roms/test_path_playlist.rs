@@ -15,7 +15,7 @@ async fn test() {
         jbfolder: false,
         regions: String::from(""),
         sorting: Sorting::AllRegions as i64,
-        complete: false,
+        completion: 0,
         system_id: 1,
         parent_id: None,
         bios_id: None,

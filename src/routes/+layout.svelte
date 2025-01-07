@@ -23,6 +23,7 @@
     isSettingsModalOpen,
     nameFilter,
     oneRegionFilter,
+    wantedFilter,
   } from "../store.js";
 
   let navbarIsOpen = false;
@@ -56,8 +57,11 @@
           <Button color="success" bind:active={$completeFilter} on:click={() => completeFilter.update((b) => !b)}>
             {#if $completeFilter}Hide{:else}Show{/if} Complete
           </Button>
-          <Button color="danger" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
+          <Button color="warning" bind:active={$incompleteFilter} on:click={() => incompleteFilter.update((b) => !b)}>
             {#if $incompleteFilter}Hide{:else}Show{/if} Incomplete
+          </Button>
+          <Button color="danger" bind:active={$wantedFilter} on:click={() => wantedFilter.update((b) => !b)}>
+            {#if $wantedFilter}Hide{:else}Show{/if} Wanted
           </Button>
           <Button color="secondary" bind:active={$ignoredFilter} on:click={() => ignoredFilter.update((b) => !b)}>
             {#if $ignoredFilter}Hide{:else}Show{/if} Ignored

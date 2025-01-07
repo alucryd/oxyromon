@@ -53,6 +53,7 @@
     unfilteredGames,
     unfilteredRoms,
     unfilteredSystems,
+    wantedFilter,
   } from "../store.js";
 
   $: systemsFirstPage = $systemsPage == 1;
@@ -63,7 +64,15 @@
   $: romsLastPage = $romsPage == $romsTotalPages;
 
   function computeSystemColor(system) {
-    return system.complete ? "list-group-item-success" : "list-group-item-danger";
+    if (system.completion == 2) {
+      return "list-group-item-success";
+    }
+
+    if (system.completion == 1) {
+      return "list-group-item-warning";
+    }
+
+    return "list-group-item-danger";
   }
 
   function computeGameColor(game) {
@@ -71,8 +80,12 @@
       return "list-group-item-secondary";
     }
 
-    if (game.complete) {
+    if (game.completion == 2) {
       return "list-group-item-success";
+    }
+
+    if (game.completion == 1) {
+      return "list-group-item-warning";
     }
 
     return "list-group-item-danger";
@@ -131,13 +144,6 @@
         await updateGames();
       }
     });
-    oneRegionFilter.subscribe(async () => {
-      if ($gamesPage != 1) {
-        gamesPage.set(1);
-      } else {
-        await updateGames();
-      }
-    });
     incompleteFilter.subscribe(async () => {
       if ($gamesPage != 1) {
         gamesPage.set(1);
@@ -145,7 +151,21 @@
         await updateGames();
       }
     });
+    wantedFilter.subscribe(async () => {
+      if ($gamesPage != 1) {
+        gamesPage.set(1);
+      } else {
+        await updateGames();
+      }
+    });
     ignoredFilter.subscribe(async () => {
+      if ($gamesPage != 1) {
+        gamesPage.set(1);
+      } else {
+        await updateGames();
+      }
+    });
+    oneRegionFilter.subscribe(async () => {
       if ($gamesPage != 1) {
         gamesPage.set(1);
       } else {

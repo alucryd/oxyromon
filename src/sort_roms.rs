@@ -280,14 +280,18 @@ async fn sort_system(
             // find the one game we want to keep, if any
             for region in one_regions {
                 let i = games.iter().position(|game| {
-                    (game.complete || one_regions_strict || games.iter().all(|game| !game.complete))
+                    (game.completion == Completion::Full as i64
+                        || one_regions_strict
+                        || games
+                            .iter()
+                            .all(|game| game.completion != Completion::Full as i64))
                         && Region::try_from_tosec_region(&game.regions)
                             .unwrap_or_default()
                             .contains(region)
                 });
                 if let Some(i) = i {
                     let game = games.remove(i);
-                    if game.complete {
+                    if game.completion == Completion::Full as i64 {
                         one_region_games.push(game);
                     } else {
                         incomplete_one_region_games.push(game);
@@ -306,7 +310,7 @@ async fn sort_system(
                             .contains(region)
                     });
                 if region_in_all_regions {
-                    if game.complete {
+                    if game.completion == Completion::Full as i64 {
                         all_regions_games.push(game);
                     } else {
                         incomplete_all_regions_games.push(game);
@@ -340,7 +344,7 @@ async fn sort_system(
                     .contains(region)
             });
             if region_in_all_regions {
-                if game.complete {
+                if game.completion == Completion::Full as i64 {
                     all_regions_games.push(game);
                 } else {
                     incomplete_all_regions_games.push(game);
@@ -366,7 +370,7 @@ async fn sort_system(
         }
 
         for game in games {
-            if game.complete {
+            if game.completion == Completion::Full as i64 {
                 all_regions_games.push(game);
             } else {
                 incomplete_all_regions_games.push(game)
@@ -584,13 +588,7 @@ async fn sort_system(
 
     // update games and systems completion
     if changes > 0 {
-        if system.arcade {
-            compute_arcade_system_completion(connection, progress_bar, system).await;
-            compute_arcade_system_incompletion(connection, progress_bar, system).await;
-        } else {
-            compute_system_completion(connection, progress_bar, system).await;
-            compute_system_incompletion(connection, progress_bar, system).await;
-        }
+        compute_system_completion(connection, progress_bar, system).await;
     }
 
     Ok(())

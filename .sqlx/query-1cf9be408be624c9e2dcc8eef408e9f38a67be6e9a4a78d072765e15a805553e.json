@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND complete = true\n        ORDER BY name\n        ",
+  "query": "\n        SELECT *\n        FROM games\n        WHERE system_id = ?\n        AND completion = 2\n        ORDER BY name\n        ",
   "describe": {
     "columns": [
       {
@@ -34,49 +34,49 @@
         "type_info": "Integer"
       },
       {
-        "name": "complete",
-        "ordinal": 6,
-        "type_info": "Bool"
-      },
-      {
         "name": "sorting",
-        "ordinal": 7,
+        "ordinal": 6,
         "type_info": "Integer"
       },
       {
         "name": "comment",
-        "ordinal": 8,
+        "ordinal": 7,
         "type_info": "Text"
       },
       {
         "name": "bios",
-        "ordinal": 9,
+        "ordinal": 8,
         "type_info": "Bool"
       },
       {
         "name": "bios_id",
-        "ordinal": 10,
+        "ordinal": 9,
         "type_info": "Integer"
       },
       {
         "name": "external_id",
-        "ordinal": 11,
+        "ordinal": 10,
         "type_info": "Text"
       },
       {
         "name": "jbfolder",
-        "ordinal": 12,
+        "ordinal": 11,
         "type_info": "Bool"
       },
       {
         "name": "playlist_id",
-        "ordinal": 13,
+        "ordinal": 12,
         "type_info": "Integer"
       },
       {
         "name": "device",
-        "ordinal": 14,
+        "ordinal": 13,
         "type_info": "Bool"
+      },
+      {
+        "name": "completion",
+        "ordinal": 14,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -90,15 +90,15 @@
       false,
       true,
       false,
-      false,
       true,
       false,
       true,
       true,
       false,
       true,
+      false,
       false
     ]
   },
-  "hash": "3a7a0ad59e72d50353b26e751ead790e4392027c58f8402fb9357416e75a8493"
+  "hash": "1cf9be408be624c9e2dcc8eef408e9f38a67be6e9a4a78d072765e15a805553e"
 }

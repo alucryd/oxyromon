@@ -211,11 +211,7 @@ pub async fn main(
 
     for system_id in system_ids {
         let system = find_system_by_id(connection, system_id).await;
-        if system.arcade {
-            compute_arcade_system_completion(connection, progress_bar, &system).await;
-        } else {
-            compute_system_completion(connection, progress_bar, &system).await;
-        }
+        compute_system_completion(connection, progress_bar, &system).await;
     }
 
     Ok(())
@@ -820,6 +816,7 @@ async fn import_chd(
                 .await?;
 
             let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
+            let mut new_game_ids: HashSet<i64> = HashSet::new();
             for bin_romfile in &cue_bin_romfile.bin_romfiles {
                 for hash_algorithm in &hash_algorithms {
                     let (hash, size) = bin_romfile
@@ -831,7 +828,11 @@ async fn import_chd(
                         size,
                         &hash,
                         system,
-                        game_ids,
+                        if new_game_ids.is_empty() {
+                            game_ids
+                        } else {
+                            &new_game_ids
+                        },
                         &[],
                         None,
                         hash_algorithm,
@@ -839,6 +840,7 @@ async fn import_chd(
                     )
                     .await?
                     {
+                        new_game_ids.insert(rom_game_system.1.id);
                         roms_games_systems.push(rom_game_system);
                         break;
                     }

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE games\n        SET completion = CASE\n            WHEN NOT EXISTS (\n                SELECT 1\n                FROM roms\n                WHERE roms.game_id = games.id\n                AND roms.romfile_id IS NOT NULL\n                AND roms.parent_id IS NOT NULL\n                AND roms.name NOT LIKE 'PS3_CONTENT/%'\n                AND roms.name NOT LIKE 'PS3_EXTRA/%'\n                AND roms.name NOT LIKE 'PS3_UPDATE/%'\n            ) THEN 0\n            WHEN NOT EXISTS (\n                SELECT 1\n                FROM roms\n                WHERE roms.game_id = games.id\n                AND roms.romfile_id IS NULL\n                AND roms.parent_id IS NOT NULL\n                AND roms.name NOT LIKE 'PS3_CONTENT/%'\n                AND roms.name NOT LIKE 'PS3_EXTRA/%'\n                AND roms.name NOT LIKE 'PS3_UPDATE/%'\n            ) THEN 2\n            ELSE 1\n        END\n        WHERE system_id = ?\n        AND jbfolder = true\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "1b8a8367d688d60060f96696e3759662704ce9877f2effd71040cc4c632166b4"
+}

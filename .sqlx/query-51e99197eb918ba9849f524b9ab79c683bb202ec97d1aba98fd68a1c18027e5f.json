@@ -29,24 +29,24 @@
         "type_info": "Text"
       },
       {
-        "name": "complete",
+        "name": "arcade",
         "ordinal": 5,
         "type_info": "Bool"
       },
       {
-        "name": "arcade",
-        "ordinal": 6,
-        "type_info": "Bool"
-      },
-      {
         "name": "merging",
-        "ordinal": 7,
+        "ordinal": 6,
         "type_info": "Integer"
       },
       {
         "name": "custom_name",
-        "ordinal": 8,
+        "ordinal": 7,
         "type_info": "Text"
+      },
+      {
+        "name": "completion",
+        "ordinal": 8,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -60,8 +60,8 @@
       true,
       false,
       false,
-      false,
-      true
+      true,
+      false
     ]
   },
   "hash": "51e99197eb918ba9849f524b9ab79c683bb202ec97d1aba98fd68a1c18027e5f"

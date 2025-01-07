@@ -56,6 +56,7 @@ import {
   unfilteredGames,
   unfilteredRoms,
   unfilteredSystems,
+  wantedFilter,
 } from "./store.js";
 
 const endpoint = "/graphql";
@@ -109,7 +110,7 @@ export async function getSystems() {
         id
         name
         description
-        complete
+        completion
         merging
         arcade
       }
@@ -133,7 +134,7 @@ export async function getGamesBySystemId(systemId) {
                 id
                 name
                 description
-                complete
+                completion
                 sorting
             }
         }
@@ -146,10 +147,13 @@ export async function getGamesBySystemId(systemId) {
 
 function filterGames(games) {
   if (!get(completeFilter)) {
-    games = reject(games, (game) => game.complete);
+    games = reject(games, (game) => game.completion == 2);
   }
   if (!get(incompleteFilter)) {
-    games = reject(games, (game) => !game.complete);
+    games = reject(games, (game) => game.completion == 1);
+  }
+  if (!get(wantedFilter)) {
+    games = reject(games, (game) => game.completion == 0);
   }
   if (!get(ignoredFilter)) {
     games = reject(games, (game) => game.sorting === 2);

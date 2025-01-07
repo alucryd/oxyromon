@@ -30,7 +30,7 @@ async fn test() {
         version: String::from(""),
         url: None,
         arcade: false,
-        complete: false,
+        completion: 0,
         merging: Merging::NonMerged as i64,
     };
 
