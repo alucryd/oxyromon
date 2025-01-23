@@ -1234,6 +1234,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5(
         WHERE romfile_id IS NULL
         AND size = ?
         AND md5 = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1266,6 +1267,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.md5 = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1299,6 +1301,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1337,6 +1340,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1377,7 +1381,8 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.name = '{}'
         AND r.size = {}
-        AND r.sha1 = '{}'
+        AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1418,7 +1423,8 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
         WHERE r.romfile_id IS NULL
         AND r.name = '{}'
         AND r.size = {}
-        AND r.sha1 = '{}'
+        AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1520,6 +1526,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1(
         WHERE romfile_id IS NULL
         AND size = ?
         AND sha1 = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1552,6 +1559,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.sha1 = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1585,6 +1593,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1623,6 +1632,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1664,6 +1674,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
         AND r.name = '{}'
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1705,6 +1716,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
         AND r.name = '{}'
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1808,6 +1820,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc(
         WHERE romfile_id IS NULL
         AND size = ?
         AND crc = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1840,6 +1853,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.crc = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1873,6 +1887,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1911,6 +1926,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1952,6 +1968,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
         AND r.name = '{}'
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1993,6 +2010,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
         AND r.name = '{}'
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -2079,7 +2097,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     .count
 }
 
-pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
+pub async fn find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     size: u64,
@@ -2117,7 +2135,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     })
 }
 
-pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
+pub async fn count_sfb_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     size: u64,

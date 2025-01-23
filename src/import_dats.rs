@@ -593,7 +593,7 @@ async fn create_or_update_roms(
             };
             if let Some(rom) = parent_rom.or(bios_rom) {
                 bios = rom.bios;
-                parent_id = rom.parent_id;
+                parent_id = Some(rom.id);
             } else {
                 progress_bar.println(format!(
                     "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
