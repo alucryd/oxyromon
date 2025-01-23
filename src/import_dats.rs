@@ -230,8 +230,18 @@ pub async fn import_dat(
 
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     progress_bar.println("Deleting old games");
-    orphan_romfile_ids
-        .append(&mut delete_old_games(&mut transaction, &datfile_xml.games, system_id).await);
+    orphan_romfile_ids.append(
+        &mut delete_old_games(
+            &mut transaction,
+            if !datfile_xml.machines.is_empty() {
+                &datfile_xml.machines
+            } else {
+                &datfile_xml.games
+            },
+            system_id,
+        )
+        .await,
+    );
     progress_bar.println("Processing games");
     orphan_romfile_ids.append(
         &mut create_or_update_games(

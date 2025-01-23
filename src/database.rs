@@ -937,7 +937,7 @@ pub async fn update_rom_from_xml(
     game_id: i64,
     parent_id: Option<i64>,
 ) {
-    let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
+    let crc = rom_xml.crc.as_ref().map(|crc| crc.to_lowercase());
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
     sqlx::query!(
