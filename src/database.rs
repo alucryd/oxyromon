@@ -2293,6 +2293,39 @@ pub async fn find_rom_by_size_and_crc_and_game_id(
     })
 }
 
+pub async fn find_rom_by_size_and_crc_and_game_ids(
+    connection: &mut SqliteConnection,
+    size: i64,
+    crc: &str,
+    game_ids: &[i64],
+) -> Vec<Rom> {
+    let crc = crc.to_lowercase();
+    let sql = format!(
+        "
+        SELECT *
+        FROM roms
+        WHERE size = {}
+        AND crc = '{}'
+        AND game_id IN ({})
+        AND parent_id IS NULL
+    ",
+        size,
+        crc,
+        game_ids.iter().join(",")
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding rom with size {} and CRC {} and game ids {}",
+                size,
+                crc,
+                game_ids.iter().join(",")
+            )
+        })
+}
+
 pub async fn delete_rom_by_name_and_game_id(
     connection: &mut SqliteConnection,
     name: &str,
