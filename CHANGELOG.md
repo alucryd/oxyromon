@@ -2,7 +2,10 @@
 
 - Add a new `wanted` game state in the web UI, replaces `incomplete` which now means games with some (but not all) its ROMs
 - Fix a regression when importing multi-track CHDs which contain tracks identical to other games
-- Fix parsing archives containing files with `=` symbols in their names
+- Fix parsing archives containing files with `=` signs in their names
+- Fix several issues affecting the import of MAME DATs
+- Fix regressions in `rebuild-roms`
+- Add a `-f` flag to `rebuild-roms` to force rebuilding with the same strategy
 
 # 0.20.1
 

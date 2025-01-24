@@ -55,7 +55,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut connection, system.id).await;
     let games_by_id: HashMap<i64, Game> = games.into_iter().map(|game| (game.id, game)).collect();
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;

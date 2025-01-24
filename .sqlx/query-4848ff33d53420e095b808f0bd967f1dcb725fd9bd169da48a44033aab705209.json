@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NULL\n        AND size = ?\n        AND md5 = ?\n        ORDER BY name\n        ",
+  "query": "\n        SELECT r.*\n        FROM roms AS r\n        JOIN games AS g ON r.game_id = g.id\n        WHERE r.romfile_id IS NOT NULL\n        AND r.size = ?\n        AND r.md5 = ?\n        AND g.system_id = ?\n        ORDER BY r.name\n        ",
   "describe": {
     "columns": [
       {
@@ -65,7 +65,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 3
     },
     "nullable": [
       false,
@@ -82,5 +82,5 @@
       false
     ]
   },
-  "hash": "721e3d4b2564a16dddc69c7afdca31831b1a2e0fc3ab0f94d24feb584e58601e"
+  "hash": "4848ff33d53420e095b808f0bd967f1dcb725fd9bd169da48a44033aab705209"
 }

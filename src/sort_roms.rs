@@ -400,11 +400,15 @@ async fn sort_system(
                     .iter()
                     .find(|&game| game.id == rom.game_id)
                     .unwrap();
+                let checksum = vec![&rom.crc, &rom.md5, &rom.sha1]
+                    .into_iter()
+                    .find(|checksum| checksum.is_some())
+                    .map(|checksum| checksum.as_ref().unwrap().as_str());
                 progress_bar.println(format!(
                     "{} ({}) [{}]",
                     rom.name,
                     game.name,
-                    rom.crc.as_ref().unwrap_or(rom.sha1.as_ref().unwrap())
+                    checksum.unwrap_or("n/a")
                 ));
             }
         } else {

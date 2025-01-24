@@ -31,6 +31,12 @@ pub trait CommonFile {
         new_path: &P,
         quiet: bool,
     ) -> SimpleResult<CommonRomfile>;
+    async fn copy<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        quiet: bool,
+    ) -> SimpleResult<CommonRomfile>;
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
 }
 
@@ -53,6 +59,7 @@ impl CommonFile for CommonRomfile {
         );
         Ok(relative_path)
     }
+
     async fn rename<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
@@ -65,6 +72,18 @@ impl CommonFile for CommonRomfile {
         CommonRomfile::from_path(new_path)
     }
 
+    async fn copy<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        quiet: bool,
+    ) -> SimpleResult<CommonRomfile> {
+        let new_path = destination_directory
+            .as_ref()
+            .join(self.path.file_name().unwrap());
+        copy_file(progress_bar, &self.path, &new_path, quiet).await?;
+        CommonRomfile::from_path(&new_path)
+    }
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
         remove_file(progress_bar, &self.path, quiet).await?;
         Ok(())

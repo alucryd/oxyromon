@@ -64,7 +64,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut connection, system.id).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     for game in &games {
@@ -100,7 +100,7 @@ async fn test() {
     .await
     .unwrap();
 
-    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut connection, system.id).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
     for game in &games {

@@ -1,0 +1,86 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM roms\n        WHERE romfile_id IS NULL\n        AND size = ?\n        AND md5 = ?\n        AND parent_id IS NULL\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "rom_status",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "game_id",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "romfile_id",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "md5",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "sha1",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "bios",
+        "ordinal": 9,
+        "type_info": "Bool"
+      },
+      {
+        "name": "crc",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "disk",
+        "ordinal": 11,
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "6c497634fc9793190f6cd000af561e93b8eba54228129c9d6b1920f704d64185"
+}

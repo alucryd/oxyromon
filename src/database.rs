@@ -756,7 +756,27 @@ pub async fn find_game_by_name_and_bios_and_system_id(
     })
 }
 
-pub async fn find_complete_games_by_system_id(
+pub async fn find_partial_games_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE system_id = ?
+        AND completion = 1
+        ORDER BY name
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding incomplete games")
+}
+
+pub async fn find_full_games_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) -> Vec<Game> {
@@ -937,7 +957,7 @@ pub async fn update_rom_from_xml(
     game_id: i64,
     parent_id: Option<i64>,
 ) {
-    let crc = rom_xml.crc.as_ref().unwrap().to_lowercase();
+    let crc = rom_xml.crc.as_ref().map(|crc| crc.to_lowercase());
     let md5 = rom_xml.md5.as_ref().map(|md5| md5.to_lowercase());
     let sha1 = rom_xml.sha1.as_ref().map(|sha1| sha1.to_lowercase());
     sqlx::query!(
@@ -1192,10 +1212,10 @@ pub async fn find_roms_with_romfile_by_game_ids(
         .expect("Error while finding roms with romfile")
 }
 
-pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
+pub async fn find_roms_with_romfile_by_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     size: i64,
-    crc: &str,
+    md5: &str,
     system_id: i64,
 ) -> Vec<Rom> {
     sqlx::query_as!(
@@ -1206,12 +1226,12 @@ pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
         JOIN games AS g ON r.game_id = g.id
         WHERE r.romfile_id IS NOT NULL
         AND r.size = ?
-        AND r.crc = ?
+        AND r.md5 = ?
         AND g.system_id = ?
         ORDER BY r.name
         ",
         size,
-        crc,
+        md5,
         system_id
     )
     .fetch_all(connection)
@@ -1234,6 +1254,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5(
         WHERE romfile_id IS NULL
         AND size = ?
         AND md5 = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1266,6 +1287,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.md5 = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1299,6 +1321,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1337,6 +1360,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1377,7 +1401,8 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.name = '{}'
         AND r.size = {}
-        AND r.sha1 = '{}'
+        AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1418,7 +1443,8 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
         WHERE r.romfile_id IS NULL
         AND r.name = '{}'
         AND r.size = {}
-        AND r.sha1 = '{}'
+        AND r.md5 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1505,6 +1531,33 @@ pub async fn count_roms_with_romfile_by_size_and_md5_and_system_id(
     .count
 }
 
+pub async fn find_roms_with_romfile_by_size_and_sha1_and_system_id(
+    connection: &mut SqliteConnection,
+    size: i64,
+    sha1: &str,
+    system_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT r.*
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.sha1 = ?
+        AND g.system_id = ?
+        ORDER BY r.name
+        ",
+        size,
+        sha1,
+        system_id
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms with romfile")
+}
+
 pub async fn find_roms_without_romfile_by_size_and_sha1(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1520,6 +1573,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1(
         WHERE romfile_id IS NULL
         AND size = ?
         AND sha1 = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1552,6 +1606,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.sha1 = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1585,6 +1640,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1623,6 +1679,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1664,6 +1721,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
         AND r.name = '{}'
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1705,6 +1763,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
         AND r.name = '{}'
         AND r.size = {}
         AND r.sha1 = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1793,6 +1852,33 @@ pub async fn count_roms_with_romfile_by_size_and_sha1_and_system_id(
     .count
 }
 
+pub async fn find_roms_with_romfile_by_size_and_crc_and_system_id(
+    connection: &mut SqliteConnection,
+    size: i64,
+    crc: &str,
+    system_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT r.*
+        FROM roms AS r
+        JOIN games AS g ON r.game_id = g.id
+        WHERE r.romfile_id IS NOT NULL
+        AND r.size = ?
+        AND r.crc = ?
+        AND g.system_id = ?
+        ORDER BY r.name
+        ",
+        size,
+        crc,
+        system_id
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms with romfile")
+}
+
 pub async fn find_roms_without_romfile_by_size_and_crc(
     connection: &mut SqliteConnection,
     size: u64,
@@ -1808,6 +1894,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc(
         WHERE romfile_id IS NULL
         AND size = ?
         AND crc = ?
+        AND parent_id IS NULL
         ORDER BY name
         ",
         size,
@@ -1840,6 +1927,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_system_id(
         WHERE r.romfile_id IS NULL
         AND r.size = ?
         AND r.crc = ?
+        AND r.parent_id IS NULL
         AND g.system_id = ?
         ORDER BY r.name
         ",
@@ -1873,6 +1961,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1911,6 +2000,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
         WHERE r.romfile_id IS NULL
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -1952,6 +2042,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
         AND r.name = '{}'
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         ORDER BY r.name
         ",
@@ -1993,6 +2084,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
         AND r.name = '{}'
         AND r.size = {}
         AND r.crc = '{}'
+        AND r.parent_id IS NULL
         AND g.name IN ({})
         AND g.system_id = {}
         ORDER BY r.name
@@ -2079,7 +2171,7 @@ pub async fn count_roms_with_romfile_by_size_and_crc_and_system_id(
     .count
 }
 
-pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
+pub async fn find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     size: u64,
@@ -2117,7 +2209,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
     })
 }
 
-pub async fn count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
+pub async fn count_sfb_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     size: u64,
@@ -2273,6 +2365,39 @@ pub async fn find_rom_by_size_and_crc_and_game_id(
             size, crc, game_id
         )
     })
+}
+
+pub async fn find_rom_by_size_and_crc_and_game_ids(
+    connection: &mut SqliteConnection,
+    size: i64,
+    crc: &str,
+    game_ids: &[i64],
+) -> Vec<Rom> {
+    let crc = crc.to_lowercase();
+    let sql = format!(
+        "
+        SELECT *
+        FROM roms
+        WHERE size = {}
+        AND crc = '{}'
+        AND game_id IN ({})
+        AND parent_id IS NULL
+    ",
+        size,
+        crc,
+        game_ids.iter().join(",")
+    );
+    sqlx::query_as::<_, Rom>(&sql)
+        .fetch_all(connection)
+        .await
+        .unwrap_or_else(|_| {
+            panic!(
+                "Error while finding rom with size {} and CRC {} and game ids {}",
+                size,
+                crc,
+                game_ids.iter().join(",")
+            )
+        })
 }
 
 pub async fn delete_rom_by_name_and_game_id(

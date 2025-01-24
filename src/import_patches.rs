@@ -94,7 +94,7 @@ pub async fn import_patch<P: AsRef<Path>>(
 ) -> SimpleResult<()> {
     let system = prompt_for_system(connection, None).await?;
     let system_directory = get_system_directory(connection, &system).await?;
-    let games = find_complete_games_by_system_id(connection, system.id).await;
+    let games = find_full_games_by_system_id(connection, system.id).await;
     let game = match prompt_for_game(&games, None)? {
         Some(game) => game,
         None => {

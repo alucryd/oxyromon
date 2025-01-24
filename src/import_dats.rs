@@ -230,8 +230,18 @@ pub async fn import_dat(
 
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     progress_bar.println("Deleting old games");
-    orphan_romfile_ids
-        .append(&mut delete_old_games(&mut transaction, &datfile_xml.games, system_id).await);
+    orphan_romfile_ids.append(
+        &mut delete_old_games(
+            &mut transaction,
+            if !datfile_xml.machines.is_empty() {
+                &datfile_xml.machines
+            } else {
+                &datfile_xml.games
+            },
+            system_id,
+        )
+        .await,
+    );
     progress_bar.println("Processing games");
     orphan_romfile_ids.append(
         &mut create_or_update_games(
@@ -413,7 +423,7 @@ async fn create_or_update_games(
         orphan_romfile_ids.append(
             &mut delete_old_roms(
                 connection,
-                &vec![
+                &[
                     game_xml.roms.iter().collect::<Vec<&RomXml>>(),
                     game_xml.disks.iter().collect::<Vec<&RomXml>>(),
                 ]
@@ -536,7 +546,7 @@ async fn create_or_update_games(
             orphan_romfile_ids.append(
                 &mut delete_old_roms(
                     connection,
-                    &vec![
+                    &[
                         game_xml.roms.iter().collect::<Vec<&RomXml>>(),
                         game_xml.disks.iter().collect::<Vec<&RomXml>>(),
                     ]
@@ -555,7 +565,7 @@ async fn create_or_update_roms(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     roms_xml: &[RomXml],
-    mut bios: bool,
+    bios: bool,
     disk: bool,
     game_id: i64,
 ) -> Vec<i64> {
@@ -566,34 +576,31 @@ async fn create_or_update_roms(
             continue;
         }
         // find parent rom if needed
-        let mut parent_id = None;
+        let mut rom_parent_bios = false;
+        let mut rom_parent_id = None;
         if rom_xml.merge.is_some() && rom_xml.crc.is_some() {
             let game = find_game_by_id(connection, game_id).await;
-            let parent_rom = if let Some(parent_id) = game.parent_id {
-                find_rom_by_size_and_crc_and_game_id(
-                    connection,
-                    rom_xml.size,
-                    rom_xml.crc.as_ref().unwrap(),
-                    parent_id,
-                )
-                .await
-            } else {
-                None
-            };
-            let bios_rom = if let Some(bios_id) = game.bios_id {
-                find_rom_by_size_and_crc_and_game_id(
-                    connection,
-                    rom_xml.size,
-                    rom_xml.crc.as_ref().unwrap(),
-                    bios_id,
-                )
-                .await
-            } else {
-                None
-            };
-            if let Some(rom) = parent_rom.or(bios_rom) {
-                bios = rom.bios;
-                parent_id = rom.parent_id;
+            let mut game_ids: Vec<i64> = vec![];
+            if let Some(bios_id) = game.bios_id {
+                game_ids.push(bios_id);
+            }
+            if let Some(parent_id) = game.parent_id {
+                game_ids.push(parent_id);
+                let parent_game = find_game_by_id(connection, parent_id).await;
+                if let Some(bios_id) = parent_game.bios_id {
+                    game_ids.push(bios_id);
+                }
+            }
+            let roms = find_rom_by_size_and_crc_and_game_ids(
+                connection,
+                rom_xml.size,
+                rom_xml.crc.as_ref().unwrap(),
+                &game_ids,
+            )
+            .await;
+            if let Some(rom) = roms.first() {
+                rom_parent_bios = rom.bios;
+                rom_parent_id = Some(rom.id);
             } else {
                 progress_bar.println(format!(
                     "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
@@ -603,8 +610,16 @@ async fn create_or_update_roms(
         }
         match find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await {
             Some(rom) => {
-                update_rom_from_xml(connection, rom.id, rom_xml, bios, disk, game_id, parent_id)
-                    .await;
+                update_rom_from_xml(
+                    connection,
+                    rom.id,
+                    rom_xml,
+                    bios || rom_parent_bios,
+                    disk,
+                    game_id,
+                    rom_parent_id,
+                )
+                .await;
                 if rom_xml.size != rom.size
                     || rom_xml.crc.is_some()
                         && rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap()
@@ -616,7 +631,17 @@ async fn create_or_update_roms(
                 }
                 rom.id
             }
-            None => create_rom_from_xml(connection, rom_xml, bios, disk, game_id, parent_id).await,
+            None => {
+                create_rom_from_xml(
+                    connection,
+                    rom_xml,
+                    bios || rom_parent_bios,
+                    disk,
+                    game_id,
+                    rom_parent_id,
+                )
+                .await
+            }
         };
     }
     orphan_romfile_ids

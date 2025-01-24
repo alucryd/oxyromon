@@ -1397,7 +1397,7 @@ async fn import_zso(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_other(
+pub async fn import_other(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
@@ -1781,7 +1781,7 @@ async fn find_sfb_rom_by_md5(
     unattended: bool,
 ) -> SimpleResult<Option<(Rom, Game)>> {
     let mut rom_game: Option<(Rom, Game)> = None;
-    let mut roms = find_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
+    let mut roms = find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
         PS3_DISC_SFB,
         size,
@@ -1792,7 +1792,7 @@ async fn find_sfb_rom_by_md5(
 
     // abort if no match
     if roms.is_empty() {
-        if count_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
+        if count_sfb_roms_with_romfile_by_name_and_size_and_md5_and_system_id(
             connection,
             PS3_DISC_SFB,
             size,
