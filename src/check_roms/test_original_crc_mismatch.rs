@@ -55,7 +55,7 @@ async fn test() {
     file.write_all(b"00000000").await.unwrap();
     file.sync_all().await.unwrap();
 
-    let games = find_complete_games_by_system_id(&mut connection, system.id).await;
+    let games = find_full_games_by_system_id(&mut connection, system.id).await;
 
     // when
     check_system(&mut connection, &progress_bar, &system, games, false)

@@ -423,7 +423,7 @@ async fn create_or_update_games(
         orphan_romfile_ids.append(
             &mut delete_old_roms(
                 connection,
-                &vec![
+                &[
                     game_xml.roms.iter().collect::<Vec<&RomXml>>(),
                     game_xml.disks.iter().collect::<Vec<&RomXml>>(),
                 ]
@@ -546,7 +546,7 @@ async fn create_or_update_games(
             orphan_romfile_ids.append(
                 &mut delete_old_roms(
                     connection,
-                    &vec![
+                    &[
                         game_xml.roms.iter().collect::<Vec<&RomXml>>(),
                         game_xml.disks.iter().collect::<Vec<&RomXml>>(),
                     ]

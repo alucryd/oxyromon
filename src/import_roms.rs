@@ -1397,7 +1397,7 @@ async fn import_zso(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn import_other(
+pub async fn import_other(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,

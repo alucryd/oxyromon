@@ -200,7 +200,7 @@ pub async fn main(
                 games.dedup_by_key(|game| game.id);
                 prompt_for_games(games, cfg!(test))?
             }
-            None => find_complete_games_by_system_id(connection, system.id).await,
+            None => find_full_games_by_system_id(connection, system.id).await,
         };
 
         if matches.get_flag("1G1R") {

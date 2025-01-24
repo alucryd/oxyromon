@@ -423,8 +423,8 @@ impl AsArchive for CommonRomfile {
 
 pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
-    source_path: &P,
-    destination_path: &Q,
+    source_archive_path: &P,
+    destination_archive_path: &Q,
     source_names: &[&str],
     destination_names: &[&str],
 ) -> SimpleResult<()> {
@@ -432,23 +432,23 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let source_file = File::open(source_path.as_ref()).expect("Failed to read archive");
-    let mut source_archive = ZipArchive::new(source_file).expect("Failed to open archive");
+    let source_archive_file = File::open(source_archive_path.as_ref()).expect("Failed to read archive");
+    let mut source_archive = ZipArchive::new(source_archive_file).expect("Failed to open archive");
 
-    let destination_file: File;
+    let destination_archive_file: File;
     let mut destination_archive: ZipWriter<File>;
-    if destination_path.as_ref().is_file() {
-        destination_file = OpenOptions::new()
+    if destination_archive_path.as_ref().is_file() {
+        destination_archive_file = OpenOptions::new()
             .read(true)
             .write(true)
-            .open(destination_path.as_ref())
+            .open(destination_archive_path.as_ref())
             .expect("Failed to open archive");
         destination_archive =
-            ZipWriter::new_append(destination_file).expect("Failed to open archive");
+            ZipWriter::new_append(destination_archive_file).expect("Failed to open archive");
     } else {
-        destination_file =
-            File::create(destination_path.as_ref()).expect("Failed to create archive");
-        destination_archive = ZipWriter::new(destination_file);
+        destination_archive_file =
+            File::create(destination_archive_path.as_ref()).expect("Failed to create archive");
+        destination_archive = ZipWriter::new(destination_archive_file);
     };
 
     for (&source_name, &destination_name) in zip(source_names, destination_names) {
