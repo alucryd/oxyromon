@@ -152,16 +152,16 @@ pub async fn update_system_completion(connection: &mut SqliteConnection, id: i64
             SELECT 1
             FROM games
             WHERE games.system_id = systems.id
-            AND games.completion != 0
+            AND games.completion != 2
             AND games.sorting != 2
-        ) THEN 0
+        ) THEN 2
         WHEN NOT EXISTS (
             SELECT 1
             FROM games
             WHERE games.system_id = systems.id
-            AND games.completion != 2
+            AND games.completion != 0
             AND games.sorting != 2
-        ) THEN 2
+        ) THEN 0
         ELSE 1
         END
         WHERE id = ?
@@ -381,14 +381,14 @@ pub async fn update_games_completion_by_system_id(
                 SELECT 1
                 FROM roms
                 WHERE roms.game_id = games.id
-                AND roms.romfile_id IS NOT NULL
-            ) THEN 0
+                AND roms.romfile_id IS NULL
+            ) THEN 2
             WHEN NOT EXISTS (
                 SELECT 1
                 FROM roms
                 WHERE roms.game_id = games.id
-                AND roms.romfile_id IS NULL
-            ) THEN 2
+                AND roms.romfile_id IS NOT NULL
+            ) THEN 0
             ELSE 1
         END
         WHERE system_id = ?
@@ -413,16 +413,16 @@ pub async fn update_split_games_completion_by_system_id(
                 SELECT 1
                 FROM roms
                 WHERE roms.game_id = games.id
-                AND roms.romfile_id IS NOT NULL
+                AND roms.romfile_id IS NULL
                 AND roms.parent_id IS NULL
-            ) THEN 0
+            ) THEN 2
             WHEN NOT EXISTS (
                 SELECT 1
                 FROM roms
                 WHERE roms.game_id = games.id
-                AND roms.romfile_id IS NULL
+                AND roms.romfile_id IS NOT NULL
                 AND roms.parent_id IS NULL
-            ) THEN 2
+            ) THEN 0
             ELSE 1
         END
         WHERE system_id = ?
@@ -446,22 +446,6 @@ pub async fn update_non_merged_and_merged_games_completion_by_system_id(
                 SELECT 1
                 FROM roms AS r1
                 WHERE r1.game_id = games.id
-                AND r1.romfile_id IS NOT NULL
-                AND (
-                    r1.parent_id IS NULL
-                    OR EXISTS (
-                        SELECT 1
-                        FROM roms AS r2
-                        JOIN games AS g ON g.id = r2.game_id
-                        WHERE r2.id = r1.parent_id
-                        AND g.bios = false
-                    )
-                )
-            ) THEN 0
-            WHEN NOT EXISTS (
-                SELECT 1
-                FROM roms AS r1
-                WHERE r1.game_id = games.id
                 AND r1.romfile_id IS NULL
                 AND (
                     r1.parent_id IS NULL
@@ -474,6 +458,22 @@ pub async fn update_non_merged_and_merged_games_completion_by_system_id(
                     )
                 )
             ) THEN 2
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms AS r1
+                WHERE r1.game_id = games.id
+                AND r1.romfile_id IS NOT NULL
+                AND (
+                    r1.parent_id IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM roms AS r2
+                        JOIN games AS g ON g.id = r2.game_id
+                        WHERE r2.id = r1.parent_id
+                        AND g.bios = false
+                    )
+                )
+            ) THEN 0
             ELSE 1
         END
         WHERE system_id = ?
@@ -497,22 +497,22 @@ pub async fn update_jbfolder_games_completion_by_system_id(
                 SELECT 1
                 FROM roms
                 WHERE roms.game_id = games.id
-                AND roms.romfile_id IS NOT NULL
-                AND roms.parent_id IS NOT NULL
-                AND roms.name NOT LIKE 'PS3_CONTENT/%'
-                AND roms.name NOT LIKE 'PS3_EXTRA/%'
-                AND roms.name NOT LIKE 'PS3_UPDATE/%'
-            ) THEN 0
-            WHEN NOT EXISTS (
-                SELECT 1
-                FROM roms
-                WHERE roms.game_id = games.id
                 AND roms.romfile_id IS NULL
                 AND roms.parent_id IS NOT NULL
                 AND roms.name NOT LIKE 'PS3_CONTENT/%'
                 AND roms.name NOT LIKE 'PS3_EXTRA/%'
                 AND roms.name NOT LIKE 'PS3_UPDATE/%'
             ) THEN 2
+            WHEN NOT EXISTS (
+                SELECT 1
+                FROM roms
+                WHERE roms.game_id = games.id
+                AND roms.romfile_id IS NOT NULL
+                AND roms.parent_id IS NOT NULL
+                AND roms.name NOT LIKE 'PS3_CONTENT/%'
+                AND roms.name NOT LIKE 'PS3_EXTRA/%'
+                AND roms.name NOT LIKE 'PS3_UPDATE/%'
+            ) THEN 0
             ELSE 1
         END
         WHERE system_id = ?
@@ -796,7 +796,7 @@ pub async fn find_full_games_by_system_id(
     .expect("Error while finding complete games")
 }
 
-pub async fn find_complete_games_by_name_and_system_id(
+pub async fn find_full_games_by_name_and_system_id(
     connection: &mut SqliteConnection,
     name: &str,
     system_id: i64,

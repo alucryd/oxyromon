@@ -66,6 +66,14 @@ pub enum PreferredRegion {
     Narrow,
 }
 
+#[derive(PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ArcadeRomType {
+    Bios,
+    Clone,
+    Parent,
+}
+
 const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
@@ -86,6 +94,8 @@ const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
     "CHD_DVD_COMPRESSION_ALGORITHMS" => ChdDvdCompressionAlgorithm::VARIANTS,
     "CHD_HD_COMPRESSION_ALGORITHMS" => ChdHdCompressionAlgorithm::VARIANTS,
     "CHD_LD_COMPRESSION_ALGORITHMS" => ChdLdCompressionAlgorithm::VARIANTS,
+    "REGIONS_ALL_ARCADE" => ArcadeRomType::VARIANTS,
+    "REGIONS_ONE_ARCADE" => ArcadeRomType::VARIANTS,
 };
 const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
     "CHD_CD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
@@ -117,7 +127,9 @@ const NULLABLES: &[&str] = &[
     "LANGUAGES",
     "PREFER_FLAGS",
     "REGIONS_ALL",
+    "REGIONS_ALL_ARCADE",
     "REGIONS_ONE",
+    "REGIONS_ONE_ARCADE",
     "SEVENZIP_COMPRESSION_LEVEL",
     "ZIP_COMPRESSION_LEVEL",
 ];

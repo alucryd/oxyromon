@@ -1,0 +1,6 @@
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES ('REGIONS_ONE_ARCADE', NULL);
+
+INSERT OR REPLACE INTO settings ("key", value)
+VALUES ('REGIONS_ALL_ARCADE', NULL);
+

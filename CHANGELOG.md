@@ -1,3 +1,7 @@
+# 0.21.0
+
+- Add sorting options for arcade systems
+
 # 0.20.2
 
 - Add a new `wanted` game state in the web UI, replaces `incomplete` which now means games with some (but not all) its ROMs
