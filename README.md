@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.20.2</h1>
+<h1 style="text-align: center;">oxyROMon 0.21.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -113,6 +113,8 @@ Available settings:
 - `LANGUAGES`: List of languages you want to keep, applies only to ROMs that do specify them (eg: `En,Ja`)
 - `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files (eg: `US,EU,JP`)
 - `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file (eg: `US,EU`)
+- `REGIONS_ALL_ARCADE`: Unordered list of ROM types you want to place in the main directory (eg: `clone`)
+- `REGIONS_ONE_ARCADE`: Unordered list of ROM types you want to place in the 1G1R directory (eg: `bios,parent`)
 - `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
 - `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
@@ -429,7 +431,7 @@ Supported console modes:
 
 Supported arcade modes:
 
-- None (yet?)
+- BIOS/Parent/Clone
 
 In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
 system.
@@ -444,7 +446,12 @@ directory.
 
 1G1R and hybrid modes have an additional knob you can turn via `REGIONS_ONE_STRICT`.
 Setting it to false will elect the first available ROM you possess following your region preferences.
-Setting to true will elect ROMs following region preferences regardless of whether you actually posses the ROM or not.
+Setting to true will elect ROMs following region preferences regardless of whether you actually possess the ROM or not.
+
+Arcade systems can be split according to 3 archetypes: BIOS files, parent games and clone games.
+Which type goes where is defined using `REGIONS_ONE_ARCADE` and `REGIONS_ALL_ARCADE`. Valid choices are `bios`, `parent` and `clone`.
+Keeping both lists empty puts everything in the main directory.
+On the other hand, attributing at least one of these types will discard those that are omitted.
 
 In every mode, discarded games are placed in the `Trash` subdirectory.
 

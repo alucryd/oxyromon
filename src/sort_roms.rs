@@ -99,6 +99,16 @@ pub async fn main(
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
+    let all_regions_arcade = get_list(connection, "REGIONS_ALL_ARCADE")
+        .await
+        .into_iter()
+        .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
+        .collect_vec();
+    let one_regions_arcade = get_list(connection, "REGIONS_ONE_ARCADE")
+        .await
+        .into_iter()
+        .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
+        .collect_vec();
     let languages = get_list(connection, "LANGUAGES").await;
     let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
     let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
@@ -144,6 +154,8 @@ pub async fn main(
             &system,
             &all_regions,
             &one_regions,
+            &all_regions_arcade,
+            &one_regions_arcade,
             &languages.iter().map(String::as_str).collect_vec(),
             &ignored_releases.iter().map(String::as_str).collect_vec(),
             &ignored_flags.iter().map(String::as_str).collect_vec(),
@@ -194,6 +206,8 @@ async fn sort_system(
     system: &System,
     all_regions: &[Region],
     one_regions: &[Region],
+    all_regions_arcade: &[ArcadeRomType],
+    one_regions_arcade: &[ArcadeRomType],
     languages: &[&str],
     ignored_releases: &[&str],
     ignored_flags: &[&str],
@@ -352,6 +366,57 @@ async fn sort_system(
             } else {
                 ignored_games.push(game);
             }
+        }
+    // arcade
+    } else if system.arcade && (!one_regions_arcade.is_empty() || !all_regions_arcade.is_empty()) {
+        let mut parent_games = find_parent_games_by_system_id(connection, system.id).await;
+        let mut clone_games = find_clone_games_by_system_id(connection, system.id).await;
+
+        // trim ignored games
+        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
+            let (mut left_games, right_games) = trim_ignored_games(
+                parent_games,
+                languages,
+                ignored_releases,
+                ignored_flags,
+                system.arcade,
+            );
+            ignored_games.append(&mut left_games);
+            parent_games = right_games;
+            let (mut left_games, right_games) = trim_ignored_games(
+                clone_games,
+                languages,
+                ignored_releases,
+                ignored_flags,
+                system.arcade,
+            );
+            ignored_games.append(&mut left_games);
+            clone_games = right_games;
+        }
+
+        let (mut bios_games, mut parent_games): (Vec<Game>, Vec<Game>) =
+            parent_games.into_iter().partition(|game| game.bios);
+
+        if one_regions_arcade.contains(&ArcadeRomType::Bios) {
+            one_region_games.append(&mut bios_games);
+        } else if all_regions_arcade.contains(&ArcadeRomType::Bios) {
+            all_regions_games.append(&mut bios_games);
+        } else {
+            ignored_games.append(&mut bios_games);
+        }
+
+        if one_regions_arcade.contains(&ArcadeRomType::Parent) {
+            one_region_games.append(&mut parent_games);
+        } else if all_regions_arcade.contains(&ArcadeRomType::Parent) {
+            all_regions_games.append(&mut parent_games);
+        } else {
+            ignored_games.append(&mut parent_games);
+        }
+
+        if all_regions_arcade.contains(&ArcadeRomType::Clone) {
+            all_regions_games.append(&mut clone_games);
+        } else {
+            ignored_games.append(&mut clone_games);
         }
     } else {
         games = find_games_by_system_id(connection, system.id).await;

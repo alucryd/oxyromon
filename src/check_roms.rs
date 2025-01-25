@@ -63,7 +63,7 @@ pub async fn main(
                 let mut games: Vec<Game> = vec![];
                 for game_name in game_names {
                     games.append(
-                        &mut find_complete_games_by_name_and_system_id(
+                        &mut find_full_games_by_name_and_system_id(
                             connection, game_name, system.id,
                         )
                         .await,

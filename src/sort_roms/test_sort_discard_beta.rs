@@ -65,6 +65,8 @@ async fn test() {
         &all_regions,
         &one_regions,
         &[],
+        &[],
+        &[],
         &["Beta"],
         &[],
         true,
