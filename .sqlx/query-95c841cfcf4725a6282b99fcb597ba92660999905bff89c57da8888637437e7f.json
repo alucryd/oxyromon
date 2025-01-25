@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE games\n        SET completion = CASE\n            WHEN NOT EXISTS (\n                SELECT 1\n                FROM roms AS r1\n                WHERE r1.game_id = games.id\n                AND r1.romfile_id IS NULL\n                AND (\n                    r1.parent_id IS NULL\n                    OR EXISTS (\n                        SELECT 1\n                        FROM roms AS r2\n                        JOIN games AS g ON g.id = r2.game_id\n                        WHERE r2.id = r1.parent_id\n                        AND g.bios = false\n                    )\n                )\n            ) THEN 2\n            WHEN NOT EXISTS (\n                SELECT 1\n                FROM roms AS r1\n                WHERE r1.game_id = games.id\n                AND r1.romfile_id IS NOT NULL\n                AND (\n                    r1.parent_id IS NULL\n                    OR EXISTS (\n                        SELECT 1\n                        FROM roms AS r2\n                        JOIN games AS g ON g.id = r2.game_id\n                        WHERE r2.id = r1.parent_id\n                        AND g.bios = false\n                    )\n                )\n            ) THEN 0\n            ELSE 1\n        END\n        WHERE system_id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "95c841cfcf4725a6282b99fcb597ba92660999905bff89c57da8888637437e7f"
+}
