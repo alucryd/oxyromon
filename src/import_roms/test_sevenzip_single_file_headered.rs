@@ -53,7 +53,6 @@ async fn test() {
         romfile_path.extension().unwrap().to_str().unwrap(),
         true,
         false,
-        &None,
     )
     .await
     .unwrap();

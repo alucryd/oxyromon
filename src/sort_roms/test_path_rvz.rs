@@ -45,6 +45,7 @@ async fn test() {
         game_id: 1,
         romfile_id: Some(1),
         parent_id: None,
+        original: true,
     };
     let romfile = Romfile {
         id: 1,

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE roms\n        SET name = ?, size = ?, md5 = ?, game_id = ?, parent_id = ?, original = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "3d22e610d788a45202325572cd293ad0634a9bd0576908977df3b9aefe7e36e8"
+}

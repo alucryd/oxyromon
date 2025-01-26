@@ -68,7 +68,7 @@ async fn test() {
         true,
         true,
         false,
-        &None,
+        false,
     )
     .await
     .unwrap();
@@ -81,7 +81,7 @@ async fn test() {
         true,
         true,
         false,
-        &None,
+        false,
     )
     .await
     .unwrap();

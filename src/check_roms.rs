@@ -101,7 +101,7 @@ async fn check_system(
     games: Vec<Game>,
     size: bool,
 ) -> SimpleResult<()> {
-    let roms = find_roms_with_romfile_by_game_ids(
+    let roms = find_original_roms_with_romfile_by_game_ids(
         connection,
         &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
     )

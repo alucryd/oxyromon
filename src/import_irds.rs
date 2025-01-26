@@ -288,6 +288,7 @@ pub async fn import_ird(
                     irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
+                    false,
                 )
                 .await;
                 if size != rom.size
@@ -308,6 +309,7 @@ pub async fn import_ird(
                     irdfile.files_hashes.get(&location).unwrap(),
                     game.id,
                     parent_rom.as_ref().map(|rom| rom.id),
+                    false,
                 )
                 .await
             }

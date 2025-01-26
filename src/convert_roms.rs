@@ -215,7 +215,7 @@ pub async fn main(
             continue;
         }
 
-        let roms = find_roms_with_romfile_by_game_ids(
+        let roms = find_original_roms_with_romfile_by_game_ids(
             connection,
             &games.par_iter().map(|game| game.id).collect::<Vec<i64>>(),
         )

@@ -17,7 +17,6 @@ use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
 use super::util::*;
 use super::SimpleResult;
-use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
@@ -26,8 +25,8 @@ use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
-use std::{cmp::Ordering, str::FromStr};
-use strum::{IntoEnumIterator, VariantNames};
+use std::cmp::Ordering;
+use strum::IntoEnumIterator;
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -82,13 +81,12 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("HASH")
+            Arg::new("AS_IS")
                 .short('a')
-                .long("hash")
-                .help("Specify a hash algorithm")
+                .long("as-is")
+                .help("Import ROM files as-is without converting them")
                 .required(false)
-                .num_args(1)
-                .value_parser(PossibleValuesParser::new(HashAlgorithm::VARIANTS)),
+                .action(ArgAction::SetTrue),
         )
 }
 
@@ -112,11 +110,7 @@ pub async fn main(
     let trash = matches.get_flag("TRASH");
     let force = matches.get_flag("FORCE");
     let unattended = matches.get_flag("UNATTENDED");
-    let hash_algorithm = matches
-        .get_one::<String>("HASH")
-        .map(String::as_str)
-        .map(HashAlgorithm::from_str)
-        .map(Result::unwrap);
+    let as_is = matches.get_flag("AS_IS");
 
     let mut system_ids: HashSet<i64> = HashSet::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
@@ -180,7 +174,7 @@ pub async fn main(
                                 trash,
                                 force,
                                 unattended,
-                                &hash_algorithm,
+                                as_is,
                             )
                             .await?;
                             system_ids.extend(new_system_ids);
@@ -198,7 +192,7 @@ pub async fn main(
                     trash,
                     force,
                     unattended,
-                    &hash_algorithm,
+                    as_is,
                 )
                 .await?;
                 system_ids.extend(new_system_ids);
@@ -226,7 +220,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     trash: bool,
     force: bool,
     unattended: bool,
-    hash_algorithm: &Option<HashAlgorithm>,
+    as_is: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     progress_bar.println(format!(
         "Processing \"{}\"",
@@ -265,7 +259,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             .to_lowercase(),
     };
 
-    if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) {
+    if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) && !as_is {
         if sevenzip::get_version().await.is_err() {
             progress_bar.println("Please install sevenzip");
             return Ok((system_ids, game_ids));
@@ -280,12 +274,11 @@ pub async fn import_rom<P: AsRef<Path>>(
             &extension,
             trash,
             unattended,
-            hash_algorithm,
         )
         .await?;
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
-    } else if CHD_EXTENSION == extension {
+    } else if CHD_EXTENSION == extension && !as_is {
         if chdman::get_version().await.is_err() {
             progress_bar.println("Please install chdman");
             return Ok((system_ids, game_ids));
@@ -298,14 +291,13 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             unattended,
-            hash_algorithm,
         )
         .await?
         {
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if CIA_EXTENSION == extension {
+    } else if CIA_EXTENSION == extension && !as_is {
         if ctrtool::get_version().await.is_err() {
             progress_bar.println("Please install ctrtool");
             return Ok((system_ids, game_ids));
@@ -322,7 +314,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         .await?;
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
-    } else if CSO_EXTENSION == extension {
+    } else if CSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
             progress_bar.println("Please install maxcso");
             return Ok((system_ids, game_ids));
@@ -341,7 +333,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if NSZ_EXTENSION == extension {
+    } else if NSZ_EXTENSION == extension && !as_is {
         if nsz::get_version().await.is_err() {
             progress_bar.println("Please install nsz");
             return Ok((system_ids, game_ids));
@@ -360,7 +352,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if RVZ_EXTENSION == extension {
+    } else if RVZ_EXTENSION == extension && !as_is {
         if dolphin::get_version().await.is_err() {
             progress_bar.println("Please install dolphin-tool");
             return Ok((system_ids, game_ids));
@@ -379,7 +371,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
-    } else if ZSO_EXTENSION == extension {
+    } else if ZSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
             progress_bar.println("Please install maxcso");
             return Ok((system_ids, game_ids));
@@ -407,7 +399,6 @@ pub async fn import_rom<P: AsRef<Path>>(
         romfile,
         trash,
         unattended,
-        hash_algorithm,
     )
     .await?
     {
@@ -572,15 +563,9 @@ async fn import_archive(
     romfile_extension: &str,
     trash: bool,
     unattended: bool,
-    hash_algorithm: &Option<HashAlgorithm>,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let hash_variants = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
-    let hash_algorithms = if hash_algorithm.is_some() {
-        vec![hash_algorithm.as_ref().unwrap()]
-    } else {
-        hash_variants.iter().collect()
-    };
+    let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
 
     let archive_romfiles = romfile.as_archive(progress_bar, None).await?;
     let romfiles_count = archive_romfiles.len();
@@ -785,15 +770,9 @@ async fn import_chd(
     romfile: CommonRomfile,
     trash: bool,
     unattended: bool,
-    hash_algorithm: &Option<HashAlgorithm>,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let hash_variants = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
-    let hash_algorithms = if hash_algorithm.is_some() {
-        vec![hash_algorithm.as_ref().unwrap()]
-    } else {
-        hash_variants.iter().rev().collect() // reverse iterator so SHA1 is tried first
-    };
+    let hash_algorithms = HashAlgorithm::iter().rev().collect::<Vec<HashAlgorithm>>(); // reverse iterator so SHA1 is tried first
     let chd_romfile = romfile.as_chd().await?;
     match chd_romfile.chd_type {
         ChdType::Cd => {
@@ -908,7 +887,7 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
+                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
                     rom_game_system = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
@@ -967,7 +946,7 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
+                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
                     rom_game_system = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
@@ -1035,7 +1014,7 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && *hash_algorithm == &HashAlgorithm::Sha1 {
+                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
                     rom_game_system = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
@@ -1406,15 +1385,8 @@ pub async fn import_other(
     romfile: CommonRomfile,
     trash: bool,
     unattended: bool,
-    hash_algorithm: &Option<HashAlgorithm>,
 ) -> SimpleResult<Option<[i64; 2]>> {
-    let hash_variants = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
-    let hash_algorithms = if hash_algorithm.is_some() {
-        vec![hash_algorithm.as_ref().unwrap()]
-    } else {
-        hash_variants.iter().collect()
-    };
-
+    let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
     for hash_algorithm in &hash_algorithms {
         let (hash, size) = match header {
             Some(header) => {
@@ -1911,6 +1883,8 @@ mod test_original;
 mod test_original_headered;
 #[cfg(test)]
 mod test_rvz;
+#[cfg(test)]
+mod test_rvz_as_is;
 #[cfg(test)]
 mod test_sevenzip_multiple_files_full_game;
 #[cfg(test)]

@@ -1,16 +1,29 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::*;
+use std::env;
 use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
+    if dolphin::get_version().await.is_err() {
+        return;
+    }
+
     // given
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
+    env::set_var(
+        "PATH",
+        format!(
+            "{}:{}",
+            test_directory.as_os_str().to_str().unwrap(),
+            env::var("PATH").unwrap()
+        ),
+    );
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -24,15 +37,15 @@ async fn test() {
 
     let matches = import_dats::subcommand().get_matches_from(&[
         "import-dats",
-        "tests/Test System (20241010) (Special Characters).dat",
+        "tests/Test System (20250126) (RVZ as-is).dat",
     ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("-Test Game@ (USA, Europe).rom.zip");
+    let romfile_path = tmp_directory.join("Test Game (USA).rvz");
     fs::copy(
-        test_directory.join("-Test Game@ (USA, Europe).rom.zip"),
+        test_directory.join("Test Game (USA).rvz"),
         &romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
@@ -44,16 +57,16 @@ async fn test() {
         .unwrap();
 
     // when
-    import_archive(
+    import_rom(
         &mut connection,
         &progress_bar,
         &Some(&system),
         &None,
-        &HashSet::new(),
-        CommonRomfile::from_path(&romfile_path).unwrap(),
-        romfile_path.extension().unwrap().to_str().unwrap(),
+        &romfile_path,
         true,
         false,
+        false,
+        true,
     )
     .await
     .unwrap();
@@ -74,18 +87,18 @@ async fn test() {
     assert_eq!(games.len(), 1);
 
     let game = games.first().unwrap();
-    assert_eq!(game.name, "-Test Game@ (USA, Europe)");
+    assert_eq!(game.name, "Test Game (USA)");
     assert_eq!(game.system_id, system.id);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "-Test Game@ (USA, Europe).rom");
+    assert_eq!(rom.name, "Test Game (USA).rvz");
     assert_eq!(rom.game_id, game.id);
 
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
-            .join("-Test Game@ (USA, Europe).zip")
+            .join("Test Game (USA).rvz")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()

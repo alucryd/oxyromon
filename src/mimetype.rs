@@ -16,6 +16,9 @@ pub const RVZ_EXTENSION: &str = "rvz";
 pub const XDELTA_EXTENSION: &str = "xdelta";
 pub const ZSO_EXTENSION: &str = "zso";
 
+pub const NON_ORIGINAL_EXTENSIONS: [&str; 4] =
+    [CHD_EXTENSION, CSO_EXTENSION, RVZ_EXTENSION, ZSO_EXTENSION];
+
 static MATCHER: OnceCell<Infer> = OnceCell::new();
 
 fn bps_matcher(buf: &[u8]) -> bool {
