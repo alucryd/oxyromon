@@ -113,6 +113,7 @@ pub struct Rom {
     pub game_id: i64,
     pub romfile_id: Option<i64>,
     pub parent_id: Option<i64>,
+    pub original: bool,
 }
 
 #[derive(FromRow)]

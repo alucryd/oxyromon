@@ -1,6 +1,8 @@
 # 0.21.0
 
 - Add sorting options for arcade systems
+- Retire the hash algorithm override in `import-roms`
+- Repurpose the `-a` flag in `import-roms` to import files as-is (support non original formats in DAT files)
 
 # 0.20.2
 

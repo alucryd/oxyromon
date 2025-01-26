@@ -49,7 +49,7 @@ async fn test() {
         true,
         false,
         false,
-        &None,
+        false,
     )
     .await
     .unwrap();

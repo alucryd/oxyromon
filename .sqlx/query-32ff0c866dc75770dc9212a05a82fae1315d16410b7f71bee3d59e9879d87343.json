@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO roms (name, size, md5, game_id, parent_id, original)\n        VALUES (?, ?, ?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "32ff0c866dc75770dc9212a05a82fae1315d16410b7f71bee3d59e9879d87343"
+}

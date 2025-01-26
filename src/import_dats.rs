@@ -2,6 +2,7 @@ use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
+use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
@@ -618,6 +619,11 @@ async fn create_or_update_roms(
                     disk,
                     game_id,
                     rom_parent_id,
+                    PathBuf::from(&rom_xml.name)
+                        .extension()
+                        .is_some_and(|extension| {
+                            !NON_ORIGINAL_EXTENSIONS.contains(&extension.to_str().unwrap())
+                        }),
                 )
                 .await;
                 if rom_xml.size != rom.size
@@ -639,6 +645,11 @@ async fn create_or_update_roms(
                     disk,
                     game_id,
                     rom_parent_id,
+                    PathBuf::from(&rom_xml.name)
+                        .extension()
+                        .is_some_and(|extension| {
+                            !NON_ORIGINAL_EXTENSIONS.contains(&extension.to_str().unwrap())
+                        }),
                 )
                 .await
             }
@@ -718,7 +729,7 @@ pub async fn reimport_orphan_romfiles(
                 false,
                 false,
                 false,
-                &None,
+                false,
             )
             .await?;
             if game_ids.is_empty() {
@@ -738,6 +749,8 @@ pub async fn reimport_orphan_romfiles(
 
 #[cfg(test)]
 mod test_dat;
+#[cfg(test)]
+mod test_dat_as_is;
 #[cfg(test)]
 mod test_dat_custom_name;
 #[cfg(test)]
