@@ -96,7 +96,7 @@ pub async fn main(
             systems.dedup_by_key(|system| system.id);
             systems
         }
-        None => prompt_for_systems(connection, None, false, false).await?,
+        None => prompt_for_systems(connection, None, false, false, false).await?,
     };
     let format = match matches.get_one::<String>("FORMAT") {
         Some(format) => format.as_str().to_owned(),

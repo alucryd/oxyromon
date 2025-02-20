@@ -55,7 +55,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
     for system in systems {
         progress_bar.println(format!("Processing \"{}\"", system.name));
         let games = match matches.get_many::<String>("GAME") {

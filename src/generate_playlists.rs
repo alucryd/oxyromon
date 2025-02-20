@@ -43,6 +43,7 @@ pub async fn main(
         connection,
         Some(REDUMP_SYSTEM_URL),
         false,
+        false,
         matches.get_flag("ALL"),
     )
     .await?;

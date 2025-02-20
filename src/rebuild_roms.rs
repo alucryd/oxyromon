@@ -63,7 +63,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, true, matches.get_flag("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
 
     let merging = match matches.get_one::<String>("MERGING").map(String::as_str) {
         Some("SPLIT") => Merging::Split,

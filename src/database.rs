@@ -231,6 +231,26 @@ pub async fn find_arcade_systems(connection: &mut SqliteConnection) -> Vec<Syste
     .expect("Error while finding arcade systems")
 }
 
+pub async fn find_empty_systems(connection: &mut SqliteConnection) -> Vec<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE systems.completion = 0
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM games 
+            WHERE systems.id = games.system_id 
+            AND games.completion != 0)
+        ORDER BY systems.name
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding empty systems")
+}
+
 pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -> Vec<System> {
     sqlx::query_as!(
         System,
