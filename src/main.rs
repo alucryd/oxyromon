@@ -276,7 +276,12 @@ async fn main() -> SimpleResult<()> {
                 .await?
             }
             Some("purge-systems") => {
-                purge_systems::main(&mut pool.acquire().await.unwrap(), &progress_bar).await?
+                purge_systems::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("purge-systems").unwrap(),
+                    &progress_bar,
+                )
+                .await?
             }
             Some("generate-playlists") => {
                 generate_playlists::main(

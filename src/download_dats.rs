@@ -189,7 +189,7 @@ async fn update_nointro_dats(
     {
         let profile: ProfileXml =
             try_with!(de::from_str(&response), "Failed to parse No-Intro profiles");
-        let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, all).await?;
+        let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
         for system in systems {
             progress_bar.println(format!("Processing \"{}\"", &system.name));
             let system_xml = profile
@@ -250,7 +250,7 @@ async fn update_redump_dats(
     all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, all).await?;
+    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, false, all).await?;
     for system in systems {
         download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
     }

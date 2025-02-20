@@ -10,10 +10,13 @@ pub async fn prompt_for_systems(
     connection: &mut SqliteConnection,
     url: Option<&str>,
     arcade_only: bool,
+    empty_only: bool,
     all: bool,
 ) -> SimpleResult<Vec<System>> {
     let systems = if arcade_only {
         find_arcade_systems(connection).await
+    } else if empty_only {
+        find_empty_systems(connection).await
     } else {
         match url {
             Some(url) => find_systems_by_url(connection, url).await,
