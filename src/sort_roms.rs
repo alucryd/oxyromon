@@ -95,7 +95,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.get_flag("ALL")).await?;
+    let systems = prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
