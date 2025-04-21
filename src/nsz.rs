@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::Path;

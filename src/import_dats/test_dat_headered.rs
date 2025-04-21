@@ -16,9 +16,9 @@ async fn test() {
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
-    set_rom_directory(PathBuf::from(rom_directory.path()));
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-    set_tmp_directory(PathBuf::from(tmp_directory.path()));
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let dat_path = test_directory.join("Test System (20210402) (Headered).dat");
     let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
@@ -42,9 +42,11 @@ async fn test() {
     let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System (Headered)");
 
-    assert!(find_header_by_system_id(&mut connection, system.id)
-        .await
-        .is_some());
+    assert!(
+        find_header_by_system_id(&mut connection, system.id)
+            .await
+            .is_some()
+    );
 
     assert_eq!(find_games(&mut connection).await.len(), 1);
     assert_eq!(find_roms(&mut connection).await.len(), 1);

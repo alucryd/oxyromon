@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::bchunk;
 use super::chdman;
 use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
@@ -18,7 +19,6 @@ use super::sevenzip::{AsArchive, ToArchive};
 use super::util::*;
 use super::wit;
 use super::wit::ToWbfs;
-use super::SimpleResult;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;

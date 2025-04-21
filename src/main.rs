@@ -152,10 +152,7 @@ async fn main() -> SimpleResult<()> {
 
         let data_directory = match env::var("OXYROMON_DATA_DIRECTORY") {
             Ok(data_directory) => PathBuf::from(data_directory),
-            Err(_) => dirs::data_dir()
-                .map(PathBuf::from)
-                .unwrap()
-                .join("oxyromon"),
+            Err(_) => dirs::data_dir().unwrap().join("oxyromon"),
         };
         create_directory(&progress_bar, &data_directory, true).await?;
 

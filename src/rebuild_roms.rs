@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -8,7 +9,6 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -63,7 +63,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
+    let systems =
+        prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
 
     let merging = match matches.get_one::<String>("MERGING").map(String::as_str) {
         Some("SPLIT") => Merging::Split,

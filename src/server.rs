@@ -5,15 +5,16 @@ use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
 use axum::{
+    Router,
     body::Body,
     extract::Path,
-    http::{header, Response, StatusCode},
+    http::{Response, StatusCode, header},
     routing::{get, post_service},
-    serve, Router,
+    serve,
 };
 use clap::{Arg, ArgMatches, Command};
-use http_types::mime::{BYTE_STREAM, HTML};
 use http_types::Mime;
+use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;

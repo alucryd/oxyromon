@@ -2,7 +2,7 @@
 authors = ["Maxime Gauduin <alucryd@archlinux.org>"]
 categories = ["command-line-utilities", "games"]
 description = "Rusty ROM OrgaNizer"
-edition = "2021"
+edition = "2024"
 exclude = [".github/", "dist/", "tests/"]
 homepage = "https://github.com/alucryd/oxyromon"
 keywords = ["cli", "rom", "tool"]
@@ -11,7 +11,7 @@ name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
 version = "0.21.0-beta"
-rust-version = "1.81.0"
+rust-version = "1.85.0"
 
 [features]
 default = ["use-rustls", "enable-asm"]

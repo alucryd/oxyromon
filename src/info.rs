@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::bchunk;
 use super::chdman;
 use super::ctrtool;
@@ -10,7 +11,6 @@ use super::progress::*;
 use super::sevenzip;
 use super::wit;
 use super::xdelta3;
-use super::SimpleResult;
 use clap::Command;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;

@@ -1,8 +1,8 @@
+use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;
 use regex::Regex;

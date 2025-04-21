@@ -1,4 +1,4 @@
-use super::super::config::{set_rom_directory, set_tmp_directory, MUTEX};
+use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
@@ -7,12 +7,12 @@ use super::super::util::*;
 use super::*;
 use async_graphql::Result;
 use indicatif::ProgressBar;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 use tokio::select;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 #[tokio::test]
 async fn test() -> Result<()> {
@@ -27,9 +27,10 @@ async fn test() -> Result<()> {
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
-    set_rom_directory(PathBuf::from(rom_directory.path()));
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-    let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+    let tmp_directory =
+        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
         .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);

@@ -1,7 +1,7 @@
+use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
-use super::SimpleResult;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::time::Duration;

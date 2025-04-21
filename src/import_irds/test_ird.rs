@@ -12,14 +12,17 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
-    env::set_var(
-        "PATH",
-        format!(
-            "{}:{}",
-            test_directory.as_os_str().to_str().unwrap(),
-            env::var("PATH").unwrap()
-        ),
-    );
+    // TODO: Audit that the environment access only happens in single-threaded code.
+    unsafe {
+        env::set_var(
+            "PATH",
+            format!(
+                "{}:{}",
+                test_directory.as_os_str().to_str().unwrap(),
+                env::var("PATH").unwrap()
+            ),
+        )
+    };
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();
@@ -27,9 +30,9 @@ async fn test() {
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
-    set_rom_directory(PathBuf::from(rom_directory.path()));
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-    set_tmp_directory(PathBuf::from(tmp_directory.path()));
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
         .get_matches_from(&["import-dats", "tests/Test System (20240704) (IRD).dat"]);

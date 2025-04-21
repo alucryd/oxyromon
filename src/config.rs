@@ -1,39 +1,21 @@
 use super::chdman::{
-    ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm, ChdHdCompressionAlgorithm,
-    ChdLdCompressionAlgorithm, CHD_HUNK_SIZE_RANGE,
+    CHD_HUNK_SIZE_RANGE, ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm,
+    ChdHdCompressionAlgorithm, ChdLdCompressionAlgorithm,
 };
 use super::database::*;
-use super::dolphin::{RvzCompressionAlgorithm, RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE};
+use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
-use super::SimpleResult;
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
+use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use strum::{Display, EnumIter, EnumString, VariantNames};
-
-cfg_if! {
-    if #[cfg(test)] {
-        use tokio::sync::Mutex;
-
-        static mut ROM_DIRECTORY: Option<PathBuf> = None;
-        static mut TMP_DIRECTORY: Option<PathBuf> = None;
-
-        lazy_static! {
-            pub static ref MUTEX: Mutex<i32> = Mutex::new(0);
-        }
-    } else {
-        use async_once_cell::OnceCell;
-        use std::env;
-
-        static ROM_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
-        static TMP_DIRECTORY: OnceCell<PathBuf> = OnceCell::new();
-    }
-}
 
 #[derive(Display, PartialEq, EnumIter, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
@@ -463,68 +445,53 @@ pub async fn set_string(connection: &mut SqliteConnection, key: &str, value: &st
     };
 }
 
-cfg_if::cfg_if! {
+pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
+    match get_directory(connection, "ROM_DIRECTORY").await {
+        Some(rom_directory) => rom_directory,
+        None => {
+            let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
+                Ok(rom_directory) => PathBuf::from(rom_directory),
+                Err(_) => dirs::home_dir()
+                    .map(PathBuf::from)
+                    .unwrap()
+                    .join("Emulation"),
+            };
+            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+            rom_directory
+        }
+    }
+}
+
+pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
+    match get_directory(connection, "TMP_DIRECTORY").await {
+        Some(tmp_directory) => tmp_directory,
+        None => {
+            let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
+                Ok(tmp_directory) => PathBuf::from(tmp_directory),
+                Err(_) => env::temp_dir(),
+            };
+            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+            tmp_directory
+        }
+    }
+}
+
+cfg_if! {
     if #[cfg(test)] {
-        pub async fn get_rom_directory(_: &mut SqliteConnection) -> &'static PathBuf {
-            unsafe {
-                ROM_DIRECTORY.as_ref().unwrap()
-            }
+        use tokio::sync::Mutex;
+
+        lazy_static! {
+            pub static ref MUTEX: Mutex<i32> = Mutex::new(0);
         }
 
-        pub fn set_rom_directory(rom_directory: PathBuf) -> &'static PathBuf {
-            unsafe {
-                ROM_DIRECTORY.replace(rom_directory);
-                ROM_DIRECTORY.as_ref().unwrap()
-            }
+        pub async fn set_rom_directory(connection: &mut SqliteConnection, rom_directory: PathBuf) -> PathBuf {
+            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+            rom_directory
         }
 
-        pub async fn get_tmp_directory(_: &mut SqliteConnection) -> &'static PathBuf {
-            unsafe {
-                TMP_DIRECTORY.as_ref().unwrap()
-            }
-        }
-
-        pub fn set_tmp_directory(tmp_directory: PathBuf) -> &'static PathBuf {
-            unsafe {
-                TMP_DIRECTORY.replace(tmp_directory);
-                TMP_DIRECTORY.as_ref().unwrap()
-            }
-        }
-    } else {
-        async fn init_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
-            match get_directory(connection, "ROM_DIRECTORY").await {
-                Some(rom_directory) => rom_directory,
-                None => {
-                    let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
-                        Ok(rom_directory) => PathBuf::from(rom_directory),
-                        Err(_) => dirs::home_dir().map(PathBuf::from).unwrap().join("Emulation")
-                    };
-                    set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
-                    rom_directory
-                }
-            }
-        }
-
-        pub async fn get_rom_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
-            ROM_DIRECTORY.get_or_init(init_rom_directory(connection)).await
-        }
-
-        async fn init_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
-            match get_directory(connection, "TMP_DIRECTORY").await {
-                Some(tmp_directory) => tmp_directory,
-                None => {
-                    let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
-                        Ok(tmp_directory) => PathBuf::from(tmp_directory),
-                        Err(_) => env::temp_dir()
-                    };
-                    set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
-                    tmp_directory
-                }
-            }
-        }
-
-        pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> &'static PathBuf {
-            TMP_DIRECTORY.get_or_init(init_tmp_directory(connection)).await
+        pub async fn set_tmp_directory(connection: &mut SqliteConnection, tmp_directory: PathBuf) -> PathBuf {
+            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+            tmp_directory
         }
     }
 }

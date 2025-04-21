@@ -1,5 +1,5 @@
-use super::progress::*;
 use super::SimpleResult;
+use super::progress::*;
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::{Path, PathBuf};

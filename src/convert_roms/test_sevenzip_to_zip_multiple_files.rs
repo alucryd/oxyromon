@@ -19,9 +19,10 @@ async fn test() {
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
-    set_rom_directory(PathBuf::from(rom_directory.path()));
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-    let tmp_directory = set_tmp_directory(PathBuf::from(tmp_directory.path()));
+    let tmp_directory =
+        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
         .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
@@ -93,9 +94,11 @@ async fn test() {
             .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
-    assert!(!system_directory
-        .join("Test Game (USA, Europe) (CUE BIN).7z")
-        .is_file());
+    assert!(
+        !system_directory
+            .join("Test Game (USA, Europe) (CUE BIN).7z")
+            .is_file()
+    );
     for rom in roms {
         assert_eq!(rom.romfile_id, Some(romfile.id));
     }

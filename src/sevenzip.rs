@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use itertools::izip;
 use regex::Regex;
@@ -432,7 +432,8 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let source_archive_file = File::open(source_archive_path.as_ref()).expect("Failed to read archive");
+    let source_archive_file =
+        File::open(source_archive_path.as_ref()).expect("Failed to read archive");
     let mut source_archive = ZipArchive::new(source_archive_file).expect("Failed to open archive");
 
     let destination_archive_file: File;

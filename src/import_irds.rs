@@ -1,19 +1,19 @@
+use super::SimpleResult;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
-use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660Reader, ISODirectory, ISOFile, ISO9660};
+use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::hash_map::{Entry, HashMap};
 use std::io;
-use std::io::prelude::*;
 use std::io::Cursor;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::str;
 use strsim::jaro_winkler;
@@ -228,10 +228,13 @@ fn walk_directory<T: ISO9660Reader>(
             }
             DirectoryEntry::File(file) => {
                 let path = format!("{}{}", prefix, file.identifier);
-                if let Entry::Vacant(e) = files.entry(path.clone()) {
-                    e.insert(Vec::from([file]));
-                } else {
-                    files.get_mut(&path).unwrap().push(file);
+                match files.entry(path.clone()) {
+                    Entry::Vacant(e) => {
+                        e.insert(Vec::from([file]));
+                    }
+                    _ => {
+                        files.get_mut(&path).unwrap().push(file);
+                    }
                 }
             }
             _ => {}

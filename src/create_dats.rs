@@ -1,8 +1,8 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::util::*;
-use super::SimpleResult;
 use chrono::prelude::*;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -22,7 +22,7 @@ struct Assets;
 
 pub const DOCTYPE: &[&str] = &[
     "<?xml version=\"1.0\"?>\n",
-    "<!DOCTYPE datafile PUBLIC \"-//Logiqx//DTD ROM Management Datafile//EN\" \"http://www.logiqx.com/Dats/datafile.dtd\">\n"
+    "<!DOCTYPE datafile PUBLIC \"-//Logiqx//DTD ROM Management Datafile//EN\" \"http://www.logiqx.com/Dats/datafile.dtd\">\n",
 ];
 
 pub fn subcommand() -> Command {

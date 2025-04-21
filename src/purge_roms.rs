@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -195,12 +195,12 @@ async fn purge_foreign_romfiles(
 ) -> SimpleResult<()> {
     progress_bar.println("Processing foreign ROM files");
     let rom_directory = get_rom_directory(connection).await;
-    let walker = WalkDir::new(rom_directory).into_iter();
+    let walker = WalkDir::new(&rom_directory).into_iter();
     let mut count = 0;
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
             let relative_path = try_with!(
-                entry.path().strip_prefix(rom_directory),
+                entry.path().strip_prefix(&rom_directory),
                 "Failed to retrieve relative path"
             );
             if find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap())
