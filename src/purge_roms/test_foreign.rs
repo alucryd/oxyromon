@@ -1,4 +1,4 @@
-use super::super::config::{set_rom_directory, MUTEX};
+use super::super::config::{MUTEX, set_rom_directory};
 use super::super::database::*;
 use super::*;
 use std::path::{Path, PathBuf};
@@ -18,7 +18,8 @@ async fn test() {
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
-    let rom_directory = set_rom_directory(PathBuf::from(rom_directory.path()));
+    let rom_directory =
+        set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
 
     let romfile_path = rom_directory.join("Test Game (USA, Europe).rom");
     fs::copy(

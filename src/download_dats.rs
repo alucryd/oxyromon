@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::database::*;
 use super::import_dats::{import_dat, parse_dat};
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -13,7 +13,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::io::Cursor;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 use zip::read::ZipArchive;
 
 const NOINTRO_BASE_URL: &str = "https://datomatic.no-intro.org";
@@ -189,7 +189,8 @@ async fn update_nointro_dats(
     {
         let profile: ProfileXml =
             try_with!(de::from_str(&response), "Failed to parse No-Intro profiles");
-        let systems = prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
+        let systems =
+            prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
         for system in systems {
             progress_bar.println(format!("Processing \"{}\"", &system.name));
             let system_xml = profile
@@ -250,7 +251,8 @@ async fn update_redump_dats(
     all: bool,
     force: bool,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, false, all).await?;
+    let systems =
+        prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, false, all).await?;
     for system in systems {
         download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
     }
@@ -267,43 +269,44 @@ async fn download_redump_dat(
     progress_bar.println(format!("Processing \"{}\"", system_name));
     let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
     let zip_url = format!("{}/datfile/{}/", base_url, code);
-    if let Ok(response) = reqwest::get(zip_url)
+    match reqwest::get(zip_url)
         .await
         .expect("Failed to download ZIP")
         .bytes()
         .await
     {
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let mut zip_archive = try_with!(
-            ZipArchive::new(Cursor::new(response)),
-            "Failed to read Redump ZIP"
-        );
-        match zip_archive.len() {
-            0 => progress_bar.println("ZIP is empty"),
-            1 => {
-                try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
-                let (datfile_xml, detector_xml) = parse_dat(
-                    progress_bar,
-                    &tmp_directory
-                        .path()
-                        .join(zip_archive.file_names().next().unwrap()),
-                    true,
-                )
-                .await?;
-                import_dat(
-                    connection,
-                    progress_bar,
-                    &datfile_xml,
-                    &detector_xml,
-                    None,
-                    force,
-                )
-                .await?;
+        Ok(response) => {
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let mut zip_archive = try_with!(
+                ZipArchive::new(Cursor::new(response)),
+                "Failed to read Redump ZIP"
+            );
+            match zip_archive.len() {
+                0 => progress_bar.println("ZIP is empty"),
+                1 => {
+                    try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+                    let (datfile_xml, detector_xml) = parse_dat(
+                        progress_bar,
+                        &tmp_directory
+                            .path()
+                            .join(zip_archive.file_names().next().unwrap()),
+                        true,
+                    )
+                    .await?;
+                    import_dat(
+                        connection,
+                        progress_bar,
+                        &datfile_xml,
+                        &detector_xml,
+                        None,
+                        force,
+                    )
+                    .await?;
+                }
+                _ => progress_bar.println("ZIP contains too many files"),
             }
-            _ => progress_bar.println("ZIP contains too many files"),
         }
-    } else {
-        progress_bar.println("Failed to download ZIP")
+        _ => progress_bar.println("Failed to download ZIP"),
     }
     // rate limit
     sleep(Duration::from_secs(1)).await;

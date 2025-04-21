@@ -1,6 +1,6 @@
+use super::SimpleResult;
 use super::common::*;
 use super::progress::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use std::path::Path;
 use std::str::FromStr;

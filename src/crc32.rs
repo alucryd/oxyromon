@@ -1,7 +1,7 @@
 use crc32fast::Hasher;
-use digest::generic_array::typenum::U4;
-use digest::generic_array::GenericArray;
 use digest::OutputSizeUser;
+use digest::generic_array::GenericArray;
+use digest::generic_array::typenum::U4;
 use digest::{FixedOutput, HashMarker, Reset, Update};
 use std::io::Write;
 

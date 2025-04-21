@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::config::*;
 use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;

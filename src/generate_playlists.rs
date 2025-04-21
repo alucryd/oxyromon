@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,7 +7,6 @@ use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use regex::Regex;

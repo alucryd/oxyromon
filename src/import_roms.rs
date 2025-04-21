@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::chdman;
 use super::chdman::{AsChd, ChdType};
 use super::common::*;
@@ -16,16 +17,15 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
+use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
-use std::cmp::Ordering;
 use strum::IntoEnumIterator;
 use walkdir::WalkDir;
 
@@ -436,7 +436,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     let (md5, size) = original_romfile
         .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &HashAlgorithm::Md5)
         .await?;
-    if let Some((sfb_rom, game)) = find_sfb_rom_by_md5(
+    match find_sfb_rom_by_md5(
         &mut transaction,
         progress_bar,
         system,
@@ -446,105 +446,114 @@ async fn import_jbfolder<P: AsRef<Path>>(
     )
     .await?
     {
-        let system_directory = get_system_directory(&mut transaction, system).await?;
+        Some((sfb_rom, game)) => {
+            let system_directory = get_system_directory(&mut transaction, system).await?;
 
-        let walker = WalkDir::new(path.as_ref()).into_iter();
-        for entry in walker.filter_map(|e| e.ok()) {
-            if entry.path().is_file() {
-                progress_bar.println(format!(
-                    "Processing \"{}\"",
-                    &entry.path().as_os_str().to_str().unwrap()
-                ));
-                // force MD5 as IRD files only provide those
-                let original_romfile = CommonRomfile::from_path(&entry.path())?;
-                let (md5, size) = original_romfile
-                    .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &HashAlgorithm::Md5)
-                    .await?;
+            let walker = WalkDir::new(path.as_ref()).into_iter();
+            for entry in walker.filter_map(|e| e.ok()) {
+                if entry.path().is_file() {
+                    progress_bar.println(format!(
+                        "Processing \"{}\"",
+                        &entry.path().as_os_str().to_str().unwrap()
+                    ));
+                    // force MD5 as IRD files only provide those
+                    let original_romfile = CommonRomfile::from_path(&entry.path())?;
+                    let (md5, size) = original_romfile
+                        .get_hash_and_size(
+                            &mut transaction,
+                            progress_bar,
+                            1,
+                            1,
+                            &HashAlgorithm::Md5,
+                        )
+                        .await?;
 
-                let rom: Option<&Rom>;
-                let roms = find_roms_without_romfile_by_size_and_md5_and_parent_id(
-                    &mut transaction,
-                    size,
-                    &md5,
-                    sfb_rom.parent_id.unwrap(),
-                )
-                .await;
-
-                // abort if no match
-                if roms.is_empty() {
-                    if count_roms_with_romfile_by_size_and_md5_and_parent_id(
+                    let rom: Option<&Rom>;
+                    let roms = find_roms_without_romfile_by_size_and_md5_and_parent_id(
                         &mut transaction,
                         size,
                         &md5,
                         sfb_rom.parent_id.unwrap(),
                     )
-                    .await
-                        > 0
-                    {
-                        progress_bar.println("Already imported");
-                    } else {
-                        progress_bar.println("No match");
-                    }
-                    continue;
-                }
+                    .await;
 
-                // select the first rom if there is only one
-                if roms.len() == 1 {
-                    rom = roms.first();
-                    progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
-                // select the first rom that matches the file name if there multiple matches
-                } else if let Some(rom_index) = roms.iter().position(|rom| {
-                    entry
-                        .path()
-                        .as_os_str()
-                        .to_str()
-                        .unwrap()
-                        .ends_with(&rom.name)
-                }) {
-                    rom = roms.get(rom_index);
-                    progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
-                } else {
-                    // skip if unattended
-                    if unattended {
-                        progress_bar.println("Multiple matches, skipping");
-                    }
-                    // let the user select the rom if all else fails
-                    rom = prompt_for_rom(&roms, None)?;
-                }
-
-                if let Some(rom) = rom {
-                    // abort if rom already has a file
-                    if rom.romfile_id.is_some() {
-                        let romfile =
-                            find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
-                        progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
+                    // abort if no match
+                    if roms.is_empty() {
+                        if count_roms_with_romfile_by_size_and_md5_and_parent_id(
+                            &mut transaction,
+                            size,
+                            &md5,
+                            sfb_rom.parent_id.unwrap(),
+                        )
+                        .await
+                            > 0
+                        {
+                            progress_bar.println("Already imported");
+                        } else {
+                            progress_bar.println("No match");
+                        }
                         continue;
                     }
 
-                    // put JB files in subdirectories
-                    let new_path = system_directory.join(&game.name).join(&rom.name);
-
-                    // move file if needed
-                    rename_file(progress_bar, &entry.path(), &new_path, false).await?;
-
-                    // persist in database
-                    create_or_update_romfile(&mut transaction, progress_bar, &new_path, &[rom])
-                        .await?;
-
-                    // remove directories if empty
-                    let mut directory = entry.path().parent().unwrap();
-                    while directory.read_dir().unwrap().next().is_none() {
-                        remove_directory(progress_bar, &directory, false).await?;
-                        if directory == entry.path() {
-                            break;
+                    // select the first rom if there is only one
+                    if roms.len() == 1 {
+                        rom = roms.first();
+                        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                    // select the first rom that matches the file name if there multiple matches
+                    } else if let Some(rom_index) = roms.iter().position(|rom| {
+                        entry
+                            .path()
+                            .as_os_str()
+                            .to_str()
+                            .unwrap()
+                            .ends_with(&rom.name)
+                    }) {
+                        rom = roms.get(rom_index);
+                        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                    } else {
+                        // skip if unattended
+                        if unattended {
+                            progress_bar.println("Multiple matches, skipping");
                         }
-                        directory = directory.parent().unwrap();
+                        // let the user select the rom if all else fails
+                        rom = prompt_for_rom(&roms, None)?;
+                    }
+
+                    if let Some(rom) = rom {
+                        // abort if rom already has a file
+                        if rom.romfile_id.is_some() {
+                            let romfile =
+                                find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
+                            progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
+                            continue;
+                        }
+
+                        // put JB files in subdirectories
+                        let new_path = system_directory.join(&game.name).join(&rom.name);
+
+                        // move file if needed
+                        rename_file(progress_bar, &entry.path(), &new_path, false).await?;
+
+                        // persist in database
+                        create_or_update_romfile(&mut transaction, progress_bar, &new_path, &[rom])
+                            .await?;
+
+                        // remove directories if empty
+                        let mut directory = entry.path().parent().unwrap();
+                        while directory.read_dir().unwrap().next().is_none() {
+                            remove_directory(progress_bar, &directory, false).await?;
+                            if directory == entry.path() {
+                                break;
+                            }
+                            directory = directory.parent().unwrap();
+                        }
                     }
                 }
             }
         }
-    } else {
-        progress_bar.println("No match");
+        _ => {
+            progress_bar.println("No match");
+        }
     }
 
     commit_transaction(transaction).await;

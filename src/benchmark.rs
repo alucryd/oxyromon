@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::progress::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -11,7 +11,7 @@ use std::path::Path;
 use std::time::Duration;
 use std::time::Instant;
 use tokio::fs;
-use tokio::io::{copy, AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter, copy};
 
 pub fn subcommand() -> Command {
     Command::new("benchmark").about("Benchmark oxyromon").arg(

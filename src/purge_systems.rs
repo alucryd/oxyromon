@@ -1,9 +1,9 @@
+use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -11,16 +11,14 @@ use std::path::Path;
 use std::time::Duration;
 
 pub fn subcommand() -> Command {
-    Command::new("purge-systems")
-        .about("Purge systems")
-        .arg(
-            Arg::new("EMPTY")
-                .short('e')
-                .long("empty")
-                .help("Only list empty systems for selection")
-                .required(false)
-                .action(ArgAction::SetTrue),
-        )
+    Command::new("purge-systems").about("Purge systems").arg(
+        Arg::new("EMPTY")
+            .short('e')
+            .long("empty")
+            .help("Only list empty systems for selection")
+            .required(false)
+            .action(ArgAction::SetTrue),
+    )
 }
 
 pub async fn main(
@@ -28,7 +26,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, matches.get_flag("EMPTY"), false).await?;
+    let systems =
+        prompt_for_systems(connection, None, false, matches.get_flag("EMPTY"), false).await?;
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     for system in systems {
         purge_system(connection, progress_bar, &system).await?;

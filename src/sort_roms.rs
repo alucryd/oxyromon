@@ -1,3 +1,4 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,15 +7,14 @@ use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use itertools::Itertools;
 use rayon::prelude::*;
 use regex::Regex;
-use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::TokenizedName;
+use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
@@ -95,7 +95,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let systems = prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
+    let systems =
+        prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;

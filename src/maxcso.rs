@@ -1,10 +1,10 @@
+use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use super::SimpleResult;
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;

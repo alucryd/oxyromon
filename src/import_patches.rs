@@ -1,10 +1,10 @@
+use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::prompt::*;
 use super::util::*;
-use super::SimpleResult;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -58,18 +58,21 @@ pub async fn main(
     let name = matches.get_flag("NAME");
     let force = matches.get_flag("FORCE");
     for patch_path in patch_paths {
-        if let Some(patch_format) = parse_patch(patch_path).await? {
-            import_patch(
-                connection,
-                progress_bar,
-                patch_path,
-                &patch_format,
-                name,
-                force,
-            )
-            .await?;
-        } else {
-            progress_bar.println("Unsupported patch format");
+        match parse_patch(patch_path).await? {
+            Some(patch_format) => {
+                import_patch(
+                    connection,
+                    progress_bar,
+                    patch_path,
+                    &patch_format,
+                    name,
+                    force,
+                )
+                .await?;
+            }
+            _ => {
+                progress_bar.println("Unsupported patch format");
+            }
         }
         progress_bar.println("");
     }

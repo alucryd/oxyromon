@@ -4,8 +4,7 @@ const PROGRESS_CHARS: &str = "#-";
 const NONE_TEMPLATE: &str = "{spinner} {wide_msg}";
 const COUNT_TEMPLATE: &str =
     "{spinner} {wide_msg} {pos}/{len} {per_sec} {elapsed_precise} ({eta_precise}) [{bar:80}]";
-const BYTES_TEMPLATE: &str =
-    "{spinner} {wide_msg} {bytes}/{total_bytes} {bytes_per_sec} {elapsed_precise} ({eta_precise}) [{bar:80}]";
+const BYTES_TEMPLATE: &str = "{spinner} {wide_msg} {bytes}/{total_bytes} {bytes_per_sec} {elapsed_precise} ({eta_precise}) [{bar:80}]";
 
 pub fn get_progress_bar(length: u64, style: ProgressStyle) -> ProgressBar {
     ProgressBar::new(length).with_style(style)
