@@ -452,6 +452,21 @@ async fn create_or_update_games(
                 )
             })
             .collect();
+        if parent_games_xml.is_empty() {
+            for child_game_xml in &child_games_xml {
+                progress_bar.println(format!(
+                    "Game \"{}\" has an invalid parent: \"{}\"",
+                    &child_game_xml.name,
+                    &child_game_xml
+                        .cloneof
+                        .as_ref()
+                        .or(child_game_xml.romof.as_ref())
+                        .unwrap()
+                        .as_str(),
+                ));
+            }
+            break;
+        }
         for game_xml in &parent_games_xml {
             let game = find_game_by_name_and_bios_and_system_id(
                 connection,
