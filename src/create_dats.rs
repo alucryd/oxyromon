@@ -145,7 +145,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
             .unwrap_or(system_name.clone()),
         version: system_version.clone(),
         date: Some(system_date.clone()),
-        author: author.map(String::to_owned).unwrap_or_default(),
+        author: author.map(String::to_owned),
         url: url.map(String::to_owned),
         clrmamepros: vec![],
     };

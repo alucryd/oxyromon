@@ -176,7 +176,7 @@ pub struct SystemXml {
     pub description: String,
     pub version: String,
     pub date: Option<String>,
-    pub author: String,
+    pub author: Option<String>,
     #[serde(rename = "clrmamepro", default)]
     pub clrmamepros: Vec<ClrMameProXml>,
     pub url: Option<String>,
