@@ -24,22 +24,22 @@ server = ["async-graphql", "async-graphql-axum", "axum", "http-types"]
 async-graphql = { version = "7.0.16", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-axum = { version = "7.0.16", optional = true }
+async-graphql-axum = { version = "7.0.17", optional = true }
 async-once-cell = "0.5.4"
-axum = { version = "0.8.3", default-features = false, features = [
+axum = { version = "0.8.4", default-features = false, features = [
     "http2",
     "tokio",
     "ws",
 ], optional = true }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.0"
-chrono = { version = "0.4.40", default-features = false, features = [
+chrono = { version = "0.4.41", default-features = false, features = [
     "std",
     "alloc",
     "now",
     "clock",
 ] }
-clap = "4.5.37"
+clap = "4.5.39"
 crc32fast = "1.4.2"
 dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
 digest = { version = "0.10.7", features = ["std"] }
@@ -62,16 +62,16 @@ md-5 = "0.10.6"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
 phf = { version = "0.11.3", features = ["macros"] }
-quick-xml = { version = "0.37.4", features = ["serialize"] }
+quick-xml = { version = "0.37.5", features = ["serialize"] }
 rayon = "1.10.0"
 regex = "1.11.1"
-reqwest = { version = "0.12.15", default-features = false }
-rust-embed = { version = "8.7.0", features = ["compression"] }
+reqwest = { version = "0.12.19", default-features = false }
+rust-embed = { version = "8.7.2", features = ["compression"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
 simple-error = "0.3.1"
-sqlx = { version = "0.8.5", default-features = false, features = [
+sqlx = { version = "0.8.6", default-features = false, features = [
     "macros",
     "migrate",
     "runtime-tokio",
@@ -79,8 +79,8 @@ sqlx = { version = "0.8.5", default-features = false, features = [
 ] }
 strsim = "0.11.1"
 strum = { version = "0.27.1", features = ["derive"] }
-tempfile = "3.19.1"
-tokio = { version = "1.44.2", features = [
+tempfile = "3.20.0"
+tokio = { version = "1.45.1", features = [
     "fs",
     "io-std",
     "io-util",
@@ -92,8 +92,8 @@ tokio = { version = "1.44.2", features = [
 ] }
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
-which = { version = "7.0.3", default-features = false }
-zip = { version = "2.6.1", features = ["deflate"], default-features = false }
+which = { version = "8.0.0" }
+zip = { version = "4.0.0", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0.140"
