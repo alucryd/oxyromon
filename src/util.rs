@@ -351,6 +351,15 @@ pub async fn find_parent_chd_romfile_by_game(
     }
 }
 
+pub fn compute_alpha_subfolder(name: &str) -> String {
+    let first_char = name.chars().next().unwrap();
+    if first_char.is_ascii_alphabetic() {
+        first_char.to_ascii_uppercase().to_string()
+    } else {
+        String::from("#")
+    }
+}
+
 #[cfg(test)]
 mod test_system_directory_no_group_subsystems;
 

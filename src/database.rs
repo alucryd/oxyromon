@@ -95,16 +95,18 @@ pub async fn create_system_from_xml(
     connection: &mut SqliteConnection,
     system_xml: &SystemXml,
     custom_name: Option<&String>,
+    custom_extension: Option<&String>,
     arcade: bool,
 ) -> i64 {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
-        INSERT INTO systems (name, custom_name, description, version, url, arcade)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO systems (name, custom_name, custom_extension, description, version, url, arcade)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ",
         name,
         custom_name,
+        custom_extension,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -121,17 +123,19 @@ pub async fn update_system_from_xml(
     id: i64,
     system_xml: &SystemXml,
     custom_name: Option<&String>,
+    custom_extension: Option<&String>,
     arcade: bool,
 ) {
     let name = system_xml.name.replace(" (Parent-Clone)", "");
     sqlx::query!(
         "
         UPDATE systems
-        SET name = ?, custom_name = ?, description = ?, version = ?, url = ?, arcade = ?
+        SET name = ?, custom_name = ?, custom_extension = ?, description = ?, version = ?, url = ?, arcade = ?
         WHERE id = ?
         ",
         name,
         custom_name,
+        custom_extension,
         system_xml.description,
         system_xml.version,
         system_xml.url,
@@ -545,28 +549,30 @@ pub async fn update_jbfolder_games_completion_by_system_id(
     .unwrap_or_else(|_| panic!("Error while marking game as complete"));
 }
 
-pub async fn update_games_sorting(
-    connection: &mut SqliteConnection,
-    ids: &[i64],
-    sorting: Sorting,
-) -> u64 {
-    let sorting = sorting as i8;
-    let sql = format!(
-        "
-        UPDATE games
-        SET sorting = {}
-        WHERE id IN ({})
-        AND sorting != {}
-        ",
-        sorting,
-        ids.iter().join(","),
-        sorting,
-    );
-    sqlx::query(&sql)
+pub trait GameOperations {
+    async fn update_sorting(&self, connection: &mut SqliteConnection, sorting: Sorting) -> bool;
+}
+
+impl GameOperations for Game {
+    async fn update_sorting(&self, connection: &mut SqliteConnection, sorting: Sorting) -> bool {
+        let sorting = sorting as i64;
+        sqlx::query!(
+            "
+            UPDATE games
+            SET sorting = ?
+            WHERE id = ?
+            AND sorting != ?
+            ",
+            sorting,
+            self.id,
+            sorting,
+        )
         .execute(connection)
         .await
-        .unwrap_or_else(|_| panic!("Error while updating games sorting"))
+        .unwrap_or_else(|_| panic!("Error while updating game sorting for id {}", self.id))
         .rows_affected()
+            > 0
+    }
 }
 
 pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jbfolder: bool) {
@@ -1214,6 +1220,26 @@ pub async fn find_roms_with_romfile_by_system_id(
         ORDER BY r.name
         ",
         system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms with romfile")
+}
+
+pub async fn find_roms_with_romfile_by_game_id(
+    connection: &mut SqliteConnection,
+    game_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id IS NOT NULL
+        AND game_id = ?
+        ORDER BY name
+        ",
+        game_id,
     )
     .fetch_all(connection)
     .await

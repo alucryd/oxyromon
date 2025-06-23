@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE systems\n        SET name = ?, custom_name = ?, custom_extension = ?, description = ?, version = ?, url = ?, arcade = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "d2f8e081d6760171b9da90c651cc225bd9fb662356c485a09bfd23256849e757"
+}

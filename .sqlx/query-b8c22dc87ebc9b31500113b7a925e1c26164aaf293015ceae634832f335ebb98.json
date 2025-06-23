@@ -47,6 +47,11 @@
         "name": "completion",
         "ordinal": 8,
         "type_info": "Integer"
+      },
+      {
+        "name": "custom_extension",
+        "ordinal": 9,
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -61,7 +66,8 @@
       false,
       false,
       true,
-      false
+      false,
+      true
     ]
   },
   "hash": "b8c22dc87ebc9b31500113b7a925e1c26164aaf293015ceae634832f335ebb98"

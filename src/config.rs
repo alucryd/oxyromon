@@ -123,23 +123,6 @@ const SORTED_LISTS: &[&str] = &[
 ];
 const LIST_SEPARATOR: &str = "|";
 
-pub static BIN_EXTENSION: &str = "bin";
-pub static CIA_EXTENSION: &str = "cia";
-pub static CUE_EXTENSION: &str = "cue";
-pub static DAT_EXTENSION: &str = "dat";
-pub static M3U_EXTENSION: &str = "m3u";
-pub static NSP_EXTENSION: &str = "nsp";
-pub static NSZ_EXTENSION: &str = "nsz";
-pub static PKG_EXTENSION: &str = "pkg";
-pub static PUP_EXTENSION: &str = "pup";
-pub static RAP_EXTENSION: &str = "rap";
-pub static SEVENZIP_EXTENSION: &str = "7z";
-pub static WBFS_EXTENSION: &str = "wbfs";
-pub static ZIP_EXTENSION: &str = "zip";
-
-pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
-pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
-
 pub static PS3_DISC_SFB: &str = "PS3_DISC.SFB";
 
 pub fn subcommand() -> Command {

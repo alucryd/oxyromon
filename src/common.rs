@@ -1,8 +1,9 @@
+// === IMPORTS ===
 use super::config::*;
 use super::crc32::*;
 use super::database::*;
+use super::generate_playlists::DISC_REGEX;
 use super::mimetype::*;
-use super::model::Header;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
@@ -18,35 +19,207 @@ use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
+// === CORE TYPES ===
 #[derive(Clone)]
 pub struct CommonRomfile {
     pub path: PathBuf,
 }
 
+pub struct M3uRomfile {
+    pub romfile: CommonRomfile,
+}
+
+pub struct IsoRomfile {
+    pub romfile: CommonRomfile,
+}
+
+pub struct CueBinRomfile {
+    pub cue_romfile: CommonRomfile,
+    pub bin_romfiles: Vec<CommonRomfile>,
+}
+
+// === CORE TRAITS ===
+pub trait FromPath<T> {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<T>;
+}
+
 pub trait CommonFile {
+    async fn get_sorted_path(
+        &self,
+        connection: &mut SqliteConnection,
+        system: &System,
+        game: &Game,
+        rom: &Rom,
+        subfolders: &SubfolderScheme,
+        extension: Option<&str>,
+    ) -> SimpleResult<PathBuf>;
+
     async fn get_relative_path(&self, connection: &mut SqliteConnection) -> SimpleResult<&Path>;
+
     async fn rename<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         new_path: &P,
         quiet: bool,
     ) -> SimpleResult<CommonRomfile>;
+
     async fn copy<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
         quiet: bool,
     ) -> SimpleResult<CommonRomfile>;
+
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()>;
 }
 
-pub trait PatchFile {
+// === CONVERSION TRAITS ===
+pub trait AsCommon {
+    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile>;
+}
+
+pub trait ToCommon {
+    async fn to_common<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> SimpleResult<CommonRomfile>;
+}
+
+pub trait AsM3u {
+    async fn as_m3u(self) -> SimpleResult<M3uRomfile>;
+}
+
+pub trait AsIso {
+    fn as_iso(self) -> SimpleResult<IsoRomfile>;
+}
+
+pub trait AsCueBin {
+    fn as_cue_bin(self, bin_romfiles: Vec<CommonRomfile>) -> SimpleResult<CueBinRomfile>;
+}
+
+pub trait ToIso {
+    async fn to_iso<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> SimpleResult<IsoRomfile>;
+}
+
+pub trait ToCueBin {
+    async fn to_cue_bin<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        cue_romfile: Option<CommonRomfile>,
+        bin_roms: &[&Rom],
+        quiet: bool,
+    ) -> SimpleResult<CueBinRomfile>;
+}
+
+// === SPECIALIZED TRAITS ===
+pub trait Patch {
     async fn patch<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> SimpleResult<CommonRomfile>;
+}
+
+pub trait Playlist {
+    async fn get_playlist_path(
+        &self,
+        connection: &mut SqliteConnection,
+        system: &System,
+        subfolders: &SubfolderScheme,
+    ) -> SimpleResult<PathBuf>;
+}
+
+pub trait Size {
+    async fn get_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+    ) -> SimpleResult<u64>;
+}
+
+pub trait HashAndSize {
+    async fn get_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)>;
+}
+
+pub trait HeaderedHashAndSize {
+    async fn get_file_and_header_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Header,
+    ) -> SimpleResult<(File, u64)>;
+
+    async fn get_headered_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Header,
+    ) -> SimpleResult<u64>;
+
+    async fn get_headered_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Header,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> SimpleResult<(String, u64)>;
+}
+
+pub trait Check {
+    async fn check(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Option<Header>,
+        roms: &[&Rom],
+    ) -> SimpleResult<()>;
+}
+
+pub trait Persist {
+    async fn create(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        romfile_type: RomfileType,
+    ) -> SimpleResult<i64>;
+
+    async fn update(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        id: i64,
+    ) -> SimpleResult<()>;
+}
+
+// === IMPLEMENTATIONS FOR CommonRomfile ===
+impl FromPath<CommonRomfile> for CommonRomfile {
+    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<CommonRomfile> {
+        Ok(CommonRomfile {
+            path: path.as_ref().to_path_buf(),
+        })
+    }
+}
+
+impl fmt::Display for CommonRomfile {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.path.as_os_str().to_str().unwrap())
+    }
 }
 
 impl CommonFile for CommonRomfile {
@@ -84,55 +257,66 @@ impl CommonFile for CommonRomfile {
         copy_file(progress_bar, &self.path, &new_path, quiet).await?;
         CommonRomfile::from_path(&new_path)
     }
+
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> SimpleResult<()> {
         remove_file(progress_bar, &self.path, quiet).await?;
         Ok(())
     }
-}
 
-impl fmt::Display for CommonRomfile {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.path.as_os_str().to_str().unwrap())
-    }
-}
-
-pub trait FromPath<T> {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<T>;
-}
-
-impl FromPath<CommonRomfile> for CommonRomfile {
-    fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<CommonRomfile> {
-        Ok(CommonRomfile {
-            path: path.as_ref().to_path_buf(),
-        })
-    }
-}
-
-pub trait AsCommon {
-    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile>;
-}
-
-impl AsCommon for Romfile {
-    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile> {
-        let rom_directory = get_rom_directory(connection).await;
-        CommonRomfile::from_path(&rom_directory.join(&self.path))
-    }
-}
-
-pub trait ToCommon {
-    async fn to_common<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        destination_directory: &P,
-    ) -> SimpleResult<CommonRomfile>;
-}
-
-pub trait Size {
-    async fn get_size(
+    async fn get_sorted_path(
         &self,
         connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-    ) -> SimpleResult<u64>;
+        system: &System,
+        game: &Game,
+        rom: &Rom,
+        subfolders: &SubfolderScheme,
+        extension: Option<&str>,
+    ) -> SimpleResult<PathBuf> {
+        let mut sorted_path = get_system_directory(connection, system).await?;
+
+        let extension = extension.or_else(|| self.path.extension()?.to_str());
+
+        // sorting
+        match game.sorting {
+            s if s == Sorting::OneRegion as i64 => {
+                sorted_path = sorted_path.join("1G1R");
+            }
+            s if s == Sorting::Ignored as i64 => {
+                sorted_path = sorted_path.join("Trash");
+            }
+            _ => {}
+        }
+
+        // subfolders
+        if subfolders == &SubfolderScheme::Alpha {
+            sorted_path.push(compute_alpha_subfolder(&game.name));
+        }
+
+        // arcade and jbfolder in subdirectories unless they are archives
+        if (system.arcade && !extension.map_or(false, |ext| ARCHIVE_EXTENSIONS.contains(&ext)))
+            || game.jbfolder
+        {
+            sorted_path.push(&game.name);
+        }
+
+        // file name
+        let filename = match extension {
+            Some(ext) if NON_ORIGINAL_EXTENSIONS.contains(&ext) => {
+                if system.arcade && !ARCHIVE_EXTENSIONS.contains(&ext) {
+                    format!("{}.{}", &rom.name, ext)
+                } else {
+                    format!("{}.{}", &game.name, ext)
+                }
+            }
+            _ => match &system.custom_extension {
+                Some(custom_ext) => format!("{}.{}", &game.name, custom_ext),
+                None => rom.name.clone(),
+            },
+        };
+
+        sorted_path.push(filename);
+        Ok(sorted_path)
+    }
 }
 
 impl Size for CommonRomfile {
@@ -143,17 +327,6 @@ impl Size for CommonRomfile {
     ) -> SimpleResult<u64> {
         Ok(self.path.metadata().unwrap().len())
     }
-}
-
-pub trait HashAndSize {
-    async fn get_hash_and_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        position: usize,
-        total: usize,
-        hash_algorithm: &HashAlgorithm,
-    ) -> SimpleResult<(String, u64)>;
 }
 
 impl HashAndSize for CommonRomfile {
@@ -206,30 +379,6 @@ impl HashAndSize for CommonRomfile {
     }
 }
 
-pub trait HeaderedHashAndSize {
-    async fn get_file_and_header_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Header,
-    ) -> SimpleResult<(File, u64)>;
-    async fn get_headered_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Header,
-    ) -> SimpleResult<u64>;
-    async fn get_headered_hash_and_size(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Header,
-        position: usize,
-        total: usize,
-        hash_algorithm: &HashAlgorithm,
-    ) -> SimpleResult<(String, u64)>;
-}
-
 impl HeaderedHashAndSize for CommonRomfile {
     async fn get_file_and_header_size(
         &self,
@@ -269,6 +418,7 @@ impl HeaderedHashAndSize for CommonRomfile {
 
         Ok((file, header_size))
     }
+
     async fn get_headered_size(
         &self,
         connection: &mut SqliteConnection,
@@ -280,6 +430,7 @@ impl HeaderedHashAndSize for CommonRomfile {
             .await?;
         Ok(file.metadata().unwrap().len() - header_size)
     }
+
     async fn get_headered_hash_and_size(
         &self,
         connection: &mut SqliteConnection,
@@ -337,16 +488,6 @@ impl HeaderedHashAndSize for CommonRomfile {
 
         Ok((hash, size))
     }
-}
-
-pub trait Check {
-    async fn check(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        header: &Option<Header>,
-        roms: &[&Rom],
-    ) -> SimpleResult<()>;
 }
 
 impl Check for CommonRomfile {
@@ -412,20 +553,60 @@ impl Check for CommonRomfile {
     }
 }
 
-pub struct IsoRomfile {
-    pub romfile: CommonRomfile,
-}
-
-pub trait ToIso {
-    async fn to_iso<P: AsRef<Path>>(
+impl Persist for CommonRomfile {
+    async fn create(
         &self,
+        connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        destination_directory: &P,
-    ) -> SimpleResult<IsoRomfile>;
+        romfile_type: RomfileType,
+    ) -> SimpleResult<i64> {
+        let path = &self.get_relative_path(connection).await?;
+        let size = self.get_size(connection, progress_bar).await?;
+        Ok(create_romfile(
+            connection,
+            path.as_os_str().to_str().unwrap(),
+            size,
+            romfile_type,
+        )
+        .await)
+    }
+
+    async fn update(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        id: i64,
+    ) -> SimpleResult<()> {
+        let path = &self.get_relative_path(connection).await?;
+        let size = self.get_size(connection, progress_bar).await?;
+        update_romfile(connection, id, path.as_os_str().to_str().unwrap(), size).await;
+        Ok(())
+    }
 }
 
-pub trait AsIso {
-    fn as_iso(self) -> SimpleResult<IsoRomfile>;
+// === CONVERSION IMPLEMENTATIONS ===
+impl AsCommon for Romfile {
+    async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile> {
+        let rom_directory = get_rom_directory(connection).await;
+        CommonRomfile::from_path(&rom_directory.join(&self.path))
+    }
+}
+
+impl AsM3u for CommonRomfile {
+    async fn as_m3u(self) -> SimpleResult<M3uRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != M3U_EXTENSION
+        {
+            bail!("Not a valid m3u");
+        }
+        Ok(M3uRomfile { romfile: self })
+    }
 }
 
 impl AsIso for CommonRomfile {
@@ -443,26 +624,6 @@ impl AsIso for CommonRomfile {
         }
         Ok(IsoRomfile { romfile: self })
     }
-}
-
-pub struct CueBinRomfile {
-    pub cue_romfile: CommonRomfile,
-    pub bin_romfiles: Vec<CommonRomfile>,
-}
-
-pub trait ToCueBin {
-    async fn to_cue_bin<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        destination_directory: &P,
-        cue_romfile: Option<CommonRomfile>,
-        bin_roms: &[&Rom],
-        quiet: bool,
-    ) -> SimpleResult<CueBinRomfile>;
-}
-
-pub trait AsCueBin {
-    fn as_cue_bin(self, bin_romfiles: Vec<CommonRomfile>) -> SimpleResult<CueBinRomfile>;
 }
 
 impl AsCueBin for CommonRomfile {
@@ -498,47 +659,52 @@ impl AsCueBin for CommonRomfile {
     }
 }
 
-pub trait Persist {
-    async fn create(
+// === PLAYLIST IMPLEMENTATIONS ===
+impl Playlist for Game {
+    async fn get_playlist_path(
         &self,
         connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        romfile_type: RomfileType,
-    ) -> SimpleResult<i64>;
-    async fn update(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        id: i64,
-    ) -> SimpleResult<()>;
+        system: &System,
+        subfolders: &SubfolderScheme,
+    ) -> SimpleResult<PathBuf> {
+        let mut playlist_path = get_system_directory(connection, system).await?;
+        if subfolders == &SubfolderScheme::Alpha {
+            playlist_path = playlist_path.join(compute_alpha_subfolder(&self.name));
+        }
+        if self.sorting == Sorting::OneRegion as i64 {
+            playlist_path = playlist_path.join("1G1R");
+        }
+        playlist_path = playlist_path.join(format!(
+            "{}.{}",
+            DISC_REGEX.replace(&self.name, ""),
+            M3U_EXTENSION
+        ));
+        Ok(playlist_path)
+    }
 }
 
-impl Persist for CommonRomfile {
-    async fn create(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        romfile_type: RomfileType,
-    ) -> SimpleResult<i64> {
-        let path = &self.get_relative_path(connection).await?;
-        let size = self.get_size(connection, progress_bar).await?;
-        Ok(create_romfile(
-            connection,
-            path.as_os_str().to_str().unwrap(),
-            size,
-            romfile_type,
-        )
-        .await)
-    }
-    async fn update(
-        &self,
-        connection: &mut SqliteConnection,
-        progress_bar: &ProgressBar,
-        id: i64,
-    ) -> SimpleResult<()> {
-        let path = &self.get_relative_path(connection).await?;
-        let size = self.get_size(connection, progress_bar).await?;
-        update_romfile(connection, id, path.as_os_str().to_str().unwrap(), size).await;
-        Ok(())
-    }
-}
+// === TESTS ===
+#[cfg(test)]
+mod test_path_archive_multiple_files;
+#[cfg(test)]
+mod test_path_archive_single_file;
+#[cfg(test)]
+mod test_path_chd_multiple_tracks;
+#[cfg(test)]
+mod test_path_chd_single_track;
+#[cfg(test)]
+mod test_path_cso;
+#[cfg(test)]
+mod test_path_custom_extension;
+#[cfg(test)]
+mod test_path_original;
+#[cfg(test)]
+mod test_path_playlist;
+#[cfg(test)]
+mod test_path_playlist_subfolder_alpha;
+#[cfg(test)]
+mod test_path_rvz;
+#[cfg(test)]
+mod test_path_subfolder_alpha_letter;
+#[cfg(test)]
+mod test_path_subfolder_alpha_other;

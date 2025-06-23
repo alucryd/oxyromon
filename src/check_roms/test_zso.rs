@@ -1,3 +1,4 @@
+use super::super::config::*;
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;

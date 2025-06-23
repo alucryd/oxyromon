@@ -23,6 +23,7 @@ pub struct System {
     pub id: i64,
     pub name: String,
     pub custom_name: Option<String>,
+    pub custom_extension: Option<String>,
     pub description: String,
     pub version: String,
     pub url: Option<String>,

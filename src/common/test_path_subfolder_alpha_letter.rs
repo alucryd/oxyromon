@@ -1,9 +1,20 @@
+use tempfile::{NamedTempFile, TempDir};
+
 use super::*;
 
 #[tokio::test]
 async fn test() {
     // given
+    let _guard = MUTEX.lock().await;
+
     let test_directory = Path::new("tests");
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+
     let system = System {
         id: 1,
         name: String::from("Test System"),
@@ -14,6 +25,7 @@ async fn test() {
         arcade: false,
         merging: Merging::Split as i64,
         completion: 0,
+        custom_extension: None,
     };
     let game = Game {
         id: 1,
@@ -34,7 +46,7 @@ async fn test() {
     };
     let rom = Rom {
         id: 1,
-        name: String::from("rom name.bin"),
+        name: String::from("rom name.rom"),
         bios: false,
         disk: false,
         size: 1,
@@ -49,29 +61,35 @@ async fn test() {
     };
     let romfile = Romfile {
         id: 1,
-        path: String::from("romfile.chd"),
+        path: String::from("romfile.rom"),
         size: 0,
         parent_id: None,
         romfile_type: RomfileType::Romfile as i64,
     };
-    let extension = Path::new(&romfile.path)
-        .extension()
-        .unwrap()
-        .to_str()
-        .unwrap();
 
     // when
-    let path = compute_new_romfile_path(
-        &system,
-        &game,
-        &rom,
-        Some(extension),
-        &test_directory,
-        &SubfolderScheme::None,
-    )
-    .await
-    .unwrap();
+    let path = romfile
+        .as_common(&mut connection)
+        .await
+        .unwrap()
+        .get_sorted_path(
+            &mut connection,
+            &system,
+            &game,
+            &rom,
+            &SubfolderScheme::Alpha,
+            None,
+        )
+        .await
+        .unwrap();
 
     // then
-    assert_eq!(path, test_directory.join("game name.chd"));
+    assert_eq!(
+        path,
+        rom_directory
+            .path()
+            .join(system.name)
+            .join("G")
+            .join("rom name.rom")
+    );
 }
