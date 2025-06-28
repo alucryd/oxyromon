@@ -47,7 +47,7 @@ async fn test() {
 
     // when
     let path = game
-        .get_playlist_path(&mut connection, &system, &SubfolderScheme::Alpha)
+        .get_playlist_path(&mut connection, &system, &Some(SubfolderScheme::Alpha))
         .await
         .unwrap();
 

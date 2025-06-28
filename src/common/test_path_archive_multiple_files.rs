@@ -77,8 +77,8 @@ async fn test() {
             &system,
             &game,
             &rom,
-            &SubfolderScheme::None,
-            Some(SEVENZIP_EXTENSION),
+            &None,
+            &Some(SEVENZIP_EXTENSION),
         )
         .await
         .unwrap();

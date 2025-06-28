@@ -77,8 +77,8 @@ async fn test() {
             &system,
             &game,
             &rom,
-            &SubfolderScheme::None,
-            Some(RVZ_EXTENSION),
+            &None,
+            &Some(RVZ_EXTENSION),
         )
         .await
         .unwrap();

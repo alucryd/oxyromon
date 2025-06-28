@@ -119,26 +119,12 @@ pub async fn main(
         PreferredVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await.unwrap())
             .unwrap();
     let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
-    let all_regions_subfolders = SubfolderScheme::from_str(
-        matches
-            .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
-            .unwrap_or(
-                &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
-                    .await
-                    .unwrap(),
-            ),
-    )
-    .unwrap();
-    let one_regions_subfolders = SubfolderScheme::from_str(
-        matches
-            .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
-            .unwrap_or(
-                &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
-                    .await
-                    .unwrap(),
-            ),
-    )
-    .unwrap();
+    let all_regions_subfolders = matches
+        .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
+        .map(|s| SubfolderScheme::from_str(s.as_str()).unwrap_or(SubfolderScheme::None));
+    let one_regions_subfolders = matches
+        .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
+        .map(|s| SubfolderScheme::from_str(s.as_str()).unwrap_or(SubfolderScheme::None));
     let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;
 
     let answer_yes = matches.get_flag("YES");
@@ -214,8 +200,8 @@ async fn sort_system(
     preferred_regions: &PreferredRegion,
     preferred_versions: &PreferredVersion,
     preferred_flags: &[&str],
-    all_regions_subfolders: &SubfolderScheme,
-    one_regions_subfolders: &SubfolderScheme,
+    all_regions_subfolders: &Option<SubfolderScheme>,
+    one_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -577,16 +563,8 @@ async fn sort_system(
             game.sorting = Sorting::Ignored as i64;
             changes += 1;
         }
-        romfile_moves.append(
-            &mut sort_game(
-                &mut transaction,
-                system,
-                game,
-                &romfiles_by_id,
-                &SubfolderScheme::None,
-            )
-            .await?,
-        );
+        romfile_moves
+            .append(&mut sort_game(&mut transaction, system, game, &romfiles_by_id, &None).await?);
     }
 
     progress_bar.disable_steady_tick();
@@ -660,7 +638,7 @@ async fn sort_game<'a>(
     system: &System,
     game: &Game,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
-    subfolders: &SubfolderScheme,
+    subfolder_scheme: &Option<SubfolderScheme>,
 ) -> SimpleResult<Vec<(&'a Romfile, PathBuf)>> {
     let mut romfile_moves: Vec<(&Romfile, PathBuf)> = vec![];
 
@@ -682,7 +660,7 @@ async fn sort_game<'a>(
         let new_romfile_path = romfile
             .as_common(connection)
             .await?
-            .get_sorted_path(connection, system, &game, &rom, subfolders, None)
+            .get_sorted_path(connection, system, &game, &rom, subfolder_scheme, &None)
             .await?;
         if romfile.as_common(connection).await?.path != new_romfile_path {
             let patches = find_patches_by_rom_id(connection, rom.id).await;
@@ -702,7 +680,7 @@ async fn sort_game<'a>(
     if game.playlist_id.is_some() {
         let playlist_romfile = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
         let new_playlist_romfile_path = game
-            .get_playlist_path(connection, system, subfolders)
+            .get_playlist_path(connection, system, subfolder_scheme)
             .await?;
         if playlist_romfile.as_common(connection).await?.path != new_playlist_romfile_path {
             romfile_moves.push((playlist_romfile, new_playlist_romfile_path));

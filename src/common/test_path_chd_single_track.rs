@@ -77,8 +77,8 @@ async fn test() {
             &system,
             &game,
             &rom,
-            &SubfolderScheme::None,
-            Some(CHD_EXTENSION),
+            &None,
+            &Some(CHD_EXTENSION),
         )
         .await
         .unwrap();

@@ -77,8 +77,8 @@ async fn test() {
             &system,
             &game,
             &rom,
-            &SubfolderScheme::None,
-            None,
+            &None,
+            &None,
         )
         .await
         .unwrap();

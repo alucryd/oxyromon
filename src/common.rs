@@ -11,13 +11,14 @@ use core::fmt;
 use digest::Digest;
 use indicatif::ProgressBar;
 use md5::Md5;
+use num_traits::FromPrimitive;
 use sha1::Sha1;
 use simple_error::SimpleResult;
 use sqlx::SqliteConnection;
-use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::{fs::File, str::FromStr};
 
 // === CORE TYPES ===
 #[derive(Clone)]
@@ -50,8 +51,8 @@ pub trait CommonFile {
         system: &System,
         game: &Game,
         rom: &Rom,
-        subfolders: &SubfolderScheme,
-        extension: Option<&str>,
+        subfolders: &Option<SubfolderScheme>,
+        extension: &Option<&str>,
     ) -> SimpleResult<PathBuf>;
 
     async fn get_relative_path(&self, connection: &mut SqliteConnection) -> SimpleResult<&Path>;
@@ -132,7 +133,7 @@ pub trait Playlist {
         &self,
         connection: &mut SqliteConnection,
         system: &System,
-        subfolders: &SubfolderScheme,
+        subfolders: &Option<SubfolderScheme>,
     ) -> SimpleResult<PathBuf>;
 }
 
@@ -269,8 +270,8 @@ impl CommonFile for CommonRomfile {
         system: &System,
         game: &Game,
         rom: &Rom,
-        subfolders: &SubfolderScheme,
-        extension: Option<&str>,
+        subfolder_scheme: &Option<SubfolderScheme>,
+        extension: &Option<&str>,
     ) -> SimpleResult<PathBuf> {
         let mut sorted_path = get_system_directory(connection, system).await?;
 
@@ -288,7 +289,25 @@ impl CommonFile for CommonRomfile {
         }
 
         // subfolders
-        if subfolders == &SubfolderScheme::Alpha {
+        let subfolder_scheme = match subfolder_scheme {
+            Some(scheme) => scheme,
+            None => match Sorting::from_i64(game.sorting) {
+                Some(Sorting::OneRegion) => &SubfolderScheme::from_str(
+                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
+                        .await
+                        .unwrap(),
+                )
+                .unwrap(),
+                Some(Sorting::AllRegions) => &SubfolderScheme::from_str(
+                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
+                        .await
+                        .unwrap(),
+                )
+                .unwrap(),
+                Some(Sorting::Ignored) | None => &SubfolderScheme::None,
+            },
+        };
+        if subfolder_scheme == &SubfolderScheme::Alpha {
             sorted_path.push(compute_alpha_subfolder(&game.name));
         }
 
@@ -665,10 +684,28 @@ impl Playlist for Game {
         &self,
         connection: &mut SqliteConnection,
         system: &System,
-        subfolders: &SubfolderScheme,
+        subfolder_scheme: &Option<SubfolderScheme>,
     ) -> SimpleResult<PathBuf> {
         let mut playlist_path = get_system_directory(connection, system).await?;
-        if subfolders == &SubfolderScheme::Alpha {
+        let subfolder_scheme = match subfolder_scheme {
+            Some(scheme) => scheme,
+            None => match Sorting::from_i64(self.sorting) {
+                Some(Sorting::OneRegion) => &SubfolderScheme::from_str(
+                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
+                        .await
+                        .unwrap(),
+                )
+                .unwrap(),
+                Some(Sorting::AllRegions) => &SubfolderScheme::from_str(
+                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
+                        .await
+                        .unwrap(),
+                )
+                .unwrap(),
+                Some(Sorting::Ignored) | None => &SubfolderScheme::None,
+            },
+        };
+        if subfolder_scheme == &SubfolderScheme::Alpha {
             playlist_path = playlist_path.join(compute_alpha_subfolder(&self.name));
         }
         if self.sorting == Sorting::OneRegion as i64 {

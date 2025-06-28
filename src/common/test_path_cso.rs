@@ -77,8 +77,8 @@ async fn test() {
             &system,
             &game,
             &rom,
-            &SubfolderScheme::None,
-            Some(CSO_EXTENSION),
+            &None,
+            &Some(CSO_EXTENSION),
         )
         .await
         .unwrap();

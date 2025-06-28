@@ -33,23 +33,30 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
         .await
         .unwrap_or_else(|_| panic!("Error connecting to {}", url));
 
-    pool.execute(
-        format!(
-            "
-            PRAGMA foreign_keys = ON;
-            PRAGMA locking_mode = {};
-            PRAGMA journal_mode = WAL;
-            PRAGMA synchronous = NORMAL;
-            PRAGMA temp_store = MEMORY;
-            PRAGMA mmap_size = 30000000000;
-            PRAGMA auto_vacuum = INCREMENTAL;
-        ",
-            locking_mode
-        )
-        .as_str(),
-    )
-    .await
-    .expect("Failed to setup the database");
+    pool.execute("PRAGMA foreign_keys = ON;")
+        .await
+        .expect("Failed to set PRAGMA foreign_keys");
+    pool.execute(format!("PRAGMA locking_mode = {};", locking_mode).as_str())
+        .await
+        .expect("Failed to set PRAGMA locking_mode");
+    pool.execute("PRAGMA journal_mode = WAL;")
+        .await
+        .expect("Failed to set PRAGMA journal_mode");
+    pool.execute("PRAGMA synchronous = NORMAL;")
+        .await
+        .expect("Failed to set PRAGMA synchronous");
+    pool.execute("PRAGMA temp_store = MEMORY;")
+        .await
+        .expect("Failed to set PRAGMA temp_store");
+    pool.execute("PRAGMA mmap_size = 268435456;")
+        .await
+        .expect("Failed to set PRAGMA mmap_size");
+    pool.execute("PRAGMA cache_size = 10000;")
+        .await
+        .expect("Failed to set PRAGMA cache_size");
+    pool.execute("PRAGMA auto_vacuum = INCREMENTAL;")
+        .await
+        .expect("Failed to set PRAGMA auto_vacuum");
 
     MIGRATOR
         .run(&pool)

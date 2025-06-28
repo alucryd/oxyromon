@@ -75,8 +75,8 @@ async fn test() {
         &PreferredRegion::None,
         &PreferredVersion::None,
         &[],
-        &SubfolderScheme::None,
-        &SubfolderScheme::Alpha,
+        &None,
+        &Some(SubfolderScheme::Alpha),
         false,
     )
     .await
