@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE games\n            SET sorting = ?\n            WHERE id = ?\n            AND sorting != ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "4c6211e15c794f5a291d6d3a9dea41cffc6ae444f072c9e1af4f69dd8f1de67b"
+}

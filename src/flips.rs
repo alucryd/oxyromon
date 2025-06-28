@@ -22,7 +22,7 @@ pub struct XpsRomfile {
     pub xps_type: XpsType,
 }
 
-impl PatchFile for XpsRomfile {
+impl Patch for XpsRomfile {
     async fn patch<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,

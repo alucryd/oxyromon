@@ -1,7 +1,6 @@
-use super::super::database::*;
-use super::*;
-use std::path::PathBuf;
 use tempfile::{NamedTempFile, TempDir};
+
+use super::*;
 
 #[tokio::test]
 async fn test() {
@@ -9,37 +8,52 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
-
     let db_file = NamedTempFile::new().unwrap();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
     let rom_directory = TempDir::new_in(&test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
-    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let system = System {
         id: 1,
-        name: String::from("Non-Redump - Sony - PlayStation Portable"),
+        name: String::from("Test System"),
         custom_name: None,
         description: String::from(""),
         version: String::from(""),
-        url: None,
+        url: Some(String::from("")),
         arcade: false,
+        merging: Merging::Split as i64,
         completion: 0,
-        merging: Merging::NonMerged as i64,
         custom_extension: None,
+    };
+    let game = Game {
+        id: 1,
+        name: String::from("game name"),
+        description: String::from(""),
+        comment: None,
+        external_id: None,
+        device: false,
+        bios: false,
+        jbfolder: false,
+        regions: String::from(""),
+        sorting: Sorting::AllRegions as i64,
+        completion: 0,
+        system_id: 1,
+        parent_id: None,
+        bios_id: None,
+        playlist_id: None,
     };
 
     // when
-    let system_directory = get_system_directory(&mut connection, &system)
+    let path = game
+        .get_playlist_path(&mut connection, &system, &None)
         .await
         .unwrap();
 
     // then
     assert_eq!(
-        system_directory.file_name().unwrap().to_str().unwrap(),
-        "Sony - PlayStation Portable"
+        path,
+        rom_directory.path().join(system.name).join("game name.m3u")
     );
 }

@@ -26,28 +26,26 @@ async fn test() {
 
     let matches = import_dats::subcommand().get_matches_from(&[
         "import-dats",
-        "tests/Test System (20200721) (Parent-Clone).dat",
+        "-e",
+        "ext",
+        "tests/Test System (20000000).dat",
     ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let romfile_names = vec![
-        "Test Game (Asia).rom",
-        "Test Game (Japan).rom",
-        "Test Game (USA, Europe) (Beta).rom",
-    ];
-    for romfile_name in &romfile_names {
-        let romfile_path = tmp_directory.join(romfile_name);
-        fs::copy(test_directory.join(romfile_name), &romfile_path)
-            .await
-            .unwrap();
-        let matches = import_roms::subcommand()
-            .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
-    }
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe).rom"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    let matches = import_roms::subcommand()
+        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+    import_roms::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
     let system_directory = get_system_directory(&mut connection, &system)
@@ -55,7 +53,7 @@ async fn test() {
         .unwrap();
 
     let all_regions = vec![];
-    let one_regions = vec![Region::UnitedStates, Region::Europe];
+    let one_regions = vec![];
 
     // when
     sort_system(
@@ -77,30 +75,25 @@ async fn test() {
         &[],
         &None,
         &None,
-        true,
+        false,
     )
     .await
     .unwrap();
 
     // then
     let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
-    assert_eq!(3, romfiles.len());
+    assert_eq!(1, romfiles.len());
 
-    let trash_indices = vec![0, 1, 2];
-
-    for i in trash_indices {
-        let romfile = romfiles.get(i).unwrap();
-        assert_eq!(
-            &system_directory
-                .join("Trash")
-                .join(&romfile_names.get(i).unwrap())
-                .strip_prefix(&rom_directory)
-                .unwrap()
-                .as_os_str()
-                .to_str()
-                .unwrap(),
-            &romfile.path
-        );
-        assert!(rom_directory.path().join(&romfile.path).is_file());
-    }
+    let romfile = romfiles.get(0).unwrap();
+    assert_eq!(
+        &system_directory
+            .join("Test Game (USA, Europe).ext")
+            .strip_prefix(&rom_directory)
+            .unwrap()
+            .as_os_str()
+            .to_str()
+            .unwrap(),
+        &romfile.path
+    );
+    assert!(rom_directory.path().join(&romfile.path).is_file());
 }

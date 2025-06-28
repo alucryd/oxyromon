@@ -32,6 +32,7 @@ async fn test() {
         arcade: false,
         completion: 0,
         merging: Merging::NonMerged as i64,
+        custom_extension: None,
     };
 
     // when
