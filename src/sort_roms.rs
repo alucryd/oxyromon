@@ -949,6 +949,10 @@ mod test_sort_1g1r_without_parent_clone;
 #[cfg(test)]
 mod test_sort_1g1r_without_roms;
 #[cfg(test)]
+mod test_sort_archive_custom_extension;
+#[cfg(test)]
+mod test_sort_custom_extension;
+#[cfg(test)]
 mod test_sort_discard_asia;
 #[cfg(test)]
 mod test_sort_discard_asia_and_beta;

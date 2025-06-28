@@ -62,12 +62,16 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.enable_steady_tick(Duration::from_millis(100));
         progress_bar.println(format!("Renaming \"{}\" to \"{}\"", &self.path, new_path));
 
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
+        command
             .arg("rn")
             .arg("--")
             .arg(&self.romfile.path)
             .arg(&self.path)
-            .arg(new_path)
+            .arg(new_path);
+        log::debug!("{:?}", command);
+
+        let output = command
             .output()
             .await
             .expect("Failed to rename file in archive");
