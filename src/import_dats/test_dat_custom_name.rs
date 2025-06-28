@@ -1,3 +1,4 @@
+use super::super::config::*;
 use super::super::database::*;
 use super::*;
 use std::path::PathBuf;
@@ -30,6 +31,7 @@ async fn test() {
         &datfile_xml,
         &detector_xml,
         Some(&String::from("Custom Test System")),
+        None,
         false,
     )
     .await

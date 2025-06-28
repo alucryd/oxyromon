@@ -3,21 +3,44 @@ use infer::{Infer, Type};
 use simple_error::SimpleResult;
 use std::path::Path;
 
+pub const BIN_EXTENSION: &str = "bin";
 pub const BPS_EXTENSION: &str = "bps";
 pub const CHD_EXTENSION: &str = "chd";
+pub const CIA_EXTENSION: &str = "cia";
 pub const CSO_EXTENSION: &str = "cso";
+pub const CUE_EXTENSION: &str = "cue";
+pub const DAT_EXTENSION: &str = "dat";
 pub const GZ_EXTENSION: &str = "gz";
 pub const IPS_EXTENSION: &str = "ips";
 pub const IRD_EXTENSION: &str = "ird";
 pub const ISO_EXTENSION: &str = "iso";
+pub const M3U_EXTENSION: &str = "m3u";
+pub const NSP_EXTENSION: &str = "nsp";
+pub const NSZ_EXTENSION: &str = "nsz";
+pub const PKG_EXTENSION: &str = "pkg";
+pub const PUP_EXTENSION: &str = "pup";
+pub const RAP_EXTENSION: &str = "rap";
 pub const RDSK_EXTENSION: &str = "rdsk";
 pub const RIFF_EXTENSION: &str = "riff";
 pub const RVZ_EXTENSION: &str = "rvz";
+pub const SEVENZIP_EXTENSION: &str = "7z";
+pub const WBFS_EXTENSION: &str = "wbfs";
 pub const XDELTA_EXTENSION: &str = "xdelta";
+pub const ZIP_EXTENSION: &str = "zip";
 pub const ZSO_EXTENSION: &str = "zso";
 
-pub const NON_ORIGINAL_EXTENSIONS: [&str; 4] =
-    [CHD_EXTENSION, CSO_EXTENSION, RVZ_EXTENSION, ZSO_EXTENSION];
+pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
+pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
+
+pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[
+    CHD_EXTENSION,
+    CSO_EXTENSION,
+    NSZ_EXTENSION,
+    RVZ_EXTENSION,
+    ZSO_EXTENSION,
+    SEVENZIP_EXTENSION,
+    ZIP_EXTENSION,
+];
 
 static MATCHER: OnceCell<Infer> = OnceCell::new();
 

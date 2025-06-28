@@ -17,7 +17,7 @@ pub struct XdeltaRomfile {
     pub romfile: CommonRomfile,
 }
 
-impl PatchFile for XdeltaRomfile {
+impl Patch for XdeltaRomfile {
     async fn patch<P: AsRef<std::path::Path>>(
         &self,
         progress_bar: &indicatif::ProgressBar,

@@ -1430,15 +1430,9 @@ pub async fn import_other(
         )
         .await?;
         if let Some((rom, game, system)) = rom_game_system {
-            let system_directory = get_system_directory(connection, &system).await?;
-            let new_path;
-            // put arcade roms and JB folders in subdirectories
-            if system.arcade || game.jbfolder {
-                let game = find_game_by_id(connection, rom.game_id).await;
-                new_path = system_directory.join(game.name).join(&rom.name);
-            } else {
-                new_path = system_directory.join(&rom.name);
-            }
+            let new_path = romfile
+                .get_sorted_path(connection, &system, &game, &rom, &None, &None)
+                .await?;
             // move file if needed
             romfile.rename(progress_bar, &new_path, false).await?;
             // persist in database

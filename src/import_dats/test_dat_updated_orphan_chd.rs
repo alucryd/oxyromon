@@ -1,4 +1,5 @@
 use super::super::chdman;
+use super::super::config::*;
 use super::super::database::*;
 use super::*;
 use std::cmp::Ordering;
@@ -38,6 +39,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
+        None,
         None,
         false,
     )
@@ -96,6 +98,7 @@ async fn test() {
         &progress_bar,
         &datfile_xml,
         &detector_xml,
+        None,
         None,
         false,
     )

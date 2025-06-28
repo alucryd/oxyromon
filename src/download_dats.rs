@@ -299,6 +299,7 @@ async fn download_redump_dat(
                         &datfile_xml,
                         &detector_xml,
                         None,
+                        None,
                         force,
                     )
                     .await?;

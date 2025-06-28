@@ -2243,10 +2243,9 @@ async fn to_original(
                     .await?;
                 cue_bin_romfile
                     .cue_romfile
-                    .rename(
+                    .copy(
                         progress_bar,
-                        &destination_directory
-                            .join(cue_bin_romfile.cue_romfile.path.file_name().unwrap()),
+                        &destination_directory,
                         false,
                     )
                     .await?;

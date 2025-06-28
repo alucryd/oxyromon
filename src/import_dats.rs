@@ -1,6 +1,5 @@
 use super::SimpleResult;
 use super::common::*;
-use super::config::*;
 use super::database::*;
 use super::import_roms::import_rom;
 use super::mimetype::*;
@@ -72,6 +71,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(1),
         )
+        .arg(
+            Arg::new("EXTENSION")
+                .short('e')
+                .long("extension")
+                .help("Customize the system extension")
+                .required(false)
+                .num_args(1),
+        )
 }
 
 pub async fn main(
@@ -100,7 +107,6 @@ pub async fn main(
     }
 
     let custom_name = matches.get_one::<String>("NAME");
-
     if custom_name.is_some() {
         if dat_paths.len() > 1 {
             progress_bar.println("Custom system name requires a single DAT file");
@@ -111,6 +117,14 @@ pub async fn main(
             .is_some()
         {
             progress_bar.println("Custom system name must not match a known system name");
+            return Ok(());
+        }
+    }
+
+    let custom_extension = matches.get_one::<String>("EXTENSION");
+    if custom_extension.is_some() {
+        if dat_paths.len() > 1 {
+            progress_bar.println("Custom system name requires a single DAT file");
             return Ok(());
         }
     }
@@ -126,6 +140,24 @@ pub async fn main(
             matches.get_flag("SKIP_HEADER"),
         )
         .await?;
+
+        if custom_extension.is_some() {
+            let games = if !datfile_xml.machines.is_empty() {
+                &datfile_xml.machines
+            } else {
+                &datfile_xml.games
+            };
+
+            for game in games {
+                if game.roms.len() + game.disks.len() > 1 {
+                    progress_bar.println(
+                        "Custom extension cannot be used with games that have multiple ROMs",
+                    );
+                    return Ok(());
+                }
+            }
+        }
+
         if !matches.get_flag("INFO") {
             import_dat(
                 connection,
@@ -133,13 +165,13 @@ pub async fn main(
                 &datfile_xml,
                 &detector_xml,
                 custom_name,
+                custom_extension,
                 matches.get_flag("FORCE"),
             )
             .await?;
         }
         progress_bar.println("");
     }
-
     Ok(())
 }
 
@@ -195,6 +227,7 @@ pub async fn import_dat(
     datfile_xml: &DatfileXml,
     detector_xml: &Option<DetectorXml>,
     custom_name: Option<&String>,
+    custom_extension: Option<&String>,
     force: bool,
 ) -> SimpleResult<()> {
     progress_bar.println("Processing system");
@@ -207,6 +240,7 @@ pub async fn import_dat(
         progress_bar,
         &datfile_xml.system,
         custom_name,
+        custom_extension,
         !datfile_xml.machines.is_empty(),
         force,
     )
@@ -318,20 +352,37 @@ async fn create_or_update_system(
     progress_bar: &ProgressBar,
     system_xml: &SystemXml,
     custom_name: Option<&String>,
+    custom_extension: Option<&String>,
     arcade: bool,
     force: bool,
 ) -> Option<i64> {
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                update_system_from_xml(connection, system.id, system_xml, custom_name, arcade)
-                    .await;
+                update_system_from_xml(
+                    connection,
+                    system.id,
+                    system_xml,
+                    custom_name,
+                    custom_extension,
+                    arcade,
+                )
+                .await;
                 Some(system.id)
             } else {
                 None
             }
         }
-        None => Some(create_system_from_xml(connection, system_xml, custom_name, arcade).await),
+        None => Some(
+            create_system_from_xml(
+                connection,
+                system_xml,
+                custom_name,
+                custom_extension,
+                arcade,
+            )
+            .await,
+        ),
     }
 }
 

@@ -1,6 +1,6 @@
 use super::SimpleResult;
 use super::common::*;
-use super::config::*;
+use super::mimetype::*;
 use super::progress::*;
 use indicatif::ProgressBar;
 use lazy_static::lazy_static;

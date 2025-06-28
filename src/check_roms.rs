@@ -1,7 +1,6 @@
 use super::chdman;
 use super::chdman::AsChd;
 use super::common::*;
-use super::config::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::AsRvz;

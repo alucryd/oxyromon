@@ -1,9 +1,8 @@
-use super::super::config::*;
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
+use super::super::util::*;
 use super::*;
-use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
@@ -25,8 +24,12 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+    let matches = import_dats::subcommand().get_matches_from(&[
+        "import-dats",
+        "-e",
+        "ext",
+        "tests/Test System (20000000).dat",
+    ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -38,27 +41,60 @@ async fn test() {
     )
     .await
     .unwrap();
-
-    let system = find_systems(&mut connection).await.remove(0);
-
     let matches = import_roms::subcommand()
         .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let games = find_full_games_by_system_id(&mut connection, system.id).await;
-
-    // when
-    check_system(&mut connection, &progress_bar, &system, games, false)
+    let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &system)
         .await
         .unwrap();
 
-    // then
-    let mut romfiles = find_romfiles(&mut connection).await;
-    assert_eq!(romfiles.len(), 1);
+    let all_regions = vec![];
+    let one_regions = vec![Region::UnitedStates, Region::Europe];
 
-    let romfile = romfiles.remove(0);
-    assert!(!romfile.path.contains("/Trash/"));
-    assert!(&rom_directory.path().join(&romfile.path).is_file());
+    // when
+    sort_system(
+        &mut connection,
+        &progress_bar,
+        true,
+        false,
+        &system,
+        &all_regions,
+        &one_regions,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        true,
+        &PreferredRegion::None,
+        &PreferredVersion::None,
+        &[],
+        &None,
+        &None,
+        false,
+    )
+    .await
+    .unwrap();
+
+    // then
+    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    assert_eq!(1, romfiles.len());
+
+    let romfile = romfiles.get(0).unwrap();
+    assert_eq!(
+        &system_directory
+            .join("1G1R")
+            .join("Test Game (USA, Europe).7z")
+            .strip_prefix(&rom_directory)
+            .unwrap()
+            .as_os_str()
+            .to_str()
+            .unwrap(),
+        &romfile.path
+    );
+    assert!(rom_directory.path().join(&romfile.path).is_file());
 }
