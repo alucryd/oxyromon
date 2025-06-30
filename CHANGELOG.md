@@ -4,6 +4,8 @@
 - Retire the hash algorithm override in `import-roms`
 - Repurpose the `-a` flag in `import-roms` to import files as-is (support non original formats in DAT files)
 - Fix an infinite loop while importing DAT files containing invalid parent references
+- Add `-e` to `import-dats` to set a custom extension for original ROMs in the system
+- Add support for exporting Dreamcast Redump images to GDI in `export-roms`
 
 # 0.20.2
 
