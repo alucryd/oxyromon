@@ -61,6 +61,7 @@ mod dolphin;
 mod download_dats;
 mod export_roms;
 mod flips;
+mod gdidrop;
 mod generate_playlists;
 mod import_dats;
 mod import_irds;

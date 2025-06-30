@@ -39,6 +39,8 @@ pub struct CueBinRomfile {
     pub bin_romfiles: Vec<CommonRomfile>,
 }
 
+
+
 // === CORE TRAITS ===
 pub trait FromPath<T> {
     fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<T>;
@@ -99,6 +101,8 @@ pub trait AsCueBin {
     fn as_cue_bin(self, bin_romfiles: Vec<CommonRomfile>) -> SimpleResult<CueBinRomfile>;
 }
 
+
+
 pub trait ToIso {
     async fn to_iso<P: AsRef<Path>>(
         &self,
@@ -117,6 +121,8 @@ pub trait ToCueBin {
         quiet: bool,
     ) -> SimpleResult<CueBinRomfile>;
 }
+
+
 
 // === SPECIALIZED TRAITS ===
 pub trait Patch {
@@ -678,6 +684,10 @@ impl AsCueBin for CommonRomfile {
     }
 }
 
+
+
+
+
 // === PLAYLIST IMPLEMENTATIONS ===
 impl Playlist for Game {
     async fn get_playlist_path(
@@ -747,3 +757,9 @@ mod test_path_rvz;
 mod test_path_subfolder_alpha_letter;
 #[cfg(test)]
 mod test_path_subfolder_alpha_other;
+
+
+
+
+
+

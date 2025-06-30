@@ -7,6 +7,7 @@ use super::config::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
+use super::gdidrop::*;
 use super::maxcso;
 use super::maxcso::{AsXso, ToXso, XsoType};
 use super::mimetype::*;
@@ -32,7 +33,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 const ALL_FORMATS: &[&str] = &[
-    "ORIGINAL", "7Z", "CHD", "CSO", "ISO", "NSZ", "RVZ", "WBFS", "ZIP", "ZSO",
+    "ORIGINAL", "7Z", "CHD", "CSO", "GDI", "ISO", "NSZ", "RVZ", "WBFS", "ZIP", "ZSO",
 ];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
@@ -159,7 +160,7 @@ pub async fn main(
                 return Ok(());
             }
         }
-        "ORIGINAL" => {}
+        "GDI" | "ORIGINAL" => {}
         _ => bail!("Not supported"),
     }
 
@@ -175,6 +176,13 @@ pub async fn main(
                 == Ordering::Less
         {
             progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
+            continue;
+        }
+
+        if format == "GDI"
+            && !system.name.contains("Dreamcast")
+        {
+            progress_bar.println("GDI is only for Dreamcast");
             continue;
         }
 
@@ -319,6 +327,16 @@ pub async fn main(
             }
             "CSO" => {
                 to_cso(
+                    connection,
+                    progress_bar,
+                    &destination_directory,
+                    roms_by_game_id,
+                    romfiles_by_id,
+                )
+                .await?
+            }
+            "GDI" => {
+                to_gdi(
                     connection,
                     progress_bar,
                     &destination_directory,
@@ -1312,6 +1330,245 @@ async fn to_cso(
             false,
         )
         .await?;
+    }
+
+    Ok(())
+}
+
+async fn to_gdi(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    destination_directory: &PathBuf,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+) -> SimpleResult<()> {
+    // partition archives
+    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
+        roms_by_game_id.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
+            })
+        });
+
+    // partition CHDs
+    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CHD_EXTENSION)
+            })
+        });
+
+    // partition CUE/BINs
+    let (cue_bins, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(CUE_EXTENSION)
+            }) && roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(BIN_EXTENSION)
+            })
+        });
+
+    // partition GDIs (already in GDI format)
+    let (gdis, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
+        others.into_iter().partition(|(_, roms)| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(GDI_EXTENSION)
+            })
+        });
+
+    drop(others);
+
+    // export archives containing CUE/BIN
+    for roms in archives.values() {
+        let mut romfiles: Vec<&Romfile> = roms
+            .iter()
+            .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
+            .collect();
+        romfiles.dedup();
+        if romfiles.len() > 1 {
+            bail!("Multiple archives found");
+        }
+        if roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
+            let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+                .iter()
+                .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+            let tmp_directory = create_tmp_directory(connection).await?;
+            let romfile = romfiles.first().unwrap();
+            let cue_rom = cue_roms.first().unwrap();
+            let cue_romfile = romfile
+                .as_common(connection)
+                .await?
+                .as_archive(progress_bar, Some(cue_rom))
+                .await?
+                .first()
+                .unwrap()
+                .to_common(progress_bar, &tmp_directory.path())
+                .await?;
+            
+            let mut bin_romfiles: Vec<CommonRomfile> = vec![];
+            for bin_rom in &bin_roms {
+                let bin_romfile = romfile
+                    .as_common(connection)
+                    .await?
+                    .as_archive(progress_bar, Some(bin_rom))
+                    .await?
+                    .first()
+                    .unwrap()
+                    .to_common(progress_bar, &tmp_directory.path())
+                    .await?;
+                bin_romfiles.push(bin_romfile);
+            }
+            
+            cue_romfile
+                .as_cue_bin(bin_romfiles)?
+                .to_gdi(progress_bar, destination_directory)
+                .await?;
+        }
+    }
+
+    // export CHDs
+    for roms in chds.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let romfile = romfiles_by_id
+            .get(&bin_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap();
+        let chd_romfile = match romfile.parent_id {
+            Some(parent_id) => {
+                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
+                    .await
+                    .as_common(connection)
+                    .await?
+                    .as_chd()
+                    .await?;
+                romfile
+                    .as_common(connection)
+                    .await?
+                    .as_chd_with_parent(parent_chd_romfile)
+                    .await?
+            }
+            None => romfile.as_common(connection).await?.as_chd().await?,
+        };
+        
+        // Only convert CD-type CHDs (Dreamcast games)
+        if chd_romfile.chd_type == ChdType::Cd {
+            if chd_romfile.track_count > 1
+                && chdman::get_version()
+                    .await?
+                    .as_str()
+                    .cmp(chdman::MIN_SPLITBIN_VERSION)
+                    == Ordering::Less
+            {
+                progress_bar.println(format!(
+                    "Older chdman versions don't support splitbin, please update to {} or newer",
+                    chdman::MIN_SPLITBIN_VERSION
+                ));
+                continue;
+            }
+            
+            let cue_rom = cue_roms.first().unwrap();
+            let cue_romfile = romfiles_by_id
+                .get(&cue_rom.romfile_id.unwrap())
+                .unwrap()
+                .as_common(connection)
+                .await?;
+            chd_romfile
+                .to_cue_bin(
+                    progress_bar,
+                    &tmp_directory.path(),
+                    Some(cue_romfile),
+                    &bin_roms,
+                    true,
+                )
+                .await?
+                .to_gdi(progress_bar, destination_directory)
+                .await?;
+        }
+    }
+
+    // export CUE/BIN
+    for roms in cue_bins.values() {
+        let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
+        let cue_romfile = romfiles_by_id
+            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?;
+        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
+        for bin_rom in &bin_roms {
+            bin_romfiles.push(
+                romfiles_by_id
+                    .get(&bin_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(connection)
+                    .await?,
+            );
+        }
+        cue_romfile
+            .as_cue_bin(bin_romfiles)?
+            .to_gdi(progress_bar, destination_directory)
+            .await?;
+    }
+
+    // copy existing GDI files
+    for roms in gdis.values() {
+        // Find the main GDI file and associated track files
+        let (gdi_roms, track_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            .iter()
+            .partition(|rom| rom.name.ends_with(GDI_EXTENSION));
+        
+        if gdi_roms.len() != 1 {
+            continue; // Skip if we don't have exactly one GDI file
+        }
+        
+        let gdi_romfile = romfiles_by_id
+            .get(&gdi_roms.first().unwrap().romfile_id.unwrap())
+            .unwrap()
+            .as_common(connection)
+            .await?;
+        
+        let mut track_romfiles: Vec<CommonRomfile> = vec![];
+        for track_rom in &track_roms {
+            track_romfiles.push(
+                romfiles_by_id
+                    .get(&track_rom.romfile_id.unwrap())
+                    .unwrap()
+                    .as_common(connection)
+                    .await?,
+            );
+        }
+        
+        // Create GdiRomfile and copy to destination
+        let gdi_romfile_set = gdi_romfile.as_gdi(track_romfiles)?;
+        
+        // Copy main GDI file
+        gdi_romfile_set.gdi_romfile.copy(progress_bar, destination_directory, false).await?;
+        
+        // Copy all track files
+        for track_romfile in &gdi_romfile_set.track_romfiles {
+            track_romfile.copy(progress_bar, destination_directory, false).await?;
+        }
     }
 
     Ok(())
