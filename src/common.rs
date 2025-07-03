@@ -722,6 +722,8 @@ impl Playlist for Game {
 
 // === TESTS ===
 #[cfg(test)]
+mod test_path_archive_custom_extension;
+#[cfg(test)]
 mod test_path_archive_multiple_files;
 #[cfg(test)]
 mod test_path_archive_single_file;
@@ -731,8 +733,6 @@ mod test_path_chd_multiple_tracks;
 mod test_path_chd_single_track;
 #[cfg(test)]
 mod test_path_cso;
-#[cfg(test)]
-mod test_path_archive_custom_extension;
 #[cfg(test)]
 mod test_path_custom_extension;
 #[cfg(test)]
