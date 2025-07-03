@@ -2,9 +2,9 @@
 
 mkdir -p dist
 
-export SKIP_YARN=true
-
 export CROSS_CONTAINER_ENGINE=podman
+export PATH="/opt/llvm-mingw/llvm-mingw-ucrt/bin/:$PATH"
+export SKIP_YARN=true
 
 for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
     yarn install
@@ -17,7 +17,7 @@ for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknow
     cargo clean
 done
 
-for target in x86_64-pc-windows-gnu; do
+for target in x86_64-pc-windows-gnullvm; do
     yarn install
     yarn build
     cross build \

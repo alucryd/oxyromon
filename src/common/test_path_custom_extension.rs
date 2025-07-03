@@ -72,14 +72,7 @@ async fn test() {
         .as_common(&mut connection)
         .await
         .unwrap()
-        .get_sorted_path(
-            &mut connection,
-            &system,
-            &game,
-            &rom,
-            &None,
-            &None,
-        )
+        .get_sorted_path(&mut connection, &system, &game, &rom, &None, &None)
         .await
         .unwrap();
 

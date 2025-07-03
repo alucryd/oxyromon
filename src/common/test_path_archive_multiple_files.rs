@@ -84,5 +84,8 @@ async fn test() {
         .unwrap();
 
     // then
-    assert_eq!(path, rom_directory.path().join(system.name).join("game name.7z"));
+    assert_eq!(
+        path,
+        rom_directory.path().join(system.name).join("game name.7z")
+    );
 }
