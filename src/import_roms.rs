@@ -26,6 +26,7 @@ use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
+use strsim::jaro_winkler;
 use strum::IntoEnumIterator;
 use walkdir::WalkDir;
 
@@ -495,7 +496,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                         .await?;
 
                     let rom: Option<&Rom>;
-                    let roms = find_roms_without_romfile_by_size_and_md5_and_parent_id(
+                    let mut roms = find_roms_without_romfile_by_size_and_md5_and_parent_id(
                         &mut transaction,
                         size,
                         &md5,
@@ -536,12 +537,33 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     }) {
                         rom = roms.get(rom_index);
                         progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                    } else if unattended {
+                        // order roms by distance to the file name
+                        roms.sort_by(|a, b| {
+                            let a_distance = jaro_winkler(
+                                &entry
+                                    .path()
+                                    .file_name()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap()
+                                    .to_lowercase(),
+                                &a.name.to_lowercase(),
+                            );
+                            let b_distance = jaro_winkler(
+                                &entry
+                                    .path()
+                                    .file_name()
+                                    .unwrap()
+                                    .to_str()
+                                    .unwrap()
+                                    .to_lowercase(),
+                                &b.name.to_lowercase(),
+                            );
+                            a_distance.partial_cmp(&b_distance).unwrap()
+                        });
+                        rom = roms.first();
                     } else {
-                        // skip if unattended
-                        if unattended {
-                            progress_bar.println("Multiple matches, skipping");
-                        }
-                        // let the user select the rom if all else fails
                         rom = prompt_for_rom(&roms, None)?;
                     }
 
@@ -849,7 +871,7 @@ async fn import_chd(
                             &new_game_ids
                         },
                         &[],
-                        None,
+                        chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
                     )
@@ -925,7 +947,7 @@ async fn import_chd(
                     system,
                     game_ids,
                     &[],
-                    None,
+                    chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
                 )
@@ -940,7 +962,7 @@ async fn import_chd(
                         system,
                         game_ids,
                         &[],
-                        None,
+                        chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
                     )
@@ -991,7 +1013,7 @@ async fn import_chd(
                     system,
                     game_ids,
                     &[],
-                    None,
+                    chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
                 )
@@ -1006,7 +1028,7 @@ async fn import_chd(
                         system,
                         game_ids,
                         &[],
-                        None,
+                        chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
                     )
@@ -1066,7 +1088,7 @@ async fn import_chd(
                     system,
                     game_ids,
                     &[],
-                    None,
+                    chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
                 )
@@ -1081,7 +1103,7 @@ async fn import_chd(
                         system,
                         game_ids,
                         &[],
-                        None,
+                        chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
                     )
@@ -1269,7 +1291,7 @@ async fn import_cso(
             system,
             game_ids,
             &[],
-            None,
+            cso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
         )
@@ -1326,7 +1348,7 @@ async fn import_nsz(
             system,
             game_ids,
             &[],
-            None,
+            nsz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
         )
@@ -1383,7 +1405,7 @@ async fn import_rvz(
             system,
             game_ids,
             &[],
-            None,
+            rvz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
         )
@@ -1440,7 +1462,7 @@ async fn import_zso(
             system,
             game_ids,
             &[],
-            None,
+            zso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
         )
@@ -1514,7 +1536,7 @@ pub async fn import_other(
             system,
             game_ids,
             &[],
-            None,
+            romfile.path.file_name().unwrap().to_str(),
             hash_algorithm,
             unattended,
         )
@@ -1800,9 +1822,18 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
-    // skip if unattended
-    } else if unattended {
-        progress_bar.println("Multiple matches, skipping");
+    // select the first rom by distance to the file name if unattended
+    } else if unattended && let Some(rom_name) = rom_name {
+        roms.sort_by(|a, b| {
+            let a_distance = jaro_winkler(&rom_name.to_lowercase(), &a.name.to_lowercase());
+            let b_distance = jaro_winkler(&rom_name.to_lowercase(), &b.name.to_lowercase());
+            a_distance.partial_cmp(&b_distance).unwrap()
+        });
+        let rom = roms.remove(0);
+        let game = find_game_by_id(connection, rom.game_id).await;
+        let system = find_system_by_id(connection, game.system_id).await;
+        progress_bar.println(format!("Matches \"{}\"", &rom.name));
+        rom_game_system = Some((rom, game, system));
     } else if system.is_some() {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
