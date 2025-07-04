@@ -283,12 +283,12 @@ That way they will be physically grouped in a single `MAME` folder and work in M
         <DATS>...  Set the DAT files to import
 
     Options:
-        -i, --info         Show the DAT information and exit
-        -s, --skip-header  Skip parsing the header even if the system has one
-        -f, --force        Force import of outdated DAT files
+        -i, --info                   Show the DAT information and exit
+        -s, --skip-header            Skip parsing the header even if the system has one
+        -f, --force                  Force import of outdated DAT files
         -n, --name <NAME>            Customize the system name
         -e, --extension <EXTENSION>  Customize the system extension
-        -h, --help         Print help information
+        -h, --help                   Print help information
 
 ## oxyromon-download-dats
 
@@ -308,12 +308,13 @@ Supported DAT providers:
       Usage: oxyromon download-dats [OPTIONS]
 
       Options:
-          -n, --nointro  Download No-Intro DAT files
-          -r, --redump   Download Redump DAT files
-          -u, --update   Check for system updates
-          -a, --all      Import all systems
-          -f, --force    Force import of outdated DAT files
-          -h, --help     Print help information
+          -n, --nointro                 Download No-Intro DAT files
+          -r, --redump                  Download Redump DAT files
+          -u, --update                  Check for system updates
+          -a, --all                     Import all systems
+          -f, --force                   Force import of outdated DAT files
+          -s, --save <DIRECTORY>        Save downloaded DAT files to the specified directory
+          -h, --help                    Print help information
 
 ## oxyromon-create-dats
 

@@ -13,6 +13,7 @@ use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::io::Cursor;
+use std::path::PathBuf;
 use tokio::time::{Duration, sleep};
 use zip::read::ZipArchive;
 
@@ -133,6 +134,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("SAVE_DIRECTORY")
+                .short('s')
+                .long("save")
+                .help("Save downloaded DAT files to the specified directory")
+                .required(false)
+                .value_name("DIRECTORY"),
+        )
 }
 
 pub async fn main(
@@ -140,6 +149,8 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    let save_directory = matches.get_one::<String>("SAVE_DIRECTORY");
+
     if matches.get_flag("NOINTRO") {
         if matches.get_flag("UPDATE") {
             update_nointro_dats(
@@ -160,6 +171,7 @@ pub async fn main(
                 REDUMP_BASE_URL,
                 matches.get_flag("ALL"),
                 matches.get_flag("FORCE"),
+                save_directory.map(|s| s.as_str()),
             )
             .await?
         } else {
@@ -168,6 +180,7 @@ pub async fn main(
                 progress_bar,
                 REDUMP_BASE_URL,
                 matches.get_flag("ALL"),
+                save_directory.map(|s| s.as_str()),
             )
             .await?
         }
@@ -214,6 +227,7 @@ async fn download_redump_dats(
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
+    save_directory: Option<&str>,
 ) -> SimpleResult<()> {
     let system_names: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
         .await
@@ -238,6 +252,7 @@ async fn download_redump_dats(
             base_url,
             items.get(i).unwrap(),
             false,
+            save_directory,
         )
         .await?;
     }
@@ -250,11 +265,20 @@ async fn update_redump_dats(
     base_url: &str,
     all: bool,
     force: bool,
+    save_directory: Option<&str>,
 ) -> SimpleResult<()> {
     let systems =
         prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, false, all).await?;
     for system in systems {
-        download_redump_dat(connection, progress_bar, base_url, &system.name, force).await?;
+        download_redump_dat(
+            connection,
+            progress_bar,
+            base_url,
+            &system.name,
+            force,
+            save_directory,
+        )
+        .await?;
     }
     Ok(())
 }
@@ -265,6 +289,7 @@ async fn download_redump_dat(
     base_url: &str,
     system_name: &str,
     force: bool,
+    save_directory: Option<&str>,
 ) -> SimpleResult<()> {
     progress_bar.println(format!("Processing \"{}\"", system_name));
     let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
@@ -285,14 +310,24 @@ async fn download_redump_dat(
                 0 => progress_bar.println("ZIP is empty"),
                 1 => {
                     try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
-                    let (datfile_xml, detector_xml) = parse_dat(
-                        progress_bar,
-                        &tmp_directory
-                            .path()
-                            .join(zip_archive.file_names().next().unwrap()),
-                        true,
-                    )
-                    .await?;
+                    let dat_file_name = zip_archive.file_names().next().unwrap();
+                    let dat_file_path = tmp_directory.path().join(dat_file_name);
+
+                    // Save DAT file to specified directory if requested
+                    if let Some(save_directory) = save_directory {
+                        let save_directory = PathBuf::from(save_directory);
+                        create_directory(progress_bar, &save_directory, false).await?;
+                        copy_file(
+                            progress_bar,
+                            &dat_file_path,
+                            &save_directory.join(dat_file_name),
+                            false,
+                        )
+                        .await?;
+                    }
+
+                    let (datfile_xml, detector_xml) =
+                        parse_dat(progress_bar, &dat_file_path, true).await?;
                     import_dat(
                         connection,
                         progress_bar,
