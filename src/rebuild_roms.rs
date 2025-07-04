@@ -182,6 +182,7 @@ async fn rebuild_system(
                 new_romfile,
                 false,
                 false,
+                false,
             )
             .await?;
         }

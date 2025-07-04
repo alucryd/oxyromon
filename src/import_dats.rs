@@ -796,6 +796,7 @@ pub async fn reimport_orphan_romfiles(
                 false,
                 false,
                 false,
+                false,
             )
             .await?;
             if game_ids.is_empty() {

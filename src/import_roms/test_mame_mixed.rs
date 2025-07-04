@@ -61,6 +61,7 @@ async fn test() {
         CommonRomfile::from_path(&romfile_path).unwrap(),
         true,
         false,
+        false,
     )
     .await
     .unwrap();
@@ -71,6 +72,7 @@ async fn test() {
         &HashSet::new(),
         CommonRomfile::from_path(&chd_romfile_path).unwrap(),
         true,
+        false,
         false,
     )
     .await

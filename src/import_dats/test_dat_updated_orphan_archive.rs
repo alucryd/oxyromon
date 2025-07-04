@@ -56,6 +56,7 @@ async fn test() {
             &None,
             &romfile_path,
             true,
+            false,
             true,
             false,
             false,

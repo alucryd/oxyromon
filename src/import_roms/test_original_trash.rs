@@ -29,28 +29,24 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.7z");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Headered).rom");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom.7z"),
+        test_directory.join("Test Game (USA, Europe) (Headered).rom"),
         &romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
 
     let system = find_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system)
-        .await
-        .unwrap();
 
     // when
-    import_archive(
+    import_other(
         &mut connection,
         &progress_bar,
         &Some(&system),
         &None,
         &HashSet::new(),
         CommonRomfile::from_path(&romfile_path).unwrap(),
-        romfile_path.extension().unwrap().to_str().unwrap(),
         true,
         false,
         false,
@@ -60,32 +56,17 @@ async fn test() {
 
     // then
     let roms = find_roms_with_romfile_by_system_id(&mut connection, system.id).await;
-    assert_eq!(roms.len(), 1);
+    assert_eq!(roms.len(), 0);
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 1);
-    let games = find_games_by_ids(
-        &mut connection,
-        roms.iter()
-            .map(|rom| rom.game_id)
-            .collect::<Vec<i64>>()
-            .as_slice(),
-    )
-    .await;
-    assert_eq!(games.len(), 1);
-
-    let game = games.first().unwrap();
-    assert_eq!(game.name, "Test Game (USA, Europe)");
-    assert_eq!(game.system_id, system.id);
-
-    let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA, Europe).rom");
-    assert_eq!(rom.game_id, game.id);
 
     let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
-        system_directory
-            .join("Test Game (USA, Europe).7z")
+        rom_directory
+            .path()
+            .join("Trash")
+            .join("Test Game (USA, Europe) (Headered).rom")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
@@ -93,5 +74,4 @@ async fn test() {
             .unwrap(),
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
-    assert_eq!(rom.romfile_id, Some(romfile.id));
 }

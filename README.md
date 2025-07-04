@@ -286,6 +286,8 @@ That way they will be physically grouped in a single `MAME` folder and work in M
         -i, --info         Show the DAT information and exit
         -s, --skip-header  Skip parsing the header even if the system has one
         -f, --force        Force import of outdated DAT files
+        -n, --name <NAME>            Customize the system name
+        -e, --extension <EXTENSION>  Customize the system extension
         -h, --help         Print help information
 
 ## oxyromon-download-dats
@@ -393,10 +395,11 @@ Note: When importing MAME CHDs and uncompressed disk formats, please make sure t
     Options:
         -s, --system <SYSTEM>  Select systems by name
         -t, --trash            Trash invalid ROM files
+        -d, --delete           Delete invalid ROM files (hard delete)
         -f, --force            Force import of existing ROM files
         -u, --unattended       Skip ROM files that require human intervention
         -x, --extract          Extract top-level archives before importing their contents
-        -a, --hash <HASH>      Specify a hash algorithm [possible values: crc, md5, sha1]
+        -a, --as-is            Import ROM files as-is without converting them
         -h, --help             Print help
 
 ## oxyromon-import-patches
