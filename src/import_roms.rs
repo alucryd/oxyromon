@@ -57,6 +57,14 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("DELETE")
+                .short('d')
+                .long("delete")
+                .help("Delete invalid ROM files (hard delete)")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("FORCE")
                 .short('f')
                 .long("force")
@@ -108,6 +116,13 @@ pub async fn main(
     }
 
     let trash = matches.get_flag("TRASH");
+    let delete = matches.get_flag("DELETE");
+
+    // Validate that trash and delete are mutually exclusive
+    if trash && delete {
+        return Err("Cannot use both --trash and --delete flags simultaneously".into());
+    }
+
     let force = matches.get_flag("FORCE");
     let unattended = matches.get_flag("UNATTENDED");
     let as_is = matches.get_flag("AS_IS");
@@ -172,6 +187,7 @@ pub async fn main(
                                 &header,
                                 &entry.path(),
                                 trash,
+                                delete,
                                 force,
                                 unattended,
                                 as_is,
@@ -190,6 +206,7 @@ pub async fn main(
                     &header,
                     &path,
                     trash,
+                    delete,
                     force,
                     unattended,
                     as_is,
@@ -218,6 +235,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     header: &Option<Header>,
     path: &P,
     trash: bool,
+    delete: bool,
     force: bool,
     unattended: bool,
     as_is: bool,
@@ -273,6 +291,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             &extension,
             trash,
+            delete,
             unattended,
         )
         .await?;
@@ -290,6 +309,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?
@@ -309,6 +329,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?;
@@ -326,6 +347,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?
@@ -345,6 +367,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?
@@ -364,6 +387,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?
@@ -383,6 +407,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &game_ids,
             romfile,
             trash,
+            delete,
             unattended,
         )
         .await?
@@ -398,6 +423,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         &game_ids,
         romfile,
         trash,
+        delete,
         unattended,
     )
     .await?
@@ -571,6 +597,7 @@ async fn import_archive(
     romfile: CommonRomfile,
     romfile_extension: &str,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -671,8 +698,8 @@ async fn import_archive(
                 break;
             }
         }
-        if !matched && trash && romfiles_count == 1 {
-            move_to_trash(connection, progress_bar, &romfile).await?;
+        if !matched && (trash || delete) && romfiles_count == 1 {
+            handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
         }
     }
 
@@ -778,6 +805,7 @@ async fn import_chd(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -871,8 +899,15 @@ async fn import_chd(
                 Ok(Some([system.id, game.id]))
             } else {
                 progress_bar.println("CRC mismatch");
-                if trash {
-                    move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+                if trash || delete {
+                    handle_invalid_romfile(
+                        connection,
+                        progress_bar,
+                        &chd_romfile.romfile,
+                        trash,
+                        delete,
+                    )
+                    .await?;
                 }
                 Ok(None)
             }
@@ -931,8 +966,15 @@ async fn import_chd(
                     return Ok(Some([system.id, game.id]));
                 }
             }
-            if trash {
-                move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+            if trash || delete {
+                handle_invalid_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                )
+                .await?;
             }
             Ok(None)
         }
@@ -999,8 +1041,15 @@ async fn import_chd(
                     return Ok(Some([system.id, game.id]));
                 }
             }
-            if trash {
-                move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+            if trash || delete {
+                handle_invalid_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                )
+                .await?;
             }
             Ok(None)
         }
@@ -1067,8 +1116,15 @@ async fn import_chd(
                     return Ok(Some([system.id, game.id]));
                 }
             }
-            if trash {
-                move_to_trash(connection, progress_bar, &chd_romfile.romfile).await?;
+            if trash || delete {
+                handle_invalid_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                )
+                .await?;
             }
             Ok(None)
         }
@@ -1083,6 +1139,7 @@ async fn import_cia(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -1181,8 +1238,8 @@ async fn import_cia(
         }
     }
 
-    if trash {
-        move_to_trash(connection, progress_bar, &romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
     }
 
     Ok((new_system_ids, new_game_ids))
@@ -1196,6 +1253,7 @@ async fn import_cso(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let cso_romfile = romfile.as_xso().await?;
@@ -1231,8 +1289,15 @@ async fn import_cso(
             return Ok(Some([system.id, game.id]));
         }
     }
-    if trash {
-        move_to_trash(connection, progress_bar, &cso_romfile.romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(
+            connection,
+            progress_bar,
+            &cso_romfile.romfile,
+            trash,
+            delete,
+        )
+        .await?;
     }
     Ok(None)
 }
@@ -1245,6 +1310,7 @@ async fn import_nsz(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let nsz_romfile = romfile.as_nsz()?;
@@ -1280,8 +1346,15 @@ async fn import_nsz(
             return Ok(Some([system.id, game.id]));
         }
     }
-    if trash {
-        move_to_trash(connection, progress_bar, &nsz_romfile.romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(
+            connection,
+            progress_bar,
+            &nsz_romfile.romfile,
+            trash,
+            delete,
+        )
+        .await?;
     }
     Ok(None)
 }
@@ -1294,6 +1367,7 @@ async fn import_rvz(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let rvz_romfile = romfile.as_rvz()?;
@@ -1329,8 +1403,15 @@ async fn import_rvz(
             return Ok(Some([system.id, game.id]));
         }
     }
-    if trash {
-        move_to_trash(connection, progress_bar, &rvz_romfile.romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(
+            connection,
+            progress_bar,
+            &rvz_romfile.romfile,
+            trash,
+            delete,
+        )
+        .await?;
     }
     Ok(None)
 }
@@ -1343,6 +1424,7 @@ async fn import_zso(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let zso_romfile = romfile.as_xso().await?;
@@ -1378,8 +1460,15 @@ async fn import_zso(
             return Ok(Some([system.id, game.id]));
         }
     }
-    if trash {
-        move_to_trash(connection, progress_bar, &zso_romfile.romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(
+            connection,
+            progress_bar,
+            &zso_romfile.romfile,
+            trash,
+            delete,
+        )
+        .await?;
     }
     Ok(None)
 }
@@ -1393,6 +1482,7 @@ pub async fn import_other(
     game_ids: &HashSet<i64>,
     romfile: CommonRomfile,
     trash: bool,
+    delete: bool,
     unattended: bool,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
@@ -1440,8 +1530,8 @@ pub async fn import_other(
             return Ok(Some([system.id, game.id]));
         }
     }
-    if trash {
-        move_to_trash(connection, progress_bar, &romfile).await?;
+    if trash || delete {
+        handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
     }
     Ok(None)
 }
@@ -1842,25 +1932,31 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
     Ok(())
 }
 
-async fn move_to_trash(
+async fn handle_invalid_romfile(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     romfile: &CommonRomfile,
+    trash: bool,
+    delete: bool,
 ) -> SimpleResult<()> {
-    let new_path = get_trash_directory(connection, None)
-        .await?
-        .join(romfile.path.file_name().unwrap());
-    let new_romfile = romfile.rename(progress_bar, &new_path, false).await?;
-    match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
-        Some(romfile) => {
-            new_romfile
-                .update(connection, progress_bar, romfile.id)
-                .await?;
-        }
-        None => {
-            new_romfile
-                .create(connection, progress_bar, RomfileType::Romfile)
-                .await?;
+    if delete {
+        romfile.delete(progress_bar, false).await?;
+    } else if trash {
+        let new_path = get_trash_directory(connection, None)
+            .await?
+            .join(romfile.path.file_name().unwrap());
+        let new_romfile = romfile.rename(progress_bar, &new_path, false).await?;
+        match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {
+            Some(romfile) => {
+                new_romfile
+                    .update(connection, progress_bar, romfile.id)
+                    .await?;
+            }
+            None => {
+                new_romfile
+                    .create(connection, progress_bar, RomfileType::Romfile)
+                    .await?;
+            }
         }
     }
     Ok(())
@@ -1883,7 +1979,11 @@ mod test_multiple_tracks_chd;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
+mod test_original_delete;
+#[cfg(test)]
 mod test_original_headered;
+#[cfg(test)]
+mod test_original_trash;
 #[cfg(test)]
 mod test_rvz;
 #[cfg(test)]
