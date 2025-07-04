@@ -2,21 +2,6 @@
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
   import { onMount } from "svelte";
-  import {
-    Card,
-    CardBody,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-    Col,
-    ListGroup,
-    ListGroupItem,
-    Pagination,
-    PaginationItem,
-    PaginationLink,
-    Row,
-    Tooltip,
-  } from "sveltestrap";
 
   import {
     getGamesBySystemId,
@@ -183,7 +168,7 @@
   });
 </script>
 
-<Row class="mb-3">
+<!-- <Row class="mb-3">
   <Col sm="3" class="d-flex flex-column">
     <Card class="text-center flex-fill">
       <CardHeader>
@@ -357,4 +342,4 @@
       </Row>
     </Card>
   </Col>
-</Row>
+</Row> -->

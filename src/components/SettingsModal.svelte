@@ -1,20 +1,6 @@
 <script>
   import { faTrashCan } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
-  import {
-    Badge,
-    Button,
-    Col,
-    FormGroup,
-    Input,
-    InputGroup,
-    InputGroupText,
-    Modal,
-    ModalBody,
-    ModalHeader,
-    Row,
-    Tooltip,
-  } from "sveltestrap";
 
   import {
     addToList,
@@ -172,7 +158,7 @@
   };
 </script>
 
-<Modal isOpen={$isSettingsModalOpen} {toggle} size="xl" class="text-start">
+<!-- <Modal isOpen={$isSettingsModalOpen} {toggle} size="xl" class="text-start">
   <ModalHeader {toggle}>Settings</ModalHeader>
   <ModalBody class="pb-0">
     <h6 class="text-muted">REGIONS/LANGUAGES</h6>
@@ -429,4 +415,4 @@
       <Tooltip target="all-regions-subfolders" placement="left">Store all games in subfolders</Tooltip>
     </FormGroup>
   </ModalBody>
-</Modal>
+</Modal> -->
