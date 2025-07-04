@@ -870,7 +870,13 @@ async fn import_chd(
                         } else {
                             &new_game_ids
                         },
-                        &[],
+                        &[chd_romfile
+                            .romfile
+                            .path
+                            .file_stem()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
@@ -946,7 +952,13 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
-                    &[],
+                    &[chd_romfile
+                        .romfile
+                        .path
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
@@ -961,7 +973,13 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
-                        &[],
+                        &[chd_romfile
+                            .romfile
+                            .path
+                            .file_stem()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
@@ -1012,7 +1030,13 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
-                    &[],
+                    &[chd_romfile
+                        .romfile
+                        .path
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
@@ -1027,7 +1051,13 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
-                        &[],
+                        &[chd_romfile
+                            .romfile
+                            .path
+                            .file_stem()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
@@ -1087,7 +1117,13 @@ async fn import_chd(
                     &hash,
                     system,
                     game_ids,
-                    &[],
+                    &[chd_romfile
+                        .romfile
+                        .path
+                        .file_stem()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
                     unattended,
@@ -1102,7 +1138,13 @@ async fn import_chd(
                         &chd_romfile.chd_sha1,
                         system,
                         game_ids,
-                        &[],
+                        &[chd_romfile
+                            .romfile
+                            .path
+                            .file_stem()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
                         unattended,
@@ -1290,7 +1332,13 @@ async fn import_cso(
             &hash,
             system,
             game_ids,
-            &[],
+            &[cso_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()],
             cso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
@@ -1347,7 +1395,13 @@ async fn import_nsz(
             &hash,
             system,
             game_ids,
-            &[],
+            &[nsz_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()],
             nsz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
@@ -1404,7 +1458,13 @@ async fn import_rvz(
             &hash,
             system,
             game_ids,
-            &[],
+            &[rvz_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()],
             rvz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
@@ -1461,7 +1521,13 @@ async fn import_zso(
             &hash,
             system,
             game_ids,
-            &[],
+            &[zso_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()],
             zso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended,
@@ -1535,7 +1601,7 @@ pub async fn import_other(
             &hash,
             system,
             game_ids,
-            &[],
+            &[romfile.path.file_stem().unwrap().to_str().unwrap()],
             romfile.path.file_name().unwrap().to_str(),
             hash_algorithm,
             unattended,
