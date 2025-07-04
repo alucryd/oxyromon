@@ -6,6 +6,7 @@
 - Added `-e/--extension` flag to `import-dats` for setting custom extensions on original ROMs in the system
 - Added support for exporting Dreamcast Redump images to GDI format in `export-roms` (based on gdidrop, credits to feyris-tan)
 - Added `-d/--delete` flag to `import-roms` for hard deletion of unmatched and duplicate ROMs (alternative to `--trash`)
+- Added `-s/--save` flag to `download-dats` for optionally saving downloaded DAT files to a specified directory
 
 ## Changes
 

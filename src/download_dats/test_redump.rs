@@ -44,9 +44,15 @@ async fn test() {
         .await;
 
     // when
-    download_redump_dats(&mut connection, &progress_bar, &mock_server.uri(), true)
-        .await
-        .unwrap();
+    download_redump_dats(
+        &mut connection,
+        &progress_bar,
+        &mock_server.uri(),
+        true,
+        tmp_directory.path().to_str(),
+    )
+    .await
+    .unwrap();
 
     // then
     let systems = find_systems(&mut connection).await;
@@ -57,4 +63,11 @@ async fn test() {
 
     assert_eq!(find_games(&mut connection).await.len(), 6);
     assert_eq!(find_roms(&mut connection).await.len(), 8);
+
+    assert!(
+        tmp_directory
+            .path()
+            .join("Test System (20200721).dat")
+            .exists()
+    );
 }
