@@ -11,6 +11,7 @@
 
 - Retired the hash algorithm override in `import-roms`
 - Repurposed the `-a` flag in `import-roms` to import files as-is (now supports non-original formats in DAT files)
+- Improved ROM matching in unattended mode using similarity scoring
 
 ## Fixes
 
