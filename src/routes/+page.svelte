@@ -2,6 +2,13 @@
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
   import { onMount } from "svelte";
+  import { Card, List, Li, Tooltip, Button } from "flowbite-svelte";
+  import {
+    ChevronLeftOutline,
+    ChevronRightOutline,
+    ChevronDoubleLeftOutline,
+    ChevronDoubleRightOutline,
+  } from "flowbite-svelte-icons";
 
   import {
     getGamesBySystemId,
@@ -50,42 +57,42 @@
 
   function computeSystemColor(system) {
     if (system.completion == 2) {
-      return "list-group-item-success";
+      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
     }
 
     if (system.completion == 1) {
-      return "list-group-item-warning";
+      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100";
     }
 
-    return "list-group-item-danger";
+    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
   }
 
   function computeGameColor(game) {
     if (game.sorting == 2) {
-      return "list-group-item-secondary";
+      return "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100";
     }
 
     if (game.completion == 2) {
-      return "list-group-item-success";
+      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
     }
 
     if (game.completion == 1) {
-      return "list-group-item-warning";
+      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100";
     }
 
-    return "list-group-item-danger";
+    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
   }
 
   function computeRomColor(rom) {
     if (rom.ignored) {
-      return "list-group-item-secondary";
+      return "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100";
     }
 
     if (rom.romfile) {
-      return "list-group-item-success";
+      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
     }
 
-    return "list-group-item-danger";
+    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
   }
 
   onMount(async () => {
@@ -168,178 +175,187 @@
   });
 </script>
 
-<!-- <Row class="mb-3">
-  <Col sm="3" class="d-flex flex-column">
-    <Card class="text-center flex-fill">
-      <CardHeader>
-        <CardTitle class="fs-5 mb-0">Systems</CardTitle>
-      </CardHeader>
-      <CardBody class="p-0">
-        <ListGroup flush>
+<div class="w-full px-4">
+  <div class="mt-20 mb-4 grid grid-cols-1 gap-4 md:grid-cols-8">
+    <div class="flex flex-col md:col-span-2">
+      <Card class="flex max-w-none flex-1 flex-col text-center">
+        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Systems</h5>
+        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
           {#each $systems as system, i}
-            <ListGroupItem
+            <Li
               id="lgi-system-{i}"
-              tag="button"
-              action
-              class="text-truncate {system.id == $systemId ? 'active' : ''} {computeSystemColor(system)}"
+              class="cursor-pointer truncate {system.id == $systemId
+                ? 'bg-blue-500 text-white dark:bg-blue-600'
+                : ''} {computeSystemColor(system)}"
               on:click={() => {
                 systemId.set(system.id);
               }}
             >
               {system.name}
-            </ListGroupItem>
+            </Li>
             {#if system.description && system.description != system.name}
-              <Tooltip target="lgi-system-{i}" placement="bottom">{system.description}</Tooltip>
+              <Tooltip triggeredBy="#lgi-system-{i}" placement="bottom">{system.description}</Tooltip>
             {/if}
           {/each}
-        </ListGroup>
-      </CardBody>
-      <CardFooter class="d-flex">
-        <Pagination arialabel="Systems navigation" class="mx-auto" listClassName="mb-0">
-          <PaginationItem bind:disabled={systemsFirstPage}>
-            <PaginationLink first href="#" on:click={() => systemsPage.set(1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={systemsFirstPage}>
-            <PaginationLink previous href="#" on:click={() => systemsPage.update((n) => n - 1)} />
-          </PaginationItem>
-          <PaginationItem disabled>
-            <PaginationLink href="#">
-              {$systemsPage} / {$systemsTotalPages}
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem bind:disabled={systemsLastPage}>
-            <PaginationLink next href="#" on:click={() => systemsPage.update((n) => n + 1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={systemsLastPage}>
-            <PaginationLink last href="#" on:click={() => systemsPage.set($systemsTotalPages)} />
-          </PaginationItem>
-        </Pagination>
-      </CardFooter>
-    </Card>
-  </Col>
-  <Col sm="3" class="d-flex flex-column">
-    <Card class="text-center flex-fill">
-      <CardHeader>
-        <CardTitle class="fs-5 mb-0">Games</CardTitle>
-      </CardHeader>
-      <CardBody class="p-0">
-        <ListGroup flush>
+        </List>
+        <div class="m-4 flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={systemsFirstPage} on:click={() => systemsPage.set(1)}>
+            <ChevronDoubleLeftOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={systemsFirstPage}
+            on:click={() => systemsPage.update((n) => n - 1)}
+          >
+            <ChevronLeftOutline class="h-4 w-4" />
+          </Button>
+          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+            {$systemsPage} / {$systemsTotalPages}
+          </span>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={systemsLastPage}
+            on:click={() => systemsPage.update((n) => n + 1)}
+          >
+            <ChevronRightOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={systemsLastPage}
+            on:click={() => systemsPage.set($systemsTotalPages)}
+          >
+            <ChevronDoubleRightOutline class="h-4 w-4" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+    <div class="flex flex-col md:col-span-2">
+      <Card class="flex max-w-none flex-1 flex-col text-center">
+        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Games</h5>
+        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
           {#each $games as game, i}
-            <ListGroupItem
+            <Li
               id="lgi-game-{i}"
-              tag="button"
-              action
-              class="text-truncate {game.id == $gameId ? 'active' : ''} {computeGameColor(game)} {game.sorting == 1
-                ? 'fw-bold'
-                : ''}"
+              class="cursor-pointer truncate {game.id == $gameId
+                ? 'bg-blue-500 text-white dark:bg-blue-600'
+                : ''} {computeGameColor(game)} {game.sorting == 1 ? 'font-bold' : ''}"
               on:click={() => {
                 gameId.set(game.id);
               }}
             >
               {game.name}
-            </ListGroupItem>
+            </Li>
             {#if game.description && game.description != game.name}
-              <Tooltip target="lgi-game-{i}" placement="bottom">{game.description}</Tooltip>
+              <Tooltip triggeredBy="#lgi-game-{i}" placement="bottom">{game.description}</Tooltip>
             {/if}
           {/each}
-        </ListGroup>
-      </CardBody>
-      <CardFooter class="d-flex">
-        <Pagination arialabel="Games navigation" class="mx-auto" listClassName="mb-0">
-          <PaginationItem bind:disabled={gamesFirstPage}>
-            <PaginationLink first href="#" on:click={() => gamesPage.set(1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={gamesFirstPage}>
-            <PaginationLink previous href="#" on:click={() => gamesPage.update((n) => n - 1)} />
-          </PaginationItem>
-          <PaginationItem disabled>
-            <PaginationLink href="#">
-              {$gamesPage} / {$gamesTotalPages}
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem bind:disabled={gamesLastPage}>
-            <PaginationLink next href="#" on:click={() => gamesPage.update((n) => n + 1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={gamesLastPage}>
-            <PaginationLink last href="#" on:click={() => gamesPage.set($gamesTotalPages)} />
-          </PaginationItem>
-        </Pagination>
-      </CardFooter>
-    </Card>
-  </Col>
-  <Col sm="6" class="d-flex flex-column">
-    <Card class="text-center flex-fill">
-      <CardHeader>
-        <CardTitle class="fs-5 mb-0">Roms</CardTitle>
-      </CardHeader>
-      <CardBody class="p-0">
-        <ListGroup flush>
+        </List>
+        <div class="m-4 flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={gamesFirstPage} on:click={() => gamesPage.set(1)}>
+            <ChevronDoubleLeftOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={gamesFirstPage}
+            on:click={() => gamesPage.update((n) => n - 1)}
+          >
+            <ChevronLeftOutline class="h-4 w-4" />
+          </Button>
+          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+            {$gamesPage} / {$gamesTotalPages}
+          </span>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={gamesLastPage}
+            on:click={() => gamesPage.update((n) => n + 1)}
+          >
+            <ChevronRightOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            color="alternative"
+            disabled={gamesLastPage}
+            on:click={() => gamesPage.set($gamesTotalPages)}
+          >
+            <ChevronDoubleRightOutline class="h-4 w-4" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+    <div class="flex flex-col md:col-span-4">
+      <Card class="flex max-w-none flex-1 flex-col text-center">
+        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Roms</h5>
+        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
           {#each $roms as rom}
-            <ListGroupItem class="text-truncate {computeRomColor(rom)}">
+            <Li class="truncate {computeRomColor(rom)}">
               {rom.name}
-            </ListGroupItem>
+            </Li>
           {/each}
-        </ListGroup>
-      </CardBody>
-      <CardFooter class="d-flex">
-        <Pagination arialabel="Roms navigation" class="mx-auto" listClassName="mb-0">
-          <PaginationItem bind:disabled={romsFirstPage}>
-            <PaginationLink first href="#" on:click={() => romsPage.set(1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={romsFirstPage}>
-            <PaginationLink previous href="#" on:click={() => romsPage.update((n) => n - 1)} />
-          </PaginationItem>
-          <PaginationItem disabled>
-            <PaginationLink href="#">
-              {$romsPage} / {$romsTotalPages}
-            </PaginationLink>
-          </PaginationItem>
-          <PaginationItem bind:disabled={romsLastPage}>
-            <PaginationLink next href="#" on:click={() => romsPage.update((n) => n + 1)} />
-          </PaginationItem>
-          <PaginationItem bind:disabled={romsLastPage}>
-            <PaginationLink last href="#" on:click={() => romsPage.set($romsTotalPages)} />
-          </PaginationItem>
-        </Pagination>
-      </CardFooter>
+        </List>
+        <div class="m-4 flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={romsFirstPage} on:click={() => romsPage.set(1)}>
+            <ChevronDoubleLeftOutline class="h-4 w-4" />
+          </Button>
+          <Button size="sm" color="alternative" disabled={romsFirstPage} on:click={() => romsPage.update((n) => n - 1)}>
+            <ChevronLeftOutline class="h-4 w-4" />
+          </Button>
+          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+            {$romsPage} / {$romsTotalPages}
+          </span>
+          <Button size="sm" color="alternative" disabled={romsLastPage} on:click={() => romsPage.update((n) => n + 1)}>
+            <ChevronRightOutline class="h-4 w-4" />
+          </Button>
+          <Button size="sm" color="alternative" disabled={romsLastPage} on:click={() => romsPage.set($romsTotalPages)}>
+            <ChevronDoubleRightOutline class="h-4 w-4" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+  </div>
+  <div class="mb-4">
+    <Card class="max-w-none text-center">
+      <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Statistics</h5>
+      <div class="grid grid-cols-1 gap-4 p-2 md:grid-cols-4">
+        <div class="text-sm">
+          <span class="font-medium">Systems:</span>
+          {$unfilteredSystems.length}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">Games:</span>
+          {$unfilteredGames.length}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">Roms:</span>
+          {$unfilteredRoms.length}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">Romfiles:</span>
+          {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-4 p-2 md:grid-cols-4">
+        <div class="text-sm">
+          <span class="font-medium">Total Original Size:</span>
+          {prettyBytes($totalOriginalSize)}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">1G1R Original Size:</span>
+          {prettyBytes($oneRegionOriginalSize)}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">Total Actual Size:</span>
+          {prettyBytes($totalActualSize)}
+        </div>
+        <div class="text-sm">
+          <span class="font-medium">1G1R Actual Size:</span>
+          {prettyBytes($oneRegionActualSize)}
+        </div>
+      </div>
     </Card>
-  </Col>
-</Row>
-<Row class="mb-3">
-  <Col>
-    <Card class="text-center">
-      <CardHeader>
-        <CardTitle class="fs-5 mb-0">Statistics</CardTitle>
-      </CardHeader>
-      <CardBody class="p-0" />
-      <Row class="p-1">
-        <Col>
-          Systems: {$unfilteredSystems.length}
-        </Col>
-        <Col>
-          Games: {$unfilteredGames.length}
-        </Col>
-        <Col>
-          Roms: {$unfilteredRoms.length}
-        </Col>
-        <Col>
-          Romfiles: {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
-        </Col>
-      </Row>
-      <Row class="p-1">
-        <Col>
-          Total Original Size: {prettyBytes($totalOriginalSize)}
-        </Col>
-        <Col>
-          1G1R Original Size: {prettyBytes($oneRegionOriginalSize)}
-        </Col>
-        <Col>
-          Total Actual Size: {prettyBytes($totalActualSize)}
-        </Col>
-        <Col>
-          1G1R Actual Size: {prettyBytes($oneRegionActualSize)}
-        </Col>
-      </Row>
-    </Card>
-  </Col>
-</Row> -->
+  </div>
+</div>

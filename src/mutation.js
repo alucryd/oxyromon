@@ -1,6 +1,7 @@
 import { GraphQLClient, gql } from "graphql-request";
 
-const endpoint = "/graphql";
+// const endpoint = `${window.location.origin}/graphql`;
+const endpoint = "http://localhost:8000/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 export async function addToList(key, value) {

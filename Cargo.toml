@@ -11,7 +11,7 @@ name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
 version = "0.21.0-beta"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 
 [features]
 default = ["use-rustls", "enable-asm"]
@@ -19,6 +19,7 @@ use-native-tls = ["reqwest/default-tls"]
 use-rustls = ["reqwest/rustls-tls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types"]
+server-dev = ["server", "tower-http"]
 
 [dependencies]
 async-graphql = { version = "7.0.16", features = [
@@ -31,6 +32,7 @@ axum = { version = "0.8.4", default-features = false, features = [
     "tokio",
     "ws",
 ], optional = true }
+tower-http = { version = "0.6.2", features = ["cors"], optional = true }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.1"
 chrono = { version = "0.4.41", default-features = false, features = [
@@ -93,7 +95,7 @@ tokio = { version = "1.45.1", features = [
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
 which = { version = "8.0.0" }
-zip = { version = "4.1.0", features = ["deflate"], default-features = false }
+zip = { version = "6.0.0", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0.140"

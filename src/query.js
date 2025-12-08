@@ -59,7 +59,8 @@ import {
   wantedFilter,
 } from "./store.js";
 
-const endpoint = "/graphql";
+// const endpoint = `${window.location.origin}/graphql`;
+const endpoint = "http://localhost:8000/graphql";
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {

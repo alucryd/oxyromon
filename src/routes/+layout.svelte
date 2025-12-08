@@ -15,15 +15,15 @@
     wantedFilter,
   } from "../store.js";
 
-  let navbarIsOpen = false;
+  let isNavbarOpen = false;
 
   function handleNavbarUpdate(event) {
-    navbarIsOpen = event.detail.isOpen;
+    isNavbarOpen = event.detail.isOpen;
   }
 </script>
 
-<div class="flex min-h-screen">
-  <Navbar fluid="true" class="fixed start-0 top-0 z-20 bg-gray-800 text-white" expand="md">
+<div class="flex flex-col min-h-screen w-full">
+  <Navbar fluid="true" class="fixed start-0 top-0 z-20 bg-gray-800 text-white w-full" expand="md">
     <NavBrand href="/" class="flex gap-2">
       <img src="/logo.svg" alt="logo" style="height: 32px;" />
       oxyromon
@@ -38,7 +38,7 @@
       on:update={handleNavbarUpdate}
     >
     </Collapse> -->
-    <div class="flex-grow" />
+    <div class="grow" />
     <ButtonGroup class="mx-1">
       <Button color="blue" bind:active={$oneRegionFilter} onclick={() => oneRegionFilter.update((b) => !b)}>
         {#if $oneRegionFilter}Show All{:else}Show 1G1R only{/if}
@@ -74,9 +74,9 @@
     <DarkMode class="mx-1" />
   </Navbar>
 
-  <!-- <Container fluid class="flex-fill">
+  <div class="flex-1 w-full">
     <slot />
-  </Container> -->
+  </div>
 
-  <SettingsModal toggle={() => isSettingsModalOpen.update((b) => !b)} />
+  <SettingsModal />
 </div>

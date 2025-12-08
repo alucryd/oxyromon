@@ -20,6 +20,8 @@ use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use tokio::net::TcpListener;
 use tokio::{select, signal};
+#[cfg(feature = "server-dev")]
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(RustEmbed)]
 #[folder = "target/assets"]
@@ -131,6 +133,15 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
         .route("/graphql", post_service(GraphQL::new(schema)))
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index));
+
+    #[cfg(feature = "server-dev")]
+    let app = {
+        let cors = CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods(Any)
+            .allow_headers(Any);
+        app.layer(cors)
+    };
 
     let listener = TcpListener::bind(format!(
         "{}:{}",
