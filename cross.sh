@@ -4,11 +4,11 @@ mkdir -p dist
 
 export CROSS_CONTAINER_ENGINE=podman
 export PATH="/opt/llvm-mingw/llvm-mingw-ucrt/bin/:$PATH"
-export SKIP_YARN=true
+export SKIP_PNPM=true
 
 for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
-    yarn install
-    yarn build
+    pnpm install
+    pnpm build
     cross build \
         --release \
         --target $target \
@@ -18,8 +18,8 @@ for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknow
 done
 
 for target in x86_64-pc-windows-gnullvm; do
-    yarn install
-    yarn build
+    pnpm install
+    pnpm build
     cross build \
         --release \
         --target $target \
@@ -29,8 +29,8 @@ for target in x86_64-pc-windows-gnullvm; do
 done
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
-    yarn install
-    yarn build
+    pnpm install
+    pnpm build
     cross build \
         --release \
         --target $target \

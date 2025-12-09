@@ -42,6 +42,7 @@ export const allRegionsSubfolders = writable("none");
 
 export const systems = writable([]);
 export const systemId = writable(-1);
+export const purgingSystemId = writable(-1);
 export const games = writable([]);
 export const gameId = writable(-1);
 export const roms = writable([]);
@@ -72,3 +73,8 @@ export const oneRegionFilter = writable(false);
 export const nameFilter = writable("");
 
 export const isSettingsModalOpen = writable(false);
+
+export const loadingSystems = writable(false);
+export const loadingGames = writable(false);
+export const loadingRoms = writable(false);
+export const loadingSizes = writable(false);

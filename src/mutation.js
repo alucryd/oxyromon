@@ -1,6 +1,7 @@
 import { GraphQLClient, gql } from "graphql-request";
+import { purgingSystemId } from "./store.js";
 
-const endpoint = "/graphql";
+const endpoint = import.meta.env.DEV ? "http://localhost:8000/graphql" : `${window.location.origin}/graphql`;
 const graphQLClient = new GraphQLClient(endpoint);
 
 export async function addToList(key, value) {
@@ -97,4 +98,22 @@ export async function setDirectory(key, value) {
     value,
   };
   await graphQLClient.request(mutation, variables);
+}
+
+export async function purgeSystem(systemId) {
+  purgingSystemId.set(systemId);
+  try {
+    const mutation = gql`
+      mutation PurgeSystem($systemId: Int!) {
+        purgeSystem(systemId: $systemId)
+      }
+    `;
+
+    const variables = {
+      systemId,
+    };
+    await graphQLClient.request(mutation, variables);
+  } finally {
+    purgingSystemId.set(-1);
+  }
 }

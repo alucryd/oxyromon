@@ -2,7 +2,7 @@ FROM alpine
 
 WORKDIR /usr/src/oxyromon
 COPY . .
-RUN apk add --no-cache build-base dolphin-emu musl-dev 7zip rustup yarn && \
+RUN apk add --no-cache build-base dolphin-emu musl-dev 7zip rustup pnpm && \
     rustup-init -y && \
     source /root/.cargo/env && \
     cargo install \
@@ -10,9 +10,9 @@ RUN apk add --no-cache build-base dolphin-emu musl-dev 7zip rustup yarn && \
     --root /usr \
     --path . && \
     cargo clean && \
-    yarn cache clean --all && \
+    pnpm store prune && \
     rm -rf /root/.cargo /root/.rustup /tmp/* && \
-    apk del --no-cache build-base musl-dev rustup yarn
+    apk del --no-cache build-base musl-dev rustup pnpm
 
 WORKDIR /
 RUN rm -rf /usr/src/oxyromon
