@@ -1,8 +1,11 @@
 build
 target
+tests
 .github
 .gitignore
 .svelte-kit
 .vscode
 .sqlx
 sqlx-data.json
+pnpm-lock.yaml
+*.rs
