@@ -1,17 +1,6 @@
 <script>
-  import { TrashBinSolid, PlusOutline } from "flowbite-svelte-icons";
-  import {
-    Modal,
-    Input,
-    Badge,
-    Label,
-    Select,
-    Toggle,
-    Tooltip,
-    Button,
-    ButtonGroup,
-    InputAddon,
-  } from "flowbite-svelte";
+  import { TrashBinOutline, PlusOutline } from "flowbite-svelte-icons";
+  import { Modal, Input, Badge, Label, Select, Toggle, Tooltip, Button, ButtonGroup } from "flowbite-svelte";
 
   import {
     addToList,
@@ -73,7 +62,6 @@
   };
 
   const onAddOneRegionClick = async () => {
-    console.log("coucou");
     await onAddToListChange(oneRegionsKey, addOneRegion);
     addOneRegion = "";
   };
@@ -171,141 +159,141 @@
 <Modal title="Settings" bind:open={$isSettingsModalOpen} size="md" class="text-start">
   <div class="space-y-4">
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">REGIONS/LANGUAGES</h6>
-    <div class="mb-4 flex flex-wrap gap-2">
-      {#each $oneRegions as oneRegion}
-        <Badge class="flex items-center gap-1">
-          {oneRegion}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(oneRegionsKey, oneRegion)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
-        </Badge>
-      {/each}
-    </div>
     <div class="mb-4">
       <Label for="one-regions" class="mb-2">1G1R Regions</Label>
       <ButtonGroup class="w-full">
-        <Input id="one-regions" placeholder="1G1R Regions" bind:value={addOneRegion} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddOneRegionClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="one-regions"
+          placeholder="1G1R Regions"
+          bind:value={addOneRegion}
+          onkeydown={(e) => e.key === "Enter" && onAddOneRegionClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddOneRegionClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#one-regions" placement="left">2 letters, uppercase, ordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $allRegions as allRegion}
-        <Badge class="flex items-center gap-1">
-          {allRegion}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(allRegionsKey, allRegion)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
+      {#each $oneRegions as oneRegion}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(oneRegionsKey, oneRegion)}
+        >
+          {oneRegion}
         </Badge>
       {/each}
     </div>
     <div class="mb-4">
       <Label for="all-regions" class="mb-2">All Regions</Label>
       <ButtonGroup class="w-full">
-        <Input id="all-regions" placeholder="All Regions" bind:value={addAllRegion} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddAllRegionClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="all-regions"
+          placeholder="All Regions"
+          bind:value={addAllRegion}
+          onkeydown={(e) => e.key === "Enter" && onAddAllRegionClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddAllRegionClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#all-regions" placement="left">2 letters, uppercase, unordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $languages as language}
-        <Badge class="flex items-center gap-1">
-          {language}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(languagesKey, language)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
+      {#each $allRegions as allRegion}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(allRegionsKey, allRegion)}
+        >
+          {allRegion}
         </Badge>
       {/each}
     </div>
     <div class="mb-4">
       <Label for="languages" class="mb-2">Languages</Label>
       <ButtonGroup class="w-full">
-        <Input id="languages" placeholder="Languages" bind:value={addLanguage} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddLanguageClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="languages"
+          placeholder="Languages"
+          bind:value={addLanguage}
+          onkeydown={(e) => e.key === "Enter" && onAddLanguageClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddLanguageClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#languages" placement="left">2 letters, capitalized</Tooltip>
     </div>
-    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">FILTERS</h6>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardReleases as discardRelease}
-        <Badge class="flex items-center gap-1">
-          {discardRelease}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(discardReleasesKey, discardRelease)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
+      {#each $languages as language}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(languagesKey, language)}
+        >
+          {language}
         </Badge>
       {/each}
     </div>
+    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">FILTERS</h6>
     <div class="mb-4">
       <Label for="discard-releases" class="mb-2">Discard Releases</Label>
       <ButtonGroup class="w-full">
-        <Input id="discard-releases" placeholder="Discard Releases" bind:value={addDiscardRelease} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddDiscardReleaseClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="discard-releases"
+          placeholder="Discard Releases"
+          bind:value={addDiscardRelease}
+          onkeydown={(e) => e.key === "Enter" && onAddDiscardReleaseClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddDiscardReleaseClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#discard-releases" placement="left">Discard specific releases</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardFlags as discardFlag}
-        <Badge class="flex items-center gap-1">
-          {discardFlag}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(discardFlagsKey, discardFlag)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
+      {#each $discardReleases as discardRelease}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(discardReleasesKey, discardRelease)}
+        >
+          {discardRelease}
         </Badge>
       {/each}
     </div>
     <div class="mb-4">
       <Label for="discard-flags" class="mb-2">Discard Flags</Label>
       <ButtonGroup class="w-full">
-        <Input id="discard-flags" placeholder="Discard Flags" bind:value={addDiscardFlag} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddDiscardFlagClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="discard-flags"
+          placeholder="Discard Flags"
+          bind:value={addDiscardFlag}
+          onkeydown={(e) => e.key === "Enter" && onAddDiscardFlagClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddDiscardFlagClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#discard-flags" placement="left">Discard specific flags</Tooltip>
+    </div>
+    <div class="mb-4 flex flex-wrap gap-2">
+      {#each $discardFlags as discardFlag}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(discardFlagsKey, discardFlag)}
+        >
+          {discardFlag}
+        </Badge>
+      {/each}
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">SORTING</h6>
     <div id="strict-one-regions" class="mb-4">
@@ -325,9 +313,9 @@
           <option value={preferRegionChoice}>{preferRegionChoice}</option>
         {/each}
       </Select>
-      <Tooltip triggeredBy="#prefer-regions" placement="left"
-        >Broad favors games targeting more regions, narrow favors fewer regions</Tooltip
-      >
+      <Tooltip triggeredBy="#prefer-regions-select" placement="left">
+        Broad favors games targeting more regions, narrow favors fewer regions
+      </Tooltip>
     </div>
     <div id="prefer-versions" class="mb-4">
       <Label for="prefer-versions-select" class="mb-2">Prefer Versions</Label>
@@ -336,34 +324,36 @@
           <option value={preferVersionChoice}>{preferVersionChoice}</option>
         {/each}
       </Select>
-      <Tooltip triggeredBy="#prefer-versions" placement="left">New favors newer revisions, old favors older</Tooltip>
-    </div>
-    <div class="mb-4 flex flex-wrap gap-2">
-      {#each $preferFlags as preferFlag}
-        <Badge class="flex items-center gap-1">
-          {preferFlag}
-          <Button
-            size="xs"
-            color="none"
-            class="ml-1 p-0.5"
-            on:click={() => onRemoveFromListClick(preferFlagsKey, preferFlag)}
-          >
-            <TrashBinSolid class="h-3 w-3" />
-          </Button>
-        </Badge>
-      {/each}
+      <Tooltip triggeredBy="#prefer-versions-select" placement="left">
+        New favors newer revisions, old favors older
+      </Tooltip>
     </div>
     <div class="mb-4">
       <Label for="prefer-flags" class="mb-2">Prefer Flags</Label>
       <ButtonGroup class="w-full">
-        <Input id="prefer-flags" placeholder="Prefer Flags" bind:value={addPreferFlag} />
-        <InputAddon>
-          <Button size="sm" color="primary" on:click={onAddPreferFlagClick}>
-            <PlusOutline class="h-4 w-4" />
-          </Button>
-        </InputAddon>
+        <Input
+          id="prefer-flags"
+          placeholder="Prefer Flags"
+          bind:value={addPreferFlag}
+          onkeydown={(e) => e.key === "Enter" && onAddPreferFlagClick()}
+        />
+        <Button size="sm" color="primary" onclick={onAddPreferFlagClick}>
+          <PlusOutline class="h-4 w-4" />
+        </Button>
       </ButtonGroup>
       <Tooltip triggeredBy="#prefer-flags" placement="left">Favors specific flags in the election process</Tooltip>
+    </div>
+    <div class="mb-4 flex flex-wrap gap-2">
+      {#each $preferFlags as preferFlag}
+        <Badge
+          dismissable
+          large
+          class="flex items-center gap-1"
+          onclose={() => onRemoveFromListClick(preferFlagsKey, preferFlag)}
+        >
+          {preferFlag}
+        </Badge>
+      {/each}
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">DIRECTORIES</h6>
     <div class="mb-4">
@@ -388,9 +378,9 @@
     </div>
     <div id="group-subsystems" class="mb-4">
       <Toggle bind:checked={$groupSubsystems} on:change={onGroupSubsystemsChange}>Group Subsystems</Toggle>
-      <Tooltip triggeredBy="#group-subsystems" placement="left"
-        >Group subsystems in the main system directory (eg: PS3 DLCs and updates)</Tooltip
-      >
+      <Tooltip triggeredBy="#group-subsystems" placement="left">
+        Group subsystems in the main system directory (eg: PS3 DLCs and updates)
+      </Tooltip>
     </div>
     <div id="one-regions-subfolders" class="mb-4">
       <Label for="one-regions-subfolders-select" class="mb-2">1G1R Subfolders</Label>
@@ -403,7 +393,7 @@
           <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
         {/each}
       </Select>
-      <Tooltip triggeredBy="#one-regions-subfolders" placement="left">Store 1G1R games in subfolders</Tooltip>
+      <Tooltip triggeredBy="#one-regions-subfolders-select" placement="left">Store 1G1R games in subfolders</Tooltip>
     </div>
     <div id="all-regions-subfolders" class="mb-4">
       <Label for="all-regions-subfolders-select" class="mb-2">All Subfolders</Label>
@@ -416,7 +406,7 @@
           <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
         {/each}
       </Select>
-      <Tooltip triggeredBy="#all-regions-subfolders" placement="left">Store all games in subfolders</Tooltip>
+      <Tooltip triggeredBy="#all-regions-subfolders-select" placement="left">Store all games in subfolders</Tooltip>
     </div>
   </div>
 </Modal>

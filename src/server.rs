@@ -20,7 +20,7 @@ use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use tokio::net::TcpListener;
 use tokio::{select, signal};
-#[cfg(feature = "server-dev")]
+#[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
 
 #[derive(RustEmbed)]
@@ -134,7 +134,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index));
 
-    #[cfg(feature = "server-dev")]
+    #[cfg(debug_assertions)]
     let app = {
         let cors = CorsLayer::new()
             .allow_origin(Any)

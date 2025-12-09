@@ -18,8 +18,7 @@ default = ["use-rustls", "enable-asm"]
 use-native-tls = ["reqwest/default-tls"]
 use-rustls = ["reqwest/rustls-tls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
-server = ["async-graphql", "async-graphql-axum", "axum", "http-types"]
-server-dev = ["server", "tower-http"]
+server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
 
 [dependencies]
 async-graphql = { version = "7.0.16", features = [
@@ -32,7 +31,7 @@ axum = { version = "0.8.4", default-features = false, features = [
     "tokio",
     "ws",
 ], optional = true }
-tower-http = { version = "0.6.2", features = ["cors"], optional = true }
+tower-http = { version = "0.6.2", features = ["cors"], optional = true, default-features = false }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.1"
 chrono = { version = "0.4.41", default-features = false, features = [

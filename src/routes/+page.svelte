@@ -2,12 +2,25 @@
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
   import { onMount } from "svelte";
-  import { Card, List, Li, Tooltip, Button } from "flowbite-svelte";
+  import {
+    Card,
+    List,
+    Li,
+    Tooltip,
+    Button,
+    Table,
+    TableHead,
+    TableHeadCell,
+    TableBody,
+    TableBodyRow,
+    TableBodyCell,
+  } from "flowbite-svelte";
   import {
     ChevronLeftOutline,
     ChevronRightOutline,
     ChevronDoubleLeftOutline,
     ChevronDoubleRightOutline,
+    TrashBinOutline,
   } from "flowbite-svelte-icons";
 
   import {
@@ -57,42 +70,42 @@
 
   function computeSystemColor(system) {
     if (system.completion == 2) {
-      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
+      return "text-green-300";
     }
 
     if (system.completion == 1) {
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100";
+      return "text-yellow-300";
     }
 
-    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
+    return "text-red-300";
   }
 
   function computeGameColor(game) {
     if (game.sorting == 2) {
-      return "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100";
+      return "text-gray-300";
     }
 
     if (game.completion == 2) {
-      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
+      return "text-green-300";
     }
 
     if (game.completion == 1) {
-      return "bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100";
+      return "text-yellow-300";
     }
 
-    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
+    return "text-red-300";
   }
 
   function computeRomColor(rom) {
     if (rom.ignored) {
-      return "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100";
+      return "text-gray-300";
     }
 
     if (rom.romfile) {
-      return "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100";
+      return "text-green-300";
     }
 
-    return "bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100";
+    return "text-red-300";
   }
 
   onMount(async () => {
@@ -178,35 +191,44 @@
 <div class="w-full px-4">
   <div class="mt-20 mb-4 grid grid-cols-1 gap-4 md:grid-cols-8">
     <div class="flex flex-col md:col-span-2">
-      <Card class="flex max-w-none flex-1 flex-col text-center">
-        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Systems</h5>
-        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
-          {#each $systems as system, i}
-            <Li
-              id="lgi-system-{i}"
-              class="cursor-pointer truncate {system.id == $systemId
-                ? 'bg-blue-500 text-white dark:bg-blue-600'
-                : ''} {computeSystemColor(system)}"
-              on:click={() => {
-                systemId.set(system.id);
-              }}
-            >
-              {system.name}
-            </Li>
-            {#if system.description && system.description != system.name}
-              <Tooltip triggeredBy="#lgi-system-{i}" placement="bottom">{system.description}</Tooltip>
-            {/if}
-          {/each}
-        </List>
-        <div class="m-4 flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={systemsFirstPage} on:click={() => systemsPage.set(1)}>
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
+        <Table hoverable={true} class="mb-4 table-fixed">
+          <TableHead class="text-left text-base">
+            <TableHeadCell class="w-full">Systems</TableHeadCell>
+            <TableHeadCell class="w-1"></TableHeadCell>
+          </TableHead>
+          <TableBody>
+            {#each $systems as system, i}
+              <TableBodyRow>
+                <TableBodyCell id="tbc-system-{i}" class="p-0 {system.id == $systemId ? 'active' : ''}">
+                  <button
+                    class="block w-full truncate px-4 py-2 text-left text-base {computeSystemColor(system)}"
+                    onclick={() => {
+                      systemId.set(system.id);
+                    }}
+                  >
+                    {system.name}
+                  </button>
+                </TableBodyCell>
+                <TableBodyCell class="px-2 py-2 text-right">
+                  <TrashBinOutline class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800" />
+                </TableBodyCell>
+                {#if system.description && system.description != system.name}
+                  <Tooltip triggeredBy="#tbc-system-{i}" placement="bottom">{system.description}</Tooltip>
+                {/if}
+              </TableBodyRow>
+            {/each}
+          </TableBody>
+        </Table>
+        <div class="m-4 mt-auto flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={systemsFirstPage} onclick={() => systemsPage.set(1)}>
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             color="alternative"
             disabled={systemsFirstPage}
-            on:click={() => systemsPage.update((n) => n - 1)}
+            onclick={() => systemsPage.update((n) => n - 1)}
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
@@ -217,7 +239,7 @@
             size="sm"
             color="alternative"
             disabled={systemsLastPage}
-            on:click={() => systemsPage.update((n) => n + 1)}
+            onclick={() => systemsPage.update((n) => n + 1)}
           >
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
@@ -225,7 +247,7 @@
             size="sm"
             color="alternative"
             disabled={systemsLastPage}
-            on:click={() => systemsPage.set($systemsTotalPages)}
+            onclick={() => systemsPage.set($systemsTotalPages)}
           >
             <ChevronDoubleRightOutline class="h-4 w-4" />
           </Button>
@@ -233,54 +255,61 @@
       </Card>
     </div>
     <div class="flex flex-col md:col-span-2">
-      <Card class="flex max-w-none flex-1 flex-col text-center">
-        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Games</h5>
-        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
-          {#each $games as game, i}
-            <Li
-              id="lgi-game-{i}"
-              class="cursor-pointer truncate {game.id == $gameId
-                ? 'bg-blue-500 text-white dark:bg-blue-600'
-                : ''} {computeGameColor(game)} {game.sorting == 1 ? 'font-bold' : ''}"
-              on:click={() => {
-                gameId.set(game.id);
-              }}
-            >
-              {game.name}
-            </Li>
-            {#if game.description && game.description != game.name}
-              <Tooltip triggeredBy="#lgi-game-{i}" placement="bottom">{game.description}</Tooltip>
-            {/if}
-          {/each}
-        </List>
-        <div class="m-4 flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={gamesFirstPage} on:click={() => gamesPage.set(1)}>
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
+        <Table hoverable={true} class="mb-4 table-fixed">
+          <TableHead class="text-left text-base">
+            <TableHeadCell class="w-full">Games</TableHeadCell>
+            <TableHeadCell class="w-1"></TableHeadCell>
+          </TableHead>
+          <TableBody>
+            {#each $games as game, i}
+              <TableBodyRow>
+                <TableBodyCell
+                  id="tbc-game-{i}"
+                  class="p-0 {game.sorting == 1 ? 'font-bold' : ''} {game.id == $gameId ? 'active' : ''}"
+                >
+                  <button
+                    class="block w-full truncate px-4 py-2 text-left text-base {computeGameColor(game)}"
+                    onclick={() => {
+                      gameId.set(game.id);
+                    }}
+                  >
+                    {game.name}
+                  </button>
+                </TableBodyCell>
+                <TableBodyCell class="px-2 py-2 text-right">
+                  <TrashBinOutline class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800" />
+                </TableBodyCell>
+                {#if game.description && game.description != game.name}
+                  <Tooltip triggeredBy="#tbc-game-{i}" placement="bottom">{game.description}</Tooltip>
+                {/if}
+              </TableBodyRow>
+            {/each}
+          </TableBody>
+        </Table>
+        <div class="m-4 mt-auto flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={gamesFirstPage} onclick={() => gamesPage.set(1)}>
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             color="alternative"
             disabled={gamesFirstPage}
-            on:click={() => gamesPage.update((n) => n - 1)}
+            onclick={() => gamesPage.update((n) => n - 1)}
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
           <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
             {$gamesPage} / {$gamesTotalPages}
           </span>
-          <Button
-            size="sm"
-            color="alternative"
-            disabled={gamesLastPage}
-            on:click={() => gamesPage.update((n) => n + 1)}
-          >
+          <Button size="sm" color="alternative" disabled={gamesLastPage} onclick={() => gamesPage.update((n) => n + 1)}>
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
           <Button
             size="sm"
             color="alternative"
             disabled={gamesLastPage}
-            on:click={() => gamesPage.set($gamesTotalPages)}
+            onclick={() => gamesPage.set($gamesTotalPages)}
           >
             <ChevronDoubleRightOutline class="h-4 w-4" />
           </Button>
@@ -288,29 +317,35 @@
       </Card>
     </div>
     <div class="flex flex-col md:col-span-4">
-      <Card class="flex max-w-none flex-1 flex-col text-center">
-        <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Roms</h5>
-        <List class="flex-1 divide-y divide-gray-200 dark:divide-gray-700">
-          {#each $roms as rom}
-            <Li class="truncate {computeRomColor(rom)}">
-              {rom.name}
-            </Li>
-          {/each}
-        </List>
-        <div class="m-4 flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={romsFirstPage} on:click={() => romsPage.set(1)}>
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
+        <Table hoverable={true} class="mb-4 table-fixed">
+          <TableHead class="text-left text-base">
+            <TableHeadCell>Roms</TableHeadCell>
+          </TableHead>
+          <TableBody>
+            {#each $roms as rom}
+              <TableBodyRow>
+                <TableBodyCell class="truncate px-4 py-2 text-left text-base {computeRomColor(rom)}">
+                  {rom.name}
+                </TableBodyCell>
+              </TableBodyRow>
+            {/each}
+          </TableBody>
+        </Table>
+        <div class="m-4 mt-auto flex items-center justify-center gap-2">
+          <Button size="sm" color="alternative" disabled={romsFirstPage} onclick={() => romsPage.set(1)}>
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
-          <Button size="sm" color="alternative" disabled={romsFirstPage} on:click={() => romsPage.update((n) => n - 1)}>
+          <Button size="sm" color="alternative" disabled={romsFirstPage} onclick={() => romsPage.update((n) => n - 1)}>
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
           <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
             {$romsPage} / {$romsTotalPages}
           </span>
-          <Button size="sm" color="alternative" disabled={romsLastPage} on:click={() => romsPage.update((n) => n + 1)}>
+          <Button size="sm" color="alternative" disabled={romsLastPage} onclick={() => romsPage.update((n) => n + 1)}>
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
-          <Button size="sm" color="alternative" disabled={romsLastPage} on:click={() => romsPage.set($romsTotalPages)}>
+          <Button size="sm" color="alternative" disabled={romsLastPage} onclick={() => romsPage.set($romsTotalPages)}>
             <ChevronDoubleRightOutline class="h-4 w-4" />
           </Button>
         </div>
