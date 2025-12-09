@@ -242,31 +242,40 @@
           </TableBody>
         </Table>
         <div class="m-4 mt-auto flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={systemsFirstPage} onclick={() => systemsPage.set(1)}>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={systemsFirstPage}
+            onclick={() => systemsPage.set(1)}
+          >
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
           <Button
-            size="sm"
+            size="xs"
             color="alternative"
+            class="px-2"
             disabled={systemsFirstPage}
             onclick={() => systemsPage.update((n) => n - 1)}
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
             {$systemsPage} / {$systemsTotalPages}
           </span>
           <Button
-            size="sm"
+            size="xs"
             color="alternative"
+            class="px-2"
             disabled={systemsLastPage}
             onclick={() => systemsPage.update((n) => n + 1)}
           >
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
           <Button
-            size="sm"
+            size="xs"
             color="alternative"
+            class="px-2"
             disabled={systemsLastPage}
             onclick={() => systemsPage.set($systemsTotalPages)}
           >
@@ -311,26 +320,34 @@
           </TableBody>
         </Table>
         <div class="m-4 mt-auto flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={gamesFirstPage} onclick={() => gamesPage.set(1)}>
+          <Button size="xs" color="alternative" class="px-2" disabled={gamesFirstPage} onclick={() => gamesPage.set(1)}>
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
           <Button
-            size="sm"
+            size="xs"
             color="alternative"
+            class="px-2"
             disabled={gamesFirstPage}
             onclick={() => gamesPage.update((n) => n - 1)}
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
             {$gamesPage} / {$gamesTotalPages}
           </span>
-          <Button size="sm" color="alternative" disabled={gamesLastPage} onclick={() => gamesPage.update((n) => n + 1)}>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={gamesLastPage}
+            onclick={() => gamesPage.update((n) => n + 1)}
+          >
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
           <Button
-            size="sm"
+            size="xs"
             color="alternative"
+            class="px-2"
             disabled={gamesLastPage}
             onclick={() => gamesPage.set($gamesTotalPages)}
           >
@@ -361,19 +378,37 @@
           </TableBody>
         </Table>
         <div class="m-4 mt-auto flex items-center justify-center gap-2">
-          <Button size="sm" color="alternative" disabled={romsFirstPage} onclick={() => romsPage.set(1)}>
+          <Button size="xs" color="alternative" class="px-2" disabled={romsFirstPage} onclick={() => romsPage.set(1)}>
             <ChevronDoubleLeftOutline class="h-4 w-4" />
           </Button>
-          <Button size="sm" color="alternative" disabled={romsFirstPage} onclick={() => romsPage.update((n) => n - 1)}>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romsFirstPage}
+            onclick={() => romsPage.update((n) => n - 1)}
+          >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
             {$romsPage} / {$romsTotalPages}
           </span>
-          <Button size="sm" color="alternative" disabled={romsLastPage} onclick={() => romsPage.update((n) => n + 1)}>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romsLastPage}
+            onclick={() => romsPage.update((n) => n + 1)}
+          >
             <ChevronRightOutline class="h-4 w-4" />
           </Button>
-          <Button size="sm" color="alternative" disabled={romsLastPage} onclick={() => romsPage.set($romsTotalPages)}>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romsLastPage}
+            onclick={() => romsPage.set($romsTotalPages)}
+          >
             <ChevronDoubleRightOutline class="h-4 w-4" />
           </Button>
         </div>
@@ -386,10 +421,10 @@
         <TableHead class="text-left text-base">
           <TableHeadCell colspan="4">Statistics</TableHeadCell>
         </TableHead>
-        <TableBody class="text-left text-base">
+        <TableBody class="text-left text-base font-medium">
           <TableBodyRow>
             <TableBodyCell>
-              <span class="font-medium">Systems:</span>
+              <span>Systems:</span>
               {#if $loadingSystems}
                 <Spinner size="4" />
               {:else}
@@ -397,7 +432,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">Games:</span>
+              <span>Games:</span>
               {#if $loadingGames}
                 <Spinner size="4" />
               {:else}
@@ -405,7 +440,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">Roms:</span>
+              <span>Roms:</span>
               {#if $loadingRoms}
                 <Spinner size="4" />
               {:else}
@@ -413,7 +448,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">Romfiles:</span>
+              <span>Romfiles:</span>
               {#if $loadingRoms}
                 <Spinner size="4" />
               {:else}
@@ -423,7 +458,7 @@
           </TableBodyRow>
           <TableBodyRow>
             <TableBodyCell>
-              <span class="font-medium">Total Original Size:</span>
+              <span>Total Original Size:</span>
               {#if $loadingSizes}
                 <Spinner size="4" />
               {:else}
@@ -431,7 +466,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">1G1R Original Size:</span>
+              <span>1G1R Original Size:</span>
               {#if $loadingSizes}
                 <Spinner size="4" />
               {:else}
@@ -439,7 +474,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">Total Actual Size:</span>
+              <span>Total Actual Size:</span>
               {#if $loadingSizes}
                 <Spinner size="4" />
               {:else}
@@ -447,7 +482,7 @@
               {/if}
             </TableBodyCell>
             <TableBodyCell>
-              <span class="font-medium">1G1R Actual Size:</span>
+              <span>1G1R Actual Size:</span>
               {#if $loadingSizes}
                 <Spinner size="4" />
               {:else}
