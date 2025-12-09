@@ -104,15 +104,15 @@
   };
 
   const onStrictOneRegionsChange = async () => {
-    await onSwitchChange(strictOneRegionsKey, !$strictOneRegions);
+    await onSwitchChange(strictOneRegionsKey, $strictOneRegions);
   };
 
   const onPreferParentsChange = async () => {
-    await onSwitchChange(preferParentsKey, !$preferParents);
+    await onSwitchChange(preferParentsKey, $preferParents);
   };
 
   const onGroupSubsystemsChange = async () => {
-    await onSwitchChange(groupSubsystemsKey, !$groupSubsystems);
+    await onSwitchChange(groupSubsystemsKey, $groupSubsystems);
   };
 
   const onPreferRegionsChange = async () => {
