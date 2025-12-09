@@ -57,9 +57,13 @@ import {
   unfilteredRoms,
   unfilteredSystems,
   wantedFilter,
+  loadingSystems,
+  loadingGames,
+  loadingRoms,
+  loadingSizes,
 } from "./store.js";
 
-const endpoint = "/graphql";
+const endpoint = import.meta.env.DEV ? "http://localhost:8000/graphql" : `${window.location.origin}/graphql`;
 const graphQLClient = new GraphQLClient(endpoint);
 
 function paginate(array, page, pageSize) {
@@ -104,22 +108,27 @@ export async function getSettings() {
 }
 
 export async function getSystems() {
-  const query = gql`
-    {
-      systems {
-        id
-        name
-        description
-        completion
-        merging
-        arcade
+  loadingSystems.set(true);
+  try {
+    const query = gql`
+      {
+        systems {
+          id
+          name
+          description
+          completion
+          merging
+          arcade
+        }
       }
-    }
-  `;
+    `;
 
-  const data = await graphQLClient.request(query);
-  unfilteredSystems.set(data.systems);
-  await updateSystems();
+    const data = await graphQLClient.request(query);
+    unfilteredSystems.set(data.systems);
+    await updateSystems();
+  } finally {
+    loadingSystems.set(false);
+  }
 }
 
 export async function updateSystems() {
@@ -128,21 +137,26 @@ export async function updateSystems() {
 }
 
 export async function getGamesBySystemId(systemId) {
-  const query = gql`
-        {
-            games(systemId: ${systemId}) {
-                id
-                name
-                description
-                completion
-                sorting
-            }
-        }
-    `;
+  loadingGames.set(true);
+  try {
+    const query = gql`
+          {
+              games(systemId: ${systemId}) {
+                  id
+                  name
+                  description
+                  completion
+                  sorting
+              }
+          }
+      `;
 
-  const data = await graphQLClient.request(query);
-  unfilteredGames.set(data.games);
-  await updateGames();
+    const data = await graphQLClient.request(query);
+    unfilteredGames.set(data.games);
+    await updateGames();
+  } finally {
+    loadingGames.set(false);
+  }
 }
 
 function filterGames(games) {
@@ -177,23 +191,28 @@ export async function updateGames() {
 }
 
 export async function getRomsByGameIdAndSystemId(gameId, systemId) {
-  const query = gql`
-        {
-            roms(gameId: ${gameId}) {
-                name
-                size
-                romfile {
-                    path
-                    size
-                }
-                ignored(systemId: ${systemId})
-            }
-        }
-    `;
+  loadingRoms.set(true);
+  try {
+    const query = gql`
+          {
+              roms(gameId: ${gameId}) {
+                  name
+                  size
+                  romfile {
+                      path
+                      size
+                  }
+                  ignored(systemId: ${systemId})
+              }
+          }
+      `;
 
-  const data = await graphQLClient.request(query);
-  unfilteredRoms.set(data.roms);
-  await updateRoms();
+    const data = await graphQLClient.request(query);
+    unfilteredRoms.set(data.roms);
+    await updateRoms();
+  } finally {
+    loadingRoms.set(false);
+  }
 }
 
 export async function updateRoms() {
@@ -202,17 +221,24 @@ export async function updateRoms() {
 }
 
 export async function getSizesBySystemId(systemId) {
-  const query = gql`
-        {
-            totalOriginalSize(systemId: ${systemId})
-            oneRegionOriginalSize(systemId: ${systemId})
-            totalActualSize(systemId: ${systemId})
-            oneRegionActualSize(systemId: ${systemId})
-        }
-    `;
-  const data = await graphQLClient.request(query);
-  totalOriginalSize.set(data.totalOriginalSize);
-  oneRegionOriginalSize.set(data.oneRegionOriginalSize);
-  totalActualSize.set(data.totalActualSize);
-  oneRegionActualSize.set(data.oneRegionActualSize);
+  loadingSizes.set(true);
+  try {
+    const query = gql`
+          {
+              totalOriginalSize(systemId: ${systemId})
+              oneRegionOriginalSize(systemId: ${systemId})
+              totalActualSize(systemId: ${systemId})
+              oneRegionActualSize(systemId: ${systemId})
+          }
+      `;
+
+    const data = await graphQLClient.request(query);
+
+    totalOriginalSize.set(data.totalOriginalSize);
+    oneRegionOriginalSize.set(data.oneRegionOriginalSize);
+    totalActualSize.set(data.totalActualSize);
+    oneRegionActualSize.set(data.oneRegionActualSize);
+  } finally {
+    loadingSizes.set(false);
+  }
 }

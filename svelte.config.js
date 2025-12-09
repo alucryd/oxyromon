@@ -1,12 +1,11 @@
 import adapter from "@sveltejs/adapter-static";
-import preprocess from "svelte-preprocess";
+import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 /** @type {import('@sveltejs/kit').Config} */
 export default {
-  preprocess: preprocess(),
+  preprocess: vitePreprocess(),
 
   kit: {
     adapter: adapter({ pages: "target/assets", fallback: "index.html" }),
-    prerender: { entries: [] },
   },
 };

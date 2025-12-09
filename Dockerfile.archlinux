@@ -3,16 +3,16 @@ FROM archlinux
 WORKDIR /usr/src/oxyromon
 COPY . .
 RUN sed 's/^SigLevel    =.*/SigLevel = Never/' -i /etc/pacman.conf && \
-    pacman -Syu --noconfirm base-devel bchunk dolphin-emu-tool mame-tools maxcso p7zip rustup wit yarn && \
+    pacman -Syu --noconfirm base-devel bchunk dolphin-emu-tool mame-tools maxcso p7zip rustup wit pnpm && \
     rustup toolchain install stable && \
     cargo install \
     --features server \
     --root /usr \
     --path . && \
     cargo clean && \
-    yarn cache clean --all && \
+    pnpm store prune && \
     rm -rf /root/.cargo /root/.rustup /tmp/* && \
-    pacman -Rns --noconfirm base-devel rustup yarn && \
+    pacman -Rns --noconfirm base-devel rustup pnpm && \
     pacman -Sc --noconfirm
 
 WORKDIR /

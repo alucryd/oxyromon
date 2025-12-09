@@ -1,5 +1,5 @@
 [build.env]
-passthrough = ["SKIP_YARN"]
+passthrough = ["SKIP_PNPM"]
 
 [target.aarch64-apple-darwin]
 image = "ghcr.io/cross-rs/aarch64-apple-darwin-cross:local"

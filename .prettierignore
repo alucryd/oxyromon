@@ -4,4 +4,5 @@ target
 .gitignore
 .svelte-kit
 .vscode
+.sqlx
 sqlx-data.json
