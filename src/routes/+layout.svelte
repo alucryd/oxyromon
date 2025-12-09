@@ -22,7 +22,14 @@
   }
 
   function buttonClasses(color) {
-    return `text-base text-${color}-300 dark:text-${color}-300 bg-${color}-900 dark:bg-${color}-900 hover:bg-${color}-700 dark:hover:bg-${color}-700`;
+    const classes = {
+      blue: "text-base bg-blue-900 dark:bg-blue-900 hover:bg-blue-700 dark:hover:bg-blue-700",
+      green: "text-base bg-green-900 dark:bg-green-900 hover:bg-green-700 dark:hover:bg-green-700",
+      yellow: "text-base bg-yellow-900 dark:bg-yellow-900 hover:bg-yellow-700 dark:hover:bg-yellow-700",
+      red: "text-base bg-red-900 dark:bg-red-900 hover:bg-red-700 dark:hover:bg-red-700",
+      gray: "text-base bg-gray-900 dark:bg-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700",
+    };
+    return classes[color] || "";
   }
 </script>
 

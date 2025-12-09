@@ -7,12 +7,14 @@
 - Added support for exporting Dreamcast Redump images to GDI format in `export-roms` (based on gdidrop, credits to feyris-tan)
 - Added `-d/--delete` flag to `import-roms` for hard deletion of unmatched and duplicate ROMs (alternative to `--trash`)
 - Added `-s/--save` flag to `download-dats` for optionally saving downloaded DAT files to a specified directory
+- Added purge system buttons in the frontend
 
 ## Changes
 
 - Retired the hash algorithm override in `import-roms`
 - Repurposed the `-a` flag in `import-roms` to import files as-is (now supports non-original formats in DAT files)
 - Improved ROM matching in unattended mode using similarity scoring
+- Rewrote the frontend using Svelte/Flowbite
 
 ## Fixes
 
