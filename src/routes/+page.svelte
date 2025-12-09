@@ -4,8 +4,6 @@
   import { onMount } from "svelte";
   import {
     Card,
-    List,
-    Li,
     Tooltip,
     Button,
     Table,
@@ -22,7 +20,9 @@
     ChevronDoubleRightOutline,
     TrashBinOutline,
   } from "flowbite-svelte-icons";
+  import { Spinner } from "flowbite-svelte";
 
+  import { purgeSystem } from "../mutation.js";
   import {
     getGamesBySystemId,
     getRomsByGameIdAndSystemId,
@@ -50,6 +50,7 @@
     romsPage,
     romsTotalPages,
     systemId,
+    purgingSystemId,
     systems,
     systemsPage,
     systemsTotalPages,
@@ -59,6 +60,10 @@
     unfilteredRoms,
     unfilteredSystems,
     wantedFilter,
+    loadingSystems,
+    loadingGames,
+    loadingRoms,
+    loadingSizes,
   } from "../store.js";
 
   $: systemsFirstPage = $systemsPage == 1;
@@ -70,43 +75,48 @@
 
   function computeSystemColor(system) {
     if (system.completion == 2) {
-      return "text-green-300";
+      return "dark:text-green-300 text-green-500";
     }
 
     if (system.completion == 1) {
-      return "text-yellow-300";
+      return "dark:text-yellow-300 text-yellow-500";
     }
 
-    return "text-red-300";
+    return "dark:text-red-300 text-red-500";
   }
 
   function computeGameColor(game) {
     if (game.sorting == 2) {
-      return "text-gray-300";
+      return "dark:text-gray-300 text-gray-500";
     }
 
     if (game.completion == 2) {
-      return "text-green-300";
+      return "dark:text-green-300 text-green-500";
     }
 
     if (game.completion == 1) {
-      return "text-yellow-300";
+      return "dark:text-yellow-300 text-yellow-500";
     }
 
-    return "text-red-300";
+    return "dark:text-red-300 text-red-500";
   }
 
   function computeRomColor(rom) {
     if (rom.ignored) {
-      return "text-gray-300";
+      return "dark:text-gray-300 text-gray-500";
     }
 
     if (rom.romfile) {
-      return "text-green-300";
+      return "dark:text-green-300 text-green-500";
     }
 
-    return "text-red-300";
+    return "dark:text-red-300 text-red-500";
   }
+
+  const onPurgeSystemClick = async (systemId) => {
+    await purgeSystem(systemId);
+    await getSystems();
+  };
 
   onMount(async () => {
     await getSettings();
@@ -189,13 +199,17 @@
 </script>
 
 <div class="w-full px-4">
-  <div class="mt-20 mb-4 grid grid-cols-1 gap-4 md:grid-cols-8">
+  <div class="mt-20 mb-4 grid grid-cols-1 gap-4 md:grid-cols-10">
     <div class="flex flex-col md:col-span-2">
-      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
-        <Table hoverable={true} class="mb-4 table-fixed">
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
+        <Table hoverable striped border={false} class="mb-4 table-fixed">
           <TableHead class="text-left text-base">
             <TableHeadCell class="w-full">Systems</TableHeadCell>
-            <TableHeadCell class="w-1"></TableHeadCell>
+            <TableHeadCell class="w-1">
+              {#if $loadingSystems}
+                <Spinner size="4" />
+              {/if}
+            </TableHeadCell>
           </TableHead>
           <TableBody>
             {#each $systems as system, i}
@@ -211,7 +225,14 @@
                   </button>
                 </TableBodyCell>
                 <TableBodyCell class="px-2 py-2 text-right">
-                  <TrashBinOutline class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800" />
+                  {#if purgingSystemId === system.id}
+                    <Spinner size="4" />
+                  {:else}
+                    <TrashBinOutline
+                      class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800"
+                      onclick={() => onPurgeSystemClick(system.id)}
+                    />
+                  {/if}
                 </TableBodyCell>
                 {#if system.description && system.description != system.name}
                   <Tooltip triggeredBy="#tbc-system-{i}" placement="bottom">{system.description}</Tooltip>
@@ -254,17 +275,22 @@
         </div>
       </Card>
     </div>
-    <div class="flex flex-col md:col-span-2">
-      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
-        <Table hoverable={true} class="mb-4 table-fixed">
+    <div class="flex flex-col md:col-span-3">
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
+        <Table hoverable striped border={false} class="mb-4 table-fixed">
           <TableHead class="text-left text-base">
             <TableHeadCell class="w-full">Games</TableHeadCell>
-            <TableHeadCell class="w-1"></TableHeadCell>
+            <TableHeadCell class="w-1">
+              {#if $loadingGames}
+                <Spinner size="4" />
+              {/if}
+            </TableHeadCell>
           </TableHead>
           <TableBody>
             {#each $games as game, i}
               <TableBodyRow>
                 <TableBodyCell
+                  colspan="2"
                   id="tbc-game-{i}"
                   class="p-0 {game.sorting == 1 ? 'font-bold' : ''} {game.id == $gameId ? 'active' : ''}"
                 >
@@ -276,9 +302,6 @@
                   >
                     {game.name}
                   </button>
-                </TableBodyCell>
-                <TableBodyCell class="px-2 py-2 text-right">
-                  <TrashBinOutline class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800" />
                 </TableBodyCell>
                 {#if game.description && game.description != game.name}
                   <Tooltip triggeredBy="#tbc-game-{i}" placement="bottom">{game.description}</Tooltip>
@@ -316,16 +339,21 @@
         </div>
       </Card>
     </div>
-    <div class="flex flex-col md:col-span-4">
-      <Card class="flex max-w-none flex-1 flex-col overflow-hidden text-center">
-        <Table hoverable={true} class="mb-4 table-fixed">
+    <div class="flex flex-col md:col-span-5">
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
+        <Table hoverable striped border={false} class="mb-4 table-fixed">
           <TableHead class="text-left text-base">
             <TableHeadCell>Roms</TableHeadCell>
+            <TableHeadCell class="w-1">
+              {#if $loadingRoms}
+                <Spinner size="4" />
+              {/if}
+            </TableHeadCell>
           </TableHead>
           <TableBody>
             {#each $roms as rom}
               <TableBodyRow>
-                <TableBodyCell class="truncate px-4 py-2 text-left text-base {computeRomColor(rom)}">
+                <TableBodyCell colspan="2" class="truncate px-4 py-2 text-left text-base {computeRomColor(rom)}">
                   {rom.name}
                 </TableBodyCell>
               </TableBodyRow>
@@ -353,44 +381,82 @@
     </div>
   </div>
   <div class="mb-4">
-    <Card class="max-w-none text-center">
-      <h5 class="m-2 text-xl font-bold tracking-tight text-gray-900 dark:text-white">Statistics</h5>
-      <div class="grid grid-cols-1 gap-4 p-2 md:grid-cols-4">
-        <div class="text-sm">
-          <span class="font-medium">Systems:</span>
-          {$unfilteredSystems.length}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">Games:</span>
-          {$unfilteredGames.length}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">Roms:</span>
-          {$unfilteredRoms.length}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">Romfiles:</span>
-          {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
-        </div>
-      </div>
-      <div class="grid grid-cols-1 gap-4 p-2 md:grid-cols-4">
-        <div class="text-sm">
-          <span class="font-medium">Total Original Size:</span>
-          {prettyBytes($totalOriginalSize)}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">1G1R Original Size:</span>
-          {prettyBytes($oneRegionOriginalSize)}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">Total Actual Size:</span>
-          {prettyBytes($totalActualSize)}
-        </div>
-        <div class="text-sm">
-          <span class="font-medium">1G1R Actual Size:</span>
-          {prettyBytes($oneRegionActualSize)}
-        </div>
-      </div>
+    <Card class="max-w-none overflow-hidden">
+      <Table border={false} class="table-fixed">
+        <TableHead class="text-left text-base">
+          <TableHeadCell colspan="4">Statistics</TableHeadCell>
+        </TableHead>
+        <TableBody class="text-left text-base">
+          <TableBodyRow>
+            <TableBodyCell>
+              <span class="font-medium">Systems:</span>
+              {#if $loadingSystems}
+                <Spinner size="4" />
+              {:else}
+                {$unfilteredSystems.length}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">Games:</span>
+              {#if $loadingGames}
+                <Spinner size="4" />
+              {:else}
+                {$unfilteredGames.length}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">Roms:</span>
+              {#if $loadingRoms}
+                <Spinner size="4" />
+              {:else}
+                {$unfilteredRoms.length}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">Romfiles:</span>
+              {#if $loadingRoms}
+                <Spinner size="4" />
+              {:else}
+                {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
+              {/if}
+            </TableBodyCell>
+          </TableBodyRow>
+          <TableBodyRow>
+            <TableBodyCell>
+              <span class="font-medium">Total Original Size:</span>
+              {#if $loadingSizes}
+                <Spinner size="4" />
+              {:else}
+                {prettyBytes($totalOriginalSize)}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">1G1R Original Size:</span>
+              {#if $loadingSizes}
+                <Spinner size="4" />
+              {:else}
+                {prettyBytes($oneRegionOriginalSize)}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">Total Actual Size:</span>
+              {#if $loadingSizes}
+                <Spinner size="4" />
+              {:else}
+                {prettyBytes($totalActualSize)}
+              {/if}
+            </TableBodyCell>
+            <TableBodyCell>
+              <span class="font-medium">1G1R Actual Size:</span>
+              {#if $loadingSizes}
+                <Spinner size="4" />
+              {:else}
+                {prettyBytes($oneRegionActualSize)}
+              {/if}
+            </TableBodyCell>
+          </TableBodyRow>
+        </TableBody>
+      </Table>
     </Card>
   </div>
 </div>

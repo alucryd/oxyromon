@@ -36,7 +36,7 @@ pub async fn main(
     Ok(())
 }
 
-async fn purge_system(
+pub async fn purge_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,

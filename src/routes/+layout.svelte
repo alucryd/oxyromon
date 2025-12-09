@@ -20,6 +20,10 @@
   function handleNavbarUpdate(event) {
     isNavbarOpen = event.detail.isOpen;
   }
+
+  function buttonClasses(color) {
+    return `text-base text-${color}-300 dark:text-${color}-300 bg-${color}-900 dark:bg-${color}-900 hover:bg-${color}-700 dark:hover:bg-${color}-700`;
+  }
 </script>
 
 <div class="flex min-h-screen">
@@ -41,9 +45,8 @@
     <div class="grow"></div>
     <ButtonGroup class="mx-2">
       <Button
-        outline
-        color="dark"
-        class="bg-blue-900 text-base text-blue-300 hover:bg-blue-700 dark:text-blue-300"
+        color="blue"
+        class={buttonClasses("blue")}
         bind:active={$oneRegionFilter}
         onclick={() => oneRegionFilter.update((b) => !b)}
       >
@@ -52,36 +55,32 @@
     </ButtonGroup>
     <ButtonGroup class="mx-2">
       <Button
-        outline
-        color="dark"
-        class="bg-green-900 text-base text-green-300 hover:bg-green-700 dark:text-green-300"
+        color="green"
+        class={buttonClasses("green")}
         bind:active={$completeFilter}
         onclick={() => completeFilter.update((b) => !b)}
       >
         {#if $completeFilter}Hide{:else}Show{/if} Complete
       </Button>
       <Button
-        outline
-        color="dark"
-        class="bg-yellow-900 text-base text-yellow-300 hover:bg-yellow-700 dark:text-yellow-300"
+        color="yellow"
+        class={buttonClasses("yellow")}
         bind:active={$incompleteFilter}
         onclick={() => incompleteFilter.update((b) => !b)}
       >
         {#if $incompleteFilter}Hide{:else}Show{/if} Incomplete
       </Button>
       <Button
-        outline
-        color="dark"
-        class="bg-red-900 text-base text-red-300 hover:bg-red-700 dark:text-red-300"
+        color="red"
+        class={buttonClasses("red")}
         bind:active={$wantedFilter}
         onclick={() => wantedFilter.update((b) => !b)}
       >
         {#if $wantedFilter}Hide{:else}Show{/if} Wanted
       </Button>
       <Button
-        outline
-        color="dark"
-        class="bg-gray-900 text-base text-gray-300 hover:bg-gray-700 dark:text-gray-300"
+        color="gray"
+        class={buttonClasses("gray")}
         bind:active={$ignoredFilter}
         onclick={() => ignoredFilter.update((b) => !b)}
       >
