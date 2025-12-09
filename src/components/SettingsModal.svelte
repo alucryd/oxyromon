@@ -1,5 +1,5 @@
 <script>
-  import { TrashBinOutline, PlusOutline } from "flowbite-svelte-icons";
+  import { PlusOutline } from "flowbite-svelte-icons";
   import { Modal, Input, Badge, Label, Select, Toggle, Tooltip, Button, ButtonGroup } from "flowbite-svelte";
 
   import {
@@ -99,7 +99,6 @@
   };
 
   const onSwitchChange = async (key, value) => {
-    await new Promise(setTimeout);
     await setBool(key, value);
     await getSettings();
   };
@@ -117,25 +116,21 @@
   };
 
   const onPreferRegionsChange = async () => {
-    await new Promise(setTimeout);
     await setPreferRegions($preferRegions);
     await getSettings();
   };
 
   const onPreferVersionsChange = async () => {
-    await new Promise(setTimeout);
     await setPreferVersions($preferVersions);
     await getSettings();
   };
 
   const onOneRegionsSubfoldersChange = async () => {
-    await new Promise(setTimeout);
     await setSubfolderScheme(oneRegionsSubfoldersKey, $oneRegionsSubfolders);
     await getSettings();
   };
 
   const onAllRegionsSubfoldersChange = async () => {
-    await new Promise(setTimeout);
     await setSubfolderScheme(allRegionsSubfoldersKey, $allRegionsSubfolders);
     await getSettings();
   };
@@ -175,7 +170,7 @@
       <Tooltip triggeredBy="#one-regions" placement="left">2 letters, uppercase, ordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $oneRegions as oneRegion}
+      {#each $oneRegions as oneRegion (oneRegion)}
         <Badge
           dismissable
           large
@@ -202,7 +197,7 @@
       <Tooltip triggeredBy="#all-regions" placement="left">2 letters, uppercase, unordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $allRegions as allRegion}
+      {#each $allRegions as allRegion (allRegion)}
         <Badge
           dismissable
           large
@@ -229,7 +224,7 @@
       <Tooltip triggeredBy="#languages" placement="left">2 letters, capitalized</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $languages as language}
+      {#each $languages as language (language)}
         <Badge
           dismissable
           large
@@ -257,7 +252,7 @@
       <Tooltip triggeredBy="#discard-releases" placement="left">Discard specific releases</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardReleases as discardRelease}
+      {#each $discardReleases as discardRelease (discardRelease)}
         <Badge
           dismissable
           large
@@ -284,7 +279,7 @@
       <Tooltip triggeredBy="#discard-flags" placement="left">Discard specific flags</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardFlags as discardFlag}
+      {#each $discardFlags as discardFlag (discardFlag)}
         <Badge
           dismissable
           large
@@ -297,19 +292,19 @@
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">SORTING</h6>
     <div id="strict-one-regions" class="mb-4">
-      <Toggle bind:checked={$strictOneRegions} on:change={onStrictOneRegionsChange}>Strict 1G1R</Toggle>
+      <Toggle bind:checked={$strictOneRegions} onchange={onStrictOneRegionsChange}>Strict 1G1R</Toggle>
       <Tooltip triggeredBy="#strict-one-regions" placement="left"
         >Strict mode elects games regardless of their completion</Tooltip
       >
     </div>
     <div id="prefer-parents" class="mb-4">
-      <Toggle bind:checked={$preferParents} on:change={onPreferParentsChange}>Prefer Parents</Toggle>
+      <Toggle bind:checked={$preferParents} onchange={onPreferParentsChange}>Prefer Parents</Toggle>
       <Tooltip triggeredBy="#prefer-parents" placement="left">Favor parents vs clones in the election process</Tooltip>
     </div>
     <div id="prefer-regions" class="mb-4">
       <Label for="prefer-regions-select" class="mb-2">Prefer Regions</Label>
-      <Select id="prefer-regions-select" bind:value={$preferRegions} on:change={onPreferRegionsChange}>
-        {#each preferRegionsChoices as preferRegionChoice}
+      <Select id="prefer-regions-select" bind:value={$preferRegions} onchange={onPreferRegionsChange}>
+        {#each preferRegionsChoices as preferRegionChoice (preferRegionChoice)}
           <option value={preferRegionChoice}>{preferRegionChoice}</option>
         {/each}
       </Select>
@@ -319,8 +314,8 @@
     </div>
     <div id="prefer-versions" class="mb-4">
       <Label for="prefer-versions-select" class="mb-2">Prefer Versions</Label>
-      <Select id="prefer-versions-select" bind:value={$preferVersions} on:change={onPreferVersionsChange}>
-        {#each preferVersionsChoices as preferVersionChoice}
+      <Select id="prefer-versions-select" bind:value={$preferVersions} onchange={onPreferVersionsChange}>
+        {#each preferVersionsChoices as preferVersionChoice (preferVersionChoice)}
           <option value={preferVersionChoice}>{preferVersionChoice}</option>
         {/each}
       </Select>
@@ -344,7 +339,7 @@
       <Tooltip triggeredBy="#prefer-flags" placement="left">Favors specific flags in the election process</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $preferFlags as preferFlag}
+      {#each $preferFlags as preferFlag (preferFlag)}
         <Badge
           dismissable
           large
@@ -362,7 +357,7 @@
         id="rom-directory"
         placeholder="ROM Directory"
         bind:value={$romDirectory}
-        on:change={onRomDirectoryChange}
+        onchange={onRomDirectoryChange}
       />
       <Tooltip triggeredBy="#rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
     </div>
@@ -372,12 +367,12 @@
         id="tmp-directory"
         placeholder="TMP Directory"
         bind:value={$tmpDirectory}
-        on:change={onTmpDirectoryChange}
+        onchange={onTmpDirectoryChange}
       />
       <Tooltip triggeredBy="#tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
     </div>
     <div id="group-subsystems" class="mb-4">
-      <Toggle bind:checked={$groupSubsystems} on:change={onGroupSubsystemsChange}>Group Subsystems</Toggle>
+      <Toggle bind:checked={$groupSubsystems} onchange={onGroupSubsystemsChange}>Group Subsystems</Toggle>
       <Tooltip triggeredBy="#group-subsystems" placement="left">
         Group subsystems in the main system directory (eg: PS3 DLCs and updates)
       </Tooltip>
@@ -387,9 +382,9 @@
       <Select
         id="one-regions-subfolders-select"
         bind:value={$oneRegionsSubfolders}
-        on:change={onOneRegionsSubfoldersChange}
+        onchange={onOneRegionsSubfoldersChange}
       >
-        {#each subfolderSchemesChoices as subfolderSchemeChoice}
+        {#each subfolderSchemesChoices as subfolderSchemeChoice (subfolderSchemeChoice)}
           <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
         {/each}
       </Select>
@@ -400,9 +395,9 @@
       <Select
         id="all-regions-subfolders-select"
         bind:value={$allRegionsSubfolders}
-        on:change={onAllRegionsSubfoldersChange}
+        onchange={onAllRegionsSubfoldersChange}
       >
-        {#each subfolderSchemesChoices as subfolderSchemeChoice}
+        {#each subfolderSchemesChoices as subfolderSchemeChoice (subfolderSchemeChoice)}
           <option value={subfolderSchemeChoice}>{subfolderSchemeChoice}</option>
         {/each}
       </Select>

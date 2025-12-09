@@ -1,7 +1,7 @@
 <script>
   import "../app.css";
 
-  import { Navbar, NavBrand, NavLi, NavUl, NavHamburger, DarkMode, Button, ButtonGroup, Input } from "flowbite-svelte";
+  import { Navbar, NavBrand, NavHamburger, DarkMode, Button, ButtonGroup, Input } from "flowbite-svelte";
   import { AdjustmentsHorizontalSolid } from "flowbite-svelte-icons";
 
   import SettingsModal from "../components/SettingsModal.svelte";
@@ -15,11 +15,11 @@
     wantedFilter,
   } from "../store.js";
 
-  let isNavbarOpen = false;
+  // let isNavbarOpen = false;
 
-  function handleNavbarUpdate(event) {
-    isNavbarOpen = event.detail.isOpen;
-  }
+  // function handleNavbarUpdate(event) {
+  //   isNavbarOpen = event.detail.isOpen;
+  // }
 
   function buttonClasses(color) {
     const classes = {
@@ -40,13 +40,13 @@
       OXYROMON
     </NavBrand>
     <NavHamburger />
-    <!-- <NavbarToggler on:click={() => (navbarIsOpen = !navbarIsOpen)} /> -->
+    <!-- <NavbarToggler onclick={() => (navbarIsOpen = !navbarIsOpen)} /> -->
     <!-- <Collapse
       isOpen={navbarIsOpen}
       navbar
       expand="md"
       class="d-flex justify-content-end"
-      on:update={handleNavbarUpdate}
+      onupdate={handleNavbarUpdate}
     >
     </Collapse> -->
     <div class="grow"></div>

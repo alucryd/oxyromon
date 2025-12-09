@@ -212,7 +212,7 @@
             </TableHeadCell>
           </TableHead>
           <TableBody>
-            {#each $systems as system, i}
+            {#each $systems as system, i (system.id)}
               <TableBodyRow>
                 <TableBodyCell id="tbc-system-{i}" class="p-0 {system.id == $systemId ? 'active' : ''}">
                   <button
@@ -296,7 +296,7 @@
             </TableHeadCell>
           </TableHead>
           <TableBody>
-            {#each $games as game, i}
+            {#each $games as game, i (game.id)}
               <TableBodyRow>
                 <TableBodyCell
                   colspan="2"
@@ -368,7 +368,7 @@
             </TableHeadCell>
           </TableHead>
           <TableBody>
-            {#each $roms as rom}
+            {#each $roms as rom (rom.id)}
               <TableBodyRow>
                 <TableBodyCell colspan="2" class="truncate px-4 py-2 text-left text-base {computeRomColor(rom)}">
                   {rom.name}
