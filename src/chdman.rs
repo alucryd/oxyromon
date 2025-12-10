@@ -659,6 +659,10 @@ impl AsChd for CommonRomfile {
                     let mut parent_romfile = None;
                     for entry in entries.flatten() {
                         let entry_path = entry.path();
+                        // Skip directories
+                        if entry_path.is_dir() {
+                            continue;
+                        }
                         // Skip if it's the same file
                         if entry_path == self.path {
                             continue;
