@@ -131,7 +131,51 @@ pub async fn main(
     let mut system_ids: HashSet<i64> = HashSet::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
-    for path in matches.get_many::<PathBuf>("ROMS").unwrap() {
+    // Collect paths and determine order for CHD imports (children before parents)
+    let paths: Vec<PathBuf> = matches
+        .get_many::<PathBuf>("ROMS")
+        .unwrap()
+        .cloned()
+        .collect();
+
+    // Create a list with priority information
+    let mut paths_with_priority: Vec<(PathBuf, i32)> = Vec::new();
+    for path in paths {
+        let priority = if path.is_file() {
+            if let Ok(Some(mimetype)) = get_mimetype(&path).await {
+                if mimetype.extension() == CHD_EXTENSION {
+                    let romfile = CommonRomfile { path: path.clone() };
+                    if let Ok((_, _, _, _, parent_sha1, _)) = romfile.parse_chd().await {
+                        if parent_sha1.is_some() {
+                            0 // CHD with parent (child) comes first
+                        } else {
+                            1 // CHD without parent comes after
+                        }
+                    } else {
+                        2 // Failed to parse, treat as regular
+                    }
+                } else {
+                    2 // Not a CHD
+                }
+            } else {
+                2 // No mimetype or failed to get mimetype
+            }
+        } else {
+            2 // Directory or not a file
+        };
+        paths_with_priority.push((path, priority));
+    }
+
+    // Sort by priority
+    paths_with_priority.sort_by_key(|(_, priority)| *priority);
+
+    // Extract sorted paths
+    let sorted_paths: Vec<PathBuf> = paths_with_priority
+        .into_iter()
+        .map(|(path, _)| path)
+        .collect();
+
+    for path in sorted_paths {
         let tmp_directory = create_tmp_directory(connection).await?;
         let mut path = get_canonicalized_path(&path).await?;
         if !path.is_dir() {

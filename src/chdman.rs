@@ -543,13 +543,17 @@ impl ToRdsk for ChdRomfile {
 }
 
 pub trait AsChd {
-    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, String, usize)>;
+    async fn parse_chd(
+        &self,
+    ) -> SimpleResult<(ChdType, u64, String, String, Option<String>, usize)>;
     async fn as_chd(self) -> SimpleResult<ChdRomfile>;
     async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile>;
 }
 
 impl AsChd for CommonRomfile {
-    async fn parse_chd(&self) -> SimpleResult<(ChdType, u64, String, String, usize)> {
+    async fn parse_chd(
+        &self,
+    ) -> SimpleResult<(ChdType, u64, String, String, Option<String>, usize)> {
         let output = Command::new(CHDMAN)
             .arg("info")
             .arg("-i")
@@ -579,6 +583,11 @@ impl AsChd for CommonRomfile {
             .trim()
             .to_string();
 
+        let parent_sha1 = stdout
+            .lines()
+            .find(|&line| line.starts_with("Parent SHA1:"))
+            .map(|line| line.split(":").last().unwrap().trim().to_string());
+
         if metadata.contains("CHCD")
             || metadata.contains("CHGD")
             || metadata.contains("CHGT")
@@ -589,7 +598,14 @@ impl AsChd for CommonRomfile {
                 .lines()
                 .filter(|&line| line.trim().starts_with("TRACK:"))
                 .count();
-            return Ok((ChdType::Cd, 0, String::new(), sha1, track_count));
+            return Ok((
+                ChdType::Cd,
+                0,
+                String::new(),
+                sha1,
+                parent_sha1,
+                track_count,
+            ));
         }
 
         let size: u64 = try_with!(
@@ -619,13 +635,13 @@ impl AsChd for CommonRomfile {
             .to_string();
 
         if metadata.contains("DVD") {
-            return Ok((ChdType::Dvd, size, data_sha1, sha1, 1));
+            return Ok((ChdType::Dvd, size, data_sha1, sha1, parent_sha1, 1));
         }
         if metadata.contains("GDDD") || metadata.contains("GDDI") {
-            return Ok((ChdType::Hd, size, data_sha1, sha1, 1));
+            return Ok((ChdType::Hd, size, data_sha1, sha1, parent_sha1, 1));
         }
         if metadata.contains("AVAV") || metadata.contains("AVLD") {
-            return Ok((ChdType::Ld, size, data_sha1, sha1, 1));
+            return Ok((ChdType::Ld, size, data_sha1, sha1, parent_sha1, 1));
         }
         bail!("Unknown CHD type");
     }
@@ -634,10 +650,57 @@ impl AsChd for CommonRomfile {
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, size, sha1, chd_sha1, track_count) = self.parse_chd().await?;
+        let (chd_type, size, sha1, chd_sha1, parent_sha1, track_count) = self.parse_chd().await?;
+
+        // Look for parent CHD if parent_sha1 is not null
+        let parent_romfile = if let Some(ref parent_sha1_value) = parent_sha1 {
+            if let Some(parent_dir) = self.path.parent() {
+                if let Ok(entries) = std::fs::read_dir(parent_dir) {
+                    let mut parent_romfile = None;
+                    for entry in entries.flatten() {
+                        let entry_path = entry.path();
+                        // Skip if it's the same file
+                        if entry_path == self.path {
+                            continue;
+                        }
+                        // Check if it's a CHD file
+                        let mimetype = get_mimetype(&entry_path).await?;
+                        if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
+                            continue;
+                        }
+                        // Create a CommonRomfile and check its SHA1
+                        let candidate_romfile = CommonRomfile {
+                            path: entry_path.clone(),
+                        };
+                        if let Ok((
+                            _chd_type,
+                            _size,
+                            _sha1,
+                            candidate_sha1,
+                            _parent_sha1,
+                            _track_count,
+                        )) = candidate_romfile.parse_chd().await
+                        {
+                            if candidate_sha1 == *parent_sha1_value {
+                                parent_romfile = Some(candidate_romfile);
+                                break;
+                            }
+                        }
+                    }
+                    parent_romfile
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         Ok(ChdRomfile {
             romfile: self,
-            parent_romfile: None,
+            parent_romfile,
             chd_type,
             size,
             sha1,
@@ -650,7 +713,21 @@ impl AsChd for CommonRomfile {
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
         }
-        let (chd_type, size, sha1, chd_sha1, track_count) = self.parse_chd().await?;
+        let (chd_type, size, sha1, chd_sha1, parent_sha1, track_count) = self.parse_chd().await?;
+
+        // Verify that the provided parent's SHA1 matches the expected parent_sha1
+        if let Some(parent_sha1) = parent_sha1 {
+            let (_chd_type, _size, _sha1, chd_sha1, _parent_sha1, _track_count) =
+                parent_romfile.romfile.parse_chd().await?;
+            if chd_sha1 != parent_sha1 {
+                bail!(
+                    "Parent CHD SHA1 mismatch: expected {}, got {}",
+                    parent_sha1,
+                    chd_sha1
+                );
+            }
+        }
+
         Ok(ChdRomfile {
             romfile: self,
             parent_romfile: Some(parent_romfile.romfile),
