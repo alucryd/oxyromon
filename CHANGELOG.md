@@ -20,6 +20,7 @@
 ## Fixes
 
 - Fixed an infinite loop when importing DAT files containing invalid parent references
+- Fixed playlist names for games having stuff after the disc number
 
 # 0.20.2
 
