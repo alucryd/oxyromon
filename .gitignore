@@ -16,6 +16,7 @@ lcov.info
 dist
 *.profraw
 .cargo
+tests/.tmp*
 
 # javascript
 node_modules

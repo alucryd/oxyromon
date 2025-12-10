@@ -8,6 +8,7 @@
 - Added `-d/--delete` flag to `import-roms` for hard deletion of unmatched and duplicate ROMs (alternative to `--trash`)
 - Added `-s/--save` flag to `download-dats` for optionally saving downloaded DAT files to a specified directory
 - Added purge system buttons in the frontend
+- Added automatic detection of CHD parents in `import-roms`, provided they are in the same directory
 
 ## Changes
 
