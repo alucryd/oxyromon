@@ -196,6 +196,7 @@ export async function getRomsByGameIdAndSystemId(gameId, systemId) {
     const query = gql`
           {
               roms(gameId: ${gameId}) {
+                  id
                   name
                   size
                   romfile {
