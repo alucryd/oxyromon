@@ -19,9 +19,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install dependencies
-        run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit pnpm
+        run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+          cache: true
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
