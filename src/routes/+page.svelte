@@ -31,6 +31,7 @@
     getSystems,
     updateGames,
     updateRoms,
+    updateRomfiles,
     updateSystems,
   } from "../query.js";
   import {
@@ -46,6 +47,9 @@
     oneRegionFilter,
     oneRegionOriginalSize,
     pageSize,
+    romfiles,
+    romfilesPage,
+    romfilesTotalPages,
     roms,
     romsPage,
     romsTotalPages,
@@ -64,6 +68,7 @@
     loadingGames,
     loadingRoms,
     loadingSizes,
+    romsPageSize,
   } from "../store.js";
 
   $: systemsFirstPage = $systemsPage == 1;
@@ -72,6 +77,8 @@
   $: gamesLastPage = $gamesPage == $gamesTotalPages;
   $: romsFirstPage = $romsPage == 1;
   $: romsLastPage = $romsPage == $romsTotalPages;
+  $: romfilesFirstPage = $romfilesPage == 1;
+  $: romfilesLastPage = $romfilesPage == $romfilesTotalPages;
 
   function computeSystemColor(system) {
     if (system.completion == 2) {
@@ -126,31 +133,35 @@
     systemId.subscribe(async (systemId) => {
       gameId.set(-1);
       gamesPage.set(1);
-      if (systemId === -1) {
-        games.set([]);
-      } else {
-        await getGamesBySystemId(systemId);
-        await getSizesBySystemId(systemId);
-      }
+      games.set([]);
+      roms.set([]);
+      romfiles.set([]);
+      await getGamesBySystemId(systemId);
+      await getSizesBySystemId(systemId);
     });
     gamesPage.subscribe(async () => {
       await updateGames();
     });
     gameId.subscribe(async (gameId) => {
       romsPage.set(1);
-      if (gameId === -1) {
-        roms.set([]);
-      } else {
-        await getRomsByGameIdAndSystemId(gameId, $systemId);
-      }
+      romfilesPage.set(1);
+      roms.set([]);
+      romfiles.set([]);
+      await getRomsByGameIdAndSystemId(gameId, $systemId);
     });
     romsPage.subscribe(async () => {
       await updateRoms();
     });
+    romfilesPage.subscribe(async () => {
+      await updateRomfiles();
+    });
     pageSize.subscribe(async () => {
       await updateSystems();
       await updateGames();
+    });
+    romsPageSize.subscribe(async () => {
       await updateRoms();
+      await updateRomfiles();
     });
     completeFilter.subscribe(async () => {
       if ($gamesPage != 1) {
@@ -198,8 +209,8 @@
   });
 </script>
 
-<div class="w-full px-4">
-  <div class="mt-20 mb-4 grid grid-cols-1 gap-4 md:grid-cols-10">
+<div class="flex min-h-screen w-full flex-col px-4">
+  <div class="mt-20 mb-4 grid flex-1 grid-cols-1 gap-4 md:grid-cols-10">
     <div class="flex flex-col md:col-span-2">
       <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
         <Table hoverable striped border={false} class="mb-4 table-fixed">
@@ -356,7 +367,7 @@
         </div>
       </Card>
     </div>
-    <div class="flex flex-col md:col-span-5">
+    <div class="flex flex-col gap-4 md:col-span-5">
       <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
         <Table hoverable striped border={false} class="mb-4 table-fixed">
           <TableHead class="text-left text-base">
@@ -408,6 +419,68 @@
             class="px-2"
             disabled={romsLastPage}
             onclick={() => romsPage.set($romsTotalPages)}
+          >
+            <ChevronDoubleRightOutline class="h-4 w-4" />
+          </Button>
+        </div>
+      </Card>
+      <Card class="flex max-w-none flex-1 flex-col overflow-hidden">
+        <Table hoverable striped border={false} class="mb-4 table-fixed">
+          <TableHead class="text-left text-base">
+            <TableHeadCell>Romfiles</TableHeadCell>
+            <TableHeadCell class="w-1">
+              {#if $loadingRoms}
+                <Spinner size="4" />
+              {/if}
+            </TableHeadCell>
+          </TableHead>
+          <TableBody>
+            {#each $romfiles as romfile (romfile.path)}
+              <TableBodyRow>
+                <TableBodyCell colspan="2" class="truncate px-4 py-2 text-left text-base">
+                  {romfile.path.split("/").slice(1).join("/")}
+                </TableBodyCell>
+              </TableBodyRow>
+            {/each}
+          </TableBody>
+        </Table>
+        <div class="m-4 mt-auto flex items-center justify-center gap-2">
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romfilesFirstPage}
+            onclick={() => romfilesPage.set(1)}
+          >
+            <ChevronDoubleLeftOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romfilesFirstPage}
+            onclick={() => romfilesPage.update((n) => n - 1)}
+          >
+            <ChevronLeftOutline class="h-4 w-4" />
+          </Button>
+          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
+            {$romfilesPage} / {$romfilesTotalPages}
+          </span>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romfilesLastPage}
+            onclick={() => romfilesPage.update((n) => n + 1)}
+          >
+            <ChevronRightOutline class="h-4 w-4" />
+          </Button>
+          <Button
+            size="xs"
+            color="alternative"
+            class="px-2"
+            disabled={romfilesLastPage}
+            onclick={() => romfilesPage.set($romfilesTotalPages)}
           >
             <ChevronDoubleRightOutline class="h-4 w-4" />
           </Button>

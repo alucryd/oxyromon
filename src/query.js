@@ -1,5 +1,5 @@
 import { GraphQLClient, gql } from "graphql-request";
-import { reject } from "lodash-es";
+import { reject, uniqBy } from "lodash-es";
 import { get } from "svelte/store";
 
 import {
@@ -41,8 +41,12 @@ import {
   preferVersionsKey,
   romDirectory,
   romDirectoryKey,
+  romfiles,
+  romfilesPage,
+  romfilesTotalPages,
   roms,
   romsPage,
+  romsPageSize,
   romsTotalPages,
   strictOneRegions,
   strictOneRegionsKey,
@@ -217,8 +221,21 @@ export async function getRomsByGameIdAndSystemId(gameId, systemId) {
 }
 
 export async function updateRoms() {
-  romsTotalPages.set(Math.max(Math.ceil(get(unfilteredRoms).length / get(pageSize)), 1));
-  roms.set(paginate(get(unfilteredRoms), get(romsPage), get(pageSize)));
+  romsTotalPages.set(Math.max(Math.ceil(get(unfilteredRoms).length / get(romsPageSize)), 1));
+  roms.set(paginate(get(unfilteredRoms), get(romsPage), get(romsPageSize)));
+  await updateRomfiles();
+}
+
+export async function updateRomfiles() {
+  const allRomfiles = uniqBy(
+    get(unfilteredRoms)
+      .filter((rom) => rom.romfile)
+      .map((rom) => rom.romfile),
+    "path"
+  ).sort((a, b) => a.path.localeCompare(b.path));
+
+  romfilesTotalPages.set(Math.max(Math.ceil(allRomfiles.length / get(romsPageSize)), 1));
+  romfiles.set(paginate(allRomfiles, get(romfilesPage), get(romsPageSize)));
 }
 
 export async function getSizesBySystemId(systemId) {

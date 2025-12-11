@@ -46,6 +46,7 @@ export const purgingSystemId = writable(-1);
 export const games = writable([]);
 export const gameId = writable(-1);
 export const roms = writable([]);
+export const romfiles = writable([]);
 
 export const unfilteredSystems = writable([]);
 export const unfilteredGames = writable([]);
@@ -63,7 +64,10 @@ export const gamesPage = writable(1);
 export const gamesTotalPages = writable(1);
 export const romsPage = writable(1);
 export const romsTotalPages = writable(1);
+export const romfilesPage = writable(1);
+export const romfilesTotalPages = writable(1);
 export const pageSize = writable(20);
+export const romsPageSize = writable(8);
 
 export const completeFilter = writable(true);
 export const incompleteFilter = writable(true);
