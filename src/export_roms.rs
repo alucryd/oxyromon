@@ -2674,6 +2674,8 @@ mod test_multiple_tracks_chd_to_zso_should_do_nothing;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
+mod test_multiple_tracks_cue_bin_to_gdi;
+#[cfg(test)]
 mod test_original_to_original_should_copy;
 #[cfg(test)]
 mod test_original_to_sevenzip;
