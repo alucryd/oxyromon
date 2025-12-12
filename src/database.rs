@@ -250,9 +250,9 @@ pub async fn find_empty_systems(connection: &mut SqliteConnection) -> Vec<System
         FROM systems
         WHERE systems.completion = 0
         AND NOT EXISTS (
-            SELECT 1 
-            FROM games 
-            WHERE systems.id = games.system_id 
+            SELECT 1
+            FROM games
+            WHERE systems.id = games.system_id
             AND games.completion != 0)
         ORDER BY systems.name
         ",
@@ -529,7 +529,7 @@ pub async fn update_jbfolder_games_completion_by_system_id(
                 FROM roms
                 WHERE roms.game_id = games.id
                 AND roms.romfile_id IS NULL
-                AND roms.parent_id IS NOT NULL
+                AND roms.parent_id IS NULL
                 AND roms.name NOT LIKE 'PS3_CONTENT/%'
                 AND roms.name NOT LIKE 'PS3_EXTRA/%'
                 AND roms.name NOT LIKE 'PS3_UPDATE/%'
@@ -539,7 +539,7 @@ pub async fn update_jbfolder_games_completion_by_system_id(
                 FROM roms
                 WHERE roms.game_id = games.id
                 AND roms.romfile_id IS NOT NULL
-                AND roms.parent_id IS NOT NULL
+                AND roms.parent_id IS NULL
                 AND roms.name NOT LIKE 'PS3_CONTENT/%'
                 AND roms.name NOT LIKE 'PS3_EXTRA/%'
                 AND roms.name NOT LIKE 'PS3_UPDATE/%'
@@ -668,7 +668,7 @@ pub async fn find_wanted_games_by_system_id(
         SELECT *
         FROM games
         WHERE system_id = ?
-        AND sorting != 2 
+        AND sorting != 2
         ORDER BY name
         ",
         system_id,
@@ -2539,7 +2539,7 @@ pub async fn update_patch(
 ) {
     sqlx::query!(
         "
-        UPDATE patches 
+        UPDATE patches
         SET name = ?, \"index\" = ?, rom_id = ?, romfile_id = ?
         WHERE id = ?
         ",
@@ -2597,7 +2597,7 @@ pub async fn update_romfile(connection: &mut SqliteConnection, id: i64, path: &s
     let size = i64::try_from(size).unwrap();
     sqlx::query!(
         "
-        UPDATE romfiles 
+        UPDATE romfiles
         SET path = ?, size = ?
         WHERE id = ?
         ",

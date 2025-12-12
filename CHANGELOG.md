@@ -22,6 +22,7 @@
 
 - Fixed an infinite loop when importing DAT files containing invalid parent references
 - Fixed playlist names for games having stuff after the disc number
+- Fix JB folder game completion
 
 # 0.20.2
 
