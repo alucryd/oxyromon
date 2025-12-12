@@ -10,6 +10,7 @@
 - Added purge system buttons in the frontend
 - Added automatic detection of CHD parents in `import-roms`, provided they are in the same directory
 - Added a romfiles card to the frontend
+- Added new `purge-irds` subcommand to unassociate games from IRD files
 
 ## Changes
 

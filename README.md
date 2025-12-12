@@ -215,6 +215,7 @@ These should be in your `${PATH}` for extra features.
         export-roms         Export ROM files to common formats
         rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
         check-roms          Check ROM files' integrity
+        purge-irds          Unassociate games from IRD files
         purge-roms          Purge trashed, missing, and orphan ROM files
         purge-systems       Purge systems
         generate-playlists  Generate M3U playlists for multi-disc games
@@ -358,6 +359,22 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
         -i, --info   Show the IRD information and exit
         -f, --force  Force import of already imported IRD files
         -h, --help   Print help information
+
+## oxyromon-purge-irds
+
+Unassociate games from IRD files
+
+This will remove all child ROMs that were created when importing an IRD file, effectively unassociating the game from the IRD.
+All ROM files associated with the deleted ROMs will be moved to the system's `Trash` directory.
+The game will be marked as not being a JB folder anymore, allowing you to re-import a different IRD if needed.
+
+    Usage: oxyromon purge-irds [GAMES]...
+
+    Arguments:
+        [GAMES]...  Set the game names to purge
+
+    Options:
+        -h, --help  Print help
 
 ## oxyromon-import-roms
 
