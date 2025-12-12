@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE patches\n        SET name = ?, \"index\" = ?, rom_id = ?, romfile_id = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "f26d6c242c82ef81cc8d5cadbc6ed99a37df1436bcba819b7e78f12f9b06a2e0"
+}

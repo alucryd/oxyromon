@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE romfiles\n        SET path = ?, size = ?\n        WHERE id = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "4ba638bd617e5ab52917d8035909522404f98aea5aa406f956635b15bb97f2c2"
+}
