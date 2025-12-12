@@ -1,0 +1,74 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM systems\n        WHERE systems.completion = 0\n        AND NOT EXISTS (\n            SELECT 1\n            FROM games\n            WHERE systems.id = games.system_id\n            AND games.completion != 0)\n        ORDER BY systems.name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "version",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "url",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "arcade",
+        "ordinal": 5,
+        "type_info": "Bool"
+      },
+      {
+        "name": "merging",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "custom_name",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "completion",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "custom_extension",
+        "ordinal": 9,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "39a47ac609f5d42061d33608fdfe647f7eff7edba5ae2961a0b57507de253f41"
+}
