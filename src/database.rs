@@ -1187,6 +1187,22 @@ pub async fn find_roms_by_game_id_parent_bioses_only(
     .unwrap_or_else(|_| panic!("Error while finding roms with game id {}", game_id))
 }
 
+pub async fn find_roms_by_parent_id(connection: &mut SqliteConnection, parent_id: i64) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE parent_id = ?
+        ORDER BY name
+        ",
+        parent_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with parent id {}", parent_id))
+}
+
 pub async fn find_roms_without_romfile_by_game_ids(
     connection: &mut SqliteConnection,
     game_ids: &[i64],
@@ -2496,10 +2512,23 @@ pub async fn delete_rom_by_name_and_game_id(
     .await
     .unwrap_or_else(|_| {
         panic!(
-            "Error while deleting rom with name {} and game_id {}",
+            "Error while deleting rom with name {} and game id {}",
             name, game_id
         )
     });
+}
+
+pub async fn delete_rom_by_id(connection: &mut SqliteConnection, id: i64) {
+    sqlx::query!(
+        "
+        DELETE FROM roms
+        WHERE id = ?
+        ",
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while deleting rom with id {}", id));
 }
 
 pub async fn create_patch(

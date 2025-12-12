@@ -76,6 +76,7 @@ mod mutation;
 mod nsz;
 mod progress;
 mod prompt;
+mod purge_irds;
 mod purge_roms;
 mod purge_systems;
 #[cfg(feature = "server")]
@@ -117,6 +118,7 @@ async fn main() -> SimpleResult<()> {
         import_irds::subcommand(),
         import_patches::subcommand(),
         import_roms::subcommand(),
+        purge_irds::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
         export_roms::subcommand(),
@@ -205,6 +207,14 @@ async fn main() -> SimpleResult<()> {
                 import_irds::main(
                     &mut pool.acquire().await.unwrap(),
                     matches.subcommand_matches("import-irds").unwrap(),
+                    &progress_bar,
+                )
+                .await?
+            }
+            Some("purge-irds") => {
+                purge_irds::main(
+                    &mut pool.acquire().await.unwrap(),
+                    matches.subcommand_matches("purge-irds").unwrap(),
                     &progress_bar,
                 )
                 .await?
