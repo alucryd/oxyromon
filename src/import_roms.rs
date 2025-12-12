@@ -211,14 +211,28 @@ pub async fn main(
                     ));
                     match system.as_ref() {
                         Some(system) => {
-                            import_jbfolder(connection, progress_bar, system, &path, unattended)
-                                .await?
+                            let system_id = import_jbfolder(
+                                connection,
+                                progress_bar,
+                                system,
+                                &path,
+                                unattended,
+                            )
+                            .await?;
+                            system_ids.insert(system_id);
                         }
                         None => {
                             let system =
                                 prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
-                            import_jbfolder(connection, progress_bar, &system, &path, unattended)
-                                .await?;
+                            let system_id = import_jbfolder(
+                                connection,
+                                progress_bar,
+                                &system,
+                                &path,
+                                unattended,
+                            )
+                            .await?;
+                            system_ids.insert(system_id);
                         }
                     }
                 } else {
@@ -488,7 +502,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     system: &System,
     path: &P,
     unattended: bool,
-) -> SimpleResult<()> {
+) -> SimpleResult<i64> {
     let sfb_romfile_path = path.as_ref().join(PS3_DISC_SFB);
 
     // abort if the romfile is already in the database
@@ -497,7 +511,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
         .is_some()
     {
         progress_bar.println("Already in database");
-        return Ok(());
+        return Ok(system.id);
     }
 
     let mut transaction = begin_transaction(connection).await;
@@ -650,7 +664,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
 
     commit_transaction(transaction).await;
 
-    Ok(())
+    Ok(system.id)
 }
 
 #[allow(clippy::too_many_arguments)]
