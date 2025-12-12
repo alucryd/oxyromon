@@ -529,7 +529,7 @@ pub async fn update_jbfolder_games_completion_by_system_id(
                 FROM roms
                 WHERE roms.game_id = games.id
                 AND roms.romfile_id IS NULL
-                AND roms.parent_id IS NULL
+                AND roms.parent_id IS NOT NULL
                 AND roms.name NOT LIKE 'PS3_CONTENT/%'
                 AND roms.name NOT LIKE 'PS3_EXTRA/%'
                 AND roms.name NOT LIKE 'PS3_UPDATE/%'
@@ -539,10 +539,6 @@ pub async fn update_jbfolder_games_completion_by_system_id(
                 FROM roms
                 WHERE roms.game_id = games.id
                 AND roms.romfile_id IS NOT NULL
-                AND roms.parent_id IS NULL
-                AND roms.name NOT LIKE 'PS3_CONTENT/%'
-                AND roms.name NOT LIKE 'PS3_EXTRA/%'
-                AND roms.name NOT LIKE 'PS3_UPDATE/%'
             ) THEN 0
             ELSE 1
         END
