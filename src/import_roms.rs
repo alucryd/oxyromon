@@ -27,8 +27,22 @@ use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
 use strsim::jaro_winkler;
-use strum::IntoEnumIterator;
+use strum::{Display, IntoEnumIterator};
 use walkdir::WalkDir;
+
+#[derive(Display, PartialEq)]
+enum MatchState {
+    Valid = 0,
+    Duplicate = 1,
+    Invalid = 2,
+}
+
+struct MatchResult {
+    state: MatchState,
+    system: Option<System>,
+    game: Option<Game>,
+    rom: Option<Rom>,
+}
 
 pub fn subcommand() -> Command {
     Command::new("import-roms")
@@ -521,7 +535,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     let (md5, size) = original_romfile
         .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &HashAlgorithm::Md5)
         .await?;
-    match find_sfb_rom_by_md5(
+    let sfb_match_result = find_sfb_rom_by_md5(
         &mut transaction,
         progress_bar,
         system,
@@ -529,10 +543,13 @@ async fn import_jbfolder<P: AsRef<Path>>(
         &md5,
         unattended,
     )
-    .await?
-    {
-        Some((sfb_rom, game)) => {
+    .await?;
+    match sfb_match_result.state {
+        MatchState::Valid => {
             let system_directory = get_system_directory(&mut transaction, system).await?;
+
+            let game = sfb_match_result.game.unwrap();
+            let sfb_rom = sfb_match_result.rom.unwrap();
 
             let walker = WalkDir::new(path.as_ref()).into_iter();
             for entry in walker.filter_map(|e| e.ok()) {
@@ -659,6 +676,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
         }
         _ => {
             progress_bar.println("No match");
+            // TODO: implement sensible trashing or deleting
         }
     }
 
@@ -757,7 +775,7 @@ async fn import_archive(
             }
             let rom_name = rom_path.file_name().unwrap().to_str();
 
-            let rom_game_system = find_rom_by_size_and_hash(
+            let match_result = find_rom_by_size_and_hash(
                 connection,
                 progress_bar,
                 size,
@@ -770,16 +788,44 @@ async fn import_archive(
                 unattended,
             )
             .await?;
-            if let Some((rom, game, system)) = rom_game_system {
-                matched = true;
+            if match_result.state == MatchState::Valid {
+                let system = match_result.system.unwrap();
+                let game = match_result.game.unwrap();
+                let rom = match_result.rom.unwrap();
                 new_system_ids.insert(system.id);
                 new_game_ids.insert(game.id);
                 roms_games_systems_archive_romfiles.push((rom, game, system, archive_romfile));
+                matched = true;
+                break;
+            } else if match_result.state == MatchState::Duplicate {
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &romfile,
+                    trash,
+                    delete,
+                    &match_result,
+                )
+                .await?;
+                matched = true;
                 break;
             }
         }
-        if !matched && (trash || delete) && romfiles_count == 1 {
-            handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
+        if !matched && romfiles_count == 1 {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &romfile,
+                trash,
+                delete,
+                &MatchResult {
+                    state: MatchState::Invalid,
+                    system: None,
+                    game: None,
+                    rom: None,
+                },
+            )
+            .await?;
         }
     }
 
@@ -917,7 +963,7 @@ async fn import_chd(
                     let (hash, size) = bin_romfile
                         .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                         .await?;
-                    if let Some(rom_game_system) = find_rom_by_size_and_hash(
+                    let match_result = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         size,
@@ -939,10 +985,13 @@ async fn import_chd(
                         hash_algorithm,
                         unattended,
                     )
-                    .await?
-                    {
-                        new_game_ids.insert(rom_game_system.1.id);
-                        roms_games_systems.push(rom_game_system);
+                    .await?;
+                    if match_result.state == MatchState::Valid {
+                        let system = match_result.system.unwrap();
+                        let game = match_result.game.unwrap();
+                        let rom = match_result.rom.unwrap();
+                        new_game_ids.insert(game.id);
+                        roms_games_systems.push((rom, game, system));
                         break;
                     }
                 }
@@ -982,28 +1031,31 @@ async fn import_chd(
                 // persist in database
                 create_or_update_romfile(connection, progress_bar, &new_chd_path, &roms).await?;
 
-                Ok(Some([system.id, game.id]))
-            } else {
-                progress_bar.println("CRC mismatch");
-                if trash || delete {
-                    handle_invalid_romfile(
-                        connection,
-                        progress_bar,
-                        &chd_romfile.romfile,
-                        trash,
-                        delete,
-                    )
-                    .await?;
-                }
-                Ok(None)
+                return Ok(Some([system.id, game.id]));
             }
+            progress_bar.println("CRC mismatch");
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &chd_romfile.romfile,
+                trash,
+                delete,
+                &MatchResult {
+                    state: MatchState::Invalid,
+                    system: None,
+                    game: None,
+                    rom: None,
+                },
+            )
+            .await?;
+            Ok(None)
         }
         ChdType::Dvd => {
             for hash_algorithm in &hash_algorithms {
                 let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                let mut rom_game_system = find_rom_by_size_and_hash(
+                let mut match_result = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
@@ -1023,8 +1075,10 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
-                    rom_game_system = find_rom_by_size_and_hash(
+                if match_result.state == MatchState::Invalid
+                    && hash_algorithm == &HashAlgorithm::Sha1
+                {
+                    match_result = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         0,
@@ -1044,7 +1098,11 @@ async fn import_chd(
                     )
                     .await?;
                 }
-                if let Some((rom, game, system)) = rom_game_system {
+                if match_result.state == MatchState::Valid {
+                    let system = match_result.system.unwrap();
+                    let game = match_result.game.unwrap();
+                    let rom = match_result.rom.unwrap();
+
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     let new_chd_path = system_directory
@@ -1062,18 +1120,33 @@ async fn import_chd(
                         .await?;
 
                     return Ok(Some([system.id, game.id]));
+                } else if match_result.state == MatchState::Duplicate {
+                    trash_or_delete_romfile(
+                        connection,
+                        progress_bar,
+                        &chd_romfile.romfile,
+                        trash,
+                        delete,
+                        &match_result,
+                    )
+                    .await?;
                 }
             }
-            if trash || delete {
-                handle_invalid_romfile(
-                    connection,
-                    progress_bar,
-                    &chd_romfile.romfile,
-                    trash,
-                    delete,
-                )
-                .await?;
-            }
+            progress_bar.println("CRC mismatch");
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &chd_romfile.romfile,
+                trash,
+                delete,
+                &MatchResult {
+                    state: MatchState::Invalid,
+                    system: None,
+                    game: None,
+                    rom: None,
+                },
+            )
+            .await?;
             Ok(None)
         }
         ChdType::Hd => {
@@ -1081,7 +1154,7 @@ async fn import_chd(
                 let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                let mut rom_game_system = find_rom_by_size_and_hash(
+                let mut match_result = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
@@ -1101,8 +1174,10 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
-                    rom_game_system = find_rom_by_size_and_hash(
+                if match_result.state == MatchState::Invalid
+                    && hash_algorithm == &HashAlgorithm::Sha1
+                {
+                    match_result = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         0,
@@ -1122,7 +1197,11 @@ async fn import_chd(
                     )
                     .await?;
                 }
-                if let Some((rom, game, system)) = rom_game_system {
+                if match_result.state == MatchState::Valid {
+                    let system = match_result.system.unwrap();
+                    let game = match_result.game.unwrap();
+                    let rom = match_result.rom.unwrap();
+
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     // put MAME CHDs in a subdirectory
@@ -1149,18 +1228,33 @@ async fn import_chd(
                         .await?;
 
                     return Ok(Some([system.id, game.id]));
+                } else if match_result.state == MatchState::Duplicate {
+                    trash_or_delete_romfile(
+                        connection,
+                        progress_bar,
+                        &chd_romfile.romfile,
+                        trash,
+                        delete,
+                        &match_result,
+                    )
+                    .await?;
                 }
             }
-            if trash || delete {
-                handle_invalid_romfile(
-                    connection,
-                    progress_bar,
-                    &chd_romfile.romfile,
-                    trash,
-                    delete,
-                )
-                .await?;
-            }
+            progress_bar.println("CRC mismatch");
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &chd_romfile.romfile,
+                trash,
+                delete,
+                &MatchResult {
+                    state: MatchState::Invalid,
+                    system: None,
+                    game: None,
+                    rom: None,
+                },
+            )
+            .await?;
             Ok(None)
         }
         ChdType::Ld => {
@@ -1168,7 +1262,7 @@ async fn import_chd(
                 let (hash, size) = chd_romfile
                     .get_hash_and_size(connection, progress_bar, 1, 1, hash_algorithm)
                     .await?;
-                let mut rom_game_system = find_rom_by_size_and_hash(
+                let mut match_result = find_rom_by_size_and_hash(
                     connection,
                     progress_bar,
                     size,
@@ -1188,8 +1282,10 @@ async fn import_chd(
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
-                if rom_game_system.is_none() && hash_algorithm == &HashAlgorithm::Sha1 {
-                    rom_game_system = find_rom_by_size_and_hash(
+                if match_result.state == MatchState::Invalid
+                    && hash_algorithm == &HashAlgorithm::Sha1
+                {
+                    match_result = find_rom_by_size_and_hash(
                         connection,
                         progress_bar,
                         0,
@@ -1209,7 +1305,11 @@ async fn import_chd(
                     )
                     .await?;
                 }
-                if let Some((rom, game, system)) = rom_game_system {
+                if match_result.state == MatchState::Valid {
+                    let system = match_result.system.unwrap();
+                    let game = match_result.game.unwrap();
+                    let rom = match_result.rom.unwrap();
+
                     let system_directory = get_system_directory(connection, &system).await?;
 
                     // put MAME CHDs in a subdirectory
@@ -1236,18 +1336,33 @@ async fn import_chd(
                         .await?;
 
                     return Ok(Some([system.id, game.id]));
+                } else if match_result.state == MatchState::Duplicate {
+                    trash_or_delete_romfile(
+                        connection,
+                        progress_bar,
+                        &chd_romfile.romfile,
+                        trash,
+                        delete,
+                        &match_result,
+                    )
+                    .await?;
                 }
             }
-            if trash || delete {
-                handle_invalid_romfile(
-                    connection,
-                    progress_bar,
-                    &chd_romfile.romfile,
-                    trash,
-                    delete,
-                )
-                .await?;
-            }
+            progress_bar.println("CRC mismatch");
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &chd_romfile.romfile,
+                trash,
+                delete,
+                &MatchResult {
+                    state: MatchState::Invalid,
+                    system: None,
+                    game: None,
+                    rom: None,
+                },
+            )
+            .await?;
             Ok(None)
         }
     }
@@ -1267,7 +1382,7 @@ async fn import_cia(
     let tmp_directory = create_tmp_directory(connection).await?;
     let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
 
-    let mut roms_games_systems_cia_infos: Vec<(Rom, Game, System, &ctrtool::ArchiveInfo)> = vec![];
+    let mut match_results_cia_infos: Vec<(MatchResult, &ctrtool::ArchiveInfo)> = vec![];
     let mut new_system_ids: HashSet<i64> = HashSet::new();
     let mut new_game_ids: HashSet<i64> = HashSet::new();
 
@@ -1286,7 +1401,6 @@ async fn import_cia(
             let (hash, size) = extracted_romfile
                 .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
                 .await?;
-            extracted_romfile.delete(progress_bar, true).await?;
 
             let path = Path::new(&cia_info.path);
             let mut game_names: Vec<&str> = vec![];
@@ -1299,7 +1413,7 @@ async fn import_cia(
             }
             let rom_name = path.file_name().unwrap().to_str();
 
-            if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+            let match_result = find_rom_by_size_and_hash(
                 connection,
                 progress_bar,
                 size,
@@ -1311,18 +1425,20 @@ async fn import_cia(
                 &hash_algorithm,
                 unattended,
             )
-            .await?
-            {
-                new_system_ids.insert(system.id);
-                new_game_ids.insert(game.id);
-                roms_games_systems_cia_infos.push((rom, game, system, cia_info));
+            .await?;
+
+            if match_result.state == MatchState::Valid {
+                new_system_ids.insert(match_result.system.as_ref().unwrap().id);
+                new_game_ids.insert(match_result.game.as_ref().unwrap().id);
+                match_results_cia_infos.push((match_result, cia_info));
                 break;
             }
         }
+        extracted_romfile.delete(progress_bar, true).await?;
     }
 
     // archive contains a single full game with no invalid file
-    if roms_games_systems_cia_infos.len() == cia_infos.len() && new_game_ids.len() == 1 {
+    if match_results_cia_infos.len() == cia_infos.len() && new_game_ids.len() == 1 {
         let rom_ids: HashSet<i64> =
             find_roms_by_game_id_no_parents(connection, *new_game_ids.iter().last().unwrap())
                 .await
@@ -1330,13 +1446,19 @@ async fn import_cia(
                 .map(|rom| rom.id)
                 .collect();
         if rom_ids.is_superset(
-            &roms_games_systems_cia_infos
+            &match_results_cia_infos
                 .par_iter()
-                .map(|(rom, _, _, _)| rom.id)
+                .map(|(match_result, _)| match_result.rom.as_ref().unwrap().id)
                 .collect(),
         ) {
-            let game = &roms_games_systems_cia_infos.first().unwrap().1;
-            let system = &roms_games_systems_cia_infos.first().unwrap().2;
+            let first_match = &match_results_cia_infos.first().unwrap().0;
+            let system = first_match.system.as_ref().unwrap();
+            let game = first_match.game.as_ref().unwrap();
+            let roms = match_results_cia_infos
+                .iter()
+                .map(|(match_result, _)| match_result.rom.as_ref().unwrap())
+                .collect::<Vec<&Rom>>();
+
             let system_directory = get_system_directory(connection, system).await?;
 
             let new_path = system_directory.join(format!("{}.cia", &game.name));
@@ -1345,23 +1467,40 @@ async fn import_cia(
             romfile.rename(progress_bar, &new_path, false).await?;
 
             // persist in database
-            create_or_update_romfile(
-                connection,
-                progress_bar,
-                &new_path,
-                &roms_games_systems_cia_infos
-                    .iter()
-                    .map(|(rom, _, _, _)| rom)
-                    .collect::<Vec<&Rom>>(),
-            )
-            .await?;
+            create_or_update_romfile(connection, progress_bar, &new_path, &roms).await?;
 
             return Ok((new_system_ids, new_game_ids));
         }
     }
 
-    if trash || delete {
-        handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
+    if match_results_cia_infos
+        .iter()
+        .all(|(match_result, _)| match_result.state == MatchState::Duplicate)
+    {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &romfile,
+            trash,
+            delete,
+            &match_results_cia_infos.first().unwrap().0,
+        )
+        .await?;
+    } else {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &romfile,
+            trash,
+            delete,
+            &MatchResult {
+                state: MatchState::Invalid,
+                system: None,
+                game: None,
+                rom: None,
+            },
+        )
+        .await?;
     }
 
     Ok((new_system_ids, new_game_ids))
@@ -1383,7 +1522,7 @@ async fn import_cso(
         let (hash, size) = cso_romfile
             .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
             .await?;
-        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+        let match_result = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1401,8 +1540,11 @@ async fn import_cso(
             &hash_algorithm,
             unattended,
         )
-        .await?
-        {
+        .await?;
+        if match_result.state == MatchState::Valid {
+            let system = match_result.system.unwrap();
+            let game = match_result.game.unwrap();
+            let rom = match_result.rom.unwrap();
             let system_directory = get_system_directory(connection, &system).await?;
             let new_path = system_directory
                 .join(&rom.name)
@@ -1415,18 +1557,33 @@ async fn import_cso(
             // persist in database
             create_or_update_romfile(connection, progress_bar, &new_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
+        } else if match_result.state == MatchState::Duplicate {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &cso_romfile.romfile,
+                trash,
+                delete,
+                &match_result,
+            )
+            .await?;
+            return Ok(None);
         }
     }
-    if trash || delete {
-        handle_invalid_romfile(
-            connection,
-            progress_bar,
-            &cso_romfile.romfile,
-            trash,
-            delete,
-        )
-        .await?;
-    }
+    trash_or_delete_romfile(
+        connection,
+        progress_bar,
+        &cso_romfile.romfile,
+        trash,
+        delete,
+        &MatchResult {
+            state: MatchState::Invalid,
+            system: None,
+            game: None,
+            rom: None,
+        },
+    )
+    .await?;
     Ok(None)
 }
 
@@ -1446,7 +1603,7 @@ async fn import_nsz(
         let (hash, size) = nsz_romfile
             .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
             .await?;
-        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+        let match_result = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1464,8 +1621,11 @@ async fn import_nsz(
             &hash_algorithm,
             unattended,
         )
-        .await?
-        {
+        .await?;
+        if match_result.state == MatchState::Valid {
+            let system = match_result.system.unwrap();
+            let game = match_result.game.unwrap();
+            let rom = match_result.rom.unwrap();
             let system_directory = get_system_directory(connection, &system).await?;
             let new_nsz_path = system_directory
                 .join(&rom.name)
@@ -1478,18 +1638,33 @@ async fn import_nsz(
             // persist in database
             create_or_update_romfile(connection, progress_bar, &new_nsz_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
+        } else if match_result.state == MatchState::Duplicate {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &nsz_romfile.romfile,
+                trash,
+                delete,
+                &match_result,
+            )
+            .await?;
+            return Ok(None);
         }
     }
-    if trash || delete {
-        handle_invalid_romfile(
-            connection,
-            progress_bar,
-            &nsz_romfile.romfile,
-            trash,
-            delete,
-        )
-        .await?;
-    }
+    trash_or_delete_romfile(
+        connection,
+        progress_bar,
+        &nsz_romfile.romfile,
+        trash,
+        delete,
+        &MatchResult {
+            state: MatchState::Invalid,
+            system: None,
+            game: None,
+            rom: None,
+        },
+    )
+    .await?;
     Ok(None)
 }
 
@@ -1509,7 +1684,7 @@ async fn import_rvz(
         let (hash, size) = rvz_romfile
             .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
             .await?;
-        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+        let match_result = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1527,8 +1702,11 @@ async fn import_rvz(
             &hash_algorithm,
             unattended,
         )
-        .await?
-        {
+        .await?;
+        if match_result.state == MatchState::Valid {
+            let system = match_result.system.unwrap();
+            let game = match_result.game.unwrap();
+            let rom = match_result.rom.unwrap();
             let system_directory = get_system_directory(connection, &system).await?;
             let new_rvz_path = system_directory
                 .join(&rom.name)
@@ -1541,18 +1719,33 @@ async fn import_rvz(
             // persist in database
             create_or_update_romfile(connection, progress_bar, &new_rvz_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
+        } else if match_result.state == MatchState::Duplicate {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &rvz_romfile.romfile,
+                trash,
+                delete,
+                &match_result,
+            )
+            .await?;
+            return Ok(None);
         }
     }
-    if trash || delete {
-        handle_invalid_romfile(
-            connection,
-            progress_bar,
-            &rvz_romfile.romfile,
-            trash,
-            delete,
-        )
-        .await?;
-    }
+    trash_or_delete_romfile(
+        connection,
+        progress_bar,
+        &rvz_romfile.romfile,
+        trash,
+        delete,
+        &MatchResult {
+            state: MatchState::Invalid,
+            system: None,
+            game: None,
+            rom: None,
+        },
+    )
+    .await?;
     Ok(None)
 }
 
@@ -1572,7 +1765,7 @@ async fn import_zso(
         let (hash, size) = zso_romfile
             .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
             .await?;
-        if let Some((rom, game, system)) = find_rom_by_size_and_hash(
+        let match_result = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1590,8 +1783,11 @@ async fn import_zso(
             &hash_algorithm,
             unattended,
         )
-        .await?
-        {
+        .await?;
+        if match_result.state == MatchState::Valid {
+            let system = match_result.system.unwrap();
+            let game = match_result.game.unwrap();
+            let rom = match_result.rom.unwrap();
             let system_directory = get_system_directory(connection, &system).await?;
             let new_zso_path = system_directory
                 .join(&rom.name)
@@ -1604,18 +1800,33 @@ async fn import_zso(
             // persist in database
             create_or_update_romfile(connection, progress_bar, &new_zso_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
+        } else if match_result.state == MatchState::Duplicate {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &zso_romfile.romfile,
+                trash,
+                delete,
+                &match_result,
+            )
+            .await?;
+            return Ok(None);
         }
     }
-    if trash || delete {
-        handle_invalid_romfile(
-            connection,
-            progress_bar,
-            &zso_romfile.romfile,
-            trash,
-            delete,
-        )
-        .await?;
-    }
+    trash_or_delete_romfile(
+        connection,
+        progress_bar,
+        &zso_romfile.romfile,
+        trash,
+        delete,
+        &MatchResult {
+            state: MatchState::Invalid,
+            system: None,
+            game: None,
+            rom: None,
+        },
+    )
+    .await?;
     Ok(None)
 }
 
@@ -1652,7 +1863,7 @@ pub async fn import_other(
                     .await?
             }
         };
-        let rom_game_system = find_rom_by_size_and_hash(
+        let match_result = find_rom_by_size_and_hash(
             connection,
             progress_bar,
             size,
@@ -1665,7 +1876,10 @@ pub async fn import_other(
             unattended,
         )
         .await?;
-        if let Some((rom, game, system)) = rom_game_system {
+        if match_result.state == MatchState::Valid {
+            let system = match_result.system.unwrap();
+            let game = match_result.game.unwrap();
+            let rom = match_result.rom.unwrap();
             let new_path = romfile
                 .get_sorted_path(connection, &system, &game, &rom, &None, &None)
                 .await?;
@@ -1674,11 +1888,33 @@ pub async fn import_other(
             // persist in database
             create_or_update_romfile(connection, progress_bar, &new_path, &[&rom]).await?;
             return Ok(Some([system.id, game.id]));
+        } else if match_result.state == MatchState::Duplicate {
+            trash_or_delete_romfile(
+                connection,
+                progress_bar,
+                &romfile,
+                trash,
+                delete,
+                &match_result,
+            )
+            .await?;
+            return Ok(None);
         }
     }
-    if trash || delete {
-        handle_invalid_romfile(connection, progress_bar, &romfile, trash, delete).await?;
-    }
+    trash_or_delete_romfile(
+        connection,
+        progress_bar,
+        &romfile,
+        trash,
+        delete,
+        &MatchResult {
+            state: MatchState::Invalid,
+            system: None,
+            game: None,
+            rom: None,
+        },
+    )
+    .await?;
     Ok(None)
 }
 
@@ -1694,8 +1930,7 @@ async fn find_rom_by_size_and_hash(
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
     unattended: bool,
-) -> SimpleResult<Option<(Rom, Game, System)>> {
-    let mut rom_game_system: Option<(Rom, Game, System)> = None;
+) -> SimpleResult<MatchResult> {
     let mut roms: Vec<Rom> = vec![];
 
     // first try matching with game and rom names
@@ -1923,11 +2158,24 @@ async fn find_rom_by_size_and_hash(
         };
         if rom_count > 0 {
             progress_bar.println("Already imported");
+            return Ok(MatchResult {
+                state: MatchState::Duplicate,
+                system: None,
+                game: None,
+                rom: None,
+            });
         } else {
             progress_bar.println("No match");
+            return Ok(MatchResult {
+                state: MatchState::Invalid,
+                system: None,
+                game: None,
+                rom: None,
+            });
         }
-        return Ok(None);
     }
+
+    let mut rom_game_system: Option<(Rom, Game, System)> = None;
 
     // select the first rom if there is only one
     if roms.len() == 1 {
@@ -1986,10 +2234,22 @@ async fn find_rom_by_size_and_hash(
         )
         .await;
         progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
-        return Ok(None);
+        let (rom, game, system) = rom_game_system.unwrap();
+        return Ok(MatchResult {
+            state: MatchState::Duplicate,
+            system: Some(system),
+            game: Some(game),
+            rom: Some(rom),
+        });
     }
 
-    Ok(rom_game_system)
+    let (rom, game, system) = rom_game_system.unwrap();
+    Ok(MatchResult {
+        state: MatchState::Valid,
+        system: Some(system),
+        game: Some(game),
+        rom: Some(rom),
+    })
 }
 
 async fn find_sfb_rom_by_md5(
@@ -1999,8 +2259,7 @@ async fn find_sfb_rom_by_md5(
     size: u64,
     md5: &str,
     unattended: bool,
-) -> SimpleResult<Option<(Rom, Game)>> {
-    let mut rom_game: Option<(Rom, Game)> = None;
+) -> SimpleResult<MatchResult> {
     let mut roms = find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
         PS3_DISC_SFB,
@@ -2023,11 +2282,24 @@ async fn find_sfb_rom_by_md5(
             > 0
         {
             progress_bar.println("Already imported");
+            return Ok(MatchResult {
+                state: MatchState::Duplicate,
+                system: None,
+                game: None,
+                rom: None,
+            });
         } else {
             progress_bar.println("No match");
+            return Ok(MatchResult {
+                state: MatchState::Invalid,
+                system: None,
+                game: None,
+                rom: None,
+            });
         }
-        return Ok(None);
     }
+
+    let mut rom_game: Option<(Rom, Game)> = None;
 
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 {
@@ -2052,10 +2324,22 @@ async fn find_sfb_rom_by_md5(
         let romfile =
             find_romfile_by_id(connection, rom_game.as_ref().unwrap().0.romfile_id.unwrap()).await;
         progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
-        return Ok(None);
+        let (rom, game) = rom_game.unwrap();
+        return Ok(MatchResult {
+            state: MatchState::Duplicate,
+            system: None,
+            game: Some(game),
+            rom: Some(rom),
+        });
     }
 
-    Ok(rom_game)
+    let (rom, game) = rom_game.unwrap();
+    Ok(MatchResult {
+        state: MatchState::Valid,
+        system: None,
+        game: Some(game),
+        rom: Some(rom),
+    })
 }
 
 async fn create_or_update_romfile<P: AsRef<Path>>(
@@ -2087,18 +2371,20 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
     Ok(())
 }
 
-async fn handle_invalid_romfile(
+async fn trash_or_delete_romfile(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     romfile: &CommonRomfile,
     trash: bool,
     delete: bool,
+    match_result: &MatchResult,
 ) -> SimpleResult<()> {
     if delete {
         romfile.delete(progress_bar, false).await?;
     } else if trash {
-        let new_path = get_trash_directory(connection, None)
+        let new_path = get_trash_directory(connection, match_result.system.as_ref())
             .await?
+            .join(match_result.state.to_string())
             .join(romfile.path.file_name().unwrap());
         let new_romfile = romfile.rename(progress_bar, &new_path, false).await?;
         match find_romfile_by_path(connection, new_path.as_os_str().to_str().unwrap()).await {

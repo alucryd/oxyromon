@@ -66,6 +66,7 @@ async fn test() {
         rom_directory
             .path()
             .join("Trash")
+            .join("Invalid")
             .join("Test Game (USA, Europe) (Headered).rom")
             .strip_prefix(&rom_directory)
             .unwrap()
