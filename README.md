@@ -403,8 +403,6 @@ Supported arcade ROM formats:
 - ZIP archives
 - CHD (Compressed Hunks of Data)
 
-Note: When importing MAME CHDs and uncompressed disk formats, please make sure to select the `sha1` hash algorithm explicitly.
-
     Usage: oxyromon import-roms [OPTIONS] <ROMS>...
 
     Arguments:
@@ -569,7 +567,7 @@ Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 
     Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
     Options:
-        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, NSZ, RVZ, WBFS, ZSO]
+        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, GDI, NSZ, RVZ, WBFS, ZSO]
         -g, --game <Game>            Select games by name
         -s, --system <SYSTEM>        Select systems by name
         -d, --directory <DIRECTORY>  Set the output directory
