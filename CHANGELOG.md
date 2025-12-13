@@ -11,7 +11,8 @@
 - Added automatic detection of CHD parents in `import-roms`, provided they are in the same directory
 - Added a romfiles card to the frontend
 - Added new `purge-irds` subcommand to unassociate games from IRD files
-- Move invalid/duplicate ROM files in subdirectories of the Trash directory in `import-roms`
+- Moved invalid/duplicate ROM files in subdirectories of the Trash directory in `import-roms`
+- Appended the first computed checksum to the trashed ROM filenames in `import-roms`
 
 ## Changes
 
