@@ -2436,6 +2436,7 @@ dependencies = [
  "async-graphql",
  "async-graphql-axum",
  "async-once-cell",
+ "async-stream",
  "axum",
  "cdfs",
  "cfg-if",

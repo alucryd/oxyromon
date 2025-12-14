@@ -187,7 +187,7 @@ async fn rebuild_system(
             .await?;
         }
     }
-    compute_system_completion(connection, progress_bar, system).await;
+    compute_system_completion(connection, progress_bar, system).await?;
 
     if system.merging == merging as i64 && !force {
         progress_bar.println("Nothing to do");
@@ -221,7 +221,7 @@ async fn rebuild_system(
     }
 
     update_system_merging(connection, system.id, merging).await;
-    compute_system_completion(connection, progress_bar, system).await;
+    compute_system_completion(connection, progress_bar, system).await?;
 
     Ok(())
 }

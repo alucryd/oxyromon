@@ -7,18 +7,23 @@ use async_graphql_axum::GraphQL;
 use axum::{
     Router,
     body::Body,
-    extract::Path,
+    extract::{Path, State},
     http::{Response, StatusCode, header},
+    response::sse::{Event, KeepAlive, Sse},
     routing::{get, post_service},
     serve,
 };
 use clap::{Arg, ArgMatches, Command};
+use futures::stream::{Stream, StreamExt};
 use http_types::Mime;
 use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
+use serde::Serialize;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
+use std::convert::Infallible;
 use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 use tokio::{select, signal};
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
@@ -26,6 +31,41 @@ use tower_http::cors::{Any, CorsLayer};
 #[derive(RustEmbed)]
 #[folder = "target/assets"]
 struct Assets;
+
+/// Message structure for Server-Sent Events
+///
+/// # Example
+/// ```
+/// use oxyromon::server::SseMessage;
+/// use tokio::sync::broadcast;
+///
+/// let (tx, _rx) = broadcast::channel::<SseMessage>(100);
+///
+/// // Send a message to all connected SSE clients
+/// let _ = tx.send(SseMessage {
+///     event: "progress".to_string(),
+///     data: serde_json::json!({
+///         "current": 50,
+///         "total": 100,
+///         "message": "Processing..."
+///     }).to_string(),
+/// });
+/// ```
+#[derive(Clone, Debug, Serialize)]
+pub struct SseMessage {
+    pub event: String,
+    pub data: String,
+}
+
+/// Shared application state
+///
+/// Contains the database pool and SSE broadcast channel.
+/// The `sse_tx` can be used to publish messages to all connected SSE clients.
+#[derive(Clone)]
+pub struct AppState {
+    pub pool: SqlitePool,
+    pub sse_tx: broadcast::Sender<SseMessage>,
+}
 
 pub fn subcommand() -> Command {
     Command::new("server")
@@ -113,6 +153,14 @@ async fn shutdown_signal(pool: SqlitePool) {
 }
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
+    // Create broadcast channel for SSE
+    let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
+
+    let state = AppState {
+        pool: pool.clone(),
+        sse_tx: sse_tx.clone(),
+    };
+
     let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
         .data(DataLoader::new(
             SystemLoader { pool: pool.clone() },
@@ -127,12 +175,15 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
             tokio::task::spawn,
         ))
         .data(pool.clone())
+        .data(sse_tx)
         .finish();
 
     let app = Router::new()
         .route("/graphql", post_service(GraphQL::new(schema)))
+        .route("/events", get(sse_handler))
         .route("/{*path}", get(serve_asset))
-        .route("/", get(serve_index));
+        .route("/", get(serve_index))
+        .with_state(state);
 
     #[cfg(debug_assertions)]
     let app = {
@@ -157,6 +208,52 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
         .unwrap();
 
     Ok(())
+}
+
+/// SSE endpoint handler
+///
+/// Handles Server-Sent Events connections at `/events`.
+/// Clients can connect to this endpoint to receive real-time updates.
+///
+/// # Client Usage (JavaScript/Svelte)
+/// ```javascript
+/// const eventSource = new EventSource('/events');
+///
+/// eventSource.addEventListener('progress', (event) => {
+///     const data = JSON.parse(event.data);
+///     console.log('Progress:', data);
+/// });
+///
+/// eventSource.addEventListener('error', (event) => {
+///     console.error('SSE error:', event);
+/// });
+/// ```
+async fn sse_handler(
+    State(state): State<AppState>,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let mut rx = state.sse_tx.subscribe();
+
+    let stream = async_stream::stream! {
+        loop {
+            match rx.recv().await {
+                Ok(msg) => {
+                    let event = Event::default()
+                        .event(msg.event)
+                        .data(msg.data);
+                    yield Ok(event);
+                }
+                Err(broadcast::error::RecvError::Lagged(n)) => {
+                    log::warn!("SSE client lagged by {} messages", n);
+                    continue;
+                }
+                Err(broadcast::error::RecvError::Closed) => {
+                    break;
+                }
+            }
+        }
+    };
+
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
 #[cfg(test)]

@@ -273,20 +273,18 @@ impl CommonFile for CommonRomfile {
         subfolder_scheme: &Option<SubfolderScheme>,
         extension: &Option<&str>,
     ) -> SimpleResult<PathBuf> {
-        let mut sorted_path = get_system_directory(connection, system).await?;
-
         let extension = extension.or_else(|| self.path.extension()?.to_str());
 
         // sorting
-        match game.sorting {
+        let mut sorted_path = match game.sorting {
             s if s == Sorting::OneRegion as i64 => {
-                sorted_path = sorted_path.join("1G1R");
+                get_one_region_directory(connection, system).await?
             }
             s if s == Sorting::Ignored as i64 => {
-                sorted_path = sorted_path.join("Trash");
+                get_trash_directory(connection, Some(system)).await?
             }
-            _ => {}
-        }
+            _ => get_system_directory(connection, system).await?,
+        };
 
         // subfolders
         let subfolder_scheme = match subfolder_scheme {
@@ -686,7 +684,11 @@ impl Playlist for Game {
         system: &System,
         subfolder_scheme: &Option<SubfolderScheme>,
     ) -> SimpleResult<PathBuf> {
-        let mut playlist_path = get_system_directory(connection, system).await?;
+        let mut playlist_path = if self.sorting == Sorting::OneRegion as i64 {
+            get_one_region_directory(connection, system).await?
+        } else {
+            get_system_directory(connection, system).await?
+        };
         let subfolder_scheme = match subfolder_scheme {
             Some(scheme) => scheme,
             None => match Sorting::from_i64(self.sorting) {
@@ -707,9 +709,6 @@ impl Playlist for Game {
         };
         if subfolder_scheme == &SubfolderScheme::Alpha {
             playlist_path = playlist_path.join(compute_alpha_subfolder(&self.name));
-        }
-        if self.sorting == Sorting::OneRegion as i64 {
-            playlist_path = playlist_path.join("1G1R");
         }
         playlist_path = playlist_path.join(format!(
             "{}.{}",

@@ -317,7 +317,7 @@ pub async fn main(
 
     for system_id in system_ids {
         let system = find_system_by_id(connection, system_id).await;
-        compute_system_completion(connection, progress_bar, &system).await;
+        compute_system_completion(connection, progress_bar, &system).await?;
     }
 
     Ok(())
