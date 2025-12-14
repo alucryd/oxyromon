@@ -51,7 +51,7 @@ async fn test() {
         CommonRomfile::from_path(&romfile_path).unwrap(),
         true,
         false,
-        false,
+        UnattendedMode::Skip,
     )
     .await
     .unwrap();

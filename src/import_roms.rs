@@ -37,6 +37,21 @@ enum MatchState {
     Invalid = 2,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum UnattendedMode {
+    Skip,
+    First,
+}
+
+impl UnattendedMode {
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "first" => UnattendedMode::First,
+            _ => UnattendedMode::Skip,
+        }
+    }
+}
+
 struct MatchResult {
     state: MatchState,
     system: Option<System>,
@@ -93,9 +108,11 @@ pub fn subcommand() -> Command {
             Arg::new("UNATTENDED")
                 .short('u')
                 .long("unattended")
-                .help("Skip ROM files that require human intervention")
+                .help("Handle ROM files that require human intervention (skip: skip, first: auto-select first match)")
                 .required(false)
-                .action(ArgAction::SetTrue),
+                .value_name("MODE")
+                .default_value("skip")
+                .value_parser(["skip", "first"]),
         )
         .arg(
             Arg::new("EXTRACT")
@@ -141,7 +158,8 @@ pub async fn main(
     }
 
     let force = matches.get_flag("FORCE");
-    let unattended = matches.get_flag("UNATTENDED");
+    let unattended_mode =
+        UnattendedMode::from_str(matches.get_one::<String>("UNATTENDED").unwrap().as_str());
     let as_is = matches.get_flag("AS_IS");
 
     let mut system_ids: HashSet<i64> = HashSet::new();
@@ -232,7 +250,7 @@ pub async fn main(
                                 progress_bar,
                                 system,
                                 &path,
-                                unattended,
+                                unattended_mode,
                             )
                             .await?;
                             system_ids.insert(system_id);
@@ -245,7 +263,7 @@ pub async fn main(
                                 progress_bar,
                                 &system,
                                 &path,
-                                unattended,
+                                unattended_mode,
                             )
                             .await?;
                             system_ids.insert(system_id);
@@ -264,7 +282,7 @@ pub async fn main(
                                 trash,
                                 delete,
                                 force,
-                                unattended,
+                                unattended_mode,
                                 as_is,
                             )
                             .await?;
@@ -283,7 +301,7 @@ pub async fn main(
                     trash,
                     delete,
                     force,
-                    unattended,
+                    unattended_mode,
                     as_is,
                 )
                 .await?;
@@ -312,7 +330,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     trash: bool,
     delete: bool,
     force: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
     as_is: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     progress_bar.println(format!(
@@ -367,7 +385,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             &extension,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?;
         system_ids.extend(new_system_ids);
@@ -385,7 +403,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?
         {
@@ -405,7 +423,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?;
         system_ids.extend(new_system_ids);
@@ -423,7 +441,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?
         {
@@ -443,7 +461,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?
         {
@@ -463,7 +481,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?
         {
@@ -483,7 +501,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             romfile,
             trash,
             delete,
-            unattended,
+            unattended_mode,
         )
         .await?
         {
@@ -499,7 +517,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         romfile,
         trash,
         delete,
-        unattended,
+        unattended_mode,
     )
     .await?
     {
@@ -517,7 +535,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     system: &System,
     path: &P,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<i64> {
     let sfb_romfile_path = path.as_ref().join(PS3_DISC_SFB);
 
@@ -543,7 +561,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
         system,
         size,
         &md5,
-        unattended,
+        unattended_mode,
     )
     .await?;
     match sfb_match_result.state {
@@ -614,7 +632,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     }) {
                         rom = roms.get(rom_index);
                         progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
-                    } else if unattended {
+                    } else if unattended_mode == UnattendedMode::Skip {
                         // order roms by distance to the file name
                         roms.sort_by(|a, b| {
                             let a_distance = jaro_winkler(
@@ -698,7 +716,7 @@ async fn import_archive(
     romfile_extension: &str,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
@@ -787,7 +805,7 @@ async fn import_archive(
                 game_names.as_slice(),
                 rom_name,
                 hash_algorithm,
-                unattended,
+                unattended_mode,
             )
             .await?;
             match match_result.state {
@@ -933,7 +951,7 @@ async fn import_chd(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().rev().collect::<Vec<HashAlgorithm>>(); // reverse iterator so SHA1 is tried first
@@ -984,7 +1002,7 @@ async fn import_chd(
                             .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
-                        unattended,
+                        unattended_mode,
                     )
                     .await?;
                     match match_result.state {
@@ -1083,7 +1101,7 @@ async fn import_chd(
                         .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
-                    unattended,
+                    unattended_mode,
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
@@ -1106,7 +1124,7 @@ async fn import_chd(
                             .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
-                        unattended,
+                        unattended_mode,
                     )
                     .await?;
                 }
@@ -1147,7 +1165,7 @@ async fn import_chd(
                         return Ok(None);
                     }
                     MatchState::Invalid => {
-                        // Continue to next hash algorithm
+                        invalid_match_results.push(match_result);
                     }
                 }
             }
@@ -1158,14 +1176,7 @@ async fn import_chd(
                 &chd_romfile.romfile,
                 trash,
                 delete,
-                &MatchResult {
-                    state: MatchState::Invalid,
-                    system: None,
-                    game: None,
-                    rom: None,
-                    hash_algorithm: None,
-                    hash: None,
-                },
+                invalid_match_results.first().unwrap(),
             )
             .await?;
             Ok(None)
@@ -1192,7 +1203,7 @@ async fn import_chd(
                         .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
-                    unattended,
+                    unattended_mode,
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
@@ -1215,7 +1226,7 @@ async fn import_chd(
                             .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
-                        unattended,
+                        unattended_mode,
                     )
                     .await?;
                 }
@@ -1303,7 +1314,7 @@ async fn import_chd(
                         .unwrap()],
                     chd_romfile.romfile.path.file_name().unwrap().to_str(),
                     hash_algorithm,
-                    unattended,
+                    unattended_mode,
                 )
                 .await?;
                 // MAME's CHD DATs have no size information and use the CHD SHA1
@@ -1326,7 +1337,7 @@ async fn import_chd(
                             .unwrap()],
                         chd_romfile.romfile.path.file_name().unwrap().to_str(),
                         hash_algorithm,
-                        unattended,
+                        unattended_mode,
                     )
                     .await?;
                 }
@@ -1404,7 +1415,7 @@ async fn import_cia(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
@@ -1450,7 +1461,7 @@ async fn import_cia(
                 game_names.as_slice(),
                 rom_name,
                 &hash_algorithm,
-                unattended,
+                unattended_mode,
             )
             .await?;
 
@@ -1544,7 +1555,7 @@ async fn import_cso(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let cso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
@@ -1568,7 +1579,7 @@ async fn import_cso(
                 .unwrap()],
             cso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
-            unattended,
+            unattended_mode,
         )
         .await?;
         match match_result.state {
@@ -1627,7 +1638,7 @@ async fn import_nsz(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let nsz_romfile = romfile.as_nsz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
@@ -1651,7 +1662,7 @@ async fn import_nsz(
                 .unwrap()],
             nsz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
-            unattended,
+            unattended_mode,
         )
         .await?;
         match match_result.state {
@@ -1710,7 +1721,7 @@ async fn import_rvz(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let rvz_romfile = romfile.as_rvz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
@@ -1734,7 +1745,7 @@ async fn import_rvz(
                 .unwrap()],
             rvz_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
-            unattended,
+            unattended_mode,
         )
         .await?;
         match match_result.state {
@@ -1793,7 +1804,7 @@ async fn import_zso(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let zso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
@@ -1817,7 +1828,7 @@ async fn import_zso(
                 .unwrap()],
             zso_romfile.romfile.path.file_name().unwrap().to_str(),
             &hash_algorithm,
-            unattended,
+            unattended_mode,
         )
         .await?;
         match match_result.state {
@@ -1877,7 +1888,7 @@ pub async fn import_other(
     romfile: CommonRomfile,
     trash: bool,
     delete: bool,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<Option<[i64; 2]>> {
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
     let mut invalid_match_results: Vec<MatchResult> = vec![];
@@ -1911,7 +1922,7 @@ pub async fn import_other(
             &[romfile.path.file_stem().unwrap().to_str().unwrap()],
             romfile.path.file_name().unwrap().to_str(),
             hash_algorithm,
-            unattended,
+            unattended_mode,
         )
         .await?;
         match match_result.state {
@@ -1968,7 +1979,7 @@ async fn find_rom_by_size_and_hash(
     game_names: &[&str],
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<MatchResult> {
     let mut roms: Vec<Rom> = vec![];
 
@@ -2237,8 +2248,10 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
-    // select the first rom by distance to the file name if unattended
-    } else if unattended && let Some(rom_name) = rom_name {
+    // select the first rom by distance to the file name if unattended mode is first
+    } else if unattended_mode == UnattendedMode::First
+        && let Some(rom_name) = rom_name
+    {
         roms.sort_by(|a, b| {
             let a_distance = jaro_winkler(&rom_name.to_lowercase(), &a.name.to_lowercase());
             let b_distance = jaro_winkler(&rom_name.to_lowercase(), &b.name.to_lowercase());
@@ -2259,6 +2272,8 @@ async fn find_rom_by_size_and_hash(
             let system = find_system_by_id(connection, game.system_id).await;
             rom_game_system = Some((rom, game, system));
         };
+    } else if unattended_mode == UnattendedMode::Skip {
+        progress_bar.println("Multiple matches, skipping");
     } else {
         let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
         for rom in roms {
@@ -2305,7 +2320,7 @@ async fn find_sfb_rom_by_md5(
     system: &System,
     size: u64,
     md5: &str,
-    unattended: bool,
+    unattended_mode: UnattendedMode,
 ) -> SimpleResult<MatchResult> {
     let mut roms = find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
@@ -2353,13 +2368,13 @@ async fn find_sfb_rom_by_md5(
     let mut rom_game: Option<(Rom, Game)> = None;
 
     // let user choose the rom if there are multiple matches
-    if roms.len() == 1 {
+    if roms.len() == 1 || unattended_mode == UnattendedMode::First {
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
         progress_bar.println(format!("Matches \"{}\"", &rom.name));
         rom_game = Some((rom, game));
-    // skip if unattended
-    } else if unattended {
+    // skip if unattended mode is none
+    } else if unattended_mode == UnattendedMode::Skip {
         progress_bar.println("Multiple matches, skipping");
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
@@ -2504,6 +2519,8 @@ mod test_original;
 mod test_original_delete;
 #[cfg(test)]
 mod test_original_headered;
+#[cfg(test)]
+mod test_original_shared;
 #[cfg(test)]
 mod test_original_trash;
 #[cfg(test)]

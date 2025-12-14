@@ -409,14 +409,14 @@ Supported arcade ROM formats:
         <ROMS>...  Set the ROM files or directories to import
 
     Options:
-        -s, --system <SYSTEM>  Select systems by name
-        -t, --trash            Trash invalid ROM files
-        -d, --delete           Delete invalid ROM files (hard delete)
-        -f, --force            Force import of existing ROM files
-        -u, --unattended       Skip ROM files that require human intervention
-        -x, --extract          Extract top-level archives before importing their contents
-        -a, --as-is            Import ROM files as-is without converting them
-        -h, --help             Print help
+        -s, --system <SYSTEM>    Select systems by name
+        -t, --trash              Trash invalid ROM files
+        -d, --delete             Delete invalid ROM files (hard delete)
+        -f, --force              Force import of existing ROM files
+        -u, --unattended <MODE>  Handle ROM files that require human intervention (skip: skip, first: auto-select first match) [default: skip] [possible values: skip, first]
+        -x, --extract            Extract top-level archives before importing their contents
+        -a, --as-is              Import ROM files as-is without converting them
+        -h, --help               Print help
 
 ## oxyromon-import-patches
 

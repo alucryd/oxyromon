@@ -70,7 +70,7 @@ async fn test() {
         true,
         false,
         false,
-        false,
+        UnattendedMode::Skip,
         true,
     )
     .await
