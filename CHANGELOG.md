@@ -26,7 +26,8 @@
 
 - Fixed an infinite loop when importing DAT files containing invalid parent references
 - Fixed playlist names for games having stuff after the disc number
-- Fix JB folder game completion
+- Fixed JB folder game completion
+- Fixed simultaneously importing ROM files that are shared between 2 or more systems (e.g. Commodore Amiga and Atari ST)
 
 # 0.20.2
 

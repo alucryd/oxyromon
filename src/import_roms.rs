@@ -35,10 +35,12 @@ enum MatchState {
     Valid = 0,
     Duplicate = 1,
     Invalid = 2,
+    Skipped = 3,
 }
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum UnattendedMode {
+    None,
     Skip,
     First,
 }
@@ -46,8 +48,9 @@ pub enum UnattendedMode {
 impl UnattendedMode {
     pub fn from_str(s: &str) -> Self {
         match s {
+            "skip" => UnattendedMode::Skip,
             "first" => UnattendedMode::First,
-            _ => UnattendedMode::Skip,
+            _ => UnattendedMode::None,
         }
     }
 }
@@ -111,8 +114,8 @@ pub fn subcommand() -> Command {
                 .help("Handle ROM files that require human intervention (skip: skip, first: auto-select first match)")
                 .required(false)
                 .value_name("MODE")
-                .default_value("skip")
-                .value_parser(["skip", "first"]),
+                .default_value("none")
+                .value_parser(["none", "skip", "first"]),
         )
         .arg(
             Arg::new("EXTRACT")
@@ -833,6 +836,7 @@ async fn import_archive(
                 MatchState::Invalid => {
                     invalid_match_results.push(match_result);
                 }
+                MatchState::Skipped => {}
             }
         }
         if invalid_match_results.len() == hash_algorithms.len() && romfiles_count == 1 {
@@ -977,6 +981,7 @@ async fn import_chd(
 
             let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
             let mut new_game_ids: HashSet<i64> = HashSet::new();
+            let mut invalid_match_results: Vec<MatchResult> = vec![];
             for bin_romfile in &cue_bin_romfile.bin_romfiles {
                 for hash_algorithm in &hash_algorithms {
                     let (hash, size) = bin_romfile
@@ -1018,8 +1023,9 @@ async fn import_chd(
                             break;
                         }
                         MatchState::Invalid => {
-                            // Continue to next hash algorithm
+                            invalid_match_results.push(match_result);
                         }
+                        MatchState::Skipped => {}
                     }
                 }
             }
@@ -1060,23 +1066,25 @@ async fn import_chd(
 
                 return Ok(Some([system.id, game.id]));
             }
-            progress_bar.println("CRC mismatch");
-            trash_or_delete_romfile(
-                connection,
-                progress_bar,
-                &chd_romfile.romfile,
-                trash,
-                delete,
-                &MatchResult {
-                    state: MatchState::Invalid,
-                    system: None,
-                    game: None,
-                    rom: None,
-                    hash_algorithm: None,
-                    hash: None,
-                },
-            )
-            .await?;
+            if !invalid_match_results.is_empty() {
+                progress_bar.println("CRC mismatch");
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                    &MatchResult {
+                        state: MatchState::Invalid,
+                        system: None,
+                        game: None,
+                        rom: None,
+                        hash_algorithm: None,
+                        hash: None,
+                    },
+                )
+                .await?;
+            }
             Ok(None)
         }
         ChdType::Dvd => {
@@ -1167,18 +1175,21 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
+                    MatchState::Skipped => {}
                 }
             }
-            progress_bar.println("CRC mismatch");
-            trash_or_delete_romfile(
-                connection,
-                progress_bar,
-                &chd_romfile.romfile,
-                trash,
-                delete,
-                invalid_match_results.first().unwrap(),
-            )
-            .await?;
+            if !invalid_match_results.is_empty() {
+                progress_bar.println("CRC mismatch");
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                    invalid_match_results.first().unwrap(),
+                )
+                .await?;
+            }
             Ok(None)
         }
         ChdType::Hd => {
@@ -1278,18 +1289,21 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
+                    MatchState::Skipped => {}
                 }
             }
-            progress_bar.println("CRC mismatch");
-            trash_or_delete_romfile(
-                connection,
-                progress_bar,
-                &chd_romfile.romfile,
-                trash,
-                delete,
-                invalid_match_results.first().unwrap(),
-            )
-            .await?;
+            if !invalid_match_results.is_empty() {
+                progress_bar.println("CRC mismatch");
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                    invalid_match_results.first().unwrap(),
+                )
+                .await?;
+            }
             Ok(None)
         }
         ChdType::Ld => {
@@ -1389,18 +1403,21 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
+                    MatchState::Skipped => {}
                 }
             }
-            progress_bar.println("CRC mismatch");
-            trash_or_delete_romfile(
-                connection,
-                progress_bar,
-                &chd_romfile.romfile,
-                trash,
-                delete,
-                invalid_match_results.first().unwrap(),
-            )
-            .await?;
+            if !invalid_match_results.is_empty() {
+                progress_bar.println("CRC mismatch");
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &chd_romfile.romfile,
+                    trash,
+                    delete,
+                    invalid_match_results.first().unwrap(),
+                )
+                .await?;
+            }
             Ok(None)
         }
     }
@@ -1427,6 +1444,7 @@ async fn import_cia(
     let extracted_files =
         ctrtool::extract_files_from_cia(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
+    let mut invalid_match_results: Vec<MatchResult> = vec![];
     for (cia_info, extracted_path) in cia_infos.iter().zip(extracted_files) {
         progress_bar.println(format!(
             "Processing \"{} ({})\"",
@@ -1470,6 +1488,8 @@ async fn import_cia(
                 new_game_ids.insert(match_result.game.as_ref().unwrap().id);
                 match_results_cia_infos.push((match_result, cia_info));
                 break;
+            } else if match_result.state == MatchState::Invalid {
+                invalid_match_results.push(match_result);
             }
         }
         extracted_romfile.delete(progress_bar, true).await?;
@@ -1524,7 +1544,7 @@ async fn import_cia(
             &match_results_cia_infos.first().unwrap().0,
         )
         .await?;
-    } else {
+    } else if !invalid_match_results.is_empty() {
         trash_or_delete_romfile(
             connection,
             progress_bar,
@@ -1615,17 +1635,20 @@ async fn import_cso(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
+            MatchState::Skipped => {}
         }
     }
-    trash_or_delete_romfile(
-        connection,
-        progress_bar,
-        &cso_romfile.romfile,
-        trash,
-        delete,
-        invalid_match_results.first().unwrap(),
-    )
-    .await?;
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &cso_romfile.romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
     Ok(None)
 }
 
@@ -1698,17 +1721,20 @@ async fn import_nsz(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
+            MatchState::Skipped => {}
         }
     }
-    trash_or_delete_romfile(
-        connection,
-        progress_bar,
-        &nsz_romfile.romfile,
-        trash,
-        delete,
-        invalid_match_results.first().unwrap(),
-    )
-    .await?;
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &nsz_romfile.romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
     Ok(None)
 }
 
@@ -1781,17 +1807,20 @@ async fn import_rvz(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
+            MatchState::Skipped => {}
         }
     }
-    trash_or_delete_romfile(
-        connection,
-        progress_bar,
-        &rvz_romfile.romfile,
-        trash,
-        delete,
-        invalid_match_results.first().unwrap(),
-    )
-    .await?;
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &rvz_romfile.romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
     Ok(None)
 }
 
@@ -1864,17 +1893,20 @@ async fn import_zso(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
+            MatchState::Skipped => {}
         }
     }
-    trash_or_delete_romfile(
-        connection,
-        progress_bar,
-        &zso_romfile.romfile,
-        trash,
-        delete,
-        invalid_match_results.first().unwrap(),
-    )
-    .await?;
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &zso_romfile.romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
     Ok(None)
 }
 
@@ -1954,17 +1986,20 @@ pub async fn import_other(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
+            MatchState::Skipped => {}
         }
     }
-    trash_or_delete_romfile(
-        connection,
-        progress_bar,
-        &romfile,
-        trash,
-        delete,
-        invalid_match_results.first().unwrap(),
-    )
-    .await?;
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
     Ok(None)
 }
 
@@ -2274,6 +2309,14 @@ async fn find_rom_by_size_and_hash(
         };
     } else if unattended_mode == UnattendedMode::Skip {
         progress_bar.println("Multiple matches, skipping");
+        return Ok(MatchResult {
+            state: MatchState::Skipped,
+            system: None,
+            game: None,
+            rom: None,
+            hash_algorithm: None,
+            hash: None,
+        });
     } else {
         let mut roms_games_systems: Vec<(Rom, Game, System)> = vec![];
         for rom in roms {
@@ -2365,7 +2408,7 @@ async fn find_sfb_rom_by_md5(
         }
     }
 
-    let mut rom_game: Option<(Rom, Game)> = None;
+    let rom_game: Option<(Rom, Game)>;
 
     // let user choose the rom if there are multiple matches
     if roms.len() == 1 || unattended_mode == UnattendedMode::First {
@@ -2376,6 +2419,14 @@ async fn find_sfb_rom_by_md5(
     // skip if unattended mode is none
     } else if unattended_mode == UnattendedMode::Skip {
         progress_bar.println("Multiple matches, skipping");
+        return Ok(MatchResult {
+            state: MatchState::Skipped,
+            system: None,
+            game: None,
+            rom: None,
+            hash_algorithm: None,
+            hash: None,
+        });
     } else {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
