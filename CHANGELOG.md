@@ -13,6 +13,7 @@
 - Added new `purge-irds` subcommand to unassociate games from IRD files
 - Moved invalid/duplicate ROM files in subdirectories of the Trash directory in `import-roms`
 - Appended the first computed checksum to the trashed ROM filenames in `import-roms`
+- Added an SSE endpoint for sending events to the web UI
 
 ## Changes
 

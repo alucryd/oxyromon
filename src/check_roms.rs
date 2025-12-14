@@ -244,7 +244,7 @@ async fn check_system(
 
     // update games and systems completion
     if errors > 0 {
-        compute_system_completion(&mut transaction, progress_bar, system).await;
+        compute_system_completion(&mut transaction, progress_bar, system).await?;
     }
 
     commit_transaction(transaction).await;

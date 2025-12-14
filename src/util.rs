@@ -242,8 +242,8 @@ pub async fn get_one_region_directory(
     connection: &mut SqliteConnection,
     system: &System,
 ) -> SimpleResult<PathBuf> {
-    let trash_directory = get_system_directory(connection, system).await?.join("1G1R");
-    Ok(trash_directory)
+    let one_region_directory = get_system_directory(connection, system).await?.join("1G1R");
+    Ok(one_region_directory)
 }
 
 pub async fn get_trash_directory(
@@ -334,13 +334,13 @@ pub async fn compute_system_completion(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) {
+) -> SimpleResult<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
 
     // Create missing empty files for partial games
-    create_missing_empty_files(connection, progress_bar, system).await;
+    create_missing_empty_files(connection, progress_bar, system).await?;
 
     if system.arcade {
         let merging = Merging::from_i64(system.merging).unwrap();
@@ -364,6 +364,8 @@ pub async fn compute_system_completion(
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
+
+    Ok(())
 }
 
 pub async fn find_parent_chd_romfile_by_game(

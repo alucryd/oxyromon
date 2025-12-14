@@ -96,7 +96,6 @@ pub async fn import_patch<P: AsRef<Path>>(
     force: bool,
 ) -> SimpleResult<()> {
     let system = prompt_for_system(connection, None).await?;
-    let system_directory = get_system_directory(connection, &system).await?;
     let games = find_full_games_by_system_id(connection, system.id).await;
     let game = match prompt_for_game(&games, None)? {
         Some(game) => game,
@@ -143,10 +142,11 @@ pub async fn import_patch<P: AsRef<Path>>(
         extension = format!("{}{}", extension, existing_patches.len());
     }
 
-    let mut romfile_path = system_directory;
-    if game.sorting == Sorting::OneRegion as i64 {
-        romfile_path = romfile_path.join("1G1R");
-    }
+    let mut romfile_path = if game.sorting == Sorting::OneRegion as i64 {
+        get_one_region_directory(connection, &system).await?
+    } else {
+        get_system_directory(connection, &system).await?
+    };
     romfile_path = romfile_path.join(&rom.name).with_extension(extension);
 
     if let Some(patch) = existing_patches

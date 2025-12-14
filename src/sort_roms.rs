@@ -627,7 +627,7 @@ async fn sort_system(
 
     // update games and systems completion
     if changes > 0 {
-        compute_system_completion(connection, progress_bar, system).await;
+        compute_system_completion(connection, progress_bar, system).await?;
     }
 
     Ok(())

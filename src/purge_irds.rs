@@ -64,7 +64,7 @@ pub async fn main(
         }
     }
 
-    compute_system_completion(connection, progress_bar, &system).await;
+    compute_system_completion(connection, progress_bar, &system).await?;
 
     Ok(())
 }

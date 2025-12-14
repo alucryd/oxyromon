@@ -1,11 +1,13 @@
 <script>
   import { uniq } from "lodash-es";
   import prettyBytes from "pretty-bytes";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     Card,
     Tooltip,
     Button,
+    Modal,
+    Toast,
     Table,
     TableHead,
     TableHeadCell,
@@ -19,10 +21,14 @@
     ChevronDoubleLeftOutline,
     ChevronDoubleRightOutline,
     TrashBinOutline,
+    ExclamationCircleOutline,
+    CheckCircleSolid,
+    CloseCircleSolid,
   } from "flowbite-svelte-icons";
   import { Spinner } from "flowbite-svelte";
 
   import { purgeSystem } from "../mutation.js";
+  import { connectSSE, disconnectSSE } from "../events.js";
   import {
     getGamesBySystemId,
     getRomsByGameIdAndSystemId,
@@ -120,12 +126,42 @@
     return "dark:text-red-300 text-red-500";
   }
 
-  const onPurgeSystemClick = async (systemId) => {
-    await purgeSystem(systemId);
-    await getSystems();
+  let deleteModalOpen = false;
+  let systemToDelete = null;
+  let toastMessage = "";
+  let toastType = "success"; // 'success' or 'error'
+  let showToast = false;
+
+  const onPurgeSystemClick = (system) => {
+    systemToDelete = system;
+    deleteModalOpen = true;
+  };
+
+  const confirmDelete = async () => {
+    if (systemToDelete) {
+      await purgeSystem(systemToDelete.id);
+    }
+    deleteModalOpen = false;
+    systemToDelete = null;
+  };
+
+  const cancelDelete = () => {
+    deleteModalOpen = false;
+    systemToDelete = null;
+  };
+
+  const showToastNotification = (message, type) => {
+    toastMessage = message;
+    toastType = type;
+    showToast = true;
+    const duration = type === "info" ? 3000 : 5000;
+    setTimeout(() => (showToast = false), duration);
   };
 
   onMount(async () => {
+    // Connect to SSE endpoint
+    connectSSE(showToastNotification);
+
     await getSettings();
     systemsPage.subscribe(async () => {
       await updateSystems();
@@ -207,6 +243,10 @@
     });
     await getSystems();
   });
+
+  onDestroy(() => {
+    disconnectSSE();
+  });
 </script>
 
 <div class="flex min-h-screen w-full flex-col px-4">
@@ -241,7 +281,7 @@
                   {:else}
                     <TrashBinOutline
                       class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800"
-                      onclick={() => onPurgeSystemClick(system.id)}
+                      onclick={() => onPurgeSystemClick(system)}
                     />
                   {/if}
                 </TableBodyCell>
@@ -567,4 +607,37 @@
       </Table>
     </Card>
   </div>
+
+  <Modal bind:open={deleteModalOpen} size="xs" autoclose={false}>
+    <div class="text-center">
+      <ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-200" />
+      <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+        Are you sure you want to delete system "{systemToDelete?.name}"?
+      </h3>
+      <p class="mb-5 text-sm text-gray-400 dark:text-gray-500">
+        This action cannot be undone. All data associated with this system will be permanently removed.
+      </p>
+      <Button color="red" class="me-2" onclick={confirmDelete}>Yes, I'm sure</Button>
+      <Button color="alternative" onclick={cancelDelete}>No, cancel</Button>
+    </div>
+  </Modal>
+
+  {#if showToast}
+    <Toast
+      color={toastType === "success" ? "green" : toastType === "error" ? "red" : "blue"}
+      position="bottom-right"
+      class="fixed right-4 bottom-4 z-50"
+    >
+      <svelte:fragment slot="icon">
+        {#if toastType === "success"}
+          <CheckCircleSolid class="h-5 w-5" />
+        {:else if toastType === "error"}
+          <CloseCircleSolid class="h-5 w-5" />
+        {:else}
+          <ExclamationCircleOutline class="h-5 w-5" />
+        {/if}
+      </svelte:fragment>
+      {toastMessage}
+    </Toast>
+  {/if}
 </div>

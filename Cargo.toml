@@ -26,6 +26,7 @@ async-graphql = { version = "7.0.16", features = [
 ], default-features = false, optional = true }
 async-graphql-axum = { version = "7.0.17", optional = true }
 async-once-cell = "0.5.4"
+async-stream = "0.3.6"
 axum = { version = "0.8.4", default-features = false, features = [
     "http2",
     "tokio",
@@ -69,6 +70,7 @@ regex = "1.11.1"
 reqwest = { version = "0.12.20", default-features = false }
 rust-embed = { version = "8.7.2", features = ["compression"] }
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 sha1 = "0.10.6"
 shiratsu-naming = "0.1.7"
 simple-error = "0.3.1"
@@ -97,7 +99,6 @@ which = { version = "8.0.0" }
 zip = { version = "6.0.0", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
-serde_json = "1.0.140"
 wiremock = "0.6.4"
 
 [[bin]]

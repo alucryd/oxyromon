@@ -73,7 +73,7 @@ pub async fn main(
         purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
     }
     for system in find_systems(connection).await {
-        compute_system_completion(connection, progress_bar, &system).await;
+        compute_system_completion(connection, progress_bar, &system).await?;
     }
     Ok(())
 }
