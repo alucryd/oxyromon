@@ -1,7 +1,7 @@
 use super::super::config::*;
 use super::super::database::*;
 use super::super::import_dats;
-use super::super::import_roms;
+use super::super::import_roms::{UnattendedMode, import_rom};
 use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
@@ -42,7 +42,7 @@ async fn test() {
     let system = find_systems(&mut connection).await.remove(0);
     let header = find_header_by_system_id(&mut connection, system.id).await;
 
-    import_roms::import_rom(
+    import_rom(
         &mut connection,
         &progress_bar,
         &Some(&system),
@@ -51,7 +51,7 @@ async fn test() {
         true,
         false,
         false,
-        false,
+        UnattendedMode::Skip,
         false,
     )
     .await

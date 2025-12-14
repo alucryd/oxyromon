@@ -54,7 +54,7 @@ async fn test() {
         romfile_path.extension().unwrap().to_str().unwrap(),
         true,
         false,
-        false,
+        UnattendedMode::Skip,
     )
     .await
     .unwrap();

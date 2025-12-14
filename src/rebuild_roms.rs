@@ -2,7 +2,7 @@ use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
-use super::import_roms;
+use super::import_roms::{UnattendedMode, import_other};
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
@@ -173,7 +173,7 @@ async fn rebuild_system(
             } else {
                 romfile.copy(progress_bar, &tmp_directory, false).await?
             };
-            import_roms::import_other(
+            import_other(
                 connection,
                 progress_bar,
                 &Some(system),
@@ -182,7 +182,7 @@ async fn rebuild_system(
                 new_romfile,
                 false,
                 false,
-                false,
+                UnattendedMode::Skip,
             )
             .await?;
         }

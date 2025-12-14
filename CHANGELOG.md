@@ -20,6 +20,7 @@
 - Repurposed the `-a` flag in `import-roms` to import files as-is (now supports non-original formats in DAT files)
 - Improved ROM matching in unattended mode using similarity scoring
 - Rewrote the frontend using Svelte/Flowbite
+- Expanded on the `-u` flag of `import-roms`, now provides 2 options: `skip` (default) and `first`
 
 ## Fixes
 

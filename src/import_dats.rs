@@ -1,7 +1,7 @@
 use super::SimpleResult;
 use super::common::*;
 use super::database::*;
-use super::import_roms::import_rom;
+use super::import_roms::{UnattendedMode, import_rom};
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
@@ -795,7 +795,7 @@ pub async fn reimport_orphan_romfiles(
                 false,
                 false,
                 false,
-                false,
+                UnattendedMode::Skip,
                 false,
             )
             .await?;
