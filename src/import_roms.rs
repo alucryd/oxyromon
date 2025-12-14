@@ -345,8 +345,16 @@ pub async fn import_rom<P: AsRef<Path>>(
     let mut system_ids: HashSet<i64> = HashSet::new();
     let mut game_ids: HashSet<i64> = HashSet::new();
 
-    // abort if the romfile is already in the database
+    // delete empty files immediately
     let romfile = CommonRomfile::from_path(path)?;
+    let size = romfile.get_size(&mut transaction, progress_bar).await?;
+    if size == 0 {
+        progress_bar.println("Empty file, deleting");
+        romfile.delete(progress_bar, false).await?;
+        return Ok((system_ids, game_ids));
+    }
+
+    // abort if the romfile is already in the database
     if let Ok(relative_path) = romfile.get_relative_path(&mut transaction).await {
         if !force
             && find_romfile_by_path(
