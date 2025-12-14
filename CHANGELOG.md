@@ -28,6 +28,7 @@
 - Fixed playlist names for games having stuff after the disc number
 - Fixed JB folder game completion
 - Fixed simultaneously importing ROM files that are shared between 2 or more systems (e.g. Commodore Amiga and Atari ST)
+- Fixed importing of empty files, they are now ignored in `import-roms` and automatically created when a partial game needs them for completion
 
 # 0.20.2
 

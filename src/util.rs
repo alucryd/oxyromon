@@ -1,4 +1,5 @@
 use super::SimpleResult;
+use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::mimetype::*;
@@ -67,6 +68,10 @@ pub async fn create_file<P: AsRef<Path>>(
             "Creating \"{}\"",
             path.as_ref().as_os_str().to_str().unwrap()
         ));
+    }
+    let directory = path.as_ref().parent().unwrap();
+    if !directory.is_dir() {
+        create_directory(progress_bar, &directory, quiet).await?;
     }
     let file = try_with!(
         File::create(path).await,
@@ -288,6 +293,43 @@ pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &st
     }
 }
 
+async fn create_missing_empty_files(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+) -> SimpleResult<()> {
+    let partial_games = find_partial_games_by_system_id(connection, system.id).await;
+
+    for game in partial_games {
+        let missing_roms = find_roms_without_romfile_by_game_ids(connection, &[game.id]).await;
+
+        for rom in missing_roms {
+            // Only create files for empty ROMs (size = 0)
+            if rom.size == 0 && rom.crc.is_none() {
+                // Create a temporary romfile to get the proper sorted path
+                let tmp_path = create_tmp_directory(connection)
+                    .await?
+                    .path()
+                    .join(&rom.name);
+                create_file(progress_bar, &tmp_path, false).await?;
+                let common_romfile = CommonRomfile::from_path(&tmp_path)?;
+                common_romfile
+                    .rename(
+                        progress_bar,
+                        &common_romfile
+                            .get_sorted_path(connection, system, &game, &rom, &None, &None)
+                            .await?,
+                        false,
+                    )
+                    .await?
+                    .create(connection, progress_bar, RomfileType::Romfile)
+                    .await?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub async fn compute_system_completion(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -296,6 +338,10 @@ pub async fn compute_system_completion(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing system completion");
+
+    // Create missing empty files for partial games
+    create_missing_empty_files(connection, progress_bar, system).await;
+
     if system.arcade {
         let merging = Merging::from_i64(system.merging).unwrap();
         match merging {
@@ -315,6 +361,7 @@ pub async fn compute_system_completion(
         update_jbfolder_games_completion_by_system_id(connection, system.id).await;
     }
     update_system_completion(connection, system.id).await;
+
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
 }
