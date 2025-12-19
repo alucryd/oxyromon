@@ -11,7 +11,7 @@
     alt="logo">
 </img>
 
-<h1 style="text-align: center;">oxyROMon 0.21.0</h1>
+<h1 style="text-align: center;">oxyROMon 0.22.0</h1>
 
 ### Rusty ROM OrgaNizer
 
