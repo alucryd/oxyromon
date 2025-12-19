@@ -1,6 +1,6 @@
 {
   "name": "oxyromon",
-  "version": "0.21.0-beta",
+  "version": "0.21.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -22,17 +22,17 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tailwindcss/vite": "^4.1.18",
     "@trivago/prettier-plugin-sort-imports": "^6.0.0",
-    "@types/node": "^25.0.2",
+    "@types/node": "^25.0.3",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.13.1",
     "flowbite": "^4.0.1",
-    "flowbite-svelte": "^1.30.1",
+    "flowbite-svelte": "^1.31.0",
     "flowbite-svelte-icons": "^3.0.1",
     "globals": "^16.5.0",
     "graphql": "^16.12.0",
     "graphql-request": "^7.4.0",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.22",
     "prettier": "^3.7.4",
     "prettier-plugin-svelte": "^3.4.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
@@ -42,7 +42,7 @@
     "svelte-fa": "^4.0.4",
     "svelte-preprocess": "^6.0.3",
     "tailwindcss": "^4.1.18",
-    "vite": "^7.2.7"
+    "vite": "^7.3.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
