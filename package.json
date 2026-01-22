@@ -32,7 +32,7 @@
     "globals": "^16.5.0",
     "graphql": "^16.12.0",
     "graphql-request": "^7.4.0",
-    "lodash-es": "^4.17.22",
+    "lodash-es": "^4.17.23",
     "prettier": "^3.7.4",
     "prettier-plugin-svelte": "^3.4.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
