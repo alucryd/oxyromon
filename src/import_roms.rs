@@ -390,7 +390,7 @@ pub async fn import_rom<P: AsRef<Path>>(
 
     if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) && !as_is {
         if sevenzip::get_version().await.is_err() {
-            print_error(progress_bar, "Please install sevenzip");
+            print_error(progress_bar, "Required tool not found: sevenzip");
             return Ok((system_ids, game_ids));
         }
         let (new_system_ids, new_game_ids) = import_archive(
@@ -410,7 +410,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         game_ids.extend(new_game_ids);
     } else if CHD_EXTENSION == extension && !as_is {
         if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Please install chdman");
+            print_error(progress_bar, "Required tool not found: chdman");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_chd(
@@ -430,7 +430,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if CIA_EXTENSION == extension && !as_is {
         if ctrtool::get_version().await.is_err() {
-            print_error(progress_bar, "Please install ctrtool");
+            print_error(progress_bar, "Required tool not found: ctrtool");
             return Ok((system_ids, game_ids));
         }
         let (new_system_ids, new_game_ids) = import_cia(
@@ -448,7 +448,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         game_ids.extend(new_game_ids);
     } else if CSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_cso(
@@ -468,7 +468,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if NSZ_EXTENSION == extension && !as_is {
         if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Please install nsz");
+            print_error(progress_bar, "Required tool not found: nsz");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_nsz(
@@ -488,7 +488,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if RVZ_EXTENSION == extension && !as_is {
         if dolphin::get_version().await.is_err() {
-            print_error(progress_bar, "Please install dolphin-tool");
+            print_error(progress_bar, "Required tool not found: dolphin-tool");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_rvz(
@@ -508,7 +508,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if ZSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_zso(
@@ -999,7 +999,7 @@ async fn import_chd(
                 print_warning(
                     progress_bar,
                     &format!(
-                        "Older chdman versions don't support splitbin, please update to {} or newer",
+                        "chdman {} or newer required for splitbin support",
                         chdman::MIN_SPLITBIN_VERSION
                     ),
                 );

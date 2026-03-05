@@ -9,11 +9,12 @@ async fn test() {
     let mut connection = pool.acquire().await.unwrap();
 
     let key = "DISCARD_FLAGS";
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
 
     set_list(&mut connection, key, &[String::from("item1")]).await;
 
     // when
-    add_to_list(&mut connection, key, "item1").await;
+    add_to_list(&mut connection, &progress_bar, key, "item1").await;
     let list = get_list(&mut connection, key).await;
 
     // then

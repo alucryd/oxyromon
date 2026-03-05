@@ -1,4 +1,5 @@
 use super::super::database::*;
+use super::super::progress::*;
 use super::*;
 use tempfile::NamedTempFile;
 
@@ -8,10 +9,11 @@ async fn test() {
     let db_file = NamedTempFile::new().unwrap();
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
+    let progress_bar = get_progress_bar(0, get_none_progress_style());
 
     let key = "REGIONS_ONE";
 
-    add_to_list(&mut connection, key, "US").await;
+    add_to_list(&mut connection, &progress_bar, key, "US").await;
     let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
 
     // when

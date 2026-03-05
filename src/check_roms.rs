@@ -58,7 +58,7 @@ pub async fn main(
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
     for system in systems {
-        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
+        print_header(progress_bar, &format!("Checking \"{}\"", system.name));
         let games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
                 let mut games: Vec<Game> = vec![];
@@ -78,7 +78,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.index_of("GAME").is_some() {
-                print_warning(progress_bar, "No matching game");
+                print_warning(progress_bar, "No matching games found");
             }
             continue;
         }
@@ -144,7 +144,7 @@ async fn check_system(
         let result;
         if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
             if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Please install sevenzip");
+                print_error(progress_bar, "Required tool not found: sevenzip");
                 break;
             }
             result = check_archive(
@@ -157,7 +157,7 @@ async fn check_system(
             .await;
         } else if CHD_EXTENSION == romfile_extension {
             if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Please install chdman");
+                print_error(progress_bar, "Required tool not found: chdman");
                 break;
             }
             let chd_romfile = match romfile.parent_id {
@@ -182,7 +182,7 @@ async fn check_system(
                 .await;
         } else if CSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 break;
             }
             result = romfile
@@ -194,7 +194,7 @@ async fn check_system(
                 .await;
         } else if NSZ_EXTENSION == romfile_extension {
             if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Please install nsz");
+                print_error(progress_bar, "Required tool not found: nsz");
                 break;
             }
             result = romfile
@@ -205,7 +205,7 @@ async fn check_system(
                 .await;
         } else if RVZ_EXTENSION == romfile_extension {
             if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Please install dolphin-tool");
+                print_error(progress_bar, "Required tool not found: dolphin-tool");
                 break;
             }
             result = romfile
@@ -216,7 +216,7 @@ async fn check_system(
                 .await;
         } else if ZSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 break;
             }
             result = romfile
@@ -236,19 +236,48 @@ async fn check_system(
 
         if result.is_err() {
             errors += 1;
+            print_error(
+                progress_bar,
+                &format!(
+                    "Integrity check failed for \"{}\"",
+                    romfile_path.file_name().unwrap().to_str().unwrap()
+                ),
+            );
             move_to_trash(&mut transaction, progress_bar, system, romfile).await?;
-        } else if size {
-            romfile
-                .as_common(&mut transaction)
-                .await?
-                .update(&mut transaction, progress_bar, romfile.id)
-                .await?;
+        } else {
+            print_success(
+                progress_bar,
+                &format!(
+                    "\"{}\" OK",
+                    romfile_path.file_name().unwrap().to_str().unwrap()
+                ),
+            );
+            if size {
+                romfile
+                    .as_common(&mut transaction)
+                    .await?
+                    .update(&mut transaction, progress_bar, romfile.id)
+                    .await?;
+            }
         }
     }
 
-    // update games and systems completion
+    let checked = romfiles.len();
+    let passed = checked - errors;
     if errors > 0 {
+        print_warning(
+            progress_bar,
+            &format!(
+                "{}/{} files passed, {} moved to trash",
+                passed, checked, errors
+            ),
+        );
         compute_system_completion(&mut transaction, progress_bar, system).await?;
+    } else {
+        print_success(
+            progress_bar,
+            &format!("All {} files passed integrity check", checked),
+        );
     }
 
     commit_transaction(transaction).await;

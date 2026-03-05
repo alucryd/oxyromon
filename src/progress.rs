@@ -1,6 +1,8 @@
 use console::Style;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
+
+// Re-export indicatif types so consumers of `progress::*` have them available
+pub use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 
 const TICK_CHARS: &str = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 const PROGRESS_CHARS: &str = "━╸━";

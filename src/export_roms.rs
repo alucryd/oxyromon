@@ -115,49 +115,49 @@ pub async fn main(
     match format.as_str() {
         "7Z" | "ZIP" => {
             if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Please install sevenzip");
+                print_error(progress_bar, "Required tool not found: sevenzip");
                 return Ok(());
             }
         }
         "CHD" => {
             if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Please install chdman");
+                print_error(progress_bar, "Required tool not found: chdman");
                 return Ok(());
             }
         }
         "CSO" => {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 return Ok(());
             }
         }
         "ISO" => {
             if bchunk::get_version().await.is_err() {
-                print_error(progress_bar, "Please install bchunk");
+                print_error(progress_bar, "Required tool not found: bchunk");
                 return Ok(());
             }
         }
         "NSZ" => {
             if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Please install nsz");
+                print_error(progress_bar, "Required tool not found: nsz");
                 return Ok(());
             }
         }
         "RVZ" => {
             if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Please install dolphin-tool");
+                print_error(progress_bar, "Required tool not found: dolphin-tool");
                 return Ok(());
             }
         }
         "WBFS" => {
             if wit::get_version().await.is_err() {
-                print_error(progress_bar, "Please install wit");
+                print_error(progress_bar, "Required tool not found: wit");
                 return Ok(());
             }
         }
         "ZSO" => {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 return Ok(());
             }
         }
@@ -179,7 +179,7 @@ pub async fn main(
             print_warning(
                 progress_bar,
                 &format!(
-                    "Older chdman versions have issues with Dreamcast games, please update to {} or newer",
+                    "chdman {} or newer required for Dreamcast games",
                     chdman::MIN_DREAMCAST_VERSION
                 ),
             );
@@ -187,7 +187,7 @@ pub async fn main(
         }
 
         if format == "GDI" && !system.name.contains("Dreamcast") {
-            print_warning(progress_bar, "GDI is only for Dreamcast");
+            print_warning(progress_bar, "GDI format is only supported for Dreamcast systems");
             continue;
         }
 
@@ -222,7 +222,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.index_of("GAME").is_some() {
-                print_warning(progress_bar, "No matching game");
+                print_warning(progress_bar, "No matching games found");
             }
             continue;
         }
@@ -534,7 +534,7 @@ async fn to_archive(
                     print_warning(
                         progress_bar,
                         &format!(
-                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            "chdman {} or newer required for splitbin support",
                             chdman::MIN_SPLITBIN_VERSION
                         ),
                     );
@@ -1454,7 +1454,7 @@ async fn to_gdi(
     // export CHDs
     for roms in chds.values() {
         if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Please install chdman");
+            print_error(progress_bar, "Required tool not found: chdman");
             break;
         }
         let tmp_directory = create_tmp_directory(connection).await?;
@@ -1499,7 +1499,7 @@ async fn to_gdi(
                 print_warning(
                     progress_bar,
                     &format!(
-                        "Older chdman versions don't support splitbin, please update to {} or newer",
+                        "chdman {} or newer required for splitbin support",
                         chdman::MIN_SPLITBIN_VERSION
                     ),
                 );
@@ -2230,7 +2230,7 @@ async fn to_iso(
     // export CHDs
     for roms in chds.values() {
         if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Please install chdman");
+            print_error(progress_bar, "Required tool not found: chdman");
             break;
         }
         if roms.len() > 2 {
@@ -2296,7 +2296,7 @@ async fn to_iso(
     // export CSOs
     for roms in csos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let rom = roms.first().unwrap();
@@ -2313,7 +2313,7 @@ async fn to_iso(
     // export ZSOs
     for roms in zsos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let rom = roms.first().unwrap();
@@ -2430,7 +2430,7 @@ async fn to_original(
     // export archives
     for roms in archives.values() {
         if sevenzip::get_version().await.is_err() {
-            print_error(progress_bar, "Please install sevenzip");
+            print_error(progress_bar, "Required tool not found: sevenzip");
             break;
         }
         let mut romfiles: Vec<&Romfile> = roms
@@ -2470,7 +2470,7 @@ async fn to_original(
     // export CHDs
     for roms in chds.values() {
         if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Please install chdman");
+            print_error(progress_bar, "Required tool not found: chdman");
             break;
         }
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
@@ -2513,7 +2513,7 @@ async fn to_original(
                     print_warning(
                         progress_bar,
                         &format!(
-                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            "chdman {} or newer required for splitbin support",
                             chdman::MIN_SPLITBIN_VERSION
                         ),
                     );
@@ -2564,7 +2564,7 @@ async fn to_original(
     // export CSOs
     for roms in csos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let rom = roms.first().unwrap();
@@ -2581,7 +2581,7 @@ async fn to_original(
     // export NSZs
     for roms in nszs.values() {
         if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Please install nsz");
+            print_error(progress_bar, "Required tool not found: nsz");
             break;
         }
         let rom = roms.first().unwrap();
@@ -2597,7 +2597,7 @@ async fn to_original(
     // export RVZs
     for roms in rvzs.values() {
         if dolphin::get_version().await.is_err() {
-            print_error(progress_bar, "Please install dolphin-tool");
+            print_error(progress_bar, "Required tool not found: dolphin-tool");
             break;
         }
         let rom = roms.first().unwrap();
@@ -2613,7 +2613,7 @@ async fn to_original(
     // export ZSOs
     for roms in zsos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let rom = roms.first().unwrap();

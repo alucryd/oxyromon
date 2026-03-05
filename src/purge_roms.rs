@@ -214,10 +214,10 @@ async fn purge_foreign_romfiles(
                 .await
                 .is_none()
             {
-                print_warning(
+                print_action(
                     progress_bar,
                     &format!(
-                        "Delete \"{}\"?",
+                        "Foreign file found: \"{}\"",
                         relative_path.as_os_str().to_str().unwrap()
                     ),
                 );
