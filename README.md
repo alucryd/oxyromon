@@ -260,7 +260,10 @@ Prints the program version, installed dependencies and their version (when possi
 Parse and import Logiqx DAT files into oxyromon
 
 The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
-ZIP files such as the No-Intro Love Pack can be imported directly without extracting them first.
+ZIP files such as the No-Intro daily dat-o-matic packs can be imported directly without extracting them first.
+All `.dat` files inside the archive will be found, including those nested in subdirectories.
+When used with the `-u` flag, only systems that were previously imported will be updated, making it
+ideal for keeping your collection in sync with daily releases.
 
 Supported console DAT providers:
 
@@ -285,6 +288,7 @@ That way they will be physically grouped in a single `MAME` folder and work in M
 
     Options:
         -i, --info                   Show the DAT information and exit
+        -u, --update                 Only import DAT files for systems already in the database
         -s, --skip-header            Skip parsing the header even if the system has one
         -f, --force                  Force import of outdated DAT files
         -n, --name <NAME>            Customize the system name

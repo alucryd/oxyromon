@@ -1,3 +1,10 @@
+# 0.22.0
+
+## Features
+
+- Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
+- Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
+
 # 0.21.0
 
 ## Features
