@@ -2,6 +2,7 @@ use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -82,7 +83,7 @@ async fn purge_missing_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    progress_bar.println("Processing missing ROM files");
+    print_subheader(progress_bar, "Processing missing ROM files");
 
     let romfiles = find_romfiles(connection).await;
     let mut count = 0;
@@ -95,10 +96,10 @@ async fn purge_missing_romfiles(
     }
 
     if count > 0 {
-        progress_bar.println(format!(
-            "Deleted {} missing ROM file(s) from the database",
-            count
-        ));
+        print_success(
+            progress_bar,
+            &format!("Deleted {} missing ROM file(s) from the database", count),
+        );
     }
 
     Ok(())
@@ -109,15 +110,15 @@ async fn purge_trashed_romfiles(
     progress_bar: &ProgressBar,
     answer_yes: bool,
 ) -> SimpleResult<()> {
-    progress_bar.println("Processing trashed ROM files");
+    print_subheader(progress_bar, "Processing trashed ROM files");
 
     let romfiles = find_romfiles_in_trash(connection).await;
     let mut count = 0;
 
     if !romfiles.is_empty() {
-        progress_bar.println("Summary:");
+        print_subheader(progress_bar, "Summary:");
         for romfile in &romfiles {
-            progress_bar.println(&romfile.path);
+            print_info(progress_bar, &romfile.path);
         }
 
         if answer_yes || confirm(true)? {
@@ -138,7 +139,10 @@ async fn purge_trashed_romfiles(
             commit_transaction(transaction).await;
 
             if count > 0 {
-                progress_bar.println(format!("Deleted {} trashed ROM file(s)", count));
+                print_success(
+                    progress_bar,
+                    &format!("Deleted {} trashed ROM file(s)", count),
+                );
             }
         }
     }
@@ -151,15 +155,15 @@ async fn purge_orphan_romfiles(
     progress_bar: &ProgressBar,
     answer_yes: bool,
 ) -> SimpleResult<()> {
-    progress_bar.println("Processing orphan ROM files");
+    print_subheader(progress_bar, "Processing orphan ROM files");
 
     let romfiles = find_orphan_romfiles(connection).await;
     let mut count = 0;
 
     if !romfiles.is_empty() {
-        progress_bar.println("Summary:");
+        print_subheader(progress_bar, "Summary:");
         for romfile in &romfiles {
-            progress_bar.println(&romfile.path);
+            print_info(progress_bar, &romfile.path);
         }
 
         if answer_yes || confirm(true)? {
@@ -180,7 +184,10 @@ async fn purge_orphan_romfiles(
             commit_transaction(transaction).await;
 
             if count > 0 {
-                progress_bar.println(format!("Deleted {} trashed ROM file(s)", count));
+                print_success(
+                    progress_bar,
+                    &format!("Deleted {} orphan ROM file(s)", count),
+                );
             }
         }
     }
@@ -193,7 +200,7 @@ async fn purge_foreign_romfiles(
     progress_bar: &ProgressBar,
     answer_yes: bool,
 ) -> SimpleResult<()> {
-    progress_bar.println("Processing foreign ROM files");
+    print_subheader(progress_bar, "Processing foreign ROM files");
     let rom_directory = get_rom_directory(connection).await;
     let walker = WalkDir::new(&rom_directory).into_iter();
     let mut count = 0;
@@ -207,10 +214,13 @@ async fn purge_foreign_romfiles(
                 .await
                 .is_none()
             {
-                progress_bar.println(format!(
-                    "Delete \"{}\"?",
-                    relative_path.as_os_str().to_str().unwrap()
-                ));
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "Delete \"{}\"?",
+                        relative_path.as_os_str().to_str().unwrap()
+                    ),
+                );
                 if answer_yes || confirm(true)? {
                     remove_file(progress_bar, &entry.path(), false).await?;
                     count += 1;
@@ -219,10 +229,13 @@ async fn purge_foreign_romfiles(
         }
     }
     if count > 0 {
-        progress_bar.println(format!(
-            "Deleted {} foreign ROM file(s) from the ROM directory",
-            count
-        ));
+        print_success(
+            progress_bar,
+            &format!(
+                "Deleted {} foreign ROM file(s) from the ROM directory",
+                count
+            ),
+        );
     }
     Ok(())
 }

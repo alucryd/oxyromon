@@ -58,7 +58,7 @@ impl Check for RvzRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.romfile));
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
         iso_romfile
@@ -79,10 +79,13 @@ impl ToIso for RvzRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!(
-            "Extracting \"{}\"",
-            self.romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Extracting \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let path = destination_directory
             .as_ref()
@@ -143,10 +146,13 @@ impl ToRvz for IsoRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(RVZ_EXTENSION);
 
-        progress_bar.println(format!(
-            "Creating \"{}\"",
-            path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let mut command = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?);
         command

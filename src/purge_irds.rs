@@ -2,6 +2,7 @@ use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgMatches, Command};
@@ -33,7 +34,7 @@ pub async fn main(
     games.retain(|game| game.jbfolder);
 
     if games.is_empty() {
-        progress_bar.println("No IRD games found");
+        print_info(progress_bar, "No IRD games found");
         return Ok(());
     }
 
@@ -44,7 +45,7 @@ pub async fn main(
             if let Some(game) = games.iter().find(|game| &game.name == game_name) {
                 purge_ird(connection, progress_bar, game).await?;
             } else {
-                progress_bar.println(format!("Game \"{}\" not found", game_name));
+                print_warning(progress_bar, &format!("Game \"{}\" not found", game_name));
             }
         }
     } else {
@@ -55,7 +56,7 @@ pub async fn main(
                 purge_ird(connection, progress_bar, game).await?;
                 games.retain(|g| g.id != game_id);
                 if games.is_empty() {
-                    progress_bar.println("No more IRD games to purge");
+                    print_info(progress_bar, "No more IRD games to purge");
                     break;
                 }
             } else {
@@ -74,7 +75,7 @@ pub async fn purge_ird(
     progress_bar: &ProgressBar,
     game: &Game,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Purging IRD for \"{}\"", game.name));
+    print_header(progress_bar, &format!("Purging IRD for \"{}\"", game.name));
 
     let mut transaction = begin_transaction(connection).await;
     let system = find_system_by_id(&mut transaction, game.system_id).await;
@@ -91,11 +92,14 @@ pub async fn purge_ird(
         // Find all child roms
         let child_roms = find_roms_by_parent_id(&mut transaction, parent_rom.id).await;
 
-        progress_bar.println(format!(
-            "Deleting {} child roms for parent \"{}\"",
-            child_roms.len(),
-            parent_rom.name
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Deleting {} child roms for parent \"{}\"",
+                child_roms.len(),
+                parent_rom.name
+            ),
+        );
 
         // Collect romfile IDs from child roms
         for child_rom in &child_roms {
@@ -112,7 +116,10 @@ pub async fn purge_ird(
 
     // Move romfiles to trash
     if !romfile_ids.is_empty() {
-        progress_bar.println(format!("Moving {} romfiles to trash", romfile_ids.len()));
+        print_action(
+            progress_bar,
+            &format!("Moving {} romfiles to trash", romfile_ids.len()),
+        );
         for romfile_id in romfile_ids {
             let romfile = find_romfile_by_id(&mut transaction, romfile_id).await;
             let common_romfile = romfile.as_common(&mut transaction).await?;
@@ -135,7 +142,7 @@ pub async fn purge_ird(
 
     commit_transaction(transaction).await;
 
-    progress_bar.println("IRD purged successfully");
+    print_success(progress_bar, "IRD purged successfully");
 
     Ok(())
 }

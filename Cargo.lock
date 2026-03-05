@@ -1946,6 +1946,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "indicatif-log-bridge"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63703cf9069b85dbe6fe26e1c5230d013dee99d3559cd3d02ba39e099ef7ab02"
+dependencies = [
+ "indicatif",
+ "log",
+]
+
+[[package]]
 name = "infer"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2456,6 +2466,7 @@ dependencies = [
  "cfg-if",
  "chrono",
  "clap",
+ "console",
  "crc32fast",
  "dialoguer",
  "digest 0.10.7",
@@ -2467,6 +2478,7 @@ dependencies = [
  "http-types",
  "indexmap 2.13.0",
  "indicatif",
+ "indicatif-log-bridge",
  "infer 0.19.0",
  "itertools 0.14.0",
  "lazy_static",

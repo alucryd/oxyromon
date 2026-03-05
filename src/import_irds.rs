@@ -3,6 +3,7 @@ use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::mimetype::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
@@ -61,17 +62,29 @@ pub async fn main(
     for ird_path in ird_paths {
         let (irdfile, mut header) = parse_ird(ird_path).await?;
 
-        progress_bar.println(format!("IRD Version: {}", &irdfile.version));
-        progress_bar.println(format!("Game ID: {}", &irdfile.game_id));
-        progress_bar.println(format!("Game Name: {}", &irdfile.game_name));
-        progress_bar.println(format!("Update Version: {}", &irdfile.update_version));
-        progress_bar.println(format!("Game Version: {}", &irdfile.game_version));
-        progress_bar.println(format!("App Version: {}", &irdfile.app_version));
-        progress_bar.println(format!("Regions: {}", &irdfile.regions_count));
-        progress_bar.println(format!("Files: {}", &irdfile.files_count));
+        print_header(progress_bar, &format!("IRD: {}", &irdfile.game_name));
+        print_info(progress_bar, &format!("IRD Version: {}", &irdfile.version));
+        print_info(progress_bar, &format!("Game ID: {}", &irdfile.game_id));
+        print_info(
+            progress_bar,
+            &format!("Update Version: {}", &irdfile.update_version),
+        );
+        print_info(
+            progress_bar,
+            &format!("Game Version: {}", &irdfile.game_version),
+        );
+        print_info(
+            progress_bar,
+            &format!("App Version: {}", &irdfile.app_version),
+        );
+        print_info(
+            progress_bar,
+            &format!("Regions: {}", &irdfile.regions_count),
+        );
+        print_info(progress_bar, &format!("Files: {}", &irdfile.files_count));
 
         if irdfile.version != IRD_VERSION {
-            progress_bar.println("IRD version unsupported");
+            print_warning(progress_bar, "IRD version unsupported");
             continue;
         }
 
@@ -86,13 +99,13 @@ pub async fn main(
             });
             if let Some(game) = prompt_for_game(&games, None)? {
                 if game.jbfolder && !matches.get_flag("FORCE") {
-                    progress_bar.println("IRD already exists");
+                    print_skip(progress_bar, "IRD already exists");
                     continue;
                 }
                 import_ird(connection, progress_bar, game, &irdfile, &mut header).await?;
             }
         }
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
 
     compute_system_completion(connection, progress_bar, &system).await?;
@@ -324,7 +337,7 @@ pub async fn import_ird(
 
     // reimport orphan romfiles
     if !orphan_romfile_ids.is_empty() {
-        progress_bar.println("Processing orphan romfiles");
+        print_subheader(progress_bar, "Processing orphan romfiles");
         reimport_orphan_romfiles(
             &mut transaction,
             progress_bar,

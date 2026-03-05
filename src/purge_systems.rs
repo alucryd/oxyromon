@@ -2,6 +2,7 @@ use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -30,8 +31,9 @@ pub async fn main(
         prompt_for_systems(connection, None, false, matches.get_flag("EMPTY"), false).await?;
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     for system in systems {
+        print_header(progress_bar, &format!("Purging \"{}\"", system.name));
         purge_system(connection, progress_bar, &system).await?;
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -41,7 +43,7 @@ pub async fn purge_system(
     progress_bar: &ProgressBar,
     system: &System,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Processing \"{}\"", system.name));
+    print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
     let trash_directory = get_trash_directory(connection, Some(system)).await?;
@@ -57,7 +59,7 @@ pub async fn purge_system(
             .await?;
     }
 
-    progress_bar.println("Deleting system");
+    print_action(progress_bar, "Deleting system");
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
     delete_system_by_id(connection, system.id).await;

@@ -60,7 +60,10 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_message("Renaming file in archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
-        progress_bar.println(format!("Renaming \"{}\" to \"{}\"", &self.path, new_path));
+        print_action(
+            progress_bar,
+            &format!("Renaming \"{}\" to \"{}\"", &self.path, new_path),
+        );
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command
@@ -97,7 +100,7 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!("Deleting \"{}\"", &self.path));
+        print_action(progress_bar, &format!("Deleting \"{}\"", &self.path));
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
@@ -179,7 +182,10 @@ impl Check for ArchiveRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\" ({})", &self.romfile, &self.path));
+        print_action(
+            progress_bar,
+            &format!("Checking \"{}\" ({})", &self.romfile, &self.path),
+        );
         let tmp_directory = create_tmp_directory(connection).await?;
         let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
         common_romfile
@@ -199,7 +205,7 @@ impl ToCommon for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!("Extracting \"{}\"", &self.path));
+        print_action(progress_bar, &format!("Extracting \"{}\"", &self.path));
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command
@@ -254,7 +260,7 @@ impl ToArchive for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!("Compressing \"{}\"", &self));
+        print_action(progress_bar, &format!("Compressing \"{}\"", &self));
 
         let archive_path = destination_directory.as_ref().join(format!(
             "{}.{}",
@@ -459,15 +465,15 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
 
     for (&source_name, &destination_name) in zip(source_names, destination_names) {
         if source_name == destination_name {
-            progress_bar.println(format!("Copying \"{}\"", source_name));
+            print_action(progress_bar, &format!("Copying \"{}\"", source_name));
             destination_archive
                 .raw_copy_file(source_archive.by_name(source_name).unwrap())
                 .expect("Failed to copy file")
         } else {
-            progress_bar.println(format!(
-                "Copying \"{}\" to \"{}\"",
-                source_name, destination_name
-            ));
+            print_action(
+                progress_bar,
+                &format!("Copying \"{}\" to \"{}\"", source_name, destination_name),
+            );
             destination_archive
                 .raw_copy_file_rename(
                     source_archive.by_name(source_name).unwrap(),

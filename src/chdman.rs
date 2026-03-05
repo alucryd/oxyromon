@@ -241,7 +241,7 @@ impl Check for ChdRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.romfile));
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         match self.chd_type {
             ChdType::Cd => {
@@ -762,15 +762,21 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .join(romfile_path.as_ref().file_name().unwrap())
         .with_extension(CHD_EXTENSION);
 
-    progress_bar.println(format!(
-        "Creating \"{}\"",
-        chd_path.file_name().unwrap().to_str().unwrap()
-    ));
+    print_action(
+        progress_bar,
+        &format!(
+            "Creating \"{}\"",
+            chd_path.file_name().unwrap().to_str().unwrap()
+        ),
+    );
     if let Some(parent_romfile) = parent_romfile {
-        progress_bar.println(format!(
-            "Using parent \"{}\"",
-            parent_romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_info(
+            progress_bar,
+            &format!(
+                "Using parent \"{}\"",
+                parent_romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
     }
 
     let mut command = Command::new(CHDMAN);
@@ -834,15 +840,21 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         });
     let cue_path: Option<PathBuf>;
 
-    progress_bar.println(format!(
-        "Extracting \"{}\"",
-        path.as_ref().file_name().unwrap().to_str().unwrap()
-    ));
+    print_action(
+        progress_bar,
+        &format!(
+            "Extracting \"{}\"",
+            path.as_ref().file_name().unwrap().to_str().unwrap()
+        ),
+    );
     if let Some(parent_romfile) = parent_romfile {
-        progress_bar.println(format!(
-            "Using parent \"{}\"",
-            parent_romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_info(
+            progress_bar,
+            &format!(
+                "Using parent \"{}\"",
+                parent_romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
     }
 
     let mut command = Command::new(CHDMAN);

@@ -60,7 +60,7 @@ impl Check for XsoRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.romfile));
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
         iso_romfile
@@ -81,10 +81,13 @@ impl ToIso for XsoRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!(
-            "Extracting \"{}\"",
-            self.romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Extracting \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let path = destination_directory
             .as_ref()
@@ -139,10 +142,13 @@ impl ToXso for IsoRomfile {
                 XsoType::Zso => ZSO_EXTENSION,
             });
 
-        progress_bar.println(format!(
-            "Creating \"{}\"",
-            path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let output = Command::new(MAXCSO)
             .arg("--block=2048")

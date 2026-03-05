@@ -515,7 +515,7 @@ impl Check for CommonRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self));
+        print_action(progress_bar, &format!("Checking \"{}\"", self));
         let rom = roms[0];
         let hash_algorithm: HashAlgorithm;
         if rom.crc.is_some() {

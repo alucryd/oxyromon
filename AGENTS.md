@@ -56,7 +56,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `config.rs` | Settings management. Defines setting types (booleans, integers, paths, lists, choices), and provides get/set helpers. Also defines `HashAlgorithm`, `SubfolderScheme`, `PreferredVersion`, `PreferredRegion`, `ArcadeRomType`. |
 | `util.rs` | Low-level filesystem operations (`create_file`, `copy_file`, `rename_file`, `remove_file`, `create_directory`, etc.) and directory structure helpers (`get_system_directory`, `get_one_region_directory`, `get_trash_directory`). Also contains `compute_system_completion` and `compute_alpha_subfolder`. |
 | `mimetype.rs` | File type detection using the `infer` crate with custom matchers for ROM-specific formats (CHD, CSO, RVZ, IRD, BPS, IPS, XDELTA, ZSO, RDSK, RIFF). Defines all file extension constants. |
-| `progress.rs` | Thin wrappers around `indicatif` for progress bar styles. |
+| `progress.rs` | Progress bar styles, `MultiProgress` management, `indicatif-log-bridge` integration, and categorized styled output helpers (`print_header`, `print_info`, `print_success`, `print_warning`, `print_error`, `print_skip`, `print_action`, `print_separator`). |
 | `import_dats.rs` | Parses Logiqx-format DAT files, creates/updates systems, games, and ROMs in the database. |
 | `import_roms.rs` | Imports ROM files by hashing them and matching against the database. Handles archives, CHDs, CIAs, CSOs, RVZs, NSZs, ZSOs, and plain files. |
 | `sort_roms.rs` | Sorts imported ROMs into region folders and 1G1R directories based on user configuration. Implements the weighted election algorithm. |
@@ -362,13 +362,31 @@ pnpm format
 
 - **Async everywhere:** All subcommand `main()` functions and most helpers are `async`.
 - **Database connection passing:** Functions take `&mut SqliteConnection` (not the pool).
-- **Progress bar:** Most functions accept `&ProgressBar` for user feedback.
+- **Progress bar:** Most functions accept `&ProgressBar` for user feedback. Use the styled `print_*` helpers from `progress.rs` instead of raw `progress_bar.println(...)`.
 - **Traits over generics:** ROM format abstractions use trait objects and the trait system in `common.rs`.
 - **Module-per-test:** Each test case gets its own file in a subdirectory (e.g., `src/import_roms/test_original.rs`).
 - **Feature gating:** All server-related code uses `#[cfg(feature = "server")]`.
 - **No unwrap in production code** where avoidable — use `try_with!` or `bail!` instead.
 - **Lazy statics** for compiled regexes and shared state (via `lazy_static!`).
 - **Parallel iteration** with `rayon` where beneficial (e.g., filtering large lists).
+
+### CLI Output Helpers
+
+All user-facing output should go through the categorized helpers in `progress.rs`. **Never** call `progress_bar.println(...)` directly from subcommand or format modules — use these instead:
+
+| Helper | Icon | Purpose | Example |
+|--------|------|---------|---------|
+| `print_header` | `◆` (bold cyan) | Section titles, system names | `Processing "Nintendo - Game Boy"` |
+| `print_subheader` | `▸` (bold) | Steps within a section | `Processing games`, `Summary:` |
+| `print_info` | `ℹ` (dim) | Informational messages | `System: Test System`, speed results |
+| `print_success` | `✔` (green) | Completion, match found | `Imported Test Game (USA)`, `Matches "rom.bin"` |
+| `print_warning` | `⚠` (yellow) | Non-fatal issues | `No match`, `Multiple matches, skipping` |
+| `print_error` | `✖` (red bold) | Errors, failures | `CRC mismatch`, `Please install chdman` |
+| `print_skip` | `↪` (dim) | Skipped/duplicate items | `Already imported`, `Duplicate of "file.zip"` |
+| `print_action` | `→` (dim) | File operations in progress | `Extracting "game.chd"`, `Compressing "rom.bin"` |
+| `print_separator` | (blank line) | Visual spacing between sections | |
+
+All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`lazy_static`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
 
 ### File Organization
 

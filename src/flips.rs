@@ -36,10 +36,13 @@ impl Patch for XpsRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!(
-            "Patching \"{}\"",
-            &romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Patching \"{}\"",
+                &romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let path = destination_directory
             .as_ref()

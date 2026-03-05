@@ -7,6 +7,7 @@ extern crate async_once_cell;
 extern crate axum;
 extern crate cfg_if;
 extern crate chrono;
+extern crate console;
 #[macro_use]
 extern crate clap;
 extern crate crc32fast;
@@ -20,6 +21,7 @@ extern crate futures;
 extern crate http_types;
 extern crate indexmap;
 extern crate indicatif;
+extern crate indicatif_log_bridge;
 extern crate infer;
 #[macro_use]
 extern crate lazy_static;
@@ -97,7 +99,8 @@ use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
 use dotenvy::dotenv;
-use env_logger::{Builder, Target};
+use env_logger::Builder;
+use indicatif_log_bridge::LogWrapper;
 use progress::*;
 use simple_error::SimpleError;
 use std::env;
@@ -144,14 +147,20 @@ async fn main() -> SimpleResult<()> {
     if matches.subcommand().is_some() {
         dotenv().ok();
 
-        let mut builder = Builder::from_env("OXYROMON_LOG_LEVEL");
-        if matches.subcommand_name().unwrap() != "server" {
-            // log to stdout for interactive commands because indicatif uses stderr
-            builder.target(Target::Stdout);
-        }
-        builder.init();
+        let logger = Builder::from_env("OXYROMON_LOG_LEVEL").build();
+        let level = logger.filter();
+        let multi = get_multi_progress().clone();
+        LogWrapper::new(multi, logger).try_init().unwrap();
+        log::set_max_level(level);
 
         let progress_bar = get_progress_bar(0, get_none_progress_style());
+
+        print_separator(&progress_bar);
+        print_header(
+            &progress_bar,
+            &format!("oxyROMon {}", env!("CARGO_PKG_VERSION")),
+        );
+        print_separator(&progress_bar);
 
         let data_directory = match env::var("OXYROMON_DATA_DIRECTORY") {
             Ok(data_directory) => PathBuf::from(data_directory),

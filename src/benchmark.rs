@@ -74,10 +74,13 @@ pub async fn main(
     writer.flush().await.unwrap();
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "ROM Directory Write Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "ROM Directory Write Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // rom read speed
     progress_bar.set_message("Measuring ROM directory read speed");
@@ -96,10 +99,13 @@ pub async fn main(
     writer.flush().await.unwrap();
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "ROM Directory Read Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "ROM Directory Read Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // tmp write speed
     progress_bar.set_message("Measuring TMP directory write speed");
@@ -118,10 +124,13 @@ pub async fn main(
     writer.flush().await.unwrap();
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "TMP Directory Write Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "TMP Directory Write Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // tmp read speed
     progress_bar.set_message("Measuring TMP directory read speed");
@@ -141,10 +150,13 @@ pub async fn main(
     writer.flush().await.unwrap();
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "TMP Directory Read Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "TMP Directory Read Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // crc speed
     let start = Instant::now();
@@ -153,10 +165,13 @@ pub async fn main(
         .await?;
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "CRC Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "CRC Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // md5 speed
     let start = Instant::now();
@@ -165,10 +180,13 @@ pub async fn main(
         .await?;
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "MD5 Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "MD5 Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     // sha1 speed
     let start = Instant::now();
@@ -177,10 +195,13 @@ pub async fn main(
         .await?;
     let duration = start.elapsed();
 
-    progress_bar.println(format!(
-        "SHA1 Speed: {:.2}Mb/s",
-        mb_count as f64 / duration.as_secs_f64()
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "SHA1 Speed: {:.2}Mb/s",
+            mb_count as f64 / duration.as_secs_f64()
+        ),
+    );
 
     remove_file(progress_bar, &rom_file_path, true).await?;
     remove_file(progress_bar, &tmp_file_path, true).await?;

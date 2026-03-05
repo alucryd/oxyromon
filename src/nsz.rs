@@ -49,7 +49,7 @@ impl Check for NszRomfile {
         header: &Option<Header>,
         roms: &[&Rom],
     ) -> SimpleResult<()> {
-        progress_bar.println(format!("Checking \"{}\"", self.romfile));
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
         nsp_romfile
@@ -78,10 +78,13 @@ impl ToNsp for NszRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        progress_bar.println(format!(
-            "Extracting \"{}\"",
-            self.romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Extracting \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let path = destination_directory
             .as_ref()
@@ -132,10 +135,13 @@ impl ToNsz for NspRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSZ_EXTENSION);
 
-        progress_bar.println(format!(
-            "Creating \"{}\"",
-            path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let output = Command::new(NSZ)
             .arg("-C")

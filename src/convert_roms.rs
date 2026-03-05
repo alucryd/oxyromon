@@ -12,6 +12,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
@@ -130,37 +131,37 @@ pub async fn main(
     match format.as_str() {
         "7Z" | "ZIP" => {
             if sevenzip::get_version().await.is_err() {
-                progress_bar.println("Please install sevenzip");
+                print_error(progress_bar, "Please install sevenzip");
                 return Ok(());
             }
         }
         "CHD" => {
             if chdman::get_version().await.is_err() {
-                progress_bar.println("Please install chdman");
+                print_error(progress_bar, "Please install chdman");
                 return Ok(());
             }
         }
         "CSO" => {
             if maxcso::get_version().await.is_err() {
-                progress_bar.println("Please install maxcso");
+                print_error(progress_bar, "Please install maxcso");
                 return Ok(());
             }
         }
         "NSZ" => {
             if nsz::get_version().await.is_err() {
-                progress_bar.println("Please install nsz");
+                print_error(progress_bar, "Please install nsz");
                 return Ok(());
             }
         }
         "RVZ" => {
             if dolphin::get_version().await.is_err() {
-                progress_bar.println("Please install dolphin-tool");
+                print_error(progress_bar, "Please install dolphin-tool");
                 return Ok(());
             }
         }
         "ZSO" => {
             if maxcso::get_version().await.is_err() {
-                progress_bar.println("Please install maxcso");
+                print_error(progress_bar, "Please install maxcso");
                 return Ok(());
             }
         }
@@ -169,7 +170,7 @@ pub async fn main(
     }
 
     for system in systems {
-        progress_bar.println(format!("Processing \"{}\"", system.name));
+        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
         if format == "CHD"
             && system.name.contains("Dreamcast")
@@ -179,15 +180,21 @@ pub async fn main(
                 .cmp(chdman::MIN_DREAMCAST_VERSION)
                 == Ordering::Less
         {
-            progress_bar.println(format!("Older chdman versions have issues with Dreamcast games, please update to {} or newer", chdman::MIN_DREAMCAST_VERSION));
+            print_warning(
+                progress_bar,
+                &format!(
+                    "Older chdman versions have issues with Dreamcast games, please update to {} or newer",
+                    chdman::MIN_DREAMCAST_VERSION
+                ),
+            );
             continue;
         }
 
         if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
-            progress_bar.println(format!(
-                "Only {:?} are supported for arcade systems",
-                ARCADE_FORMATS
-            ));
+            print_warning(
+                progress_bar,
+                &format!("Only {:?} are supported for arcade systems", ARCADE_FORMATS),
+            );
             continue;
         }
 
@@ -210,7 +217,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.index_of("GAME").is_some() {
-                progress_bar.println("No matching game");
+                print_warning(progress_bar, "No matching game");
             }
             continue;
         }
@@ -391,7 +398,7 @@ pub async fn main(
             _ => bail!("Not supported"),
         }
 
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
 
     Ok(())
@@ -511,7 +518,7 @@ async fn to_archive(
             .await
             .is_empty()
         {
-            progress_bar.println("CHD has children, skipping");
+            print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
         let chd_romfile = match romfile.parent_id {
@@ -539,10 +546,13 @@ async fn to_archive(
                         .cmp(chdman::MIN_SPLITBIN_VERSION)
                         == Ordering::Less
                 {
-                    progress_bar.println(format!(
-                    "Older chdman versions don't support splitbin, please update to {} or newer",
-                    chdman::MIN_SPLITBIN_VERSION
-                ));
+                    print_warning(
+                        progress_bar,
+                        &format!(
+                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            chdman::MIN_SPLITBIN_VERSION
+                        ),
+                    );
                     continue;
                 }
                 let cue_rom = cue_roms.first().unwrap();
@@ -605,7 +615,7 @@ async fn to_archive(
                         }
                     }
                     if error {
-                        progress_bar.println("Converted file doesn't match the original");
+                        print_warning(progress_bar, "Converted file doesn't match the original");
                         archive_romfiles
                             .first()
                             .unwrap()
@@ -670,7 +680,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -721,7 +731,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -772,7 +782,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -830,7 +840,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -885,7 +895,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -940,7 +950,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -995,7 +1005,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1088,7 +1098,7 @@ async fn to_archive(
                     };
                 }
                 if error {
-                    progress_bar.println("Converted files don't match the original");
+                    print_warning(progress_bar, "Converted files don't match the original");
                     if source_archive_type != archive_type {
                         archive_romfile_rom
                             .0
@@ -1160,7 +1170,7 @@ async fn to_archive(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 archive_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1232,7 +1242,7 @@ async fn to_archive(
                         .check(&mut transaction, progress_bar, &None, &[rom])
                         .await;
                     if result.is_err() {
-                        progress_bar.println("Converted file doesn't match the original");
+                        print_warning(progress_bar, "Converted file doesn't match the original");
                         archive_romfile.delete_file(progress_bar).await?;
                     }
                     results.push(result);
@@ -1509,7 +1519,7 @@ async fn to_chd(
                         .await?
                 }
                 _ => {
-                    progress_bar.println("Unknown file type");
+                    print_warning(progress_bar, "Unknown file type");
                     continue;
                 }
             };
@@ -1519,7 +1529,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1555,7 +1565,7 @@ async fn to_chd(
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
 
             if cue_roms.is_empty() {
-                progress_bar.println("No CUE file, skipping");
+                print_skip(progress_bar, "No CUE file, skipping");
                 continue;
             }
 
@@ -1607,7 +1617,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1708,7 +1718,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1786,7 +1796,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1850,7 +1860,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1924,7 +1934,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1994,7 +2004,7 @@ async fn to_chd(
                         .await?
                 }
                 _ => {
-                    progress_bar.println("Unknown file type");
+                    print_warning(progress_bar, "Unknown file type");
                     continue;
                 }
             };
@@ -2004,7 +2014,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -2070,7 +2080,7 @@ async fn to_chd(
                 .await
                 .is_empty()
             {
-                progress_bar.println("CHD has children, skipping");
+                print_skip(progress_bar, "CHD has children, skipping");
                 continue;
             }
 
@@ -2100,10 +2110,13 @@ async fn to_chd(
                             .cmp(chdman::MIN_SPLITBIN_VERSION)
                             == Ordering::Less
                     {
-                        progress_bar.println(format!(
-                    "Older chdman versions don't support splitbin, please update to {} or newer",
-                    chdman::MIN_SPLITBIN_VERSION
-                ));
+                        print_warning(
+                            progress_bar,
+                            &format!(
+                                "Older chdman versions don't support splitbin, please update to {} or newer",
+                                chdman::MIN_SPLITBIN_VERSION
+                            ),
+                        );
                         continue;
                     }
                     chd_romfile
@@ -2190,7 +2203,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 new_chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2340,7 +2353,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2384,7 +2397,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2422,7 +2435,7 @@ async fn to_cso(
             .await
             .is_empty()
         {
-            progress_bar.println("CHD has children, skipping");
+            print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
         let chd_romfile = match romfile.parent_id {
@@ -2459,7 +2472,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2508,7 +2521,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2552,7 +2565,7 @@ async fn to_cso(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 new_cso_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2660,7 +2673,7 @@ async fn to_nsz(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             nsz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2700,7 +2713,7 @@ async fn to_nsz(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             nsz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2743,7 +2756,7 @@ async fn to_nsz(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 new_nsz_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2858,7 +2871,7 @@ async fn to_rvz(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             rvz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2905,7 +2918,7 @@ async fn to_rvz(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             rvz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2956,7 +2969,7 @@ async fn to_rvz(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     new_rvz_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 } else {
@@ -3101,7 +3114,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3145,7 +3158,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3181,7 +3194,7 @@ async fn to_zso(
             .await
             .is_empty()
         {
-            progress_bar.println("CHD has children, skipping");
+            print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
         let chd_romfile = match romfile.parent_id {
@@ -3218,7 +3231,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3266,7 +3279,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3309,7 +3322,7 @@ async fn to_zso(
                     .await
                     .is_err()
             {
-                progress_bar.println("Converted file doesn't match the original");
+                print_warning(progress_bar, "Converted file doesn't match the original");
                 new_zso_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -3432,7 +3445,7 @@ async fn to_original(
     // convert archives
     for roms in archives.values() {
         if sevenzip::get_version().await.is_err() {
-            progress_bar.println("Please install sevenzip");
+            print_error(progress_bar, "Please install sevenzip");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3507,7 +3520,7 @@ async fn to_original(
                 };
             }
             if error {
-                progress_bar.println("Converted files don't match the original");
+                print_warning(progress_bar, "Converted files don't match the original");
                 for common_romfile in common_romfiles {
                     common_romfile.delete(progress_bar, false).await?;
                 }
@@ -3544,7 +3557,7 @@ async fn to_original(
             continue;
         }
         if chdman::get_version().await.is_err() {
-            progress_bar.println("Please install chdman");
+            print_error(progress_bar, "Please install chdman");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3564,7 +3577,7 @@ async fn to_original(
             .await
             .is_empty()
         {
-            progress_bar.println("CHD has children, skipping");
+            print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
         let chd_romfile = match romfile.parent_id {
@@ -3592,10 +3605,13 @@ async fn to_original(
                         .cmp(chdman::MIN_SPLITBIN_VERSION)
                         == Ordering::Less
                 {
-                    progress_bar.println(format!(
-                        "Older chdman versions don't support splitbin, please update to {} or newer",
-                        chdman::MIN_SPLITBIN_VERSION
-                    ));
+                    print_warning(
+                        progress_bar,
+                        &format!(
+                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            chdman::MIN_SPLITBIN_VERSION
+                        ),
+                    );
                     continue;
                 }
                 let cue_romfile = romfiles_by_id
@@ -3631,7 +3647,7 @@ async fn to_original(
                         };
                     }
                     if error {
-                        progress_bar.println("Converted files don't match the original");
+                        print_warning(progress_bar, "Converted files don't match the original");
                         if cue_roms.is_empty() {
                             cue_bin_romfile
                                 .cue_romfile
@@ -3682,7 +3698,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     iso_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3713,7 +3729,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     rdsk_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3744,7 +3760,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    progress_bar.println("Converted file doesn't match the original");
+                    print_warning(progress_bar, "Converted file doesn't match the original");
                     riff_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3766,7 +3782,7 @@ async fn to_original(
     // convert CSOs
     for roms in csos.values() {
         if maxcso::get_version().await.is_err() {
-            progress_bar.println("Please install maxcso");
+            print_error(progress_bar, "Please install maxcso");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3784,7 +3800,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3801,7 +3817,7 @@ async fn to_original(
     // convert NSZs
     for roms in nszs.values() {
         if nsz::get_version().await.is_err() {
-            progress_bar.println("Please install nsz");
+            print_error(progress_bar, "Please install nsz");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3819,7 +3835,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             nsp_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3836,7 +3852,7 @@ async fn to_original(
     // convert RVZs
     for roms in rvzs.values() {
         if dolphin::get_version().await.is_err() {
-            progress_bar.println("Please install dolphin-tool");
+            print_error(progress_bar, "Please install dolphin-tool");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3854,7 +3870,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3871,7 +3887,7 @@ async fn to_original(
     // convert ZSOs
     for roms in zsos.values() {
         if maxcso::get_version().await.is_err() {
-            progress_bar.println("Please install maxcso");
+            print_error(progress_bar, "Please install maxcso");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3889,7 +3905,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            progress_bar.println("Converted file doesn't match the original");
+            print_warning(progress_bar, "Converted file doesn't match the original");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3922,14 +3938,17 @@ async fn print_diff(
     for &romfile in new_romfiles {
         new_size += romfile.get_size(connection, progress_bar).await?;
     }
-    progress_bar.println(format!(
-        "Before: {} ({:.1}%); After: {} ({:.1}%); Original: {}",
-        HumanBytes(old_size),
-        old_size as f64 / original_size as f64 * 100f64,
-        HumanBytes(new_size),
-        new_size as f64 / original_size as f64 * 100f64,
-        HumanBytes(original_size)
-    ));
+    print_info(
+        progress_bar,
+        &format!(
+            "Before: {} ({:.1}%); After: {} ({:.1}%); Original: {}",
+            HumanBytes(old_size),
+            old_size as f64 / original_size as f64 * 100f64,
+            HumanBytes(new_size),
+            new_size as f64 / original_size as f64 * 100f64,
+            HumanBytes(original_size)
+        ),
+    );
     Ok(())
 }
 
