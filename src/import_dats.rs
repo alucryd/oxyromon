@@ -22,6 +22,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::str;
 use vec_drain_where::VecDrainWhereExt;
+use walkdir::WalkDir;
 use zip::ZipArchive;
 
 #[derive(RustEmbed)]
@@ -48,6 +49,14 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("UPDATE")
+                .short('u')
+                .long("update")
+                .help("Only import DAT files for systems already in the database")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("SKIP_HEADER")
                 .short('s')
                 .long("skip-header")
@@ -69,7 +78,8 @@ pub fn subcommand() -> Command {
                 .long("name")
                 .help("Customize the system name")
                 .required(false)
-                .num_args(1),
+                .num_args(1)
+                .conflicts_with("UPDATE"),
         )
         .arg(
             Arg::new("EXTENSION")
@@ -77,7 +87,8 @@ pub fn subcommand() -> Command {
                 .long("extension")
                 .help("Customize the system extension")
                 .required(false)
-                .num_args(1),
+                .num_args(1)
+                .conflicts_with("UPDATE"),
         )
 }
 
@@ -91,7 +102,9 @@ pub async fn main(
         .unwrap()
         .cloned()
         .partition(|path| {
-            path.extension().unwrap().to_str().unwrap().to_lowercase() == ZIP_EXTENSION
+            path.extension()
+                .map(|ext| ext.to_str().unwrap().to_lowercase() == ZIP_EXTENSION)
+                .unwrap_or(false)
         });
 
     let tmp_directory = create_tmp_directory(connection).await?;
@@ -99,12 +112,25 @@ pub async fn main(
         let mut reader = get_reader_sync(&zip_path)?;
         let mut zip_archive = try_with!(ZipArchive::new(&mut reader), "Failed to read ZIP");
         try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
-        for file_name in zip_archive.file_names() {
-            if file_name.ends_with(DAT_EXTENSION) {
-                dat_paths.push(tmp_directory.path().join(file_name));
+        // walk the extracted tree to find all .dat files, including in subdirectories
+        let walker = WalkDir::new(tmp_directory.path()).into_iter();
+        for entry in walker.filter_map(|e| e.ok()) {
+            if entry.path().is_file()
+                && entry
+                    .path()
+                    .extension()
+                    .is_some_and(|ext| ext.to_str().unwrap().to_lowercase() == DAT_EXTENSION)
+            {
+                dat_paths.push(entry.path().to_path_buf());
             }
         }
     }
+
+    // deduplicate dat paths that may have been found multiple times
+    dat_paths.sort();
+    dat_paths.dedup();
+
+    let update = matches.get_flag("UPDATE");
 
     let custom_name = matches.get_one::<String>("NAME");
     if custom_name.is_some() {
@@ -140,6 +166,16 @@ pub async fn main(
             matches.get_flag("SKIP_HEADER"),
         )
         .await?;
+
+        // in update mode, skip systems that are not already in the database
+        if update {
+            let system_name = &datfile_xml.system.name;
+            if find_system_by_name(connection, system_name).await.is_none() {
+                progress_bar.println(format!("Skipping unknown system \"{}\"", system_name));
+                progress_bar.println("");
+                continue;
+            }
+        }
 
         if custom_extension.is_some() {
             let games = if !datfile_xml.machines.is_empty() {
@@ -856,3 +892,9 @@ mod test_dat_updated_orphan_chd_mismatch;
 mod test_regions_france_germany;
 #[cfg(test)]
 mod test_regions_world;
+#[cfg(test)]
+mod test_zip_nested;
+#[cfg(test)]
+mod test_zip_update_known_system;
+#[cfg(test)]
+mod test_zip_update_unknown_system;
