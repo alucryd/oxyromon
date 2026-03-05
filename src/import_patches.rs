@@ -3,6 +3,7 @@ use super::common::*;
 use super::database::*;
 use super::mimetype::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -71,10 +72,10 @@ pub async fn main(
                 .await?;
             }
             _ => {
-                progress_bar.println("Unsupported patch format");
+                print_warning(progress_bar, "Unsupported patch format");
             }
         }
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -100,7 +101,7 @@ pub async fn import_patch<P: AsRef<Path>>(
     let game = match prompt_for_game(&games, None)? {
         Some(game) => game,
         None => {
-            progress_bar.println("Skipping patch");
+            print_skip(progress_bar, "Skipping patch");
             return Ok(());
         }
     };
@@ -108,7 +109,7 @@ pub async fn import_patch<P: AsRef<Path>>(
     let rom = match prompt_for_rom(&roms, None)? {
         Some(rom) => rom,
         None => {
-            progress_bar.println("Skipping patch");
+            print_skip(progress_bar, "Skipping patch");
             return Ok(());
         }
     };
@@ -117,7 +118,7 @@ pub async fn import_patch<P: AsRef<Path>>(
         true => match prompt_for_name("Please enter a name for the patch")? {
             Some(name) => name,
             None => {
-                progress_bar.println("Skipping patch");
+                print_skip(progress_bar, "Skipping patch");
                 return Ok(());
             }
         },
@@ -160,7 +161,7 @@ pub async fn import_patch<P: AsRef<Path>>(
                 .update(connection, progress_bar, patch.romfile_id)
                 .await?;
         } else {
-            progress_bar.println("Name already exists, skipping patch");
+            print_skip(progress_bar, "Name already exists, skipping patch");
         }
     } else {
         let mut transaction = begin_transaction(connection).await;

@@ -10,6 +10,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::AsNsz;
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::AsArchive;
@@ -57,7 +58,7 @@ pub async fn main(
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
     for system in systems {
-        progress_bar.println(format!("Processing \"{}\"", system.name));
+        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
         let games = match matches.get_many::<String>("GAME") {
             Some(game_names) => {
                 let mut games: Vec<Game> = vec![];
@@ -77,7 +78,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.index_of("GAME").is_some() {
-                progress_bar.println("No matching game");
+                print_warning(progress_bar, "No matching game");
             }
             continue;
         }
@@ -89,7 +90,7 @@ pub async fn main(
             matches.get_flag("SIZE"),
         )
         .await?;
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -132,15 +133,18 @@ async fn check_system(
         let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
         let romfile_roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
-        progress_bar.println(format!(
-            "Processing \"{}\"",
-            romfile_path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_subheader(
+            progress_bar,
+            &format!(
+                "Processing \"{}\"",
+                romfile_path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let result;
         if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
             if sevenzip::get_version().await.is_err() {
-                progress_bar.println("Please install sevenzip");
+                print_error(progress_bar, "Please install sevenzip");
                 break;
             }
             result = check_archive(
@@ -153,7 +157,7 @@ async fn check_system(
             .await;
         } else if CHD_EXTENSION == romfile_extension {
             if chdman::get_version().await.is_err() {
-                progress_bar.println("Please install chdman");
+                print_error(progress_bar, "Please install chdman");
                 break;
             }
             let chd_romfile = match romfile.parent_id {
@@ -178,7 +182,7 @@ async fn check_system(
                 .await;
         } else if CSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
-                progress_bar.println("Please install maxcso");
+                print_error(progress_bar, "Please install maxcso");
                 break;
             }
             result = romfile
@@ -190,7 +194,7 @@ async fn check_system(
                 .await;
         } else if NSZ_EXTENSION == romfile_extension {
             if nsz::get_version().await.is_err() {
-                progress_bar.println("Please install nsz");
+                print_error(progress_bar, "Please install nsz");
                 break;
             }
             result = romfile
@@ -201,7 +205,7 @@ async fn check_system(
                 .await;
         } else if RVZ_EXTENSION == romfile_extension {
             if dolphin::get_version().await.is_err() {
-                progress_bar.println("Please install dolphin-tool");
+                print_error(progress_bar, "Please install dolphin-tool");
                 break;
             }
             result = romfile
@@ -212,7 +216,7 @@ async fn check_system(
                 .await;
         } else if ZSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
-                progress_bar.println("Please install maxcso");
+                print_error(progress_bar, "Please install maxcso");
                 break;
             }
             result = romfile

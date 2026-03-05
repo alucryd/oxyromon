@@ -80,7 +80,7 @@ pub async fn main(
     };
 
     for system in systems {
-        progress_bar.println(format!("Processing \"{}\"", system.name));
+        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
         rebuild_system(
             connection,
             progress_bar,
@@ -89,7 +89,7 @@ pub async fn main(
             matches.get_flag("FORCE"),
         )
         .await?;
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
 
     Ok(())
@@ -190,7 +190,7 @@ async fn rebuild_system(
     compute_system_completion(connection, progress_bar, system).await?;
 
     if system.merging == merging as i64 && !force {
-        progress_bar.println("Nothing to do");
+        print_skip(progress_bar, "Nothing to do");
         return Ok(());
     }
 
@@ -234,7 +234,7 @@ async fn expand_game(
     merging: Merging,
     compression_level: &Option<usize>,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Processing \"{}\"", game.name));
+    print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let game_directory = get_system_directory(connection, system)
         .await?
@@ -283,7 +283,7 @@ async fn expand_game(
             )
             .await?;
         } else {
-            progress_bar.println(format!("Missing \"{}\"", &rom.name));
+            print_warning(progress_bar, &format!("Missing \"{}\"", &rom.name));
             return Ok(());
         }
     }
@@ -305,7 +305,7 @@ async fn trim_game(
     game: &Game,
     merging: Merging,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Processing \"{}\"", game.name));
+    print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let romfile_path = get_system_directory(connection, system)
         .await?

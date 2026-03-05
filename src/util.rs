@@ -5,6 +5,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
+use console::Style;
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
@@ -64,10 +65,13 @@ pub async fn create_file<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<File> {
     if !quiet {
-        progress_bar.println(format!(
-            "Creating \"{}\"",
-            path.as_ref().as_os_str().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.as_ref().as_os_str().to_str().unwrap()
+            ),
+        );
     }
     let directory = path.as_ref().parent().unwrap();
     if !directory.is_dir() {
@@ -93,10 +97,13 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
-            progress_bar.println(format!(
-                "Copying to \"{}\"",
-                new_path.as_ref().as_os_str().to_str().unwrap()
-            ));
+            print_action(
+                progress_bar,
+                &format!(
+                    "Copying to \"{}\"",
+                    new_path.as_ref().as_os_str().to_str().unwrap()
+                ),
+            );
         }
         try_with!(
             fs::copy(old_path, new_path).await,
@@ -120,10 +127,13 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
             create_directory(progress_bar, &new_directory, quiet).await?;
         }
         if !quiet {
-            progress_bar.println(format!(
-                "Moving to \"{}\"",
-                new_path.as_ref().as_os_str().to_str().unwrap()
-            ));
+            print_action(
+                progress_bar,
+                &format!(
+                    "Moving to \"{}\"",
+                    new_path.as_ref().as_os_str().to_str().unwrap()
+                ),
+            );
         }
         let result = fs::rename(old_path, new_path).await;
         // rename doesn't work across filesystems, use copy/remove as fallback
@@ -141,10 +151,13 @@ pub async fn remove_file<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(format!(
-            "Deleting \"{}\"",
-            path.as_ref().as_os_str().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Deleting \"{}\"",
+                path.as_ref().as_os_str().to_str().unwrap()
+            ),
+        );
     }
     try_with!(
         fs::remove_file(path).await,
@@ -160,10 +173,13 @@ pub async fn create_directory<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(format!(
-            "Creating \"{}\"",
-            path.as_ref().as_os_str().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.as_ref().as_os_str().to_str().unwrap()
+            ),
+        );
     }
     if !path.as_ref().is_dir() {
         try_with!(
@@ -189,10 +205,13 @@ pub async fn remove_directory<P: AsRef<Path>>(
     quiet: bool,
 ) -> SimpleResult<()> {
     if !quiet {
-        progress_bar.println(format!(
-            "Deleting \"{}\"",
-            path.as_ref().as_os_str().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Deleting \"{}\"",
+                path.as_ref().as_os_str().to_str().unwrap()
+            ),
+        );
     }
     try_with!(
         fs::remove_dir_all(path).await,
@@ -273,21 +292,30 @@ pub fn get_executable_path(executables: &[&str]) -> SimpleResult<PathBuf> {
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {
     match new_version.cmp(old_version) {
         Ordering::Less => {
-            progress_bar.println(format!(
-                "Version \"{}\" is older than \"{}\"",
-                new_version, old_version
-            ));
+            print_skip(
+                progress_bar,
+                &format!(
+                    "Version \"{}\" is older than \"{}\"",
+                    new_version, old_version
+                ),
+            );
             false
         }
         Ordering::Equal => {
-            progress_bar.println(format!("Already at version \"{}\"", new_version));
+            print_skip(
+                progress_bar,
+                &format!("Already at version \"{}\"", new_version),
+            );
             false
         }
         Ordering::Greater => {
-            progress_bar.println(format!(
-                "Version \"{}\" is newer than \"{}\"",
-                new_version, old_version
-            ));
+            print_info(
+                progress_bar,
+                &format!(
+                    "Version \"{}\" is newer than \"{}\"",
+                    new_version, old_version
+                ),
+            );
             true
         }
     }
@@ -337,7 +365,7 @@ pub async fn compute_system_completion(
 ) -> SimpleResult<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing system completion");
+    progress_bar.set_message("Computing completion");
 
     // Create missing empty files for partial games
     create_missing_empty_files(connection, progress_bar, system).await?;
@@ -397,6 +425,29 @@ pub async fn find_parent_chd_romfile_by_game(
                 .find_first(|romfile| romfile.path.ends_with(CHD_EXTENSION))
         }
         None => None,
+    }
+}
+
+/// Format a dependency status for display in `info` output.
+pub fn format_dependency(
+    name: &str,
+    version_result: &Result<String, simple_error::SimpleError>,
+) -> String {
+    let found_style = Style::new().green();
+    let missing_style = Style::new().dim();
+    match version_result {
+        Ok(version) => format!(
+            "    {} {}: {}",
+            found_style.apply_to("✔"),
+            name,
+            found_style.apply_to(version),
+        ),
+        Err(_) => format!(
+            "    {} {}: {}",
+            missing_style.apply_to("·"),
+            name,
+            missing_style.apply_to("not found"),
+        ),
     }
 }
 

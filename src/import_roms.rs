@@ -13,6 +13,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::nsz;
 use super::nsz::AsNsz;
+use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
@@ -234,7 +235,7 @@ pub async fn main(
         }
         for system in &systems {
             if let Some(system) = system {
-                progress_bar.println(format!("Searching in \"{}\"", &system.name));
+                print_header(progress_bar, &format!("Searching in \"{}\"", &system.name));
             }
             let header = match system {
                 Some(system) => find_header_by_system_id(connection, system.id).await,
@@ -242,10 +243,13 @@ pub async fn main(
             };
             if path.is_dir() {
                 if path.join(PS3_DISC_SFB).is_file() {
-                    progress_bar.println(format!(
-                        "Processing \"{}\"",
-                        &path.file_name().unwrap().to_str().unwrap()
-                    ));
+                    print_subheader(
+                        progress_bar,
+                        &format!(
+                            "Processing \"{}\"",
+                            &path.file_name().unwrap().to_str().unwrap()
+                        ),
+                    );
                     match system.as_ref() {
                         Some(system) => {
                             let system_id = import_jbfolder(
@@ -311,7 +315,7 @@ pub async fn main(
                 system_ids.extend(new_system_ids);
                 game_ids.extend(new_game_ids);
             }
-            progress_bar.println("");
+            print_separator(progress_bar);
         }
     }
 
@@ -336,10 +340,13 @@ pub async fn import_rom<P: AsRef<Path>>(
     unattended_mode: UnattendedMode,
     as_is: bool,
 ) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
-    progress_bar.println(format!(
-        "Processing \"{}\"",
-        path.as_ref().file_name().unwrap().to_str().unwrap()
-    ));
+    print_subheader(
+        progress_bar,
+        &format!(
+            "Processing \"{}\"",
+            path.as_ref().file_name().unwrap().to_str().unwrap()
+        ),
+    );
 
     let mut transaction = begin_transaction(connection).await;
     let mut system_ids: HashSet<i64> = HashSet::new();
@@ -349,7 +356,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     let romfile = CommonRomfile::from_path(path)?;
     let size = romfile.get_size(&mut transaction, progress_bar).await?;
     if size == 0 {
-        progress_bar.println("Empty file, deleting");
+        print_skip(progress_bar, "Empty file, deleting");
         romfile.delete(progress_bar, false).await?;
         return Ok((system_ids, game_ids));
     }
@@ -364,7 +371,7 @@ pub async fn import_rom<P: AsRef<Path>>(
             .await
             .is_some()
         {
-            progress_bar.println("Already in database");
+            print_skip(progress_bar, "Already in database");
             return Ok((system_ids, game_ids));
         }
     }
@@ -383,7 +390,7 @@ pub async fn import_rom<P: AsRef<Path>>(
 
     if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) && !as_is {
         if sevenzip::get_version().await.is_err() {
-            progress_bar.println("Please install sevenzip");
+            print_error(progress_bar, "Please install sevenzip");
             return Ok((system_ids, game_ids));
         }
         let (new_system_ids, new_game_ids) = import_archive(
@@ -403,7 +410,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         game_ids.extend(new_game_ids);
     } else if CHD_EXTENSION == extension && !as_is {
         if chdman::get_version().await.is_err() {
-            progress_bar.println("Please install chdman");
+            print_error(progress_bar, "Please install chdman");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_chd(
@@ -423,7 +430,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if CIA_EXTENSION == extension && !as_is {
         if ctrtool::get_version().await.is_err() {
-            progress_bar.println("Please install ctrtool");
+            print_error(progress_bar, "Please install ctrtool");
             return Ok((system_ids, game_ids));
         }
         let (new_system_ids, new_game_ids) = import_cia(
@@ -441,7 +448,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         game_ids.extend(new_game_ids);
     } else if CSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
-            progress_bar.println("Please install maxcso");
+            print_error(progress_bar, "Please install maxcso");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_cso(
@@ -461,7 +468,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if NSZ_EXTENSION == extension && !as_is {
         if nsz::get_version().await.is_err() {
-            progress_bar.println("Please install nsz");
+            print_error(progress_bar, "Please install nsz");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_nsz(
@@ -481,7 +488,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if RVZ_EXTENSION == extension && !as_is {
         if dolphin::get_version().await.is_err() {
-            progress_bar.println("Please install dolphin-tool");
+            print_error(progress_bar, "Please install dolphin-tool");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_rvz(
@@ -501,7 +508,7 @@ pub async fn import_rom<P: AsRef<Path>>(
         };
     } else if ZSO_EXTENSION == extension && !as_is {
         if maxcso::get_version().await.is_err() {
-            progress_bar.println("Please install maxcso");
+            print_error(progress_bar, "Please install maxcso");
             return Ok((system_ids, game_ids));
         }
         if let Some(ids) = import_zso(
@@ -555,7 +562,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
         .await
         .is_some()
     {
-        progress_bar.println("Already in database");
+        print_skip(progress_bar, "Already in database");
         return Ok(system.id);
     }
 
@@ -585,10 +592,13 @@ async fn import_jbfolder<P: AsRef<Path>>(
             let walker = WalkDir::new(path.as_ref()).into_iter();
             for entry in walker.filter_map(|e| e.ok()) {
                 if entry.path().is_file() {
-                    progress_bar.println(format!(
-                        "Processing \"{}\"",
-                        &entry.path().as_os_str().to_str().unwrap()
-                    ));
+                    print_action(
+                        progress_bar,
+                        &format!(
+                            "Processing \"{}\"",
+                            &entry.path().as_os_str().to_str().unwrap()
+                        ),
+                    );
                     // force MD5 as IRD files only provide those
                     let original_romfile = CommonRomfile::from_path(&entry.path())?;
                     let (md5, size) = original_romfile
@@ -621,9 +631,9 @@ async fn import_jbfolder<P: AsRef<Path>>(
                         .await
                             > 0
                         {
-                            progress_bar.println("Already imported");
+                            print_skip(progress_bar, "Already imported");
                         } else {
-                            progress_bar.println("No match");
+                            print_warning(progress_bar, "No match");
                         }
                         continue;
                     }
@@ -631,7 +641,10 @@ async fn import_jbfolder<P: AsRef<Path>>(
                     // select the first rom if there is only one
                     if roms.len() == 1 {
                         rom = roms.first();
-                        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                        print_success(
+                            progress_bar,
+                            &format!("Matches \"{}\"", rom.as_ref().unwrap().name),
+                        );
                     // select the first rom that matches the file name if there multiple matches
                     } else if let Some(rom_index) = roms.iter().position(|rom| {
                         entry
@@ -642,7 +655,10 @@ async fn import_jbfolder<P: AsRef<Path>>(
                             .ends_with(&rom.name)
                     }) {
                         rom = roms.get(rom_index);
-                        progress_bar.println(format!("Matches \"{}\"", rom.as_ref().unwrap().name));
+                        print_success(
+                            progress_bar,
+                            &format!("Matches \"{}\"", rom.as_ref().unwrap().name),
+                        );
                     } else if unattended_mode == UnattendedMode::Skip {
                         // order roms by distance to the file name
                         roms.sort_by(|a, b| {
@@ -678,7 +694,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                         if rom.romfile_id.is_some() {
                             let romfile =
                                 find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
-                            progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
+                            print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
                             continue;
                         }
 
@@ -706,7 +722,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
             }
         }
         _ => {
-            progress_bar.println("No match");
+            print_warning(progress_bar, "No match");
             // TODO: implement sensible trashing or deleting
         }
     }
@@ -745,17 +761,20 @@ async fn import_archive(
     let mut new_game_ids: HashSet<i64> = HashSet::new();
 
     for archive_romfile in archive_romfiles {
-        progress_bar.println(format!(
-            "Processing \"{} ({})\"",
-            &archive_romfile.path,
-            archive_romfile
-                .romfile
-                .path
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Processing \"{} ({})\"",
+                &archive_romfile.path,
+                archive_romfile
+                    .romfile
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+            ),
+        );
 
         let mut invalid_match_results: Vec<MatchResult> = vec![];
         for hash_algorithm in &hash_algorithms {
@@ -977,10 +996,13 @@ async fn import_chd(
                     .cmp(chdman::MIN_SPLITBIN_VERSION)
                     == Ordering::Less
             {
-                progress_bar.println(format!(
-                    "Older chdman versions don't support splitbin, please update to {} or newer",
-                    chdman::MIN_SPLITBIN_VERSION
-                ));
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "Older chdman versions don't support splitbin, please update to {} or newer",
+                        chdman::MIN_SPLITBIN_VERSION
+                    ),
+                );
                 return Ok(None);
             }
             let cue_bin_romfile = chd_romfile
@@ -1075,7 +1097,7 @@ async fn import_chd(
                 return Ok(Some([system.id, game.id]));
             }
             if !invalid_match_results.is_empty() {
-                progress_bar.println("CRC mismatch");
+                print_error(progress_bar, "CRC mismatch");
                 trash_or_delete_romfile(
                     connection,
                     progress_bar,
@@ -1187,7 +1209,7 @@ async fn import_chd(
                 }
             }
             if !invalid_match_results.is_empty() {
-                progress_bar.println("CRC mismatch");
+                print_error(progress_bar, "CRC mismatch");
                 trash_or_delete_romfile(
                     connection,
                     progress_bar,
@@ -1301,7 +1323,7 @@ async fn import_chd(
                 }
             }
             if !invalid_match_results.is_empty() {
-                progress_bar.println("CRC mismatch");
+                print_error(progress_bar, "CRC mismatch");
                 trash_or_delete_romfile(
                     connection,
                     progress_bar,
@@ -1415,7 +1437,7 @@ async fn import_chd(
                 }
             }
             if !invalid_match_results.is_empty() {
-                progress_bar.println("CRC mismatch");
+                print_error(progress_bar, "CRC mismatch");
                 trash_or_delete_romfile(
                     connection,
                     progress_bar,
@@ -1454,11 +1476,14 @@ async fn import_cia(
 
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for (cia_info, extracted_path) in cia_infos.iter().zip(extracted_files) {
-        progress_bar.println(format!(
-            "Processing \"{} ({})\"",
-            &cia_info.path,
-            romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_action(
+            progress_bar,
+            &format!(
+                "Processing \"{} ({})\"",
+                &cia_info.path,
+                romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
 
         let extracted_romfile = CommonRomfile::from_path(&extracted_path)?;
         for hash_algorithm in HashAlgorithm::iter() {
@@ -2250,7 +2275,7 @@ async fn find_rom_by_size_and_hash(
             },
         };
         if rom_count > 0 {
-            progress_bar.println("Already imported");
+            print_skip(progress_bar, "Already imported");
             return Ok(MatchResult {
                 state: MatchState::Duplicate,
                 system: None,
@@ -2260,7 +2285,7 @@ async fn find_rom_by_size_and_hash(
                 hash: Some(hash.to_string()),
             });
         } else {
-            progress_bar.println("No match");
+            print_warning(progress_bar, "No match");
             return Ok(MatchResult {
                 state: MatchState::Invalid,
                 system: None,
@@ -2279,7 +2304,7 @@ async fn find_rom_by_size_and_hash(
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        progress_bar.println(format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
     // select the first rom from a game that's been previously imported during this session
     } else if roms.iter().any(|rom| game_ids.contains(&rom.game_id)) {
@@ -2289,7 +2314,7 @@ async fn find_rom_by_size_and_hash(
             .unwrap();
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        progress_bar.println(format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
     // select the first rom by distance to the file name if unattended mode is first
     } else if unattended_mode == UnattendedMode::First
@@ -2303,7 +2328,7 @@ async fn find_rom_by_size_and_hash(
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        progress_bar.println(format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
         rom_game_system = Some((rom, game, system));
     } else if system.is_some() {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
@@ -2316,7 +2341,7 @@ async fn find_rom_by_size_and_hash(
             rom_game_system = Some((rom, game, system));
         };
     } else if unattended_mode == UnattendedMode::Skip {
-        progress_bar.println("Multiple matches, skipping");
+        print_warning(progress_bar, "Multiple matches, skipping");
         return Ok(MatchResult {
             state: MatchState::Skipped,
             system: None,
@@ -2342,7 +2367,7 @@ async fn find_rom_by_size_and_hash(
             rom_game_system.as_ref().unwrap().0.romfile_id.unwrap(),
         )
         .await;
-        progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
+        print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
         let (rom, game, system) = rom_game_system.unwrap();
         return Ok(MatchResult {
             state: MatchState::Duplicate,
@@ -2394,7 +2419,7 @@ async fn find_sfb_rom_by_md5(
         .await
             > 0
         {
-            progress_bar.println("Already imported");
+            print_skip(progress_bar, "Already imported");
             return Ok(MatchResult {
                 state: MatchState::Duplicate,
                 system: None,
@@ -2404,7 +2429,7 @@ async fn find_sfb_rom_by_md5(
                 hash: Some(md5.to_string()),
             });
         } else {
-            progress_bar.println("No match");
+            print_warning(progress_bar, "No match");
             return Ok(MatchResult {
                 state: MatchState::Invalid,
                 system: None,
@@ -2422,11 +2447,11 @@ async fn find_sfb_rom_by_md5(
     if roms.len() == 1 || unattended_mode == UnattendedMode::First {
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
-        progress_bar.println(format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
         rom_game = Some((rom, game));
     // skip if unattended mode is none
     } else if unattended_mode == UnattendedMode::Skip {
-        progress_bar.println("Multiple matches, skipping");
+        print_warning(progress_bar, "Multiple matches, skipping");
         return Ok(MatchResult {
             state: MatchState::Skipped,
             system: None,
@@ -2448,7 +2473,7 @@ async fn find_sfb_rom_by_md5(
     if rom_game.is_some() && rom_game.as_ref().unwrap().0.romfile_id.is_some() {
         let romfile =
             find_romfile_by_id(connection, rom_game.as_ref().unwrap().0.romfile_id.unwrap()).await;
-        progress_bar.println(format!("Duplicate of \"{}\"", romfile.path));
+        print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
         let (rom, game) = rom_game.unwrap();
         return Ok(MatchResult {
             state: MatchState::Duplicate,

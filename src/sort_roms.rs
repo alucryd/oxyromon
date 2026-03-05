@@ -3,6 +3,7 @@ use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::builder::PossibleValuesParser;
@@ -154,7 +155,7 @@ pub async fn main(
         )
         .await?;
 
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
 
     Ok(())
@@ -205,7 +206,7 @@ async fn sort_system(
     one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.println(format!("Processing \"{}\"", system.name));
+    print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = vec![];
@@ -443,7 +444,7 @@ async fn sort_system(
         .await;
 
         if !wanted_roms.is_empty() {
-            progress_bar.println("Wanted:");
+            print_subheader(progress_bar, "Wanted:");
             wanted_roms.sort_by_key(|rom| rom.game_id);
             for rom in wanted_roms {
                 let game = all_incomplete_games
@@ -454,15 +455,18 @@ async fn sort_system(
                     .into_iter()
                     .find(|checksum| checksum.is_some())
                     .map(|checksum| checksum.as_ref().unwrap().as_str());
-                progress_bar.println(format!(
-                    "{} ({}) [{}]",
-                    rom.name,
-                    game.name,
-                    checksum.unwrap_or("n/a")
-                ));
+                print_info(
+                    progress_bar,
+                    &format!(
+                        "{} ({}) [{}]",
+                        rom.name,
+                        game.name,
+                        checksum.unwrap_or("n/a")
+                    ),
+                );
             }
         } else {
-            progress_bar.println("No wanted ROMs");
+            print_info(progress_bar, "No wanted ROMs");
         }
     }
 
@@ -574,17 +578,20 @@ async fn sort_system(
         romfile_moves.sort_by(|a, b| a.1.cmp(&b.1));
         romfile_moves.dedup_by(|a, b| a.1 == b.1);
 
-        progress_bar.println("Summary:");
+        print_subheader(progress_bar, "Summary:");
         for romfile_move in &romfile_moves {
-            progress_bar.println(format!(
-                "\"{}\" -> \"{}\"",
-                Path::new(&romfile_move.0.path)
-                    .file_name()
-                    .unwrap()
-                    .to_str()
-                    .unwrap(),
-                romfile_move.1.as_os_str().to_str().unwrap()
-            ));
+            print_action(
+                progress_bar,
+                &format!(
+                    "\"{}\" → \"{}\"",
+                    Path::new(&romfile_move.0.path)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                    romfile_move.1.as_os_str().to_str().unwrap()
+                ),
+            );
         }
 
         // prompt user for confirmation
@@ -622,7 +629,7 @@ async fn sort_system(
         }
     } else {
         commit_transaction(transaction).await;
-        progress_bar.println("Nothing to do");
+        print_skip(progress_bar, "Nothing to do");
     }
 
     // update games and systems completion

@@ -2,6 +2,7 @@ use super::SimpleResult;
 use super::database::*;
 use super::import_dats::{import_dat, parse_dat};
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use cfg_if::cfg_if;
@@ -161,7 +162,7 @@ pub async fn main(
             )
             .await?
         } else {
-            progress_bar.println("Not supported");
+            print_warning(progress_bar, "Not supported");
         }
     } else if matches.get_flag("REDUMP") {
         if matches.get_flag("UPDATE") {
@@ -205,7 +206,7 @@ async fn update_nointro_dats(
         let systems =
             prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
         for system in systems {
-            progress_bar.println(format!("Processing \"{}\"", &system.name));
+            print_header(progress_bar, &format!("Processing \"{}\"", &system.name));
             let system_xml = profile
                 .systems
                 .par_iter()
@@ -214,9 +215,9 @@ async fn update_nointro_dats(
                 Some(system_xml) => {
                     is_update(progress_bar, &system.version, &system_xml.version);
                 }
-                None => progress_bar.println("System is no longer available"),
+                None => print_warning(progress_bar, "System is no longer available"),
             }
-            progress_bar.println("");
+            print_separator(progress_bar);
         }
     }
     Ok(())
@@ -291,7 +292,7 @@ async fn download_redump_dat(
     force: bool,
     save_directory: Option<&str>,
 ) -> SimpleResult<()> {
-    progress_bar.println(format!("Processing \"{}\"", system_name));
+    print_header(progress_bar, &format!("Processing \"{}\"", system_name));
     let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
     let zip_url = format!("{}/datfile/{}/", base_url, code);
     match reqwest::get(zip_url)
@@ -307,7 +308,7 @@ async fn download_redump_dat(
                 "Failed to read Redump ZIP"
             );
             match zip_archive.len() {
-                0 => progress_bar.println("ZIP is empty"),
+                0 => print_warning(progress_bar, "ZIP is empty"),
                 1 => {
                     try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
                     let dat_file_name = zip_archive.file_names().next().unwrap();
@@ -339,14 +340,14 @@ async fn download_redump_dat(
                     )
                     .await?;
                 }
-                _ => progress_bar.println("ZIP contains too many files"),
+                _ => print_warning(progress_bar, "ZIP contains too many files"),
             }
         }
-        _ => progress_bar.println("Failed to download ZIP"),
+        _ => print_error(progress_bar, "Failed to download ZIP"),
     }
     // rate limit
     sleep(Duration::from_secs(1)).await;
-    progress_bar.println("");
+    print_separator(progress_bar);
     Ok(())
 }
 

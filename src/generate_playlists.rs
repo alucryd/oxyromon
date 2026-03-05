@@ -4,6 +4,7 @@ use super::database::*;
 use super::download_dats::REDUMP_SYSTEM_URL;
 use super::mimetype::*;
 use super::model::*;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -47,9 +48,9 @@ pub async fn main(
     )
     .await?;
     for system in systems {
-        progress_bar.println(format!("Processing \"{}\"", system.name));
+        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
         process_system(connection, progress_bar, &system).await?;
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -130,7 +131,7 @@ async fn process_system(
             .expect("Failed to create M3U file");
         let mut writer = BufWriter::new(playlist_file);
 
-        progress_bar.println(format!("Creating \"{}\"", &playlist_name));
+        print_action(progress_bar, &format!("Creating \"{}\"", &playlist_name));
 
         for romfile in existing_romfiles {
             writer

@@ -2,6 +2,7 @@ use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::model::*;
+use super::progress::*;
 use super::util::*;
 use chrono::prelude::*;
 use clap::{Arg, ArgMatches, Command};
@@ -97,10 +98,13 @@ pub async fn main(
         .cloned()
         .collect::<Vec<PathBuf>>();
     for directory in directories {
-        progress_bar.println(format!(
-            "Processing \"{}\"",
-            &directory.file_name().unwrap().to_str().unwrap()
-        ));
+        print_header(
+            progress_bar,
+            &format!(
+                "Processing \"{}\"",
+                &directory.file_name().unwrap().to_str().unwrap()
+            ),
+        );
         create_dat(
             connection,
             progress_bar,
@@ -113,7 +117,7 @@ pub async fn main(
             matches.get_one::<String>("URL"),
         )
         .await?;
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -162,7 +166,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
                 .to_str()
                 .unwrap()
                 .to_string();
-            progress_bar.println(format!("Processing \"{}\"", &rom_name));
+            print_subheader(progress_bar, &format!("Processing \"{}\"", &rom_name));
             let rom_xml = RomXml {
                 name: rom_name,
                 size: romfile.get_size(connection, progress_bar).await? as i64,

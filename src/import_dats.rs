@@ -7,6 +7,7 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use console::Style;
 use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
@@ -135,14 +136,20 @@ pub async fn main(
     let custom_name = matches.get_one::<String>("NAME");
     if custom_name.is_some() {
         if dat_paths.len() > 1 {
-            progress_bar.println("Custom system name requires a single DAT file");
+            print_error(
+                progress_bar,
+                "Custom system name requires a single DAT file",
+            );
             return Ok(());
         }
         if find_system_by_name(connection, custom_name.unwrap())
             .await
             .is_some()
         {
-            progress_bar.println("Custom system name must not match a known system name");
+            print_error(
+                progress_bar,
+                "Custom system name must not match a known system name",
+            );
             return Ok(());
         }
     }
@@ -150,16 +157,22 @@ pub async fn main(
     let custom_extension = matches.get_one::<String>("EXTENSION");
     if custom_extension.is_some() {
         if dat_paths.len() > 1 {
-            progress_bar.println("Custom system name requires a single DAT file");
+            print_error(
+                progress_bar,
+                "Custom system extension requires a single DAT file",
+            );
             return Ok(());
         }
     }
 
     for dat_path in dat_paths {
-        progress_bar.println(format!(
-            "Processing \"{}\"",
-            &dat_path.file_name().unwrap().to_str().unwrap()
-        ));
+        print_header(
+            progress_bar,
+            &format!(
+                "Processing \"{}\"",
+                &dat_path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
         let (datfile_xml, detector_xml) = parse_dat(
             progress_bar,
             &get_canonicalized_path(&dat_path).await?,
@@ -171,8 +184,11 @@ pub async fn main(
         if update {
             let system_name = &datfile_xml.system.name;
             if find_system_by_name(connection, system_name).await.is_none() {
-                progress_bar.println(format!("Skipping unknown system \"{}\"", system_name));
-                progress_bar.println("");
+                print_skip(
+                    progress_bar,
+                    &format!("Skipping unknown system \"{}\"", system_name),
+                );
+                print_separator(progress_bar);
                 continue;
             }
         }
@@ -186,7 +202,8 @@ pub async fn main(
 
             for game in games {
                 if game.roms.len() + game.disks.len() > 1 {
-                    progress_bar.println(
+                    print_error(
+                        progress_bar,
                         "Custom extension cannot be used with games that have multiple ROMs",
                     );
                     return Ok(());
@@ -206,7 +223,7 @@ pub async fn main(
             )
             .await?;
         }
-        progress_bar.println("");
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -222,12 +239,41 @@ pub async fn parse_dat<P: AsRef<Path>>(
     );
 
     // print information
-    progress_bar.println(format!("System: {}", datfile_xml.system.name));
-    progress_bar.println(format!("Version: {}", datfile_xml.system.version));
+    let label_style = Style::new().dim();
+    print_info(
+        progress_bar,
+        &format!(
+            "{} {}",
+            label_style.apply_to("System:"),
+            datfile_xml.system.name,
+        ),
+    );
+    print_info(
+        progress_bar,
+        &format!(
+            "{} {}",
+            label_style.apply_to("Version:"),
+            datfile_xml.system.version,
+        ),
+    );
     if !datfile_xml.machines.is_empty() {
-        progress_bar.println(format!("Games: {}", datfile_xml.machines.len()));
+        print_info(
+            progress_bar,
+            &format!(
+                "{} {}",
+                label_style.apply_to("Games:"),
+                datfile_xml.machines.len(),
+            ),
+        );
     } else {
-        progress_bar.println(format!("Games: {}", datfile_xml.games.len()));
+        print_info(
+            progress_bar,
+            &format!(
+                "{} {}",
+                label_style.apply_to("Games:"),
+                datfile_xml.games.len(),
+            ),
+        );
     }
 
     let mut detector_xml = None;
@@ -238,7 +284,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
             .iter()
             .find(|clrmamepro| clrmamepro.header.is_some())
         {
-            progress_bar.println("Processing header");
+            print_subheader(progress_bar, "Processing header");
             if let Some(header_file_name) = &clr_mame_pro_xml.header {
                 let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
                 if header_file_path.is_file() {
@@ -266,7 +312,7 @@ pub async fn import_dat(
     custom_extension: Option<&String>,
     force: bool,
 ) -> SimpleResult<()> {
-    progress_bar.println("Processing system");
+    print_subheader(progress_bar, "Processing system");
 
     let mut transaction = begin_transaction(connection).await;
 
@@ -300,7 +346,7 @@ pub async fn import_dat(
     }
 
     let mut orphan_romfile_ids: Vec<i64> = vec![];
-    progress_bar.println("Deleting old games");
+    print_subheader(progress_bar, "Deleting old games");
     orphan_romfile_ids.append(
         &mut delete_old_games(
             &mut transaction,
@@ -313,7 +359,7 @@ pub async fn import_dat(
         )
         .await,
     );
-    progress_bar.println("Processing games");
+    print_subheader(progress_bar, "Processing games");
     orphan_romfile_ids.append(
         &mut create_or_update_games(
             &mut transaction,
@@ -334,7 +380,7 @@ pub async fn import_dat(
 
     // reimport orphan romfiles
     if !orphan_romfile_ids.is_empty() {
-        progress_bar.println("Processing orphan romfiles");
+        print_subheader(progress_bar, "Processing orphan romfiles");
         orphan_romfile_ids.dedup();
         reimport_orphan_romfiles(
             &mut transaction,
@@ -464,7 +510,7 @@ async fn create_or_update_games(
             match get_regions_from_game_name(&game_xml.name) {
                 Ok(s) => regions.push_str(&s),
                 Err(err) => {
-                    progress_bar.println(err.as_str());
+                    print_warning(progress_bar, err.as_str());
                     progress_bar.inc(1);
                     continue;
                 }
@@ -541,16 +587,19 @@ async fn create_or_update_games(
             .collect();
         if parent_games_xml.is_empty() {
             for child_game_xml in &child_games_xml {
-                progress_bar.println(format!(
-                    "Game \"{}\" has an invalid parent: \"{}\"",
-                    &child_game_xml.name,
-                    &child_game_xml
-                        .cloneof
-                        .as_ref()
-                        .or(child_game_xml.romof.as_ref())
-                        .unwrap()
-                        .as_str(),
-                ));
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "Game \"{}\" has an invalid parent: \"{}\"",
+                        &child_game_xml.name,
+                        &child_game_xml
+                            .cloneof
+                            .as_ref()
+                            .or(child_game_xml.romof.as_ref())
+                            .unwrap()
+                            .as_str(),
+                    ),
+                );
             }
             break;
         }
@@ -588,7 +637,7 @@ async fn create_or_update_games(
                 match get_regions_from_game_name(&game_xml.name) {
                     Ok(s) => regions.push_str(&s),
                     Err(err) => {
-                        progress_bar.println(err.as_str());
+                        print_warning(progress_bar, err.as_str());
                         progress_bar.inc(1);
                         continue;
                     }
@@ -705,10 +754,13 @@ async fn create_or_update_roms(
                 rom_parent_bios = rom.bios;
                 rom_parent_id = Some(rom.id);
             } else {
-                progress_bar.println(format!(
-                    "Rom \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
-                    rom_xml.name, game.name
-                ));
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "ROM \"{}\" not found in game \"{}\" parent/bios, please fix your DAT file",
+                        rom_xml.name, game.name
+                    ),
+                );
             }
         }
         match find_rom_by_name_and_game_id(connection, &rom_xml.name, game_id).await {
