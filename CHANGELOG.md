@@ -5,6 +5,13 @@
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
 
+## Improvements
+
+- Overhauled CLI output for a cleaner, more consistent terminal experience
+- Progress bars and log messages no longer overlap or corrupt each other
+- Standardized messaging across all commands with clear icons and color coding
+- Improved `check-roms` output with per-system pass/fail summary
+
 # 0.21.0
 
 ## Features

@@ -5,7 +5,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
-use console::Style;
+
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
@@ -295,7 +295,7 @@ pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &st
             print_skip(
                 progress_bar,
                 &format!(
-                    "Version \"{}\" is older than \"{}\"",
+                    "Skipping older version \"{}\" (current: \"{}\")",
                     new_version, old_version
                 ),
             );
@@ -304,17 +304,14 @@ pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &st
         Ordering::Equal => {
             print_skip(
                 progress_bar,
-                &format!("Already at version \"{}\"", new_version),
+                &format!("Already up to date (version \"{}\")", new_version),
             );
             false
         }
         Ordering::Greater => {
             print_info(
                 progress_bar,
-                &format!(
-                    "Version \"{}\" is newer than \"{}\"",
-                    new_version, old_version
-                ),
+                &format!("Updating from \"{}\" to \"{}\"", old_version, new_version),
             );
             true
         }
@@ -429,25 +426,14 @@ pub async fn find_parent_chd_romfile_by_game(
 }
 
 /// Format a dependency status for display in `info` output.
-pub fn format_dependency(
+pub fn print_dependency(
+    progress_bar: &ProgressBar,
     name: &str,
     version_result: &Result<String, simple_error::SimpleError>,
-) -> String {
-    let found_style = Style::new().green();
-    let missing_style = Style::new().dim();
+) {
     match version_result {
-        Ok(version) => format!(
-            "    {} {}: {}",
-            found_style.apply_to("✔"),
-            name,
-            found_style.apply_to(version),
-        ),
-        Err(_) => format!(
-            "    {} {}: {}",
-            missing_style.apply_to("·"),
-            name,
-            missing_style.apply_to("not found"),
-        ),
+        Ok(version) => print_success(progress_bar, &format!("{}: {}", name, version)),
+        Err(_) => print_skip(progress_bar, &format!("{}: not found", name)),
     }
 }
 

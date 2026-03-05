@@ -131,37 +131,37 @@ pub async fn main(
     match format.as_str() {
         "7Z" | "ZIP" => {
             if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Please install sevenzip");
+                print_error(progress_bar, "Required tool not found: sevenzip");
                 return Ok(());
             }
         }
         "CHD" => {
             if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Please install chdman");
+                print_error(progress_bar, "Required tool not found: chdman");
                 return Ok(());
             }
         }
         "CSO" => {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 return Ok(());
             }
         }
         "NSZ" => {
             if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Please install nsz");
+                print_error(progress_bar, "Required tool not found: nsz");
                 return Ok(());
             }
         }
         "RVZ" => {
             if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Please install dolphin-tool");
+                print_error(progress_bar, "Required tool not found: dolphin-tool");
                 return Ok(());
             }
         }
         "ZSO" => {
             if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Please install maxcso");
+                print_error(progress_bar, "Required tool not found: maxcso");
                 return Ok(());
             }
         }
@@ -183,7 +183,7 @@ pub async fn main(
             print_warning(
                 progress_bar,
                 &format!(
-                    "Older chdman versions have issues with Dreamcast games, please update to {} or newer",
+                    "chdman {} or newer required for Dreamcast games",
                     chdman::MIN_DREAMCAST_VERSION
                 ),
             );
@@ -217,7 +217,7 @@ pub async fn main(
 
         if games.is_empty() {
             if matches.index_of("GAME").is_some() {
-                print_warning(progress_bar, "No matching game");
+                print_warning(progress_bar, "No matching games found");
             }
             continue;
         }
@@ -549,7 +549,7 @@ async fn to_archive(
                     print_warning(
                         progress_bar,
                         &format!(
-                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            "chdman {} or newer required for splitbin support",
                             chdman::MIN_SPLITBIN_VERSION
                         ),
                     );
@@ -615,7 +615,7 @@ async fn to_archive(
                         }
                     }
                     if error {
-                        print_warning(progress_bar, "Converted file doesn't match the original");
+                        print_error(progress_bar, "Integrity check failed, reverting conversion");
                         archive_romfiles
                             .first()
                             .unwrap()
@@ -680,7 +680,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -731,7 +731,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -782,7 +782,7 @@ async fn to_archive(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     archive_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -840,7 +840,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -895,7 +895,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -950,7 +950,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1005,7 +1005,7 @@ async fn to_archive(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             archive_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1098,7 +1098,7 @@ async fn to_archive(
                     };
                 }
                 if error {
-                    print_warning(progress_bar, "Converted files don't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     if source_archive_type != archive_type {
                         archive_romfile_rom
                             .0
@@ -1170,7 +1170,7 @@ async fn to_archive(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 archive_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1242,7 +1242,7 @@ async fn to_archive(
                         .check(&mut transaction, progress_bar, &None, &[rom])
                         .await;
                     if result.is_err() {
-                        print_warning(progress_bar, "Converted file doesn't match the original");
+                        print_error(progress_bar, "Integrity check failed, reverting conversion");
                         archive_romfile.delete_file(progress_bar).await?;
                     }
                     results.push(result);
@@ -1519,7 +1519,7 @@ async fn to_chd(
                         .await?
                 }
                 _ => {
-                    print_warning(progress_bar, "Unknown file type");
+                    print_skip(progress_bar, "Unsupported file type, skipping");
                     continue;
                 }
             };
@@ -1529,7 +1529,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1617,7 +1617,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -1718,7 +1718,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1796,7 +1796,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1860,7 +1860,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -1934,7 +1934,7 @@ async fn to_chd(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             chd_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2004,7 +2004,7 @@ async fn to_chd(
                         .await?
                 }
                 _ => {
-                    print_warning(progress_bar, "Unknown file type");
+                    print_skip(progress_bar, "Unsupported file type, skipping");
                     continue;
                 }
             };
@@ -2014,7 +2014,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             };
@@ -2113,7 +2113,7 @@ async fn to_chd(
                         print_warning(
                             progress_bar,
                             &format!(
-                                "Older chdman versions don't support splitbin, please update to {} or newer",
+                                "chdman {} or newer required for splitbin support",
                                 chdman::MIN_SPLITBIN_VERSION
                             ),
                         );
@@ -2203,7 +2203,7 @@ async fn to_chd(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 new_chd_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2353,7 +2353,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2397,7 +2397,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2472,7 +2472,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2521,7 +2521,7 @@ async fn to_cso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             cso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2565,7 +2565,7 @@ async fn to_cso(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 new_cso_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2673,7 +2673,7 @@ async fn to_nsz(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             nsz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2713,7 +2713,7 @@ async fn to_nsz(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             nsz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2756,7 +2756,7 @@ async fn to_nsz(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 new_nsz_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -2871,7 +2871,7 @@ async fn to_rvz(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             rvz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2918,7 +2918,7 @@ async fn to_rvz(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             rvz_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -2969,7 +2969,7 @@ async fn to_rvz(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     new_rvz_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 } else {
@@ -3114,7 +3114,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3158,7 +3158,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3231,7 +3231,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3279,7 +3279,7 @@ async fn to_zso(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             zso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3322,7 +3322,7 @@ async fn to_zso(
                     .await
                     .is_err()
             {
-                print_warning(progress_bar, "Converted file doesn't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 new_zso_romfile.romfile.delete(progress_bar, false).await?;
                 continue;
             } else {
@@ -3445,7 +3445,7 @@ async fn to_original(
     // convert archives
     for roms in archives.values() {
         if sevenzip::get_version().await.is_err() {
-            print_error(progress_bar, "Please install sevenzip");
+            print_error(progress_bar, "Required tool not found: sevenzip");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3520,7 +3520,7 @@ async fn to_original(
                 };
             }
             if error {
-                print_warning(progress_bar, "Converted files don't match the original");
+                print_error(progress_bar, "Integrity check failed, reverting conversion");
                 for common_romfile in common_romfiles {
                     common_romfile.delete(progress_bar, false).await?;
                 }
@@ -3557,7 +3557,7 @@ async fn to_original(
             continue;
         }
         if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Please install chdman");
+            print_error(progress_bar, "Required tool not found: chdman");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3608,7 +3608,7 @@ async fn to_original(
                     print_warning(
                         progress_bar,
                         &format!(
-                            "Older chdman versions don't support splitbin, please update to {} or newer",
+                            "chdman {} or newer required for splitbin support",
                             chdman::MIN_SPLITBIN_VERSION
                         ),
                     );
@@ -3647,7 +3647,7 @@ async fn to_original(
                         };
                     }
                     if error {
-                        print_warning(progress_bar, "Converted files don't match the original");
+                        print_error(progress_bar, "Integrity check failed, reverting conversion");
                         if cue_roms.is_empty() {
                             cue_bin_romfile
                                 .cue_romfile
@@ -3698,7 +3698,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     iso_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3729,7 +3729,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     rdsk_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3760,7 +3760,7 @@ async fn to_original(
                         .await
                         .is_err()
                 {
-                    print_warning(progress_bar, "Converted file doesn't match the original");
+                    print_error(progress_bar, "Integrity check failed, reverting conversion");
                     riff_romfile.romfile.delete(progress_bar, false).await?;
                     continue;
                 };
@@ -3782,7 +3782,7 @@ async fn to_original(
     // convert CSOs
     for roms in csos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3800,7 +3800,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3817,7 +3817,7 @@ async fn to_original(
     // convert NSZs
     for roms in nszs.values() {
         if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Please install nsz");
+            print_error(progress_bar, "Required tool not found: nsz");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3835,7 +3835,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             nsp_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3852,7 +3852,7 @@ async fn to_original(
     // convert RVZs
     for roms in rvzs.values() {
         if dolphin::get_version().await.is_err() {
-            print_error(progress_bar, "Please install dolphin-tool");
+            print_error(progress_bar, "Required tool not found: dolphin-tool");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3870,7 +3870,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };
@@ -3887,7 +3887,7 @@ async fn to_original(
     // convert ZSOs
     for roms in zsos.values() {
         if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Please install maxcso");
+            print_error(progress_bar, "Required tool not found: maxcso");
             break;
         }
         let mut transaction = begin_transaction(connection).await;
@@ -3905,7 +3905,7 @@ async fn to_original(
                 .await
                 .is_err()
         {
-            print_warning(progress_bar, "Converted file doesn't match the original");
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
             iso_romfile.romfile.delete(progress_bar, false).await?;
             continue;
         };

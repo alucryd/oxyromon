@@ -1,10 +1,10 @@
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
 use super::database::*;
+use super::progress::*;
 use super::purge_systems::purge_system;
 use super::server::SseMessage;
 use super::validator::*;
 use async_graphql::{Context, Object, Result};
-use indicatif::ProgressBar;
 use serde_json::json;
 use sqlx::SqlitePool;
 use tokio::sync::broadcast;
@@ -16,7 +16,14 @@ impl Mutation {
     async fn add_to_list(&self, ctx: &Context<'_>, key: String, value: String) -> Result<bool> {
         log::debug!("mutation::add_to_list({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        add_to_list(&mut pool.acquire().await.unwrap(), &key, &value).await;
+        let progress_bar = get_progress_bar(0, get_none_progress_style());
+        add_to_list(
+            &mut pool.acquire().await.unwrap(),
+            &progress_bar,
+            &key,
+            &value,
+        )
+        .await;
         Ok(true)
     }
 
@@ -28,7 +35,14 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::remove_to_list({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        remove_from_list(&mut pool.acquire().await.unwrap(), &key, &value).await;
+        let progress_bar = get_progress_bar(0, get_none_progress_style());
+        remove_from_list(
+            &mut pool.acquire().await.unwrap(),
+            &progress_bar,
+            &key,
+            &value,
+        )
+        .await;
         Ok(true)
     }
 

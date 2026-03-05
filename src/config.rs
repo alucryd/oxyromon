@@ -4,6 +4,7 @@ use super::chdman::{
 };
 use super::database::*;
 use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
+use super::progress::*;
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use cfg_if::cfg_if;
@@ -195,9 +196,14 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
     if matches.get_flag("LIST") {
-        list_settings(connection).await;
+        list_settings(connection, progress_bar).await;
     } else if matches.contains_id("GET") {
-        get_setting(connection, matches.get_one::<String>("GET").unwrap()).await;
+        get_setting(
+            connection,
+            progress_bar,
+            matches.get_one::<String>("GET").unwrap(),
+        )
+        .await;
     } else if matches.contains_id("SET") {
         if let [key, value] = matches
             .get_many::<String>("SET")
@@ -208,7 +214,12 @@ pub async fn main(
             set_setting(connection, progress_bar, key, value).await?;
         };
     } else if matches.contains_id("UNSET") {
-        unset_setting(connection, matches.get_one::<String>("UNSET").unwrap()).await?;
+        unset_setting(
+            connection,
+            progress_bar,
+            matches.get_one::<String>("UNSET").unwrap(),
+        )
+        .await?;
     } else if matches.contains_id("ADD") {
         if let [key, value] = matches
             .get_many::<String>("ADD")
@@ -216,7 +227,7 @@ pub async fn main(
             .collect::<Vec<_>>()
             .as_slice()
         {
-            add_to_list(connection, key, value).await;
+            add_to_list(connection, progress_bar, key, value).await;
         };
     } else if matches.contains_id("REMOVE") {
         if let [key, value] = matches
@@ -225,22 +236,28 @@ pub async fn main(
             .collect::<Vec<_>>()
             .as_slice()
         {
-            remove_from_list(connection, key, value).await;
+            remove_from_list(connection, progress_bar, key, value).await;
         };
     }
 
     Ok(())
 }
 
-async fn list_settings(connection: &mut SqliteConnection) {
+async fn list_settings(connection: &mut SqliteConnection, progress_bar: &ProgressBar) {
     for setting in find_settings(connection).await {
-        println!("{} = {}", setting.key, setting.value.unwrap_or_default());
+        print_info(
+            progress_bar,
+            &format!("{} = {}", setting.key, setting.value.unwrap_or_default()),
+        );
     }
 }
 
-pub async fn get_setting(connection: &mut SqliteConnection, key: &str) {
+pub async fn get_setting(connection: &mut SqliteConnection, progress_bar: &ProgressBar, key: &str) {
     let setting = find_setting_by_key(connection, key).await.unwrap();
-    println!("{} = {}", setting.key, setting.value.unwrap_or_default());
+    print_info(
+        progress_bar,
+        &format!("{} = {}", setting.key, setting.value.unwrap_or_default()),
+    );
 }
 
 async fn set_setting(
@@ -260,30 +277,46 @@ async fn set_setting(
         if CHOICES.get(key).unwrap().contains(&value) {
             set_string(connection, key, value).await;
         } else {
-            println!("Valid choices: {:?}", CHOICES.get(key).unwrap());
+            print_warning(
+                progress_bar,
+                &format!("Valid choices: {:?}", CHOICES.get(key).unwrap()),
+            );
         }
     } else if INTEGERS.keys().any(|&i| i == key) {
         let i: usize = try_with!(FromStr::from_str(value), "Failed to parse integer");
         if INTEGERS.get(key).unwrap()[0] <= i && i <= INTEGERS.get(key).unwrap()[1] {
             set_integer(connection, key, i).await;
         } else {
-            println!("Valid range: {:?}", INTEGERS.get(key).unwrap());
+            print_warning(
+                progress_bar,
+                &format!("Valid range: {:?}", INTEGERS.get(key).unwrap()),
+            );
         }
     } else if LISTS.contains(&key) {
-        println!("Lists can't be set directly, please use ADD or REMOVE instead");
+        print_warning(
+            progress_bar,
+            "Lists can't be set directly, use --add or --remove instead",
+        );
     } else {
-        println!("Unsupported setting");
+        print_error(progress_bar, &format!("Unknown setting: {}", key));
     }
     Ok(())
 }
 
-async fn unset_setting(connection: &mut SqliteConnection, key: &str) -> SimpleResult<()> {
+async fn unset_setting(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    key: &str,
+) -> SimpleResult<()> {
     if NULLABLES.contains(&key) {
         if let Some(setting) = find_setting_by_key(connection, key).await {
             update_setting(connection, setting.id, None).await;
         };
     } else {
-        println!("Unsupported setting");
+        print_error(
+            progress_bar,
+            &format!("Setting \"{}\" cannot be unset", key),
+        );
     }
     Ok(())
 }
@@ -334,7 +367,12 @@ pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<Strin
     }
 }
 
-pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &str) {
+pub async fn add_to_list(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    key: &str,
+    value: &str,
+) {
     if LISTS.contains(&key) {
         let mut list = get_list(connection, key).await;
         if !list.contains(&String::from(value)) {
@@ -344,7 +382,7 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
             }
             set_list(connection, key, &list).await;
         } else {
-            println!("Value already in list");
+            print_skip(progress_bar, "Value already in list");
         }
     } else if CHOICE_LISTS.keys().any(|&s| s == key) {
         if CHOICE_LISTS.get(key).unwrap().contains(&value) {
@@ -356,27 +394,35 @@ pub async fn add_to_list(connection: &mut SqliteConnection, key: &str, value: &s
                 }
                 set_list(connection, key, &list).await;
             } else {
-                println!("Value already in list");
+                print_skip(progress_bar, "Value already in list");
             }
         } else {
-            println!("Valid choices: {:?}", CHOICE_LISTS.get(key).unwrap());
+            print_warning(
+                progress_bar,
+                &format!("Valid choices: {:?}", CHOICE_LISTS.get(key).unwrap()),
+            );
         }
     } else {
-        println!("Only list settings are supported");
+        print_error(progress_bar, "Only list settings support --add");
     }
 }
 
-pub async fn remove_from_list(connection: &mut SqliteConnection, key: &str, value: &str) {
+pub async fn remove_from_list(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    key: &str,
+    value: &str,
+) {
     if LISTS.contains(&key) || CHOICE_LISTS.keys().any(|&s| s == key) {
         let mut list = get_list(connection, key).await;
         if list.contains(&String::from(value)) {
             list.remove(list.iter().position(|v| v == value).unwrap());
             set_list(connection, key, &list).await;
         } else {
-            println!("Value not in list");
+            print_warning(progress_bar, "Value not found in list");
         }
     } else {
-        println!("Only list settings are supported");
+        print_error(progress_bar, "Only list settings support --remove");
     }
 }
 

@@ -45,7 +45,7 @@ pub async fn main(
     ];
 
     for (name, result) in &deps {
-        print_info(progress_bar, &format_dependency(name, result));
+        print_dependency(progress_bar, name, result);
     }
 
     print_separator(progress_bar);

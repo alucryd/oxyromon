@@ -206,7 +206,7 @@ async fn sort_system(
     one_regions_strict: bool,
 ) -> SimpleResult<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
-    print_header(progress_bar, &format!("Processing \"{}\"", system.name));
+    print_header(progress_bar, &format!("Sorting \"{}\"", system.name));
 
     let mut games: Vec<Game>;
     let mut all_regions_games: Vec<Game> = vec![];
@@ -466,7 +466,7 @@ async fn sort_system(
                 );
             }
         } else {
-            print_info(progress_bar, "No wanted ROMs");
+            print_skip(progress_bar, "No wanted ROMs");
         }
     }
 
@@ -629,7 +629,7 @@ async fn sort_system(
         }
     } else {
         commit_transaction(transaction).await;
-        print_skip(progress_bar, "Nothing to do");
+        print_skip(progress_bar, "Already sorted, nothing to do");
     }
 
     // update games and systems completion
