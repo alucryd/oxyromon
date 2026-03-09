@@ -15,8 +15,8 @@ rust-version = "1.88.0"
 
 [features]
 default = ["use-rustls", "enable-asm"]
-use-native-tls = ["reqwest/default-tls"]
-use-rustls = ["reqwest/rustls-tls"]
+use-native-tls = ["reqwest/native-tls"]
+use-rustls = ["reqwest/rustls"]
 enable-asm = ["md-5/asm", "sha1/asm"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
 
@@ -35,7 +35,7 @@ axum = { version = "0.8.4", default-features = false, features = [
 tower-http = { version = "0.6.2", features = ["cors"], optional = true, default-features = false }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.1"
-console = "0.15.11"
+console = "0.16.2"
 chrono = { version = "0.4.41", default-features = false, features = [
     "std",
     "alloc",
@@ -44,7 +44,7 @@ chrono = { version = "0.4.41", default-features = false, features = [
 ] }
 clap = "4.5.40"
 crc32fast = "1.4.2"
-dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
+dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
 digest = { version = "0.10.7", features = ["std"] }
 dirs = "6.0.0"
 dotenvy = "0.15.7"
@@ -56,7 +56,7 @@ indexmap = { version = "2.9.0", default-features = false, features = [
     "std",
     "rayon",
 ] }
-indicatif = { version = "0.17.11", features = ["rayon"] }
+indicatif = "0.18.4"
 indicatif-log-bridge = "0.2.3"
 infer = "0.19.0"
 itertools = "0.14.0"
@@ -65,11 +65,11 @@ log = "0.4.27"
 md-5 = "0.10.6"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
-phf = { version = "0.12.1", features = ["macros"] }
-quick-xml = { version = "0.37.5", features = ["serialize"] }
+phf = { version = "0.13.1", features = ["macros"] }
+quick-xml = { version = "0.39.2", features = ["serialize"] }
 rayon = "1.10.0"
 regex = "1.11.1"
-reqwest = { version = "0.12.20", default-features = false }
+reqwest = { version = "0.13.2", default-features = false }
 rust-embed = { version = "8.7.2", features = ["compression"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
@@ -83,7 +83,7 @@ sqlx = { version = "0.8.6", default-features = false, features = [
     "sqlite",
 ] }
 strsim = "0.11.1"
-strum = { version = "0.27.1", features = ["derive"] }
+strum = { version = "0.28.0", features = ["derive"] }
 tempfile = "3.20.0"
 tokio = { version = "1.45.1", features = [
     "fs",
@@ -98,7 +98,7 @@ tokio = { version = "1.45.1", features = [
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
 which = { version = "8.0.0" }
-zip = { version = "6.0.0", features = ["deflate"], default-features = false }
+zip = { version = "8.2.0", features = ["deflate"], default-features = false }
 
 [dev-dependencies]
 wiremock = "0.6.4"
