@@ -241,7 +241,7 @@ pub fn editor(prompt: &str) -> SimpleResult<Option<String>> {
     ))
 }
 
-pub fn select<T: ToString>(
+pub fn select<T: ToString + std::fmt::Display>(
     items: &[T],
     prompt: &str,
     default: Option<usize>,
@@ -258,7 +258,7 @@ pub fn select<T: ToString>(
     Ok(try_with!(select.interact(), "Failed to get user input"))
 }
 
-pub fn select_opt<T: ToString>(
+pub fn select_opt<T: ToString + std::fmt::Display>(
     items: &[T],
     prompt: &str,
     default: Option<usize>,
@@ -275,7 +275,7 @@ pub fn select_opt<T: ToString>(
     Ok(try_with!(select.interact_opt(), "Failed to get user input"))
 }
 
-pub fn multiselect<T: ToString>(
+pub fn multiselect<T: ToString + std::fmt::Display>(
     items: &[T],
     prompt: &str,
     defaults: Option<&[bool]>,
