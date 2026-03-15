@@ -16,6 +16,7 @@ use super::sevenzip::AsArchive;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
+use simple_error::SimpleError;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
@@ -271,7 +272,9 @@ async fn check_archive(
         let rom = roms
             .iter()
             .find(|rom| rom.name == archive_romfile.path)
-            .unwrap();
+            .ok_or_else(|| {
+                SimpleError::new(format!("file not found in DB {}", archive_romfile.path))
+            })?;
         archive_romfile
             .check(connection, progress_bar, header, &[rom])
             .await?;
