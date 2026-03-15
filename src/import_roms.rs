@@ -280,7 +280,7 @@ pub async fn main(
                     let walker = WalkDir::new(&path).into_iter();
                     for entry in walker.filter_map(|e| e.ok()) {
                         if entry.path().is_file() {
-                            let (new_system_ids, new_game_ids) = import_rom(
+                            let result = import_rom(
                                 connection,
                                 progress_bar,
                                 &system.as_ref(),
@@ -292,7 +292,14 @@ pub async fn main(
                                 unattended_mode,
                                 as_is,
                             )
-                            .await?;
+                            .await;
+                            let (new_system_ids, new_game_ids) = match result {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    println!("{}\n\nContinuing", e);
+                                    continue;
+                                }
+                            };
                             system_ids.extend(new_system_ids);
                             game_ids.extend(new_game_ids);
                         }
