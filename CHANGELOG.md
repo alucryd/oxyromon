@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added romfile download support to the web UI
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
 

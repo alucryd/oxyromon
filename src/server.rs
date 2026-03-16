@@ -22,9 +22,11 @@ use serde::Serialize;
 use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
+use std::path::PathBuf;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use tokio::{select, signal};
+use tokio_util::io::ReaderStream;
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
 
@@ -181,6 +183,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     let app = Router::new()
         .route("/graphql", post_service(GraphQL::new(schema)))
         .route("/events", get(sse_handler))
+        .route("/romfiles/{id}", get(download_romfile))
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index))
         .with_state(state);
@@ -208,6 +211,59 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
         .unwrap();
 
     Ok(())
+}
+
+async fn download_romfile(
+    Path(id): Path<i64>,
+    State(state): State<AppState>,
+) -> Response<Body> {
+    let mut connection = state.pool.acquire().await.unwrap();
+
+    let rom_directory = match find_setting_by_key(&mut connection, "ROM_DIRECTORY").await {
+        Some(setting) => match setting.value {
+            Some(value) => value,
+            None => {
+                return Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::empty())
+                    .unwrap();
+            }
+        },
+        None => {
+            return Response::builder()
+                .status(StatusCode::INTERNAL_SERVER_ERROR)
+                .body(Body::empty())
+                .unwrap();
+        }
+    };
+
+    let romfile = find_romfile_by_id(&mut connection, id).await;
+    let file_path = PathBuf::from(&rom_directory).join(&romfile.path);
+
+    let file = match tokio::fs::File::open(&file_path).await {
+        Ok(f) => f,
+        Err(_) => {
+            return Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Body::empty())
+                .unwrap();
+        }
+    };
+
+    let filename = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("download");
+
+    let content_disposition = format!("attachment; filename=\"{}\"", filename);
+    let stream = ReaderStream::new(file);
+    let body = Body::from_stream(stream);
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, BYTE_STREAM.to_string())
+        .header(header::CONTENT_DISPOSITION, content_disposition)
+        .body(body)
+        .unwrap()
 }
 
 /// SSE endpoint handler

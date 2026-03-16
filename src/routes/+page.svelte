@@ -24,6 +24,7 @@
     ExclamationCircleOutline,
     CheckCircleSolid,
     CloseCircleSolid,
+    DownloadOutline,
   } from "flowbite-svelte-icons";
   import { Spinner } from "flowbite-svelte";
 
@@ -477,8 +478,19 @@
           <TableBody>
             {#each $romfiles as romfile (romfile.path)}
               <TableBodyRow>
-                <TableBodyCell colspan="2" class="truncate px-4 py-2 text-left text-base">
+                <TableBodyCell class="truncate px-4 py-2 text-left text-base">
                   {romfile.path.split("/").slice(1).join("/")}
+                </TableBodyCell>
+                <TableBodyCell class="w-1 px-4 py-2">
+                  <Button
+                    size="xs"
+                    color="alternative"
+                    class="px-2"
+                    href="/romfiles/{romfile.id}"
+                    download
+                  >
+                    <DownloadOutline class="h-4 w-4" />
+                  </Button>
                 </TableBodyCell>
               </TableBodyRow>
             {/each}
