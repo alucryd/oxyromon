@@ -204,6 +204,7 @@ export async function getRomsByGameIdAndSystemId(gameId, systemId) {
                   name
                   size
                   romfile {
+                      id
                       path
                       size
                   }

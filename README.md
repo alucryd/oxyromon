@@ -188,7 +188,7 @@ These should be in your `${PATH}` for extra features.
 
 ### TODO
 
-- Add actions to the web UI
+- Add more actions to the web UI
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
