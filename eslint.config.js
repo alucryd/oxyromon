@@ -18,7 +18,7 @@ export default defineConfig(
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
-    }
+    },
   },
   {
     files: ["**/*.svelte", "**/*.svelte.js"],

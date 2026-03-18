@@ -261,8 +261,10 @@ pub async fn main(
                 .await?
             }
             "7Z" => {
-                let compression_level = get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL", Some(system.id)).await;
-                let solid = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION", Some(system.id)).await;
+                let compression_level =
+                    get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL", Some(system.id)).await;
+                let solid =
+                    get_bool(connection, "SEVENZIP_SOLID_COMPRESSION", Some(system.id)).await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -280,7 +282,8 @@ pub async fn main(
                 .await?
             }
             "ZIP" => {
-                let compression_level = get_integer(connection, "ZIP_COMPRESSION_LEVEL", Some(system.id)).await;
+                let compression_level =
+                    get_integer(connection, "ZIP_COMPRESSION_LEVEL", Some(system.id)).await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -300,16 +303,24 @@ pub async fn main(
             "CHD" => {
                 let cd_compression_algorithms =
                     get_list(connection, "CHD_CD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let cd_hunk_size = get_integer(connection, "CHD_CD_HUNK_SIZE", Some(system.id)).await;
-                let dvd_compression_algorithms =
-                    get_list(connection, "CHD_DVD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let dvd_hunk_size = get_integer(connection, "CHD_DVD_HUNK_SIZE", Some(system.id)).await;
+                let cd_hunk_size =
+                    get_integer(connection, "CHD_CD_HUNK_SIZE", Some(system.id)).await;
+                let dvd_compression_algorithms = get_list(
+                    connection,
+                    "CHD_DVD_COMPRESSION_ALGORITHMS",
+                    Some(system.id),
+                )
+                .await;
+                let dvd_hunk_size =
+                    get_integer(connection, "CHD_DVD_HUNK_SIZE", Some(system.id)).await;
                 let hd_compression_algorithms =
                     get_list(connection, "CHD_HD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let hd_hunk_size = get_integer(connection, "CHD_HD_HUNK_SIZE", Some(system.id)).await;
+                let hd_hunk_size =
+                    get_integer(connection, "CHD_HD_HUNK_SIZE", Some(system.id)).await;
                 let ld_compression_algorithms =
                     get_list(connection, "CHD_LD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let ld_hunk_size = get_integer(connection, "CHD_LD_HUNK_SIZE", Some(system.id)).await;
+                let ld_hunk_size =
+                    get_integer(connection, "CHD_LD_HUNK_SIZE", Some(system.id)).await;
                 let parents = get_bool(connection, "CHD_PARENTS", Some(system.id)).await;
                 let prompt_for_parents = matches.get_flag("PARENTS");
                 to_chd(
@@ -369,10 +380,9 @@ pub async fn main(
                     get_integer(connection, "RVZ_COMPRESSION_LEVEL", Some(system.id))
                         .await
                         .unwrap();
-                let block_size =
-                    get_integer(connection, "RVZ_BLOCK_SIZE", Some(system.id))
-                        .await
-                        .unwrap();
+                let block_size = get_integer(connection, "RVZ_BLOCK_SIZE", Some(system.id))
+                    .await
+                    .unwrap();
                 to_rvz(
                     connection,
                     progress_bar,
