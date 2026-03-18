@@ -113,13 +113,7 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_subfolder_scheme({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(
-            &mut pool.acquire().await.unwrap(),
-            &key,
-            &value,
-            system_id,
-        )
-        .await;
+        set_string(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
         Ok(true)
     }
 

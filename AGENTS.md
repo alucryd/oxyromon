@@ -47,29 +47,29 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Key Modules
 
-| Module | Purpose |
-|--------|---------|
-| `main.rs` | Entry point. Registers all subcommands, establishes DB connection, dispatches to subcommand `main()` functions. |
-| `model.rs` | All data structures: DB row types (`System`, `Game`, `Rom`, `Romfile`, `Patch`, `Setting`), XML deserialization types (`DatfileXml`, `GameXml`, `RomXml`, etc.), and enums (`Merging`, `Sorting`, `Completion`, `RomfileType`). |
-| `database.rs` | All database operations as standalone async functions. Uses `sqlx` with compile-time checked queries. Contains the `MIGRATOR` for schema migrations. |
-| `common.rs` | The `CommonRomfile` struct and a rich trait system (`FromPath`, `CommonFile`, `AsCommon`, `ToCommon`, `AsIso`, `AsCueBin`, `ToIso`, `ToCueBin`, `Patch`, `Playlist`, `Size`, `HashAndSize`, `HeaderedHashAndSize`, `Check`, `Persist`) that abstracts over different ROM file formats. |
-| `config.rs` | Settings management. Defines setting types (booleans, integers, paths, lists, choices), and provides get/set helpers. Also defines `HashAlgorithm`, `SubfolderScheme`, `PreferredVersion`, `PreferredRegion`, `ArcadeRomType`. |
-| `util.rs` | Low-level filesystem operations (`create_file`, `copy_file`, `rename_file`, `remove_file`, `create_directory`, etc.) and directory structure helpers (`get_system_directory`, `get_one_region_directory`, `get_trash_directory`). Also contains `compute_system_completion` and `compute_alpha_subfolder`. |
-| `mimetype.rs` | File type detection using the `infer` crate with custom matchers for ROM-specific formats (CHD, CSO, RVZ, IRD, BPS, IPS, XDELTA, ZSO, RDSK, RIFF). Defines all file extension constants. |
-| `progress.rs` | Progress bar styles, `MultiProgress` management, `indicatif-log-bridge` integration, and categorized styled output helpers (`print_header`, `print_info`, `print_success`, `print_warning`, `print_error`, `print_skip`, `print_action`, `print_separator`). |
-| `import_dats.rs` | Parses Logiqx-format DAT files, creates/updates systems, games, and ROMs in the database. |
-| `import_roms.rs` | Imports ROM files by hashing them and matching against the database. Handles archives, CHDs, CIAs, CSOs, RVZs, NSZs, ZSOs, and plain files. |
-| `sort_roms.rs` | Sorts imported ROMs into region folders and 1G1R directories based on user configuration. Implements the weighted election algorithm. |
-| `convert_roms.rs` | Converts between ROM formats (archive ↔ original, ISO ↔ CHD ↔ CSO/ZSO, ISO ↔ RVZ, etc.). |
-| `check_roms.rs` | Verifies ROM integrity by re-hashing and comparing against database records. |
-| `rebuild_roms.rs` | Rebuilds arcade ROM sets between merging strategies (split, non-merged, full non-merged). |
-| `export_roms.rs` | Exports ROMs to various formats without modifying the originals. |
-| `sevenzip.rs` | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits. Shells out to the `7zz`/`7z` executable. |
-| `chdman.rs` | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`. |
-| `server.rs` | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Svelte build. |
-| `query.rs` | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention. |
-| `mutation.rs` | GraphQL mutation resolvers for settings and system management. |
-| `validator.rs` | GraphQL input validators. |
+| Module            | Purpose                                                                                                                                                                                                                                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main.rs`         | Entry point. Registers all subcommands, establishes DB connection, dispatches to subcommand `main()` functions.                                                                                                                                                                                            |
+| `model.rs`        | All data structures: DB row types (`System`, `Game`, `Rom`, `Romfile`, `Patch`, `Setting`), XML deserialization types (`DatfileXml`, `GameXml`, `RomXml`, etc.), and enums (`Merging`, `Sorting`, `Completion`, `RomfileType`).                                                                            |
+| `database.rs`     | All database operations as standalone async functions. Uses `sqlx` with compile-time checked queries. Contains the `MIGRATOR` for schema migrations.                                                                                                                                                       |
+| `common.rs`       | The `CommonRomfile` struct and a rich trait system (`FromPath`, `CommonFile`, `AsCommon`, `ToCommon`, `AsIso`, `AsCueBin`, `ToIso`, `ToCueBin`, `Patch`, `Playlist`, `Size`, `HashAndSize`, `HeaderedHashAndSize`, `Check`, `Persist`) that abstracts over different ROM file formats.                     |
+| `config.rs`       | Settings management. Defines setting types (booleans, integers, paths, lists, choices), and provides get/set helpers. Also defines `HashAlgorithm`, `SubfolderScheme`, `PreferredVersion`, `PreferredRegion`, `ArcadeRomType`.                                                                             |
+| `util.rs`         | Low-level filesystem operations (`create_file`, `copy_file`, `rename_file`, `remove_file`, `create_directory`, etc.) and directory structure helpers (`get_system_directory`, `get_one_region_directory`, `get_trash_directory`). Also contains `compute_system_completion` and `compute_alpha_subfolder`. |
+| `mimetype.rs`     | File type detection using the `infer` crate with custom matchers for ROM-specific formats (CHD, CSO, RVZ, IRD, BPS, IPS, XDELTA, ZSO, RDSK, RIFF). Defines all file extension constants.                                                                                                                   |
+| `progress.rs`     | Progress bar styles, `MultiProgress` management, `indicatif-log-bridge` integration, and categorized styled output helpers (`print_header`, `print_info`, `print_success`, `print_warning`, `print_error`, `print_skip`, `print_action`, `print_separator`).                                               |
+| `import_dats.rs`  | Parses Logiqx-format DAT files, creates/updates systems, games, and ROMs in the database.                                                                                                                                                                                                                  |
+| `import_roms.rs`  | Imports ROM files by hashing them and matching against the database. Handles archives, CHDs, CIAs, CSOs, RVZs, NSZs, ZSOs, and plain files.                                                                                                                                                                |
+| `sort_roms.rs`    | Sorts imported ROMs into region folders and 1G1R directories based on user configuration. Implements the weighted election algorithm.                                                                                                                                                                      |
+| `convert_roms.rs` | Converts between ROM formats (archive ↔ original, ISO ↔ CHD ↔ CSO/ZSO, ISO ↔ RVZ, etc.).                                                                                                                                                                                                                   |
+| `check_roms.rs`   | Verifies ROM integrity by re-hashing and comparing against database records.                                                                                                                                                                                                                               |
+| `rebuild_roms.rs` | Rebuilds arcade ROM sets between merging strategies (split, non-merged, full non-merged).                                                                                                                                                                                                                  |
+| `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
+| `sevenzip.rs`     | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits. Shells out to the `7zz`/`7z` executable.                                                                                                                                                                         |
+| `chdman.rs`       | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`.                                                                                                                                                                                                          |
+| `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Svelte build.                                                                                                                                                                           |
+| `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
+| `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
+| `validator.rs`    | GraphQL input validators.                                                                                                                                                                                                                                                                                  |
 
 ### Format-Specific Module Pattern
 
@@ -99,22 +99,23 @@ Each external tool module (e.g., `chdman.rs`, `sevenzip.rs`, `maxcso.rs`, `dolph
 
 ### Schema (Key Tables)
 
-| Table | Key Columns | Purpose |
-|-------|-------------|---------|
-| `systems` | id, name, custom_name, custom_extension, description, version, url, completion, arcade, merging | Game system definitions from DAT files |
-| `games` | id, name, description, comment, external_id, device, bios, jbfolder, regions, sorting, completion, system_id, parent_id, bios_id, playlist_id | Individual game entries |
-| `roms` | id, name, bios, disk, size, crc, md5, sha1, rom_status, game_id, romfile_id, parent_id, original | ROM file definitions (expected files) |
-| `romfiles` | id, path, size, parent_id, romfile_type | Actual files on disk (paths are relative to ROM_DIRECTORY) |
-| `patches` | id, name, index, rom_id, romfile_id | Patch files (BPS, IPS, XDELTA) |
-| `headers` | id, name, version, size, system_id | ROM header definitions for headered systems |
-| `rules` | id, start_byte, hex_value, header_id | Header detection rules |
-| `settings` | id, key, value | Key-value configuration store |
+| Table      | Key Columns                                                                                                                                   | Purpose                                                    |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `systems`  | id, name, custom_name, custom_extension, description, version, url, completion, arcade, merging                                               | Game system definitions from DAT files                     |
+| `games`    | id, name, description, comment, external_id, device, bios, jbfolder, regions, sorting, completion, system_id, parent_id, bios_id, playlist_id | Individual game entries                                    |
+| `roms`     | id, name, bios, disk, size, crc, md5, sha1, rom_status, game_id, romfile_id, parent_id, original                                              | ROM file definitions (expected files)                      |
+| `romfiles` | id, path, size, parent_id, romfile_type                                                                                                       | Actual files on disk (paths are relative to ROM_DIRECTORY) |
+| `patches`  | id, name, index, rom_id, romfile_id                                                                                                           | Patch files (BPS, IPS, XDELTA)                             |
+| `headers`  | id, name, version, size, system_id                                                                                                            | ROM header definitions for headered systems                |
+| `rules`    | id, start_byte, hex_value, header_id                                                                                                          | Header detection rules                                     |
+| `settings` | id, key, value                                                                                                                                | Key-value configuration store                              |
 
 ### Migrations
 
 Migrations live in `migrations/` and use the `sqlx::migrate!()` macro (embedded at compile time). Files are named with timestamps: `YYYYMMDDHHMMSS_description.sql`.
 
 **When adding a new migration:**
+
 1. Create a new `.sql` file in `migrations/` with the next timestamp.
 2. Run `cargo sqlx prepare` to update the `.sqlx/` directory (offline query data).
 3. The `sqlx-data.json` file in the root may also need updating.
@@ -146,23 +147,23 @@ The `build.rs` script automatically runs `pnpm install` and `pnpm build` when th
 
 ### Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
+| Variable                  | Purpose                                                                |
+| ------------------------- | ---------------------------------------------------------------------- |
 | `OXYROMON_DATA_DIRECTORY` | Override the data directory (default: platform data dir + `/oxyromon`) |
-| `OXYROMON_ROM_DIRECTORY` | Override the default ROM directory |
-| `OXYROMON_TMP_DIRECTORY` | Override the default temp directory |
-| `OXYROMON_LOG_LEVEL` | Control log verbosity (standard `env_logger` syntax) |
-| `SKIP_PNPM` | Set to `true` to skip frontend build in `build.rs` |
-| `DATABASE_URL` | Used by `sqlx` for compile-time query checking |
+| `OXYROMON_ROM_DIRECTORY`  | Override the default ROM directory                                     |
+| `OXYROMON_TMP_DIRECTORY`  | Override the default temp directory                                    |
+| `OXYROMON_LOG_LEVEL`      | Control log verbosity (standard `env_logger` syntax)                   |
+| `SKIP_PNPM`               | Set to `true` to skip frontend build in `build.rs`                     |
+| `DATABASE_URL`            | Used by `sqlx` for compile-time query checking                         |
 
 ## Feature Flags
 
-| Feature | Description | Default |
-|---------|-------------|---------|
-| `server` | Builds the web server subcommand (GraphQL + Svelte SPA) | Off |
-| `enable-asm` | ASM variants of MD5 and SHA1 hashes | On |
-| `use-rustls` | Use rustls for TLS | On |
-| `use-native-tls` | Use system OpenSSL for TLS | Off |
+| Feature          | Description                                             | Default |
+| ---------------- | ------------------------------------------------------- | ------- |
+| `server`         | Builds the web server subcommand (GraphQL + Svelte SPA) | Off     |
+| `enable-asm`     | ASM variants of MD5 and SHA1 hashes                     | On      |
+| `use-rustls`     | Use rustls for TLS                                      | On      |
+| `use-native-tls` | Use system OpenSSL for TLS                              | Off     |
 
 Server-only code is gated with `#[cfg(feature = "server")]` throughout the codebase.
 
@@ -228,6 +229,7 @@ async fn test() {
 ### CI
 
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
+
 - Runs on Ubuntu 24.04
 - Installs system dependencies: `bchunk`, `mame-tools` (for chdman), `wit`
 - Runs `clippy` with `--features server`
@@ -241,6 +243,7 @@ Follow this checklist:
 
 1. **Create the module file** at `src/my_command.rs`.
 2. **Implement the standard interface:**
+
    ```rust
    pub fn subcommand() -> Command {
        Command::new("my-command")
@@ -257,6 +260,7 @@ Follow this checklist:
        Ok(())
    }
    ```
+
 3. **Register in `main.rs`:**
    - Add `mod my_command;` to the module declarations.
    - Add `my_command::subcommand()` to the `subcommands` vec.
@@ -313,17 +317,17 @@ Follow this checklist:
 
 ### Frontend Structure
 
-| Path | Purpose |
-|------|---------|
-| `src/routes/+layout.svelte` | Root layout |
-| `src/routes/+page.svelte` | Main page |
-| `src/components/` | Reusable Svelte components |
-| `src/query.js` | GraphQL query definitions |
-| `src/mutation.js` | GraphQL mutation definitions |
-| `src/store.js` | Svelte stores |
-| `src/events.js` | SSE client helpers |
-| `src/app.css` | Global styles (Tailwind) |
-| `src/app.html` | HTML template |
+| Path                        | Purpose                      |
+| --------------------------- | ---------------------------- |
+| `src/routes/+layout.svelte` | Root layout                  |
+| `src/routes/+page.svelte`   | Main page                    |
+| `src/components/`           | Reusable Svelte components   |
+| `src/query.js`              | GraphQL query definitions    |
+| `src/mutation.js`           | GraphQL mutation definitions |
+| `src/store.js`              | Svelte stores                |
+| `src/events.js`             | SSE client helpers           |
+| `src/app.css`               | Global styles (Tailwind)     |
+| `src/app.html`              | HTML template                |
 
 ### Frontend Dev
 
@@ -374,17 +378,17 @@ pnpm format
 
 All user-facing output should go through the categorized helpers in `progress.rs`. **Never** call `progress_bar.println(...)` directly from subcommand or format modules — use these instead:
 
-| Helper | Icon | Purpose | Example |
-|--------|------|---------|---------|
-| `print_header` | `◆` (bold cyan) | Section titles, system names | `Processing "Nintendo - Game Boy"` |
-| `print_subheader` | `▸` (bold) | Steps within a section | `Processing games`, `Summary:` |
-| `print_info` | `ℹ` (dim) | Informational messages | `System: Test System`, speed results |
-| `print_success` | `✔` (green) | Completion, match found | `Imported Test Game (USA)`, `Matches "rom.bin"` |
-| `print_warning` | `⚠` (yellow) | Non-fatal issues | `No match`, `Multiple matches, skipping` |
-| `print_error` | `✖` (red bold) | Errors, failures | `CRC mismatch`, `Please install chdman` |
-| `print_skip` | `↪` (dim) | Skipped/duplicate items | `Already imported`, `Duplicate of "file.zip"` |
-| `print_action` | `→` (dim) | File operations in progress | `Extracting "game.chd"`, `Compressing "rom.bin"` |
-| `print_separator` | (blank line) | Visual spacing between sections | |
+| Helper            | Icon            | Purpose                         | Example                                          |
+| ----------------- | --------------- | ------------------------------- | ------------------------------------------------ |
+| `print_header`    | `◆` (bold cyan) | Section titles, system names    | `Processing "Nintendo - Game Boy"`               |
+| `print_subheader` | `▸` (bold)      | Steps within a section          | `Processing games`, `Summary:`                   |
+| `print_info`      | `ℹ` (dim)       | Informational messages          | `System: Test System`, speed results             |
+| `print_success`   | `✔` (green)     | Completion, match found         | `Imported Test Game (USA)`, `Matches "rom.bin"`  |
+| `print_warning`   | `⚠` (yellow)    | Non-fatal issues                | `No match`, `Multiple matches, skipping`         |
+| `print_error`     | `✖` (red bold)  | Errors, failures                | `CRC mismatch`, `Please install chdman`          |
+| `print_skip`      | `↪` (dim)       | Skipped/duplicate items         | `Already imported`, `Duplicate of "file.zip"`    |
+| `print_action`    | `→` (dim)       | File operations in progress     | `Extracting "game.chd"`, `Compressing "rom.bin"` |
+| `print_separator` | (blank line)    | Visual spacing between sections |                                                  |
 
 All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`lazy_static`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
 
@@ -435,6 +439,7 @@ This applies to all contributions — CLI changes, server changes, bug fixes, an
 ## TODO / Known Areas for Improvement
 
 From the README:
+
 - Add actions to the web UI (currently read-only except settings and system purge)
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems

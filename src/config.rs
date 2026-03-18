@@ -3,8 +3,8 @@ use super::chdman::{
     ChdHdCompressionAlgorithm, ChdLdCompressionAlgorithm,
 };
 use super::database::*;
-use super::model::Setting;
 use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
+use super::model::Setting;
 use super::progress::*;
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
@@ -213,7 +213,10 @@ pub async fn main(
                 return Ok(());
             }
             if systems.len() > 1 {
-                print_warning(progress_bar, "System name matches multiple systems, please be more specific");
+                print_warning(
+                    progress_bar,
+                    "System name matches multiple systems, please be more specific",
+                );
                 return Ok(());
             }
             Some(systems.into_iter().next().unwrap().id)
@@ -373,7 +376,11 @@ pub async fn unset_setting(
     Ok(())
 }
 
-pub async fn get_bool(connection: &mut SqliteConnection, key: &str, system_id: Option<i64>) -> bool {
+pub async fn get_bool(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> bool {
     get_setting(connection, key, system_id)
         .await
         .unwrap()
@@ -549,10 +556,7 @@ pub async fn get_string(
     key: &str,
     system_id: Option<i64>,
 ) -> Option<String> {
-    get_setting(connection, key, system_id)
-        .await
-        .unwrap()
-        .value
+    get_setting(connection, key, system_id).await.unwrap().value
 }
 
 pub async fn set_string(

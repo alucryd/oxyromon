@@ -413,20 +413,20 @@ Supported arcade ROM formats:
 - ZIP archives
 - CHD (Compressed Hunks of Data)
 
-    Usage: oxyromon import-roms [OPTIONS] <ROMS>...
+  Usage: oxyromon import-roms [OPTIONS] <ROMS>...
 
-    Arguments:
-        <ROMS>...  Set the ROM files or directories to import
+  Arguments:
+  <ROMS>... Set the ROM files or directories to import
 
-    Options:
-        -s, --system <SYSTEM>    Select systems by name
-        -t, --trash              Trash invalid ROM files
-        -d, --delete             Delete invalid ROM files (hard delete)
-        -f, --force              Force import of existing ROM files
-        -u, --unattended <MODE>  Handle ROM files that require human intervention (skip: skip, first: auto-select first match) [default: skip] [possible values: skip, first]
-        -x, --extract            Extract top-level archives before importing their contents
-        -a, --as-is              Import ROM files as-is without converting them
-        -h, --help               Print help
+  Options:
+  -s, --system <SYSTEM> Select systems by name
+  -t, --trash Trash invalid ROM files
+  -d, --delete Delete invalid ROM files (hard delete)
+  -f, --force Force import of existing ROM files
+  -u, --unattended <MODE> Handle ROM files that require human intervention (skip: skip, first: auto-select first match) [default: skip] [possible values: skip, first]
+  -x, --extract Extract top-level archives before importing their contents
+  -a, --as-is Import ROM files as-is without converting them
+  -h, --help Print help
 
 ## oxyromon-import-patches
 

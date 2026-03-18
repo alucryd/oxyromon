@@ -21,20 +21,30 @@
   //   isNavbarOpen = event.detail.isOpen;
   // }
 
-  function buttonClasses(color) {
+  function buttonClasses(color, active) {
+    if (!active) {
+      const inactive = {
+        blue: "text-sm bg-sky-800 text-sky-300 hover:bg-sky-700",
+        green: "text-sm bg-slate-700 text-slate-400 hover:bg-slate-600",
+        yellow: "text-sm bg-slate-700 text-slate-400 hover:bg-slate-600",
+        red: "text-sm bg-slate-700 text-slate-400 hover:bg-slate-600",
+        gray: "text-sm bg-slate-700 text-slate-400 hover:bg-slate-600",
+      };
+      return inactive[color] || "text-sm bg-slate-700 text-slate-400 hover:bg-slate-600";
+    }
     const classes = {
-      blue: "text-base bg-blue-900 dark:bg-blue-900 hover:bg-blue-700 dark:hover:bg-blue-700",
-      green: "text-base bg-green-900 dark:bg-green-900 hover:bg-green-700 dark:hover:bg-green-700",
-      yellow: "text-base bg-yellow-900 dark:bg-yellow-900 hover:bg-yellow-700 dark:hover:bg-yellow-700",
-      red: "text-base bg-red-900 dark:bg-red-900 hover:bg-red-700 dark:hover:bg-red-700",
-      gray: "text-base bg-gray-900 dark:bg-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700",
+      blue: "text-sm bg-sky-600 text-white hover:bg-sky-500",
+      green: "text-sm bg-emerald-700 text-white hover:bg-emerald-600",
+      yellow: "text-sm bg-amber-600 text-white hover:bg-amber-500",
+      red: "text-sm bg-rose-700 text-white hover:bg-rose-600",
+      gray: "text-sm bg-slate-500 text-white hover:bg-slate-400",
     };
-    return classes[color] || "";
+    return classes[color] || "text-sm";
   }
 </script>
 
 <div class="flex min-h-screen">
-  <Navbar fluid="true" class="fixed start-0 top-0 z-20 bg-gray-800 text-base text-white" expand="md">
+  <Navbar fluid="true" class="fixed start-0 top-0 z-20 bg-slate-900 text-base text-white" expand="md">
     <NavBrand href="/" class="flex gap-2">
       <img src="/logo.svg" alt="logo" style="height: 32px;" />
       OXYROMON
@@ -53,8 +63,7 @@
     <ButtonGroup class="mx-2">
       <Button
         color="blue"
-        class={buttonClasses("blue")}
-        bind:active={$oneRegionFilter}
+        class={buttonClasses("blue", $oneRegionFilter)}
         onclick={() => oneRegionFilter.update((b) => !b)}
       >
         {#if $oneRegionFilter}Show All{:else}Show 1G1R only{/if}
@@ -63,32 +72,24 @@
     <ButtonGroup class="mx-2">
       <Button
         color="green"
-        class={buttonClasses("green")}
-        bind:active={$completeFilter}
+        class={buttonClasses("green", $completeFilter)}
         onclick={() => completeFilter.update((b) => !b)}
       >
         {#if $completeFilter}Hide{:else}Show{/if} Complete
       </Button>
       <Button
         color="yellow"
-        class={buttonClasses("yellow")}
-        bind:active={$incompleteFilter}
+        class={buttonClasses("yellow", $incompleteFilter)}
         onclick={() => incompleteFilter.update((b) => !b)}
       >
         {#if $incompleteFilter}Hide{:else}Show{/if} Incomplete
       </Button>
-      <Button
-        color="red"
-        class={buttonClasses("red")}
-        bind:active={$wantedFilter}
-        onclick={() => wantedFilter.update((b) => !b)}
-      >
+      <Button color="red" class={buttonClasses("red", $wantedFilter)} onclick={() => wantedFilter.update((b) => !b)}>
         {#if $wantedFilter}Hide{:else}Show{/if} Wanted
       </Button>
       <Button
         color="gray"
-        class={buttonClasses("gray")}
-        bind:active={$ignoredFilter}
+        class={buttonClasses("gray", $ignoredFilter)}
         onclick={() => ignoredFilter.update((b) => !b)}
       >
         {#if $ignoredFilter}Hide{:else}Show{/if} Ignored
@@ -110,7 +111,7 @@
     <DarkMode />
   </Navbar>
 
-  <div class="flex w-full flex-col gap-4 bg-gray-300">
+  <div class="flex w-full flex-col gap-4 bg-slate-200 dark:bg-slate-800">
     <slot />
   </div>
 

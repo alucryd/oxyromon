@@ -449,10 +449,10 @@ pub fn compute_alpha_subfolder(name: &str) -> String {
 #[cfg(test)]
 mod test_compute_alpha_subfolder;
 #[cfg(test)]
-mod test_system_directory_no_group_subsystems;
-#[cfg(test)]
-mod test_system_directory_group_subsystems;
-#[cfg(test)]
 mod test_system_directory_custom_name;
 #[cfg(test)]
 mod test_system_directory_group_non_redump;
+#[cfg(test)]
+mod test_system_directory_group_subsystems;
+#[cfg(test)]
+mod test_system_directory_no_group_subsystems;

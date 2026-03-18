@@ -37,3 +37,18 @@
     display: none;
   }
 }
+
+@layer utilities {
+  /* darken table headers and striped rows in light mode for better contrast */
+  table:not(.stats-table) thead tr th {
+    @apply bg-slate-300 dark:bg-gray-700;
+  }
+
+  table:not(.stats-table) tbody tr:nth-child(odd):not(:hover) {
+    @apply bg-slate-100 dark:bg-gray-800;
+  }
+
+  table:not(.stats-table) tbody tr:nth-child(even):not(:hover) {
+    @apply bg-white dark:bg-gray-700;
+  }
+}

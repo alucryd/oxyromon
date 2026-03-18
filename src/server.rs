@@ -216,10 +216,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     Ok(())
 }
 
-async fn download_romfile(
-    Path(id): Path<i64>,
-    State(state): State<AppState>,
-) -> Response<Body> {
+async fn download_romfile(Path(id): Path<i64>, State(state): State<AppState>) -> Response<Body> {
     let mut connection = state.pool.acquire().await.unwrap();
 
     let rom_directory = match find_setting_by_key(&mut connection, "ROM_DIRECTORY", None).await {

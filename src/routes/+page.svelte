@@ -94,43 +94,22 @@
   $: romfilesLastPage = $romfilesPage == $romfilesTotalPages;
 
   function computeSystemColor(system) {
-    if (system.completion == 2) {
-      return "dark:text-green-300 text-green-500";
-    }
-
-    if (system.completion == 1) {
-      return "dark:text-yellow-300 text-yellow-500";
-    }
-
-    return "dark:text-red-300 text-red-500";
+    if (system.completion == 2) return "text-emerald-600 dark:text-emerald-400";
+    if (system.completion == 1) return "text-amber-500 dark:text-amber-400";
+    return "text-rose-600 dark:text-rose-400";
   }
 
   function computeGameColor(game) {
-    if (game.sorting == 2) {
-      return "dark:text-gray-300 text-gray-500";
-    }
-
-    if (game.completion == 2) {
-      return "dark:text-green-300 text-green-500";
-    }
-
-    if (game.completion == 1) {
-      return "dark:text-yellow-300 text-yellow-500";
-    }
-
-    return "dark:text-red-300 text-red-500";
+    if (game.sorting == 2) return "text-slate-400 dark:text-slate-500";
+    if (game.completion == 2) return "text-emerald-600 dark:text-emerald-400";
+    if (game.completion == 1) return "text-amber-500 dark:text-amber-400";
+    return "text-rose-600 dark:text-rose-400";
   }
 
   function computeRomColor(rom) {
-    if (rom.ignored) {
-      return "dark:text-gray-300 text-gray-500";
-    }
-
-    if (rom.romfile) {
-      return "dark:text-green-300 text-green-500";
-    }
-
-    return "dark:text-red-300 text-red-500";
+    if (rom.ignored) return "text-slate-400 dark:text-slate-500";
+    if (rom.romfile) return "text-emerald-600 dark:text-emerald-400";
+    return "text-rose-600 dark:text-rose-400";
   }
 
   let deleteModalOpen = false;
@@ -279,7 +258,10 @@
           <TableBody>
             {#each $systems as system, i (system.id)}
               <TableBodyRow>
-                <TableBodyCell id="tbc-system-{i}" class="p-0 {system.id == $systemId ? 'active' : ''}">
+                <TableBodyCell
+                  id="tbc-system-{i}"
+                  class="p-0 {system.id == $systemId ? 'bg-slate-200 dark:bg-slate-700' : ''}"
+                >
                   <button
                     class="block w-full truncate px-4 py-2 text-left text-base {computeSystemColor(system)}"
                     onclick={() => {
@@ -289,18 +271,28 @@
                     {system.name}
                   </button>
                 </TableBodyCell>
-                <TableBodyCell class="px-2 py-2 text-right">
+                <TableBodyCell
+                  class="px-2 py-2 text-right {system.id == $systemId ? 'bg-slate-200 dark:bg-slate-700' : ''}"
+                >
                   {#if $purgingSystemId === system.id}
                     <Spinner size="4" />
                   {:else}
-                    <Button id="system-menu-{system.id}" size="xs" color="alternative" class="border-0 p-1">
+                    <Button id="system-menu-{system.id}" size="xs" color="primary" class="p-1">
                       <DotsVerticalOutline class="h-4 w-4" />
                     </Button>
                     <Dropdown triggeredBy="#system-menu-{system.id}" class="!overflow-hidden">
-                      <DropdownItem liClass="list-none" onclick={() => onSystemSettingsClick(system)}>
+                      <DropdownItem
+                        liClass="list-none"
+                        class="dark:text-gray-100"
+                        onclick={() => onSystemSettingsClick(system)}
+                      >
                         <AdjustmentsHorizontalOutline class="mr-2 inline h-4 w-4" />Settings
                       </DropdownItem>
-                      <DropdownItem liClass="list-none" class="text-red-600 dark:text-red-400" onclick={() => onPurgeSystemClick(system)}>
+                      <DropdownItem
+                        liClass="list-none"
+                        class="text-rose-600 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-400"
+                        onclick={() => onPurgeSystemClick(system)}
+                      >
                         <TrashBinOutline class="mr-2 inline h-4 w-4" />Delete
                       </DropdownItem>
                     </Dropdown>
@@ -332,7 +324,7 @@
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-slate-600 dark:text-slate-400">
             {$systemsPage} / {$systemsTotalPages}
           </span>
           <Button
@@ -373,7 +365,9 @@
                 <TableBodyCell
                   colspan="2"
                   id="tbc-game-{i}"
-                  class="p-0 {game.sorting == 1 ? 'font-bold' : ''} {game.id == $gameId ? 'active' : ''}"
+                  class="p-0 {game.sorting == 1 ? 'font-bold' : ''} {game.id == $gameId
+                    ? 'bg-slate-200 dark:bg-slate-700'
+                    : ''}"
                 >
                   <button
                     class="block w-full truncate px-4 py-2 text-left text-base {computeGameColor(game)}"
@@ -404,7 +398,7 @@
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-slate-600 dark:text-slate-400">
             {$gamesPage} / {$gamesTotalPages}
           </span>
           <Button
@@ -462,7 +456,7 @@
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-slate-600 dark:text-slate-400">
             {$romsPage} / {$romsTotalPages}
           </span>
           <Button
@@ -502,9 +496,9 @@
                   {romfile.path.split("/").slice(1).join("/")}
                 </TableBodyCell>
                 <TableBodyCell class="px-2 py-2 text-right">
-                  <a href="/romfiles/{romfile.id}" download>
-                    <DownloadOutline class="h-4 w-4 cursor-pointer text-gray-600 hover:text-gray-800" />
-                  </a>
+                  <Button href="/romfiles/{romfile.id}" download size="xs" color="primary" class="p-1">
+                    <DownloadOutline class="h-4 w-4" />
+                  </Button>
                 </TableBodyCell>
               </TableBodyRow>
             {/each}
@@ -529,7 +523,7 @@
           >
             <ChevronLeftOutline class="h-4 w-4" />
           </Button>
-          <span class="w-full px-3 py-1 text-center text-sm text-gray-700 dark:text-gray-300">
+          <span class="w-full px-3 py-1 text-center text-sm text-slate-600 dark:text-slate-400">
             {$romfilesPage} / {$romfilesTotalPages}
           </span>
           <Button
@@ -556,7 +550,7 @@
   </div>
   <div class="mb-4">
     <Card class="max-w-none overflow-hidden">
-      <Table border={false} class="table-fixed">
+      <Table border={false} class="stats-table table-fixed">
         <TableHead class="text-left text-base">
           <TableHeadCell colspan="4">Statistics</TableHeadCell>
         </TableHead>
@@ -642,11 +636,11 @@
 
   <Modal bind:open={deleteModalOpen} size="xs" autoclose={false}>
     <div class="text-center">
-      <ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-200" />
-      <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+      <ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-rose-500 dark:text-rose-400" />
+      <h3 class="mb-5 text-lg font-normal text-slate-700 dark:text-slate-300">
         Are you sure you want to delete system "{systemToDelete?.name}"?
       </h3>
-      <p class="mb-5 text-sm text-gray-400 dark:text-gray-500">
+      <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
         This action cannot be undone. All data associated with this system will be permanently removed.
       </p>
       <Button color="red" class="me-2" onclick={confirmDelete}>Yes, I'm sure</Button>

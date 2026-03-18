@@ -11,6 +11,7 @@
 
 ## Improvements
 
+- Overhauled web UI colors for improved readability in both light and dark themes
 - Overhauled CLI output for a cleaner, more consistent terminal experience
 - Progress bars and log messages no longer overlap or corrupt each other
 - Standardized messaging across all commands with clear icons and color coding
