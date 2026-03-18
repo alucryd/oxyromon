@@ -20,7 +20,7 @@ async fn test() {
     let tmp_directory = TempDir::new_in(&test_directory).unwrap();
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    set_bool(&mut connection, "GROUP_SUBSYSTEMS", false).await;
+    set_bool(&mut connection, "GROUP_SUBSYSTEMS", false, None).await;
 
     let system = System {
         id: 1,

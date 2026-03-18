@@ -98,6 +98,9 @@ Configuration is done from the command line, and settings are stored in the SQLi
 The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
 This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
 
+Settings can be global or per-system. Per-system settings take precedence over global ones, with automatic fallback to the global value when no system-specific override is set.
+Use the `-y/--system` flag with the `config` subcommand to manage system-specific settings.
+
 Available settings:
 
 - `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
@@ -232,10 +235,13 @@ These should be in your `${PATH}` for extra features.
 Query and modify the oxyromon settings
 
 The settings can be queried, modified, and deleted from the command line.
+All operations are global by default. Use `-y/--system` to scope them to a specific system.
+Per-system settings take precedence over global ones, with fallback to the global value.
 
     Usage: oxyromon config [OPTIONS]
 
     Options:
+        -y, --system <NAME>         Select a system by name (supports % globs)
         -l, --list                  Print the whole configuration
         -g, --get <KEY>             Print a single setting
         -s, --set <KEY> <VALUE>     Set a single setting

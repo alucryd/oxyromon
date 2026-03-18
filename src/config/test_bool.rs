@@ -11,8 +11,8 @@ async fn test() {
     let key = "TEST_BOOLEAN";
 
     // when
-    set_bool(&mut connection, key, true).await;
-    let bool = get_bool(&mut connection, key).await;
+    set_bool(&mut connection, key, true, None).await;
+    let bool = get_bool(&mut connection, key, None).await;
 
     // then
     assert!(bool);

@@ -3018,14 +3018,20 @@ pub async fn delete_rules_by_header_id(connection: &mut SqliteConnection, header
     .unwrap_or_else(|_| panic!("Error while deleting rules with header_id {}", header_id));
 }
 
-pub async fn create_setting(connection: &mut SqliteConnection, key: &str, value: Option<String>) {
+pub async fn create_setting(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: Option<String>,
+    system_id: Option<i64>,
+) {
     sqlx::query!(
         "
-        INSERT INTO settings (key, value)
-        VALUES (?, ?)
+        INSERT INTO settings (key, value, system_id)
+        VALUES (?, ?, ?)
         ",
         key,
         value,
+        system_id,
     )
     .execute(connection)
     .await
@@ -3047,29 +3053,40 @@ pub async fn update_setting(connection: &mut SqliteConnection, id: i64, value: O
     .unwrap_or_else(|_| panic!("Error while updating setting with id {}", id));
 }
 
-pub async fn find_settings(connection: &mut SqliteConnection) -> Vec<Setting> {
+pub async fn find_settings(
+    connection: &mut SqliteConnection,
+    system_id: Option<i64>,
+) -> Vec<Setting> {
     sqlx::query_as!(
         Setting,
         "
         SELECT *
         FROM settings
+        WHERE system_id IS ?
         ORDER BY key
         ",
+        system_id,
     )
     .fetch_all(connection)
     .await
     .expect("Error while finding settings")
 }
 
-pub async fn find_setting_by_key(connection: &mut SqliteConnection, key: &str) -> Option<Setting> {
+pub async fn find_setting_by_key(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Option<Setting> {
     sqlx::query_as!(
         Setting,
         "
         SELECT *
         FROM settings
         WHERE key = ?
+        AND system_id IS ?
         ",
         key,
+        system_id,
     )
     .fetch_optional(connection)
     .await

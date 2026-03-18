@@ -2,6 +2,8 @@
 
 ## Features
 
+- Added per-system settings: any setting can now be overridden on a per-system basis, with automatic fallback to the global value when no system-specific override exists
+- Added `-y/--system` flag to `config` to scope all operations (list, get, set, unset, add, remove) to a specific system (supports `%` globs)
 - Added romfile download support to the web UI
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)

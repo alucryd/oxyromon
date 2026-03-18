@@ -8,7 +8,6 @@ use chrono::prelude::*;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::se;
-use rust_embed::RustEmbed;
 use serde::Serialize;
 use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
@@ -16,10 +15,6 @@ use std::path::PathBuf;
 use std::str;
 use tokio::io::AsyncWriteExt;
 use walkdir::WalkDir;
-
-#[derive(RustEmbed)]
-#[folder = "data/"]
-struct Assets;
 
 pub const DOCTYPE: &[&str] = &[
     "<?xml version=\"1.0\"?>\n",
