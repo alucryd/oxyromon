@@ -15,10 +15,11 @@ async fn test() {
         &mut connection,
         key,
         &[String::from("item1"), String::from("item2")],
+        None,
     )
     .await;
 
-    let list = get_list(&mut connection, key).await;
+    let list = get_list(&mut connection, key, None).await;
 
     // then
     assert_eq!(list.len(), 2);

@@ -22,6 +22,7 @@ impl Mutation {
             &progress_bar,
             &key,
             &value,
+            None,
         )
         .await;
         Ok(true)
@@ -41,6 +42,7 @@ impl Mutation {
             &progress_bar,
             &key,
             &value,
+            None,
         )
         .await;
         Ok(true)
@@ -49,7 +51,7 @@ impl Mutation {
     async fn set_bool(&self, ctx: &Context<'_>, key: String, value: bool) -> Result<bool> {
         log::debug!("mutation::set_bool({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_bool(&mut pool.acquire().await.unwrap(), &key, value).await;
+        set_bool(&mut pool.acquire().await.unwrap(), &key, value, None).await;
         Ok(true)
     }
 
@@ -60,7 +62,7 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_prefer_regions({})", &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(&mut pool.acquire().await.unwrap(), "PREFER_REGIONS", &value).await;
+        set_string(&mut pool.acquire().await.unwrap(), "PREFER_REGIONS", &value, None).await;
         Ok(true)
     }
 
@@ -75,6 +77,7 @@ impl Mutation {
             &mut pool.acquire().await.unwrap(),
             "PREFER_VERSIONS",
             &value,
+            None,
         )
         .await;
         Ok(true)
@@ -88,7 +91,7 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_subfolder_scheme({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(&mut pool.acquire().await.unwrap(), &key, &value).await;
+        set_string(&mut pool.acquire().await.unwrap(), &key, &value, None).await;
         Ok(true)
     }
 
@@ -100,7 +103,7 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_directory({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_directory(&mut pool.acquire().await.unwrap(), &key, &value).await;
+        set_directory(&mut pool.acquire().await.unwrap(), &key, &value, None).await;
         Ok(true)
     }
 

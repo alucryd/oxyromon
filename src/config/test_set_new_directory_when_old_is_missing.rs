@@ -20,19 +20,19 @@ async fn test() {
     create_directory(&progress_bar, &old_directory, true)
         .await
         .unwrap();
-    set_directory(&mut connection, "TEST_DIRECTORY", &old_directory).await;
+    set_directory(&mut connection, "TEST_DIRECTORY", &old_directory, None).await;
     fs::remove_dir_all(&old_directory).await.unwrap();
 
     // when
-    get_directory(&mut connection, "TEST_DIRECTORY").await;
+    get_directory(&mut connection, "TEST_DIRECTORY", None).await;
     let new_directory = PathBuf::from(&tmp_directory.path()).join("new");
     create_directory(&progress_bar, &new_directory, true)
         .await
         .unwrap();
-    set_directory(&mut connection, "TEST_DIRECTORY", &new_directory).await;
+    set_directory(&mut connection, "TEST_DIRECTORY", &new_directory, None).await;
 
     // then
-    let directory = get_directory(&mut connection, "TEST_DIRECTORY").await;
+    let directory = get_directory(&mut connection, "TEST_DIRECTORY", None).await;
     assert!(directory.is_some());
     assert_eq!(directory.unwrap().as_os_str(), new_directory.as_os_str());
 }

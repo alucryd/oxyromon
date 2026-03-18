@@ -199,7 +199,7 @@ async fn rebuild_system(
     if (system.merging == Merging::Split as i64 || system.merging == Merging::NonMerged as i64)
         && (merging == Merging::NonMerged || merging == Merging::FullNonMerged)
     {
-        let compression_level = get_integer(connection, "ZIP_COMPRESSION_LEVEL").await;
+        let compression_level = get_integer(connection, "ZIP_COMPRESSION_LEVEL", Some(system.id)).await;
         for game in games {
             expand_game(
                 connection,

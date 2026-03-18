@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM settings\n        WHERE key = ?\n        ",
+  "query": "\n        SELECT *\n        FROM settings\n        WHERE system_id IS ?\n        ORDER BY key\n        ",
   "describe": {
     "columns": [
       {
@@ -17,6 +17,11 @@
         "name": "value",
         "ordinal": 2,
         "type_info": "Text"
+      },
+      {
+        "name": "system_id",
+        "ordinal": 3,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -25,8 +30,9 @@
     "nullable": [
       false,
       false,
+      true,
       true
     ]
   },
-  "hash": "a1d261ee89ace572e49b4a12a25aff1f8582ea82bd9cd9a9a38e93e1d23b89e4"
+  "hash": "55850cb692e1c97eb9327a9c1808c500efc090597b56c10cc9f946543ea5d2ff"
 }

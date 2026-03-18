@@ -14,9 +14,9 @@ async fn test() {
     let key = "TEST_DIRECTORY";
 
     // when
-    set_directory(&mut connection, key, &test_directory).await;
+    set_directory(&mut connection, key, &test_directory, None).await;
 
-    let directory = get_directory(&mut connection, key).await.unwrap();
+    let directory = get_directory(&mut connection, key, None).await.unwrap();
 
     // then
     assert_eq!(directory, test_directory);

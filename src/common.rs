@@ -291,13 +291,13 @@ impl CommonFile for CommonRomfile {
             Some(scheme) => scheme,
             None => match Sorting::from_i64(game.sorting) {
                 Some(Sorting::OneRegion) => &SubfolderScheme::from_str(
-                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
+                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS", Some(system.id))
                         .await
                         .unwrap(),
                 )
                 .unwrap(),
                 Some(Sorting::AllRegions) => &SubfolderScheme::from_str(
-                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
+                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS", Some(system.id))
                         .await
                         .unwrap(),
                 )
@@ -693,13 +693,13 @@ impl Playlist for Game {
             Some(scheme) => scheme,
             None => match Sorting::from_i64(self.sorting) {
                 Some(Sorting::OneRegion) => &SubfolderScheme::from_str(
-                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS")
+                    &get_string(connection, "REGIONS_ONE_SUBFOLDERS", Some(system.id))
                         .await
                         .unwrap(),
                 )
                 .unwrap(),
                 Some(Sorting::AllRegions) => &SubfolderScheme::from_str(
-                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS")
+                    &get_string(connection, "REGIONS_ALL_SUBFOLDERS", Some(system.id))
                         .await
                         .unwrap(),
                 )

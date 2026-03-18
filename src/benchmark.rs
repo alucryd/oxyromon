@@ -33,12 +33,12 @@ pub async fn main(
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-    let rom_directory = find_setting_by_key(connection, "ROM_DIRECTORY")
+    let rom_directory = find_setting_by_key(connection, "ROM_DIRECTORY", None)
         .await
         .unwrap()
         .value
         .unwrap();
-    let tmp_directory = find_setting_by_key(connection, "TMP_DIRECTORY")
+    let tmp_directory = find_setting_by_key(connection, "TMP_DIRECTORY", None)
         .await
         .unwrap()
         .value

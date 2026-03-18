@@ -3,6 +3,7 @@ use super::chdman::{
     ChdHdCompressionAlgorithm, ChdLdCompressionAlgorithm,
 };
 use super::database::*;
+use super::model::Setting;
 use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
 use super::progress::*;
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
@@ -130,13 +131,22 @@ pub fn subcommand() -> Command {
     Command::new("config")
         .about("Query and modify the oxyromon settings")
         .arg(
+            Arg::new("SYSTEM")
+                .short('y')
+                .long("system")
+                .help("Select a system by name (supports % globs)")
+                .required(false)
+                .num_args(1)
+                .value_name("NAME"),
+        )
+        .arg(
             Arg::new("LIST")
                 .short('l')
                 .long("list")
                 .help("Print the whole configuration")
                 .required(false)
                 .action(ArgAction::SetTrue)
-                .exclusive(true),
+                .conflicts_with_all(["GET", "SET", "UNSET", "ADD", "REMOVE"]),
         )
         .arg(
             Arg::new("GET")
@@ -146,7 +156,7 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(1)
                 .value_name("KEY")
-                .exclusive(true),
+                .conflicts_with_all(["LIST", "SET", "UNSET", "ADD", "REMOVE"]),
         )
         .arg(
             Arg::new("SET")
@@ -156,7 +166,7 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(2)
                 .value_names(["KEY", "VALUE"])
-                .exclusive(true),
+                .conflicts_with_all(["LIST", "GET", "UNSET", "ADD", "REMOVE"]),
         )
         .arg(
             Arg::new("UNSET")
@@ -166,7 +176,7 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(1)
                 .value_name("KEY")
-                .exclusive(true),
+                .conflicts_with_all(["LIST", "GET", "SET", "ADD", "REMOVE"]),
         )
         .arg(
             Arg::new("ADD")
@@ -176,7 +186,7 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(2)
                 .value_names(["KEY", "VALUE"])
-                .exclusive(true),
+                .conflicts_with_all(["LIST", "GET", "SET", "UNSET", "REMOVE"]),
         )
         .arg(
             Arg::new("REMOVE")
@@ -186,7 +196,7 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .num_args(2)
                 .value_names(["KEY", "VALUE"])
-                .exclusive(true),
+                .conflicts_with_all(["LIST", "GET", "SET", "UNSET", "ADD"]),
         )
 }
 
@@ -195,13 +205,30 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
+    let system_id = match matches.get_one::<String>("SYSTEM") {
+        Some(system_name) => {
+            let systems = find_systems_by_name_like(connection, system_name).await;
+            if systems.is_empty() {
+                print_warning(progress_bar, "No matching system found");
+                return Ok(());
+            }
+            if systems.len() > 1 {
+                print_warning(progress_bar, "System name matches multiple systems, please be more specific");
+                return Ok(());
+            }
+            Some(systems.into_iter().next().unwrap().id)
+        }
+        None => None,
+    };
+
     if matches.get_flag("LIST") {
-        list_settings(connection, progress_bar).await;
+        list_settings(connection, progress_bar, system_id).await;
     } else if matches.contains_id("GET") {
-        get_setting(
+        print_setting(
             connection,
             progress_bar,
             matches.get_one::<String>("GET").unwrap(),
+            system_id,
         )
         .await;
     } else if matches.contains_id("SET") {
@@ -211,13 +238,14 @@ pub async fn main(
             .collect::<Vec<_>>()
             .as_slice()
         {
-            set_setting(connection, progress_bar, key, value).await?;
+            set_setting(connection, progress_bar, key, value, system_id).await?;
         };
     } else if matches.contains_id("UNSET") {
         unset_setting(
             connection,
             progress_bar,
             matches.get_one::<String>("UNSET").unwrap(),
+            system_id,
         )
         .await?;
     } else if matches.contains_id("ADD") {
@@ -227,7 +255,7 @@ pub async fn main(
             .collect::<Vec<_>>()
             .as_slice()
         {
-            add_to_list(connection, progress_bar, key, value).await;
+            add_to_list(connection, progress_bar, key, value, system_id).await;
         };
     } else if matches.contains_id("REMOVE") {
         if let [key, value] = matches
@@ -236,15 +264,32 @@ pub async fn main(
             .collect::<Vec<_>>()
             .as_slice()
         {
-            remove_from_list(connection, progress_bar, key, value).await;
+            remove_from_list(connection, progress_bar, key, value, system_id).await;
         };
     }
 
     Ok(())
 }
 
-async fn list_settings(connection: &mut SqliteConnection, progress_bar: &ProgressBar) {
-    for setting in find_settings(connection).await {
+pub async fn get_setting(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Option<Setting> {
+    if let Some(id) = system_id {
+        if let Some(setting) = find_setting_by_key(connection, key, Some(id)).await {
+            return Some(setting);
+        }
+    }
+    find_setting_by_key(connection, key, None).await
+}
+
+pub async fn list_settings(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_id: Option<i64>,
+) {
+    for setting in find_settings(connection, system_id).await {
         print_info(
             progress_bar,
             &format!("{} = {}", setting.key, setting.value.unwrap_or_default()),
@@ -252,30 +297,36 @@ async fn list_settings(connection: &mut SqliteConnection, progress_bar: &Progres
     }
 }
 
-pub async fn get_setting(connection: &mut SqliteConnection, progress_bar: &ProgressBar, key: &str) {
-    let setting = find_setting_by_key(connection, key).await.unwrap();
+async fn print_setting(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    key: &str,
+    system_id: Option<i64>,
+) {
+    let setting = get_setting(connection, key, system_id).await.unwrap();
     print_info(
         progress_bar,
         &format!("{} = {}", setting.key, setting.value.unwrap_or_default()),
     );
 }
 
-async fn set_setting(
+pub async fn set_setting(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     key: &str,
     value: &str,
+    system_id: Option<i64>,
 ) -> SimpleResult<()> {
     if PATHS.contains(&key) {
         let p = get_canonicalized_path(&value.to_owned()).await?;
         create_directory(progress_bar, &p, false).await?;
-        set_directory(connection, key, &p).await;
+        set_directory(connection, key, &p, system_id).await;
     } else if BOOLEANS.contains(&key) {
         let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
-        set_bool(connection, key, b).await;
+        set_bool(connection, key, b, system_id).await;
     } else if CHOICES.keys().any(|&s| s == key) {
         if CHOICES.get(key).unwrap().contains(&value) {
-            set_string(connection, key, value).await;
+            set_string(connection, key, value, system_id).await;
         } else {
             print_warning(
                 progress_bar,
@@ -285,7 +336,7 @@ async fn set_setting(
     } else if INTEGERS.keys().any(|&i| i == key) {
         let i: usize = try_with!(FromStr::from_str(value), "Failed to parse integer");
         if INTEGERS.get(key).unwrap()[0] <= i && i <= INTEGERS.get(key).unwrap()[1] {
-            set_integer(connection, key, i).await;
+            set_integer(connection, key, i, system_id).await;
         } else {
             print_warning(
                 progress_bar,
@@ -303,13 +354,14 @@ async fn set_setting(
     Ok(())
 }
 
-async fn unset_setting(
+pub async fn unset_setting(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     key: &str,
+    system_id: Option<i64>,
 ) -> SimpleResult<()> {
     if NULLABLES.contains(&key) {
-        if let Some(setting) = find_setting_by_key(connection, key).await {
+        if let Some(setting) = find_setting_by_key(connection, key, system_id).await {
             update_setting(connection, setting.id, None).await;
         };
     } else {
@@ -321,8 +373,8 @@ async fn unset_setting(
     Ok(())
 }
 
-pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
-    find_setting_by_key(connection, key)
+pub async fn get_bool(connection: &mut SqliteConnection, key: &str, system_id: Option<i64>) -> bool {
+    get_setting(connection, key, system_id)
         .await
         .unwrap()
         .value
@@ -331,34 +383,52 @@ pub async fn get_bool(connection: &mut SqliteConnection, key: &str) -> bool {
         .unwrap()
 }
 
-pub async fn set_bool(connection: &mut SqliteConnection, key: &str, value: bool) {
-    let setting = find_setting_by_key(connection, key).await;
+pub async fn set_bool(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: bool,
+    system_id: Option<i64>,
+) {
+    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = value.to_string();
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value)).await,
+        None => create_setting(connection, key, Some(value), system_id).await,
     };
 }
 
-pub async fn get_integer(connection: &mut SqliteConnection, key: &str) -> Option<usize> {
-    find_setting_by_key(connection, key)
+pub async fn get_integer(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Option<usize> {
+    get_setting(connection, key, system_id)
         .await
         .unwrap()
         .value
         .map(|value| value.parse().unwrap())
 }
 
-async fn set_integer(connection: &mut SqliteConnection, key: &str, value: usize) {
-    let setting = find_setting_by_key(connection, key).await;
+async fn set_integer(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: usize,
+    system_id: Option<i64>,
+) {
+    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = value.to_string();
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value)).await,
+        None => create_setting(connection, key, Some(value), system_id).await,
     };
 }
 
-pub async fn get_list(connection: &mut SqliteConnection, key: &str) -> Vec<String> {
-    match find_setting_by_key(connection, key).await {
+pub async fn get_list(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Vec<String> {
+    match get_setting(connection, key, system_id).await {
         Some(setting) => match setting.value {
             Some(value) => value.split(LIST_SEPARATOR).map(|s| s.to_owned()).collect(),
             None => vec![],
@@ -372,27 +442,28 @@ pub async fn add_to_list(
     progress_bar: &ProgressBar,
     key: &str,
     value: &str,
+    system_id: Option<i64>,
 ) {
     if LISTS.contains(&key) {
-        let mut list = get_list(connection, key).await;
+        let mut list = get_list(connection, key, system_id).await;
         if !list.contains(&String::from(value)) {
             list.push(value.to_owned());
             if !SORTED_LISTS.contains(&key) {
                 list.sort();
             }
-            set_list(connection, key, &list).await;
+            set_list(connection, key, &list, system_id).await;
         } else {
             print_skip(progress_bar, "Value already in list");
         }
     } else if CHOICE_LISTS.keys().any(|&s| s == key) {
         if CHOICE_LISTS.get(key).unwrap().contains(&value) {
-            let mut list = get_list(connection, key).await;
+            let mut list = get_list(connection, key, system_id).await;
             if !list.contains(&String::from(value)) {
                 list.push(value.to_owned());
                 if !SORTED_LISTS.contains(&key) {
                     list.sort();
                 }
-                set_list(connection, key, &list).await;
+                set_list(connection, key, &list, system_id).await;
             } else {
                 print_skip(progress_bar, "Value already in list");
             }
@@ -412,12 +483,13 @@ pub async fn remove_from_list(
     progress_bar: &ProgressBar,
     key: &str,
     value: &str,
+    system_id: Option<i64>,
 ) {
     if LISTS.contains(&key) || CHOICE_LISTS.keys().any(|&s| s == key) {
-        let mut list = get_list(connection, key).await;
+        let mut list = get_list(connection, key, system_id).await;
         if list.contains(&String::from(value)) {
             list.remove(list.iter().position(|v| v == value).unwrap());
-            set_list(connection, key, &list).await;
+            set_list(connection, key, &list, system_id).await;
         } else {
             print_warning(progress_bar, "Value not found in list");
         }
@@ -426,8 +498,13 @@ pub async fn remove_from_list(
     }
 }
 
-async fn set_list(connection: &mut SqliteConnection, key: &str, value: &[String]) {
-    let setting = find_setting_by_key(connection, key).await;
+async fn set_list(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: &[String],
+    system_id: Option<i64>,
+) {
+    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = if value.is_empty() {
         None
     } else {
@@ -435,12 +512,16 @@ async fn set_list(connection: &mut SqliteConnection, key: &str, value: &[String]
     };
     match setting {
         Some(setting) => update_setting(connection, setting.id, value).await,
-        None => create_setting(connection, key, value).await,
+        None => create_setting(connection, key, value, system_id).await,
     };
 }
 
-pub async fn get_directory(connection: &mut SqliteConnection, key: &str) -> Option<PathBuf> {
-    match find_setting_by_key(connection, key).await {
+pub async fn get_directory(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Option<PathBuf> {
+    match get_setting(connection, key, system_id).await {
         Some(p) => match get_canonicalized_path(&p.value.unwrap()).await {
             Ok(path) => Some(path),
             Err(_) => None,
@@ -453,29 +534,42 @@ pub async fn set_directory<P: AsRef<Path>>(
     connection: &mut SqliteConnection,
     key: &str,
     value: &P,
+    system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key).await;
+    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = value.as_ref().as_os_str().to_str().unwrap().to_owned();
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value)).await,
+        None => create_setting(connection, key, Some(value), system_id).await,
     };
 }
 
-pub async fn get_string(connection: &mut SqliteConnection, key: &str) -> Option<String> {
-    find_setting_by_key(connection, key).await.unwrap().value
+pub async fn get_string(
+    connection: &mut SqliteConnection,
+    key: &str,
+    system_id: Option<i64>,
+) -> Option<String> {
+    get_setting(connection, key, system_id)
+        .await
+        .unwrap()
+        .value
 }
 
-pub async fn set_string(connection: &mut SqliteConnection, key: &str, value: &str) {
-    let setting = find_setting_by_key(connection, key).await;
+pub async fn set_string(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: &str,
+    system_id: Option<i64>,
+) {
+    let setting = find_setting_by_key(connection, key, system_id).await;
     match setting {
         Some(setting) => update_setting(connection, setting.id, Some(value.to_string())).await,
-        None => create_setting(connection, key, Some(value.to_string())).await,
+        None => create_setting(connection, key, Some(value.to_string()), system_id).await,
     };
 }
 
 pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
-    match get_directory(connection, "ROM_DIRECTORY").await {
+    match get_directory(connection, "ROM_DIRECTORY", None).await {
         Some(rom_directory) => rom_directory,
         None => {
             let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
@@ -485,21 +579,21 @@ pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
                     .unwrap()
                     .join("Emulation"),
             };
-            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+            set_directory(connection, "ROM_DIRECTORY", &rom_directory, None).await;
             rom_directory
         }
     }
 }
 
 pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
-    match get_directory(connection, "TMP_DIRECTORY").await {
+    match get_directory(connection, "TMP_DIRECTORY", None).await {
         Some(tmp_directory) => tmp_directory,
         None => {
             let tmp_directory = match env::var("OXYROMON_TMP_DIRECTORY") {
                 Ok(tmp_directory) => PathBuf::from(tmp_directory),
                 Err(_) => env::temp_dir(),
             };
-            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+            set_directory(connection, "TMP_DIRECTORY", &tmp_directory, None).await;
             tmp_directory
         }
     }
@@ -514,12 +608,12 @@ cfg_if! {
         }
 
         pub async fn set_rom_directory(connection: &mut SqliteConnection, rom_directory: PathBuf) -> PathBuf {
-            set_directory(connection, "ROM_DIRECTORY", &rom_directory).await;
+            set_directory(connection, "ROM_DIRECTORY", &rom_directory, None).await;
             rom_directory
         }
 
         pub async fn set_tmp_directory(connection: &mut SqliteConnection, tmp_directory: PathBuf) -> PathBuf {
-            set_directory(connection, "TMP_DIRECTORY", &tmp_directory).await;
+            set_directory(connection, "TMP_DIRECTORY", &tmp_directory, None).await;
             tmp_directory
         }
     }
@@ -541,3 +635,7 @@ mod test_remove_from_list;
 mod test_remove_from_list_does_not_exist;
 #[cfg(test)]
 mod test_set_new_directory_when_old_is_missing;
+#[cfg(test)]
+mod test_system_bool_fallback;
+#[cfg(test)]
+mod test_system_bool_override;
