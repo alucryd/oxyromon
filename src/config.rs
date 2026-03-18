@@ -6,6 +6,7 @@ use super::database::*;
 use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
 use super::model::Setting;
 use super::progress::*;
+use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
 use cfg_if::cfg_if;
@@ -205,70 +206,78 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> SimpleResult<()> {
-    let system_id = match matches.get_one::<String>("SYSTEM") {
+    let is_editing = matches.contains_id("SET")
+        || matches.contains_id("UNSET")
+        || matches.contains_id("ADD")
+        || matches.contains_id("REMOVE");
+
+    let system_ids: Vec<Option<i64>> = match matches.get_one::<String>("SYSTEM") {
+        None => vec![None],
         Some(system_name) => {
-            let systems = find_systems_by_name_like(connection, system_name).await;
-            if systems.is_empty() {
-                print_warning(progress_bar, "No matching system found");
-                return Ok(());
+            if is_editing {
+                let systems = prompt_for_systems_like(connection, system_name).await?;
+                if systems.is_empty() {
+                    print_warning(progress_bar, "No matching system found");
+                    return Ok(());
+                }
+                systems.into_iter().map(|s| Some(s.id)).collect()
+            } else {
+                vec![Some(
+                    prompt_for_system_like(connection, None, system_name)
+                        .await?
+                        .id,
+                )]
             }
-            if systems.len() > 1 {
-                print_warning(
-                    progress_bar,
-                    "System name matches multiple systems, please be more specific",
-                );
-                return Ok(());
-            }
-            Some(systems.into_iter().next().unwrap().id)
         }
-        None => None,
     };
 
-    if matches.get_flag("LIST") {
-        list_settings(connection, progress_bar, system_id).await;
-    } else if matches.contains_id("GET") {
-        print_setting(
-            connection,
-            progress_bar,
-            matches.get_one::<String>("GET").unwrap(),
-            system_id,
-        )
-        .await;
-    } else if matches.contains_id("SET") {
-        if let [key, value] = matches
-            .get_many::<String>("SET")
-            .unwrap()
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            set_setting(connection, progress_bar, key, value, system_id).await?;
-        };
-    } else if matches.contains_id("UNSET") {
-        unset_setting(
-            connection,
-            progress_bar,
-            matches.get_one::<String>("UNSET").unwrap(),
-            system_id,
-        )
-        .await?;
-    } else if matches.contains_id("ADD") {
-        if let [key, value] = matches
-            .get_many::<String>("ADD")
-            .unwrap()
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            add_to_list(connection, progress_bar, key, value, system_id).await;
-        };
-    } else if matches.contains_id("REMOVE") {
-        if let [key, value] = matches
-            .get_many::<String>("REMOVE")
-            .unwrap()
-            .collect::<Vec<_>>()
-            .as_slice()
-        {
-            remove_from_list(connection, progress_bar, key, value, system_id).await;
-        };
+    for system_id in system_ids {
+        if matches.get_flag("LIST") {
+            list_settings(connection, progress_bar, system_id).await;
+        } else if matches.contains_id("GET") {
+            print_setting(
+                connection,
+                progress_bar,
+                matches.get_one::<String>("GET").unwrap(),
+                system_id,
+            )
+            .await;
+        } else if matches.contains_id("SET") {
+            if let [key, value] = matches
+                .get_many::<String>("SET")
+                .unwrap()
+                .collect::<Vec<_>>()
+                .as_slice()
+            {
+                set_setting(connection, progress_bar, key, value, system_id).await?;
+            };
+        } else if matches.contains_id("UNSET") {
+            unset_setting(
+                connection,
+                progress_bar,
+                matches.get_one::<String>("UNSET").unwrap(),
+                system_id,
+            )
+            .await?;
+        } else if matches.contains_id("ADD") {
+            if let [key, value] = matches
+                .get_many::<String>("ADD")
+                .unwrap()
+                .collect::<Vec<_>>()
+                .as_slice()
+            {
+                add_to_list(connection, progress_bar, key, value, system_id).await;
+            };
+        } else if matches.contains_id("REMOVE") {
+            if let [key, value] = matches
+                .get_many::<String>("REMOVE")
+                .unwrap()
+                .collect::<Vec<_>>()
+                .as_slice()
+            {
+                remove_from_list(connection, progress_bar, key, value, system_id).await;
+            };
+        }
     }
 
     Ok(())
@@ -292,7 +301,23 @@ pub async fn list_settings(
     progress_bar: &ProgressBar,
     system_id: Option<i64>,
 ) {
-    for setting in find_settings(connection, system_id).await {
+    let settings = if let Some(id) = system_id {
+        let mut merged: std::collections::HashMap<String, Setting> =
+            find_settings(connection, None)
+                .await
+                .into_iter()
+                .map(|s| (s.key.clone(), s))
+                .collect();
+        for setting in find_settings(connection, Some(id)).await {
+            merged.insert(setting.key.clone(), setting);
+        }
+        let mut result: Vec<Setting> = merged.into_values().collect();
+        result.sort_by(|a, b| a.key.cmp(&b.key));
+        result
+    } else {
+        find_settings(connection, None).await
+    };
+    for setting in settings {
         print_info(
             progress_bar,
             &format!("{} = {}", setting.key, setting.value.unwrap_or_default()),

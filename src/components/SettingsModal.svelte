@@ -179,7 +179,7 @@
 
   const onDirectoryChange = async (key, value) => {
     if (value) {
-      await setDirectory(key, value);
+      await setDirectory(key, value, systemId);
       await reload();
     }
   };
@@ -393,28 +393,26 @@
       {/each}
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">DIRECTORIES</h6>
-    {#if systemId === null}
-      <div class="mb-4">
-        <Label for="rom-directory" class="mb-2">ROM Directory</Label>
-        <Input
-          id="rom-directory"
-          placeholder="ROM Directory"
-          bind:value={localRomDirectory}
-          onchange={onRomDirectoryChange}
-        />
-        <Tooltip triggeredBy="#rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
-      </div>
-      <div class="mb-4">
-        <Label for="tmp-directory" class="mb-2">TMP Directory</Label>
-        <Input
-          id="tmp-directory"
-          placeholder="TMP Directory"
-          bind:value={localTmpDirectory}
-          onchange={onTmpDirectoryChange}
-        />
-        <Tooltip triggeredBy="#tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
-      </div>
-    {/if}
+    <div class="mb-4">
+      <Label for="rom-directory" class="mb-2">ROM Directory</Label>
+      <Input
+        id="rom-directory"
+        placeholder="ROM Directory"
+        bind:value={localRomDirectory}
+        onchange={onRomDirectoryChange}
+      />
+      <Tooltip triggeredBy="#rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
+    </div>
+    <div class="mb-4">
+      <Label for="tmp-directory" class="mb-2">TMP Directory</Label>
+      <Input
+        id="tmp-directory"
+        placeholder="TMP Directory"
+        bind:value={localTmpDirectory}
+        onchange={onTmpDirectoryChange}
+      />
+      <Tooltip triggeredBy="#tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
+    </div>
     <div id="group-subsystems" class="mb-4">
       <Toggle bind:checked={localGroupSubsystems} onchange={onGroupSubsystemsChange}>Group Subsystems</Toggle>
       <Tooltip triggeredBy="#group-subsystems" placement="left">

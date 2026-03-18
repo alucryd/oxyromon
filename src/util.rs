@@ -253,7 +253,11 @@ pub async fn get_system_directory(
             }
         }
     };
-    let system_directory = get_rom_directory(connection).await.join(system_name);
+    let rom_directory = match get_directory(connection, "ROM_DIRECTORY", Some(system.id)).await {
+        Some(dir) => dir,
+        None => get_rom_directory(connection).await,
+    };
+    let system_directory = rom_directory.join(system_name);
     Ok(system_directory)
 }
 

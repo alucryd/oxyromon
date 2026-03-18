@@ -17,7 +17,7 @@ async fn test() {
     let matches = subcommand().get_matches_from(&["sort-roms", "-y", "-r", "EU"]);
 
     // when
-    let all_regions = get_regions(&mut connection, &matches, key).await;
+    let all_regions = get_regions(&mut connection, &matches, key, None).await;
 
     // then
     assert_eq!(all_regions.len(), 1);
