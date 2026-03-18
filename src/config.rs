@@ -132,7 +132,7 @@ pub fn subcommand() -> Command {
         .about("Query and modify the oxyromon settings")
         .arg(
             Arg::new("SYSTEM")
-                .short('y')
+                .short('n')
                 .long("system")
                 .help("Select a system by name (supports % globs)")
                 .required(false)

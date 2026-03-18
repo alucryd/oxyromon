@@ -6,6 +6,8 @@
     Card,
     Tooltip,
     Button,
+    Dropdown,
+    DropdownItem,
     Modal,
     Toast,
     Table,
@@ -16,10 +18,12 @@
     TableBodyCell,
   } from "flowbite-svelte";
   import {
+    AdjustmentsHorizontalOutline,
     ChevronLeftOutline,
     ChevronRightOutline,
     ChevronDoubleLeftOutline,
     ChevronDoubleRightOutline,
+    DotsVerticalOutline,
     TrashBinOutline,
     ExclamationCircleOutline,
     CheckCircleSolid,
@@ -27,6 +31,8 @@
     DownloadOutline,
   } from "flowbite-svelte-icons";
   import { Spinner } from "flowbite-svelte";
+
+  import SettingsModal from "../components/SettingsModal.svelte";
 
   import { purgeSystem } from "../mutation.js";
   import { connectSSE, disconnectSSE } from "../events.js";
@@ -129,9 +135,16 @@
 
   let deleteModalOpen = false;
   let systemToDelete = null;
+  let systemSettingsOpen = false;
+  let systemSettingsTarget = null;
   let toastMessage = "";
   let toastType = "success"; // 'success' or 'error'
   let showToast = false;
+
+  const onSystemSettingsClick = (system) => {
+    systemSettingsTarget = system;
+    systemSettingsOpen = true;
+  };
 
   const onPurgeSystemClick = (system) => {
     systemToDelete = system;
@@ -277,13 +290,20 @@
                   </button>
                 </TableBodyCell>
                 <TableBodyCell class="px-2 py-2 text-right">
-                  {#if purgingSystemId === system.id}
+                  {#if $purgingSystemId === system.id}
                     <Spinner size="4" />
                   {:else}
-                    <TrashBinOutline
-                      class="h-4 w-4 cursor-pointer text-red-600 hover:text-red-800"
-                      onclick={() => onPurgeSystemClick(system)}
-                    />
+                    <Button id="system-menu-{system.id}" size="xs" color="alternative" class="border-0 p-1">
+                      <DotsVerticalOutline class="h-4 w-4" />
+                    </Button>
+                    <Dropdown triggeredBy="#system-menu-{system.id}" class="!overflow-hidden">
+                      <DropdownItem liClass="list-none" onclick={() => onSystemSettingsClick(system)}>
+                        <AdjustmentsHorizontalOutline class="mr-2 inline h-4 w-4" />Settings
+                      </DropdownItem>
+                      <DropdownItem liClass="list-none" class="text-red-600 dark:text-red-400" onclick={() => onPurgeSystemClick(system)}>
+                        <TrashBinOutline class="mr-2 inline h-4 w-4" />Delete
+                      </DropdownItem>
+                    </Dropdown>
                   {/if}
                 </TableBodyCell>
                 {#if system.description && system.description != system.name}
@@ -613,6 +633,12 @@
       </Table>
     </Card>
   </div>
+
+  <SettingsModal
+    bind:open={systemSettingsOpen}
+    systemId={systemSettingsTarget?.id ?? null}
+    title={systemSettingsTarget ? `${systemSettingsTarget.name} Settings` : "Settings"}
+  />
 
   <Modal bind:open={deleteModalOpen} size="xs" autoclose={false}>
     <div class="text-center">

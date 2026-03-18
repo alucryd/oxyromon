@@ -80,7 +80,20 @@ function splitList(list) {
   return list ? list.split("|") : [];
 }
 
-export async function getSettings() {
+export async function getRawSettings(systemId = null) {
+  if (systemId !== null) {
+    const query = gql`
+      {
+        systemSettings(systemId: ${systemId}) {
+          key
+          value
+        }
+      }
+    `;
+    const data = await graphQLClient.request(query);
+    return data.systemSettings;
+  }
+
   const query = gql`
     {
       settings {
@@ -89,26 +102,30 @@ export async function getSettings() {
       }
     }
   `;
-
   const data = await graphQLClient.request(query);
+  return data.settings;
+}
 
-  oneRegions.set(splitList(data.settings.find((setting) => setting.key === oneRegionsKey).value));
-  allRegions.set(splitList(data.settings.find((setting) => setting.key === allRegionsKey).value));
-  languages.set(splitList(data.settings.find((setting) => setting.key === languagesKey).value));
-  discardReleases.set(splitList(data.settings.find((setting) => setting.key === discardReleasesKey).value));
-  discardFlags.set(splitList(data.settings.find((setting) => setting.key === discardFlagsKey).value));
+export async function getSettings() {
+  const settings = await getRawSettings(null);
 
-  strictOneRegions.set(data.settings.find((setting) => setting.key === strictOneRegionsKey).value === "true");
-  preferParents.set(data.settings.find((setting) => setting.key === preferParentsKey).value === "true");
-  preferRegions.set(data.settings.find((setting) => setting.key === preferRegionsKey).value);
-  preferVersions.set(data.settings.find((setting) => setting.key === preferVersionsKey).value);
-  preferFlags.set(splitList(data.settings.find((setting) => setting.key === preferFlagsKey).value));
+  oneRegions.set(splitList(settings.find((setting) => setting.key === oneRegionsKey).value));
+  allRegions.set(splitList(settings.find((setting) => setting.key === allRegionsKey).value));
+  languages.set(splitList(settings.find((setting) => setting.key === languagesKey).value));
+  discardReleases.set(splitList(settings.find((setting) => setting.key === discardReleasesKey).value));
+  discardFlags.set(splitList(settings.find((setting) => setting.key === discardFlagsKey).value));
 
-  romDirectory.set(data.settings.find((setting) => setting.key === romDirectoryKey).value);
-  tmpDirectory.set(data.settings.find((setting) => setting.key === tmpDirectoryKey).value);
-  groupSubsystems.set(data.settings.find((setting) => setting.key === groupSubsystemsKey).value === "true");
-  oneRegionsSubfolders.set(data.settings.find((setting) => setting.key === oneRegionsSubfoldersKey).value);
-  allRegionsSubfolders.set(data.settings.find((setting) => setting.key === allRegionsSubfoldersKey).value);
+  strictOneRegions.set(settings.find((setting) => setting.key === strictOneRegionsKey).value === "true");
+  preferParents.set(settings.find((setting) => setting.key === preferParentsKey).value === "true");
+  preferRegions.set(settings.find((setting) => setting.key === preferRegionsKey).value);
+  preferVersions.set(settings.find((setting) => setting.key === preferVersionsKey).value);
+  preferFlags.set(splitList(settings.find((setting) => setting.key === preferFlagsKey).value));
+
+  romDirectory.set(settings.find((setting) => setting.key === romDirectoryKey).value);
+  tmpDirectory.set(settings.find((setting) => setting.key === tmpDirectoryKey).value);
+  groupSubsystems.set(settings.find((setting) => setting.key === groupSubsystemsKey).value === "true");
+  oneRegionsSubfolders.set(settings.find((setting) => setting.key === oneRegionsSubfoldersKey).value);
+  allRegionsSubfolders.set(settings.find((setting) => setting.key === allRegionsSubfoldersKey).value);
 }
 
 export async function getSystems() {

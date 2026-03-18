@@ -99,7 +99,7 @@ The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs]
 This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
 
 Settings can be global or per-system. Per-system settings take precedence over global ones, with automatic fallback to the global value when no system-specific override is set.
-Use the `-y/--system` flag with the `config` subcommand to manage system-specific settings.
+Use the `-n/--system` flag with the `config` subcommand to manage system-specific settings.
 
 Available settings:
 
@@ -241,7 +241,7 @@ Per-system settings take precedence over global ones, with fallback to the globa
     Usage: oxyromon config [OPTIONS]
 
     Options:
-        -y, --system <NAME>         Select a system by name (supports % globs)
+        -n, --system <NAME>         Select a system by name (supports % globs)
         -l, --list                  Print the whole configuration
         -g, --get <KEY>             Print a single setting
         -s, --set <KEY> <VALUE>     Set a single setting

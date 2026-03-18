@@ -11,41 +11,48 @@
     setPreferVersions,
     setSubfolderScheme,
   } from "../mutation.js";
-  import { getSettings } from "../query.js";
+  import { getRawSettings, getSettings } from "../query.js";
   import {
-    allRegions,
     allRegionsKey,
-    allRegionsSubfolders,
     allRegionsSubfoldersKey,
-    discardFlags,
     discardFlagsKey,
-    discardReleases,
     discardReleasesKey,
-    groupSubsystems,
     groupSubsystemsKey,
-    isSettingsModalOpen,
-    languages,
     languagesKey,
-    oneRegions,
     oneRegionsKey,
-    oneRegionsSubfolders,
     oneRegionsSubfoldersKey,
-    preferFlags,
     preferFlagsKey,
-    preferParents,
     preferParentsKey,
-    preferRegions,
     preferRegionsChoices,
-    preferVersions,
+    preferRegionsKey,
     preferVersionsChoices,
-    romDirectory,
+    preferVersionsKey,
     romDirectoryKey,
-    strictOneRegions,
     strictOneRegionsKey,
-    tmpDirectory,
-    tmpDirectoryKey,
     subfolderSchemesChoices,
+    tmpDirectoryKey,
   } from "../store.js";
+
+  export let open = false;
+  export let systemId = null;
+  export let title = "Settings";
+
+  // Local settings state
+  let localOneRegions = [];
+  let localAllRegions = [];
+  let localLanguages = [];
+  let localDiscardReleases = [];
+  let localDiscardFlags = [];
+  let localStrictOneRegions = false;
+  let localPreferParents = true;
+  let localPreferRegions = "none";
+  let localPreferVersions = "none";
+  let localPreferFlags = [];
+  let localRomDirectory = "";
+  let localTmpDirectory = "";
+  let localGroupSubsystems = true;
+  let localOneRegionsSubfolders = "none";
+  let localAllRegionsSubfolders = "none";
 
   let addOneRegion = "";
   let addAllRegion = "";
@@ -54,10 +61,47 @@
   let addDiscardFlag = "";
   let addPreferFlag = "";
 
+  function populateFromSettings(settings) {
+    const find = (key) => settings.find((s) => s.key === key);
+    localOneRegions = splitList(find(oneRegionsKey)?.value);
+    localAllRegions = splitList(find(allRegionsKey)?.value);
+    localLanguages = splitList(find(languagesKey)?.value);
+    localDiscardReleases = splitList(find(discardReleasesKey)?.value);
+    localDiscardFlags = splitList(find(discardFlagsKey)?.value);
+    localStrictOneRegions = find(strictOneRegionsKey)?.value === "true";
+    localPreferParents = find(preferParentsKey)?.value !== "false";
+    localPreferRegions = find(preferRegionsKey)?.value ?? "none";
+    localPreferVersions = find(preferVersionsKey)?.value ?? "none";
+    localPreferFlags = splitList(find(preferFlagsKey)?.value);
+    localRomDirectory = find(romDirectoryKey)?.value ?? "";
+    localTmpDirectory = find(tmpDirectoryKey)?.value ?? "";
+    localGroupSubsystems = find(groupSubsystemsKey)?.value !== "false";
+    localOneRegionsSubfolders = find(oneRegionsSubfoldersKey)?.value ?? "none";
+    localAllRegionsSubfolders = find(allRegionsSubfoldersKey)?.value ?? "none";
+  }
+
+  function splitList(value) {
+    return value ? value.split("|") : [];
+  }
+
+  async function loadSettings() {
+    const settings = await getRawSettings(systemId);
+    populateFromSettings(settings);
+  }
+
+  async function reload() {
+    await loadSettings();
+    if (systemId === null) {
+      await getSettings();
+    }
+  }
+
+  $: if (open) loadSettings();
+
   const onAddToListChange = async (key, value) => {
     if (value) {
-      await addToList(key, value);
-      await getSettings();
+      await addToList(key, value, systemId);
+      await reload();
     }
   };
 
@@ -93,65 +137,63 @@
 
   const onRemoveFromListClick = async (key, value) => {
     if (value) {
-      await removeFromList(key, value);
-      await getSettings();
+      await removeFromList(key, value, systemId);
+      await reload();
     }
   };
 
-  const onSwitchChange = async (key, value) => {
-    await setBool(key, value);
-    await getSettings();
-  };
-
   const onStrictOneRegionsChange = async () => {
-    await onSwitchChange(strictOneRegionsKey, $strictOneRegions);
+    await setBool(strictOneRegionsKey, localStrictOneRegions, systemId);
+    await reload();
   };
 
   const onPreferParentsChange = async () => {
-    await onSwitchChange(preferParentsKey, $preferParents);
+    await setBool(preferParentsKey, localPreferParents, systemId);
+    await reload();
   };
 
   const onGroupSubsystemsChange = async () => {
-    await onSwitchChange(groupSubsystemsKey, $groupSubsystems);
+    await setBool(groupSubsystemsKey, localGroupSubsystems, systemId);
+    await reload();
   };
 
   const onPreferRegionsChange = async () => {
-    await setPreferRegions($preferRegions);
-    await getSettings();
+    await setPreferRegions(localPreferRegions, systemId);
+    await reload();
   };
 
   const onPreferVersionsChange = async () => {
-    await setPreferVersions($preferVersions);
-    await getSettings();
+    await setPreferVersions(localPreferVersions, systemId);
+    await reload();
   };
 
   const onOneRegionsSubfoldersChange = async () => {
-    await setSubfolderScheme(oneRegionsSubfoldersKey, $oneRegionsSubfolders);
-    await getSettings();
+    await setSubfolderScheme(oneRegionsSubfoldersKey, localOneRegionsSubfolders, systemId);
+    await reload();
   };
 
   const onAllRegionsSubfoldersChange = async () => {
-    await setSubfolderScheme(allRegionsSubfoldersKey, $allRegionsSubfolders);
-    await getSettings();
+    await setSubfolderScheme(allRegionsSubfoldersKey, localAllRegionsSubfolders, systemId);
+    await reload();
   };
 
   const onDirectoryChange = async (key, value) => {
     if (value) {
       await setDirectory(key, value);
-      await getSettings();
+      await reload();
     }
   };
 
   const onRomDirectoryChange = async () => {
-    await onDirectoryChange(romDirectoryKey, $romDirectory);
+    await onDirectoryChange(romDirectoryKey, localRomDirectory);
   };
 
   const onTmpDirectoryChange = async () => {
-    await onDirectoryChange(tmpDirectoryKey, $tmpDirectory);
+    await onDirectoryChange(tmpDirectoryKey, localTmpDirectory);
   };
 </script>
 
-<Modal title="Settings" bind:open={$isSettingsModalOpen} size="md" class="text-start">
+<Modal {title} bind:open size="md" class="text-start">
   <div class="space-y-4">
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">REGIONS/LANGUAGES</h6>
     <div class="mb-4">
@@ -170,7 +212,7 @@
       <Tooltip triggeredBy="#one-regions" placement="left">2 letters, uppercase, ordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $oneRegions as oneRegion (oneRegion)}
+      {#each localOneRegions as oneRegion (oneRegion)}
         <Badge
           dismissable
           large
@@ -197,7 +239,7 @@
       <Tooltip triggeredBy="#all-regions" placement="left">2 letters, uppercase, unordered</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $allRegions as allRegion (allRegion)}
+      {#each localAllRegions as allRegion (allRegion)}
         <Badge
           dismissable
           large
@@ -224,7 +266,7 @@
       <Tooltip triggeredBy="#languages" placement="left">2 letters, capitalized</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $languages as language (language)}
+      {#each localLanguages as language (language)}
         <Badge
           dismissable
           large
@@ -252,7 +294,7 @@
       <Tooltip triggeredBy="#discard-releases" placement="left">Discard specific releases</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardReleases as discardRelease (discardRelease)}
+      {#each localDiscardReleases as discardRelease (discardRelease)}
         <Badge
           dismissable
           large
@@ -279,7 +321,7 @@
       <Tooltip triggeredBy="#discard-flags" placement="left">Discard specific flags</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $discardFlags as discardFlag (discardFlag)}
+      {#each localDiscardFlags as discardFlag (discardFlag)}
         <Badge
           dismissable
           large
@@ -292,18 +334,18 @@
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">SORTING</h6>
     <div id="strict-one-regions" class="mb-4">
-      <Toggle bind:checked={$strictOneRegions} onchange={onStrictOneRegionsChange}>Strict 1G1R</Toggle>
+      <Toggle bind:checked={localStrictOneRegions} onchange={onStrictOneRegionsChange}>Strict 1G1R</Toggle>
       <Tooltip triggeredBy="#strict-one-regions" placement="left"
         >Strict mode elects games regardless of their completion</Tooltip
       >
     </div>
     <div id="prefer-parents" class="mb-4">
-      <Toggle bind:checked={$preferParents} onchange={onPreferParentsChange}>Prefer Parents</Toggle>
+      <Toggle bind:checked={localPreferParents} onchange={onPreferParentsChange}>Prefer Parents</Toggle>
       <Tooltip triggeredBy="#prefer-parents" placement="left">Favor parents vs clones in the election process</Tooltip>
     </div>
     <div id="prefer-regions" class="mb-4">
       <Label for="prefer-regions-select" class="mb-2">Prefer Regions</Label>
-      <Select id="prefer-regions-select" bind:value={$preferRegions} onchange={onPreferRegionsChange}>
+      <Select id="prefer-regions-select" bind:value={localPreferRegions} onchange={onPreferRegionsChange}>
         {#each preferRegionsChoices as preferRegionChoice (preferRegionChoice)}
           <option value={preferRegionChoice}>{preferRegionChoice}</option>
         {/each}
@@ -314,7 +356,7 @@
     </div>
     <div id="prefer-versions" class="mb-4">
       <Label for="prefer-versions-select" class="mb-2">Prefer Versions</Label>
-      <Select id="prefer-versions-select" bind:value={$preferVersions} onchange={onPreferVersionsChange}>
+      <Select id="prefer-versions-select" bind:value={localPreferVersions} onchange={onPreferVersionsChange}>
         {#each preferVersionsChoices as preferVersionChoice (preferVersionChoice)}
           <option value={preferVersionChoice}>{preferVersionChoice}</option>
         {/each}
@@ -339,7 +381,7 @@
       <Tooltip triggeredBy="#prefer-flags" placement="left">Favors specific flags in the election process</Tooltip>
     </div>
     <div class="mb-4 flex flex-wrap gap-2">
-      {#each $preferFlags as preferFlag (preferFlag)}
+      {#each localPreferFlags as preferFlag (preferFlag)}
         <Badge
           dismissable
           large
@@ -351,28 +393,30 @@
       {/each}
     </div>
     <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">DIRECTORIES</h6>
-    <div class="mb-4">
-      <Label for="rom-directory" class="mb-2">ROM Directory</Label>
-      <Input
-        id="rom-directory"
-        placeholder="ROM Directory"
-        bind:value={$romDirectory}
-        onchange={onRomDirectoryChange}
-      />
-      <Tooltip triggeredBy="#rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
-    </div>
-    <div class="mb-4">
-      <Label for="tmp-directory" class="mb-2">TMP Directory</Label>
-      <Input
-        id="tmp-directory"
-        placeholder="TMP Directory"
-        bind:value={$tmpDirectory}
-        onchange={onTmpDirectoryChange}
-      />
-      <Tooltip triggeredBy="#tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
-    </div>
+    {#if systemId === null}
+      <div class="mb-4">
+        <Label for="rom-directory" class="mb-2">ROM Directory</Label>
+        <Input
+          id="rom-directory"
+          placeholder="ROM Directory"
+          bind:value={localRomDirectory}
+          onchange={onRomDirectoryChange}
+        />
+        <Tooltip triggeredBy="#rom-directory" placement="left">Root directory where ROMs will be stored</Tooltip>
+      </div>
+      <div class="mb-4">
+        <Label for="tmp-directory" class="mb-2">TMP Directory</Label>
+        <Input
+          id="tmp-directory"
+          placeholder="TMP Directory"
+          bind:value={localTmpDirectory}
+          onchange={onTmpDirectoryChange}
+        />
+        <Tooltip triggeredBy="#tmp-directory" placement="left">Temporary directory where ROMs will be extrated</Tooltip>
+      </div>
+    {/if}
     <div id="group-subsystems" class="mb-4">
-      <Toggle bind:checked={$groupSubsystems} onchange={onGroupSubsystemsChange}>Group Subsystems</Toggle>
+      <Toggle bind:checked={localGroupSubsystems} onchange={onGroupSubsystemsChange}>Group Subsystems</Toggle>
       <Tooltip triggeredBy="#group-subsystems" placement="left">
         Group subsystems in the main system directory (eg: PS3 DLCs and updates)
       </Tooltip>
@@ -381,7 +425,7 @@
       <Label for="one-regions-subfolders-select" class="mb-2">1G1R Subfolders</Label>
       <Select
         id="one-regions-subfolders-select"
-        bind:value={$oneRegionsSubfolders}
+        bind:value={localOneRegionsSubfolders}
         onchange={onOneRegionsSubfoldersChange}
       >
         {#each subfolderSchemesChoices as subfolderSchemeChoice (subfolderSchemeChoice)}
@@ -394,7 +438,7 @@
       <Label for="all-regions-subfolders-select" class="mb-2">All Subfolders</Label>
       <Select
         id="all-regions-subfolders-select"
-        bind:value={$allRegionsSubfolders}
+        bind:value={localAllRegionsSubfolders}
         onchange={onAllRegionsSubfoldersChange}
       >
         {#each subfolderSchemesChoices as subfolderSchemeChoice (subfolderSchemeChoice)}

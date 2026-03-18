@@ -114,5 +114,5 @@
     <slot />
   </div>
 
-  <SettingsModal />
+  <SettingsModal bind:open={$isSettingsModalOpen} />
 </div>

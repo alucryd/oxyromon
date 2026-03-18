@@ -27,6 +27,7 @@ use tokio::net::TcpListener;
 use tokio::sync::broadcast;
 use tokio::{select, signal};
 use tokio_util::io::ReaderStream;
+use tokio_util::sync::CancellationToken;
 #[cfg(debug_assertions)]
 use tower_http::cors::{Any, CorsLayer};
 
@@ -67,6 +68,7 @@ pub struct SseMessage {
 pub struct AppState {
     pub pool: SqlitePool,
     pub sse_tx: broadcast::Sender<SseMessage>,
+    pub cancel: CancellationToken,
 }
 
 pub fn subcommand() -> Command {
@@ -126,7 +128,7 @@ async fn serve_asset(Path(path): Path<String>) -> Response<Body> {
     }
 }
 
-async fn shutdown_signal(pool: SqlitePool) {
+async fn shutdown_signal(pool: SqlitePool, cancel: CancellationToken) {
     let ctrl_c = async {
         signal::ctrl_c()
             .await
@@ -145,22 +147,23 @@ async fn shutdown_signal(pool: SqlitePool) {
     let terminate = std::future::pending::<()>();
 
     select! {
-        _ = ctrl_c => {
-            optimize_database(pool).await;
-        },
-        _ = terminate => {
-            optimize_database(pool).await;
-        },
+        _ = ctrl_c => {},
+        _ = terminate => {},
     }
+
+    optimize_database(pool).await;
+    cancel.cancel();
 }
 
 pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     // Create broadcast channel for SSE
     let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
+    let cancel = CancellationToken::new();
 
     let state = AppState {
         pool: pool.clone(),
         sse_tx: sse_tx.clone(),
+        cancel: cancel.clone(),
     };
 
     let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
@@ -206,7 +209,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
     .unwrap();
 
     serve(listener, app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal(pool))
+        .with_graceful_shutdown(shutdown_signal(pool, cancel))
         .await
         .unwrap();
 
@@ -288,21 +291,28 @@ async fn sse_handler(
     State(state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let mut rx = state.sse_tx.subscribe();
+    let cancel = state.cancel.clone();
 
     let stream = async_stream::stream! {
         loop {
-            match rx.recv().await {
-                Ok(msg) => {
-                    let event = Event::default()
-                        .event(msg.event)
-                        .data(msg.data);
-                    yield Ok(event);
+            select! {
+                msg = rx.recv() => {
+                    match msg {
+                        Ok(msg) => {
+                            let event = Event::default()
+                                .event(msg.event)
+                                .data(msg.data);
+                            yield Ok(event);
+                        }
+                        Err(broadcast::error::RecvError::Lagged(n)) => {
+                            log::warn!("SSE client lagged by {} messages", n);
+                        }
+                        Err(broadcast::error::RecvError::Closed) => {
+                            break;
+                        }
+                    }
                 }
-                Err(broadcast::error::RecvError::Lagged(n)) => {
-                    log::warn!("SSE client lagged by {} messages", n);
-                    continue;
-                }
-                Err(broadcast::error::RecvError::Closed) => {
+                _ = cancel.cancelled() => {
                     break;
                 }
             }
