@@ -172,6 +172,22 @@ impl QueryRoot {
         Ok(find_settings(&mut pool.acquire().await.unwrap(), None).await)
     }
 
+    async fn system_settings(&self, ctx: &Context<'_>, system_id: i64) -> Result<Vec<Setting>> {
+        log::debug!("query::system_settings({})", system_id);
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let mut conn = pool.acquire().await.unwrap();
+        let global = find_settings(&mut conn, None).await;
+        let overrides = find_settings(&mut conn, Some(system_id)).await;
+        let mut merged: HashMap<String, Setting> =
+            global.into_iter().map(|s| (s.key.clone(), s)).collect();
+        for setting in overrides {
+            merged.insert(setting.key.clone(), setting);
+        }
+        let mut result: Vec<Setting> = merged.into_values().collect();
+        result.sort_by(|a, b| a.key.cmp(&b.key));
+        Ok(result)
+    }
+
     async fn systems(&self, ctx: &Context<'_>) -> Result<Vec<System>> {
         let pool = ctx.data_unchecked::<SqlitePool>();
         Ok(find_systems(&mut pool.acquire().await.unwrap()).await)
