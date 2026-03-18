@@ -227,7 +227,7 @@ pub async fn get_system_directory(
 ) -> SimpleResult<PathBuf> {
     let system_name = match &system.custom_name {
         Some(custom_name) => {
-            if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+            if get_bool(connection, "GROUP_SUBSYSTEMS", Some(system.id)).await {
                 SYSTEM_NAME_REGEX
                     .captures(custom_name)
                     .unwrap()
@@ -240,7 +240,7 @@ pub async fn get_system_directory(
             }
         }
         None => {
-            if get_bool(connection, "GROUP_SUBSYSTEMS").await {
+            if get_bool(connection, "GROUP_SUBSYSTEMS", Some(system.id)).await {
                 SYSTEM_NAME_REGEX
                     .captures(&system.name)
                     .unwrap()

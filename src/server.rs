@@ -219,7 +219,7 @@ async fn download_romfile(
 ) -> Response<Body> {
     let mut connection = state.pool.acquire().await.unwrap();
 
-    let rom_directory = match find_setting_by_key(&mut connection, "ROM_DIRECTORY").await {
+    let rom_directory = match find_setting_by_key(&mut connection, "ROM_DIRECTORY", None).await {
         Some(setting) => match setting.value {
             Some(value) => value,
             None => {

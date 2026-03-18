@@ -146,11 +146,13 @@ pub struct Romfile {
     pub romfile_type: i64,
 }
 
+#[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct Setting {
     pub id: i64,
     pub key: String,
     pub value: Option<String>,
+    pub system_id: Option<i64>,
 }
 
 #[derive(Deserialize)]

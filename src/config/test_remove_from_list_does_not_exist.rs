@@ -11,11 +11,11 @@ async fn test() {
 
     let key = "DISCARD_FLAGS";
 
-    set_list(&mut connection, key, &[String::from("item1")]).await;
+    set_list(&mut connection, key, &[String::from("item1")], None).await;
 
     // when
-    remove_from_list(&mut connection, &progress_bar, key, "item2").await;
-    let list = get_list(&mut connection, key).await;
+    remove_from_list(&mut connection, &progress_bar, key, "item2", None).await;
+    let list = get_list(&mut connection, key, None).await;
 
     // then
     assert_eq!(list.len(), 1);

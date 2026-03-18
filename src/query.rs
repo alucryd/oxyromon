@@ -169,7 +169,7 @@ impl QueryRoot {
     async fn settings(&self, ctx: &Context<'_>) -> Result<Vec<Setting>> {
         log::debug!("query::get settings()");
         let pool = ctx.data_unchecked::<SqlitePool>();
-        Ok(find_settings(&mut pool.acquire().await.unwrap()).await)
+        Ok(find_settings(&mut pool.acquire().await.unwrap(), None).await)
     }
 
     async fn systems(&self, ctx: &Context<'_>) -> Result<Vec<System>> {

@@ -99,39 +99,47 @@ pub async fn main(
 
     let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
     let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
-    let all_regions_arcade = get_list(connection, "REGIONS_ALL_ARCADE")
-        .await
-        .into_iter()
-        .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
-        .collect_vec();
-    let one_regions_arcade = get_list(connection, "REGIONS_ONE_ARCADE")
-        .await
-        .into_iter()
-        .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
-        .collect_vec();
-    let languages = get_list(connection, "LANGUAGES").await;
-    let ignored_releases = get_list(connection, "DISCARD_RELEASES").await;
-    let ignored_flags = get_list(connection, "DISCARD_FLAGS").await;
-    let prefer_parents = get_bool(connection, "PREFER_PARENTS").await;
-    let preferred_regions =
-        PreferredRegion::from_str(&get_string(connection, "PREFER_REGIONS").await.unwrap())
-            .unwrap();
-    let preferred_versions =
-        PreferredVersion::from_str(&get_string(connection, "PREFER_VERSIONS").await.unwrap())
-            .unwrap();
-    let preferred_flags = get_list(connection, "PREFER_FLAGS").await;
     let all_regions_subfolders = matches
         .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
         .map(|s| SubfolderScheme::from_str(s.as_str()).unwrap_or(SubfolderScheme::None));
     let one_regions_subfolders = matches
         .get_one::<String>("REGIONS_ONE_SUBFOLDERS")
         .map(|s| SubfolderScheme::from_str(s.as_str()).unwrap_or(SubfolderScheme::None));
-    let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT").await;
 
     let answer_yes = matches.get_flag("YES");
     let print_wanted = matches.get_flag("WANTED");
 
     for system in systems {
+        let system_id = Some(system.id);
+        let all_regions_arcade = get_list(connection, "REGIONS_ALL_ARCADE", system_id)
+            .await
+            .into_iter()
+            .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
+            .collect_vec();
+        let one_regions_arcade = get_list(connection, "REGIONS_ONE_ARCADE", system_id)
+            .await
+            .into_iter()
+            .map(|s| ArcadeRomType::from_str(s.as_str()).unwrap())
+            .collect_vec();
+        let languages = get_list(connection, "LANGUAGES", system_id).await;
+        let ignored_releases = get_list(connection, "DISCARD_RELEASES", system_id).await;
+        let ignored_flags = get_list(connection, "DISCARD_FLAGS", system_id).await;
+        let prefer_parents = get_bool(connection, "PREFER_PARENTS", system_id).await;
+        let preferred_regions = PreferredRegion::from_str(
+            &get_string(connection, "PREFER_REGIONS", system_id)
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let preferred_versions = PreferredVersion::from_str(
+            &get_string(connection, "PREFER_VERSIONS", system_id)
+                .await
+                .unwrap(),
+        )
+        .unwrap();
+        let preferred_flags = get_list(connection, "PREFER_FLAGS", system_id).await;
+        let one_regions_strict = get_bool(connection, "REGIONS_ONE_STRICT", system_id).await;
+
         sort_system(
             connection,
             progress_bar,
@@ -175,7 +183,7 @@ pub async fn get_regions(
         regions.dedup();
         regions
     } else {
-        get_list(connection, key).await
+        get_list(connection, key, None).await
     };
     all_regions
         .into_iter()
