@@ -70,16 +70,17 @@ export async function setSubfolderScheme(key, value, systemId = null) {
   await graphQLClient.request(mutation, variables);
 }
 
-export async function setDirectory(key, value) {
+export async function setDirectory(key, value, systemId = null) {
   const mutation = gql`
-    mutation SetDirectory($key: String!, $value: String!) {
-      setDirectory(key: $key, value: $value)
+    mutation SetDirectory($key: String!, $value: String!, $systemId: Int) {
+      setDirectory(key: $key, value: $value, systemId: $systemId)
     }
   `;
 
   const variables = {
     key,
     value,
+    systemId,
   };
   await graphQLClient.request(mutation, variables);
 }

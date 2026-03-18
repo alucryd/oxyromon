@@ -122,10 +122,11 @@ impl Mutation {
         ctx: &Context<'_>,
         key: String,
         #[graphql(validator(custom = "DirectoryValidator::new()"))] value: String,
+        system_id: Option<i64>,
     ) -> Result<bool> {
         log::debug!("mutation::set_directory({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_directory(&mut pool.acquire().await.unwrap(), &key, &value, None).await;
+        set_directory(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
         Ok(true)
     }
 

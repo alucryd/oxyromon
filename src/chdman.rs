@@ -675,6 +675,7 @@ impl AsChd for CommonRomfile {
                         // Create a CommonRomfile and check its SHA1
                         let candidate_romfile = CommonRomfile {
                             path: entry_path.clone(),
+                            system_id: None,
                         };
                         if let Ok((
                             _chd_type,

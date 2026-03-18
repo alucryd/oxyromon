@@ -24,6 +24,14 @@ use std::{fs::File, str::FromStr};
 #[derive(Clone)]
 pub struct CommonRomfile {
     pub path: PathBuf,
+    pub system_id: Option<i64>,
+}
+
+impl CommonRomfile {
+    pub fn with_system(mut self, system_id: Option<i64>) -> Self {
+        self.system_id = system_id;
+        self
+    }
 }
 
 pub struct M3uRomfile {
@@ -213,6 +221,7 @@ impl FromPath<CommonRomfile> for CommonRomfile {
     fn from_path<P: AsRef<Path>>(path: &P) -> SimpleResult<CommonRomfile> {
         Ok(CommonRomfile {
             path: path.as_ref().to_path_buf(),
+            system_id: None,
         })
     }
 }
@@ -225,7 +234,10 @@ impl fmt::Display for CommonRomfile {
 
 impl CommonFile for CommonRomfile {
     async fn get_relative_path(&self, connection: &mut SqliteConnection) -> SimpleResult<&Path> {
-        let rom_directory = get_rom_directory(connection).await;
+        let rom_directory = match get_directory(connection, "ROM_DIRECTORY", self.system_id).await {
+            Some(dir) => dir,
+            None => get_rom_directory(connection).await,
+        };
         let relative_path = try_with!(
             self.path.strip_prefix(rom_directory),
             "Failed to convert \"{}\"to relative path",

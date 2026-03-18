@@ -92,6 +92,34 @@ pub async fn prompt_for_system_like(
     }
 }
 
+pub async fn prompt_for_systems_like(
+    connection: &mut SqliteConnection,
+    name: &str,
+) -> SimpleResult<Vec<System>> {
+    let systems = find_systems_by_name_like(connection, name).await;
+    match systems.len() {
+        0 => Ok(vec![]),
+        1 => Ok(systems),
+        _ => {
+            let indices = multiselect(
+                &systems
+                    .iter()
+                    .map(|system| &system.name)
+                    .collect::<Vec<&String>>(),
+                "Please select systems",
+                None,
+                None,
+            )?;
+            Ok(systems
+                .into_iter()
+                .enumerate()
+                .filter(|(i, _)| indices.contains(i))
+                .map(|(_, system)| system)
+                .collect())
+        }
+    }
+}
+
 pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> {
     if all || games.is_empty() {
         return Ok(games);

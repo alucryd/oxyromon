@@ -97,8 +97,6 @@ pub async fn main(
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
 
-    let all_regions = get_regions(connection, matches, "REGIONS_ALL").await;
-    let one_regions = get_regions(connection, matches, "REGIONS_ONE").await;
     let all_regions_subfolders = matches
         .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
         .map(|s| SubfolderScheme::from_str(s.as_str()).unwrap_or(SubfolderScheme::None));
@@ -111,6 +109,8 @@ pub async fn main(
 
     for system in systems {
         let system_id = Some(system.id);
+        let all_regions = get_regions(connection, matches, "REGIONS_ALL", system_id).await;
+        let one_regions = get_regions(connection, matches, "REGIONS_ONE", system_id).await;
         let all_regions_arcade = get_list(connection, "REGIONS_ALL_ARCADE", system_id)
             .await
             .into_iter()
@@ -173,6 +173,7 @@ pub async fn get_regions(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     key: &str,
+    system_id: Option<i64>,
 ) -> Vec<Region> {
     let all_regions: Vec<String> = if matches.contains_id(key) {
         let mut regions: Vec<String> = matches
@@ -183,7 +184,7 @@ pub async fn get_regions(
         regions.dedup();
         regions
     } else {
-        get_list(connection, key, None).await
+        get_list(connection, key, system_id).await
     };
     all_regions
         .into_iter()
