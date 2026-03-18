@@ -3,7 +3,8 @@
 ## Features
 
 - Added per-system settings: any setting can now be overridden on a per-system basis, with automatic fallback to the global value when no system-specific override exists
-- Added `-y/--system` flag to `config` to scope all operations (list, get, set, unset, add, remove) to a specific system (supports `%` globs)
+- Added `-n/--system` flag to `config` to scope all operations (list, get, set, unset, add, remove) to a specific system (supports `%` globs)
+- Added per-system settings to the web UI: a dropdown menu on each system entry gives access to a system-scoped settings modal (all settings except ROM and TMP directories)
 - Added romfile download support to the web UI
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
@@ -14,6 +15,10 @@
 - Progress bars and log messages no longer overlap or corrupt each other
 - Standardized messaging across all commands with clear icons and color coding
 - Improved `check-roms` output with per-system pass/fail summary
+
+## Fixes
+
+- Fixed the server not shutting down cleanly on Ctrl+C when SSE clients were connected
 
 # 0.21.0
 

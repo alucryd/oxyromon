@@ -13,7 +13,13 @@ pub struct Mutation;
 
 #[Object]
 impl Mutation {
-    async fn add_to_list(&self, ctx: &Context<'_>, key: String, value: String) -> Result<bool> {
+    async fn add_to_list(
+        &self,
+        ctx: &Context<'_>,
+        key: String,
+        value: String,
+        system_id: Option<i64>,
+    ) -> Result<bool> {
         log::debug!("mutation::add_to_list({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         let progress_bar = get_progress_bar(0, get_none_progress_style());
@@ -22,7 +28,7 @@ impl Mutation {
             &progress_bar,
             &key,
             &value,
-            None,
+            system_id,
         )
         .await;
         Ok(true)
@@ -33,6 +39,7 @@ impl Mutation {
         ctx: &Context<'_>,
         key: String,
         value: String,
+        system_id: Option<i64>,
     ) -> Result<bool> {
         log::debug!("mutation::remove_to_list({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
@@ -42,16 +49,22 @@ impl Mutation {
             &progress_bar,
             &key,
             &value,
-            None,
+            system_id,
         )
         .await;
         Ok(true)
     }
 
-    async fn set_bool(&self, ctx: &Context<'_>, key: String, value: bool) -> Result<bool> {
+    async fn set_bool(
+        &self,
+        ctx: &Context<'_>,
+        key: String,
+        value: bool,
+        system_id: Option<i64>,
+    ) -> Result<bool> {
         log::debug!("mutation::set_bool({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_bool(&mut pool.acquire().await.unwrap(), &key, value, None).await;
+        set_bool(&mut pool.acquire().await.unwrap(), &key, value, system_id).await;
         Ok(true)
     }
 
@@ -59,10 +72,17 @@ impl Mutation {
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(custom = "PreferRegionValidator::new()"))] value: String,
+        system_id: Option<i64>,
     ) -> Result<bool> {
         log::debug!("mutation::set_prefer_regions({})", &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(&mut pool.acquire().await.unwrap(), "PREFER_REGIONS", &value, None).await;
+        set_string(
+            &mut pool.acquire().await.unwrap(),
+            "PREFER_REGIONS",
+            &value,
+            system_id,
+        )
+        .await;
         Ok(true)
     }
 
@@ -70,6 +90,7 @@ impl Mutation {
         &self,
         ctx: &Context<'_>,
         #[graphql(validator(custom = "PreferVersionValidator::new()"))] value: String,
+        system_id: Option<i64>,
     ) -> Result<bool> {
         log::debug!("mutation::set_prefer_versions({})", &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
@@ -77,7 +98,7 @@ impl Mutation {
             &mut pool.acquire().await.unwrap(),
             "PREFER_VERSIONS",
             &value,
-            None,
+            system_id,
         )
         .await;
         Ok(true)
@@ -88,10 +109,17 @@ impl Mutation {
         ctx: &Context<'_>,
         key: String,
         #[graphql(validator(custom = "SubfolderSchemeValidator::new()"))] value: String,
+        system_id: Option<i64>,
     ) -> Result<bool> {
         log::debug!("mutation::set_subfolder_scheme({}, {})", &key, &value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(&mut pool.acquire().await.unwrap(), &key, &value, None).await;
+        set_string(
+            &mut pool.acquire().await.unwrap(),
+            &key,
+            &value,
+            system_id,
+        )
+        .await;
         Ok(true)
     }
 

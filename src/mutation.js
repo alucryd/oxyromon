@@ -4,85 +4,69 @@ import { purgingSystemId } from "./store.js";
 const endpoint = import.meta.env.DEV ? "http://localhost:8000/graphql" : `${window.location.origin}/graphql`;
 const graphQLClient = new GraphQLClient(endpoint);
 
-export async function addToList(key, value) {
+export async function addToList(key, value, systemId = null) {
   const mutation = gql`
-    mutation AddToList($key: String!, $value: String!) {
-      addToList(key: $key, value: $value)
+    mutation AddToList($key: String!, $value: String!, $systemId: Int) {
+      addToList(key: $key, value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    key,
-    value,
-  };
+  const variables = { key, value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
-export async function removeFromList(key, value) {
+export async function removeFromList(key, value, systemId = null) {
   const mutation = gql`
-    mutation RemoveFromList($key: String!, $value: String!) {
-      removeFromList(key: $key, value: $value)
+    mutation RemoveFromList($key: String!, $value: String!, $systemId: Int) {
+      removeFromList(key: $key, value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    key,
-    value,
-  };
+  const variables = { key, value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
-export async function setBool(key, value) {
+export async function setBool(key, value, systemId = null) {
   const mutation = gql`
-    mutation SetBool($key: String!, $value: Boolean!) {
-      setBool(key: $key, value: $value)
+    mutation SetBool($key: String!, $value: Boolean!, $systemId: Int) {
+      setBool(key: $key, value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    key,
-    value,
-  };
+  const variables = { key, value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
-export async function setPreferRegions(value) {
+export async function setPreferRegions(value, systemId = null) {
   const mutation = gql`
-    mutation SetPreferRegions($value: String!) {
-      setPreferRegions(value: $value)
+    mutation SetPreferRegions($value: String!, $systemId: Int) {
+      setPreferRegions(value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    value,
-  };
+  const variables = { value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
-export async function setPreferVersions(value) {
+export async function setPreferVersions(value, systemId = null) {
   const mutation = gql`
-    mutation SetPreferVersions($value: String!) {
-      setPreferVersions(value: $value)
+    mutation SetPreferVersions($value: String!, $systemId: Int) {
+      setPreferVersions(value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    value,
-  };
+  const variables = { value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
-export async function setSubfolderScheme(key, value) {
+export async function setSubfolderScheme(key, value, systemId = null) {
   const mutation = gql`
-    mutation SetSubfolderScheme($key: String!, $value: String!) {
-      setSubfolderScheme(key: $key, value: $value)
+    mutation SetSubfolderScheme($key: String!, $value: String!, $systemId: Int) {
+      setSubfolderScheme(key: $key, value: $value, systemId: $systemId)
     }
   `;
 
-  const variables = {
-    key,
-    value,
-  };
+  const variables = { key, value, systemId };
   await graphQLClient.request(mutation, variables);
 }
 
