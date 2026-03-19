@@ -9,7 +9,7 @@
 
 <h1 align="center">oxyROMon 0.22.0</h1>
 
-### Rusty ROM OrgaNizer
+<h2 align="center">Rusty ROM OrgaNizer</h2>
 
 oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
 Like most ROM managers, it checks ROM files against known good databases.
