@@ -556,71 +556,89 @@
         </TableHead>
         <TableBody class="text-left text-base font-medium">
           <TableBodyRow>
-            <TableBodyCell>
-              <span>Systems:</span>
-              {#if $loadingSystems}
-                <Spinner size="4" />
-              {:else}
-                {$unfilteredSystems.length}
-              {/if}
+            <TableBodyCell class="pt-4 pr-1 pb-1 pl-4">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingSystems}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{$unfilteredSystems.length}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">Systems</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>Games:</span>
-              {#if $loadingGames}
-                <Spinner size="4" />
-              {:else}
-                {$unfilteredGames.length}
-              {/if}
+            <TableBodyCell class="px-1 pt-4 pb-1">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingGames}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{$unfilteredGames.length}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">Games</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>Roms:</span>
-              {#if $loadingRoms}
-                <Spinner size="4" />
-              {:else}
-                {$unfilteredRoms.length}
-              {/if}
+            <TableBodyCell class="px-1 pt-4 pb-1">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingRoms}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{$unfilteredRoms.length}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">ROMs</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>Romfiles:</span>
-              {#if $loadingRoms}
-                <Spinner size="4" />
-              {:else}
-                {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
-              {/if}
+            <TableBodyCell class="pt-4 pr-4 pb-1 pl-1">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingRoms}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">
+                    {uniq($unfilteredRoms.filter((rom) => rom.romfile).map((rom) => rom.romfile.path)).length}
+                  </p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">ROM Files</p>
+              </div>
             </TableBodyCell>
           </TableBodyRow>
           <TableBodyRow>
-            <TableBodyCell>
-              <span>Total Original Size:</span>
-              {#if $loadingSizes}
-                <Spinner size="4" />
-              {:else}
-                {prettyBytes($totalOriginalSize)}
-              {/if}
+            <TableBodyCell class="pt-1 pr-1 pb-4 pl-4">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingSizes}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($totalOriginalSize)}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">Total Original</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>1G1R Original Size:</span>
-              {#if $loadingSizes}
-                <Spinner size="4" />
-              {:else}
-                {prettyBytes($oneRegionOriginalSize)}
-              {/if}
+            <TableBodyCell class="px-1 pt-1 pb-4">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingSizes}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($oneRegionOriginalSize)}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Original</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>Total Actual Size:</span>
-              {#if $loadingSizes}
-                <Spinner size="4" />
-              {:else}
-                {prettyBytes($totalActualSize)}
-              {/if}
+            <TableBodyCell class="px-1 pt-1 pb-4">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingSizes}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($totalActualSize)}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">Total Actual</p>
+              </div>
             </TableBodyCell>
-            <TableBodyCell>
-              <span>1G1R Actual Size:</span>
-              {#if $loadingSizes}
-                <Spinner size="4" />
-              {:else}
-                {prettyBytes($oneRegionActualSize)}
-              {/if}
+            <TableBodyCell class="pt-1 pr-4 pb-4 pl-1">
+              <div class="rounded bg-gray-100 p-2 text-center dark:bg-gray-700">
+                {#if $loadingSizes}
+                  <Spinner size="4" />
+                {:else}
+                  <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($oneRegionActualSize)}</p>
+                {/if}
+                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Actual</p>
+              </div>
             </TableBodyCell>
           </TableBodyRow>
         </TableBody>

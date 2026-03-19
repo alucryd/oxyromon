@@ -1,5 +1,15 @@
+use super::bchunk;
+use super::chdman;
+use super::ctrtool;
 use super::database::*;
+use super::dolphin;
+use super::flips;
+use super::maxcso;
 use super::model::*;
+use super::nsz;
+use super::sevenzip;
+use super::wit;
+use super::xdelta3;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
 use futures::stream::TryStreamExt;
@@ -166,6 +176,47 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
+    async fn version(&self) -> Result<String> {
+        Ok(env!("CARGO_PKG_VERSION").to_string())
+    }
+
+    async fn dependencies(&self) -> Result<Vec<Dependency>> {
+        let deps = vec![
+            ("7-zip", sevenzip::get_version().await),
+            ("bchunk", bchunk::get_version().await),
+            ("chdman", chdman::get_version().await),
+            ("ctrtool", ctrtool::get_version().await),
+            ("dolphin-tool", dolphin::get_version().await),
+            ("flips", flips::get_version().await),
+            ("maxcso", maxcso::get_version().await),
+            ("nsz", nsz::get_version().await),
+            ("wit", wit::get_version().await),
+            ("xdelta3", xdelta3::get_version().await),
+        ];
+        Ok(deps
+            .into_iter()
+            .map(|(name, result)| Dependency {
+                name: name.to_string(),
+                version: result.ok(),
+            })
+            .collect())
+    }
+
+    async fn system_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(count_systems(&mut pool.acquire().await.unwrap()).await)
+    }
+
+    async fn game_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(count_games(&mut pool.acquire().await.unwrap()).await)
+    }
+
+    async fn rom_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(count_roms(&mut pool.acquire().await.unwrap()).await)
+    }
+
     async fn settings(&self, ctx: &Context<'_>) -> Result<Vec<Setting>> {
         log::debug!("query::get settings()");
         let pool = ctx.data_unchecked::<SqlitePool>();

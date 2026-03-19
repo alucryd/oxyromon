@@ -77,6 +77,7 @@ export const oneRegionFilter = writable(false);
 export const nameFilter = writable("");
 
 export const isSettingsModalOpen = writable(false);
+export const isAboutModalOpen = writable(false);
 
 export const loadingSystems = writable(false);
 export const loadingGames = writable(false);

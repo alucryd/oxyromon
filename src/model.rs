@@ -88,6 +88,12 @@ pub struct Game {
     pub playlist_id: Option<i64>,
 }
 
+#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+pub struct Dependency {
+    pub name: String,
+    pub version: Option<String>,
+}
+
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 pub struct GameInformation {

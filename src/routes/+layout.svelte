@@ -2,13 +2,15 @@
   import "../app.css";
 
   import { Navbar, NavBrand, NavHamburger, DarkMode, Button, ButtonGroup, Input } from "flowbite-svelte";
-  import { AdjustmentsHorizontalSolid } from "flowbite-svelte-icons";
+  import { AdjustmentsHorizontalSolid, InfoCircleSolid } from "flowbite-svelte-icons";
 
+  import AboutModal from "../components/AboutModal.svelte";
   import SettingsModal from "../components/SettingsModal.svelte";
   import {
     completeFilter,
     ignoredFilter,
     incompleteFilter,
+    isAboutModalOpen,
     isSettingsModalOpen,
     nameFilter,
     oneRegionFilter,
@@ -46,8 +48,7 @@
 <div class="flex min-h-screen">
   <Navbar fluid="true" class="fixed start-0 top-0 z-20 bg-slate-900 text-base text-white" expand="md">
     <NavBrand href="/" class="flex gap-2">
-      <img src="/logo.svg" alt="logo" style="height: 32px;" />
-      OXYROMON
+      <img src="/logo.svg" alt="OXYROMON" style="height: 32px;" />
     </NavBrand>
     <NavHamburger />
     <!-- <NavbarToggler onclick={() => (navbarIsOpen = !navbarIsOpen)} /> -->
@@ -107,6 +108,14 @@
       >
         <AdjustmentsHorizontalSolid />
       </Button>
+      <Button
+        color="dark"
+        class="p-2.5"
+        bind:active={$isAboutModalOpen}
+        onclick={() => isAboutModalOpen.update((b) => !b)}
+      >
+        <InfoCircleSolid />
+      </Button>
     </ButtonGroup>
     <DarkMode />
   </Navbar>
@@ -115,5 +124,6 @@
     <slot />
   </div>
 
+  <AboutModal />
   <SettingsModal bind:open={$isSettingsModalOpen} />
 </div>
