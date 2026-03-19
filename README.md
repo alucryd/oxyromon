@@ -8,7 +8,7 @@
            margin-left: auto;
            margin-right: auto;
            width: 20%;"
-    src="https://github.com/alucryd/oxyromon/raw/master/resources/logo.svg" 
+    src="https://github.com/alucryd/oxyromon/raw/refs/heads/master/resources/logo.svg" 
     alt="logo">
 </img>
 
