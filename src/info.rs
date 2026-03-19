@@ -61,5 +61,12 @@ pub async fn main(
     print_info(progress_bar, &format!("Games:   {}", game_count));
     print_info(progress_bar, &format!("ROMs:    {}", rom_count));
 
+    print_separator(progress_bar);
+
+    progress_bar.println("  If you find oxyromon useful, please consider buying me a coffee:");
+    progress_bar.println("  https://ko-fi.com/alucryd");
+
+    progress_bar.finish_and_clear();
+
     Ok(())
 }

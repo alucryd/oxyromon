@@ -209,6 +209,11 @@ impl AsNsz for CommonRomfile {
 }
 
 pub async fn get_version() -> SimpleResult<String> {
+    let keys_path = dirs::home_dir().map(|home| home.join(".switch").join("prod.keys"));
+    if keys_path.map(|p| p.is_file()) != Some(true) {
+        bail!("prod.keys not found");
+    }
+
     let output = try_with!(
         Command::new(NSZ).arg("-h").output().await,
         "Failed to spawn nsz"

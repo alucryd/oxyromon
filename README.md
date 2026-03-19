@@ -1,6 +1,7 @@
 ![CI](https://github.com/alucryd/oxyromon/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/alucryd/oxyromon/branch/master/graph/badge.svg)](https://codecov.io/gh/alucryd/oxyromon)
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alucryd)
 
 <img 
     style="display: block; 

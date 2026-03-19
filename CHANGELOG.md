@@ -6,6 +6,7 @@
 - Added `-n/--system` flag to `config` to scope all operations (list, get, set, unset, add, remove) to a specific system (supports `%` globs)
 - Added per-system settings to the web UI: a dropdown menu on each system entry gives access to a system-scoped settings modal (all settings except ROM and TMP directories)
 - Added romfile download support to the web UI
+- Added About modal to the web UI: shows version, dependency status, and global statistics
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
 
@@ -16,6 +17,8 @@
 - Progress bars and log messages no longer overlap or corrupt each other
 - Standardized messaging across all commands with clear icons and color coding
 - Improved `check-roms` output with per-system pass/fail summary
+- Revamped statistics card in the web UI with a tiled layout
+- Revamped settings modal in the web UI with a two-column layout for easier navigation
 
 ## Fixes
 

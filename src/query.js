@@ -80,6 +80,24 @@ function splitList(list) {
   return list ? list.split("|") : [];
 }
 
+export async function getInfo() {
+  const query = gql`
+    {
+      version
+      dependencies {
+        name
+        version
+      }
+      systemCount
+      gameCount
+      romCount
+    }
+  `;
+
+  const data = await graphQLClient.request(query);
+  return data;
+}
+
 export async function getRawSettings(systemId = null) {
   if (systemId !== null) {
     const query = gql`
