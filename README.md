@@ -3,16 +3,11 @@
 [![crates.io](https://img.shields.io/crates/v/oxyromon.svg)](https://crates.io/crates/oxyromon)
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alucryd)
 
-<img 
-    style="display: block; 
-           margin-left: auto;
-           margin-right: auto;
-           width: 20%;"
-    src="https://github.com/alucryd/oxyromon/raw/refs/heads/master/resources/logo.svg" 
-    alt="logo">
-</img>
+<p align="center">
+  <img src="https://github.com/alucryd/oxyromon/raw/refs/heads/master/resources/logo.svg" alt="logo" width="40%">
+</p>
 
-<h1 style="text-align: center;">oxyROMon 0.22.0</h1>
+<h1 align="center">oxyROMon 0.22.0</h1>
 
 ### Rusty ROM OrgaNizer
 
@@ -24,14 +19,9 @@ Sorting can be done in regions mode, in so-called 1G1R mode, or both.
 Console, computer, and arcade (WIP) systems are supported using Logiqx DAT files.
 The first two require No-Intro or Redump DAT files, while the latter uses MAME or FBNeo DAT files.
 
-<img 
-    style="display: block; 
-           margin-left: auto;
-           margin-right: auto;
-           width: 100%;"
-    src="https://github.com/alucryd/oxyromon/raw/master/resources/screenshot.png" 
-    alt="screenshot">
-</img>
+<p align="center">
+  <img src="https://github.com/alucryd/oxyromon/raw/master/resources/screenshot.png" alt="screenshot" width="100%">
+</p>
 
 ### Quick start
 
