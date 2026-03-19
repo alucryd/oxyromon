@@ -12,6 +12,7 @@ use indicatif::ProgressBar;
 use quick_xml::de;
 use rayon::prelude::*;
 use rust_embed::RustEmbed;
+use serde::Serialize;
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
@@ -29,6 +30,13 @@ use zip::ZipArchive;
 #[derive(RustEmbed)]
 #[folder = "data/"]
 struct Assets;
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ImportSummary {
+    pub system_name: String,
+    pub system_version: String,
+    pub game_count: usize,
+}
 
 pub fn subcommand() -> Command {
     Command::new("import-dats")
@@ -311,8 +319,14 @@ pub async fn import_dat(
     custom_name: Option<&String>,
     custom_extension: Option<&String>,
     force: bool,
-) -> SimpleResult<()> {
+) -> SimpleResult<Option<ImportSummary>> {
     print_subheader(progress_bar, "Processing system");
+
+    let game_count = if !datfile_xml.machines.is_empty() {
+        datfile_xml.machines.len()
+    } else {
+        datfile_xml.games.len()
+    };
 
     let mut transaction = begin_transaction(connection).await;
 
@@ -329,7 +343,7 @@ pub async fn import_dat(
     .await
     {
         Some(system_id) => system_id,
-        None => return Ok(()),
+        None => return Ok(None),
     };
 
     // persist header
@@ -401,7 +415,11 @@ pub async fn import_dat(
 
     commit_transaction(transaction).await;
 
-    Ok(())
+    Ok(Some(ImportSummary {
+        system_name: datfile_xml.system.name.clone(),
+        system_version: datfile_xml.system.version.clone(),
+        game_count,
+    }))
 }
 
 fn get_regions_from_game_name(name: &str) -> SimpleResult<String> {
@@ -900,6 +918,116 @@ pub async fn reimport_orphan_romfiles(
         }
     }
     Ok(())
+}
+
+#[cfg(feature = "server")]
+pub enum ImportDatResult {
+    Imported(ImportSummary),
+    UpToDate(String),
+    Skipped,
+}
+
+#[cfg(feature = "server")]
+pub async fn process_dat_upload(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    file_path: &PathBuf,
+    update: bool,
+) -> Vec<SimpleResult<ImportDatResult>> {
+    let mut results = vec![];
+
+    let is_zip = file_path
+        .extension()
+        .map(|ext| ext.to_str().unwrap().to_lowercase() == ZIP_EXTENSION)
+        .unwrap_or(false);
+
+    if is_zip {
+        let tmp_dir = match tempfile::TempDir::new() {
+            Ok(d) => d,
+            Err(e) => {
+                results.push(Err(simple_error::SimpleError::with(
+                    "Failed to create temp directory",
+                    e,
+                )));
+                return results;
+            }
+        };
+        let mut reader = match get_reader_sync(file_path) {
+            Ok(r) => r,
+            Err(e) => {
+                results.push(Err(e));
+                return results;
+            }
+        };
+        let mut zip_archive = match ZipArchive::new(&mut reader) {
+            Ok(a) => a,
+            Err(e) => {
+                results.push(Err(simple_error::SimpleError::with(
+                    "Failed to read ZIP",
+                    e,
+                )));
+                return results;
+            }
+        };
+        if let Err(e) = zip_archive.extract(tmp_dir.path()) {
+            results.push(Err(simple_error::SimpleError::with(
+                "Failed to extract ZIP",
+                e,
+            )));
+            return results;
+        }
+        let mut dat_paths: Vec<PathBuf> = WalkDir::new(tmp_dir.path())
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.path().is_file()
+                    && e.path()
+                        .extension()
+                        .is_some_and(|ext| ext.to_str().unwrap().to_lowercase() == DAT_EXTENSION)
+            })
+            .map(|e| e.path().to_path_buf())
+            .collect();
+        dat_paths.sort();
+        for dat_path in dat_paths {
+            results.push(process_single_dat(connection, progress_bar, &dat_path, update).await);
+        }
+    } else {
+        results.push(process_single_dat(connection, progress_bar, file_path, update).await);
+    }
+    results.retain(|r| !matches!(r, Ok(ImportDatResult::Skipped)));
+
+    results
+}
+
+#[cfg(feature = "server")]
+async fn process_single_dat(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    dat_path: &PathBuf,
+    update: bool,
+) -> SimpleResult<ImportDatResult> {
+    let (datfile_xml, detector_xml) = parse_dat(progress_bar, dat_path, false).await?;
+    if update
+        && find_system_by_name(connection, &datfile_xml.system.name)
+            .await
+            .is_none()
+    {
+        return Ok(ImportDatResult::Skipped);
+    }
+    import_dat(
+        connection,
+        progress_bar,
+        &datfile_xml,
+        &detector_xml,
+        None,
+        None,
+        false,
+    )
+    .await
+    .map(|opt| match opt {
+        Some(summary) => ImportDatResult::Imported(summary),
+        None => ImportDatResult::UpToDate(datfile_xml.system.name.clone()),
+    })
 }
 
 #[cfg(test)]

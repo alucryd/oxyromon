@@ -40,7 +40,7 @@
 
 @layer utilities {
   /* darken table headers and striped rows in light mode for better contrast */
-  table:not(.stats-table) thead tr th {
+  table thead tr th {
     @apply bg-slate-300 dark:bg-gray-700;
   }
 

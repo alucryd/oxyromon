@@ -29,6 +29,7 @@ async-once-cell = "0.5.4"
 async-stream = "0.3.6"
 axum = { version = "0.8.4", default-features = false, features = [
     "http2",
+    "multipart",
     "tokio",
     "ws",
 ], optional = true }

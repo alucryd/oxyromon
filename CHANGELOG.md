@@ -9,10 +9,13 @@
 - Added About modal to the web UI: shows version, dependency status, and global statistics
 - Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
+- Added DAT import to the web UI
+- Added notification history to the web UI
 
 ## Improvements
 
 - Overhauled web UI colors for improved readability in both light and dark themes
+- Fixed statistics table header color in light mode to match the systems and games table headers
 - Overhauled CLI output for a cleaner, more consistent terminal experience
 - Progress bars and log messages no longer overlap or corrupt each other
 - Standardized messaging across all commands with clear icons and color coding
