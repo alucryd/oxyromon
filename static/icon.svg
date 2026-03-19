@@ -3,8 +3,8 @@
 
 <svg
    width="512"
-   height="512"
-   viewBox="0 0 512 512"
+   height="384"
+   viewBox="0 0 512 384"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
@@ -28,8 +28,8 @@
      inkscape:zoom="0.57080078"
      inkscape:cx="145.40975"
      inkscape:cy="608.79384"
-     inkscape:window-width="2469"
-     inkscape:window-height="1334"
+     inkscape:window-width="988"
+     inkscape:window-height="1174"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -72,7 +72,8 @@
        y1="460.00003"
        x2="255.99997"
        y2="52"
-       gradientUnits="userSpaceOnUse" />
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(0,-64)" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -81,7 +82,7 @@
     <path
        id="rect1"
        style="fill:none;stroke:url(#linearGradient7);stroke-width:24;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-       d="m 184,128 h 144 c 64.05474,0 120,48.02341 120,128 0,79.97659 -55.97452,128 -120,128 H 184 C 120.04675,384 64,336.23179 64,256 64,175.76821 120.06418,128 184,128 Z"
+       d="m 184,64 h 144 c 64.05474,0 120,48.02341 120,128 0,79.97659 -55.97452,128 -120,128 H 184 C 120.04675,320 64,272.23179 64,192 64,111.76821 120.06418,64 184,64 Z"
        sodipodi:nodetypes="cczcczc" />
     <rect
        style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:17.8157;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1"
@@ -89,20 +90,20 @@
        width="30.184301"
        height="126.18431"
        x="168.90785"
-       y="192.90785" />
+       y="128.90784" />
     <rect
        style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:17.8157;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1"
        id="rect8-3"
        width="30.18429"
        height="126.18433"
-       x="240.90785"
+       x="176.90785"
        y="-247.09213"
        transform="rotate(90)" />
     <circle
        style="fill:#e16700;fill-opacity:1;stroke:none;stroke-width:16;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1"
        id="path8"
        cx="352"
-       cy="256"
+       cy="192"
        r="48" />
   </g>
 </svg>

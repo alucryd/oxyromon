@@ -14,6 +14,24 @@ use tokio::fs;
 use tokio::select;
 use tokio::time::{Duration, sleep};
 
+fn build_multipart(filename: &str, data: &[u8]) -> (Vec<u8>, String) {
+    let boundary = "boundary_oxyromon_test";
+    let mut body = Vec::new();
+    body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
+    body.extend_from_slice(
+        format!(
+            "Content-Disposition: form-data; name=\"file\"; filename=\"{}\"\r\n",
+            filename
+        )
+        .as_bytes(),
+    );
+    body.extend_from_slice(b"Content-Type: application/octet-stream\r\n\r\n");
+    body.extend_from_slice(data);
+    body.extend_from_slice(b"\r\n");
+    body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+    (body, format!("multipart/form-data; boundary={}", boundary))
+}
+
 #[tokio::test]
 async fn test() -> Result<()> {
     // given
@@ -210,6 +228,221 @@ async fn test() -> Result<()> {
                 }
             )
         );
+    };
+
+    select! {
+        _ = server => {}
+        _ = client => {}
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_upload_dat() -> Result<()> {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    // when
+    let matches = subcommand().get_matches_from(&["server", "--port", "8001"]);
+    let server = async move {
+        main(pool, &matches).await.unwrap();
+    };
+
+    let client = async move {
+        sleep(Duration::from_millis(100)).await;
+
+        let client = reqwest::Client::new();
+
+        let dat = fs::read("tests/Test System (20200721).dat").await.unwrap();
+        let (body, content_type) = build_multipart("Test System (20200721).dat", &dat);
+
+        let resp = client
+            .post("http://127.0.0.1:8001/dats")
+            .header("Content-Type", content_type)
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+
+        // then
+        assert_eq!(resp.status().as_u16(), 202);
+
+        // allow time for the background import task to complete
+        sleep(Duration::from_millis(500)).await;
+
+        let string = client
+            .post("http://127.0.0.1:8001/graphql")
+            .body(r#"{"query":"{ systems { name }, systemCount }"}"#)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(v["data"]["systemCount"], json!(1));
+        assert_eq!(v["data"]["systems"][0]["name"], json!("Test System"));
+    };
+
+    select! {
+        _ = server => {}
+        _ = client => {}
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_upload_dat_zip() -> Result<()> {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    // when
+    let matches = subcommand().get_matches_from(&["server", "--port", "8002"]);
+    let server = async move {
+        main(pool, &matches).await.unwrap();
+    };
+
+    let client = async move {
+        sleep(Duration::from_millis(100)).await;
+
+        let client = reqwest::Client::new();
+
+        let zip = fs::read("tests/Test System (20200721).zip").await.unwrap();
+        let (body, content_type) = build_multipart("Test System (20200721).zip", &zip);
+
+        let resp = client
+            .post("http://127.0.0.1:8002/dats")
+            .header("Content-Type", content_type)
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+
+        // then
+        assert_eq!(resp.status().as_u16(), 202);
+
+        // allow time for the background import task to complete
+        sleep(Duration::from_millis(500)).await;
+
+        let string = client
+            .post("http://127.0.0.1:8002/graphql")
+            .body(r#"{"query":"{ systems { name }, systemCount }"}"#)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+
+        let v: Value = serde_json::from_str(&string).unwrap();
+        assert_eq!(v["data"]["systemCount"], json!(1));
+        assert_eq!(v["data"]["systems"][0]["name"], json!("Test System"));
+    };
+
+    select! {
+        _ = server => {}
+        _ = client => {}
+    }
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_upload_dat_already_imported() -> Result<()> {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+    let progress_bar = ProgressBar::hidden();
+
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    // pre-import the DAT via CLI
+    let matches = import_dats::subcommand()
+        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+    import_dats::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+
+    let game_count_before = find_games_by_system_id(&mut connection, 1).await.len();
+
+    // when
+    let matches = subcommand().get_matches_from(&["server", "--port", "8003"]);
+    let server = async move {
+        main(pool, &matches).await.unwrap();
+    };
+
+    let client = async move {
+        sleep(Duration::from_millis(100)).await;
+
+        let client = reqwest::Client::new();
+
+        let dat = fs::read("tests/Test System (20200721).dat").await.unwrap();
+        let (body, content_type) = build_multipart("Test System (20200721).dat", &dat);
+
+        let resp = client
+            .post("http://127.0.0.1:8003/dats")
+            .header("Content-Type", content_type)
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+
+        // then
+        assert_eq!(resp.status().as_u16(), 202);
+
+        // allow time for the background task to settle
+        sleep(Duration::from_millis(500)).await;
+
+        let string = client
+            .post("http://127.0.0.1:8003/graphql")
+            .body(r#"{"query":"{ systems { name }, systemCount, gameCount }"}"#)
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+
+        let v: Value = serde_json::from_str(&string).unwrap();
+        // system still present, no duplicates
+        assert_eq!(v["data"]["systemCount"], json!(1));
+        assert_eq!(v["data"]["gameCount"], json!(game_count_before));
     };
 
     select! {

@@ -76,8 +76,11 @@ export const ignoredFilter = writable(true);
 export const oneRegionFilter = writable(false);
 export const nameFilter = writable("");
 
+export const isImportDatModalOpen = writable(false);
 export const isSettingsModalOpen = writable(false);
 export const isAboutModalOpen = writable(false);
+
+export const notifications = writable([]);
 
 export const loadingSystems = writable(false);
 export const loadingGames = writable(false);

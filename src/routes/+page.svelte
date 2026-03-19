@@ -96,20 +96,20 @@
   function computeSystemColor(system) {
     if (system.completion == 2) return "text-emerald-600 dark:text-emerald-400";
     if (system.completion == 1) return "text-amber-500 dark:text-amber-400";
-    return "text-rose-600 dark:text-rose-400";
+    return "text-red-600 dark:text-red-400";
   }
 
   function computeGameColor(game) {
     if (game.sorting == 2) return "text-slate-400 dark:text-slate-500";
     if (game.completion == 2) return "text-emerald-600 dark:text-emerald-400";
     if (game.completion == 1) return "text-amber-500 dark:text-amber-400";
-    return "text-rose-600 dark:text-rose-400";
+    return "text-red-600 dark:text-red-400";
   }
 
   function computeRomColor(rom) {
     if (rom.ignored) return "text-slate-400 dark:text-slate-500";
     if (rom.romfile) return "text-emerald-600 dark:text-emerald-400";
-    return "text-rose-600 dark:text-rose-400";
+    return "text-red-600 dark:text-red-400";
   }
 
   let deleteModalOpen = false;
@@ -290,7 +290,7 @@
                       </DropdownItem>
                       <DropdownItem
                         liClass="list-none"
-                        class="text-rose-600 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-400"
+                        class="text-red-600 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400"
                         onclick={() => onPurgeSystemClick(system)}
                       >
                         <TrashBinOutline class="mr-2 inline h-4 w-4" />Delete
@@ -654,7 +654,7 @@
 
   <Modal bind:open={deleteModalOpen} size="xs" autoclose={false}>
     <div class="text-center">
-      <ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-rose-500 dark:text-rose-400" />
+      <ExclamationCircleOutline class="mx-auto mb-4 h-12 w-12 text-red-500 dark:text-red-400" />
       <h3 class="mb-5 text-lg font-normal text-slate-700 dark:text-slate-300">
         Are you sure you want to delete system "{systemToDelete?.name}"?
       </h3>
