@@ -607,7 +607,7 @@
                 {:else}
                   <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($totalOriginalSize)}</p>
                 {/if}
-                <p class="text-xs text-gray-500 dark:text-gray-400">Total Original</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Total Size (Original)</p>
               </div>
             </TableBodyCell>
             <TableBodyCell class="px-1 pt-1 pb-4">
@@ -617,7 +617,7 @@
                 {:else}
                   <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($oneRegionOriginalSize)}</p>
                 {/if}
-                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Original</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Size (Original)</p>
               </div>
             </TableBodyCell>
             <TableBodyCell class="px-1 pt-1 pb-4">
@@ -627,7 +627,7 @@
                 {:else}
                   <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($totalActualSize)}</p>
                 {/if}
-                <p class="text-xs text-gray-500 dark:text-gray-400">Total Actual</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Total Size (Actual)</p>
               </div>
             </TableBodyCell>
             <TableBodyCell class="pt-1 pr-4 pb-4 pl-1">
@@ -637,7 +637,7 @@
                 {:else}
                   <p class="text-lg font-bold text-gray-900 dark:text-white">{prettyBytes($oneRegionActualSize)}</p>
                 {/if}
-                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Actual</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">1G1R Size (Actual)</p>
               </div>
             </TableBodyCell>
           </TableBodyRow>
