@@ -79,7 +79,6 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
 | server         | build the server subcommand                    |         |
-| enable-asm     | enable ASM variants of the MD5 and SHA1 hashes | x       |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
 

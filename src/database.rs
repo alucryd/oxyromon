@@ -4,7 +4,7 @@ use itertools::Itertools;
 use sqlx::migrate::Migrator;
 use sqlx::prelude::*;
 use sqlx::sqlite::{SqliteConnection, SqlitePool, SqlitePoolOptions};
-use sqlx::{Acquire, Sqlite, Transaction};
+use sqlx::{Acquire, AssertSqlSafe, Sqlite, Transaction};
 use std::convert::TryFrom;
 use std::time::Duration;
 
@@ -36,9 +36,12 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     pool.execute("PRAGMA foreign_keys = ON;")
         .await
         .expect("Failed to set PRAGMA foreign_keys");
-    pool.execute(format!("PRAGMA locking_mode = {};", locking_mode).as_str())
-        .await
-        .expect("Failed to set PRAGMA locking_mode");
+    pool.execute(AssertSqlSafe(format!(
+        "PRAGMA locking_mode = {};",
+        locking_mode
+    )))
+    .await
+    .expect("Failed to set PRAGMA locking_mode");
     pool.execute("PRAGMA journal_mode = WAL;")
         .await
         .expect("Failed to set PRAGMA journal_mode");
@@ -685,7 +688,7 @@ pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -
         ",
         ids.iter().join(",")
     );
-    sqlx::query_as::<_, Game>(&sql)
+    sqlx::query_as::<_, Game>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .expect("Error while finding games")
@@ -1218,7 +1221,7 @@ pub async fn find_roms_without_romfile_by_game_ids(
         ",
         game_ids.iter().join(", ")
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .expect("Error while finding roms with romfile")
@@ -1279,7 +1282,7 @@ pub async fn find_roms_with_romfile_by_game_ids(
     ",
         game_ids.iter().join(",")
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .expect("Error while finding roms with romfile")
@@ -1300,7 +1303,7 @@ pub async fn find_original_roms_with_romfile_by_game_ids(
     ",
         game_ids.iter().join(",")
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .expect("Error while finding roms with romfile")
@@ -1426,7 +1429,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1467,7 +1470,7 @@ pub async fn find_roms_without_romfile_by_size_and_md5_and_game_names_and_system
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1508,7 +1511,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1552,7 +1555,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_a
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1745,7 +1748,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1786,7 +1789,7 @@ pub async fn find_roms_without_romfile_by_size_and_sha1_and_game_names_and_syste
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1827,7 +1830,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -1871,7 +1874,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2066,7 +2069,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2107,7 +2110,7 @@ pub async fn find_roms_without_romfile_by_size_and_crc_and_game_names_and_system
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2148,7 +2151,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
             .map(|game_name| format!("'{}'", game_name.replace('\'', "''")))
             .join(","),
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2192,7 +2195,7 @@ pub async fn find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_a
             .join(","),
         system_id,
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2481,7 +2484,7 @@ pub async fn find_rom_by_size_and_crc_and_game_ids(
         crc,
         game_ids.iter().join(",")
     );
-    sqlx::query_as::<_, Rom>(&sql)
+    sqlx::query_as::<_, Rom>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .unwrap_or_else(|_| {
@@ -2678,7 +2681,7 @@ pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]
     ",
         ids.iter().join(",")
     );
-    sqlx::query_as::<_, Romfile>(&sql)
+    sqlx::query_as::<_, Romfile>(AssertSqlSafe(sql.as_str()))
         .fetch_all(connection)
         .await
         .expect("Error while finding romfiles")

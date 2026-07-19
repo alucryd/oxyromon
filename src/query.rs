@@ -18,7 +18,7 @@ use num_traits::FromPrimitive;
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::region::Region;
-use sqlx::SqlitePool;
+use sqlx::{AssertSqlSafe, SqlitePool};
 use std::collections::HashMap;
 
 #[ComplexObject]
@@ -86,7 +86,7 @@ impl Rom {
                     ",
                     self.parent_id.unwrap()
                 );
-                let row: (bool,) = sqlx::query_as(&sql)
+                let row: (bool,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
                     .fetch_one(&mut *pool.acquire().await.unwrap())
                     .await?;
                 row.0
@@ -106,7 +106,7 @@ impl Loader<i64> for SystemLoader {
     type Error = Error;
 
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
+        let sql = format!(
             "
         SELECT *
         FROM systems
@@ -114,7 +114,7 @@ impl Loader<i64> for SystemLoader {
         ",
             ids.iter().join(",")
         );
-        Ok(sqlx::query_as(&query)
+        Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|system: System| (system.id, system))
             .try_collect()
@@ -131,7 +131,7 @@ impl Loader<i64> for GameLoader {
     type Error = Error;
 
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
+        let sql = format!(
             "
         SELECT *
         FROM games
@@ -139,7 +139,7 @@ impl Loader<i64> for GameLoader {
         ",
             ids.iter().join(",")
         );
-        Ok(sqlx::query_as(&query)
+        Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|game: Game| (game.id, game))
             .try_collect()
@@ -156,7 +156,7 @@ impl Loader<i64> for RomfileLoader {
     type Error = Error;
 
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let query = format!(
+        let sql = format!(
             "
         SELECT *
         FROM romfiles
@@ -164,7 +164,7 @@ impl Loader<i64> for RomfileLoader {
         ",
             ids.iter().join(",")
         );
-        Ok(sqlx::query_as(&query)
+        Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch(&mut *self.pool.acquire().await.unwrap())
             .map_ok(|romfile: Romfile| (romfile.id, romfile))
             .try_collect()
@@ -312,7 +312,7 @@ impl QueryRoot {
             ",
             system_id
         );
-        let row: (i64,) = sqlx::query_as(&sql)
+        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
@@ -331,7 +331,7 @@ impl QueryRoot {
             ",
             system_id
         );
-        let row: (i64,) = sqlx::query_as(&sql)
+        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
@@ -352,7 +352,7 @@ impl QueryRoot {
             ",
             system_id
         );
-        let row: (i64,) = sqlx::query_as(&sql)
+        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)
@@ -374,7 +374,7 @@ impl QueryRoot {
             ",
             system_id
         );
-        let row: (i64,) = sqlx::query_as(&sql)
+        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch_one(&mut *pool.acquire().await.unwrap())
             .await?;
         Ok(row.0)

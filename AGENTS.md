@@ -161,7 +161,6 @@ The `build.rs` script automatically runs `pnpm install` and `pnpm build` when th
 | Feature          | Description                                             | Default |
 | ---------------- | ------------------------------------------------------- | ------- |
 | `server`         | Builds the web server subcommand (GraphQL + Svelte SPA) | Off     |
-| `enable-asm`     | ASM variants of MD5 and SHA1 hashes                     | On      |
 | `use-rustls`     | Use rustls for TLS                                      | On      |
 | `use-native-tls` | Use system OpenSSL for TLS                              | Off     |
 
