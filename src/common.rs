@@ -9,6 +9,7 @@ use super::progress::*;
 use super::util::*;
 use core::fmt;
 use digest::Digest;
+use digest_io::IoWrapper;
 use indicatif::ProgressBar;
 use md5::Md5;
 use num_traits::FromPrimitive;
@@ -19,6 +20,10 @@ use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::{fs::File, str::FromStr};
+
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
 
 // === CORE TYPES ===
 #[derive(Clone)]
@@ -381,23 +386,23 @@ impl HashAndSize for CommonRomfile {
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:08x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.finalize())
             }
             HashAlgorithm::Md5 => {
-                let mut digest = Md5::new();
+                let mut digest = IoWrapper(Md5::new());
                 try_with!(
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:032x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.0.finalize())
             }
             HashAlgorithm::Sha1 => {
-                let mut digest = Sha1::new();
+                let mut digest = IoWrapper(Sha1::new());
                 try_with!(
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:040x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.0.finalize())
             }
         };
         let size = self.get_size(connection, progress_bar).await?;
@@ -492,23 +497,23 @@ impl HeaderedHashAndSize for CommonRomfile {
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:08x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.finalize())
             }
             HashAlgorithm::Md5 => {
-                let mut digest = Md5::new();
+                let mut digest = IoWrapper(Md5::new());
                 try_with!(
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:032x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.0.finalize())
             }
             HashAlgorithm::Sha1 => {
-                let mut digest = Sha1::new();
+                let mut digest = IoWrapper(Sha1::new());
                 try_with!(
                     io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest)),
                     "Failed to copy data"
                 );
-                format!("{:040x}", digest.finalize()).to_lowercase()
+                to_hex(&digest.0.finalize())
             }
         };
 

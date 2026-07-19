@@ -11,73 +11,72 @@ name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
 version = "0.22.0-beta"
-rust-version = "1.88.0"
+rust-version = "1.94.0"
 
 [features]
-default = ["use-rustls", "enable-asm"]
+default = ["use-rustls"]
 use-native-tls = ["reqwest/native-tls"]
 use-rustls = ["reqwest/rustls"]
-enable-asm = ["md-5/asm", "sha1/asm"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
 
 [dependencies]
-async-graphql = { version = "7.0.16", features = [
+async-graphql = { version = "7.2.1", features = [
     "dataloader",
 ], default-features = false, optional = true }
-async-graphql-axum = { version = "7.0.17", optional = true }
+async-graphql-axum = { version = "7.2.1", optional = true }
 async-once-cell = "0.5.4"
 async-stream = "0.3.6"
-axum = { version = "0.8.4", default-features = false, features = [
+axum = { version = "0.8.9", default-features = false, features = [
     "http2",
     "multipart",
     "tokio",
     "ws",
 ], optional = true }
-tower-http = { version = "0.6.2", features = ["cors"], optional = true, default-features = false }
+tower-http = { version = "0.7.0", features = ["cors"], optional = true, default-features = false }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
-cfg-if = "1.0.1"
-console = "0.16.2"
-chrono = { version = "0.4.41", default-features = false, features = [
+cfg-if = "1.0.4"
+console = "0.16.3"
+chrono = { version = "0.4.45", default-features = false, features = [
     "std",
     "alloc",
     "now",
     "clock",
 ] }
-clap = "4.5.40"
-crc32fast = "1.4.2"
+clap = "4.6.1"
+crc32fast = "1.5.0"
 dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
-digest = { version = "0.10.7", features = ["std"] }
+digest = "0.11.3"
 dirs = "6.0.0"
 dotenvy = "0.15.7"
-env_logger = "0.11.8"
-flate2 = "1.1.2"
-futures = "0.3.31"
+env_logger = "0.11.11"
+flate2 = "1.1.9"
+futures = "0.3.32"
 http-types = { version = "2.12.0", optional = true }
-indexmap = { version = "2.9.0", default-features = false, features = [
+indexmap = { version = "2.14.0", default-features = false, features = [
     "std",
     "rayon",
 ] }
-indicatif = "0.18.4"
+indicatif = "0.18.5"
 indicatif-log-bridge = "0.2.3"
 infer = "0.19.0"
 itertools = "0.14.0"
 lazy_static = "1.5.0"
-log = "0.4.27"
-md-5 = "0.10.6"
+log = "0.4.33"
+md-5 = "0.11.0"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
 phf = { version = "0.13.1", features = ["macros"] }
-quick-xml = { version = "0.39.2", features = ["serialize"] }
-rayon = "1.10.0"
-regex = "1.11.1"
-reqwest = { version = "0.13.2", default-features = false }
-rust-embed = { version = "8.7.2", features = ["compression"] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-sha1 = "0.10.6"
+quick-xml = { version = "0.41.0", features = ["serialize"] }
+rayon = "1.12.0"
+regex = "1.12.4"
+reqwest = { version = "0.13.4", default-features = false }
+rust-embed = { version = "8.11.0", features = ["compression"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+sha1 = "0.11.0"
 shiratsu-naming = "0.1.7"
-simple-error = "0.3.1"
-sqlx = { version = "0.8.6", default-features = false, features = [
+simple-error = "0.3.2"
+sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",
     "runtime-tokio",
@@ -85,9 +84,9 @@ sqlx = { version = "0.8.6", default-features = false, features = [
 ] }
 strsim = "0.11.1"
 strum = { version = "0.28.0", features = ["derive"] }
-tempfile = "3.20.0"
+tempfile = "3.27.0"
 tokio-util = { version = "0.7", features = ["io"] }
-tokio = { version = "1.45.1", features = [
+tokio = { version = "1.52.3", features = [
     "fs",
     "io-std",
     "io-util",
@@ -99,11 +98,12 @@ tokio = { version = "1.45.1", features = [
 ] }
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
-which = { version = "8.0.0" }
-zip = { version = "8.2.0", features = ["deflate"], default-features = false }
+which = { version = "8.0.4" }
+zip = { version = "8.6.0", features = ["deflate"], default-features = false }
+digest-io = "0.1.0"
 
 [dev-dependencies]
-wiremock = "0.6.4"
+wiremock = "0.6.5"
 
 [[bin]]
 name = "oxyromon"

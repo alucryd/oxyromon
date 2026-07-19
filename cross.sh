@@ -23,8 +23,6 @@ for target in x86_64-pc-windows-gnullvm; do
     PATH=/opt/llvm-mingw/llvm-mingw-ucrt/bin/:/usr/bin cross build \
         --release \
         --target $target \
-        --no-default-features \
-        --features use-rustls \
         --features server
     7z a dist/oxyromon.${target/-pc/}.7z target/$target/release/oxyromon.exe
     cargo clean

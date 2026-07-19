@@ -1,7 +1,7 @@
 use crc32fast::Hasher;
 use digest::OutputSizeUser;
-use digest::generic_array::GenericArray;
-use digest::generic_array::typenum::U4;
+use digest::array::Array;
+use digest::typenum::U4;
 use digest::{FixedOutput, HashMarker, Reset, Update};
 use std::io::Write;
 
@@ -25,7 +25,7 @@ impl OutputSizeUser for Crc32 {
 }
 
 impl FixedOutput for Crc32 {
-    fn finalize_into(self, out: &mut GenericArray<u8, U4>) {
+    fn finalize_into(self, out: &mut Array<u8, U4>) {
         out.copy_from_slice(&self.hasher.finalize().to_be_bytes());
     }
 }
