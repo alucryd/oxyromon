@@ -66,9 +66,17 @@ You can also target GNU to solve the asm-hashes issue:
 
     cargo build --release --target x86_64-pc-windows-gnu
 
-For the web UI, you will also need pnpm:
+For the web UI, you will also need the [Trunk](https://trunkrs.dev) bundler, the
+[Tailwind CSS](https://tailwindcss.com/blog/standalone-cli) standalone CLI and
+the `wasm32-unknown-unknown` target:
 
+    rustup target add wasm32-unknown-unknown
+    cargo install --locked trunk
     cargo build --release --features server
+
+The web UI (a [Leptos](https://leptos.dev) app) is compiled to WebAssembly and
+embedded into the binary during the build. Set `SKIP_TRUNK=true` to skip that
+step when the assets are already built.
 
 The build uses rustls by default, but you can also opt for OpenSSL:
 
@@ -654,7 +662,7 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
 
 Launch the backend server
 
-The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI is also exposed at `/`.
+The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
 
     Usage: oxyromon server [OPTIONS]
 

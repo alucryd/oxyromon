@@ -4,11 +4,10 @@ mkdir -p dist
 
 export CROSS_CONTAINER_ENGINE=podman
 export PATH="/opt/llvm-mingw/llvm-mingw-ucrt/bin/:$PATH"
-export SKIP_PNPM=true
+export SKIP_TRUNK=true
 
 for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknown-linux-gnu x86_64-unknown-linux-musl; do
-    pnpm install
-    pnpm build
+    (cd frontend && trunk build --release)
     cross build \
         --release \
         --target $target \
@@ -18,8 +17,7 @@ for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknow
 done
 
 for target in x86_64-pc-windows-gnullvm; do
-    pnpm install
-    pnpm build
+    (cd frontend && trunk build --release)
     PATH=/opt/llvm-mingw/llvm-mingw-ucrt/bin/:/usr/bin cross build \
         --release \
         --target $target \
@@ -29,8 +27,7 @@ for target in x86_64-pc-windows-gnullvm; do
 done
 
 for target in aarch64-apple-darwin x86_64-apple-darwin; do
-    pnpm install
-    pnpm build
+    (cd frontend && trunk build --release)
     cross build \
         --release \
         --target $target \

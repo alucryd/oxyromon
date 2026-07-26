@@ -18,7 +18,8 @@ dist
 .cargo
 tests/.tmp*
 
-# javascript
-node_modules
-.svelte-kit
-vite.config.js.*
+# frontend (leptos + trunk)
+frontend/target
+frontend/dist
+frontend/tailwind.css
+frontend/Cargo.lock

@@ -1,0 +1,31 @@
+[build]
+# Emit the built SPA where rust-embed (src/server.rs) expects it.
+target = "index.html"
+dist = "../target/assets"
+# rust-embed resolves assets by exact path (e.g. "index.html", hashed JS/WASM),
+# and server.rs serves index.html as the SPA fallback, so relative URLs work
+# regardless of the mount point.
+public_url = "/"
+
+[[hooks]]
+stage = "pre_build"
+command = "tailwindcss"
+command_arguments = ["--input", "input.css", "--output", "tailwind.css", "--minify"]
+
+# `trunk serve` (dev) proxies API traffic to a locally running `oxyromon server`
+# (default 127.0.0.1:8000). Ignored by `trunk build`.
+[[proxy]]
+rewrite = "/graphql"
+backend = "http://127.0.0.1:8000/graphql"
+
+[[proxy]]
+rewrite = "/events"
+backend = "http://127.0.0.1:8000/events"
+
+[[proxy]]
+rewrite = "/dats"
+backend = "http://127.0.0.1:8000/dats"
+
+[[proxy]]
+rewrite = "/romfiles/"
+backend = "http://127.0.0.1:8000/romfiles/"

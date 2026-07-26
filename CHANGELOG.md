@@ -12,6 +12,11 @@
 - Added DAT import to the web UI
 - Added notification history to the web UI
 
+## Changes
+
+- Rewrote the web UI in Rust using Leptos (compiled to WebAssembly), replacing the Svelte/Flowbite frontend; the UI now lives in a standalone `frontend/` crate built with Trunk and the Tailwind CSS standalone CLI (no Node.js toolchain required)
+- Replaced the `SKIP_PNPM` build environment variable with `SKIP_TRUNK`
+
 ## Improvements
 
 - Overhauled web UI colors for improved readability in both light and dark themes

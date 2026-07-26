@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**oxyromon** (oxyROMon) is a cross-platform opinionated CLI ROM organizer written in Rust. It validates ROM files against known-good databases (DAT files), imports them into a managed directory structure, sorts them by region/preference, and can convert between various ROM formats. It also includes an optional web UI (Svelte + GraphQL) behind the `server` feature flag.
+**oxyromon** (oxyROMon) is a cross-platform opinionated CLI ROM organizer written in Rust. It validates ROM files against known-good databases (DAT files), imports them into a managed directory structure, sorts them by region/preference, and can convert between various ROM formats. It also includes an optional web UI (Leptos + GraphQL) behind the `server` feature flag.
 
 - **Author:** Maxime Gauduin (alucryd)
 - **License:** GPL-3.0+
@@ -14,7 +14,7 @@
 
 ### High-Level Design
 
-oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` with SQLite for persistence, and `tokio` as the async runtime. Each CLI subcommand is implemented as its own module following a consistent pattern. An optional web server (GraphQL API + Svelte SPA) is gated behind the `server` Cargo feature.
+oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` with SQLite for persistence, and `tokio` as the async runtime. Each CLI subcommand is implemented as its own module following a consistent pattern. An optional web server (GraphQL API + Leptos WebAssembly SPA) is gated behind the `server` Cargo feature.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -39,7 +39,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
-│    + Svelte SPA (src/routes/, src/components/)      │
+│    + Leptos SPA (frontend/ crate)                   │
 ├─────────────────────────────────────────────────────┤
 │  SQLite (via sqlx) + migrations/                    │
 └─────────────────────────────────────────────────────┘
@@ -66,7 +66,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
 | `sevenzip.rs`     | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits. Shells out to the `7zz`/`7z` executable.                                                                                                                                                                         |
 | `chdman.rs`       | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`.                                                                                                                                                                                                          |
-| `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Svelte build.                                                                                                                                                                           |
+| `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
 | `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
 | `validator.rs`    | GraphQL input validators.                                                                                                                                                                                                                                                                                  |
@@ -129,7 +129,7 @@ All database queries are standalone `pub async fn` functions in `database.rs`. T
 ### Prerequisites
 
 - Rust 1.88.0+ (edition 2024)
-- For the `server` feature: Node.js (see `.nvmrc`) + pnpm
+- For the `server` feature: the `wasm32-unknown-unknown` target, [Trunk](https://trunkrs.dev), and the [Tailwind CSS standalone CLI](https://tailwindcss.com/blog/standalone-cli)
 
 ### CLI Only
 
@@ -143,7 +143,7 @@ cargo build --release
 cargo build --release --features server
 ```
 
-The `build.rs` script automatically runs `pnpm install` and `pnpm build` when the `server` feature is enabled (skip with `SKIP_PNPM=true`). The Svelte app is built to `target/assets/` and embedded into the binary via `rust-embed`.
+The `build.rs` script automatically runs `trunk build --release` (in `frontend/`) when the `server` feature is enabled (skip with `SKIP_TRUNK=true`). The Leptos app is compiled to WebAssembly, output to `target/assets/`, and embedded into the binary via `rust-embed`.
 
 ### Environment Variables
 
@@ -153,14 +153,14 @@ The `build.rs` script automatically runs `pnpm install` and `pnpm build` when th
 | `OXYROMON_ROM_DIRECTORY`  | Override the default ROM directory                                     |
 | `OXYROMON_TMP_DIRECTORY`  | Override the default temp directory                                    |
 | `OXYROMON_LOG_LEVEL`      | Control log verbosity (standard `env_logger` syntax)                   |
-| `SKIP_PNPM`               | Set to `true` to skip frontend build in `build.rs`                     |
+| `SKIP_TRUNK`              | Set to `true` to skip the web UI (`trunk build`) in `build.rs`          |
 | `DATABASE_URL`            | Used by `sqlx` for compile-time query checking                         |
 
 ## Feature Flags
 
 | Feature          | Description                                             | Default |
 | ---------------- | ------------------------------------------------------- | ------- |
-| `server`         | Builds the web server subcommand (GraphQL + Svelte SPA) | Off     |
+| `server`         | Builds the web server subcommand (GraphQL + Leptos SPA) | Off     |
 | `use-rustls`     | Use rustls for TLS                                      | On      |
 | `use-native-tls` | Use system OpenSSL for TLS                              | Off     |
 
@@ -309,48 +309,63 @@ Follow this checklist:
 ### Stack
 
 - **Backend:** Axum + async-graphql + SSE
-- **Frontend:** SvelteKit (static adapter) + Tailwind CSS 4 + Flowbite Svelte
-- **Build:** Vite, output to `target/assets/`, embedded via `rust-embed`
+- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + Tailwind CSS 4
+- **Build:** [Trunk](https://trunkrs.dev), output to `target/assets/`, embedded via `rust-embed`
 - **GraphQL:** Single `/graphql` endpoint, schema defined in `query.rs` (queries) and `mutation.rs` (mutations)
 - **SSE:** `/events` endpoint for real-time updates (e.g., purge progress)
 
+The frontend lives in its own standalone crate under `frontend/` (kept separate
+so its WebAssembly dependencies never pollute the native `oxyromon` build). It
+talks to the same backend `/graphql`, `/events`, `/dats` and `/romfiles/{id}`
+endpoints, so `server.rs` is unchanged by the framework choice.
+
 ### Frontend Structure
 
-| Path                        | Purpose                      |
-| --------------------------- | ---------------------------- |
-| `src/routes/+layout.svelte` | Root layout                  |
-| `src/routes/+page.svelte`   | Main page                    |
-| `src/components/`           | Reusable Svelte components   |
-| `src/query.js`              | GraphQL query definitions    |
-| `src/mutation.js`           | GraphQL mutation definitions |
-| `src/store.js`              | Svelte stores                |
-| `src/events.js`             | SSE client helpers           |
-| `src/app.css`               | Global styles (Tailwind)     |
-| `src/app.html`              | HTML template                |
+| Path                                   | Purpose                                                     |
+| -------------------------------------- | ---------------------------------------------------------- |
+| `frontend/index.html`                  | Trunk entry point (links the wasm bundle + generated CSS)  |
+| `frontend/input.css`                   | Tailwind entry (theme + custom layers)                     |
+| `frontend/Trunk.toml`                  | Trunk config (Tailwind pre-build hook, dev proxies)        |
+| `frontend/src/main.rs`                 | Mounts the app to the DOM                                  |
+| `frontend/src/app.rs`                  | Root component + reactive data-loading effects             |
+| `frontend/src/page.rs`                 | Main page (systems/games/roms/romfiles tables, stats)      |
+| `frontend/src/components/`             | Navbar, notifications, about/import/settings modals        |
+| `frontend/src/state.rs`                | Global reactive state (`RwSignal`s in a `Copy` `AppState`) |
+| `frontend/src/api.rs`                  | GraphQL client + query/mutation helpers                    |
+| `frontend/src/sse.rs`                  | SSE client + notification helpers                          |
+| `frontend/src/model.rs`                | Serde types mirroring the GraphQL responses                |
+| `frontend/src/ui.rs` / `icons.rs`      | Reusable modal/pagination + inline SVG icons               |
 
 ### Frontend Dev
 
+Requires the `wasm32-unknown-unknown` target, the [Trunk](https://trunkrs.dev)
+bundler and the [Tailwind CSS standalone CLI](https://tailwindcss.com/blog/standalone-cli)
+(no Node.js toolchain):
+
 ```sh
-# Install dependencies
-pnpm install
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk
 
-# Dev server (proxies API to running oxyromon server)
-pnpm dev
+# From the frontend/ directory:
+cd frontend
 
-# Build for production (outputs to target/assets/)
-pnpm build
+# Dev server with hot reload (proxies /graphql, /events, /dats, /romfiles to a
+# running `oxyromon server` on 127.0.0.1:8000 — see the [[proxy]] entries in Trunk.toml)
+trunk serve
 
-# Lint & format
-pnpm lint
-pnpm format
+# Production build (outputs to ../target/assets/)
+trunk build --release
 ```
+
+The top-level `build.rs` runs `trunk build --release` automatically when the
+`server` feature is enabled (skip with `SKIP_TRUNK=true`).
 
 ### Adding a GraphQL Query/Mutation
 
 1. **Backend:** Add the resolver in `query.rs` (for queries) or `mutation.rs` (for mutations) inside the `#[Object]` impl block.
 2. **Backend:** If new types are needed, add them to `model.rs` with `#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]`.
-3. **Frontend:** Add the query/mutation string in `src/query.js` or `src/mutation.js`.
-4. **Frontend:** Call it from Svelte components using `graphql-request`.
+3. **Frontend:** Add the query/mutation string in `frontend/src/api.rs`, deserializing into a type in `frontend/src/model.rs`.
+4. **Frontend:** Call it from a Leptos component (typically via `spawn_local`, updating `AppState` signals).
 
 ## Error Handling
 
@@ -397,13 +412,13 @@ All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in 
 - Format modules: `src/<tool_name>.rs` (e.g., `chdman.rs`, `sevenzip.rs`)
 - Shared infrastructure: `src/database.rs`, `src/model.rs`, `src/common.rs`, `src/config.rs`, `src/util.rs`
 
-### Frontend (Svelte)
+### Frontend (Leptos)
 
-- Prettier for formatting (config in `package.json`)
-- ESLint for linting
-- Print width: 120, semicolons, double quotes, ES5 trailing commas
-- Tailwind CSS 4 for styling
-- Flowbite Svelte for UI components
+- Rustfmt / clippy, same as the rest of the workspace (run from `frontend/`)
+- Reactivity via `RwSignal`/`Effect`; global state is a `Copy` `AppState` provided through context
+- Async work via `leptos::task::spawn_local`, updating signals imperatively
+- Tailwind CSS 4 utility classes for styling (no component library — small reusable pieces live in `ui.rs`)
+- **Gotcha:** inside the `view!` macro, wrap any `>`/`<` comparison in parentheses or a block, otherwise it is parsed as a tag delimiter
 
 ## External Tool Integration Pattern
 

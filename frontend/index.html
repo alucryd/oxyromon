@@ -6,10 +6,11 @@
     <link rel="icon" href="/icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>oxyromon</title>
-    %sveltekit.head%
+    <link data-trunk rel="css" href="tailwind.css" />
+    <link data-trunk rel="copy-file" href="icon.svg" />
+    <link data-trunk rel="copy-file" href="logo.svg" />
+    <link data-trunk rel="rust" data-wasm-opt="z" />
   </head>
 
-  <body>
-    <div id="svelte">%sveltekit.body%</div>
-  </body>
+  <body></body>
 </html>
