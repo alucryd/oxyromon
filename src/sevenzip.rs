@@ -41,6 +41,12 @@ pub struct ArchiveRomfile {
     pub crc: String,
 }
 
+impl GetRomfile for ArchiveRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 pub trait ArchiveFile {
     async fn rename_file(
         &self,

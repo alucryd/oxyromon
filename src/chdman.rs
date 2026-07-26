@@ -131,6 +131,12 @@ pub struct ChdRomfile {
     pub track_count: usize,
 }
 
+impl GetRomfile for ChdRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 impl Size for ChdRomfile {
     async fn get_size(
         &self,

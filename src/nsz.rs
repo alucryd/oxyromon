@@ -17,8 +17,20 @@ pub struct NspRomfile {
     pub romfile: CommonRomfile,
 }
 
+impl GetRomfile for NspRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 pub struct NszRomfile {
     pub romfile: CommonRomfile,
+}
+
+impl GetRomfile for NszRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
 }
 
 impl HashAndSize for NszRomfile {

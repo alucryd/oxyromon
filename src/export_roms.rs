@@ -1125,9 +1125,10 @@ async fn to_xso(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        archive_to_iso(connection, progress_bar, rom, romfile, &tmp_directory)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .iso
+            .inner
+            .as_iso()?
             .to_xso(progress_bar, destination_directory, xso_type)
             .await?;
     }
@@ -1155,7 +1156,7 @@ async fn to_xso(
         if let Some(decoded) = chd_to_iso(connection, progress_bar, romfile, &tmp_directory).await?
         {
             decoded
-                .iso
+                .inner
                 .to_xso(progress_bar, destination_directory, xso_type)
                 .await?;
         }
@@ -1440,15 +1441,9 @@ async fn to_nsz(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_nsp()?
             .to_nsz(progress_bar, destination_directory)
             .await?;
@@ -1505,15 +1500,9 @@ async fn to_rvz(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_iso()?
             .to_rvz(
                 progress_bar,
@@ -1551,12 +1540,9 @@ async fn to_rvz(
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         if scrub {
             let tmp_directory = create_tmp_directory(connection).await?;
-            romfile
-                .as_common(connection)
+            rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
                 .await?
-                .as_rvz()?
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
+                .inner
                 .to_rvz(
                     progress_bar,
                     destination_directory,
@@ -1619,15 +1605,9 @@ async fn to_wbfs(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_iso()?
             .to_wbfs(progress_bar, destination_directory)
             .await?;
@@ -1650,12 +1630,9 @@ async fn to_wbfs(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
             .await?
-            .as_rvz()?
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .to_wbfs(progress_bar, destination_directory)
             .await?;
     }

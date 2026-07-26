@@ -30,6 +30,12 @@ pub struct RvzRomfile {
     pub romfile: CommonRomfile,
 }
 
+impl GetRomfile for RvzRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 impl HashAndSize for RvzRomfile {
     async fn get_hash_and_size(
         &self,
