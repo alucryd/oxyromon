@@ -5,7 +5,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
@@ -283,6 +283,21 @@ pub async fn get_trash_directory(
         None => get_rom_directory(connection).await.join("Trash"),
     };
     Ok(trash_directory)
+}
+
+/// Runs an external tool command, logging it and bailing with the tool's
+/// stderr when it exits unsuccessfully.
+pub async fn run_tool(command: &mut tokio::process::Command) -> Result<std::process::Output> {
+    log::debug!("{:?}", command);
+    let program = command.as_std().get_program().to_string_lossy().to_string();
+    let output = command
+        .output()
+        .await
+        .with_context(|| format!("Failed to spawn {}", program))?;
+    if !output.status.success() {
+        bail!("{}", String::from_utf8_lossy(&output.stderr));
+    }
+    Ok(output)
 }
 
 pub fn get_executable_path(executables: &[&str]) -> Result<PathBuf> {

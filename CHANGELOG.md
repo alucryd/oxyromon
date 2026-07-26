@@ -36,12 +36,16 @@
 - Unified `convert-roms`/`export-roms` CSO and ZSO handling into a single `to_xso` per module, backed by a new shared source-decoding layer (`transcode.rs`) and a `check_and_persist` conversion finalizer, removing another ~440 lines
 - Moved `convert-roms`/`export-roms` NSZ, RVZ, and WBFS handling onto the shared decoding layer as well
 - Simplified `convert-roms` CHD handling: extracted the repeated parent-CHD lookup/resolution into helpers, merged the twin CSO and ZSO loops, and moved the single-file loops onto the shared decoding layer
+- Extracted CUE/BIN and CHD parsing helpers (`archive_to_cue_bin`, `assemble_cue_bin`, `romfile_as_chd`) into `transcode.rs`, shared by `convert-roms`, `export-roms`, and `check-roms`
+- Added a `run_tool` helper that centralizes external tool invocation (debug logging, spawn error context, stderr reporting) and adopted it across the format modules
+- Simplified `convert-roms` back-to-original handling: merged the twin CSO and ZSO loops and moved the tail loops onto the shared conversion finalizer
 
 ## Fixes
 
 - Fixed the server not shutting down cleanly on Ctrl+C when SSE clients were connected
 - Fixed `convert-roms -f rvz --recompress` leaving a stray intermediate `.iso` next to each recompressed RVZ; the intermediate is now extracted to the temporary directory
 - Fixed `convert-roms -f chd` always failing with "Not a valid rdsk" on standalone RIFF (LaserDisc) images; the RIFF branch mistakenly parsed the file as RDSK
+- Fixed `convert-roms -f original` and `export-roms -f original` mispartitioning Switch files: NSZ files were silently ignored and NSP files aborted the run with "Not a valid nsz"
 
 # 0.21.0
 

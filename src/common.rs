@@ -124,6 +124,12 @@ pub trait GetRomfile {
     fn romfile(&self) -> &CommonRomfile;
 }
 
+impl GetRomfile for CommonRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        self
+    }
+}
+
 impl GetRomfile for IsoRomfile {
     fn romfile(&self) -> &CommonRomfile {
         &self.romfile

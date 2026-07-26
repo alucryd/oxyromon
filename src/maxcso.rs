@@ -115,18 +115,14 @@ impl ToIso for XsoRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(MAXCSO)
-            .arg("--decompress")
-            .arg(&self.romfile.path)
-            .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .unwrap_or_else(|_| panic!("Failed to extract {}", self.xso_type));
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(MAXCSO)
+                .arg("--decompress")
+                .arg(&self.romfile.path)
+                .arg("-o")
+                .arg(&path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -168,25 +164,21 @@ impl ToXso for IsoRomfile {
             ),
         );
 
-        let output = Command::new(MAXCSO)
-            .arg("--block=2048")
-            .arg(format!(
-                "--format={}",
-                match xso_type {
-                    XsoType::Cso => "cso1",
-                    XsoType::Zso => "zso",
-                }
-            ))
-            .arg(&self.romfile.path)
-            .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .unwrap_or_else(|_| panic!("Failed to create {}", xso_type));
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(MAXCSO)
+                .arg("--block=2048")
+                .arg(format!(
+                    "--format={}",
+                    match xso_type {
+                        XsoType::Cso => "cso1",
+                        XsoType::Zso => "zso",
+                    }
+                ))
+                .arg(&self.romfile.path)
+                .arg("-o")
+                .arg(&path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();

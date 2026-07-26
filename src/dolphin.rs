@@ -98,21 +98,17 @@ impl ToIso for RvzRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
-            .arg("convert")
-            .arg("-f")
-            .arg("iso")
-            .arg("-i")
-            .arg(&self.romfile.path)
-            .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .expect("Failed to extract rvz");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
+                .arg("convert")
+                .arg("-f")
+                .arg("iso")
+                .arg("-i")
+                .arg(&self.romfile.path)
+                .arg("-o")
+                .arg(&path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -178,11 +174,7 @@ impl ToRvz for IsoRomfile {
         if scrub {
             command.arg("-s");
         }
-        let output = command.output().await.expect("Failed to create rvz");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(&mut command).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();

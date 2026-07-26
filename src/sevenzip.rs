@@ -79,14 +79,7 @@ impl ArchiveFile for ArchiveRomfile {
             .arg(new_path);
         log::debug!("{:?}", command);
 
-        let output = command
-            .output()
-            .await
-            .expect("Failed to rename file in archive");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr));
-        }
+        run_tool(&mut command).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -107,18 +100,14 @@ impl ArchiveFile for ArchiveRomfile {
 
         print_action(progress_bar, &format!("Deleting \"{}\"", self.path));
 
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-            .arg("d")
-            .arg("--")
-            .arg(&self.romfile.path)
-            .arg(&self.path)
-            .output()
-            .await
-            .expect("Failed to remove files from archive");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+                .arg("d")
+                .arg("--")
+                .arg(&self.romfile.path)
+                .arg(&self.path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -223,11 +212,7 @@ impl ToCommon for ArchiveRomfile {
 
         log::debug!("{:?}", command);
 
-        let output = command.output().await.expect("Failed to extract archive");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(&mut command).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -290,14 +275,7 @@ impl ToArchive for CommonRomfile {
             .arg(&archive_path)
             .arg(path)
             .current_dir(working_directory.as_ref());
-        let output = command
-            .output()
-            .await
-            .expect("Failed to add files to archive");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(&mut command).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -371,11 +349,7 @@ impl AsArchive for CommonRomfile {
 
         log::debug!("{:?}", command);
 
-        let output = command.output().await.expect("Failed to parse archive");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr));
-        }
+        let output = run_tool(&mut command).await?;
 
         let stdout = String::from_utf8(output.stdout).unwrap();
         let paths: Vec<String> = stdout

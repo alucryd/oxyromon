@@ -2538,7 +2538,7 @@ async fn to_original(
     let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition NSZs
-    let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSP_EXTENSION]);
+    let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSZ_EXTENSION]);
 
     // partition RVZs
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
@@ -2871,8 +2871,8 @@ async fn to_original(
         commit_transaction(transaction).await;
     }
 
-    // convert CSOs
-    for roms in csos.values() {
+    // convert CSOs/ZSOs
+    for roms in csos.values().chain(zsos.values()) {
         if maxcso::get_version().await.is_err() {
             print_error(progress_bar, "Required tool not found: maxcso");
             break;
@@ -2880,30 +2880,25 @@ async fn to_original(
         let mut transaction = begin_transaction(connection).await;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let cso_romfile = romfile.as_common(&mut transaction).await?.as_xso().await?;
-        let iso_romfile = cso_romfile
-            .to_iso(progress_bar, &cso_romfile.romfile.path.parent().unwrap())
+        let xso_romfile = romfile.as_common(&mut transaction).await?.as_xso().await?;
+        let iso_romfile = xso_romfile
+            .to_iso(progress_bar, &xso_romfile.romfile.path.parent().unwrap())
             .await?;
-
-        if check
-            && iso_romfile
-                .romfile
-                .check(&mut transaction, progress_bar, &None, &[rom])
-                .await
-                .is_err()
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &xso_romfile.romfile,
+            &iso_romfile.romfile,
+            romfile.id,
+            check,
+            false,
+            false,
+        )
+        .await?
         {
-            print_error(progress_bar, "Integrity check failed, reverting conversion");
-            iso_romfile.romfile.delete(progress_bar, false).await?;
-            continue;
-        };
-
-        iso_romfile
-            .romfile
-            .update(&mut transaction, progress_bar, romfile.id)
-            .await?;
-        cso_romfile.romfile.delete(progress_bar, false).await?;
-
-        commit_transaction(transaction).await;
+            commit_transaction(transaction).await;
+        }
     }
 
     // convert NSZs
@@ -2919,26 +2914,21 @@ async fn to_original(
         let nsp_romfile = nsz_romfile
             .to_nsp(progress_bar, &nsz_romfile.romfile.path.parent().unwrap())
             .await?;
-
-        if check
-            && nsp_romfile
-                .romfile
-                .check(&mut transaction, progress_bar, &None, &[rom])
-                .await
-                .is_err()
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &nsz_romfile.romfile,
+            &nsp_romfile.romfile,
+            romfile.id,
+            check,
+            false,
+            false,
+        )
+        .await?
         {
-            print_error(progress_bar, "Integrity check failed, reverting conversion");
-            nsp_romfile.romfile.delete(progress_bar, false).await?;
-            continue;
-        };
-
-        nsp_romfile
-            .romfile
-            .update(&mut transaction, progress_bar, romfile.id)
-            .await?;
-        nsz_romfile.romfile.delete(progress_bar, false).await?;
-
-        commit_transaction(transaction).await;
+            commit_transaction(transaction).await;
+        }
     }
 
     // convert RVZs
@@ -2954,61 +2944,21 @@ async fn to_original(
         let iso_romfile = rvz_romfile
             .to_iso(progress_bar, &rvz_romfile.romfile.path.parent().unwrap())
             .await?;
-
-        if check
-            && iso_romfile
-                .romfile
-                .check(&mut transaction, progress_bar, &None, &[rom])
-                .await
-                .is_err()
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &rvz_romfile.romfile,
+            &iso_romfile.romfile,
+            romfile.id,
+            check,
+            false,
+            false,
+        )
+        .await?
         {
-            print_error(progress_bar, "Integrity check failed, reverting conversion");
-            iso_romfile.romfile.delete(progress_bar, false).await?;
-            continue;
-        };
-
-        iso_romfile
-            .romfile
-            .update(&mut transaction, progress_bar, romfile.id)
-            .await?;
-        rvz_romfile.romfile.delete(progress_bar, false).await?;
-
-        commit_transaction(transaction).await;
-    }
-
-    // convert ZSOs
-    for roms in zsos.values() {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
+            commit_transaction(transaction).await;
         }
-        let mut transaction = begin_transaction(connection).await;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let zso_romfile = romfile.as_common(&mut transaction).await?.as_xso().await?;
-        let iso_romfile = zso_romfile
-            .to_iso(progress_bar, &zso_romfile.romfile.path.parent().unwrap())
-            .await?;
-
-        if check
-            && iso_romfile
-                .romfile
-                .check(&mut transaction, progress_bar, &None, &[rom])
-                .await
-                .is_err()
-        {
-            print_error(progress_bar, "Integrity check failed, reverting conversion");
-            iso_romfile.romfile.delete(progress_bar, false).await?;
-            continue;
-        };
-
-        iso_romfile
-            .romfile
-            .update(&mut transaction, progress_bar, romfile.id)
-            .await?;
-        zso_romfile.romfile.delete(progress_bar, false).await?;
-
-        commit_transaction(transaction).await;
     }
 
     Ok(())

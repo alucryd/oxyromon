@@ -103,19 +103,15 @@ impl ToNsp for NszRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSP_EXTENSION);
 
-        let output = Command::new(NSZ)
-            .arg("-D")
-            .arg("-F")
-            .arg("-o")
-            .arg(destination_directory.as_ref())
-            .arg(&self.romfile.path)
-            .output()
-            .await
-            .expect("Failed to extract nsz");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(NSZ)
+                .arg("-D")
+                .arg("-F")
+                .arg("-o")
+                .arg(destination_directory.as_ref())
+                .arg(&self.romfile.path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -155,21 +151,17 @@ impl ToNsz for NspRomfile {
             ),
         );
 
-        let output = Command::new(NSZ)
-            .arg("-C")
-            .arg("-K")
-            .arg("-L")
-            .arg("-P")
-            .arg("-o")
-            .arg(destination_directory.as_ref())
-            .arg(&self.romfile.path)
-            .output()
-            .await
-            .expect("Failed to create nsz");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(NSZ)
+                .arg("-C")
+                .arg("-K")
+                .arg("-L")
+                .arg("-P")
+                .arg("-o")
+                .arg(destination_directory.as_ref())
+                .arg(&self.romfile.path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();

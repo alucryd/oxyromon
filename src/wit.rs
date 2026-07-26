@@ -1,6 +1,7 @@
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
+use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
@@ -42,20 +43,16 @@ impl ToWbfs for IsoRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(WBFS_EXTENSION);
 
-        let output = Command::new(WIT)
-            .arg("COPY")
-            .arg("--wbfs")
-            .arg("--source")
-            .arg(&self.romfile.path)
-            .arg("--dest")
-            .arg(&path)
-            .output()
-            .await
-            .expect("Failed to create wbfs");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        let output = run_tool(
+            Command::new(WIT)
+                .arg("COPY")
+                .arg("--wbfs")
+                .arg("--source")
+                .arg(&self.romfile.path)
+                .arg("--dest")
+                .arg(&path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();

@@ -33,18 +33,14 @@ impl ToIso for CueBinRomfile {
             .join(self.cue_romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(BCHUNK)
-            .arg(&self.bin_romfiles.first().unwrap().path)
-            .arg(&self.cue_romfile.path)
-            .arg(BCHUNK)
-            .current_dir(destination_directory.as_ref())
-            .output()
-            .await
-            .expect("Failed to create iso");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
+        run_tool(
+            Command::new(BCHUNK)
+                .arg(&self.bin_romfiles.first().unwrap().path)
+                .arg(&self.cue_romfile.path)
+                .arg(BCHUNK)
+                .current_dir(destination_directory.as_ref()),
+        )
+        .await?;
 
         rename_file(
             progress_bar,

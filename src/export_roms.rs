@@ -1809,7 +1809,7 @@ async fn to_original(
     let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition NSZs
-    let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSP_EXTENSION]);
+    let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSZ_EXTENSION]);
 
     // partition RVZs
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);

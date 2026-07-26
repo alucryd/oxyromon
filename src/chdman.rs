@@ -555,17 +555,7 @@ pub trait AsChd {
 
 impl AsChd for CommonRomfile {
     async fn parse_chd(&self) -> Result<(ChdType, u64, String, String, Option<String>, usize)> {
-        let output = Command::new(CHDMAN)
-            .arg("info")
-            .arg("-i")
-            .arg(&self.path)
-            .output()
-            .await
-            .expect("Failed to parse chd");
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr));
-        }
+        let output = run_tool(Command::new(CHDMAN).arg("info").arg("-i").arg(&self.path)).await?;
 
         let stdout = String::from_utf8(output.stdout).unwrap();
 
@@ -804,11 +794,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     log::debug!("{:?}", command);
 
-    let output = command.output().await.expect("Failed to create chd");
-
-    if !output.status.success() {
-        bail!("{}", String::from_utf8_lossy(&output.stderr))
-    }
+    run_tool(&mut command).await?;
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
@@ -897,11 +883,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     log::debug!("{:?}", command);
 
-    let output = command.output().await.expect("Failed to extract chd");
-
-    if !output.status.success() {
-        bail!("{}", String::from_utf8_lossy(&output.stderr));
-    }
+    run_tool(&mut command).await?;
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
