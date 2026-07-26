@@ -4,7 +4,6 @@ use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
-use super::decode::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::gdidrop::*;
@@ -18,6 +17,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{AsArchive, ToArchive};
+use super::transcode::*;
 use super::util::*;
 use super::wit;
 use super::wit::ToWbfs;
@@ -482,22 +482,7 @@ async fn to_archive(
         let romfile = romfiles_by_id
             .get(&bin_roms.first().unwrap().romfile_id.unwrap())
             .unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1
@@ -1222,34 +1207,18 @@ async fn to_gdi(
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
             let cue_rom = cue_roms.first().unwrap();
-            let cue_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(cue_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-
-            let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-            for bin_rom in &bin_roms {
-                let bin_romfile = romfile
-                    .as_common(connection)
-                    .await?
-                    .as_archive(progress_bar, Some(bin_rom))
-                    .await?
-                    .first()
-                    .unwrap()
-                    .to_common(progress_bar, &tmp_directory.path())
-                    .await?;
-                bin_romfiles.push(bin_romfile);
-            }
-
-            cue_romfile
-                .as_cue_bin(bin_romfiles)?
-                .to_gdi(progress_bar, destination_directory)
-                .await?;
+            archive_to_cue_bin(
+                connection,
+                progress_bar,
+                cue_rom,
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?
+            .inner
+            .to_gdi(progress_bar, destination_directory)
+            .await?;
         }
     }
 
@@ -1272,22 +1241,7 @@ async fn to_gdi(
             bail!("Multiple CHDs found");
         }
         let romfile = romfiles.first().unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
 
         // Only convert CD-type CHDs (Dreamcast games)
         if chd_romfile.chd_type == ChdType::Cd {
@@ -1344,25 +1298,15 @@ async fn to_gdi(
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-        let cue_romfile = romfiles_by_id
-            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap()
-            .as_common(connection)
-            .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-        for bin_rom in &bin_roms {
-            bin_romfiles.push(
-                romfiles_by_id
-                    .get(&bin_rom.romfile_id.unwrap())
-                    .unwrap()
-                    .as_common(connection)
-                    .await?,
-            );
-        }
-        cue_romfile
-            .as_cue_bin(bin_romfiles)?
-            .to_gdi(progress_bar, destination_directory)
-            .await?;
+        assemble_cue_bin(
+            connection,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?
+        .to_gdi(progress_bar, destination_directory)
+        .await?;
     }
 
     // copy existing GDI files
@@ -1695,35 +1639,24 @@ async fn to_iso(
                 .to_common(progress_bar, destination_directory)
                 .await?;
         } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
-            let (mut cue_roms, mut bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            let (mut cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
             let cue_rom = cue_roms.pop().unwrap();
-            let cue_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(cue_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-            let bin_rom = bin_roms.pop().unwrap();
-            let bin_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(bin_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-            cue_romfile
-                .as_cue_bin(vec![bin_romfile])?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
+            archive_to_cue_bin(
+                connection,
+                progress_bar,
+                cue_rom,
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?
+            .inner
+            .to_iso(progress_bar, destination_directory)
+            .await?;
         }
     }
 
@@ -1735,25 +1668,15 @@ async fn to_iso(
         if bin_roms.len() > 1 {
             continue;
         }
-        let cue_romfile = romfiles_by_id
-            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap()
-            .as_common(connection)
-            .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-        for bin_rom in &bin_roms {
-            bin_romfiles.push(
-                romfiles_by_id
-                    .get(&bin_rom.romfile_id.unwrap())
-                    .unwrap()
-                    .as_common(connection)
-                    .await?,
-            );
-        }
-        cue_romfile
-            .as_cue_bin(bin_romfiles)?
-            .to_iso(progress_bar, destination_directory)
-            .await?;
+        assemble_cue_bin(
+            connection,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?
+        .to_iso(progress_bar, destination_directory)
+        .await?;
     }
 
     // export CHDs
@@ -1783,22 +1706,7 @@ async fn to_iso(
             .unwrap()
             .as_common(connection)
             .await?;
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 chd_romfile
@@ -1967,22 +1875,7 @@ async fn to_original(
             bail!("Multiple CHDs found");
         }
         let romfile = romfiles.first().unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1

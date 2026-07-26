@@ -1,4 +1,4 @@
-use super::chdman::{AsChd, ChdType};
+use super::chdman::{AsChd, ChdRomfile, ChdType};
 use super::common::*;
 use super::database::find_romfile_by_id;
 use super::dolphin::AsRvz;
@@ -9,6 +9,7 @@ use super::sevenzip::AsArchive;
 use anyhow::Result;
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
+use std::collections::HashMap;
 use tempfile::TempDir;
 
 /// A romfile decoded to a neutral format, along with the original file it came from.
@@ -53,15 +54,12 @@ pub async fn common_as_source(
     })
 }
 
-/// Decodes a DVD CHD to ISO in the tmp directory, resolving its parent if any.
-/// Returns None when the CHD is not a DVD.
-pub async fn chd_to_iso(
+/// Parses a CHD romfile, resolving its parent if any.
+pub async fn romfile_as_chd(
     connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
     romfile: &Romfile,
-    tmp_directory: &TempDir,
-) -> Result<Option<Decoded<IsoRomfile>>> {
-    let chd_romfile = match romfile.parent_id {
+) -> Result<ChdRomfile> {
+    match romfile.parent_id {
         Some(parent_id) => {
             let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
                 .await
@@ -73,10 +71,21 @@ pub async fn chd_to_iso(
                 .as_common(connection)
                 .await?
                 .as_chd_with_parent(parent_chd_romfile)
-                .await?
+                .await
         }
-        None => romfile.as_common(connection).await?.as_chd().await?,
-    };
+        None => romfile.as_common(connection).await?.as_chd().await,
+    }
+}
+
+/// Decodes a DVD CHD to ISO in the tmp directory, resolving its parent if any.
+/// Returns None when the CHD is not a DVD.
+pub async fn chd_to_iso(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    romfile: &Romfile,
+    tmp_directory: &TempDir,
+) -> Result<Option<Decoded<IsoRomfile>>> {
+    let chd_romfile = romfile_as_chd(connection, romfile).await?;
     if chd_romfile.chd_type != ChdType::Dvd {
         return Ok(None);
     }
@@ -138,4 +147,66 @@ pub async fn rvz_to_iso(
         source: rvz_romfile.romfile,
         inner,
     })
+}
+
+/// Extracts a CUE/BIN set from an archive into the tmp directory.
+pub async fn archive_to_cue_bin(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    cue_rom: &Rom,
+    bin_roms: &[&Rom],
+    romfile: &Romfile,
+    tmp_directory: &TempDir,
+) -> Result<Decoded<CueBinRomfile>> {
+    let source = romfile.as_common(connection).await?;
+    let cue_romfile = source
+        .clone()
+        .as_archive(progress_bar, Some(cue_rom))
+        .await?
+        .pop()
+        .unwrap()
+        .to_common(progress_bar, &tmp_directory.path())
+        .await?;
+    let mut bin_romfiles: Vec<CommonRomfile> = vec![];
+    for bin_rom in bin_roms {
+        bin_romfiles.push(
+            source
+                .clone()
+                .as_archive(progress_bar, Some(bin_rom))
+                .await?
+                .pop()
+                .unwrap()
+                .to_common(progress_bar, &tmp_directory.path())
+                .await?,
+        );
+    }
+    Ok(Decoded {
+        source,
+        inner: cue_romfile.as_cue_bin(bin_romfiles)?,
+    })
+}
+
+/// Assembles a CUE/BIN set from loose cue and bin romfiles.
+pub async fn assemble_cue_bin(
+    connection: &mut SqliteConnection,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+    cue_rom: &Rom,
+    bin_roms: &[&Rom],
+) -> Result<CueBinRomfile> {
+    let cue_romfile = romfiles_by_id
+        .get(&cue_rom.romfile_id.unwrap())
+        .unwrap()
+        .as_common(connection)
+        .await?;
+    let mut bin_romfiles: Vec<CommonRomfile> = vec![];
+    for bin_rom in bin_roms {
+        bin_romfiles.push(
+            romfiles_by_id
+                .get(&bin_rom.romfile_id.unwrap())
+                .unwrap()
+                .as_common(connection)
+                .await?,
+        );
+    }
+    cue_romfile.as_cue_bin(bin_romfiles)
 }

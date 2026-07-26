@@ -3,7 +3,6 @@ use super::chdman::{AsChd, AsRdsk, AsRiff, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
-use super::decode::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::maxcso;
@@ -16,6 +15,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
+use super::transcode::*;
 use super::util::*;
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -496,22 +496,7 @@ async fn to_archive(
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id)
-                    .await
-                    .as_common(&mut transaction)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(&mut transaction)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(&mut transaction).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1
@@ -1474,39 +1459,20 @@ async fn to_chd(
             }
 
             let cue_rom = cue_roms.pop().unwrap();
-            let cue_romfile = romfile
-                .as_common(&mut transaction)
-                .await?
-                .as_archive(progress_bar, Some(cue_rom))
-                .await?
-                .pop()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-            let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-            for rom in &bin_roms {
-                bin_romfiles.push(
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .as_archive(progress_bar, Some(rom))
-                        .await?
-                        .pop()
-                        .unwrap()
-                        .to_common(progress_bar, &tmp_directory.path())
-                        .await?,
-                );
-            }
-            let cue_bin_romfile = cue_romfile.as_cue_bin(bin_romfiles)?;
+            let decoded = archive_to_cue_bin(
+                &mut transaction,
+                progress_bar,
+                cue_rom,
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?;
+            let cue_bin_romfile = decoded.inner;
             let chd_romfile = cue_bin_romfile
                 .to_chd(
                     progress_bar,
-                    &romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .path
-                        .parent()
-                        .unwrap(),
+                    &decoded.source.path.parent().unwrap(),
                     cd_compression_algorithms,
                     cd_hunk_size,
                     parent_as_common(&mut transaction, &parent_chd_romfile).await?,
@@ -1523,12 +1489,11 @@ async fn to_chd(
                 continue;
             };
             if diff {
-                let common_romfile = romfile.as_common(&mut transaction).await?;
                 print_diff(
                     &mut transaction,
                     progress_bar,
                     &roms.iter().collect::<Vec<&Rom>>(),
-                    &[&common_romfile],
+                    &[&decoded.source],
                     &[&cue_bin_romfile.cue_romfile, &chd_romfile.romfile],
                 )
                 .await?;
@@ -1537,9 +1502,8 @@ async fn to_chd(
                 .cue_romfile
                 .rename(
                     progress_bar,
-                    &romfile
-                        .as_common(&mut transaction)
-                        .await?
+                    &decoded
+                        .source
                         .path
                         .parent()
                         .unwrap()
@@ -1560,11 +1524,7 @@ async fn to_chd(
                 parent_chd_romfile.as_ref().map(|romfile| romfile.id),
             )
             .await;
-            romfile
-                .as_common(&mut transaction)
-                .await?
-                .delete(progress_bar, false)
-                .await?;
+            decoded.source.delete(progress_bar, false).await?;
         }
 
         commit_transaction(transaction).await;
@@ -1579,22 +1539,13 @@ async fn to_chd(
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-        let cue_romfile = romfiles_by_id
-            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap()
-            .as_common(&mut transaction)
-            .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-        for bin_rom in &bin_roms {
-            bin_romfiles.push(
-                romfiles_by_id
-                    .get(&bin_rom.romfile_id.unwrap())
-                    .unwrap()
-                    .as_common(&mut transaction)
-                    .await?,
-            );
-        }
-        let cue_bin_romfile = cue_romfile.as_cue_bin(bin_romfiles)?;
+        let cue_bin_romfile = assemble_cue_bin(
+            &mut transaction,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?;
         let chd_romfile = cue_bin_romfile
             .to_chd(
                 progress_bar,
@@ -1854,22 +1805,7 @@ async fn to_chd(
                 continue;
             }
 
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id)
-                        .await
-                        .as_common(&mut transaction)
-                        .await?
-                        .as_chd()
-                        .await?;
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .as_chd_with_parent(parent_chd_romfile)
-                        .await?
-                }
-                None => romfile.as_common(&mut transaction).await?.as_chd().await?,
-            };
+            let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
 
             let new_chd_romfile = match chd_romfile.chd_type {
                 ChdType::Cd => {
@@ -2751,22 +2687,7 @@ async fn to_original(
             print_skip(progress_bar, "CHD has children, skipping");
             continue;
         }
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id)
-                    .await
-                    .as_common(&mut transaction)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(&mut transaction)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(&mut transaction).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1

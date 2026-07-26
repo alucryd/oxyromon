@@ -13,7 +13,6 @@ mod crc32;
 mod create_dats;
 mod ctrtool;
 mod database;
-mod decode;
 mod dolphin;
 mod download_dats;
 mod export_roms;
@@ -43,6 +42,7 @@ mod rebuild_roms;
 mod server;
 mod sevenzip;
 mod sort_roms;
+mod transcode;
 mod util;
 #[cfg(feature = "server")]
 mod validator;

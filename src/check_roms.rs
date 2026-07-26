@@ -14,6 +14,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::AsArchive;
+use super::transcode::romfile_as_chd;
 use super::util::*;
 use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -160,23 +161,7 @@ async fn check_system(
                 print_error(progress_bar, "Required tool not found: chdman");
                 break;
             }
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .as_chd_with_parent(
-                            parent_chd_romfile
-                                .as_common(&mut transaction)
-                                .await?
-                                .as_chd()
-                                .await?,
-                        )
-                        .await?
-                }
-                None => romfile.as_common(&mut transaction).await?.as_chd().await?,
-            };
+            let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
             result = chd_romfile
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
