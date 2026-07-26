@@ -3,6 +3,7 @@ use super::mimetype::*;
 use super::progress::*;
 use indicatif::ProgressBar;
 use simple_error::SimpleResult;
+use simple_error::{bail, simple_error};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::fs::{File, OpenOptions};
@@ -57,11 +58,15 @@ pub struct Track {
 #[derive(Debug, Clone)]
 pub struct AudioFile {
     pub filename: String,
+    // parsed for CUE sheet fidelity, not consumed by the GDI conversion
+    #[allow(dead_code)]
     pub file_type: FileType,
 }
 
 #[derive(Debug, Clone)]
 pub struct Index {
+    // parsed for CUE sheet fidelity, not consumed by the GDI conversion
+    #[allow(dead_code)]
     pub number: u32,
     pub minutes: u32,
     pub seconds: u32,
@@ -144,24 +149,24 @@ impl CueSheet {
                 }
                 "PERFORMER" => {
                     let performer = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().performer = Some(performer);
+                    if let Some(track) = current_track.as_mut() {
+                        track.performer = Some(performer);
                     } else {
                         cue_sheet.performer = Some(performer);
                     }
                 }
                 "SONGWRITER" => {
                     let songwriter = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().songwriter = Some(songwriter);
+                    if let Some(track) = current_track.as_mut() {
+                        track.songwriter = Some(songwriter);
                     } else {
                         cue_sheet.songwriter = Some(songwriter);
                     }
                 }
                 "TITLE" => {
                     let title = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().title = Some(title);
+                    if let Some(track) = current_track.as_mut() {
+                        track.title = Some(title);
                     } else {
                         cue_sheet.title = Some(title);
                     }
@@ -197,27 +202,27 @@ impl CueSheet {
                     }
                 }
                 "INDEX" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 3 {
-                            let index = Self::parse_index(parts[1], parts[2])?;
-                            track.indices.push(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 3
+                    {
+                        let index = Self::parse_index(parts[1], parts[2])?;
+                        track.indices.push(index);
                     }
                 }
                 "PREGAP" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 2 {
-                            let index = Self::parse_index("0", parts[1])?;
-                            track.pregap = Some(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 2
+                    {
+                        let index = Self::parse_index("0", parts[1])?;
+                        track.pregap = Some(index);
                     }
                 }
                 "POSTGAP" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 2 {
-                            let index = Self::parse_index("0", parts[1])?;
-                            track.postgap = Some(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 2
+                    {
+                        let index = Self::parse_index("0", parts[1])?;
+                        track.postgap = Some(index);
                     }
                 }
                 "REM" => {
@@ -243,12 +248,11 @@ impl CueSheet {
     }
 
     fn extract_quoted_string(line: &str) -> String {
-        if let Some(start) = line.find('"') {
-            if let Some(end) = line.rfind('"') {
-                if start < end {
-                    return line[start + 1..end].to_string();
-                }
-            }
+        if let Some(start) = line.find('"')
+            && let Some(end) = line.rfind('"')
+            && start < end
+        {
+            return line[start + 1..end].to_string();
         }
         // Fallback: take everything after the first space
         line.split_whitespace()
@@ -387,10 +391,9 @@ impl CueSheet {
                 .comments
                 .iter()
                 .any(|c| c.contains("HIGH-DENSITY AREA"))
+                && current_sector < 45000
             {
-                if current_sector < 45000 {
-                    current_sector = 45000;
-                }
+                current_sector = 45000;
             }
 
             track_paths.push(output_track_path);

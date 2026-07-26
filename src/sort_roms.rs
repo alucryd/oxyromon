@@ -20,13 +20,12 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::VariantNames;
 
-lazy_static! {
-    pub static ref LANGUAGE_REGEX: Regex = Regex::new(r"[A-Z][a-z]").unwrap();
-    pub static ref VARIANT_REGEX: Regex = Regex::new(r"[A-Z]{2}").unwrap();
-}
+pub static LANGUAGE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z][a-z]").unwrap());
+pub static VARIANT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z]{2}").unwrap());
 
 pub fn subcommand() -> Command {
     Command::new("sort-roms")
@@ -676,7 +675,7 @@ async fn sort_game<'a>(
         let new_romfile_path = romfile
             .as_common(connection)
             .await?
-            .get_sorted_path(connection, system, &game, &rom, subfolder_scheme, &None)
+            .get_sorted_path(connection, system, game, rom, subfolder_scheme, &None)
             .await?;
         if romfile.as_common(connection).await?.path != new_romfile_path {
             let patches = find_patches_by_rom_id(connection, rom.id).await;
@@ -693,8 +692,8 @@ async fn sort_game<'a>(
             romfile_moves.push((romfile, new_romfile_path));
         }
     }
-    if game.playlist_id.is_some() {
-        let playlist_romfile = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
+    if let Some(playlist_id) = game.playlist_id {
+        let playlist_romfile = romfiles_by_id.get(&playlist_id).unwrap();
         let new_playlist_romfile_path = game
             .get_playlist_path(connection, system, subfolder_scheme)
             .await?;
@@ -729,7 +728,7 @@ fn trim_ignored_games(
         })
     } else {
         games.into_iter().partition(|game| {
-            log::debug!("sort_roms::trim_ignored_games(\"{}\")", &game.name);
+            log::debug!("sort_roms::trim_ignored_games(\"{}\")", game.name);
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
                 for token in name.iter() {
                     if let NoIntroToken::Languages(parsed_languages) = token {

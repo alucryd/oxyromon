@@ -2542,7 +2542,6 @@ dependencies = [
  "indicatif-log-bridge",
  "infer 0.19.0",
  "itertools 0.14.0",
- "lazy_static",
  "log",
  "md-5",
  "num-derive",

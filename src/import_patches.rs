@@ -6,6 +6,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;

@@ -3,19 +3,20 @@ use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use indicatif::ProgressBar;
-use lazy_static::lazy_static;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use std::path::Path;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::process::Command;
 
 const WIT: &str = "wit";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.[\d\w]+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.[\d\w]+").unwrap());
 
 pub struct WbfsRomfile {
+    // kept for consistency with the other format wrappers, not read back after conversion
+    #[allow(dead_code)]
     romfile: CommonRomfile,
 }
 

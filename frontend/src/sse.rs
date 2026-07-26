@@ -40,7 +40,11 @@ pub fn push_notification(state: AppState, message: String, kind: NotificationKin
     state.toast.set(Some(notification));
 
     // Auto-dismiss the toast (info: 3s, otherwise 5s), matching the Svelte UI.
-    let duration = if kind == NotificationKind::Info { 3000 } else { 5000 };
+    let duration = if kind == NotificationKind::Info {
+        3000
+    } else {
+        5000
+    };
     Timeout::new(duration, move || state.toast.set(None)).forget();
 }
 

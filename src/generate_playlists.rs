@@ -13,13 +13,12 @@ use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::io::BufWriter;
 
-lazy_static! {
-    pub static ref DISC_REGEX: Regex = Regex::new(r" \(Disc \d+\).*").unwrap();
-}
+pub static DISC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" \(Disc \d+\).*").unwrap());
 
 pub fn subcommand() -> Command {
     Command::new("generate-playlists")
@@ -131,7 +130,7 @@ async fn process_system(
             .expect("Failed to create M3U file");
         let mut writer = BufWriter::new(playlist_file);
 
-        print_action(progress_bar, &format!("Creating \"{}\"", &playlist_name));
+        print_action(progress_bar, &format!("Creating \"{}\"", playlist_name));
 
         for romfile in existing_romfiles {
             writer

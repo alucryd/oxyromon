@@ -20,7 +20,7 @@ impl Mutation {
         value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::add_to_list({}, {})", &key, &value);
+        log::debug!("mutation::add_to_list({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         let progress_bar = get_progress_bar(0, get_none_progress_style());
         add_to_list(
@@ -41,7 +41,7 @@ impl Mutation {
         value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::remove_to_list({}, {})", &key, &value);
+        log::debug!("mutation::remove_to_list({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         let progress_bar = get_progress_bar(0, get_none_progress_style());
         remove_from_list(
@@ -62,7 +62,7 @@ impl Mutation {
         value: bool,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::set_bool({}, {})", &key, &value);
+        log::debug!("mutation::set_bool({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_bool(&mut pool.acquire().await.unwrap(), &key, value, system_id).await;
         Ok(true)
@@ -74,7 +74,7 @@ impl Mutation {
         #[graphql(validator(custom = "PreferRegionValidator::new()"))] value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::set_prefer_regions({})", &value);
+        log::debug!("mutation::set_prefer_regions({})", value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_string(
             &mut pool.acquire().await.unwrap(),
@@ -92,7 +92,7 @@ impl Mutation {
         #[graphql(validator(custom = "PreferVersionValidator::new()"))] value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::set_prefer_versions({})", &value);
+        log::debug!("mutation::set_prefer_versions({})", value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_string(
             &mut pool.acquire().await.unwrap(),
@@ -111,7 +111,7 @@ impl Mutation {
         #[graphql(validator(custom = "SubfolderSchemeValidator::new()"))] value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::set_subfolder_scheme({}, {})", &key, &value);
+        log::debug!("mutation::set_subfolder_scheme({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_string(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
         Ok(true)
@@ -124,7 +124,7 @@ impl Mutation {
         #[graphql(validator(custom = "DirectoryValidator::new()"))] value: String,
         system_id: Option<i64>,
     ) -> Result<bool> {
-        log::debug!("mutation::set_directory({}, {})", &key, &value);
+        log::debug!("mutation::set_directory({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_directory(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
         Ok(true)

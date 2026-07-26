@@ -22,6 +22,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
+use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -1473,10 +1474,10 @@ async fn to_chd(
                 .to_str()
                 .unwrap()
                 .to_lowercase();
-            if extension != ISO_EXTENSION {
-                if let Some(mimetype) = get_mimetype(&common_romfile.path).await? {
-                    extension = mimetype.extension().to_string();
-                }
+            if extension != ISO_EXTENSION
+                && let Some(mimetype) = get_mimetype(&common_romfile.path).await?
+            {
+                extension = mimetype.extension().to_string();
             }
             let chd_romfile = match extension.as_str() {
                 ISO_EXTENSION => {

@@ -1,5 +1,5 @@
 use console::Style;
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
 // Re-export indicatif types so consumers of `progress::*` have them available
 pub use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -11,19 +11,15 @@ const NONE_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}";
 const COUNT_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}\n        {pos}/{len} [{bar:40.cyan/dim}] {per_sec} {elapsed_precise} (ETA {eta_precise})";
 const BYTES_TEMPLATE: &str = "  {spinner:.cyan} {wide_msg}\n        {bytes}/{total_bytes} [{bar:40.cyan/dim}] {bytes_per_sec} {elapsed_precise} (ETA {eta_precise})";
 
-lazy_static! {
-    static ref MULTI_PROGRESS: MultiProgress = MultiProgress::new();
-
-    // Prefixed styles
-    static ref STYLE_HEADER: Style = Style::new().bold().cyan();
-    static ref STYLE_SUBHEADER: Style = Style::new().bold();
-    static ref STYLE_SUCCESS: Style = Style::new().green();
-    static ref STYLE_WARNING: Style = Style::new().yellow();
-    static ref STYLE_ERROR: Style = Style::new().red().bold();
-    static ref STYLE_SKIP: Style = Style::new().dim();
-    static ref STYLE_ACTION: Style = Style::new().bold();
-    static ref STYLE_DIM: Style = Style::new().dim();
-}
+static MULTI_PROGRESS: LazyLock<MultiProgress> = LazyLock::new(MultiProgress::new);
+// Prefixed styles
+static STYLE_HEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold().cyan());
+static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold());
+static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().green());
+static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().yellow());
+static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().red().bold());
+static STYLE_SKIP: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
+static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
 
 /// Returns the global MultiProgress instance.
 /// All progress bars should be added to this instance.
@@ -32,8 +28,7 @@ pub fn get_multi_progress() -> &'static MultiProgress {
 }
 
 pub fn get_progress_bar(length: u64, style: ProgressStyle) -> ProgressBar {
-    let pb = MULTI_PROGRESS.add(ProgressBar::new(length).with_style(style));
-    pb
+    MULTI_PROGRESS.add(ProgressBar::new(length).with_style(style))
 }
 
 pub fn get_none_progress_style() -> ProgressStyle {

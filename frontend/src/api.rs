@@ -64,10 +64,7 @@ pub async fn get_info() -> Result<Info, String> {
 pub async fn get_raw_settings(system_id: Option<i64>) -> Result<Vec<Setting>, String> {
     match system_id {
         Some(id) => {
-            let query = format!(
-                "{{ systemSettings(systemId: {}) {{ key value }} }}",
-                id
-            );
+            let query = format!("{{ systemSettings(systemId: {}) {{ key value }} }}", id);
             let mut data = graphql(&query, Value::Null).await?;
             field(&mut data, "systemSettings")
         }
@@ -99,7 +96,9 @@ pub async fn get_systems(state: AppState) {
 
 pub fn update_systems(state: AppState) {
     let all = state.unfiltered_systems.get_untracked();
-    state.systems_total_pages.set(total_pages(all.len(), PAGE_SIZE));
+    state
+        .systems_total_pages
+        .set(total_pages(all.len(), PAGE_SIZE));
     let page = state.systems_page.get_untracked();
     state.systems.set(paginate(&all, page, PAGE_SIZE));
 }
@@ -154,7 +153,9 @@ fn filter_games(state: AppState, games: Vec<Game>) -> Vec<Game> {
 
 pub fn update_games(state: AppState) {
     let filtered = filter_games(state, state.unfiltered_games.get_untracked());
-    state.games_total_pages.set(total_pages(filtered.len(), PAGE_SIZE));
+    state
+        .games_total_pages
+        .set(total_pages(filtered.len(), PAGE_SIZE));
     let page = state.games_page.get_untracked();
     state.games.set(paginate(&filtered, page, PAGE_SIZE));
     state.filtered_games.set(filtered);
@@ -204,7 +205,9 @@ pub fn update_romfiles(state: AppState) {
         .romfiles_total_pages
         .set(total_pages(romfiles.len(), ROMS_PAGE_SIZE));
     let page = state.romfiles_page.get_untracked();
-    state.romfiles.set(paginate(&romfiles, page, ROMS_PAGE_SIZE));
+    state
+        .romfiles
+        .set(paginate(&romfiles, page, ROMS_PAGE_SIZE));
 }
 
 pub async fn get_sizes_by_system_id(state: AppState, system_id: i64) {
@@ -254,7 +257,11 @@ pub async fn add_to_list(key: &str, value: &str, system_id: Option<i64>) -> Resu
     .map(|_| ())
 }
 
-pub async fn remove_from_list(key: &str, value: &str, system_id: Option<i64>) -> Result<(), String> {
+pub async fn remove_from_list(
+    key: &str,
+    value: &str,
+    system_id: Option<i64>,
+) -> Result<(), String> {
     let mutation = r#"mutation RemoveFromList($key: String!, $value: String!, $systemId: Int) {
         removeFromList(key: $key, value: $value, systemId: $systemId)
     }"#;

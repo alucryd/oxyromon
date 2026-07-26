@@ -26,6 +26,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
 use indicatif::ProgressBar;
 use rayon::prelude::*;
+use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;

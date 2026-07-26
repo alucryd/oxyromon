@@ -7,6 +7,7 @@ use super::prompt::*;
 use super::util::*;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
+use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use walkdir::WalkDir;
 

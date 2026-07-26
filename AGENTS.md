@@ -342,6 +342,12 @@ Requires the `wasm32-unknown-unknown` target, the [Trunk](https://trunkrs.dev)
 bundler and the [Tailwind CSS standalone CLI](https://tailwindcss.com/blog/standalone-cli)
 (no Node.js toolchain):
 
+> **Gotcha:** the `tailwindcss` binary must be the *standalone* CLI (bundles
+> the `tailwindcss` package; on Arch: `tailwindcss-bin`). A Node-based
+> `@tailwindcss/cli` fails with `Can't resolve 'tailwindcss'` because
+> `@import "tailwindcss"` is resolved by walking up `node_modules` from the
+> CSS file, never reaching `/usr/lib/node_modules`.
+
 ```sh
 rustup target add wasm32-unknown-unknown
 cargo install --locked trunk
@@ -385,7 +391,7 @@ The top-level `build.rs` runs `trunk build --release` automatically when the
 - **Module-per-test:** Each test case gets its own file in a subdirectory (e.g., `src/import_roms/test_original.rs`).
 - **Feature gating:** All server-related code uses `#[cfg(feature = "server")]`.
 - **No unwrap in production code** where avoidable — use `try_with!` or `bail!` instead.
-- **Lazy statics** for compiled regexes and shared state (via `lazy_static!`).
+- **Lazy statics** for compiled regexes and shared state (via `std::sync::LazyLock`).
 - **Parallel iteration** with `rayon` where beneficial (e.g., filtering large lists).
 
 ### CLI Output Helpers
@@ -404,7 +410,7 @@ All user-facing output should go through the categorized helpers in `progress.rs
 | `print_action`    | `→` (dim)       | File operations in progress     | `Extracting "game.chd"`, `Compressing "rom.bin"` |
 | `print_separator` | (blank line)    | Visual spacing between sections |                                                  |
 
-All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`lazy_static`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
+All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`std::sync::LazyLock`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
 
 ### File Organization
 

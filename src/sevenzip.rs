@@ -8,11 +8,13 @@ use super::util::*;
 use indicatif::ProgressBar;
 use itertools::izip;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
 use std::path::Path;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, EnumString};
 use tokio::process::Command;
@@ -22,9 +24,7 @@ pub const SEVENZIP_EXECUTABLES: &[&str] = &["7zz", "7z"];
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
@@ -62,7 +62,7 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.enable_steady_tick(Duration::from_millis(100));
         print_action(
             progress_bar,
-            &format!("Renaming \"{}\" to \"{}\"", &self.path, new_path),
+            &format!("Renaming \"{}\" to \"{}\"", self.path, new_path),
         );
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
@@ -100,7 +100,7 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        print_action(progress_bar, &format!("Deleting \"{}\"", &self.path));
+        print_action(progress_bar, &format!("Deleting \"{}\"", self.path));
 
         let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
             .arg("d")
@@ -184,7 +184,7 @@ impl Check for ArchiveRomfile {
     ) -> SimpleResult<()> {
         print_action(
             progress_bar,
-            &format!("Checking \"{}\" ({})", &self.romfile, &self.path),
+            &format!("Checking \"{}\" ({})", self.romfile, self.path),
         );
         let tmp_directory = create_tmp_directory(connection).await?;
         let common_romfile = self.to_common(progress_bar, &tmp_directory).await?;
@@ -205,7 +205,7 @@ impl ToCommon for ArchiveRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        print_action(progress_bar, &format!("Extracting \"{}\"", &self.path));
+        print_action(progress_bar, &format!("Extracting \"{}\"", self.path));
 
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command
@@ -260,7 +260,7 @@ impl ToArchive for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        print_action(progress_bar, &format!("Compressing \"{}\"", &self));
+        print_action(progress_bar, &format!("Compressing \"{}\"", self));
 
         let archive_path = destination_directory.as_ref().join(format!(
             "{}.{}",

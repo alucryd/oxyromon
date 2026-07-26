@@ -64,14 +64,20 @@ impl Local {
     }
 
     fn populate(&self, settings: &[Setting]) {
-        let find = |key: &str| settings.iter().find(|s| s.key == key).and_then(|s| s.value.clone());
+        let find = |key: &str| {
+            settings
+                .iter()
+                .find(|s| s.key == key)
+                .and_then(|s| s.value.clone())
+        };
         let is_true = |key: &str| find(key).as_deref() == Some("true");
         let not_false = |key: &str| find(key).as_deref() != Some("false");
 
         self.one_regions.set(split_list(&find(ONE_REGIONS_KEY)));
         self.all_regions.set(split_list(&find(ALL_REGIONS_KEY)));
         self.languages.set(split_list(&find(LANGUAGES_KEY)));
-        self.discard_releases.set(split_list(&find(DISCARD_RELEASES_KEY)));
+        self.discard_releases
+            .set(split_list(&find(DISCARD_RELEASES_KEY)));
         self.discard_flags.set(split_list(&find(DISCARD_FLAGS_KEY)));
         self.prefer_flags.set(split_list(&find(PREFER_FLAGS_KEY)));
         self.strict_one_regions.set(is_true(STRICT_ONE_REGIONS_KEY));
@@ -85,8 +91,10 @@ impl Local {
             .set(find(ONE_REGIONS_SUBFOLDERS_KEY).unwrap_or_else(|| "none".to_string()));
         self.all_regions_subfolders
             .set(find(ALL_REGIONS_SUBFOLDERS_KEY).unwrap_or_else(|| "none".to_string()));
-        self.rom_directory.set(find(ROM_DIRECTORY_KEY).unwrap_or_default());
-        self.tmp_directory.set(find(TMP_DIRECTORY_KEY).unwrap_or_default());
+        self.rom_directory
+            .set(find(ROM_DIRECTORY_KEY).unwrap_or_default());
+        self.tmp_directory
+            .set(find(TMP_DIRECTORY_KEY).unwrap_or_default());
     }
 }
 
@@ -244,13 +252,13 @@ pub fn SettingsModal(
                         label="Prefer Regions"
                         value=local.prefer_regions
                         choices=&PREFER_REGIONS_CHOICES
-                        on_select=Callback::new(move |v| choose_prefer_regions(v))
+                        on_select=Callback::new(choose_prefer_regions)
                     />
                     <SelectField
                         label="Prefer Versions"
                         value=local.prefer_versions
                         choices=&PREFER_VERSIONS_CHOICES
-                        on_select=Callback::new(move |v| choose_prefer_versions(v))
+                        on_select=Callback::new(choose_prefer_versions)
                     />
                     <ListField
                         label="Prefer Flags"

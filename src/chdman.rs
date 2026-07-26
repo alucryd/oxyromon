@@ -7,8 +7,10 @@ use super::progress::*;
 use super::util::*;
 use indicatif::ProgressBar;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
@@ -58,9 +60,7 @@ pub enum ChdLdCompressionAlgorithm {
     Avhu,
 }
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ChdType {
@@ -685,11 +685,10 @@ impl AsChd for CommonRomfile {
                             _parent_sha1,
                             _track_count,
                         )) = candidate_romfile.parse_chd().await
+                            && candidate_sha1 == *parent_sha1_value
                         {
-                            if candidate_sha1 == *parent_sha1_value {
-                                parent_romfile = Some(candidate_romfile);
-                                break;
-                            }
+                            parent_romfile = Some(candidate_romfile);
+                            break;
                         }
                     }
                     parent_romfile

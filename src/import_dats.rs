@@ -6,6 +6,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use console::Style;
 use indicatif::ProgressBar;
@@ -18,6 +19,7 @@ use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::region::Region;
 use simple_error::SimpleError;
+use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
 use std::path::Path;
@@ -142,7 +144,7 @@ pub async fn main(
     let update = matches.get_flag("UPDATE");
 
     let custom_name = matches.get_one::<String>("NAME");
-    if custom_name.is_some() {
+    if let Some(custom_name) = custom_name {
         if dat_paths.len() > 1 {
             print_error(
                 progress_bar,
@@ -150,10 +152,7 @@ pub async fn main(
             );
             return Ok(());
         }
-        if find_system_by_name(connection, custom_name.unwrap())
-            .await
-            .is_some()
-        {
+        if find_system_by_name(connection, custom_name).await.is_some() {
             print_error(
                 progress_bar,
                 "Custom system name must not match a known system name",
@@ -163,14 +162,12 @@ pub async fn main(
     }
 
     let custom_extension = matches.get_one::<String>("EXTENSION");
-    if custom_extension.is_some() {
-        if dat_paths.len() > 1 {
-            print_error(
-                progress_bar,
-                "Custom system extension requires a single DAT file",
-            );
-            return Ok(());
-        }
+    if custom_extension.is_some() && dat_paths.len() > 1 {
+        print_error(
+            progress_bar,
+            "Custom system extension requires a single DAT file",
+        );
+        return Ok(());
     }
 
     for dat_path in dat_paths {
@@ -178,7 +175,7 @@ pub async fn main(
             progress_bar,
             &format!(
                 "Processing \"{}\"",
-                &dat_path.file_name().unwrap().to_str().unwrap()
+                dat_path.file_name().unwrap().to_str().unwrap()
             ),
         );
         let (datfile_xml, detector_xml) = parse_dat(
@@ -285,25 +282,24 @@ pub async fn parse_dat<P: AsRef<Path>>(
     }
 
     let mut detector_xml = None;
-    if !skip_header {
-        if let Some(clr_mame_pro_xml) = &datfile_xml
+    if !skip_header
+        && let Some(clr_mame_pro_xml) = &datfile_xml
             .system
             .clrmamepros
             .iter()
             .find(|clrmamepro| clrmamepro.header.is_some())
-        {
-            print_subheader(progress_bar, "Processing header");
-            if let Some(header_file_name) = &clr_mame_pro_xml.header {
-                let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
-                if header_file_path.is_file() {
-                    let header_file = open_file_sync(&header_file_path.as_path())?;
-                    let reader = io::BufReader::new(header_file);
-                    detector_xml = de::from_reader(reader).expect("Failed to parse header file");
-                } else {
-                    let header_file = Assets::get(header_file_name).unwrap();
-                    detector_xml = de::from_str(str::from_utf8(header_file.data.as_ref()).unwrap())
-                        .expect("Failed to parse header file");
-                }
+    {
+        print_subheader(progress_bar, "Processing header");
+        if let Some(header_file_name) = &clr_mame_pro_xml.header {
+            let header_file_path = dat_path.as_ref().parent().unwrap().join(header_file_name);
+            if header_file_path.is_file() {
+                let header_file = open_file_sync(&header_file_path.as_path())?;
+                let reader = io::BufReader::new(header_file);
+                detector_xml = de::from_reader(reader).expect("Failed to parse header file");
+            } else {
+                let header_file = Assets::get(header_file_name).unwrap();
+                detector_xml = de::from_str(str::from_utf8(header_file.data.as_ref()).unwrap())
+                    .expect("Failed to parse header file");
             }
         }
     };
@@ -609,8 +605,8 @@ async fn create_or_update_games(
                     progress_bar,
                     &format!(
                         "Game \"{}\" has an invalid parent: \"{}\"",
-                        &child_game_xml.name,
-                        &child_game_xml
+                        child_game_xml.name,
+                        child_game_xml
                             .cloneof
                             .as_ref()
                             .or(child_game_xml.romof.as_ref())
@@ -742,13 +738,15 @@ async fn create_or_update_roms(
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     for rom_xml in roms_xml {
         // skip nodump roms
-        if rom_xml.status.is_some() && rom_xml.status.as_ref().unwrap() == "nodump" {
+        if rom_xml.status.as_deref() == Some("nodump") {
             continue;
         }
         // find parent rom if needed
         let mut rom_parent_bios = false;
         let mut rom_parent_id = None;
-        if rom_xml.merge.is_some() && rom_xml.crc.is_some() {
+        if rom_xml.merge.is_some()
+            && let Some(crc) = &rom_xml.crc
+        {
             let game = find_game_by_id(connection, game_id).await;
             let mut game_ids: Vec<i64> = vec![];
             if let Some(bios_id) = game.bios_id {
@@ -761,13 +759,9 @@ async fn create_or_update_roms(
                     game_ids.push(bios_id);
                 }
             }
-            let roms = find_rom_by_size_and_crc_and_game_ids(
-                connection,
-                rom_xml.size,
-                rom_xml.crc.as_ref().unwrap(),
-                &game_ids,
-            )
-            .await;
+            let roms =
+                find_rom_by_size_and_crc_and_game_ids(connection, rom_xml.size, crc, &game_ids)
+                    .await;
             if let Some(rom) = roms.first() {
                 rom_parent_bios = rom.bios;
                 rom_parent_id = Some(rom.id);
@@ -798,14 +792,13 @@ async fn create_or_update_roms(
                         }),
                 )
                 .await;
-                if rom_xml.size != rom.size
+                if (rom_xml.size != rom.size
                     || rom_xml.crc.is_some()
-                        && rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap()
+                        && rom_xml.crc.as_ref().unwrap() != rom.crc.as_ref().unwrap())
+                    && let Some(romfile_id) = rom.romfile_id
                 {
-                    if let Some(romfile_id) = rom.romfile_id {
-                        orphan_romfile_ids.push(romfile_id);
-                        update_rom_romfile(connection, rom.id, None).await;
-                    }
+                    orphan_romfile_ids.push(romfile_id);
+                    update_rom_romfile(connection, rom.id, None).await;
                 }
                 rom.id
             }

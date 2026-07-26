@@ -15,6 +15,7 @@ use md5::Md5;
 use num_traits::FromPrimitive;
 use sha1::Sha1;
 use simple_error::SimpleResult;
+use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::io;
 use std::io::prelude::*;
@@ -37,10 +38,6 @@ impl CommonRomfile {
         self.system_id = system_id;
         self
     }
-}
-
-pub struct M3uRomfile {
-    pub romfile: CommonRomfile,
 }
 
 pub struct IsoRomfile {
@@ -100,10 +97,6 @@ pub trait ToCommon {
     ) -> SimpleResult<CommonRomfile>;
 }
 
-pub trait AsM3u {
-    async fn as_m3u(self) -> SimpleResult<M3uRomfile>;
-}
-
 pub trait AsIso {
     fn as_iso(self) -> SimpleResult<IsoRomfile>;
 }
@@ -132,6 +125,8 @@ pub trait ToCueBin {
 }
 
 // === SPECIALIZED TRAITS ===
+// patch application is not wired up yet, kept for the planned feature
+#[allow(dead_code)]
 pub trait Patch {
     async fn patch<P: AsRef<Path>>(
         &self,
@@ -327,7 +322,7 @@ impl CommonFile for CommonRomfile {
         }
 
         // arcade and jbfolder in subdirectories unless they are archives
-        if (system.arcade && !extension.map_or(false, |ext| ARCHIVE_EXTENSIONS.contains(&ext)))
+        if (system.arcade && !extension.is_some_and(|ext| ARCHIVE_EXTENSIONS.contains(&ext)))
             || game.jbfolder
         {
             sorted_path.push(&game.name);
@@ -337,13 +332,13 @@ impl CommonFile for CommonRomfile {
         let filename = match extension {
             Some(ext) if NON_ORIGINAL_EXTENSIONS.contains(&ext) => {
                 if system.arcade && !ARCHIVE_EXTENSIONS.contains(&ext) {
-                    format!("{}.{}", &rom.name, ext)
+                    format!("{}.{}", rom.name, ext)
                 } else {
-                    format!("{}.{}", &game.name, ext)
+                    format!("{}.{}", game.name, ext)
                 }
             }
             _ => match &system.custom_extension {
-                Some(custom_ext) => format!("{}.{}", &game.name, custom_ext),
+                Some(custom_ext) => format!("{}.{}", game.name, custom_ext),
                 None => rom.name.clone(),
             },
         };
@@ -623,23 +618,6 @@ impl AsCommon for Romfile {
     async fn as_common(&self, connection: &mut SqliteConnection) -> SimpleResult<CommonRomfile> {
         let rom_directory = get_rom_directory(connection).await;
         CommonRomfile::from_path(&rom_directory.join(&self.path))
-    }
-}
-
-impl AsM3u for CommonRomfile {
-    async fn as_m3u(self) -> SimpleResult<M3uRomfile> {
-        if self
-            .path
-            .extension()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_lowercase()
-            != M3U_EXTENSION
-        {
-            bail!("Not a valid m3u");
-        }
-        Ok(M3uRomfile { romfile: self })
     }
 }
 

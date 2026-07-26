@@ -6,6 +6,7 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use indicatif::ProgressBar;
+use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::path::Path;
 use std::time::Duration;

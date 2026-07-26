@@ -5,10 +5,12 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use chrono::prelude::*;
+use clap::value_parser;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::se;
 use serde::Serialize;
+use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
 use std::path::PathBuf;
@@ -97,7 +99,7 @@ pub async fn main(
             progress_bar,
             &format!(
                 "Processing \"{}\"",
-                &directory.file_name().unwrap().to_str().unwrap()
+                directory.file_name().unwrap().to_str().unwrap()
             ),
         );
         create_dat(
@@ -117,6 +119,7 @@ pub async fn main(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -161,7 +164,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
                 .to_str()
                 .unwrap()
                 .to_string();
-            print_subheader(progress_bar, &format!("Processing \"{}\"", &rom_name));
+            print_subheader(progress_bar, &format!("Processing \"{}\"", rom_name));
             let rom_xml = RomXml {
                 name: rom_name,
                 size: romfile.get_size(connection, progress_bar).await? as i64,

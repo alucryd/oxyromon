@@ -19,6 +19,7 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use simple_error::SimpleError;
 use simple_error::SimpleResult;
+use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 

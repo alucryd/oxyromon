@@ -295,6 +295,8 @@ pub struct Irdfile {
     pub game_version: String,
     pub app_version: String,
     pub regions_count: usize,
+    // parsed from the IRD file but not consumed yet
+    #[allow(dead_code)]
     pub regions_hashes: Vec<String>,
     pub files_count: usize,
     pub files_hashes: HashMap<u64, String>,

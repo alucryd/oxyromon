@@ -11,6 +11,7 @@ use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
 use rayon::prelude::*;
+use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::io::Cursor;
@@ -206,7 +207,7 @@ async fn update_nointro_dats(
         let systems =
             prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
         for system in systems {
-            print_header(progress_bar, &format!("Processing \"{}\"", &system.name));
+            print_header(progress_bar, &format!("Processing \"{}\"", system.name));
             let system_xml = profile
                 .systems
                 .par_iter()

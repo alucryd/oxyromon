@@ -17,16 +17,16 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     // the ZIP contains: Test System/Test System (20210401).dat (nested in a subdirectory)
     let zip_path = test_directory.join("Test System (20210401).zip");
 
     let matches =
-        subcommand().get_matches_from(&["import-dats", zip_path.as_os_str().to_str().unwrap()]);
+        subcommand().get_matches_from(["import-dats", zip_path.as_os_str().to_str().unwrap()]);
 
     // when
     import_dats_main(&mut connection, &matches, &progress_bar)

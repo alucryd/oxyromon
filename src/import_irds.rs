@@ -7,9 +7,11 @@ use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
+use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::hash_map::{Entry, HashMap};
 use std::io;
@@ -62,26 +64,23 @@ pub async fn main(
     for ird_path in ird_paths {
         let (irdfile, mut header) = parse_ird(ird_path).await?;
 
-        print_header(progress_bar, &format!("IRD: {}", &irdfile.game_name));
-        print_info(progress_bar, &format!("IRD Version: {}", &irdfile.version));
-        print_info(progress_bar, &format!("Game ID: {}", &irdfile.game_id));
+        print_header(progress_bar, &format!("IRD: {}", irdfile.game_name));
+        print_info(progress_bar, &format!("IRD Version: {}", irdfile.version));
+        print_info(progress_bar, &format!("Game ID: {}", irdfile.game_id));
         print_info(
             progress_bar,
-            &format!("Update Version: {}", &irdfile.update_version),
+            &format!("Update Version: {}", irdfile.update_version),
         );
         print_info(
             progress_bar,
-            &format!("Game Version: {}", &irdfile.game_version),
+            &format!("Game Version: {}", irdfile.game_version),
         );
         print_info(
             progress_bar,
-            &format!("App Version: {}", &irdfile.app_version),
+            &format!("App Version: {}", irdfile.app_version),
         );
-        print_info(
-            progress_bar,
-            &format!("Regions: {}", &irdfile.regions_count),
-        );
-        print_info(progress_bar, &format!("Files: {}", &irdfile.files_count));
+        print_info(progress_bar, &format!("Regions: {}", irdfile.regions_count));
+        print_info(progress_bar, &format!("Files: {}", irdfile.files_count));
 
         if irdfile.version != IRD_VERSION {
             print_warning(progress_bar, "IRD version unsupported");
@@ -307,13 +306,12 @@ pub async fn import_ird(
                     false,
                 )
                 .await;
-                if size != rom.size
-                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap()
+                if (size != rom.size
+                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap())
+                    && let Some(romfile_id) = rom.romfile_id
                 {
-                    if let Some(romfile_id) = rom.romfile_id {
-                        orphan_romfile_ids.push(romfile_id);
-                        update_rom_romfile(&mut transaction, rom.id, None).await;
-                    }
+                    orphan_romfile_ids.push(romfile_id);
+                    update_rom_romfile(&mut transaction, rom.id, None).await;
                 }
                 rom.id
             }

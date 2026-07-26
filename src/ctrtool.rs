@@ -2,8 +2,10 @@ use super::SimpleResult;
 use super::progress::*;
 use indicatif::ProgressBar;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom};
@@ -18,13 +20,13 @@ const TICKET_CERT_OFFSET: u64 = CA_CERT_OFFSET + CA_CERT_SIZE as u64;
 const TMD_CERT_SIZE: usize = 0x300;
 const TMD_CERT_OFFSET: u64 = TICKET_CERT_OFFSET + TICKET_CERT_SIZE as u64;
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
 #[derive(Debug)]
 pub struct ArchiveInfo {
     pub path: String,
+    // parsed from the listing but not consumed yet
+    #[allow(dead_code)]
     pub size: u64,
 }
 
@@ -92,14 +94,13 @@ pub async fn parse_cia<P: AsRef<Path>>(
         } else if let Some(content_size_str) = line
             .trim_start_matches([' ', '|', '\\', '-'])
             .strip_prefix("Size:")
+            && let Some(content_id) = content_id.take()
         {
-            if let Some(content_id) = content_id.take() {
-                cia_infos.push(ArchiveInfo {
-                    path: content_id,
-                    size: u64::from_str_radix(content_size_str.trim().trim_start_matches("0x"), 16)
-                        .unwrap(),
-                });
-            }
+            cia_infos.push(ArchiveInfo {
+                path: content_id,
+                size: u64::from_str_radix(content_size_str.trim().trim_start_matches("0x"), 16)
+                    .unwrap(),
+            });
         }
     }
 

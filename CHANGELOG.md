@@ -27,6 +27,10 @@
 - Improved `check-roms` output with per-system pass/fail summary
 - Revamped statistics card in the web UI with a tiled layout
 - Revamped settings modal in the web UI with a two-column layout for easier navigation
+- Cleaned up the entire codebase to be clippy-clean: removed ~900 warnings (needless borrows, redundant references, collapsible ifs, `unwrap` after `is_some` rewritten as `if let`/let-chains)
+- Modernized idioms: replaced the `lazy_static` dependency with `std::sync::LazyLock`, removed the pre-2018 `extern crate` block, and switched to explicit macro imports
+- Simplified the `main()` subcommand dispatch using `matches.subcommand()` destructuring
+- Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
 
 ## Fixes
 

@@ -11,19 +11,19 @@ use num_traits::FromPrimitive;
 use rayon::prelude::*;
 use regex::Regex;
 use simple_error::SimpleError;
+use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::time::Duration;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
 use which::which;
 
-lazy_static! {
-    static ref SYSTEM_NAME_REGEX: Regex =
-        Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap();
-}
+static SYSTEM_NAME_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap());
 
 pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
     let canonicalized_path = try_with!(
@@ -34,6 +34,7 @@ pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<Pa
     Ok(canonicalized_path)
 }
 
+#[cfg(test)]
 pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<File> {
     let file = try_with!(
         File::open(path.as_ref()).await,

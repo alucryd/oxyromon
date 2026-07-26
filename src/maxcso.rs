@@ -7,18 +7,18 @@ use super::progress::*;
 use super::util::*;
 use indicatif::ProgressBar;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::path::Path;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, EnumString};
 use tokio::process::Command;
 
 const MAXCSO: &str = "maxcso";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]

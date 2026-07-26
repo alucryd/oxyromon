@@ -1,6 +1,7 @@
 use async_once_cell::OnceCell;
 use infer::{Infer, Type};
 use simple_error::SimpleResult;
+use simple_error::try_with;
 use std::path::Path;
 
 pub const BIN_EXTENSION: &str = "bin";

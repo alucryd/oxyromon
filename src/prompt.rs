@@ -2,6 +2,7 @@ use super::database::*;
 use super::model::*;
 use dialoguer::{Confirm, Editor, FuzzySelect, MultiSelect};
 use simple_error::SimpleResult;
+use simple_error::{bail, try_with};
 use sqlx::sqlite::SqliteConnection;
 use std::path::PathBuf;
 use strsim::jaro_winkler;
@@ -180,7 +181,7 @@ pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> SimpleResult<Opti
 pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> SimpleResult<Option<(Rom, Game)>> {
     let mut items = roms_games
         .iter()
-        .map(|(rom, game)| format!("{} ({})", &rom.name, &game.name))
+        .map(|(rom, game)| format!("{} ({})", rom.name, game.name))
         .collect::<Vec<String>>();
     items.insert(0, String::from("None"));
     let index = select_opt(&items, "Please select a ROM", Some(0), Some(10))?;
@@ -196,7 +197,7 @@ pub fn prompt_for_rom_game_system(
 ) -> SimpleResult<Option<(Rom, Game, System)>> {
     let mut items = roms_games_systems
         .iter()
-        .map(|(rom, game, system)| format!("{} ({}) [{}]", &rom.name, &game.name, &system.name))
+        .map(|(rom, game, system)| format!("{} ({}) [{}]", rom.name, game.name, system.name))
         .collect::<Vec<String>>();
     items.insert(0, String::from("None"));
     let index = select_opt(&items, "Please select a ROM", Some(0), Some(10))?;

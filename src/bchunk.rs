@@ -4,17 +4,16 @@ use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
 use indicatif::ProgressBar;
-use lazy_static::lazy_static;
 use regex::Regex;
+use simple_error::{bail, try_with};
 use std::path::Path;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::process::Command;
 
 const BCHUNK: &str = "bchunk";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
 impl ToIso for CueBinRomfile {
     async fn to_iso<P: AsRef<Path>>(
