@@ -11,11 +11,14 @@ use anyhow::{Context, Result, bail};
 use core::fmt;
 use digest::Digest;
 use digest_io::IoWrapper;
+use indexmap::IndexMap;
 use indicatif::ProgressBar;
 use md5::Md5;
 use num_traits::FromPrimitive;
+use rayon::prelude::*;
 use sha1::Sha1;
 use sqlx::SqliteConnection;
+use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -23,6 +26,39 @@ use std::{fs::File, str::FromStr};
 
 fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+/// Splits games into those whose romfiles match any of the given extensions and the rest.
+pub fn partition_games_by_extensions(
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+    extensions: &[&str],
+) -> (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) {
+    roms_by_game_id.into_iter().partition(|(_, roms)| {
+        roms.par_iter().any(|rom| {
+            let path = &romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap().path;
+            extensions.iter().any(|extension| path.ends_with(extension))
+        })
+    })
+}
+
+/// Splits games into those whose romfiles cover all of the given extensions and the rest.
+pub fn partition_games_by_all_extensions(
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+    extensions: &[&str],
+) -> (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) {
+    roms_by_game_id.into_iter().partition(|(_, roms)| {
+        extensions.iter().all(|extension| {
+            roms.par_iter().any(|rom| {
+                romfiles_by_id
+                    .get(&rom.romfile_id.unwrap())
+                    .unwrap()
+                    .path
+                    .ends_with(extension)
+            })
+        })
+    })
 }
 
 // === CORE TYPES ===

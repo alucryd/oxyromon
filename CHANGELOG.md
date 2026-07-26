@@ -32,6 +32,7 @@
 - Simplified the `main()` subcommand dispatch using `matches.subcommand()` destructuring
 - Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
 - Migrated error handling from `simple-error` to `anyhow`: errors now carry a full context chain (displayed with `Caused by:` sections), and external tool failures no longer panic on non-UTF-8 output
+- Deduplicated the 79 partition-by-extension blocks in `convert-roms` and `export-roms` into two shared helpers (`partition_games_by_extensions`, `partition_games_by_all_extensions` in `common.rs`), removing ~560 lines
 
 ## Fixes
 
