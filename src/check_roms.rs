@@ -15,11 +15,9 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::AsArchive;
 use super::util::*;
+use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
-use simple_error::SimpleError;
-use simple_error::SimpleResult;
-use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 
@@ -56,7 +54,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
     for system in systems {
@@ -103,7 +101,7 @@ async fn check_system(
     system: &System,
     games: Vec<Game>,
     size: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let roms = find_original_roms_with_romfile_by_game_ids(
         connection,
         &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
@@ -293,7 +291,7 @@ async fn check_archive(
     header: &Option<Header>,
     romfile: &Romfile,
     roms: Vec<&Rom>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let archive_romfiles = romfile
         .as_common(connection)
         .await?
@@ -306,9 +304,7 @@ async fn check_archive(
         let rom = roms
             .iter()
             .find(|rom| rom.name == archive_romfile.path)
-            .ok_or_else(|| {
-                SimpleError::new(format!("file not found in DB {}", archive_romfile.path))
-            })?;
+            .ok_or_else(|| anyhow!("file not found in DB {}", archive_romfile.path))?;
         archive_romfile
             .check(connection, progress_bar, header, &[rom])
             .await?;
@@ -321,7 +317,7 @@ async fn move_to_trash(
     progress_bar: &ProgressBar,
     system: &System,
     romfile: &Romfile,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let new_path = get_trash_directory(connection, Some(system)).await?.join(
         romfile
             .as_common(connection)

@@ -1,9 +1,8 @@
-use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
+use anyhow::{Context, Result, bail};
 use regex::Regex;
-use simple_error::{bail, try_with};
 use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::process::Command;
@@ -24,7 +23,7 @@ impl Patch for XdeltaRomfile {
         progress_bar: &indicatif::ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<CommonRomfile> {
+    ) -> Result<CommonRomfile> {
         progress_bar.set_message(format!(
             "Applying \"{}\"",
             self.romfile.path.file_name().unwrap().to_str().unwrap()
@@ -60,7 +59,7 @@ impl Patch for XdeltaRomfile {
             });
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -72,11 +71,11 @@ impl Patch for XdeltaRomfile {
 
 #[allow(dead_code)]
 pub trait AsXdelta {
-    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile>;
+    fn as_xdelta(self) -> Result<XdeltaRomfile>;
 }
 
 impl AsXdelta for CommonRomfile {
-    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile> {
+    fn as_xdelta(self) -> Result<XdeltaRomfile> {
         if self
             .path
             .extension()
@@ -92,11 +91,12 @@ impl AsXdelta for CommonRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(XDELTA3).arg("-V").output().await,
-        "Failed to spawn xdelta3"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(XDELTA3)
+        .arg("-V")
+        .output()
+        .await
+        .context("Failed to spawn xdelta3")?;
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     let version = stderr

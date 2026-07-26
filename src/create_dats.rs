@@ -1,16 +1,15 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::value_parser;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use quick_xml::se;
 use serde::Serialize;
-use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
 use std::path::PathBuf;
@@ -88,7 +87,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let directories = matches
         .get_many::<PathBuf>("DIRECTORIES")
         .unwrap()
@@ -130,7 +129,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     version: Option<&String>,
     author: Option<&String>,
     url: Option<&String>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system_name = input_directory
         .as_ref()
         .file_name()
@@ -220,10 +219,9 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     let mut buffer = String::new();
     let mut serializer = se::Serializer::new(&mut buffer);
     serializer.indent(' ', 2);
-    try_with!(
-        datfile_xml.serialize(serializer),
-        "Failed to serialize DAT file"
-    );
+    datfile_xml
+        .serialize(serializer)
+        .context("Failed to serialize DAT file")?;
 
     let output_directory = match output_directory {
         Some(directory) => {
@@ -243,15 +241,15 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
     .await?;
 
     for doctype in DOCTYPE {
-        try_with!(
-            dat_file.write_all(doctype.as_bytes()).await,
-            "Failed to write DAT file"
-        );
+        dat_file
+            .write_all(doctype.as_bytes())
+            .await
+            .context("Failed to write DAT file")?;
     }
-    try_with!(
-        dat_file.write_all(buffer.as_bytes()).await,
-        "Failed to write DAT file"
-    );
+    dat_file
+        .write_all(buffer.as_bytes())
+        .await
+        .context("Failed to write DAT file")?;
 
     Ok(())
 }

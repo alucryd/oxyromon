@@ -48,6 +48,7 @@ mod validator;
 mod wit;
 mod xdelta3;
 
+use anyhow::Result;
 use clap::Command;
 use config::{get_rom_directory, get_tmp_directory};
 use database::*;
@@ -55,15 +56,12 @@ use dotenvy::dotenv;
 use env_logger::Builder;
 use indicatif_log_bridge::LogWrapper;
 use progress::*;
-use simple_error::SimpleError;
 use std::env;
 use std::path::PathBuf;
 use util::*;
 
-type SimpleResult<T> = Result<T, SimpleError>;
-
 #[tokio::main]
-async fn main() -> SimpleResult<()> {
+async fn main() -> Result<()> {
     #[cfg_attr(not(feature = "server"), allow(unused_mut))]
     let mut subcommands = vec![
         info::subcommand(),

@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -9,11 +8,11 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
-use simple_error::{bail, try_with};
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -63,7 +62,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
 
@@ -102,7 +101,7 @@ async fn rebuild_system(
     system: &System,
     merging: Merging,
     force: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -235,7 +234,7 @@ async fn expand_game(
     game: &Game,
     merging: Merging,
     compression_level: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let game_directory = get_system_directory(connection, system)
@@ -244,10 +243,9 @@ async fn expand_game(
     let game_archive_path = get_system_directory(connection, system)
         .await?
         .join(format!("{}.{}", game.name, ZIP_EXTENSION));
-    let relative_game_archive_path = try_with!(
-        game_archive_path.strip_prefix(rom_directory),
-        "Failed to retrieve relative path"
-    );
+    let relative_game_archive_path = game_archive_path
+        .strip_prefix(rom_directory)
+        .context("Failed to retrieve relative path")?;
     let archive_romfile = find_romfile_by_path(
         connection,
         relative_game_archive_path.as_os_str().to_str().unwrap(),
@@ -306,16 +304,15 @@ async fn trim_game(
     system: &System,
     game: &Game,
     merging: Merging,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let romfile_path = get_system_directory(connection, system)
         .await?
         .join(format!("{}.{}", game.name, ZIP_EXTENSION));
-    let relative_path = try_with!(
-        romfile_path.strip_prefix(rom_directory),
-        "Failed to retrieve relative path"
-    );
+    let relative_path = romfile_path
+        .strip_prefix(rom_directory)
+        .context("Failed to retrieve relative path")?;
     let romfile =
         find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap()).await;
     let roms = match merging {
@@ -348,7 +345,7 @@ async fn add_rom(
     destination_directory: &PathBuf,
     destination_archive_romfile: &Option<Romfile>,
     compression_level: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let source_romfile = find_romfile_by_id(connection, source_rom.romfile_id.unwrap())
         .await
         .as_common(connection)
@@ -421,7 +418,7 @@ async fn delete_rom(
     progress_bar: &ProgressBar,
     rom: &Rom,
     archive_romfile: &Option<Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if let Some(archive_romfile) = archive_romfile {
         archive_romfile
             .as_common(connection)

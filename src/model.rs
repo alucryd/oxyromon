@@ -1,3 +1,4 @@
+use anyhow::Result;
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;

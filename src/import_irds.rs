@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::mimetype::*;
@@ -6,12 +5,12 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::{Result, bail};
 use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
-use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::hash_map::{Entry, HashMap};
 use std::io;
@@ -56,7 +55,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
     let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
@@ -112,7 +111,7 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
+pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Irdfile, Vec<u8>)> {
     let mimetype = get_mimetype(path).await?;
 
     if mimetype.is_none() {
@@ -267,7 +266,7 @@ pub async fn import_ird(
     game: &Game,
     irdfile: &Irdfile,
     header: &mut [u8],
-) -> SimpleResult<()> {
+) -> Result<()> {
     let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
     let parent_rom = prompt_for_rom(&roms, None)?;
     if parent_rom.is_none() {

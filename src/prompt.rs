@@ -1,8 +1,7 @@
 use super::database::*;
 use super::model::*;
+use anyhow::{Context, Result, bail};
 use dialoguer::{Confirm, Editor, FuzzySelect, MultiSelect};
-use simple_error::SimpleResult;
-use simple_error::{bail, try_with};
 use sqlx::sqlite::SqliteConnection;
 use std::path::PathBuf;
 use strsim::jaro_winkler;
@@ -13,7 +12,7 @@ pub async fn prompt_for_systems(
     arcade_only: bool,
     empty_only: bool,
     all: bool,
-) -> SimpleResult<Vec<System>> {
+) -> Result<Vec<System>> {
     let systems = if arcade_only {
         find_arcade_systems(connection).await
     } else if empty_only {
@@ -49,7 +48,7 @@ pub async fn prompt_for_systems(
 pub async fn prompt_for_system(
     connection: &mut SqliteConnection,
     default: Option<usize>,
-) -> SimpleResult<System> {
+) -> Result<System> {
     let mut systems = find_systems(connection).await;
     match systems.len() {
         0 => bail!("No available system"),
@@ -73,7 +72,7 @@ pub async fn prompt_for_system_like(
     connection: &mut SqliteConnection,
     default: Option<usize>,
     name: &str,
-) -> SimpleResult<System> {
+) -> Result<System> {
     let mut systems = find_systems_by_name_like(connection, name).await;
     match systems.len() {
         0 => bail!("No available system"),
@@ -96,7 +95,7 @@ pub async fn prompt_for_system_like(
 pub async fn prompt_for_systems_like(
     connection: &mut SqliteConnection,
     name: &str,
-) -> SimpleResult<Vec<System>> {
+) -> Result<Vec<System>> {
     let systems = find_systems_by_name_like(connection, name).await;
     match systems.len() {
         0 => Ok(vec![]),
@@ -121,7 +120,7 @@ pub async fn prompt_for_systems_like(
     }
 }
 
-pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> {
+pub fn prompt_for_games(games: Vec<Game>, all: bool) -> Result<Vec<Game>> {
     if all || games.is_empty() {
         return Ok(games);
     }
@@ -143,7 +142,7 @@ pub fn prompt_for_games(games: Vec<Game>, all: bool) -> SimpleResult<Vec<Game>> 
         .collect())
 }
 
-pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> SimpleResult<Option<&Game>> {
+pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> Result<Option<&Game>> {
     match games.len() {
         0 => bail!("No available rom"),
         1 => Ok(games.first()),
@@ -162,7 +161,7 @@ pub fn prompt_for_game(games: &[Game], default: Option<usize>) -> SimpleResult<O
     }
 }
 
-pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> SimpleResult<Option<&Rom>> {
+pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> Result<Option<&Rom>> {
     match roms.len() {
         0 => bail!("No available rom"),
         1 => Ok(roms.first()),
@@ -178,7 +177,7 @@ pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> SimpleResult<Opti
     }
 }
 
-pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> SimpleResult<Option<(Rom, Game)>> {
+pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> Result<Option<(Rom, Game)>> {
     let mut items = roms_games
         .iter()
         .map(|(rom, game)| format!("{} ({})", rom.name, game.name))
@@ -194,7 +193,7 @@ pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> SimpleResult<Op
 
 pub fn prompt_for_rom_game_system(
     roms_games_systems: &mut Vec<(Rom, Game, System)>,
-) -> SimpleResult<Option<(Rom, Game, System)>> {
+) -> Result<Option<(Rom, Game, System)>> {
     let mut items = roms_games_systems
         .iter()
         .map(|(rom, game, system)| format!("{} ({}) [{}]", rom.name, game.name, system.name))
@@ -212,7 +211,7 @@ pub async fn prompt_for_parent_romfile(
     connection: &mut SqliteConnection,
     game: &Game,
     extension: &str,
-) -> SimpleResult<Option<Romfile>> {
+) -> Result<Option<Romfile>> {
     let mut romfiles = find_romfiles_by_system_id_and_extension_and_no_parent_id(
         connection,
         game.system_id,
@@ -249,25 +248,22 @@ pub async fn prompt_for_parent_romfile(
     Ok(index.map(|index| romfiles.remove(index)))
 }
 
-pub fn prompt_for_name(prompt: &str) -> SimpleResult<Option<String>> {
+pub fn prompt_for_name(prompt: &str) -> Result<Option<String>> {
     editor(prompt)
 }
 
-pub fn confirm(default: bool) -> SimpleResult<bool> {
-    Ok(try_with!(
-        Confirm::new()
-            .with_prompt("Proceed?")
-            .default(default)
-            .interact(),
-        "Failed to get user input"
-    ))
+pub fn confirm(default: bool) -> Result<bool> {
+    Confirm::new()
+        .with_prompt("Proceed?")
+        .default(default)
+        .interact()
+        .context("Failed to get user input")
 }
 
-pub fn editor(prompt: &str) -> SimpleResult<Option<String>> {
-    Ok(try_with!(
-        Editor::new().edit(prompt),
-        "Failed to get user input"
-    ))
+pub fn editor(prompt: &str) -> Result<Option<String>> {
+    Editor::new()
+        .edit(prompt)
+        .context("Failed to get user input")
 }
 
 pub fn select<T: ToString + std::fmt::Display>(
@@ -275,7 +271,7 @@ pub fn select<T: ToString + std::fmt::Display>(
     prompt: &str,
     default: Option<usize>,
     max_length: Option<usize>,
-) -> SimpleResult<usize> {
+) -> Result<usize> {
     let mut select = FuzzySelect::new();
     select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
@@ -284,7 +280,7 @@ pub fn select<T: ToString + std::fmt::Display>(
     if let Some(max_length) = max_length {
         select = select.max_length(max_length);
     }
-    Ok(try_with!(select.interact(), "Failed to get user input"))
+    select.interact().context("Failed to get user input")
 }
 
 pub fn select_opt<T: ToString + std::fmt::Display>(
@@ -292,7 +288,7 @@ pub fn select_opt<T: ToString + std::fmt::Display>(
     prompt: &str,
     default: Option<usize>,
     max_length: Option<usize>,
-) -> SimpleResult<Option<usize>> {
+) -> Result<Option<usize>> {
     let mut select = FuzzySelect::new();
     select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {
@@ -301,7 +297,7 @@ pub fn select_opt<T: ToString + std::fmt::Display>(
     if let Some(max_length) = max_length {
         select = select.max_length(max_length);
     }
-    Ok(try_with!(select.interact_opt(), "Failed to get user input"))
+    select.interact_opt().context("Failed to get user input")
 }
 
 pub fn multiselect<T: ToString + std::fmt::Display>(
@@ -309,7 +305,7 @@ pub fn multiselect<T: ToString + std::fmt::Display>(
     prompt: &str,
     defaults: Option<&[bool]>,
     max_length: Option<usize>,
-) -> SimpleResult<Vec<usize>> {
+) -> Result<Vec<usize>> {
     let mut multiselect = MultiSelect::new();
     multiselect = multiselect.items(items).with_prompt(prompt);
     if let Some(defaults) = defaults {
@@ -318,8 +314,5 @@ pub fn multiselect<T: ToString + std::fmt::Display>(
     if let Some(max_length) = max_length {
         multiselect = multiselect.max_length(max_length);
     }
-    Ok(try_with!(
-        multiselect.interact(),
-        "Failed to get user input"
-    ))
+    multiselect.interact().context("Failed to get user input")
 }

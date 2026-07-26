@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::download_dats::REDUMP_SYSTEM_URL;
@@ -7,6 +6,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use regex::Regex;
@@ -37,7 +37,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems = prompt_for_systems(
         connection,
         Some(REDUMP_SYSTEM_URL),
@@ -58,7 +58,7 @@ async fn process_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
     find_games_by_system_id(connection, system.id)
         .await

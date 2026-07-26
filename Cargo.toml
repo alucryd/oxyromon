@@ -74,7 +74,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 sha1 = "0.11.0"
 shiratsu-naming = "0.1.7"
-simple-error = "0.3.2"
+anyhow = "1.0.100"
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",

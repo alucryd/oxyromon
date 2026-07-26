@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::bchunk;
 use super::chdman;
 use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
@@ -21,12 +20,12 @@ use super::sevenzip::{AsArchive, ToArchive};
 use super::util::*;
 use super::wit;
 use super::wit::ToWbfs;
+use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
 use indicatif::ProgressBar;
 use rayon::prelude::*;
-use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -89,7 +88,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
         Some(system_names) => {
             let mut systems: Vec<System> = vec![];
@@ -442,7 +441,7 @@ async fn to_archive(
     archive_type: sevenzip::ArchiveType,
     compression_level: &Option<usize>,
     solid: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition CHDs
     let (chds, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -852,7 +851,7 @@ async fn to_chd(
     cd_hunk_size: &Option<usize>,
     dvd_compression_algorithms: &[String],
     dvd_hunk_size: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1187,7 +1186,7 @@ async fn to_cso(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1365,7 +1364,7 @@ async fn to_gdi(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1633,7 +1632,7 @@ async fn to_nsz(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1706,7 +1705,7 @@ async fn to_rvz(
     compression_level: usize,
     block_size: usize,
     scrub: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1840,7 +1839,7 @@ async fn to_wbfs(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1935,7 +1934,7 @@ async fn to_zso(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -2081,7 +2080,7 @@ async fn to_iso(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -2373,7 +2372,7 @@ async fn to_original(
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {

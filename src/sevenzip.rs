@@ -1,14 +1,13 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use itertools::izip;
 use regex::Regex;
-use simple_error::{bail, try_with};
 use sqlx::SqliteConnection;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
@@ -47,8 +46,8 @@ pub trait ArchiveFile {
         &self,
         progress_bar: &ProgressBar,
         new_path: &str,
-    ) -> SimpleResult<ArchiveRomfile>;
-    async fn delete_file(&self, progress_bar: &ProgressBar) -> SimpleResult<()>;
+    ) -> Result<ArchiveRomfile>;
+    async fn delete_file(&self, progress_bar: &ProgressBar) -> Result<()>;
 }
 
 impl ArchiveFile for ArchiveRomfile {
@@ -56,7 +55,7 @@ impl ArchiveFile for ArchiveRomfile {
         &self,
         progress_bar: &ProgressBar,
         new_path: &str,
-    ) -> SimpleResult<ArchiveRomfile> {
+    ) -> Result<ArchiveRomfile> {
         progress_bar.set_message("Renaming file in archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -80,7 +79,7 @@ impl ArchiveFile for ArchiveRomfile {
             .expect("Failed to rename file in archive");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str());
+            bail!("{}", String::from_utf8_lossy(&output.stderr));
         }
 
         progress_bar.set_message("");
@@ -95,7 +94,7 @@ impl ArchiveFile for ArchiveRomfile {
         })
     }
 
-    async fn delete_file(&self, progress_bar: &ProgressBar) -> SimpleResult<()> {
+    async fn delete_file(&self, progress_bar: &ProgressBar) -> Result<()> {
         progress_bar.set_message("Deleting files");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -112,7 +111,7 @@ impl ArchiveFile for ArchiveRomfile {
             .expect("Failed to remove files from archive");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -136,7 +135,7 @@ impl Size for ArchiveRomfile {
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-    ) -> SimpleResult<u64> {
+    ) -> Result<u64> {
         if self.size > 0 {
             Ok(self.size)
         } else {
@@ -159,7 +158,7 @@ impl HashAndSize for ArchiveRomfile {
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
-    ) -> SimpleResult<(String, u64)> {
+    ) -> Result<(String, u64)> {
         if hash_algorithm == &HashAlgorithm::Crc && !self.crc.is_empty() && self.size > 0 {
             Ok((self.crc.clone(), self.size))
         } else {
@@ -181,7 +180,7 @@ impl Check for ArchiveRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-    ) -> SimpleResult<()> {
+    ) -> Result<()> {
         print_action(
             progress_bar,
             &format!("Checking \"{}\" ({})", self.romfile, self.path),
@@ -200,7 +199,7 @@ impl ToCommon for ArchiveRomfile {
         &self,
         progress_bar: &ProgressBar,
         directory: &P,
-    ) -> SimpleResult<CommonRomfile> {
+    ) -> Result<CommonRomfile> {
         progress_bar.set_message("Extracting file");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -221,7 +220,7 @@ impl ToCommon for ArchiveRomfile {
         let output = command.output().await.expect("Failed to extract archive");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -242,7 +241,7 @@ pub trait ToArchive {
         archive_type: &ArchiveType,
         compression_level: &Option<usize>,
         solid: bool,
-    ) -> SimpleResult<ArchiveRomfile>;
+    ) -> Result<ArchiveRomfile>;
 }
 
 impl ToArchive for CommonRomfile {
@@ -255,7 +254,7 @@ impl ToArchive for CommonRomfile {
         archive_type: &ArchiveType,
         compression_level: &Option<usize>,
         solid: bool,
-    ) -> SimpleResult<ArchiveRomfile> {
+    ) -> Result<ArchiveRomfile> {
         progress_bar.set_message(format!("Creating {}", archive_type));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -291,7 +290,7 @@ impl ToArchive for CommonRomfile {
             .expect("Failed to add files to archive");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -317,7 +316,7 @@ impl ToArchive for ArchiveRomfile {
         archive_type: &ArchiveType,
         compression_level: &Option<usize>,
         solid: bool,
-    ) -> SimpleResult<ArchiveRomfile> {
+    ) -> Result<ArchiveRomfile> {
         let original_romfile = self.to_common(progress_bar, source_directory).await?;
         let archive_romfile = original_romfile
             .to_archive(
@@ -340,12 +339,12 @@ pub trait AsArchive {
         &self,
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
-    ) -> SimpleResult<Vec<(String, u64, String)>>;
+    ) -> Result<Vec<(String, u64, String)>>;
     async fn as_archive(
         &self,
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
-    ) -> SimpleResult<Vec<ArchiveRomfile>>;
+    ) -> Result<Vec<ArchiveRomfile>>;
 }
 
 impl AsArchive for CommonRomfile {
@@ -353,7 +352,7 @@ impl AsArchive for CommonRomfile {
         &self,
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
-    ) -> SimpleResult<Vec<(String, u64, String)>> {
+    ) -> Result<Vec<(String, u64, String)>> {
         progress_bar.set_message("Parsing archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -369,7 +368,7 @@ impl AsArchive for CommonRomfile {
         let output = command.output().await.expect("Failed to parse archive");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str());
+            bail!("{}", String::from_utf8_lossy(&output.stderr));
         }
 
         let stdout = String::from_utf8(output.stdout).unwrap();
@@ -399,7 +398,7 @@ impl AsArchive for CommonRomfile {
         &self,
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
-    ) -> SimpleResult<Vec<ArchiveRomfile>> {
+    ) -> Result<Vec<ArchiveRomfile>> {
         progress_bar.set_message("Parsing archive");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -413,7 +412,7 @@ impl AsArchive for CommonRomfile {
             .to_str()
             .unwrap()
             .to_lowercase();
-        let archive_type = try_with!(ArchiveType::from_str(&extension), "Not a valid archive");
+        let archive_type = ArchiveType::from_str(&extension).context("Not a valid archive")?;
         let archived_romfiles: Vec<ArchiveRomfile> = paths_sizes_crcs
             .into_iter()
             .map(|(path, size, crc)| ArchiveRomfile {
@@ -438,7 +437,7 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     destination_archive_path: &Q,
     source_names: &[&str],
     destination_names: &[&str],
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.set_message("Copying files between archives");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -486,13 +485,11 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-            .output()
-            .await,
-        "Failed to spawn executable"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+        .output()
+        .await
+        .context("Failed to spawn executable")?;
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

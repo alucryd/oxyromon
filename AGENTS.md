@@ -375,10 +375,11 @@ The top-level `build.rs` runs `trunk build --release` automatically when the
 
 ## Error Handling
 
-- The project uses `simple_error::SimpleError` as its main error type.
-- The type alias `SimpleResult<T> = Result<T, SimpleError>` is defined in `main.rs` and used everywhere.
-- Use `try_with!()` macro (from `simple-error`) for wrapping errors with context.
-- Use `bail!()` macro (from `simple-error`) for returning errors with a message string.
+- The project uses [`anyhow`](https://docs.rs/anyhow) for error handling; fallible functions return `anyhow::Result<T>`.
+- Use `.context("...")` / `.with_context(|| format!("..."))` (from `anyhow::Context`) to wrap errors with context while preserving the source chain.
+- Use `bail!()` for returning errors with a message string, and `anyhow!()` to construct ad-hoc errors.
+- When displaying an error to the user, format it with `{:#}` to include the full context chain (`{}` prints only the outermost message).
+- GraphQL resolvers (`query.rs`, `mutation.rs`) use `async_graphql::Result` at the API boundary.
 
 ## Coding Conventions
 

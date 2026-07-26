@@ -1,17 +1,16 @@
-use super::SimpleResult;
 use super::database::*;
 use super::import_dats::{import_dat, parse_dat};
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
 use quick_xml::de;
 use rayon::prelude::*;
-use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::io::Cursor;
@@ -150,7 +149,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let save_directory = matches.get_one::<String>("SAVE_DIRECTORY");
 
     if matches.get_flag("NOINTRO") {
@@ -195,7 +194,7 @@ async fn update_nointro_dats(
     progress_bar: &ProgressBar,
     base_url: &str,
     all: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if let Ok(response) = reqwest::get(format!("{}{}", base_url, NOINTRO_PROFILE_URL))
         .await
         .expect("Failed to download No-Intro profiles")
@@ -203,7 +202,7 @@ async fn update_nointro_dats(
         .await
     {
         let profile: ProfileXml =
-            try_with!(de::from_str(&response), "Failed to parse No-Intro profiles");
+            de::from_str(&response).context("Failed to parse No-Intro profiles")?;
         let systems =
             prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
         for system in systems {
@@ -230,7 +229,7 @@ async fn download_redump_dats(
     base_url: &str,
     all: bool,
     save_directory: Option<&str>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system_names: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
         .await
         .into_par_iter()
@@ -268,7 +267,7 @@ async fn update_redump_dats(
     all: bool,
     force: bool,
     save_directory: Option<&str>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, Some(REDUMP_SYSTEM_URL), false, false, all).await?;
     for system in systems {
@@ -292,7 +291,7 @@ async fn download_redump_dat(
     system_name: &str,
     force: bool,
     save_directory: Option<&str>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_header(progress_bar, &format!("Processing \"{}\"", system_name));
     let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
     let zip_url = format!("{}/datfile/{}/", base_url, code);
@@ -304,14 +303,14 @@ async fn download_redump_dat(
     {
         Ok(response) => {
             let tmp_directory = create_tmp_directory(connection).await?;
-            let mut zip_archive = try_with!(
-                ZipArchive::new(Cursor::new(response)),
-                "Failed to read Redump ZIP"
-            );
+            let mut zip_archive =
+                ZipArchive::new(Cursor::new(response)).context("Failed to read Redump ZIP")?;
             match zip_archive.len() {
                 0 => print_warning(progress_bar, "ZIP is empty"),
                 1 => {
-                    try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+                    zip_archive
+                        .extract(&tmp_directory)
+                        .context("Failed to extract ZIP")?;
                     let dat_file_name = zip_archive.file_names().next().unwrap();
                     let dat_file_path = tmp_directory.path().join(dat_file_name);
 

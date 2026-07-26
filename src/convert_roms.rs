@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::chdman;
 use super::chdman::{AsChd, AsRdsk, AsRiff, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
@@ -17,12 +16,12 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
 use super::util::*;
+use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
 use indicatif::{HumanBytes, ProgressBar};
 use rayon::prelude::*;
-use simple_error::bail;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -106,7 +105,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
         Some(system_names) => {
             let mut systems: Vec<System> = vec![];
@@ -433,7 +432,7 @@ async fn to_archive(
     check: bool,
     compression_level: &Option<usize>,
     solid: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition CHDs
     let (mut chds, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -1251,7 +1250,7 @@ async fn to_archive(
             }
 
             if check {
-                let mut results: Vec<SimpleResult<()>> = vec![];
+                let mut results: Vec<Result<()>> = vec![];
                 for (archive_romfile, rom) in archive_romfiles.iter().zip(&roms) {
                     let result = archive_romfile
                         .check(&mut transaction, progress_bar, &None, &[rom])
@@ -1344,7 +1343,7 @@ async fn to_chd(
     ld_hunk_size: &Option<usize>,
     parents: bool,
     prompt_for_parents: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -2263,7 +2262,7 @@ async fn to_cso(
     recompress: bool,
     diff: bool,
     check: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -2619,7 +2618,7 @@ async fn to_nsz(
     recompress: bool,
     diff: bool,
     check: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -2813,7 +2812,7 @@ async fn to_rvz(
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -3024,7 +3023,7 @@ async fn to_zso(
     recompress: bool,
     diff: bool,
     check: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -3373,7 +3372,7 @@ async fn to_original(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     check: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
     let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
         roms_by_game_id.into_iter().partition(|(_, roms)| {
@@ -3943,7 +3942,7 @@ async fn print_diff(
     roms: &[&Rom],
     old_romfiles: &[&CommonRomfile],
     new_romfiles: &[&CommonRomfile],
-) -> SimpleResult<()> {
+) -> Result<()> {
     let original_size = roms.par_iter().map(|&r| r.size as u64).sum();
     let mut old_size = 0u64;
     for &romfile in old_romfiles {

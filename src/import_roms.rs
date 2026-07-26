@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::chdman;
 use super::chdman::{AsChd, ChdType};
 use super::common::*;
@@ -18,6 +17,7 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
 use super::util::*;
+use anyhow::{Result, bail};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -141,7 +141,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let mut systems: Vec<System> = vec![];
     if let Some(system_names) = matches.get_many::<String>("SYSTEM") {
         for system_name in system_names {
@@ -159,7 +159,7 @@ pub async fn main(
 
     // Validate that trash and delete are mutually exclusive
     if trash && delete {
-        return Err("Cannot use both --trash and --delete flags simultaneously".into());
+        bail!("Cannot use both --trash and --delete flags simultaneously");
     }
 
     let force = matches.get_flag("FORCE");
@@ -350,7 +350,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     force: bool,
     unattended_mode: UnattendedMode,
     as_is: bool,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     print_subheader(
         progress_bar,
         &format!(
@@ -564,7 +564,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     system: &System,
     path: &P,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<i64> {
+) -> Result<i64> {
     let sfb_romfile_path = path.as_ref().join(PS3_DISC_SFB);
 
     // abort if the romfile is already in the database
@@ -759,7 +759,7 @@ async fn import_archive(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
 
@@ -1006,7 +1006,7 @@ async fn import_chd(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().rev().collect::<Vec<HashAlgorithm>>(); // reverse iterator so SHA1 is tried first
     let chd_romfile = romfile.as_chd().await?;
@@ -1511,7 +1511,7 @@ async fn import_cia(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
 
@@ -1658,7 +1658,7 @@ async fn import_cso(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let cso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1751,7 +1751,7 @@ async fn import_nsz(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let nsz_romfile = romfile.as_nsz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1844,7 +1844,7 @@ async fn import_rvz(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let rvz_romfile = romfile.as_rvz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1937,7 +1937,7 @@ async fn import_zso(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let zso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -2031,7 +2031,7 @@ pub async fn import_other(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in &hash_algorithms {
@@ -2132,7 +2132,7 @@ async fn find_rom_by_size_and_hash(
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<MatchResult> {
+) -> Result<MatchResult> {
     let mut roms: Vec<Rom> = vec![];
 
     // first try matching with game and rom names
@@ -2459,7 +2459,7 @@ async fn find_sfb_rom_by_md5(
     size: u64,
     md5: &str,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<MatchResult> {
+) -> Result<MatchResult> {
     let mut roms = find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
         PS3_DISC_SFB,
@@ -2565,7 +2565,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
     romfile_path: &P,
     roms: &[&Rom],
     system_id: Option<i64>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let romfile = CommonRomfile::from_path(&romfile_path)?.with_system(system_id);
     let relative_path = romfile.get_relative_path(connection).await?;
     let existing_romfile =
@@ -2596,7 +2596,7 @@ async fn trash_or_delete_romfile(
     trash: bool,
     delete: bool,
     match_result: &MatchResult,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if delete {
         romfile.delete(progress_bar, false).await?;
     } else if trash {

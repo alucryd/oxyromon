@@ -1,11 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
-use simple_error::{bail, try_with};
 use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -20,7 +19,7 @@ impl ToIso for CueBinRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<IsoRomfile> {
+    ) -> Result<IsoRomfile> {
         if self.bin_romfiles.len() > 1 {
             bail!("Only single bins are supported");
         }
@@ -44,7 +43,7 @@ impl ToIso for CueBinRomfile {
             .expect("Failed to create iso");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         rename_file(
@@ -64,11 +63,11 @@ impl ToIso for CueBinRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(BCHUNK).output().await,
-        "Failed to spawn bchunk"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(BCHUNK)
+        .output()
+        .await
+        .context("Failed to spawn bchunk")?;
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

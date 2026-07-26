@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,6 +5,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -92,7 +92,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
 
@@ -212,7 +212,7 @@ async fn sort_system(
     all_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_strict: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     print_header(progress_bar, &format!("Sorting \"{}\"", system.name));
 
@@ -654,7 +654,7 @@ async fn sort_game<'a>(
     game: &Game,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
     subfolder_scheme: &Option<SubfolderScheme>,
-) -> SimpleResult<Vec<(&'a Romfile, PathBuf)>> {
+) -> Result<Vec<(&'a Romfile, PathBuf)>> {
     let mut romfile_moves: Vec<(&Romfile, PathBuf)> = vec![];
 
     let roms = find_roms_with_romfile_by_game_id(connection, game.id).await;

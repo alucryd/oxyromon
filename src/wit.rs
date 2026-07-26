@@ -1,10 +1,9 @@
-use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
-use simple_error::{bail, try_with};
 use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -25,7 +24,7 @@ pub trait ToWbfs {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<WbfsRomfile>;
+    ) -> Result<WbfsRomfile>;
 }
 
 impl ToWbfs for IsoRomfile {
@@ -33,7 +32,7 @@ impl ToWbfs for IsoRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<WbfsRomfile> {
+    ) -> Result<WbfsRomfile> {
         progress_bar.set_message("Creating wbfs");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -55,7 +54,7 @@ impl ToWbfs for IsoRomfile {
             .expect("Failed to create wbfs");
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -67,11 +66,12 @@ impl ToWbfs for IsoRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(WIT).arg("--version").output().await,
-        "Failed to spawn wit"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(WIT)
+        .arg("--version")
+        .output()
+        .await
+        .context("Failed to spawn wit")?;
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

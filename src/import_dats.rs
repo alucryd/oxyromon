@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::import_roms::{UnattendedMode, import_rom};
@@ -6,6 +5,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, anyhow};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use console::Style;
@@ -18,8 +18,6 @@ use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::region::Region;
-use simple_error::SimpleError;
-use simple_error::try_with;
 use sqlx::sqlite::SqliteConnection;
 use std::io;
 use std::path::Path;
@@ -107,7 +105,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let (zip_paths, mut dat_paths): (Vec<PathBuf>, Vec<PathBuf>) = matches
         .get_many::<PathBuf>("DATS")
         .unwrap()
@@ -121,8 +119,10 @@ pub async fn main(
     let tmp_directory = create_tmp_directory(connection).await?;
     for zip_path in zip_paths {
         let mut reader = get_reader_sync(&zip_path)?;
-        let mut zip_archive = try_with!(ZipArchive::new(&mut reader), "Failed to read ZIP");
-        try_with!(zip_archive.extract(&tmp_directory), "Failed to extract ZIP");
+        let mut zip_archive = ZipArchive::new(&mut reader).context("Failed to read ZIP")?;
+        zip_archive
+            .extract(&tmp_directory)
+            .context("Failed to extract ZIP")?;
         // walk the extracted tree to find all .dat files, including in subdirectories
         let walker = WalkDir::new(tmp_directory.path()).into_iter();
         for entry in walker.filter_map(|e| e.ok()) {
@@ -237,11 +237,9 @@ pub async fn parse_dat<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     dat_path: &P,
     skip_header: bool,
-) -> SimpleResult<(DatfileXml, Option<DetectorXml>)> {
-    let datfile_xml: DatfileXml = try_with!(
-        de::from_reader(&mut get_reader_sync(dat_path)?),
-        "Failed to deserialize DAT file"
-    );
+) -> Result<(DatfileXml, Option<DetectorXml>)> {
+    let datfile_xml: DatfileXml = de::from_reader(&mut get_reader_sync(dat_path)?)
+        .context("Failed to deserialize DAT file")?;
 
     // print information
     let label_style = Style::new().dim();
@@ -315,7 +313,7 @@ pub async fn import_dat(
     custom_name: Option<&String>,
     custom_extension: Option<&String>,
     force: bool,
-) -> SimpleResult<Option<ImportSummary>> {
+) -> Result<Option<ImportSummary>> {
     print_subheader(progress_bar, "Processing system");
 
     let game_count = if !datfile_xml.machines.is_empty() {
@@ -418,7 +416,7 @@ pub async fn import_dat(
     }))
 }
 
-fn get_regions_from_game_name(name: &str) -> SimpleResult<String> {
+fn get_regions_from_game_name(name: &str) -> Result<String> {
     match NoIntroName::try_parse(name) {
         Ok(v) => {
             for token in v.iter() {
@@ -436,7 +434,7 @@ fn get_regions_from_game_name(name: &str) -> SimpleResult<String> {
                 }
             }
             Err(e) => {
-                return Err(SimpleError::with("Failed to parse name", e));
+                return Err(anyhow!("Failed to parse name: {}", e));
             }
         },
     };
@@ -506,7 +504,7 @@ async fn create_or_update_games(
     system_id: i64,
     arcade: bool,
     progress_bar: &ProgressBar,
-) -> SimpleResult<Vec<i64>> {
+) -> Result<Vec<i64>> {
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     let (mut parent_games_xml, mut child_games_xml): (Vec<&GameXml>, Vec<&GameXml>) = games_xml
         .par_iter()
@@ -524,7 +522,7 @@ async fn create_or_update_games(
             match get_regions_from_game_name(&game_xml.name) {
                 Ok(s) => regions.push_str(&s),
                 Err(err) => {
-                    print_warning(progress_bar, err.as_str());
+                    print_warning(progress_bar, &format!("{:#}", err));
                     progress_bar.inc(1);
                     continue;
                 }
@@ -651,7 +649,7 @@ async fn create_or_update_games(
                 match get_regions_from_game_name(&game_xml.name) {
                     Ok(s) => regions.push_str(&s),
                     Err(err) => {
-                        print_warning(progress_bar, err.as_str());
+                        print_warning(progress_bar, &format!("{:#}", err));
                         progress_bar.inc(1);
                         continue;
                     }
@@ -875,7 +873,7 @@ pub async fn reimport_orphan_romfiles(
     progress_bar: &ProgressBar,
     system_id: i64,
     orphan_romfile_ids: Vec<i64>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
     for romfile_id in orphan_romfile_ids {
@@ -926,7 +924,7 @@ pub async fn process_dat_upload(
     progress_bar: &ProgressBar,
     file_path: &PathBuf,
     update: bool,
-) -> Vec<SimpleResult<ImportDatResult>> {
+) -> Vec<Result<ImportDatResult>> {
     let mut results = vec![];
 
     let is_zip = file_path
@@ -938,10 +936,7 @@ pub async fn process_dat_upload(
         let tmp_dir = match tempfile::TempDir::new() {
             Ok(d) => d,
             Err(e) => {
-                results.push(Err(simple_error::SimpleError::with(
-                    "Failed to create temp directory",
-                    e,
-                )));
+                results.push(Err(anyhow!(e).context("Failed to create temp directory")));
                 return results;
             }
         };
@@ -955,18 +950,12 @@ pub async fn process_dat_upload(
         let mut zip_archive = match ZipArchive::new(&mut reader) {
             Ok(a) => a,
             Err(e) => {
-                results.push(Err(simple_error::SimpleError::with(
-                    "Failed to read ZIP",
-                    e,
-                )));
+                results.push(Err(anyhow!(e).context("Failed to read ZIP")));
                 return results;
             }
         };
         if let Err(e) = zip_archive.extract(tmp_dir.path()) {
-            results.push(Err(simple_error::SimpleError::with(
-                "Failed to extract ZIP",
-                e,
-            )));
+            results.push(Err(anyhow!(e).context("Failed to extract ZIP")));
             return results;
         }
         let mut dat_paths: Vec<PathBuf> = WalkDir::new(tmp_dir.path())
@@ -998,7 +987,7 @@ async fn process_single_dat(
     progress_bar: &ProgressBar,
     dat_path: &PathBuf,
     update: bool,
-) -> SimpleResult<ImportDatResult> {
+) -> Result<ImportDatResult> {
     let (datfile_xml, detector_xml) = parse_dat(progress_bar, dat_path, false).await?;
     if update
         && find_system_by_name(connection, &datfile_xml.system.name)

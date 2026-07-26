@@ -1,7 +1,6 @@
+use anyhow::{Context, Result};
 use async_once_cell::OnceCell;
 use infer::{Infer, Type};
-use simple_error::SimpleResult;
-use simple_error::try_with;
 use std::path::Path;
 
 pub const BIN_EXTENSION: &str = "bin";
@@ -115,12 +114,11 @@ async fn init_matcher() -> Infer {
     matcher
 }
 
-pub async fn get_mimetype<P: AsRef<Path>>(path: &P) -> SimpleResult<Option<Type>> {
+pub async fn get_mimetype<P: AsRef<Path>>(path: &P) -> Result<Option<Type>> {
     let matcher = MATCHER.get_or_init(init_matcher()).await;
-    Ok(try_with!(
-        matcher.get_from_path(path),
-        "Failed to infer MIME type"
-    ))
+    matcher
+        .get_from_path(path)
+        .context("Failed to infer MIME type")
 }
 
 #[cfg(test)]

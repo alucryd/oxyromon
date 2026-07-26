@@ -31,6 +31,7 @@
 - Modernized idioms: replaced the `lazy_static` dependency with `std::sync::LazyLock`, removed the pre-2018 `extern crate` block, and switched to explicit macro imports
 - Simplified the `main()` subcommand dispatch using `matches.subcommand()` destructuring
 - Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
+- Migrated error handling from `simple-error` to `anyhow`: errors now carry a full context chain (displayed with `Caused by:` sections), and external tool failures no longer panic on non-UTF-8 output
 
 ## Fixes
 

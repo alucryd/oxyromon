@@ -3,6 +3,7 @@ use super::import_dats::{ImportDatResult, process_dat_upload};
 use super::mutation::Mutation;
 use super::progress::*;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
+use anyhow::Result;
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
@@ -22,7 +23,6 @@ use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
 use serde::Serialize;
 use serde_json::json;
-use simple_error::SimpleResult;
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
 use std::path::PathBuf;
@@ -158,7 +158,7 @@ async fn shutdown_signal(pool: SqlitePool, cancel: CancellationToken) {
     cancel.cancel();
 }
 
-pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> SimpleResult<()> {
+pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
     // Create broadcast channel for SSE
     let (sse_tx, _) = broadcast::channel::<SseMessage>(100);
     let cancel = CancellationToken::new();

@@ -2517,6 +2517,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 name = "oxyromon"
 version = "0.22.0-beta"
 dependencies = [
+ "anyhow",
  "async-graphql",
  "async-graphql-axum",
  "async-once-cell",
@@ -2556,7 +2557,6 @@ dependencies = [
  "serde_json",
  "sha1 0.11.0",
  "shiratsu-naming",
- "simple-error",
  "sqlx",
  "strsim",
  "strum 0.28.0",
@@ -3601,12 +3601,6 @@ name = "simdutf8"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
-
-[[package]]
-name = "simple-error"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69da7c8ef9e55986dcaa55dd095bbf7d321e80cc91644f25ce26a83dbe9e7f14"
 
 [[package]]
 name = "siphasher"

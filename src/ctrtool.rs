@@ -1,8 +1,7 @@
-use super::SimpleResult;
 use super::progress::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
-use simple_error::{bail, try_with};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
@@ -30,11 +29,11 @@ pub struct ArchiveInfo {
     pub size: u64,
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(CTRTOOL).output().await,
-        "Failed to spawn ctrtool"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(CTRTOOL)
+        .output()
+        .await
+        .context("Failed to spawn ctrtool")?;
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     let version = stderr
@@ -50,7 +49,7 @@ pub async fn get_version() -> SimpleResult<String> {
 pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
-) -> SimpleResult<Vec<ArchiveInfo>> {
+) -> Result<Vec<ArchiveInfo>> {
     progress_bar.set_message("Parsing cia");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -69,7 +68,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
             .stdout
             .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
     {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str());
+        bail!("{}", String::from_utf8_lossy(&output.stderr));
     }
 
     let stdout = String::from_utf8(output.stdout).unwrap();
@@ -119,7 +118,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     directory: &Q,
-) -> SimpleResult<Vec<PathBuf>> {
+) -> Result<Vec<PathBuf>> {
     progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -147,7 +146,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
             .stdout
             .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
     {
-        bail!(stderr.as_str())
+        bail!("{}", stderr)
     }
 
     for line in stderr.lines() {

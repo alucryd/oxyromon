@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -26,7 +26,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
     let mut games = find_games_by_system_id(connection, system.id).await;
 
@@ -70,7 +70,7 @@ pub async fn purge_ird(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     game: &Game,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_header(progress_bar, &format!("Purging IRD for \"{}\"", game.name));
 
     let mut transaction = begin_transaction(connection).await;

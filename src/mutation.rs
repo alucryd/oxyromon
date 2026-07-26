@@ -178,12 +178,12 @@ impl Mutation {
                             "system_id": system_id,
                             "system_name": system_name,
                             "success": false,
-                            "error": e.to_string(),
-                            "message": format!("Failed to delete system '{}': {}", system_name, e)
+                            "error": format!("{:#}", e),
+                            "message": format!("Failed to delete system '{}': {:#}", system_name, e)
                         })
                         .to_string(),
                     });
-                    log::error!("Failed to purge system {}: {}", system_name, e);
+                    log::error!("Failed to purge system {}: {:#}", system_name, e);
                 }
             }
         });
