@@ -1,6 +1,7 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
+use super::super::maxcso::XsoType;
 use super::*;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -87,7 +88,7 @@ async fn test() {
     roms_by_game_id.insert(roms[0].game_id, roms);
 
     // when
-    to_cso(
+    to_xso(
         &mut connection,
         &progress_bar,
         roms_by_game_id,
@@ -95,6 +96,7 @@ async fn test() {
         false,
         true,
         true,
+        XsoType::Cso,
     )
     .await
     .unwrap();

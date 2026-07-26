@@ -4,6 +4,7 @@ use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
+use super::decode::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::gdidrop::*;
@@ -343,12 +344,13 @@ pub async fn main(
                 .await?
             }
             "CSO" => {
-                to_cso(
+                to_xso(
                     connection,
                     progress_bar,
                     &destination_directory,
                     roms_by_game_id,
                     romfiles_by_id,
+                    XsoType::Cso,
                 )
                 .await?
             }
@@ -411,12 +413,13 @@ pub async fn main(
                 .await?
             }
             "ZSO" => {
-                to_zso(
+                to_xso(
                     connection,
                     progress_bar,
                     &destination_directory,
                     roms_by_game_id,
                     romfiles_by_id,
+                    XsoType::Zso,
                 )
                 .await?
             }
@@ -1086,12 +1089,13 @@ async fn to_chd(
     Ok(())
 }
 
-async fn to_cso(
+async fn to_xso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
+    xso_type: XsoType,
 ) -> Result<()> {
     // partition archives
     let (archives, others) = partition_games_by_extensions(
@@ -1106,11 +1110,9 @@ async fn to_cso(
     // partition CHDs
     let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
-    // partition CSOs
-    let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
-
-    // partition ZSOs
-    let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
+    // partition XSOs of either type
+    let (xsos, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION, ZSO_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1123,17 +1125,10 @@ async fn to_cso(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_iso(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
-            .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .iso
+            .to_xso(progress_bar, destination_directory, xso_type)
             .await?;
     }
 
@@ -1145,7 +1140,7 @@ async fn to_cso(
             .as_common(connection)
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .to_xso(progress_bar, destination_directory, xso_type)
             .await?;
     }
 
@@ -1157,67 +1152,24 @@ async fn to_cso(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
-        if chd_romfile.chd_type != ChdType::Dvd {
-            continue;
+        if let Some(decoded) = chd_to_iso(connection, progress_bar, romfile, &tmp_directory).await?
+        {
+            decoded
+                .iso
+                .to_xso(progress_bar, destination_directory, xso_type)
+                .await?;
         }
-        chd_romfile
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
-            .await?;
     }
 
-    // export ZSOs
-    for roms in zsos.values() {
+    // export XSOs as-is
+    for roms in xsos.values() {
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let common_romfile = romfile.as_common(connection).await?;
         copy_file(
             progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
-            false,
-        )
-        .await?;
-    }
-
-    // export CSOs
-    for roms in csos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        copy_file(
-            progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
+            &common_romfile.path,
+            &destination_directory.join(common_romfile.path.file_name().unwrap()),
             false,
         )
         .await?;
@@ -1706,123 +1658,6 @@ async fn to_wbfs(
             .await?
             .to_wbfs(progress_bar, destination_directory)
             .await?;
-    }
-
-    Ok(())
-}
-
-async fn to_zso(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
-    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
-    romfiles_by_id: HashMap<i64, Romfile>,
-) -> Result<()> {
-    // partition archives
-    let (archives, others) = partition_games_by_extensions(
-        roms_by_game_id,
-        &romfiles_by_id,
-        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
-    );
-
-    // partition ISOs
-    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
-
-    // partition CHDs
-    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
-
-    // partition ZSOs
-    let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
-
-    // drop others
-    drop(others);
-
-    // export archives
-    for roms in archives.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
-            continue;
-        }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
-            .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export ISOs
-    for roms in isos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export CHDs
-    for roms in chds.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
-            continue;
-        }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
-        if chd_romfile.chd_type != ChdType::Dvd {
-            continue;
-        }
-        chd_romfile
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export ZSOs
-    for roms in zsos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        copy_file(
-            progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
-            false,
-        )
-        .await?;
     }
 
     Ok(())

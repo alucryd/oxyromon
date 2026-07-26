@@ -26,9 +26,31 @@ pub enum XsoType {
     Zso,
 }
 
+impl XsoType {
+    pub fn extension(&self) -> &'static str {
+        match self {
+            XsoType::Cso => CSO_EXTENSION,
+            XsoType::Zso => ZSO_EXTENSION,
+        }
+    }
+
+    pub fn opposite(&self) -> XsoType {
+        match self {
+            XsoType::Cso => XsoType::Zso,
+            XsoType::Zso => XsoType::Cso,
+        }
+    }
+}
+
 pub struct XsoRomfile {
     pub romfile: CommonRomfile,
     pub xso_type: XsoType,
+}
+
+impl GetRomfile for XsoRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
 }
 
 impl HashAndSize for XsoRomfile {
@@ -136,10 +158,7 @@ impl ToXso for IsoRomfile {
         let path = destination_directory
             .as_ref()
             .join(self.romfile.path.file_name().unwrap())
-            .with_extension(match xso_type {
-                XsoType::Cso => CSO_EXTENSION,
-                XsoType::Zso => ZSO_EXTENSION,
-            });
+            .with_extension(xso_type.extension());
 
         print_action(
             progress_bar,

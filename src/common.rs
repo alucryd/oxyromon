@@ -119,6 +119,17 @@ pub trait CommonFile {
     async fn delete(&self, progress_bar: &ProgressBar, quiet: bool) -> Result<()>;
 }
 
+/// Access to the underlying file of a format-specific romfile wrapper.
+pub trait GetRomfile {
+    fn romfile(&self) -> &CommonRomfile;
+}
+
+impl GetRomfile for IsoRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 // === CONVERSION TRAITS ===
 pub trait AsCommon {
     async fn as_common(&self, connection: &mut SqliteConnection) -> Result<CommonRomfile>;

@@ -33,6 +33,7 @@
 - Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
 - Migrated error handling from `simple-error` to `anyhow`: errors now carry a full context chain (displayed with `Caused by:` sections), and external tool failures no longer panic on non-UTF-8 output
 - Deduplicated the 79 partition-by-extension blocks in `convert-roms` and `export-roms` into two shared helpers (`partition_games_by_extensions`, `partition_games_by_all_extensions` in `common.rs`), removing ~560 lines
+- Unified `convert-roms`/`export-roms` CSO and ZSO handling into a single `to_xso` per module, backed by a new shared source-decoding layer (`decode.rs`) and a `check_and_persist` conversion finalizer, removing another ~440 lines
 
 ## Fixes
 
