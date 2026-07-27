@@ -22,5 +22,9 @@ tests/.tmp*
 frontend/target
 frontend/dist
 frontend/tailwind.css
-frontend/Cargo.lock
 frontend/node_modules
+
+# desktop (tauri)
+desktop/target
+desktop/gen
+desktop/binaries
