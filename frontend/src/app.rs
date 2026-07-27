@@ -7,7 +7,6 @@ use leptos::task::spawn_local;
 
 use crate::api::{
     get_games_by_system_id, get_roms_by_game_and_system, get_sizes_by_system_id, get_systems,
-    update_games, update_romfiles, update_roms, update_systems,
 };
 use crate::components::about_modal::AboutModal;
 use crate::components::import_dat_modal::ImportDatModal;
@@ -50,26 +49,25 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Reactive equivalents of the `store.subscribe(...)` blocks in `+page.svelte`.
+/// The remaining effects.
+///
+/// Everything that merely recomputed a view of the data — paginating, filtering,
+/// counting pages — is now a memo on `AppState` that recomputes itself when its
+/// sources change. What is left here is genuinely imperative: fetching from the
+/// backend, and resetting the selection and paging when the user picks
+/// something new.
 fn setup_effects(state: AppState) {
-    // Pagination of the (static) systems list.
-    Effect::new(move |_| {
-        state.systems_page.track();
-        update_systems(state);
-    });
-
-    // Selecting a system resets the games/roms panes and loads fresh data.
+    // Selecting a system loads its games and sizes.
     Effect::new(move |_| {
         let system_id = state.system_id.get();
         state.game_id.set(-1);
         state.games_page.set(1);
-        state.games.set(Vec::new());
-        state.roms.set(Vec::new());
-        state.romfiles.set(Vec::new());
+        // Drop the previous system's games so the table empties while the new
+        // ones load; everything derived from them follows automatically.
+        state.unfiltered_games.set(Vec::new());
         // This effect also runs once on mount, before anything is selected;
         // querying the sentinel id would just round-trip for an empty result.
         if system_id < 0 {
-            state.unfiltered_games.set(Vec::new());
             return;
         }
         spawn_local(async move {
@@ -78,22 +76,16 @@ fn setup_effects(state: AppState) {
         });
     });
 
-    Effect::new(move |_| {
-        state.games_page.track();
-        update_games(state);
-    });
-
-    // Selecting a game reloads its roms/romfiles.
+    // Selecting a game loads its roms (and with them, its romfiles).
     Effect::new(move |_| {
         let game_id = state.game_id.get();
         state.roms_page.set(1);
         state.romfiles_page.set(1);
-        state.roms.set(Vec::new());
-        state.romfiles.set(Vec::new());
         let system_id = state.system_id.get_untracked();
-        // Also reset to the sentinel whenever the selected system changes.
+        // Clearing the roms also clears the romfiles derived from them.
+        state.unfiltered_roms.set(Vec::new());
+        // game_id returns to the sentinel whenever the selected system changes.
         if game_id < 0 || system_id < 0 {
-            state.unfiltered_roms.set(Vec::new());
             return;
         }
         spawn_local(async move {
@@ -101,40 +93,15 @@ fn setup_effects(state: AppState) {
         });
     });
 
+    // Changing a filter can shrink the list under the current page, so go back
+    // to the first one. The games memo re-filters on its own.
     Effect::new(move |_| {
-        state.roms_page.track();
-        update_roms(state);
-    });
-
-    Effect::new(move |_| {
-        state.romfiles_page.track();
-        update_romfiles(state);
-    });
-
-    // Any game filter change jumps back to page 1 (or re-filters if already there).
-    for filter in [
-        state.complete_filter,
-        state.incomplete_filter,
-        state.wanted_filter,
-        state.ignored_filter,
-        state.one_region_filter,
-    ] {
-        Effect::new(move |_| {
-            filter.track();
-            if state.games_page.get_untracked() != 1 {
-                state.games_page.set(1);
-            } else {
-                update_games(state);
-            }
-        });
-    }
-
-    Effect::new(move |_| {
+        state.complete_filter.track();
+        state.incomplete_filter.track();
+        state.wanted_filter.track();
+        state.ignored_filter.track();
+        state.one_region_filter.track();
         state.name_filter.track();
-        if state.games_page.get_untracked() != 1 {
-            state.games_page.set(1);
-        } else {
-            update_games(state);
-        }
+        state.games_page.set(1);
     });
 }

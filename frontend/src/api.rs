@@ -1,18 +1,18 @@
 //! GraphQL client and typed query/mutation helpers.
 //!
-//! Ports `src/query.js` and `src/mutation.js`. Queries POST to the same-origin
-//! `/graphql` endpoint served by the Axum backend. Data-loading helpers take
-//! `AppState` and imperatively update its signals, mirroring the store-updating
-//! style of the original code.
+//! Queries POST to the same-origin `/graphql` endpoint served by the Axum
+//! backend. Data-loading helpers take `AppState` and publish what they fetch
+//! into its source signals; deriving the filtered and paginated views from
+//! those is the job of the memos in `state.rs`.
 
 use gloo_net::http::Request;
 use leptos::prelude::*;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
-use crate::model::{Game, Info, NotificationKind, Rom, Romfile, Setting, System};
+use crate::model::{Game, Info, NotificationKind, Rom, Setting, System};
 use crate::notify::push_notification;
-use crate::state::{AppState, PAGE_SIZE, ROMS_PAGE_SIZE};
+use crate::state::AppState;
 
 /// POST a GraphQL document and return the `data` object, or an error string.
 async fn graphql(query: &str, variables: Value) -> Result<Value, String> {
@@ -55,32 +55,6 @@ fn field<T: DeserializeOwned>(data: &mut Value, name: &str) -> Result<T, String>
     serde_json::from_value(data[name].take()).map_err(|e| e.to_string())
 }
 
-/// Half-open range of `items` covered by `page` (1-indexed), clamped to `len`.
-fn page_range(len: usize, page: usize, page_size: usize) -> std::ops::Range<usize> {
-    let start = page_size.saturating_mul(page.saturating_sub(1));
-    if start >= len {
-        return 0..0;
-    }
-    start..(page_size.saturating_mul(page)).min(len)
-}
-
-/// Clone out just the items on `page`, leaving the rest borrowed.
-fn paginate<T: Clone>(items: &[T], page: usize, page_size: usize) -> Vec<T> {
-    items[page_range(items.len(), page, page_size)].to_vec()
-}
-
-/// As [`paginate`], for an already-filtered list of borrows.
-fn paginate_refs<T: Clone>(items: &[&T], page: usize, page_size: usize) -> Vec<T> {
-    items[page_range(items.len(), page, page_size)]
-        .iter()
-        .map(|item| (*item).clone())
-        .collect()
-}
-
-fn total_pages(len: usize, page_size: usize) -> usize {
-    len.div_ceil(page_size).max(1)
-}
-
 // === Queries ===
 
 pub async fn get_info() -> Result<Info, String> {
@@ -119,25 +93,12 @@ pub async fn get_systems(state: AppState) {
         Ok(mut data) => match field::<Vec<System>>(&mut data, "systems") {
             Ok(systems) => {
                 state.unfiltered_systems.set(systems);
-                update_systems(state);
             }
             Err(e) => report_error(state, "Loading systems", &e),
         },
         Err(e) => report_error(state, "Loading systems", &e),
     }
     state.loading_systems.set(false);
-}
-
-pub fn update_systems(state: AppState) {
-    let page = state.systems_page.get_untracked();
-    let (total, current_page) = state.unfiltered_systems.with_untracked(|systems| {
-        (
-            total_pages(systems.len(), PAGE_SIZE),
-            paginate(systems, page, PAGE_SIZE),
-        )
-    });
-    state.systems_total_pages.set(total);
-    state.systems.set(current_page);
 }
 
 pub async fn get_games_by_system_id(state: AppState, system_id: i64) {
@@ -153,76 +114,12 @@ pub async fn get_games_by_system_id(state: AppState, system_id: i64) {
                     game.name_lower = game.name.to_lowercase();
                 }
                 state.unfiltered_games.set(games);
-                update_games(state);
             }
             Err(e) => report_error(state, "Loading games", &e),
         },
         Err(e) => report_error(state, "Loading games", &e),
     }
     state.loading_games.set(false);
-}
-
-/// Snapshot of the game filters, read once per update rather than once per
-/// game (these are signal reads, and the games list can hold tens of thousands
-/// of entries for arcade systems).
-struct GameFilter {
-    complete: bool,
-    incomplete: bool,
-    wanted: bool,
-    ignored: bool,
-    one_region: bool,
-    needle: String,
-}
-
-impl GameFilter {
-    fn read(state: AppState) -> Self {
-        Self {
-            complete: state.complete_filter.get_untracked(),
-            incomplete: state.incomplete_filter.get_untracked(),
-            wanted: state.wanted_filter.get_untracked(),
-            ignored: state.ignored_filter.get_untracked(),
-            one_region: state.one_region_filter.get_untracked(),
-            needle: state.name_filter.get_untracked().to_lowercase(),
-        }
-    }
-
-    fn keep(&self, game: &Game) -> bool {
-        if !self.complete && game.completion == 2 {
-            return false;
-        }
-        if !self.incomplete && game.completion == 1 {
-            return false;
-        }
-        if !self.wanted && game.completion == 0 {
-            return false;
-        }
-        if !self.ignored && game.sorting == 2 {
-            return false;
-        }
-        if self.one_region && game.sorting != 1 {
-            return false;
-        }
-        if !self.needle.is_empty() && !game.name_lower.contains(&self.needle) {
-            return false;
-        }
-        true
-    }
-}
-
-pub fn update_games(state: AppState) {
-    let filter = GameFilter::read(state);
-    let page = state.games_page.get_untracked();
-    // Borrow the full list and collect only references, so the single page we
-    // hand to the view is the only thing actually cloned.
-    let (total, current_page) = state.unfiltered_games.with_untracked(|games| {
-        let matching: Vec<&Game> = games.iter().filter(|game| filter.keep(game)).collect();
-        (
-            total_pages(matching.len(), PAGE_SIZE),
-            paginate_refs(&matching, page, PAGE_SIZE),
-        )
-    });
-    state.games_total_pages.set(total);
-    state.games.set(current_page);
 }
 
 pub async fn get_roms_by_game_and_system(state: AppState, game_id: i64, system_id: i64) {
@@ -235,43 +132,12 @@ pub async fn get_roms_by_game_and_system(state: AppState, game_id: i64, system_i
         Ok(mut data) => match field::<Vec<Rom>>(&mut data, "roms") {
             Ok(roms) => {
                 state.unfiltered_roms.set(roms);
-                update_roms(state);
             }
             Err(e) => report_error(state, "Loading ROMs", &e),
         },
         Err(e) => report_error(state, "Loading ROMs", &e),
     }
     state.loading_roms.set(false);
-}
-
-pub fn update_roms(state: AppState) {
-    let page = state.roms_page.get_untracked();
-    let (total, current_page) = state.unfiltered_roms.with_untracked(|roms| {
-        (
-            total_pages(roms.len(), ROMS_PAGE_SIZE),
-            paginate(roms, page, ROMS_PAGE_SIZE),
-        )
-    });
-    state.roms_total_pages.set(total);
-    state.roms.set(current_page);
-    update_romfiles(state);
-}
-
-pub fn update_romfiles(state: AppState) {
-    let page = state.romfiles_page.get_untracked();
-    let (total, current_page) = state.unfiltered_roms.with_untracked(|roms| {
-        // Unique romfiles by path, sorted by path (mirrors uniqBy + sort).
-        let mut romfiles: Vec<&Romfile> =
-            roms.iter().filter_map(|rom| rom.romfile.as_ref()).collect();
-        romfiles.sort_by(|a, b| a.path.cmp(&b.path));
-        romfiles.dedup_by(|a, b| a.path == b.path);
-        (
-            total_pages(romfiles.len(), ROMS_PAGE_SIZE),
-            paginate_refs(&romfiles, page, ROMS_PAGE_SIZE),
-        )
-    });
-    state.romfiles_total_pages.set(total);
-    state.romfiles.set(current_page);
 }
 
 pub async fn get_sizes_by_system_id(state: AppState, system_id: i64) {

@@ -12,7 +12,10 @@ pub const ALT_BUTTON: &str = "flex items-center justify-center rounded-lg border
 
 /// First / prev / page-indicator / next / last pagination bar.
 #[component]
-pub fn Pagination(page: RwSignal<usize>, total_pages: RwSignal<usize>) -> impl IntoView {
+pub fn Pagination(
+    page: RwSignal<usize>,
+    #[prop(into)] total_pages: Signal<usize>,
+) -> impl IntoView {
     let first = move || page.get() <= 1;
     let last = move || page.get() >= total_pages.get();
     view! {

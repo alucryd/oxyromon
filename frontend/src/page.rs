@@ -2,8 +2,6 @@
 //! delete-confirmation modal, the per-system settings modal and the toast.
 //! Ports `+page.svelte`.
 
-use std::collections::HashSet;
-
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
@@ -386,16 +384,6 @@ fn RomfilesCard() -> impl IntoView {
 fn StatsCard() -> impl IntoView {
     let state = expect_context::<AppState>();
 
-    let unique_romfiles = move || {
-        let paths: HashSet<String> = state
-            .unfiltered_roms
-            .get()
-            .into_iter()
-            .filter_map(|rom| rom.romfile.map(|romfile| romfile.path))
-            .collect();
-        paths.len()
-    };
-
     let tile = "rounded bg-gray-100 p-2 text-center dark:bg-gray-700";
     let value = "text-lg font-bold text-gray-900 dark:text-white";
     let label = "text-xs text-gray-500 dark:text-gray-400";
@@ -410,7 +398,7 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_systems.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || state.unfiltered_systems.get().len()}</p>
+                            <p class=value>{move || state.unfiltered_systems.with(Vec::len)}</p>
                         </Show>
                         <p class=label>Systems</p>
                     </div>
@@ -419,19 +407,19 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_games.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || state.unfiltered_games.get().len()}</p>
+                            <p class=value>{move || state.unfiltered_games.with(Vec::len)}</p>
                         </Show>
                         <p class=label>Games</p>
                     </div>
                     <div class=tile>
                         <Show when=move || !state.loading_roms.get() fallback=|| view! { <Spinner /> }>
-                            <p class=value>{move || state.unfiltered_roms.get().len()}</p>
+                            <p class=value>{move || state.unfiltered_roms.with(Vec::len)}</p>
                         </Show>
                         <p class=label>ROMs</p>
                     </div>
                     <div class=tile>
                         <Show when=move || !state.loading_roms.get() fallback=|| view! { <Spinner /> }>
-                            <p class=value>{unique_romfiles}</p>
+                            <p class=value>{move || state.unique_romfiles.with(Vec::len)}</p>
                         </Show>
                         <p class=label>ROM Files</p>
                     </div>
