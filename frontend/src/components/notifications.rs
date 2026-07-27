@@ -9,7 +9,7 @@ use crate::state::AppState;
 pub fn NotificationsButton() -> impl IntoView {
     let state = expect_context::<AppState>();
     let open = RwSignal::new(false);
-    let notifications = state.notifications;
+    let notifications = state.notifier.notifications;
 
     let count = move || notifications.get().len();
     let has_any = move || !notifications.get().is_empty();

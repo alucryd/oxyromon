@@ -79,7 +79,7 @@ pub fn ImportDatModal() -> impl IntoView {
                 }
                 // Leave the dialog open with the file still selected so the
                 // upload can simply be retried.
-                Err(e) => report_error(state, "Uploading the DAT file", &e),
+                Err(e) => report_error(state.notifier, "Uploading the DAT file", &e),
             }
         });
     };

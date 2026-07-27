@@ -1,13 +1,9 @@
-//! Application root: provides global state, wires the reactive data-loading
-//! effects that replace the Svelte `onMount` store subscriptions, kicks off the
-//! initial load + SSE connection, and lays out the navbar, page and modals.
+//! Application root: provides global state, resets the selection and paging
+//! when the user picks something new, opens the SSE connection, and lays out
+//! the navbar, page and modals.
 
 use leptos::prelude::*;
-use leptos::task::spawn_local;
 
-use crate::api::{
-    get_games_by_system_id, get_roms_by_game_and_system, get_sizes_by_system_id, get_systems,
-};
 use crate::components::about_modal::AboutModal;
 use crate::components::import_dat_modal::ImportDatModal;
 use crate::components::navbar::Navbar;
@@ -23,9 +19,8 @@ pub fn App() -> impl IntoView {
 
     setup_effects(state);
 
-    // Initial load + real-time updates.
+    // The resources start loading on their own; this is for the pushed updates.
     connect_sse(state);
-    spawn_local(async move { get_systems(state).await });
 
     // Global settings modal (system_id = None).
     let global_settings_id = RwSignal::new(Option::<i64>::None);
@@ -51,50 +46,27 @@ pub fn App() -> impl IntoView {
 
 /// The remaining effects.
 ///
-/// Everything that merely recomputed a view of the data — paginating, filtering,
-/// counting pages — is now a memo on `AppState` that recomputes itself when its
-/// sources change. What is left here is genuinely imperative: fetching from the
-/// backend, and resetting the selection and paging when the user picks
-/// something new.
+/// Fetching is no longer among them: the resources in [`AppState`] re-run
+/// themselves when the selection they read changes. What is left is the state
+/// the user's choices invalidate — a game that belongs to the system they just
+/// navigated away from, or a page number past the end of a list they just
+/// filtered down.
 fn setup_effects(state: AppState) {
-    // Selecting a system loads its games and sizes.
+    // Picking a system drops the game selection and returns to the first page.
     Effect::new(move |_| {
-        let system_id = state.system_id.get();
+        state.system_id.track();
         state.game_id.set(-1);
         state.games_page.set(1);
-        // Drop the previous system's games so the table empties while the new
-        // ones load; everything derived from them follows automatically.
-        state.unfiltered_games.set(Vec::new());
-        // This effect also runs once on mount, before anything is selected;
-        // querying the sentinel id would just round-trip for an empty result.
-        if system_id < 0 {
-            return;
-        }
-        spawn_local(async move {
-            get_games_by_system_id(state, system_id).await;
-            get_sizes_by_system_id(state, system_id).await;
-        });
     });
 
-    // Selecting a game loads its roms (and with them, its romfiles).
+    // Picking a game returns its roms and romfiles to the first page.
     Effect::new(move |_| {
-        let game_id = state.game_id.get();
+        state.game_id.track();
         state.roms_page.set(1);
         state.romfiles_page.set(1);
-        let system_id = state.system_id.get_untracked();
-        // Clearing the roms also clears the romfiles derived from them.
-        state.unfiltered_roms.set(Vec::new());
-        // game_id returns to the sentinel whenever the selected system changes.
-        if game_id < 0 || system_id < 0 {
-            return;
-        }
-        spawn_local(async move {
-            get_roms_by_game_and_system(state, game_id, system_id).await;
-        });
     });
 
-    // Changing a filter can shrink the list under the current page, so go back
-    // to the first one. The games memo re-filters on its own.
+    // Changing a filter can shrink the list under the current page.
     Effect::new(move |_| {
         state.complete_filter.track();
         state.incomplete_filter.track();

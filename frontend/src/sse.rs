@@ -1,12 +1,10 @@
 //! Server-Sent Events client and notification helpers (ports `src/events.js`).
 
-use leptos::task::spawn_local;
 use serde_json::Value;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::closure::Closure;
 use web_sys::{EventSource, MessageEvent};
 
-use crate::api::get_systems;
 use crate::model::NotificationKind;
 use crate::notify::push_notification;
 use crate::state::AppState;
@@ -26,7 +24,7 @@ fn on_event(source: &EventSource, name: &'static str, state: AppState, kind: Not
             .as_string()
             .and_then(|s| serde_json::from_str(&s).ok())
             .unwrap_or(Value::Null);
-        push_notification(state, message_field(&data), kind);
+        push_notification(state.notifier, message_field(&data), kind);
     });
     source
         .add_event_listener_with_callback(name, handler.as_ref().unchecked_ref())
@@ -53,9 +51,10 @@ fn on_complete_event(
         } else {
             success_kind
         };
-        push_notification(state, message_field(&data), kind);
+        push_notification(state.notifier, message_field(&data), kind);
         if !skipped {
-            spawn_local(async move { get_systems(state).await });
+            // The set of systems changed underneath us, so pull it again.
+            state.systems_resource.refetch();
         }
     });
     source

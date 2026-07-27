@@ -21,7 +21,7 @@ pub fn AboutModal() -> impl IntoView {
             spawn_local(async move {
                 match get_info().await {
                     Ok(data) => info.set(Some(data)),
-                    Err(e) => report_error(state, "Loading version information", &e),
+                    Err(e) => report_error(state.notifier, "Loading version information", &e),
                 }
             });
         }

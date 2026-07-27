@@ -10,8 +10,8 @@ use leptos::prelude::*;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
-use crate::model::{Game, Info, NotificationKind, Rom, Setting, System};
-use crate::notify::push_notification;
+use crate::model::{Game, Info, NotificationKind, Rom, Setting, Sizes, System};
+use crate::notify::{Notifier, push_notification};
 use crate::state::AppState;
 
 /// POST a GraphQL document and return the `data` object, or an error string.
@@ -41,10 +41,10 @@ async fn graphql(query: &str, variables: Value) -> Result<Value, String> {
 ///
 /// Without this the UI silently renders empty tables when the backend is
 /// unreachable or a query fails.
-pub fn report_error(state: AppState, action: &str, error: &str) {
+pub fn report_error(notifier: Notifier, action: &str, error: &str) {
     leptos::logging::error!("{action}: {error}");
     push_notification(
-        state,
+        notifier,
         format!("{action} failed: {error}"),
         NotificationKind::Error,
     );
@@ -84,25 +84,31 @@ pub async fn get_raw_settings(system_id: Option<i64>) -> Result<Vec<Setting>, St
     }
 }
 
-pub async fn get_systems(state: AppState) {
-    state.loading_systems.set(true);
+/// Fetch every system.
+pub async fn fetch_systems(notifier: Notifier) -> Vec<System> {
     let query = r#"{
         systems { id name description completion merging arcade }
     }"#;
     match graphql(query, Value::Null).await {
         Ok(mut data) => match field::<Vec<System>>(&mut data, "systems") {
-            Ok(systems) => {
-                state.unfiltered_systems.set(systems);
+            Ok(systems) => systems,
+            Err(e) => {
+                report_error(notifier, "Loading systems", &e);
+                Vec::new()
             }
-            Err(e) => report_error(state, "Loading systems", &e),
         },
-        Err(e) => report_error(state, "Loading systems", &e),
+        Err(e) => {
+            report_error(notifier, "Loading systems", &e);
+            Vec::new()
+        }
     }
-    state.loading_systems.set(false);
 }
 
-pub async fn get_games_by_system_id(state: AppState, system_id: i64) {
-    state.loading_games.set(true);
+/// Fetch the games of a system, or nothing when none is selected.
+pub async fn fetch_games(notifier: Notifier, system_id: i64) -> Vec<Game> {
+    if system_id < 0 {
+        return Vec::new();
+    }
     let query = format!(
         "{{ games(systemId: {}) {{ id name description completion sorting }} }}",
         system_id
@@ -113,57 +119,65 @@ pub async fn get_games_by_system_id(state: AppState, system_id: i64) {
                 for game in &mut games {
                     game.name_lower = game.name.to_lowercase();
                 }
-                state.unfiltered_games.set(games);
+                games
             }
-            Err(e) => report_error(state, "Loading games", &e),
+            Err(e) => {
+                report_error(notifier, "Loading games", &e);
+                Vec::new()
+            }
         },
-        Err(e) => report_error(state, "Loading games", &e),
+        Err(e) => {
+            report_error(notifier, "Loading games", &e);
+            Vec::new()
+        }
     }
-    state.loading_games.set(false);
 }
 
-pub async fn get_roms_by_game_and_system(state: AppState, game_id: i64, system_id: i64) {
-    state.loading_roms.set(true);
+/// Fetch the roms of a game, or nothing when no game or system is selected.
+pub async fn fetch_roms(notifier: Notifier, game_id: i64, system_id: i64) -> Vec<Rom> {
+    if game_id < 0 || system_id < 0 {
+        return Vec::new();
+    }
     let query = format!(
         "{{ roms(gameId: {}) {{ id name size romfile {{ id path size }} ignored(systemId: {}) }} }}",
         game_id, system_id
     );
     match graphql(&query, Value::Null).await {
         Ok(mut data) => match field::<Vec<Rom>>(&mut data, "roms") {
-            Ok(roms) => {
-                state.unfiltered_roms.set(roms);
+            Ok(roms) => roms,
+            Err(e) => {
+                report_error(notifier, "Loading ROMs", &e);
+                Vec::new()
             }
-            Err(e) => report_error(state, "Loading ROMs", &e),
         },
-        Err(e) => report_error(state, "Loading ROMs", &e),
+        Err(e) => {
+            report_error(notifier, "Loading ROMs", &e);
+            Vec::new()
+        }
     }
-    state.loading_roms.set(false);
 }
 
-pub async fn get_sizes_by_system_id(state: AppState, system_id: i64) {
-    state.loading_sizes.set(true);
+/// Fetch the aggregate sizes of a system.
+pub async fn fetch_sizes(notifier: Notifier, system_id: i64) -> Sizes {
+    if system_id < 0 {
+        return Sizes::default();
+    }
     let query = format!(
         "{{ totalOriginalSize(systemId: {id}) oneRegionOriginalSize(systemId: {id}) totalActualSize(systemId: {id}) oneRegionActualSize(systemId: {id}) }}",
         id = system_id
     );
     match graphql(&query, Value::Null).await {
-        Ok(data) => {
-            state
-                .total_original_size
-                .set(data["totalOriginalSize"].as_i64().unwrap_or(0));
-            state
-                .one_region_original_size
-                .set(data["oneRegionOriginalSize"].as_i64().unwrap_or(0));
-            state
-                .total_actual_size
-                .set(data["totalActualSize"].as_i64().unwrap_or(0));
-            state
-                .one_region_actual_size
-                .set(data["oneRegionActualSize"].as_i64().unwrap_or(0));
+        Ok(data) => Sizes {
+            total_original: data["totalOriginalSize"].as_i64().unwrap_or(0),
+            one_region_original: data["oneRegionOriginalSize"].as_i64().unwrap_or(0),
+            total_actual: data["totalActualSize"].as_i64().unwrap_or(0),
+            one_region_actual: data["oneRegionActualSize"].as_i64().unwrap_or(0),
+        },
+        Err(e) => {
+            report_error(notifier, "Loading statistics", &e);
+            Sizes::default()
         }
-        Err(e) => report_error(state, "Loading statistics", &e),
     }
-    state.loading_sizes.set(false);
 }
 
 // === Mutations ===
@@ -273,7 +287,7 @@ pub async fn purge_system(state: AppState, system_id: i64) {
         purgeSystem(systemId: $systemId)
     }"#;
     if let Err(e) = graphql(mutation, json!({ "systemId": system_id })).await {
-        report_error(state, "Purging the system", &e);
+        report_error(state.notifier, "Purging the system", &e);
     }
     state.purging_system_id.set(-1);
 }

@@ -65,6 +65,15 @@ pub struct Info {
     pub rom_count: i64,
 }
 
+/// The four aggregate sizes reported for a system.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Sizes {
+    pub total_original: i64,
+    pub one_region_original: i64,
+    pub total_actual: i64,
+    pub one_region_actual: i64,
+}
+
 /// Notification shown in the bell dropdown / toast.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Notification {

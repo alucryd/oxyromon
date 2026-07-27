@@ -114,7 +114,7 @@ pub fn SettingsModal(
         spawn_local(async move {
             match get_raw_settings(sid).await {
                 Ok(settings) => local.populate(&settings),
-                Err(e) => report_error(state, "Loading settings", &e),
+                Err(e) => report_error(state.notifier, "Loading settings", &e),
             }
         });
     });
@@ -130,7 +130,7 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_bool(key, value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -140,7 +140,7 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_prefer_regions(&value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -149,7 +149,7 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_prefer_versions(&value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -158,7 +158,7 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_subfolder_scheme(key, &value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -170,7 +170,7 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_directory(key, &value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -408,7 +408,7 @@ fn ListField(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = add_to_list(setting_key, &value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });
@@ -418,7 +418,7 @@ fn ListField(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = remove_from_list(setting_key, &value, sid).await {
-                report_error(state, "Updating settings", &e);
+                report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
         });

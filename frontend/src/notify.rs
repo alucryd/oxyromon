@@ -6,9 +6,33 @@ use gloo_timers::callback::Timeout;
 use leptos::prelude::*;
 
 use crate::model::{Notification, NotificationKind};
-use crate::state::AppState;
 
 static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+
+/// The notification sinks on their own.
+///
+/// Split out of `AppState` because the resource fetchers need to report
+/// failures while `AppState` is still being constructed around them.
+#[derive(Clone, Copy)]
+pub struct Notifier {
+    pub notifications: RwSignal<Vec<Notification>>,
+    pub toast: RwSignal<Option<Notification>>,
+}
+
+impl Notifier {
+    pub fn new() -> Self {
+        Self {
+            notifications: RwSignal::new(Vec::new()),
+            toast: RwSignal::new(None),
+        }
+    }
+}
+
+impl Default for Notifier {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 fn now_time() -> String {
     js_sys::Date::new_0()
@@ -18,7 +42,7 @@ fn now_time() -> String {
 }
 
 /// Prepend a notification and surface it as a transient toast.
-pub fn push_notification(state: AppState, message: String, kind: NotificationKind) {
+pub fn push_notification(notifier: Notifier, message: String, kind: NotificationKind) {
     let notification = Notification {
         id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
         message,
@@ -26,10 +50,10 @@ pub fn push_notification(state: AppState, message: String, kind: NotificationKin
         time: now_time(),
     };
     let id = notification.id;
-    state.notifications.update(|list| {
+    notifier.notifications.update(|list| {
         list.insert(0, notification.clone());
     });
-    state.toast.set(Some(notification));
+    notifier.toast.set(Some(notification));
 
     // Auto-dismiss (info: 3s, otherwise 5s), matching the Svelte UI. Only clear
     // the toast if it is still this notification, so a later one that replaced
@@ -40,8 +64,8 @@ pub fn push_notification(state: AppState, message: String, kind: NotificationKin
         5000
     };
     Timeout::new(duration, move || {
-        if state.toast.get_untracked().map(|toast| toast.id) == Some(id) {
-            state.toast.set(None);
+        if notifier.toast.get_untracked().map(|toast| toast.id) == Some(id) {
+            notifier.toast.set(None);
         }
     })
     .forget();

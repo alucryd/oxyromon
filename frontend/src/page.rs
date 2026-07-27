@@ -398,7 +398,7 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_systems.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || state.unfiltered_systems.with(Vec::len)}</p>
+                            <p class=value>{move || state.system_count.get()}</p>
                         </Show>
                         <p class=label>Systems</p>
                     </div>
@@ -407,13 +407,13 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_games.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || state.unfiltered_games.with(Vec::len)}</p>
+                            <p class=value>{move || state.game_count.get()}</p>
                         </Show>
                         <p class=label>Games</p>
                     </div>
                     <div class=tile>
                         <Show when=move || !state.loading_roms.get() fallback=|| view! { <Spinner /> }>
-                            <p class=value>{move || state.unfiltered_roms.with(Vec::len)}</p>
+                            <p class=value>{move || state.rom_count.get()}</p>
                         </Show>
                         <p class=label>ROMs</p>
                     </div>
@@ -429,7 +429,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.total_original_size.get())}
+                                {move || format_bytes(state.sizes.get().total_original)}
                             </p>
                         </Show>
                         <p class=label>Total Size (Original)</p>
@@ -440,7 +440,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.one_region_original_size.get())}
+                                {move || format_bytes(state.sizes.get().one_region_original)}
                             </p>
                         </Show>
                         <p class=label>1G1R Size (Original)</p>
@@ -450,7 +450,7 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_sizes.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || format_bytes(state.total_actual_size.get())}</p>
+                            <p class=value>{move || format_bytes(state.sizes.get().total_actual)}</p>
                         </Show>
                         <p class=label>Total Size (Actual)</p>
                     </div>
@@ -460,7 +460,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.one_region_actual_size.get())}
+                                {move || format_bytes(state.sizes.get().one_region_actual)}
                             </p>
                         </Show>
                         <p class=label>1G1R Size (Actual)</p>
@@ -530,9 +530,9 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
 fn Toast() -> impl IntoView {
     let state = expect_context::<AppState>();
     view! {
-        <Show when=move || state.toast.get().is_some()>
+        <Show when=move || state.notifier.toast.get().is_some()>
             {move || {
-                let notification = state.toast.get().unwrap();
+                let notification = state.notifier.toast.get().unwrap();
                 let (color, icon) = match notification.kind {
                     NotificationKind::Success => {
                         ("border-green-500 text-green-500", CHECK_CIRCLE)

@@ -11,7 +11,9 @@
 
 use leptos::prelude::*;
 
-use crate::model::{Game, Notification, Rom, Romfile, System};
+use crate::api::{fetch_games, fetch_roms, fetch_sizes, fetch_systems};
+use crate::model::{Game, Rom, Romfile, Sizes, System};
+use crate::notify::Notifier;
 
 // Setting keys (mirror store.js).
 pub const ONE_REGIONS_KEY: &str = "REGIONS_ONE";
@@ -110,17 +112,6 @@ pub struct AppState {
     pub game_id: RwSignal<i64>,
     pub purging_system_id: RwSignal<i64>,
 
-    // Fetched data.
-    pub unfiltered_systems: RwSignal<Vec<System>>,
-    pub unfiltered_games: RwSignal<Vec<Game>>,
-    pub unfiltered_roms: RwSignal<Vec<Rom>>,
-
-    // Sizes.
-    pub total_original_size: RwSignal<i64>,
-    pub one_region_original_size: RwSignal<i64>,
-    pub total_actual_size: RwSignal<i64>,
-    pub one_region_actual_size: RwSignal<i64>,
-
     // Current page (1-indexed).
     pub systems_page: RwSignal<usize>,
     pub games_page: RwSignal<usize>,
@@ -141,14 +132,16 @@ pub struct AppState {
     pub about_modal_open: RwSignal<bool>,
 
     // Notifications + transient toast.
-    pub notifications: RwSignal<Vec<Notification>>,
-    pub toast: RwSignal<Option<Notification>>,
+    pub notifier: Notifier,
 
-    // Loading flags.
-    pub loading_systems: RwSignal<bool>,
-    pub loading_games: RwSignal<bool>,
-    pub loading_roms: RwSignal<bool>,
-    pub loading_sizes: RwSignal<bool>,
+    // === Async data ===
+    //
+    // The games, roms and sizes resources re-run whenever the selection they
+    // read changes, so nothing has to remember to kick off a fetch; they are
+    // reached only through the memos below. The systems resource reads no
+    // signal, so it is kept here to be refetched explicitly when an SSE event
+    // says the set of systems changed.
+    pub systems_resource: LocalResource<Vec<System>>,
 
     // === Derived ===
     /// The page of each list that is currently on screen.
@@ -164,20 +157,29 @@ pub struct AppState {
     pub games_total_pages: Memo<usize>,
     pub roms_total_pages: Memo<usize>,
     pub romfiles_total_pages: Memo<usize>,
+
+    /// Totals for the statistics card (unfiltered).
+    pub system_count: Memo<usize>,
+    pub game_count: Memo<usize>,
+    pub rom_count: Memo<usize>,
+
+    pub sizes: Memo<Sizes>,
+
+    /// Set for the duration of each fetch, by the resource wrappers above.
+    pub loading_systems: RwSignal<bool>,
+    pub loading_games: RwSignal<bool>,
+    pub loading_roms: RwSignal<bool>,
+    pub loading_sizes: RwSignal<bool>,
 }
 
 impl AppState {
     /// Must be called inside a reactive owner (i.e. from a component), since it
-    /// creates the derived memos.
+    /// creates the resources and derived memos.
     pub fn new() -> Self {
         // --- Sources ---
         let system_id = RwSignal::new(-1);
         let game_id = RwSignal::new(-1);
         let purging_system_id = RwSignal::new(-1);
-
-        let unfiltered_systems = RwSignal::new(Vec::<System>::new());
-        let unfiltered_games = RwSignal::new(Vec::<Game>::new());
-        let unfiltered_roms = RwSignal::new(Vec::<Rom>::new());
 
         let systems_page = RwSignal::new(1);
         let games_page = RwSignal::new(1);
@@ -191,11 +193,76 @@ impl AppState {
         let one_region_filter = RwSignal::new(false);
         let name_filter = RwSignal::new(String::new());
 
+        // Built before the resources, which report their failures through it.
+        let notifier = Notifier::new();
+
+        // --- Async data ---
+        //
+        // Leptos 0.8 exposes no public `loading()` on a resource, and keeps the
+        // previous value while a refetch is in flight, so each fetch drives its
+        // own flag. The memos below read it to blank a list while it reloads
+        // rather than leave the previous selection's rows on screen.
+        let loading_systems = RwSignal::new(true);
+        let systems_resource = LocalResource::new(move || {
+            loading_systems.set(true);
+            async move {
+                let systems = fetch_systems(notifier).await;
+                loading_systems.set(false);
+                systems
+            }
+        });
+
+        let loading_games = RwSignal::new(true);
+        let games_resource = LocalResource::new(move || {
+            let system_id = system_id.get();
+            loading_games.set(true);
+            async move {
+                let games = fetch_games(notifier, system_id).await;
+                loading_games.set(false);
+                games
+            }
+        });
+
+        let loading_roms = RwSignal::new(true);
+        let roms_resource = LocalResource::new(move || {
+            // Only the game selection drives this. Changing system resets the
+            // game to the sentinel, which re-runs this anyway; tracking the
+            // system as well would first fire a doomed fetch pairing the new
+            // system with the game selected under the old one.
+            let game_id = game_id.get();
+            let system_id = system_id.get_untracked();
+            loading_roms.set(true);
+            async move {
+                let roms = fetch_roms(notifier, game_id, system_id).await;
+                loading_roms.set(false);
+                roms
+            }
+        });
+
+        let loading_sizes = RwSignal::new(true);
+        let sizes_resource = LocalResource::new(move || {
+            let system_id = system_id.get();
+            loading_sizes.set(true);
+            async move {
+                let sizes = fetch_sizes(notifier, system_id).await;
+                loading_sizes.set(false);
+                sizes
+            }
+        });
+
+        let sizes = Memo::new(move |_| sizes_resource.map(|sizes| *sizes).unwrap_or_default());
+
         // --- Derived ---
-        let systems_total_pages =
-            Memo::new(move |_| total_pages(unfiltered_systems.with(Vec::len), PAGE_SIZE));
+        let system_count = Memo::new(move |_| systems_resource.map(Vec::len).unwrap_or(0));
+        let game_count = Memo::new(move |_| games_resource.map(Vec::len).unwrap_or(0));
+        let rom_count = Memo::new(move |_| roms_resource.map(Vec::len).unwrap_or(0));
+
+        let systems_total_pages = Memo::new(move |_| total_pages(system_count.get(), PAGE_SIZE));
         let systems = Memo::new(move |_| {
-            unfiltered_systems.with(|systems| paginate(systems, systems_page.get(), PAGE_SIZE))
+            let page = systems_page.get();
+            systems_resource
+                .map(|systems| paginate(systems, page, PAGE_SIZE))
+                .unwrap_or_default()
         });
 
         let game_filter = Memo::new(move |_| GameFilter {
@@ -209,8 +276,13 @@ impl AppState {
         // Only feeds the page count; kept separate so counting does not have to
         // clone or allocate the matching games.
         let filtered_game_count = Memo::new(move |_| {
+            if loading_games.get() {
+                return 0;
+            }
             game_filter.with(|filter| {
-                unfiltered_games.with(|games| games.iter().filter(|game| filter.keep(game)).count())
+                games_resource
+                    .map(|games| games.iter().filter(|game| filter.keep(game)).count())
+                    .unwrap_or(0)
             })
         });
         let games_total_pages =
@@ -218,34 +290,49 @@ impl AppState {
         // Filters and paginates in one pass, so only the visible rows are cloned
         // no matter how large the system is.
         let games = Memo::new(move |_| {
+            if loading_games.get() {
+                return Vec::new();
+            }
             let skip = offset(games_page.get(), PAGE_SIZE);
             game_filter.with(|filter| {
-                unfiltered_games.with(|games| {
-                    games
-                        .iter()
-                        .filter(|game| filter.keep(game))
-                        .skip(skip)
-                        .take(PAGE_SIZE)
-                        .cloned()
-                        .collect()
-                })
+                games_resource
+                    .map(|games| {
+                        games
+                            .iter()
+                            .filter(|game| filter.keep(game))
+                            .skip(skip)
+                            .take(PAGE_SIZE)
+                            .cloned()
+                            .collect()
+                    })
+                    .unwrap_or_default()
             })
         });
 
-        let roms_total_pages =
-            Memo::new(move |_| total_pages(unfiltered_roms.with(Vec::len), ROMS_PAGE_SIZE));
+        let roms_total_pages = Memo::new(move |_| total_pages(rom_count.get(), ROMS_PAGE_SIZE));
         let roms = Memo::new(move |_| {
-            unfiltered_roms.with(|roms| paginate(roms, roms_page.get(), ROMS_PAGE_SIZE))
+            if loading_roms.get() {
+                return Vec::new();
+            }
+            let page = roms_page.get();
+            roms_resource
+                .map(|roms| paginate(roms, page, ROMS_PAGE_SIZE))
+                .unwrap_or_default()
         });
 
         let unique_romfiles = Memo::new(move |_| {
-            unfiltered_roms.with(|roms| {
-                let mut romfiles: Vec<Romfile> =
-                    roms.iter().filter_map(|rom| rom.romfile.clone()).collect();
-                romfiles.sort_by(|a, b| a.path.cmp(&b.path));
-                romfiles.dedup_by(|a, b| a.path == b.path);
-                romfiles
-            })
+            if loading_roms.get() {
+                return Vec::new();
+            }
+            roms_resource
+                .map(|roms| {
+                    let mut romfiles: Vec<Romfile> =
+                        roms.iter().filter_map(|rom| rom.romfile.clone()).collect();
+                    romfiles.sort_by(|a, b| a.path.cmp(&b.path));
+                    romfiles.dedup_by(|a, b| a.path == b.path);
+                    romfiles
+                })
+                .unwrap_or_default()
         });
         let romfiles_total_pages =
             Memo::new(move |_| total_pages(unique_romfiles.with(Vec::len), ROMS_PAGE_SIZE));
@@ -257,15 +344,6 @@ impl AppState {
             system_id,
             game_id,
             purging_system_id,
-
-            unfiltered_systems,
-            unfiltered_games,
-            unfiltered_roms,
-
-            total_original_size: RwSignal::new(0),
-            one_region_original_size: RwSignal::new(0),
-            total_actual_size: RwSignal::new(0),
-            one_region_actual_size: RwSignal::new(0),
 
             systems_page,
             games_page,
@@ -283,23 +361,30 @@ impl AppState {
             settings_modal_open: RwSignal::new(false),
             about_modal_open: RwSignal::new(false),
 
-            notifications: RwSignal::new(Vec::new()),
-            toast: RwSignal::new(None),
+            notifier,
 
-            loading_systems: RwSignal::new(false),
-            loading_games: RwSignal::new(false),
-            loading_roms: RwSignal::new(false),
-            loading_sizes: RwSignal::new(false),
+            systems_resource,
 
             systems,
             games,
             roms,
             romfiles,
             unique_romfiles,
+
             systems_total_pages,
             games_total_pages,
             roms_total_pages,
             romfiles_total_pages,
+
+            system_count,
+            game_count,
+            rom_count,
+            sizes,
+
+            loading_systems,
+            loading_games,
+            loading_roms,
+            loading_sizes,
         }
     }
 }
