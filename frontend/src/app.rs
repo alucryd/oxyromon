@@ -66,6 +66,12 @@ fn setup_effects(state: AppState) {
         state.games.set(Vec::new());
         state.roms.set(Vec::new());
         state.romfiles.set(Vec::new());
+        // This effect also runs once on mount, before anything is selected;
+        // querying the sentinel id would just round-trip for an empty result.
+        if system_id < 0 {
+            state.unfiltered_games.set(Vec::new());
+            return;
+        }
         spawn_local(async move {
             get_games_by_system_id(state, system_id).await;
             get_sizes_by_system_id(state, system_id).await;
@@ -85,6 +91,11 @@ fn setup_effects(state: AppState) {
         state.roms.set(Vec::new());
         state.romfiles.set(Vec::new());
         let system_id = state.system_id.get_untracked();
+        // Also reset to the sentinel whenever the selected system changes.
+        if game_id < 0 || system_id < 0 {
+            state.unfiltered_roms.set(Vec::new());
+            return;
+        }
         spawn_local(async move {
             get_roms_by_game_and_system(state, game_id, system_id).await;
         });
