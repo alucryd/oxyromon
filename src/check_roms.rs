@@ -1,5 +1,4 @@
 use super::chdman;
-use super::chdman::AsChd;
 use super::common::*;
 use super::database::*;
 use super::dolphin;

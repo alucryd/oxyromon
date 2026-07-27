@@ -2,7 +2,7 @@ use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::Path;
@@ -43,7 +43,7 @@ impl ToWbfs for IsoRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(WBFS_EXTENSION);
 
-        let output = run_tool(
+        run_tool(
             Command::new(WIT)
                 .arg("COPY")
                 .arg("--wbfs")

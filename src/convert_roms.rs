@@ -1,5 +1,5 @@
 use super::chdman;
-use super::chdman::{AsChd, AsRdsk, AsRiff, ChdType, ToChd, ToRdsk, ToRiff};
+use super::chdman::{AsRdsk, AsRiff, ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;

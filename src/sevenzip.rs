@@ -4,7 +4,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use indicatif::ProgressBar;
 use itertools::izip;
 use regex::Regex;

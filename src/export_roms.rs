@@ -1,6 +1,6 @@
 use super::bchunk;
 use super::chdman;
-use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
+use super::chdman::{ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
