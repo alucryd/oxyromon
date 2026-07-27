@@ -20,6 +20,11 @@ pub struct Game {
     pub description: String,
     pub completion: i64,
     pub sorting: i64,
+    /// Lowercased `name`, filled in once when the games are fetched. Not part
+    /// of the API response; it exists so the name filter does not have to
+    /// reallocate a lowercase copy of every game name on every keystroke.
+    #[serde(skip)]
+    pub name_lower: String,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
