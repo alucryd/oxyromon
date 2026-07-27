@@ -11,6 +11,7 @@
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
 - Added DAT import to the web UI
 - Added notification history to the web UI
+- Added an optional native desktop app (`desktop/` crate, built with Tauri) that wraps the web UI in a native window; it bundles the `oxyromon` binary as a sidecar, starts `oxyromon server` on a free loopback port on launch, and shares the CLI's database and settings
 
 ## Changes
 

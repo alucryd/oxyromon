@@ -39,7 +39,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
-│    + Leptos SPA (frontend/ crate)                   │
+│    + Leptos SPA (frontend/), Tauri shell (desktop/) │
 ├─────────────────────────────────────────────────────┤
 │  SQLite (via sqlx) + migrations/                    │
 └─────────────────────────────────────────────────────┘
@@ -372,6 +372,85 @@ The top-level `build.rs` runs `trunk build --release` automatically when the
 2. **Backend:** If new types are needed, add them to `model.rs` with `#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]`.
 3. **Frontend:** Add the query/mutation string in `frontend/src/api.rs`, deserializing into a type in `frontend/src/model.rs`.
 4. **Frontend:** Call it from a Leptos component (typically via `spawn_local`, updating `AppState` signals).
+
+## Desktop App (Tauri)
+
+The `desktop/` crate is an optional [Tauri](https://tauri.app) v2 shell that
+presents the same web UI in a native window. Like `frontend/`, it is a
+standalone crate (`[workspace]` in its own `Cargo.toml`) so its webview
+dependencies stay out of the CLI build.
+
+### How it works
+
+It deliberately does **not** reimplement the backend or talk to Tauri IPC:
+
+1. `desktop/src/server.rs` reserves a free loopback port, then spawns the
+   regular `oxyromon` binary — bundled as a Tauri **sidecar** — as
+   `oxyromon server --address 127.0.0.1 --port <port>`.
+2. It polls the port with `TcpStream::connect` until the server accepts
+   connections (30s timeout).
+3. `desktop/src/main.rs` opens a `WebviewUrl::External` window pointed straight
+   at `http://127.0.0.1:<port>`.
+
+Because the window is served **from** the sidecar's origin, the Leptos SPA keeps
+using same-origin relative URLs for `/graphql`, `/events`, `/dats` and
+`/romfiles/{id}`. This means **no CORS handling, no Tauri-specific frontend
+build, and no changes to `server.rs`** — the desktop app is purely additive. The
+sidecar's `CommandChild` is held in Tauri managed state and killed on
+`RunEvent::Exit` so no orphaned server keeps the database locked.
+
+The desktop app shares the CLI's database and settings (same
+`OXYROMON_DATA_DIRECTORY`).
+
+### Layout
+
+| Path                               | Purpose                                                     |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `desktop/tauri.conf.json`          | Tauri config (sidecar, icons, bundle targets, build hooks)  |
+| `desktop/src/main.rs`              | Builder, window creation, exit handling                     |
+| `desktop/src/server.rs`            | Sidecar lifecycle: port, spawn, readiness poll, shutdown    |
+| `desktop/scripts/stage-sidecar.sh` | Builds `oxyromon` and stages it as `binaries/oxyromon-<triple>` |
+| `desktop/capabilities/default.json`| Empty permission set (the SPA never calls Tauri IPC)        |
+| `desktop/icons/`                   | Bundle icons generated from `frontend/icon.svg`             |
+
+`binaries/`, `gen/` and `target/` are generated and gitignored.
+
+### Dev
+
+Requires the Tauri CLI and the platform webview packages (Linux:
+`webkit2gtk-4.1`, `gtk3`, `librsvg`, `libayatana-appindicator`):
+
+```sh
+cargo install --locked tauri-cli --version "^2"
+
+cd desktop
+cargo tauri dev     # stages the sidecar, then runs the shell
+cargo tauri build   # release build + installers in target/release/bundle/
+```
+
+Both commands run `desktop/scripts/stage-sidecar.sh` first (via
+`beforeDevCommand`/`beforeBuildCommand`), which builds
+`cargo build --release --features server` and copies the binary to
+`desktop/binaries/oxyromon-<target-triple>` — the name Tauri's `externalBin`
+expects. Note the hook runs from the **repo root**, not `desktop/`.
+
+Because that build enables the `server` feature, the desktop app transitively
+needs the web UI toolchain too (Trunk + the Tailwind standalone CLI + the
+`wasm32-unknown-unknown` target).
+
+Plain `cargo build` in `desktop/` also works, but only once the sidecar has been
+staged at least once (`tauri-build` fails if `binaries/oxyromon-<triple>` is
+missing).
+
+### Troubleshooting
+
+- **Blank window on Linux.** WebKitGTK's DMA-BUF renderer misbehaves on some
+  GPU/driver combinations (notably NVIDIA under Wayland). Run with
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1` to confirm before chasing it further.
+- **"failed to locate the bundled oxyromon binary".** The sidecar has not been
+  staged for the current target triple; run `sh desktop/scripts/stage-sidecar.sh`.
+- **Server fails to start.** The sidecar's stdout/stderr is forwarded to the
+  desktop app's stderr, prefixed with `[oxyromon]`.
 
 ## Error Handling
 
