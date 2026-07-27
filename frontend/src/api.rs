@@ -158,7 +158,6 @@ pub fn update_games(state: AppState) {
         .set(total_pages(filtered.len(), PAGE_SIZE));
     let page = state.games_page.get_untracked();
     state.games.set(paginate(&filtered, page, PAGE_SIZE));
-    state.filtered_games.set(filtered);
 }
 
 pub async fn get_roms_by_game_and_system(state: AppState, game_id: i64, system_id: i64) {
