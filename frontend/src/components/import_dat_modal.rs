@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use web_sys::FormData;
 
+use crate::api::report_error;
 use crate::icons::{Icon, UPLOAD};
 use crate::sse::DATS_ENDPOINT;
 use crate::state::AppState;
@@ -56,15 +57,30 @@ pub fn ImportDatModal() -> impl IntoView {
             let form = FormData::new().unwrap();
             let _ = form.append_with_blob_and_filename("file", &file, &file.name());
             let _ = form.append_with_str("update", &update.to_string());
-            if let Ok(request) = Request::post(DATS_ENDPOINT).body(form) {
-                let _ = request.send().await;
-            }
+            // The import itself reports progress over SSE; this only covers
+            // failures to hand the upload over in the first place.
+            let outcome = match Request::post(DATS_ENDPOINT).body(form) {
+                Ok(request) => match request.send().await {
+                    Ok(response) if response.ok() => Ok(()),
+                    Ok(response) => Err(format!("the server returned {}", response.status())),
+                    Err(e) => Err(e.to_string()),
+                },
+                Err(e) => Err(e.to_string()),
+            };
             importing.set(false);
-            selected.set(None);
-            if let Some(input) = input_ref.get_untracked() {
-                input.set_value("");
+
+            match outcome {
+                Ok(()) => {
+                    selected.set(None);
+                    if let Some(input) = input_ref.get_untracked() {
+                        input.set_value("");
+                    }
+                    state.import_dat_modal_open.set(false);
+                }
+                // Leave the dialog open with the file still selected so the
+                // upload can simply be retried.
+                Err(e) => report_error(state, "Uploading the DAT file", &e),
             }
-            state.import_dat_modal_open.set(false);
         });
     };
 

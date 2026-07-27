@@ -10,7 +10,8 @@ use leptos::prelude::*;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
-use crate::model::{Game, Info, Rom, Romfile, Setting, System};
+use crate::model::{Game, Info, NotificationKind, Rom, Romfile, Setting, System};
+use crate::notify::push_notification;
 use crate::state::{AppState, PAGE_SIZE, ROMS_PAGE_SIZE};
 
 /// POST a GraphQL document and return the `data` object, or an error string.
@@ -24,9 +25,29 @@ async fn graphql(query: &str, variables: Value) -> Result<Value, String> {
         .map_err(|e| e.to_string())?;
     let mut value: Value = response.json().await.map_err(|e| e.to_string())?;
     if let Some(errors) = value.get("errors") {
-        return Err(errors.to_string());
+        // Surface the first message rather than the raw errors array, which is
+        // what ends up in front of the user.
+        let message = errors
+            .as_array()
+            .and_then(|errors| errors.first())
+            .and_then(|error| error["message"].as_str())
+            .unwrap_or("unknown GraphQL error");
+        return Err(message.to_string());
     }
     Ok(value["data"].take())
+}
+
+/// Log a failed request and tell the user about it.
+///
+/// Without this the UI silently renders empty tables when the backend is
+/// unreachable or a query fails.
+pub fn report_error(state: AppState, action: &str, error: &str) {
+    leptos::logging::error!("{action}: {error}");
+    push_notification(
+        state,
+        format!("{action} failed: {error}"),
+        NotificationKind::Error,
+    );
 }
 
 /// Deserialize a named field of the GraphQL `data` object.
@@ -100,9 +121,9 @@ pub async fn get_systems(state: AppState) {
                 state.unfiltered_systems.set(systems);
                 update_systems(state);
             }
-            Err(e) => leptos::logging::error!("get_systems: {e}"),
+            Err(e) => report_error(state, "Loading systems", &e),
         },
-        Err(e) => leptos::logging::error!("get_systems: {e}"),
+        Err(e) => report_error(state, "Loading systems", &e),
     }
     state.loading_systems.set(false);
 }
@@ -134,9 +155,9 @@ pub async fn get_games_by_system_id(state: AppState, system_id: i64) {
                 state.unfiltered_games.set(games);
                 update_games(state);
             }
-            Err(e) => leptos::logging::error!("get_games: {e}"),
+            Err(e) => report_error(state, "Loading games", &e),
         },
-        Err(e) => leptos::logging::error!("get_games: {e}"),
+        Err(e) => report_error(state, "Loading games", &e),
     }
     state.loading_games.set(false);
 }
@@ -216,9 +237,9 @@ pub async fn get_roms_by_game_and_system(state: AppState, game_id: i64, system_i
                 state.unfiltered_roms.set(roms);
                 update_roms(state);
             }
-            Err(e) => leptos::logging::error!("get_roms: {e}"),
+            Err(e) => report_error(state, "Loading ROMs", &e),
         },
-        Err(e) => leptos::logging::error!("get_roms: {e}"),
+        Err(e) => report_error(state, "Loading ROMs", &e),
     }
     state.loading_roms.set(false);
 }
@@ -274,7 +295,7 @@ pub async fn get_sizes_by_system_id(state: AppState, system_id: i64) {
                 .one_region_actual_size
                 .set(data["oneRegionActualSize"].as_i64().unwrap_or(0));
         }
-        Err(e) => leptos::logging::error!("get_sizes: {e}"),
+        Err(e) => report_error(state, "Loading statistics", &e),
     }
     state.loading_sizes.set(false);
 }
@@ -386,7 +407,7 @@ pub async fn purge_system(state: AppState, system_id: i64) {
         purgeSystem(systemId: $systemId)
     }"#;
     if let Err(e) = graphql(mutation, json!({ "systemId": system_id })).await {
-        leptos::logging::error!("purge_system: {e}");
+        report_error(state, "Purging the system", &e);
     }
     state.purging_system_id.set(-1);
 }

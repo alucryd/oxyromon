@@ -1,9 +1,5 @@
 //! Server-Sent Events client and notification helpers (ports `src/events.js`).
 
-use std::sync::atomic::{AtomicU64, Ordering};
-
-use gloo_timers::callback::Timeout;
-use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::Value;
 use wasm_bindgen::JsCast;
@@ -11,42 +7,12 @@ use wasm_bindgen::closure::Closure;
 use web_sys::{EventSource, MessageEvent};
 
 use crate::api::get_systems;
-use crate::model::{Notification, NotificationKind};
+use crate::model::NotificationKind;
+use crate::notify::push_notification;
 use crate::state::AppState;
-
-static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Endpoint used by the Import DAT modal to POST multipart uploads.
 pub const DATS_ENDPOINT: &str = "/dats";
-
-fn now_time() -> String {
-    js_sys::Date::new_0()
-        .to_locale_time_string("en-US")
-        .as_string()
-        .unwrap_or_default()
-}
-
-/// Prepend a notification and surface it as a transient toast.
-pub fn push_notification(state: AppState, message: String, kind: NotificationKind) {
-    let notification = Notification {
-        id: NEXT_ID.fetch_add(1, Ordering::Relaxed),
-        message,
-        kind,
-        time: now_time(),
-    };
-    state.notifications.update(|list| {
-        list.insert(0, notification.clone());
-    });
-    state.toast.set(Some(notification));
-
-    // Auto-dismiss the toast (info: 3s, otherwise 5s), matching the Svelte UI.
-    let duration = if kind == NotificationKind::Info {
-        3000
-    } else {
-        5000
-    };
-    Timeout::new(duration, move || state.toast.set(None)).forget();
-}
 
 fn message_field(data: &Value) -> String {
     data["message"].as_str().unwrap_or_default().to_string()

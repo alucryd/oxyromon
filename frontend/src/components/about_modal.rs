@@ -4,7 +4,7 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use crate::api::get_info;
+use crate::api::{get_info, report_error};
 use crate::icons::{Icon, MUG_HOT};
 use crate::model::Info;
 use crate::state::AppState;
@@ -19,8 +19,9 @@ pub fn AboutModal() -> impl IntoView {
     Effect::new(move |_| {
         if state.about_modal_open.get() && info.get_untracked().is_none() {
             spawn_local(async move {
-                if let Ok(data) = get_info().await {
-                    info.set(Some(data));
+                match get_info().await {
+                    Ok(data) => info.set(Some(data)),
+                    Err(e) => report_error(state, "Loading version information", &e),
                 }
             });
         }

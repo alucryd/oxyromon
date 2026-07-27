@@ -8,13 +8,13 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{
-    add_to_list, get_raw_settings, remove_from_list, set_bool, set_directory, set_prefer_regions,
-    set_prefer_versions, set_subfolder_scheme,
+    add_to_list, get_raw_settings, remove_from_list, report_error, set_bool, set_directory,
+    set_prefer_regions, set_prefer_versions, set_subfolder_scheme,
 };
 use crate::icons::{Icon, PLUS};
 use crate::model::Setting;
 use crate::state::{
-    ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
+    ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
     GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
     PREFER_FLAGS_KEY, PREFER_PARENTS_KEY, PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY,
     PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY,
@@ -105,14 +105,16 @@ pub fn SettingsModal(
     system_id: RwSignal<Option<i64>>,
     title: RwSignal<String>,
 ) -> impl IntoView {
+    let state = expect_context::<AppState>();
     let local = Local::new();
 
     // (Re)load settings for the active system into the local copies.
     let reload = Callback::new(move |_: ()| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            if let Ok(settings) = get_raw_settings(sid).await {
-                local.populate(&settings);
+            match get_raw_settings(sid).await {
+                Ok(settings) => local.populate(&settings),
+                Err(e) => report_error(state, "Loading settings", &e),
             }
         });
     });
@@ -127,7 +129,9 @@ pub fn SettingsModal(
     let toggle = move |key: &'static str, value: bool| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = set_bool(key, value, sid).await;
+            if let Err(e) = set_bool(key, value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
@@ -135,21 +139,27 @@ pub fn SettingsModal(
     let choose_prefer_regions = move |value: String| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = set_prefer_regions(&value, sid).await;
+            if let Err(e) = set_prefer_regions(&value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
     let choose_prefer_versions = move |value: String| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = set_prefer_versions(&value, sid).await;
+            if let Err(e) = set_prefer_versions(&value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
     let choose_subfolder = move |key: &'static str, value: String| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = set_subfolder_scheme(key, &value, sid).await;
+            if let Err(e) = set_subfolder_scheme(key, &value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
@@ -159,7 +169,9 @@ pub fn SettingsModal(
         }
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = set_directory(key, &value, sid).await;
+            if let Err(e) = set_directory(key, &value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
@@ -384,6 +396,7 @@ fn ListField(
     system_id: RwSignal<Option<i64>>,
     reload: Callback<()>,
 ) -> impl IntoView {
+    let state = expect_context::<AppState>();
     let draft = RwSignal::new(String::new());
 
     let add = move || {
@@ -394,7 +407,9 @@ fn ListField(
         draft.set(String::new());
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = add_to_list(setting_key, &value, sid).await;
+            if let Err(e) = add_to_list(setting_key, &value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };
@@ -402,7 +417,9 @@ fn ListField(
     let remove = move |value: String| {
         let sid = system_id.get_untracked();
         spawn_local(async move {
-            let _ = remove_from_list(setting_key, &value, sid).await;
+            if let Err(e) = remove_from_list(setting_key, &value, sid).await {
+                report_error(state, "Updating settings", &e);
+            }
             reload.run(());
         });
     };

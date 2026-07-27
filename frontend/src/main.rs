@@ -3,6 +3,7 @@ mod app;
 mod components;
 mod icons;
 mod model;
+mod notify;
 mod page;
 mod sse;
 mod state;
