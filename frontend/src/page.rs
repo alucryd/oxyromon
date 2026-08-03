@@ -166,6 +166,7 @@ fn SystemsCard(
                                 <button
                                     class=format!("flex-1 truncate px-4 text-left text-base {color}")
                                     title=description
+                                    aria-current=move || selected().then_some("true")
                                     on:click=move |_| state.system_id.set(id)
                                 >
                                     {name.clone()}
@@ -322,6 +323,7 @@ fn GamesCard() -> impl IntoView {
                                         "flex-1 truncate px-4 text-left text-base {weight} {color}",
                                     )
                                     title=description
+                                    aria-current=move || selected().then_some("true")
                                     on:click=move |_| state.game_id.set(id)
                                 >
                                     {name.clone()}

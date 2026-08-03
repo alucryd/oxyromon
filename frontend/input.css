@@ -59,12 +59,29 @@
     @apply bg-white dark:bg-gray-700;
   }
 
+  /* Hover stays grey, so it reads as "under the pointer" and never competes
+     with the selection below. */
   .list-row:hover {
     @apply bg-slate-200 dark:bg-gray-600;
   }
 
-  /* Last, so selection wins over both striping and hover. */
-  .list-row.row-selected {
-    @apply bg-slate-300 dark:bg-slate-600;
+  /* Which system and game you are looking at is the most important state on
+     screen, so selection gets a hue of its own rather than one more shade of
+     grey — the previous dark mode selection was four RGB points away from the
+     hover colour — plus a marker down the leading edge. An inset shadow rather
+     than a border, so selecting a row does not shift its contents sideways.
+
+     Declared last, and repeated for :hover, so it wins over both striping and
+     hover however they are combined. */
+  .list-row.row-selected,
+  .list-row.row-selected:hover {
+    --row-marker: var(--color-secondary-500);
+    @apply bg-secondary-100 dark:bg-secondary-900;
+    box-shadow: inset 3px 0 0 var(--row-marker);
+  }
+
+  :where(.dark) .list-row.row-selected,
+  :where(.dark) .list-row.row-selected:hover {
+    --row-marker: var(--color-secondary-400);
   }
 }
