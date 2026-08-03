@@ -11,7 +11,11 @@
 
 use leptos::prelude::*;
 
-use crate::api::{fetch_games, fetch_roms, fetch_sizes, fetch_systems};
+use std::ops::ControlFlow;
+
+use leptos::task::spawn_local;
+
+use crate::api::{fetch_roms, fetch_sizes, fetch_systems, stream_games};
 use crate::model::{Game, Rom, Romfile, Sizes, System};
 use crate::notify::Notifier;
 
@@ -117,9 +121,12 @@ pub struct AppState {
     // signal, so it is kept here to be refetched explicitly when an SSE event
     // says the set of systems changed.
     pub systems_resource: LocalResource<Vec<System>>,
-    /// Exposed so the games list can clone just the rows it is about to draw,
-    /// rather than every game matching the filters.
-    pub games_resource: LocalResource<Vec<Game>>,
+
+    /// Games of the selected system, growing as chunks arrive. Not a resource:
+    /// a resource resolves to one value, and the point here is to be usable
+    /// before the last chunk lands. Exposed so the list can clone just the rows
+    /// it is about to draw.
+    pub games: RwSignal<Vec<Game>>,
 
     // === Derived ===
     /// Lists rendered in full; these are bounded by one system or one game.
@@ -183,15 +190,31 @@ impl AppState {
             }
         });
 
+        // Games stream in rather than arriving whole; see the field comment.
+        // Each run takes a generation, so a stream whose system has since been
+        // deselected can tell that it should stop appending.
         let loading_games = RwSignal::new(true);
-        let games_resource = LocalResource::new(move || {
+        let games = RwSignal::new(Vec::<Game>::new());
+        let games_generation = RwSignal::new(0u64);
+        Effect::new(move |_| {
             let system_id = system_id.get();
+            let generation = games_generation.get_untracked().wrapping_add(1);
+            games_generation.set(generation);
+            games.set(Vec::new());
             loading_games.set(true);
-            async move {
-                let games = fetch_games(notifier, system_id).await;
-                loading_games.set(false);
-                games
-            }
+            spawn_local(async move {
+                stream_games(notifier, system_id, move |chunk| {
+                    if games_generation.get_untracked() != generation {
+                        return ControlFlow::Break(());
+                    }
+                    games.update(|games| games.extend(chunk));
+                    ControlFlow::Continue(())
+                })
+                .await;
+                if games_generation.get_untracked() == generation {
+                    loading_games.set(false);
+                }
+            });
         });
 
         let loading_roms = RwSignal::new(true);
@@ -225,7 +248,7 @@ impl AppState {
 
         // --- Derived ---
         let system_count = Memo::new(move |_| systems_resource.map(Vec::len).unwrap_or(0));
-        let game_count = Memo::new(move |_| games_resource.map(Vec::len).unwrap_or(0));
+        let game_count = Memo::new(move |_| games.with(Vec::len));
         let rom_count = Memo::new(move |_| roms_resource.map(Vec::len).unwrap_or(0));
 
         let systems = Memo::new(move |_| {
@@ -244,21 +267,18 @@ impl AppState {
         });
         // Indices rather than games: this recomputes on every keystroke in the
         // name filter, and a full arcade set is tens of thousands of entries.
+        // No blanking while loading: the whole point of streaming is that the
+        // rows already in hand stay on screen while the rest arrive.
         let filtered_games = Memo::new(move |_| {
-            if loading_games.get() {
-                return Vec::new();
-            }
             game_filter.with(|filter| {
-                games_resource
-                    .map(|games| {
-                        games
-                            .iter()
-                            .enumerate()
-                            .filter(|(_, game)| filter.keep(game))
-                            .map(|(index, _)| index)
-                            .collect()
-                    })
-                    .unwrap_or_default()
+                games.with(|games| {
+                    games
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, game)| filter.keep(game))
+                        .map(|(index, _)| index)
+                        .collect()
+                })
             })
         });
 
@@ -303,7 +323,7 @@ impl AppState {
             notifier,
 
             systems_resource,
-            games_resource,
+            games,
 
             systems,
             roms,

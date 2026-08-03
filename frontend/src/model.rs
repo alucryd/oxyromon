@@ -17,7 +17,8 @@ pub struct System {
 pub struct Game {
     pub id: i64,
     pub name: String,
-    pub description: String,
+    /// Null when the backend would only be repeating `name`.
+    pub description: Option<String>,
     pub completion: i64,
     pub sorting: i64,
     /// Lowercased `name`, filled in once when the games are fetched. Not part
@@ -66,12 +67,13 @@ pub struct Info {
 }
 
 /// The four aggregate sizes reported for a system.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Sizes {
-    pub total_original: i64,
-    pub one_region_original: i64,
-    pub total_actual: i64,
-    pub one_region_actual: i64,
+    pub total_original_size: i64,
+    pub one_region_original_size: i64,
+    pub total_actual_size: i64,
+    pub one_region_actual_size: i64,
 }
 
 /// Notification shown in the bell dropdown / toast.

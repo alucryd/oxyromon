@@ -254,16 +254,13 @@ fn GamesCard() -> impl IntoView {
     let rows = Memo::new(move |_| {
         let (start, end) = range.get();
         state.filtered_games.with(|indices| {
-            state
-                .games_resource
-                .map(|games| {
-                    indices[start..end]
-                        .iter()
-                        .enumerate()
-                        .map(|(offset, &index)| (start + offset, games[index].clone()))
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default()
+            state.games.with(|games| {
+                indices[start..end]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, &index)| (start + offset, games[index].clone()))
+                    .collect::<Vec<_>>()
+            })
         })
     });
 
@@ -316,11 +313,7 @@ fn GamesCard() -> impl IntoView {
                         let name = game.name.clone();
                         let color = game_color(&game);
                         let weight = if game.sorting == 1 { "font-semibold" } else { "" };
-                        let description = if game.description != game.name {
-                            game.description.clone()
-                        } else {
-                            String::new()
-                        };
+                        let description = game.description.clone().unwrap_or_default();
                         let selected = move || state.game_id.get() == id;
                         view! {
                             <div class=move || row_class(position, selected())>
@@ -465,7 +458,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.sizes.get().total_original)}
+                                {move || format_bytes(state.sizes.get().total_original_size)}
                             </p>
                         </Show>
                         <p class=label>Total Size (Original)</p>
@@ -476,7 +469,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.sizes.get().one_region_original)}
+                                {move || format_bytes(state.sizes.get().one_region_original_size)}
                             </p>
                         </Show>
                         <p class=label>1G1R Size (Original)</p>
@@ -486,7 +479,7 @@ fn StatsCard() -> impl IntoView {
                             when=move || !state.loading_sizes.get()
                             fallback=|| view! { <Spinner /> }
                         >
-                            <p class=value>{move || format_bytes(state.sizes.get().total_actual)}</p>
+                            <p class=value>{move || format_bytes(state.sizes.get().total_actual_size)}</p>
                         </Show>
                         <p class=label>Total Size (Actual)</p>
                     </div>
@@ -496,7 +489,7 @@ fn StatsCard() -> impl IntoView {
                             fallback=|| view! { <Spinner /> }
                         >
                             <p class=value>
-                                {move || format_bytes(state.sizes.get().one_region_actual)}
+                                {move || format_bytes(state.sizes.get().one_region_actual_size)}
                             </p>
                         </Show>
                         <p class=label>1G1R Size (Actual)</p>

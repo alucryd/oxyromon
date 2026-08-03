@@ -679,6 +679,31 @@ pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
     .expect("Error while finding games")
 }
 
+/// As [`find_games_by_system_id`], for one slice of a large system.
+pub async fn find_games_by_system_id_paged(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    offset: i64,
+    limit: i64,
+) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE system_id = ?
+        ORDER BY name
+        LIMIT ? OFFSET ?
+        ",
+        system_id,
+        limit,
+        offset,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
+}
+
 #[cfg(test)]
 pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
     let sql = format!(
