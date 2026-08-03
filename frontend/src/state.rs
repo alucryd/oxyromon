@@ -5,9 +5,9 @@
 //! component.
 //!
 //! Source state is held in `RwSignal`s; everything the views derive from it —
-//! the filtered and paginated slices, the page counts — is a `Memo` that pulls
-//! from those sources when read, rather than something an effect has to push
-//! into place after every change.
+//! the filtered lists, the counts — is a `Memo` that pulls from those sources
+//! when read, rather than something an effect has to push into place after
+//! every change.
 
 use leptos::prelude::*;
 
@@ -36,28 +36,9 @@ pub const PREFER_REGIONS_CHOICES: [&str; 3] = ["none", "broad", "narrow"];
 pub const PREFER_VERSIONS_CHOICES: [&str; 3] = ["none", "new", "old"];
 pub const SUBFOLDER_SCHEMES_CHOICES: [&str; 2] = ["none", "alpha"];
 
-pub const PAGE_SIZE: usize = 20;
-pub const ROMS_PAGE_SIZE: usize = 8;
-
-/// Number of pages needed to show `len` items, at least one.
-pub fn total_pages(len: usize, page_size: usize) -> usize {
-    len.div_ceil(page_size).max(1)
-}
-
-/// Number of items to skip to reach the start of `page` (1-indexed).
-fn offset(page: usize, page_size: usize) -> usize {
-    page_size.saturating_mul(page.saturating_sub(1))
-}
-
-/// Clone out just the items on `page`.
-fn paginate<T: Clone>(items: &[T], page: usize, page_size: usize) -> Vec<T> {
-    items
-        .iter()
-        .skip(offset(page, page_size))
-        .take(page_size)
-        .cloned()
-        .collect()
-}
+/// Height of one row, in pixels. The games list is virtualized, so this has to
+/// match the CSS (`--row-height` in `input.css`) exactly.
+pub const ROW_HEIGHT: f64 = 40.0;
 
 /// Snapshot of the game filters. Derived once and shared by the memos that
 /// count and paginate the games, so the filter signals are read once per
@@ -112,12 +93,6 @@ pub struct AppState {
     pub game_id: RwSignal<i64>,
     pub purging_system_id: RwSignal<i64>,
 
-    // Current page (1-indexed).
-    pub systems_page: RwSignal<usize>,
-    pub games_page: RwSignal<usize>,
-    pub roms_page: RwSignal<usize>,
-    pub romfiles_page: RwSignal<usize>,
-
     // Filters.
     pub complete_filter: RwSignal<bool>,
     pub incomplete_filter: RwSignal<bool>,
@@ -142,21 +117,22 @@ pub struct AppState {
     // signal, so it is kept here to be refetched explicitly when an SSE event
     // says the set of systems changed.
     pub systems_resource: LocalResource<Vec<System>>,
+    /// Exposed so the games list can clone just the rows it is about to draw,
+    /// rather than every game matching the filters.
+    pub games_resource: LocalResource<Vec<Game>>,
 
     // === Derived ===
-    /// The page of each list that is currently on screen.
+    /// Lists rendered in full; these are bounded by one system or one game.
     pub systems: Memo<Vec<System>>,
-    pub games: Memo<Vec<Game>>,
     pub roms: Memo<Vec<Rom>>,
-    pub romfiles: Memo<Vec<Romfile>>,
 
     /// Every distinct romfile of the selected game, deduplicated by path.
-    pub unique_romfiles: Memo<Vec<Romfile>>,
+    pub romfiles: Memo<Vec<Romfile>>,
 
-    pub systems_total_pages: Memo<usize>,
-    pub games_total_pages: Memo<usize>,
-    pub roms_total_pages: Memo<usize>,
-    pub romfiles_total_pages: Memo<usize>,
+    /// Indices into `games_resource` of the games matching the filters, in
+    /// order. A system can hold tens of thousands of games, so the list is
+    /// kept as indices and the visible window is cloned out at draw time.
+    pub filtered_games: Memo<Vec<usize>>,
 
     /// Totals for the statistics card (unfiltered).
     pub system_count: Memo<usize>,
@@ -180,11 +156,6 @@ impl AppState {
         let system_id = RwSignal::new(-1);
         let game_id = RwSignal::new(-1);
         let purging_system_id = RwSignal::new(-1);
-
-        let systems_page = RwSignal::new(1);
-        let games_page = RwSignal::new(1);
-        let roms_page = RwSignal::new(1);
-        let romfiles_page = RwSignal::new(1);
 
         let complete_filter = RwSignal::new(true);
         let incomplete_filter = RwSignal::new(true);
@@ -257,11 +228,9 @@ impl AppState {
         let game_count = Memo::new(move |_| games_resource.map(Vec::len).unwrap_or(0));
         let rom_count = Memo::new(move |_| roms_resource.map(Vec::len).unwrap_or(0));
 
-        let systems_total_pages = Memo::new(move |_| total_pages(system_count.get(), PAGE_SIZE));
         let systems = Memo::new(move |_| {
-            let page = systems_page.get();
             systems_resource
-                .map(|systems| paginate(systems, page, PAGE_SIZE))
+                .map(|systems| systems.to_vec())
                 .unwrap_or_default()
         });
 
@@ -273,54 +242,34 @@ impl AppState {
             one_region: one_region_filter.get(),
             needle: name_filter.get().to_lowercase(),
         });
-        // Only feeds the page count; kept separate so counting does not have to
-        // clone or allocate the matching games.
-        let filtered_game_count = Memo::new(move |_| {
-            if loading_games.get() {
-                return 0;
-            }
-            game_filter.with(|filter| {
-                games_resource
-                    .map(|games| games.iter().filter(|game| filter.keep(game)).count())
-                    .unwrap_or(0)
-            })
-        });
-        let games_total_pages =
-            Memo::new(move |_| total_pages(filtered_game_count.get(), PAGE_SIZE));
-        // Filters and paginates in one pass, so only the visible rows are cloned
-        // no matter how large the system is.
-        let games = Memo::new(move |_| {
+        // Indices rather than games: this recomputes on every keystroke in the
+        // name filter, and a full arcade set is tens of thousands of entries.
+        let filtered_games = Memo::new(move |_| {
             if loading_games.get() {
                 return Vec::new();
             }
-            let skip = offset(games_page.get(), PAGE_SIZE);
             game_filter.with(|filter| {
                 games_resource
                     .map(|games| {
                         games
                             .iter()
-                            .filter(|game| filter.keep(game))
-                            .skip(skip)
-                            .take(PAGE_SIZE)
-                            .cloned()
+                            .enumerate()
+                            .filter(|(_, game)| filter.keep(game))
+                            .map(|(index, _)| index)
                             .collect()
                     })
                     .unwrap_or_default()
             })
         });
 
-        let roms_total_pages = Memo::new(move |_| total_pages(rom_count.get(), ROMS_PAGE_SIZE));
         let roms = Memo::new(move |_| {
             if loading_roms.get() {
                 return Vec::new();
             }
-            let page = roms_page.get();
-            roms_resource
-                .map(|roms| paginate(roms, page, ROMS_PAGE_SIZE))
-                .unwrap_or_default()
+            roms_resource.map(|roms| roms.to_vec()).unwrap_or_default()
         });
 
-        let unique_romfiles = Memo::new(move |_| {
+        let romfiles = Memo::new(move |_| {
             if loading_roms.get() {
                 return Vec::new();
             }
@@ -334,21 +283,11 @@ impl AppState {
                 })
                 .unwrap_or_default()
         });
-        let romfiles_total_pages =
-            Memo::new(move |_| total_pages(unique_romfiles.with(Vec::len), ROMS_PAGE_SIZE));
-        let romfiles = Memo::new(move |_| {
-            unique_romfiles.with(|romfiles| paginate(romfiles, romfiles_page.get(), ROMS_PAGE_SIZE))
-        });
 
         Self {
             system_id,
             game_id,
             purging_system_id,
-
-            systems_page,
-            games_page,
-            roms_page,
-            romfiles_page,
 
             complete_filter,
             incomplete_filter,
@@ -364,17 +303,12 @@ impl AppState {
             notifier,
 
             systems_resource,
+            games_resource,
 
             systems,
-            games,
             roms,
             romfiles,
-            unique_romfiles,
-
-            systems_total_pages,
-            games_total_pages,
-            roms_total_pages,
-            romfiles_total_pages,
+            filtered_games,
 
             system_count,
             game_count,

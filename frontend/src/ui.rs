@@ -1,53 +1,74 @@
-//! Small reusable UI building blocks that replace the handful of
-//! flowbite-svelte components the app relied on (pagination + modal).
+//! Small reusable UI building blocks: the modal dialog, and the windowing used
+//! to keep long lists cheap to draw.
 
 use leptos::prelude::*;
 
-use crate::icons::{
-    CHEVRON_DOUBLE_LEFT, CHEVRON_DOUBLE_RIGHT, CHEVRON_LEFT, CHEVRON_RIGHT, CLOSE_CIRCLE, Icon,
-};
+use crate::icons::{CLOSE_CIRCLE, Icon};
+use crate::state::ROW_HEIGHT;
 
-/// Shared "alternative" (outline) button styling used by pagination controls.
-pub const ALT_BUTTON: &str = "flex items-center justify-center rounded-lg border border-gray-300 bg-white px-2 py-1 text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700";
+/// Tracks how far a scroll container has been scrolled and how tall it is, so a
+/// long list can draw only the rows that are actually on screen.
+///
+/// Rows are a fixed [`ROW_HEIGHT`], which is what makes the arithmetic — and
+/// therefore a correctly sized scrollbar — possible without measuring anything.
+#[derive(Clone, Copy)]
+pub struct ScrollWindow {
+    scroll_top: RwSignal<f64>,
+    viewport: RwSignal<f64>,
+}
 
-/// First / prev / page-indicator / next / last pagination bar.
-#[component]
-pub fn Pagination(
-    page: RwSignal<usize>,
-    #[prop(into)] total_pages: Signal<usize>,
-) -> impl IntoView {
-    let first = move || page.get() <= 1;
-    let last = move || page.get() >= total_pages.get();
-    view! {
-        <div class="m-4 mt-auto flex items-center justify-center gap-2">
-            <button class=ALT_BUTTON disabled=first on:click=move |_| page.set(1)>
-                <Icon path=CHEVRON_DOUBLE_LEFT class="h-4 w-4" />
-            </button>
-            <button
-                class=ALT_BUTTON
-                disabled=first
-                on:click=move |_| page.update(|n| *n = n.saturating_sub(1).max(1))
-            >
-                <Icon path=CHEVRON_LEFT class="h-4 w-4" />
-            </button>
-            <span class="w-full px-3 py-1 text-center text-sm text-slate-600 dark:text-slate-400">
-                {move || format!("{} / {}", page.get(), total_pages.get())}
-            </span>
-            <button
-                class=ALT_BUTTON
-                disabled=last
-                on:click=move |_| {
-                    let total = total_pages.get();
-                    page.update(|n| *n = (*n + 1).min(total));
-                }
-            >
-                <Icon path=CHEVRON_RIGHT class="h-4 w-4" />
-            </button>
-            <button class=ALT_BUTTON disabled=last on:click=move |_| page.set(total_pages.get())>
-                <Icon path=CHEVRON_DOUBLE_RIGHT class="h-4 w-4" />
-            </button>
-        </div>
+/// Rows to draw above and below the visible range, so scrolling does not expose
+/// blank space before the next render lands.
+const OVERSCAN: usize = 8;
+
+impl ScrollWindow {
+    pub fn new() -> Self {
+        Self {
+            scroll_top: RwSignal::new(0.0),
+            viewport: RwSignal::new(0.0),
+        }
     }
+
+    /// Record the geometry of the scroll container. Call from `on:scroll`, and
+    /// once the element exists so the first render is not an empty window.
+    pub fn measure(&self, element: &web_sys::Element) {
+        self.scroll_top.set(element.scroll_top() as f64);
+        self.viewport.set(element.client_height() as f64);
+    }
+
+    /// Forget how far we were scrolled. The caller resets the element itself,
+    /// since the DOM does not report that change back to us.
+    pub fn reset(&self) {
+        self.scroll_top.set(0.0);
+    }
+
+    /// The half-open range of rows to draw out of `total`.
+    pub fn range(&self, total: usize) -> (usize, usize) {
+        let first = (self.scroll_top.get() / ROW_HEIGHT).floor() as usize;
+        let start = first.saturating_sub(OVERSCAN);
+        // Before the container has been measured, draw a screenful so there is
+        // something on the first paint.
+        let visible = if self.viewport.get() > 0.0 {
+            (self.viewport.get() / ROW_HEIGHT).ceil() as usize
+        } else {
+            30
+        };
+        let end = (first + visible + OVERSCAN).min(total);
+        (start, end.max(start))
+    }
+}
+
+impl Default for ScrollWindow {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Spacer that stands in for the rows above or below the drawn window, keeping
+/// the scrollbar proportional to the whole list.
+#[component]
+pub fn Spacer(#[prop(into)] rows: Signal<usize>) -> impl IntoView {
+    view! { <div style:height=move || format!("{}px", rows.get() as f64 * ROW_HEIGHT)></div> }
 }
 
 fn size_class(size: &str) -> &'static str {

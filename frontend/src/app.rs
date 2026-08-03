@@ -44,36 +44,16 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// The remaining effects.
+/// The one remaining effect.
 ///
-/// Fetching is no longer among them: the resources in [`AppState`] re-run
-/// themselves when the selection they read changes. What is left is the state
-/// the user's choices invalidate — a game that belongs to the system they just
-/// navigated away from, or a page number past the end of a list they just
-/// filtered down.
+/// Fetching is declarative (the resources in [`AppState`] re-run when the
+/// selection they read changes) and so is everything drawn from it (memos).
+/// Scroll position is owned by the list that scrolls. All that is left is the
+/// selection the user's own choice invalidates: a game belongs to a system, so
+/// picking a different system cannot leave it selected.
 fn setup_effects(state: AppState) {
-    // Picking a system drops the game selection and returns to the first page.
     Effect::new(move |_| {
         state.system_id.track();
         state.game_id.set(-1);
-        state.games_page.set(1);
-    });
-
-    // Picking a game returns its roms and romfiles to the first page.
-    Effect::new(move |_| {
-        state.game_id.track();
-        state.roms_page.set(1);
-        state.romfiles_page.set(1);
-    });
-
-    // Changing a filter can shrink the list under the current page.
-    Effect::new(move |_| {
-        state.complete_filter.track();
-        state.incomplete_filter.track();
-        state.wanted_filter.track();
-        state.ignored_filter.track();
-        state.one_region_filter.track();
-        state.name_filter.track();
-        state.games_page.set(1);
     });
 }

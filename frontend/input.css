@@ -36,17 +36,35 @@
   }
 }
 
-@layer utilities {
-  /* darken table headers and striped rows in light mode for better contrast */
-  table thead tr th {
-    @apply bg-slate-300 dark:bg-gray-700;
+:root {
+  /* Rows are a fixed height so the games list can be virtualized; this has to
+     stay in step with ROW_HEIGHT in src/state.rs. */
+  --row-height: 40px;
+}
+
+@layer components {
+  .list-row {
+    display: flex;
+    align-items: center;
+    height: var(--row-height);
   }
 
-  table:not(.stats-table) tbody tr:nth-child(odd):not(:hover) {
+  /* Striping is keyed off the row's absolute position rather than :nth-child,
+     so it does not shift as virtualized rows are recycled. */
+  .list-row.row-odd {
     @apply bg-slate-100 dark:bg-gray-800;
   }
 
-  table:not(.stats-table) tbody tr:nth-child(even):not(:hover) {
+  .list-row.row-even {
     @apply bg-white dark:bg-gray-700;
+  }
+
+  .list-row:hover {
+    @apply bg-slate-200 dark:bg-gray-600;
+  }
+
+  /* Last, so selection wins over both striping and hover. */
+  .list-row.row-selected {
+    @apply bg-slate-300 dark:bg-slate-600;
   }
 }
