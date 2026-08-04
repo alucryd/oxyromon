@@ -309,7 +309,7 @@ Follow this checklist:
 ### Stack
 
 - **Backend:** Axum + async-graphql + SSE
-- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + Tailwind CSS 4
+- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + [Web Awesome](https://webawesome.com) web components, with Tailwind CSS 4 still covering the layout
 - **Build:** [Trunk](https://trunkrs.dev), output to `target/assets/`, embedded via `rust-embed`
 - **GraphQL:** Single `/graphql` endpoint, schema defined in `query.rs` (queries) and `mutation.rs` (mutations)
 - **SSE:** `/events` endpoint for real-time updates (e.g., purge progress)
@@ -325,7 +325,8 @@ endpoints, so `server.rs` is unchanged by the framework choice.
 | -------------------------------------- | ---------------------------------------------------------- |
 | `frontend/index.html`                  | Trunk entry point (links the wasm bundle + generated CSS)  |
 | `frontend/input.css`                   | Tailwind entry (theme + custom layers)                     |
-| `frontend/Trunk.toml`                  | Trunk config (Tailwind pre-build hook, dev proxies)        |
+| `frontend/Trunk.toml`                  | Trunk config (pre-build hooks, dev proxies)                |
+| `frontend/scripts/fetch-webawesome.sh` | Vendors Web Awesome + its icons into `frontend/vendor/`    |
 | `frontend/src/main.rs`                 | Mounts the app to the DOM                                  |
 | `frontend/src/app.rs`                  | Root component + reactive data-loading effects             |
 | `frontend/src/page.rs`                 | Main page (systems/games/roms/romfiles tables, stats)      |
@@ -365,6 +366,34 @@ trunk build --release
 
 The top-level `build.rs` runs `trunk build --release` automatically when the
 `server` feature is enabled (skip with `SKIP_TRUNK=true`).
+
+### Web Awesome
+
+The UI is migrating from hand-rolled Tailwind components to
+[Web Awesome](https://webawesome.com) (the successor to Shoelace) — MIT
+licensed custom elements. Leptos renders them like any other tag; two things
+are worth knowing:
+
+- **Properties, not attributes, for state.** `prop:open=...` sets the JS
+  property directly, which is what Lit-based components react to.
+- **Custom events need a type annotation.** The `view!` macro maps an unknown
+  `on:` name onto `Custom::new(...)`, but cannot infer the payload:
+  `on:wa-after-hide=move |_: web_sys::Event| ...`.
+
+`scripts/fetch-webawesome.sh` vendors the runtime into `frontend/vendor/`
+(gitignored) as a Trunk pre-build hook, pinned by version and skipped when
+already present. It is fetched rather than committed because it is ~3.6 MB,
+all of which is embedded into the `oxyromon` binary.
+
+**Nothing may load from a CDN at runtime** — the UI is served by
+`oxyromon server` and bundled into the desktop app, both of which have to work
+offline. That is why the script also vendors the sixteen Font Awesome icons
+Web Awesome references internally: without them `<wa-icon>` falls back to the
+Font Awesome CDN and, for example, a dialog loses its close button.
+
+Dark mode is two classes on `<html>`: Tailwind's `dark` and Web Awesome's
+`wa-dark`, both set by `set_dark` in `navbar.rs`. Web Awesome styles itself
+from inside shadow DOM, where the Tailwind variant cannot reach.
 
 ### Adding a GraphQL Query/Mutation
 

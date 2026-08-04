@@ -7,6 +7,12 @@ dist = "../target/assets"
 # regardless of the mount point.
 public_url = "/"
 
+# Web Awesome and its icons are fetched rather than committed; see the script.
+[[hooks]]
+stage = "pre_build"
+command = "sh"
+command_arguments = ["scripts/fetch-webawesome.sh"]
+
 [[hooks]]
 stage = "pre_build"
 command = "tailwindcss"

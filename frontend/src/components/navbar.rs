@@ -38,10 +38,16 @@ fn document_element() -> Option<web_sys::Element> {
 
 fn set_dark(dark: bool) {
     if let Some(element) = document_element() {
-        if dark {
-            let _ = element.class_list().add_1("dark");
-        } else {
-            let _ = element.class_list().remove_1("dark");
+        // Two classes for the one setting: Tailwind's variant reads `dark`,
+        // while Web Awesome reads `wa-dark`. Its components style themselves
+        // from inside shadow DOM, where our own variant cannot reach them.
+        let classes = element.class_list();
+        for class in ["dark", "wa-dark"] {
+            let _ = if dark {
+                classes.add_1(class)
+            } else {
+                classes.remove_1(class)
+            };
         }
     }
     if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {

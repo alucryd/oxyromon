@@ -23,6 +23,8 @@ frontend/target
 frontend/dist
 frontend/tailwind.css
 frontend/node_modules
+# fetched at build time by frontend/scripts/fetch-webawesome.sh
+frontend/vendor
 
 # desktop (tauri)
 desktop/target
