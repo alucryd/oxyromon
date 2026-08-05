@@ -151,8 +151,7 @@ Run from the repository root:
 
 | Script         | Builds                                                            |
 | -------------- | ----------------------------------------------------------------- |
-| `build.sh`     | The CLI with the web UI (`--release --features server`)           |
-| `frontend.sh`  | Just the Leptos SPA (`trunk build --release` in `frontend/`)      |
+| `build.sh`     | The web UI, then the CLI with it embedded (`--release --features server`) |
 | `desktop.sh`   | The Tauri desktop app and its installers                          |
 | `cross.sh`     | Release artifacts for every cross-compiled target, plus the desktop bundles for the host |
 | `docker.sh`    | The two container images, then pushes them                        |
