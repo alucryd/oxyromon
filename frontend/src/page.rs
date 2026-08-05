@@ -8,7 +8,6 @@ use leptos::task::spawn_local;
 
 use crate::api::purge_system;
 use crate::components::settings_modal::SettingsModal;
-use crate::icons::Spinner;
 use crate::model::{Game, NotificationKind, Rom, Romfile, Sizes, System};
 use crate::state::{AppState, format_bytes};
 use crate::ui::{Modal, StatTile};
@@ -68,7 +67,7 @@ fn CardHeader(title: &'static str, loading: RwSignal<bool>) -> impl IntoView {
         <div class="wa-card-header flex items-center justify-between">
             <span>{title}</span>
             <Show when=move || loading.get()>
-                <Spinner />
+                <wa-spinner></wa-spinner>
             </Show>
         </div>
     }
@@ -229,7 +228,7 @@ fn SystemsCard(
                                             }
                                         }
                                     >
-                                        <Spinner />
+                                        <wa-spinner></wa-spinner>
                                     </Show>
                                 </div>
                             </div>
