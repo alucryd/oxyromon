@@ -13,11 +13,6 @@ stage = "pre_build"
 command = "sh"
 command_arguments = ["scripts/fetch-webawesome.sh"]
 
-[[hooks]]
-stage = "pre_build"
-command = "tailwindcss"
-command_arguments = ["--input", "input.css", "--output", "tailwind.css", "--minify"]
-
 # `trunk serve` (dev) proxies API traffic to a locally running `oxyromon server`
 # (default 127.0.0.1:8000). Ignored by `trunk build`.
 [[proxy]]

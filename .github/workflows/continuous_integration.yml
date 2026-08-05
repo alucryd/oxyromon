@@ -36,13 +36,10 @@ jobs:
           override: true
       - name: Configure rust cache
         uses: Swatinem/rust-cache@v2
-      - name: Install Trunk and Tailwind CLI
+      - name: Install Trunk
         run: |
           curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xzf- -C "$HOME/.cargo/bin"
-          curl -fsSL "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64" \
-            -o "$HOME/.cargo/bin/tailwindcss"
-          chmod +x "$HOME/.cargo/bin/tailwindcss"
       - name: Build web UI
         run: cd frontend && trunk build --release
       - name: Install llvm-cov

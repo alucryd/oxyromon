@@ -34,15 +34,12 @@ pub fn NotificationsButton() -> impl IntoView {
 
             <Show when=move || open.get()>
                 // Closes when the click lands anywhere else.
+                <div class="overlay" on:click=move |_| open.set(false)></div>
                 <div
-                    style="position: fixed; inset: 0; z-index: 30;"
-                    on:click=move |_| open.set(false)
-                ></div>
-                <div
-                    class="wa-card-surface"
-                    style="position: absolute; inset-inline-end: 0; top: 100%; z-index: 40; margin-block-start: var(--wa-space-2xs); width: 20rem;"
+                    class="menu"
+                    style="top: 100%; inset-inline-end: 0; width: 20rem;"
                 >
-                    <div class="wa-card-header wa-split" style="align-items: center;">
+                    <div class="panel-header">
                         <span>Notifications</span>
                         <Show when=move || has_any()>
                             <wa-button

@@ -1,4 +1,5 @@
 /target
 /dist
-/tailwind.css
 /vendor
+graphify-out/cache
+graphify-out/cost.json

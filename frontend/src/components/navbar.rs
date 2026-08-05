@@ -16,7 +16,7 @@ fn filter_appearance(active: bool) -> &'static str {
 
 fn is_dark() -> bool {
     document_element()
-        .map(|e| e.class_list().contains("dark"))
+        .map(|element| element.class_list().contains("wa-dark"))
         .unwrap_or(false)
 }
 
@@ -26,17 +26,15 @@ fn document_element() -> Option<web_sys::Element> {
 
 fn set_dark(dark: bool) {
     if let Some(element) = document_element() {
-        // Two classes for the one setting: Tailwind's variant reads `dark`,
-        // while Web Awesome reads `wa-dark`. Its components style themselves
-        // from inside shadow DOM, where our own variant cannot reach them.
+        // One class for the whole app: the --wa-* tokens everything is drawn
+        // with carry both light and dark values, and the components read it
+        // from inside their own shadow roots.
         let classes = element.class_list();
-        for class in ["dark", "wa-dark"] {
-            let _ = if dark {
-                classes.add_1(class)
-            } else {
-                classes.remove_1(class)
-            };
-        }
+        let _ = if dark {
+            classes.add_1("wa-dark")
+        } else {
+            classes.remove_1("wa-dark")
+        };
     }
     if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
         let _ = storage.set_item("color-theme", if dark { "dark" } else { "light" });
@@ -68,12 +66,7 @@ pub fn Navbar() -> impl IntoView {
     let ignored = state.ignored_filter;
 
     view! {
-        <nav class="wa-cluster wa-gap-xs fixed start-0 top-0 z-20 w-full" style="
-            flex-wrap: nowrap;
-            padding: var(--wa-space-xs) var(--wa-space-m);
-            background-color: var(--wa-color-surface-raised);
-            border-block-end: 1px solid var(--wa-color-surface-border);
-        ">
+        <nav class="navbar">
             <a href="/" style="display: flex;">
                 <img src="/icon.svg" alt="oxyROMon" style="height: 2rem;" />
             </a>

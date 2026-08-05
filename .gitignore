@@ -5,6 +5,8 @@
 !.env.example
 .idea
 .vscode
+graphify-out/cache
+graphify-out/cost.json
 
 # rust
 *.rs.bk
@@ -21,7 +23,6 @@ tests/.tmp*
 # frontend (leptos + trunk)
 frontend/target
 frontend/dist
-frontend/tailwind.css
 frontend/node_modules
 # fetched at build time by frontend/scripts/fetch-webawesome.sh
 frontend/vendor

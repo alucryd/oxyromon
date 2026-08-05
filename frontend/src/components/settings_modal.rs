@@ -266,14 +266,14 @@ pub fn SettingsModal(
                             hint="Broad favors games targeting more regions, narrow favors fewer"
                             value=local.prefer_regions
                             choices=&PREFER_REGIONS_CHOICES
-                            on_select=Callback::new(move |v| choose_prefer_regions(v))
+                            on_select=Callback::new(choose_prefer_regions)
                         />
                         <SelectField
                             label="Prefer Versions"
                             hint="New favors newer revisions, old favors older"
                             value=local.prefer_versions
                             choices=&PREFER_VERSIONS_CHOICES
-                            on_select=Callback::new(move |v| choose_prefer_versions(v))
+                            on_select=Callback::new(choose_prefer_versions)
                         />
                         <ListField
                             label="Prefer Flags"

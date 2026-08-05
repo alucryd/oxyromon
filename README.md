@@ -66,8 +66,7 @@ You can also target GNU to solve the asm-hashes issue:
 
     cargo build --release --target x86_64-pc-windows-gnu
 
-For the web UI, you will also need the [Trunk](https://trunkrs.dev) bundler, the
-[Tailwind CSS](https://tailwindcss.com/blog/standalone-cli) standalone CLI and
+For the web UI, you will also need the [Trunk](https://trunkrs.dev) bundler and
 the `wasm32-unknown-unknown` target:
 
     rustup target add wasm32-unknown-unknown

@@ -16,8 +16,9 @@
 ## Changes
 
 - Rebuilt the web UI on [Web Awesome](https://webawesome.com) components: the dialogs now trap focus and close on Escape, and the settings form uses real switches, selects and removable tags rather than unstyled browser controls
+- Dropped Tailwind CSS: the UI is now styled entirely by Web Awesome's components, layout utilities and design tokens, plus a small hand-written stylesheet. The Tailwind standalone CLI is no longer a build dependency
 - Restored the per-field descriptions in the settings dialog, which explain what each setting expects (region codes, language codes, and what each sorting option favors)
-- Rewrote the web UI in Rust using Leptos (compiled to WebAssembly), replacing the Svelte/Flowbite frontend; the UI now lives in a standalone `frontend/` crate built with Trunk and the Tailwind CSS standalone CLI (no Node.js toolchain required)
+- Rewrote the web UI in Rust using Leptos (compiled to WebAssembly), replacing the Svelte/Flowbite frontend; the UI now lives in a standalone `frontend/` crate built with Trunk (no Node.js toolchain required)
 - Replaced the `SKIP_PNPM` build environment variable with `SKIP_TRUNK`
 
 ## Improvements

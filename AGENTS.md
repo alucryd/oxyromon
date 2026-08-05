@@ -129,7 +129,7 @@ All database queries are standalone `pub async fn` functions in `database.rs`. T
 ### Prerequisites
 
 - Rust 1.88.0+ (edition 2024)
-- For the `server` feature: the `wasm32-unknown-unknown` target, [Trunk](https://trunkrs.dev), and the [Tailwind CSS standalone CLI](https://tailwindcss.com/blog/standalone-cli)
+- For the `server` feature: the `wasm32-unknown-unknown` target and [Trunk](https://trunkrs.dev)
 
 ### CLI Only
 
@@ -309,7 +309,7 @@ Follow this checklist:
 ### Stack
 
 - **Backend:** Axum + async-graphql + SSE
-- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + [Web Awesome](https://webawesome.com) web components, with Tailwind CSS 4 still covering the layout
+- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + [Web Awesome](https://webawesome.com) web components
 - **Build:** [Trunk](https://trunkrs.dev), output to `target/assets/`, embedded via `rust-embed`
 - **GraphQL:** Single `/graphql` endpoint, schema defined in `query.rs` (queries) and `mutation.rs` (mutations)
 - **SSE:** `/events` endpoint for real-time updates (e.g., purge progress)
@@ -324,7 +324,7 @@ endpoints, so `server.rs` is unchanged by the framework choice.
 | Path                                   | Purpose                                                     |
 | -------------------------------------- | ---------------------------------------------------------- |
 | `frontend/index.html`                  | Trunk entry point (links the wasm bundle + generated CSS)  |
-| `frontend/input.css`                   | Tailwind entry (theme + custom layers)                     |
+| `frontend/styles.css`                  | The app's own CSS — the shell, the rows, the bare targets  |
 | `frontend/Trunk.toml`                  | Trunk config (pre-build hooks, dev proxies)                |
 | `frontend/scripts/fetch-webawesome.sh` | Vendors Web Awesome + its icons into `frontend/vendor/`    |
 | `frontend/src/main.rs`                 | Mounts the app to the DOM                                  |
@@ -339,15 +339,8 @@ endpoints, so `server.rs` is unchanged by the framework choice.
 
 ### Frontend Dev
 
-Requires the `wasm32-unknown-unknown` target, the [Trunk](https://trunkrs.dev)
-bundler and the [Tailwind CSS standalone CLI](https://tailwindcss.com/blog/standalone-cli)
-(no Node.js toolchain):
-
-> **Gotcha:** the `tailwindcss` binary must be the *standalone* CLI (bundles
-> the `tailwindcss` package; on Arch: `tailwindcss-bin`). A Node-based
-> `@tailwindcss/cli` fails with `Can't resolve 'tailwindcss'` because
-> `@import "tailwindcss"` is resolved by walking up `node_modules` from the
-> CSS file, never reaching `/usr/lib/node_modules`.
+Requires the `wasm32-unknown-unknown` target and the [Trunk](https://trunkrs.dev)
+bundler (no Node.js toolchain):
 
 ```sh
 rustup target add wasm32-unknown-unknown
@@ -369,10 +362,9 @@ The top-level `build.rs` runs `trunk build --release` automatically when the
 
 ### Web Awesome
 
-The UI is migrating from hand-rolled Tailwind components to
-[Web Awesome](https://webawesome.com) (the successor to Shoelace) — MIT
-licensed custom elements. Leptos renders them like any other tag; two things
-are worth knowing:
+The UI is built from [Web Awesome](https://webawesome.com) (the successor to
+Shoelace) — MIT licensed custom elements. Leptos renders them like any other
+tag; two things are worth knowing:
 
 - **Properties, not attributes, for state.** `prop:open=...` sets the JS
   property directly, which is what Lit-based components react to.
@@ -381,26 +373,23 @@ are worth knowing:
   `on:wa-after-hide=move |_: web_sys::Event| ...`. Known events (`on:click`)
   keep their own type and must *not* be annotated as `web_sys::Event`.
 
-Four things about the cascade, all of which cost real debugging:
+Two things about the cascade, both of which cost real debugging:
 
-- **Tailwind's preflight has to stay off.** `*, ::before, ::after { border: 0;
-  margin: 0; padding: 0 }` outranks a shadow root's `:host` rules — document
-  styles always beat `:host` — so it flattens every component's box and leaves
-  cards, badges and dividers drawn as bare text. `input.css` imports Tailwind's
-  theme and utilities only; Web Awesome's `native.css` is the reset now.
-- **Declare the layer order explicitly.** `@layer theme, base, components,
-  utilities;` at the top of `input.css`. A `@layer` block first mentioned after
-  the utilities import would otherwise outrank it.
-- **`@apply` cannot take a `dark:` variant across a multi-selector rule.** It
-  emits a stray paren and the browser drops the rule. Prefer `--wa-*` tokens,
-  which carry their own light and dark values.
+- **Our stylesheet declares its own layer.** `@layer app { ... }` in
+  `styles.css`, which is loaded after `webawesome.css` and so sits after every
+  `wa-*` layer. That is what lets `.plain-button` beat `native.css` without
+  resorting to specificity. Order *within* the layer still matters: the bare
+  target reset comes before the classes built on top of it, or its `padding: 0`
+  wins over their padding.
 - **The theme does not import the colour variants.** `--wa-color-brand-*` and
   friends only exist inside the components' shadow styles until
-  `styles/color/variants.css` is loaded, which `index.html` does.
+  `styles/color/variants.css` is loaded, which `index.html` does. Without it a
+  rule using those tokens is silently dropped as invalid.
 
-Because `native.css` styles native `<button>` like a real button, anything that
-is a button only for semantics — a whole list row — needs the `.plain-button`
-class to strip that back.
+Because `native.css` styles a native `<button>` like a real button — chrome, a
+fixed height, centred flex layout and nowrap text — anything that is a button
+only for semantics (a whole list row, a drop target) needs `.plain-button` to
+strip all of that back.
 
 The app root carries `wa-cloak`, which holds it hidden until every custom
 element inside has been upgraded. Without it there is a flash where each
@@ -418,9 +407,9 @@ offline. That is why the script also vendors the sixteen Font Awesome icons
 Web Awesome references internally: without them `<wa-icon>` falls back to the
 Font Awesome CDN and, for example, a dialog loses its close button.
 
-Dark mode is two classes on `<html>`: Tailwind's `dark` and Web Awesome's
-`wa-dark`, both set by `set_dark` in `navbar.rs`. Web Awesome styles itself
-from inside shadow DOM, where the Tailwind variant cannot reach.
+Dark mode is the `wa-dark` class on `<html>`, set by `set_dark` in `navbar.rs`.
+Nothing else is needed: the `--wa-*` tokens carry both light and dark values, so
+`styles.css` never mentions a colour scheme.
 
 ### Adding a GraphQL Query/Mutation
 
@@ -491,8 +480,7 @@ Both commands run `desktop/scripts/stage-sidecar.sh` first (via
 expects. Note the hook runs from the **repo root**, not `desktop/`.
 
 Because that build enables the `server` feature, the desktop app transitively
-needs the web UI toolchain too (Trunk + the Tailwind standalone CLI + the
-`wasm32-unknown-unknown` target).
+needs the web UI toolchain too (Trunk + the `wasm32-unknown-unknown` target).
 
 Plain `cargo build` in `desktop/` also works, but only once the sidecar has been
 staged at least once (`tauri-build` fails if `binaries/oxyromon-<triple>` is
@@ -558,7 +546,7 @@ All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in 
 - Rustfmt / clippy, same as the rest of the workspace (run from `frontend/`)
 - Reactivity via `RwSignal`/`Effect`; global state is a `Copy` `AppState` provided through context
 - Async work via `leptos::task::spawn_local`, updating signals imperatively
-- Tailwind CSS 4 utility classes for styling (no component library — small reusable pieces live in `ui.rs`)
+- Styling comes from Web Awesome: its components, its layout utilities (`wa-stack`, `wa-cluster`, `wa-grid`, `wa-split`) and its `--wa-*` tokens. Reach for `styles.css` only for what the library does not cover
 - **Gotcha:** inside the `view!` macro, wrap any `>`/`<` comparison in parentheses or a block, otherwise it is parsed as a tag delimiter
 
 ## External Tool Integration Pattern

@@ -41,7 +41,7 @@ pub const PREFER_VERSIONS_CHOICES: [&str; 3] = ["none", "new", "old"];
 pub const SUBFOLDER_SCHEMES_CHOICES: [&str; 2] = ["none", "alpha"];
 
 /// Height of one row, in pixels. The games list is virtualized, so this has to
-/// match the CSS (`--row-height` in `input.css`) exactly.
+/// match the CSS (`--row-height` in `styles.css`) exactly.
 pub const ROW_HEIGHT: f64 = 40.0;
 
 /// Snapshot of the game filters. Derived once and shared by the memos that

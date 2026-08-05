@@ -15,44 +15,38 @@ use crate::ui::{ScrollWindow, Spacer};
 
 fn system_color(system: &System) -> &'static str {
     match system.completion {
-        2 => "text-emerald-600 dark:text-emerald-400",
-        1 => "text-amber-500 dark:text-amber-400",
-        _ => "text-red-600 dark:text-red-400",
+        2 => "status-complete",
+        1 => "status-incomplete",
+        _ => "status-wanted",
     }
 }
 
 fn game_color(game: &Game) -> &'static str {
     if game.sorting == 2 {
-        return "text-slate-400 dark:text-slate-500";
+        return "status-ignored";
     }
     match game.completion {
-        2 => "text-emerald-600 dark:text-emerald-400",
-        1 => "text-amber-500 dark:text-amber-400",
-        _ => "text-red-600 dark:text-red-400",
+        2 => "status-complete",
+        1 => "status-incomplete",
+        _ => "status-wanted",
     }
 }
 
 fn rom_color(rom: &Rom) -> &'static str {
     if rom.ignored {
-        "text-slate-400 dark:text-slate-500"
+        "status-ignored"
     } else if rom.romfile.is_some() {
-        "text-emerald-600 dark:text-emerald-400"
+        "status-complete"
     } else {
-        "text-red-600 dark:text-red-400"
+        "status-wanted"
     }
 }
-
-// `min-h-0` matters: without it a flex child refuses to shrink below its
-// content, so the body would never scroll and the page would grow instead.
-const CARD: &str = "wa-card-surface flex max-w-none min-h-0 flex-1 flex-col overflow-hidden";
-/// The only part of a card that scrolls; the header stays put above it.
-const SCROLL_BODY: &str = "flex-1 overflow-y-auto";
 
 /// Classes for one row: fixed height (the virtualized list depends on it),
 /// zebra striping keyed off the row's absolute position so the stripes do not
 /// shift as rows are recycled, and the selected state on top.
 fn row_class(position: usize, selected: bool) -> String {
-    let stripe = if position % 2 == 0 {
+    let stripe = if position.is_multiple_of(2) {
         "row-even"
     } else {
         "row-odd"
@@ -64,7 +58,7 @@ fn row_class(position: usize, selected: bool) -> String {
 #[component]
 fn CardHeader(title: &'static str, loading: RwSignal<bool>) -> impl IntoView {
     view! {
-        <div class="wa-card-header flex items-center justify-between">
+        <div class="panel-header">
             <span>{title}</span>
             <Show when=move || loading.get()>
                 <wa-spinner></wa-spinner>
@@ -85,11 +79,9 @@ pub fn Page() -> impl IntoView {
     let delete_target = RwSignal::new(Option::<System>::None);
 
     view! {
-        // Wide enough for the columns: pin the app to the viewport so each pane
-        // scrolls on its own. Stacked on narrow screens, let the page scroll.
-        <div class="flex min-h-screen w-full flex-col px-4 pt-20 md:h-screen md:overflow-hidden">
-            <div class="mb-4 grid flex-1 grid-cols-1 gap-4 md:min-h-0 md:grid-cols-10">
-                <div class="flex min-h-0 flex-col md:col-span-2">
+        <div class="page">
+            <div class="panes">
+                <div class="pane">
                     <SystemsCard
                         sys_settings_open=sys_settings_open
                         sys_settings_id=sys_settings_id
@@ -98,18 +90,16 @@ pub fn Page() -> impl IntoView {
                         delete_target=delete_target
                     />
                 </div>
-                <div class="flex min-h-0 flex-col md:col-span-3">
+                <div class="pane">
                     <GamesCard />
                 </div>
-                <div class="flex min-h-0 flex-col gap-4 md:col-span-5">
+                <div class="pane">
                     <RomsCard />
                     <RomfilesCard />
                 </div>
             </div>
 
-            <div class="shrink-0">
-                <StatsCard />
-            </div>
+            <StatsCard />
 
             <SettingsModal
                 open=sys_settings_open
@@ -141,9 +131,9 @@ fn SystemsCard(
     };
 
     view! {
-        <div class=CARD>
+        <div class="panel">
             <CardHeader title="Systems" loading=state.loading_systems />
-            <div class=SCROLL_BODY>
+            <div class="panel-body">
                 <For each=rows key=|(_, system)| system.id let:entry>
                     {
                         let (position, system) = entry;
@@ -161,16 +151,14 @@ fn SystemsCard(
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
-                                    class=format!(
-                                        "plain-button flex-1 truncate px-4 text-left text-base {color}",
-                                    )
+                                    class=format!("plain-button row-label {color}")
                                     title=description
                                     aria-current=move || selected().then_some("true")
                                     on:click=move |_| state.system_id.set(id)
                                 >
                                     {name.clone()}
                                 </button>
-                                <div class="relative pr-2">
+                                <div style="position: relative; padding-inline-end: var(--wa-space-2xs);">
                                     <Show
                                         when=move || state.purging_system_id.get() == id
                                         fallback=move || {
@@ -178,7 +166,7 @@ fn SystemsCard(
                                             let system_for_delete = system_for_delete.clone();
                                             view! {
                                                 <button
-                                                    class="plain-button rounded p-1"
+                                                    class="plain-button icon-button"
                                                     aria-label="System actions"
                                                     on:click=move |_| {
                                                         open_dropdown.update(|d| *d = if *d == id { -1 } else { id });
@@ -193,12 +181,12 @@ fn SystemsCard(
                                                         view! {
                                                             // Closes when the click lands anywhere else.
                                                             <div
-                                                                class="fixed inset-0 z-30"
+                                                                class="overlay"
                                                                 on:click=move |_| open_dropdown.set(-1)
                                                             ></div>
-                                                            <div class="absolute right-2 z-40 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-lg dark:border-gray-600 dark:bg-gray-700">
+                                                            <div class="menu">
                                                                 <button
-                                                                    class="plain-button flex w-full items-center px-4 py-2 text-sm"
+                                                                    class="plain-button menu-item"
                                                                     on:click=move |_| {
                                                                         sys_settings_id.set(Some(id));
                                                                         sys_settings_title
@@ -207,18 +195,18 @@ fn SystemsCard(
                                                                         open_dropdown.set(-1);
                                                                     }
                                                                 >
-                                                                    <wa-icon name="sliders" style="margin-inline-end: 0.5rem;"></wa-icon>
+                                                                    <wa-icon name="sliders"></wa-icon>
                                                                     Settings
                                                                 </button>
                                                                 <button
-                                                                    class="plain-button flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400"
+                                                                    class="plain-button menu-item danger"
                                                                     on:click=move |_| {
                                                                         delete_target.set(Some(system_for_delete.clone()));
                                                                         delete_open.set(true);
                                                                         open_dropdown.set(-1);
                                                                     }
                                                                 >
-                                                                    <wa-icon name="trash" style="margin-inline-end: 0.5rem;"></wa-icon>
+                                                                    <wa-icon name="trash"></wa-icon>
                                                                     Delete
                                                                 </button>
                                                             </div>
@@ -294,11 +282,11 @@ fn GamesCard() -> impl IntoView {
     });
 
     view! {
-        <div class=CARD>
+        <div class="panel">
             <CardHeader title="Games" loading=state.loading_games />
             <div
                 node_ref=viewport
-                class=SCROLL_BODY
+                class="panel-body"
                 on:scroll=move |_| {
                     if let Some(element) = viewport.get_untracked() {
                         window.measure(&element);
@@ -312,15 +300,13 @@ fn GamesCard() -> impl IntoView {
                         let id = game.id;
                         let name = game.name.clone();
                         let color = game_color(&game);
-                        let weight = if game.sorting == 1 { "font-semibold" } else { "" };
+                        let weight = if game.sorting == 1 { "row-elected" } else { "" };
                         let description = game.description.clone().unwrap_or_default();
                         let selected = move || state.game_id.get() == id;
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
-                                    class=format!(
-                                        "plain-button flex-1 truncate px-4 text-left text-base {weight} {color}",
-                                    )
+                                    class=format!("plain-button row-label {weight} {color}")
                                     title=description
                                     aria-current=move || selected().then_some("true")
                                     on:click=move |_| state.game_id.set(id)
@@ -345,9 +331,9 @@ fn RomsCard() -> impl IntoView {
         roms
     };
     view! {
-        <div class=CARD>
+        <div class="panel">
             <CardHeader title="ROMs" loading=state.loading_roms />
-            <div class=SCROLL_BODY>
+            <div class="panel-body">
                 <For each=rows key=|(_, rom)| rom.id let:entry>
                     {
                         let (position, rom) = entry;
@@ -355,7 +341,7 @@ fn RomsCard() -> impl IntoView {
                         let color = rom_color(&rom);
                         view! {
                             <div class=move || row_class(position, false)>
-                                <span class=format!("flex-1 truncate px-4 text-base {color}")>
+                                <span class=format!("row-label {color}")>
                                     {name}
                                 </span>
                             </div>
@@ -376,9 +362,9 @@ fn RomfilesCard() -> impl IntoView {
         romfiles
     };
     view! {
-        <div class=CARD>
+        <div class="panel">
             <CardHeader title="ROM Files" loading=state.loading_roms />
-            <div class=SCROLL_BODY>
+            <div class="panel-body">
                 <For each=rows key=|(_, romfile)| romfile.path.clone() let:entry>
                     {
                         let (position, romfile) = entry;
@@ -392,12 +378,12 @@ fn RomfilesCard() -> impl IntoView {
                             .join("/");
                         view! {
                             <div class=move || row_class(position, false)>
-                                <span class="flex-1 truncate px-4 text-base">{display}</span>
+                                <span class="row-label">{display}</span>
                                 <a
                                     href=format!("/romfiles/{id}")
                                     download
                                     aria-label="Download"
-                                    class="mr-2 inline-flex rounded p-1 text-slate-500 hover:bg-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-white"
+                                    class="icon-button" style="margin-inline-end: var(--wa-space-2xs);"
                                 >
                                     <wa-icon name="download"></wa-icon>
                                 </a>
@@ -435,8 +421,8 @@ fn StatsCard() -> impl IntoView {
     };
 
     view! {
-        <div class="wa-card-surface shrink-0">
-            <div class="wa-card-header">Statistics</div>
+        <div class="panel" style="flex: none;">
+            <div class="panel-header">Statistics</div>
             <div
                 class="wa-grid wa-gap-s"
                 style="--min-column-size: 10rem; padding: var(--wa-space-m);"

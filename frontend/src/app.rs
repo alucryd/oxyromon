@@ -9,6 +9,7 @@ use crate::components::import_dat_modal::ImportDatModal;
 use crate::components::navbar::Navbar;
 use crate::components::settings_modal::SettingsModal;
 use crate::page::Page;
+#[allow(unused_imports)]
 use crate::sse::connect_sse;
 use crate::state::AppState;
 
@@ -31,11 +32,9 @@ pub fn App() -> impl IntoView {
         // has been upgraded. Without it there is a flash where each `<wa-*>` is
         // still an unknown inline element, and the navbar renders as a run-on
         // line of unstyled text.
-        <div class="wa-cloak flex min-h-screen bg-slate-200 dark:bg-slate-800">
+        <div class="wa-cloak app-shell">
             <Navbar />
-            <div class="flex w-full flex-col gap-4">
-                <Page />
-            </div>
+            <Page />
 
             <AboutModal />
             <ImportDatModal />
