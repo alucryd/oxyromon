@@ -145,6 +145,19 @@ cargo build --release --features server
 
 The `build.rs` script automatically runs `trunk build --release` (in `frontend/`) when the `server` feature is enabled (skip with `SKIP_TRUNK=true`). The Leptos app is compiled to WebAssembly, output to `target/assets/`, and embedded into the binary via `rust-embed`.
 
+### Helper Scripts
+
+Run from the repository root:
+
+| Script         | Builds                                                            |
+| -------------- | ----------------------------------------------------------------- |
+| `build.sh`     | The CLI with the web UI (`--release --features server`)           |
+| `frontend.sh`  | Just the Leptos SPA (`trunk build --release` in `frontend/`)      |
+| `desktop.sh`   | The Tauri desktop app and its installers                          |
+| `cross.sh`     | Release artifacts for every cross-compiled target                 |
+| `docker.sh`    | The two container images, then pushes them                        |
+| `test.sh`      | The test suite under `cargo llvm-cov`, then opens the report      |
+
 ### Environment Variables
 
 | Variable                  | Purpose                                                                |
@@ -478,6 +491,8 @@ cargo tauri dev     # stages the sidecar, then runs the shell
 cargo tauri build   # release build + installers in target/release/bundle/
 ```
 
+`desktop.sh` in the repository root wraps the release build.
+
 Both commands run `desktop/scripts/stage-sidecar.sh` first (via
 `beforeDevCommand`/`beforeBuildCommand`), which builds
 `cargo build --release --features server` and copies the binary to
@@ -500,6 +515,10 @@ missing).
   staged for the current target triple; run `sh desktop/scripts/stage-sidecar.sh`.
 - **Server fails to start.** The sidecar's stdout/stderr is forwarded to the
   desktop app's stderr, prefixed with `[oxyromon]`.
+- **`failed to run linuxdeploy`.** The AppImage bundler ships its own binutils,
+  which is too old to read the `.relr.dyn` sections modern distributions ship,
+  so it fails on the first library it tries to strip. Build with
+  `NO_STRIP=true`, which is what `desktop.sh` does.
 
 ## Error Handling
 
