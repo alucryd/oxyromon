@@ -378,7 +378,34 @@ are worth knowing:
   property directly, which is what Lit-based components react to.
 - **Custom events need a type annotation.** The `view!` macro maps an unknown
   `on:` name onto `Custom::new(...)`, but cannot infer the payload:
-  `on:wa-after-hide=move |_: web_sys::Event| ...`.
+  `on:wa-after-hide=move |_: web_sys::Event| ...`. Known events (`on:click`)
+  keep their own type and must *not* be annotated as `web_sys::Event`.
+
+Four things about the cascade, all of which cost real debugging:
+
+- **Tailwind's preflight has to stay off.** `*, ::before, ::after { border: 0;
+  margin: 0; padding: 0 }` outranks a shadow root's `:host` rules — document
+  styles always beat `:host` — so it flattens every component's box and leaves
+  cards, badges and dividers drawn as bare text. `input.css` imports Tailwind's
+  theme and utilities only; Web Awesome's `native.css` is the reset now.
+- **Declare the layer order explicitly.** `@layer theme, base, components,
+  utilities;` at the top of `input.css`. A `@layer` block first mentioned after
+  the utilities import would otherwise outrank it.
+- **`@apply` cannot take a `dark:` variant across a multi-selector rule.** It
+  emits a stray paren and the browser drops the rule. Prefer `--wa-*` tokens,
+  which carry their own light and dark values.
+- **The theme does not import the colour variants.** `--wa-color-brand-*` and
+  friends only exist inside the components' shadow styles until
+  `styles/color/variants.css` is loaded, which `index.html` does.
+
+Because `native.css` styles native `<button>` like a real button, anything that
+is a button only for semantics — a whole list row — needs the `.plain-button`
+class to strip that back.
+
+The app root carries `wa-cloak`, which holds it hidden until every custom
+element inside has been upgraded. Without it there is a flash where each
+`<wa-*>` is still an unknown inline element, and dialogs spill their contents
+onto the page.
 
 `scripts/fetch-webawesome.sh` vendors the runtime into `frontend/vendor/`
 (gitignored) as a Trunk pre-build hook, pinned by version and skipped when

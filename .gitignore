@@ -25,6 +25,7 @@ frontend/tailwind.css
 frontend/node_modules
 # fetched at build time by frontend/scripts/fetch-webawesome.sh
 frontend/vendor
+.claude/skills
 
 # desktop (tauri)
 desktop/target

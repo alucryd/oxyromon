@@ -1,14 +1,27 @@
-//! About dialog with build info, stats and dependency badges
-//! (ports `AboutModal.svelte`).
+//! About dialog with build info, stats and dependency badges.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::{get_info, report_error};
-use crate::icons::{Icon, MUG_HOT};
 use crate::model::Info;
 use crate::state::AppState;
 use crate::ui::Modal;
+
+/// One statistic, as a filled card.
+#[component]
+fn Stat(label: &'static str, value: Signal<Option<i64>>) -> impl IntoView {
+    view! {
+        <wa-card appearance="filled-outlined">
+            <div class="wa-stack wa-gap-3xs" style="align-items: center;">
+                <span style="font-size: var(--wa-font-size-xl); font-weight: var(--wa-font-weight-bold);">
+                    {move || value.get().map(|value| value.to_string()).unwrap_or_default()}
+                </span>
+                <small style="color: var(--wa-color-text-quiet);">{label}</small>
+            </div>
+        </wa-card>
+    }
+}
 
 #[component]
 pub fn AboutModal() -> impl IntoView {
@@ -31,107 +44,76 @@ pub fn AboutModal() -> impl IntoView {
         <Modal
             open=state.about_modal_open
             title=Signal::derive(|| "About oxyROMon".to_string())
-            size="md"
+            size="sm"
         >
-            <div class="space-y-4 text-start">
-                <div class="flex flex-col items-center gap-2 pb-2">
-                    <div class="rounded-xl bg-slate-800 p-3">
-                        <img src="/logo.svg" alt="logo" style="height: 48px;" />
-                    </div>
-                    <Show when=move || info.get().is_some()>
-                        <p class="text-lg font-semibold">
-                            "oxyROMon " {move || info.get().map(|i| i.version).unwrap_or_default()}
-                        </p>
-                    </Show>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">"Rusty ROM OrgaNizer"</p>
+            <div class="wa-stack wa-gap-l">
+                <div class="wa-stack wa-gap-2xs" style="align-items: center; text-align: center;">
+                    <img src="/logo.svg" alt="oxyROMon" style="height: 3rem;" />
+                    <span style="font-weight: var(--wa-font-weight-semibold);">
+                        {move || {
+                            info.get()
+                                .map(|info| format!("oxyROMon {}", info.version))
+                                .unwrap_or_default()
+                        }}
+                    </span>
+                    <small style="color: var(--wa-color-text-quiet);">"Rusty ROM OrgaNizer"</small>
                 </div>
 
-                <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                    Statistics
-                </h6>
-                <Show
-                    when=move || info.get().is_some()
-                    fallback=|| {
-                        view! {
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
-                        }
-                    }
-                >
-                    {move || {
-                        let i = info.get().unwrap();
-                        view! {
-                            <div class="grid grid-cols-3 gap-2 text-center">
-                                <div class="rounded bg-gray-100 p-2 dark:bg-gray-700">
-                                    <p class="text-lg font-bold">{i.system_count}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Systems</p>
-                                </div>
-                                <div class="rounded bg-gray-100 p-2 dark:bg-gray-700">
-                                    <p class="text-lg font-bold">{i.game_count}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Games</p>
-                                </div>
-                                <div class="rounded bg-gray-100 p-2 dark:bg-gray-700">
-                                    <p class="text-lg font-bold">{i.rom_count}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">ROMs</p>
-                                </div>
-                            </div>
-                        }
-                    }}
-                </Show>
+                <wa-divider></wa-divider>
 
-                <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                    Dependencies
-                </h6>
-                <Show
-                    when=move || info.get().is_some()
-                    fallback=|| {
-                        view! {
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
-                        }
-                    }
-                >
-                    <div class="flex flex-wrap gap-2">
+                <div class="wa-grid wa-gap-s" style="--min-column-size: 6rem;">
+                    <Stat label="Systems" value=Signal::derive(move || info.get().map(|info| info.system_count)) />
+                    <Stat label="Games" value=Signal::derive(move || info.get().map(|info| info.game_count)) />
+                    <Stat label="ROMs" value=Signal::derive(move || info.get().map(|info| info.rom_count)) />
+                </div>
+
+                <div class="wa-stack wa-gap-xs">
+                    <small style="color: var(--wa-color-text-quiet);">Dependencies</small>
+                    <div class="wa-cluster wa-gap-2xs">
                         <For
-                            each=move || info.get().map(|i| i.dependencies).unwrap_or_default()
-                            key=|dep| dep.name.clone()
-                            let:dep
+                            each=move || info.get().map(|info| info.dependencies).unwrap_or_default()
+                            key=|dependency| dependency.name.clone()
+                            let:dependency
                         >
                             {
-                                let present = dep
+                                let found = dependency
                                     .version
                                     .as_deref()
-                                    .is_some_and(|v| !v.is_empty() && v != "unknown");
-                                let label = match &dep.version {
-                                    Some(v) if present => format!("{} {}", dep.name, v),
-                                    _ => dep.name.clone(),
+                                    .is_some_and(|version| {
+                                        !version.is_empty() && version != "unknown"
+                                    });
+                                let label = match &dependency.version {
+                                    Some(version) if found => {
+                                        format!("{} {}", dependency.name, version)
+                                    }
+                                    _ => dependency.name.clone(),
                                 };
-                                let color = if dep.version.is_some() {
-                                    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300"
+                                // Missing tools are the interesting case, so let
+                                // those stand out rather than the routine ones.
+                                let variant = if dependency.version.is_some() {
+                                    "neutral"
                                 } else {
-                                    "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                    "warning"
                                 };
                                 view! {
-                                    <span class=format!(
-                                        "rounded-lg px-2.5 py-1 text-sm font-medium {color}",
-                                    )>{label}</span>
+                                    <wa-badge variant=variant appearance="outlined" pill="">
+                                        {label}
+                                    </wa-badge>
                                 }
                             }
                         </For>
                     </div>
-                </Show>
-
-                <div class="border-t border-gray-200 pt-4 dark:border-gray-600">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        "If you find oxyROMon useful, please consider "
-                        <a
-                            href="https://ko-fi.com/alucryd"
-                            target="_blank"
-                            class="inline-flex items-center gap-1 text-primary-600 hover:underline"
-                        >
-                            <Icon path=MUG_HOT class="h-4 w-4" />
-                            "buying me a coffee"
-                        </a> "."
-                    </p>
                 </div>
+
+                <wa-divider></wa-divider>
+
+                <small style="color: var(--wa-color-text-quiet);">
+                    "If you find oxyROMon useful, please consider "
+                    <a href="https://ko-fi.com/alucryd" target="_blank">
+                        <wa-icon name="mug-hot"></wa-icon>
+                        " buying me a coffee"
+                    </a> "."
+                </small>
             </div>
         </Modal>
     }

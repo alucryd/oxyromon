@@ -1,4 +1,17 @@
-@import "tailwindcss";
+/* Cascade order. Without this the `base` and `components` layers below would be
+ * declared after `utilities` — and so outrank it — because that is where they
+ * first appear. Importing all of Tailwind used to establish this for us. */
+@layer theme, base, components, utilities;
+
+/* Tailwind's utilities and theme, but not its preflight.
+ *
+ * Preflight sets `*, ::before, ::after { border: 0; margin: 0; padding: 0 }`,
+ * and a document rule always outranks a shadow root's `:host` styles — so it
+ * quietly flattened the box of every Web Awesome component, leaving cards,
+ * badges and dividers drawn as bare text. Web Awesome ships its own reset
+ * (native.css, pulled in by webawesome.css), so nothing is lost by dropping it. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 /* Scan the Leptos source for utility class names (no Node/Svelte sources). */
 @source "./src";
@@ -43,6 +56,42 @@
 }
 
 @layer components {
+  /* A <button> that is a button for semantics, not for looks: a whole table
+     row, or a bare icon target. Web Awesome's reset gives native buttons real
+     button chrome, which is right in general and wrong for these. */
+  .plain-button {
+    /* Block, because Web Awesome's reset makes native buttons centred flex
+       containers — which would centre a row label that should read from the
+       leading edge. */
+    display: block;
+    appearance: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  /* The panels the lists live in, and their headers. Web Awesome surfaces
+     rather than Tailwind greys, so they sit in the same palette as everything
+     the component library draws. */
+  .wa-card-surface {
+    background-color: var(--wa-color-surface-raised);
+    border: 1px solid var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  .wa-card-header {
+    padding: var(--wa-space-xs) var(--wa-space-m);
+    font-weight: var(--wa-font-weight-semibold);
+    background-color: var(--wa-color-surface-lowered);
+    border-block-end: 1px solid var(--wa-color-surface-border);
+  }
+
   .list-row {
     display: flex;
     align-items: center;
@@ -50,38 +99,29 @@
   }
 
   /* Striping is keyed off the row's absolute position rather than :nth-child,
-     so it does not shift as virtualized rows are recycled. */
+     so it does not shift as virtualized rows are recycled. Even rows are left
+     transparent so the card's own surface shows through, and only the odd ones
+     are tinted. */
   .list-row.row-odd {
-    @apply bg-slate-100 dark:bg-gray-800;
+    background-color: var(--wa-color-surface-lowered);
   }
 
-  .list-row.row-even {
-    @apply bg-white dark:bg-gray-700;
-  }
-
-  /* Hover stays grey, so it reads as "under the pointer" and never competes
+  /* Hover stays neutral, so it reads as "under the pointer" and never competes
      with the selection below. */
   .list-row:hover {
-    @apply bg-slate-200 dark:bg-gray-600;
+    background-color: var(--wa-color-neutral-fill-quiet);
   }
 
   /* Which system and game you are looking at is the most important state on
-     screen, so selection gets a hue of its own rather than one more shade of
-     grey — the previous dark mode selection was four RGB points away from the
-     hover colour — plus a marker down the leading edge. An inset shadow rather
-     than a border, so selecting a row does not shift its contents sideways.
+     screen, so selection is the brand colour rather than one more shade of
+     grey, plus a marker down the leading edge. An inset shadow rather than a
+     border, so selecting a row does not shift its contents sideways.
 
      Declared last, and repeated for :hover, so it wins over both striping and
      hover however they are combined. */
   .list-row.row-selected,
   .list-row.row-selected:hover {
-    --row-marker: var(--color-secondary-500);
-    @apply bg-secondary-100 dark:bg-secondary-900;
-    box-shadow: inset 3px 0 0 var(--row-marker);
-  }
-
-  :where(.dark) .list-row.row-selected,
-  :where(.dark) .list-row.row-selected:hover {
-    --row-marker: var(--color-secondary-400);
+    background-color: var(--wa-color-brand-fill-quiet);
+    box-shadow: inset 3px 0 0 var(--wa-color-brand-fill-loud);
   }
 }

@@ -2,7 +2,6 @@
 
 use leptos::prelude::*;
 
-use crate::icons::{BELL, Icon};
 use crate::state::AppState;
 
 #[component]
@@ -16,18 +15,18 @@ pub fn NotificationsButton() -> impl IntoView {
 
     view! {
         <div class="relative">
-            <button
-                class="relative rounded-lg bg-slate-700 p-2.5 text-white hover:bg-slate-600"
+            <wa-button
+                appearance="plain"
                 title="Notifications"
                 on:click=move |_| open.update(|o| *o = !*o)
             >
-                <Icon path=BELL class="h-5 w-5" />
+                <wa-icon name="bell" label="Notifications"></wa-icon>
                 <Show when=move || has_any()>
                     <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white">
                         {move || if count() > 99 { "99+".to_string() } else { count().to_string() }}
                     </span>
                 </Show>
-            </button>
+            </wa-button>
 
             <Show when=move || open.get()>
                 <div class="fixed inset-0 z-30" on:click=move |_| open.set(false)></div>
@@ -35,12 +34,13 @@ pub fn NotificationsButton() -> impl IntoView {
                     <div class="flex items-center justify-between border-b border-slate-600 px-3 py-2">
                         <span class="text-sm font-semibold text-slate-200">Notifications</span>
                         <Show when=move || has_any()>
-                            <button
-                                class="text-xs text-slate-400 hover:text-slate-200"
+                            <wa-button
+                                appearance="plain"
+                                size="small"
                                 on:click=move |_| notifications.set(Vec::new())
                             >
                                 Clear all
-                            </button>
+                            </wa-button>
                         </Show>
                     </div>
                     <div class="max-h-80 overflow-y-auto">

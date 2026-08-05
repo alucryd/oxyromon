@@ -9,6 +9,10 @@
     <link data-trunk rel="copy-dir" href="vendor/webawesome" />
     <link data-trunk rel="copy-dir" href="vendor/icons" data-target-path="icons" />
     <link rel="stylesheet" href="/webawesome/styles/webawesome.css" />
+    <!-- The theme pulls in the colour palette but not the variants built on top
+         of it, so --wa-color-brand-* and friends are only defined inside the
+         components' own shadow styles. Our stylesheet needs them too. -->
+    <link rel="stylesheet" href="/webawesome/styles/color/variants.css" />
     <script type="module">
       // Serve icons from our own copy: the default resolver points at the Font
       // Awesome CDN, which is not reachable when oxyromon is run offline.

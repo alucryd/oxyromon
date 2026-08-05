@@ -8,10 +8,7 @@ use leptos::task::spawn_local;
 
 use crate::api::purge_system;
 use crate::components::settings_modal::SettingsModal;
-use crate::icons::{
-    ADJUSTMENTS, CHECK_CIRCLE, CLOSE_CIRCLE, DOTS_VERTICAL, DOWNLOAD, EXCLAMATION_CIRCLE, Icon,
-    Spinner, TRASH,
-};
+use crate::icons::{CHECK_CIRCLE, CLOSE_CIRCLE, EXCLAMATION_CIRCLE, Icon, Spinner};
 use crate::model::{Game, NotificationKind, Rom, Romfile, System};
 use crate::state::{AppState, format_bytes};
 use crate::ui::{ScrollWindow, Spacer};
@@ -47,7 +44,7 @@ fn rom_color(rom: &Rom) -> &'static str {
 
 // `min-h-0` matters: without it a flex child refuses to shrink below its
 // content, so the body would never scroll and the page would grow instead.
-const CARD: &str = "flex max-w-none min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800";
+const CARD: &str = "wa-card-surface flex max-w-none min-h-0 flex-1 flex-col overflow-hidden";
 /// The only part of a card that scrolls; the header stays put above it.
 const SCROLL_BODY: &str = "flex-1 overflow-y-auto";
 
@@ -67,7 +64,7 @@ fn row_class(position: usize, selected: bool) -> String {
 #[component]
 fn CardHeader(title: &'static str, loading: RwSignal<bool>) -> impl IntoView {
     view! {
-        <div class="flex items-center justify-between bg-slate-300 px-4 py-2 text-base font-medium dark:bg-gray-700">
+        <div class="wa-card-header flex items-center justify-between">
             <span>{title}</span>
             <Show when=move || loading.get()>
                 <Spinner />
@@ -164,7 +161,9 @@ fn SystemsCard(
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
-                                    class=format!("flex-1 truncate px-4 text-left text-base {color}")
+                                    class=format!(
+                                        "plain-button flex-1 truncate px-4 text-left text-base {color}",
+                                    )
                                     title=description
                                     aria-current=move || selected().then_some("true")
                                     on:click=move |_| state.system_id.set(id)
@@ -179,13 +178,13 @@ fn SystemsCard(
                                             let system_for_delete = system_for_delete.clone();
                                             view! {
                                                 <button
-                                                    class="rounded p-1 hover:bg-slate-300 dark:hover:bg-slate-600"
+                                                    class="plain-button rounded p-1"
                                                     aria-label="System actions"
                                                     on:click=move |_| {
                                                         open_dropdown.update(|d| *d = if *d == id { -1 } else { id });
                                                     }
                                                 >
-                                                    <Icon path=DOTS_VERTICAL class="h-4 w-4" />
+                                                    <wa-icon name="ellipsis-vertical"></wa-icon>
                                                 </button>
                                                 <Show when=move || open_dropdown.get() == id>
                                                     {
@@ -199,7 +198,7 @@ fn SystemsCard(
                                                             ></div>
                                                             <div class="absolute right-2 z-40 mt-1 w-40 overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-lg dark:border-gray-600 dark:bg-gray-700">
                                                                 <button
-                                                                    class="flex w-full items-center px-4 py-2 text-sm hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-600"
+                                                                    class="plain-button flex w-full items-center px-4 py-2 text-sm"
                                                                     on:click=move |_| {
                                                                         sys_settings_id.set(Some(id));
                                                                         sys_settings_title
@@ -208,18 +207,18 @@ fn SystemsCard(
                                                                         open_dropdown.set(-1);
                                                                     }
                                                                 >
-                                                                    <Icon path=ADJUSTMENTS class="mr-2 inline h-4 w-4" />
+                                                                    <wa-icon name="sliders" style="margin-inline-end: 0.5rem;"></wa-icon>
                                                                     Settings
                                                                 </button>
                                                                 <button
-                                                                    class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-600"
+                                                                    class="plain-button flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400"
                                                                     on:click=move |_| {
                                                                         delete_target.set(Some(system_for_delete.clone()));
                                                                         delete_open.set(true);
                                                                         open_dropdown.set(-1);
                                                                     }
                                                                 >
-                                                                    <Icon path=TRASH class="mr-2 inline h-4 w-4" />
+                                                                    <wa-icon name="trash" style="margin-inline-end: 0.5rem;"></wa-icon>
                                                                     Delete
                                                                 </button>
                                                             </div>
@@ -320,7 +319,7 @@ fn GamesCard() -> impl IntoView {
                             <div class=move || row_class(position, selected())>
                                 <button
                                     class=format!(
-                                        "flex-1 truncate px-4 text-left text-base {weight} {color}",
+                                        "plain-button flex-1 truncate px-4 text-left text-base {weight} {color}",
                                     )
                                     title=description
                                     aria-current=move || selected().then_some("true")
@@ -400,7 +399,7 @@ fn RomfilesCard() -> impl IntoView {
                                     aria-label="Download"
                                     class="mr-2 inline-flex rounded p-1 text-slate-500 hover:bg-slate-300 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-white"
                                 >
-                                    <Icon path=DOWNLOAD class="h-4 w-4" />
+                                    <wa-icon name="download"></wa-icon>
                                 </a>
                             </div>
                         }

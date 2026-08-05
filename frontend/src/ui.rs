@@ -106,7 +106,11 @@ pub fn Modal(
             style=width
             on:wa-after-hide=move |_: web_sys::Event| open.set(false)
         >
-            {children()}
+            // Only build the contents while the dialog is actually open. Until
+            // the Web Awesome script has upgraded it, `<wa-dialog>` is just an
+            // unknown inline element, so anything inside a closed one would
+            // spill onto the page for as long as that takes.
+            <Show when=move || open.get()>{children()}</Show>
         </wa-dialog>
     }
 }

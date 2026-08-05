@@ -7,7 +7,6 @@ use leptos::task::spawn_local;
 use web_sys::FormData;
 
 use crate::api::report_error;
-use crate::icons::{Icon, UPLOAD};
 use crate::sse::DATS_ENDPOINT;
 use crate::state::AppState;
 use crate::ui::Modal;
@@ -97,7 +96,7 @@ pub fn ImportDatModal() -> impl IntoView {
                     on:drop=on_drop
                     on:dragover=move |ev| ev.prevent_default()
                 >
-                    <Icon path=UPLOAD class="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                    <wa-icon name="upload" style="font-size: 2rem; color: var(--wa-color-text-quiet);"></wa-icon>
                     <Show
                         when=move || selected.get().is_some()
                         fallback=|| {

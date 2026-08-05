@@ -11,7 +11,6 @@ use crate::api::{
     add_to_list, get_raw_settings, remove_from_list, report_error, set_bool, set_directory,
     set_prefer_regions, set_prefer_versions, set_subfolder_scheme,
 };
-use crate::icons::{Icon, PLUS};
 use crate::model::Setting;
 use crate::state::{
     ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
@@ -443,7 +442,7 @@ fn ListField(
                     class="flex items-center rounded-r-lg bg-primary-600 px-3 text-white hover:bg-primary-700"
                     on:click=move |_| add()
                 >
-                    <Icon path=PLUS class="h-4 w-4" />
+                    <wa-icon name="plus" label="Add"></wa-icon>
                 </button>
             </div>
             <div class="mt-2 flex flex-wrap gap-2">

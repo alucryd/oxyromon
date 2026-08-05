@@ -5,25 +5,12 @@
 use leptos::prelude::*;
 
 use crate::components::notifications::NotificationsButton;
-use crate::icons::{ADJUSTMENTS, INFO_CIRCLE, Icon, UPLOAD};
 use crate::state::AppState;
 
-/// Toggle button color classes, ported from `buttonClasses` in the layout.
-fn filter_class(color: &str, active: bool) -> String {
-    let base = "rounded-lg px-3 py-2 text-base font-medium";
-    let variant = match (color, active) {
-        ("blue", false) => "bg-sky-800 text-sky-300 hover:bg-sky-600",
-        ("blue", true) => "bg-sky-600 text-sky-100 hover:bg-sky-400",
-        ("green", false) => "bg-emerald-800 text-emerald-300 hover:bg-emerald-600",
-        ("green", true) => "bg-emerald-600 text-emerald-100 hover:bg-emerald-400",
-        ("yellow", false) => "bg-amber-800 text-amber-300 hover:bg-amber-600",
-        ("yellow", true) => "bg-amber-600 text-amber-100 hover:bg-amber-400",
-        ("red", false) => "bg-red-800 text-red-300 hover:bg-red-600",
-        ("red", true) => "bg-red-600 text-red-100 hover:bg-red-400",
-        ("gray", false) => "bg-slate-800 text-slate-300 hover:bg-slate-600",
-        _ => "bg-slate-600 text-slate-100 hover:bg-slate-400",
-    };
-    format!("{base} {variant}")
+/// A filter toggle: filled while its rows are showing, quiet while they are
+/// hidden, so the lit state means "these are on screen".
+fn filter_appearance(active: bool) -> &'static str {
+    if active { "filled" } else { "outlined" }
 }
 
 fn is_dark() -> bool {
@@ -80,90 +67,96 @@ pub fn Navbar() -> impl IntoView {
     let ignored = state.ignored_filter;
 
     view! {
-        <nav class="fixed start-0 top-0 z-20 flex w-full items-center gap-1 bg-slate-900 px-4 py-2 text-base text-white">
-            <a href="/" class="flex gap-2">
-                <img src="/icon.svg" alt="OXYROMON" style="height: 40px;" />
+        <nav class="wa-cluster wa-gap-xs fixed start-0 top-0 z-20 w-full" style="
+            flex-wrap: nowrap;
+            padding: var(--wa-space-xs) var(--wa-space-m);
+            background-color: var(--wa-color-surface-raised);
+            border-block-end: 1px solid var(--wa-color-surface-border);
+        ">
+            <a href="/" style="display: flex;">
+                <img src="/icon.svg" alt="oxyROMon" style="height: 2rem;" />
             </a>
 
-            <div class="ml-4 flex items-center gap-1">
-                <button
-                    class="rounded-lg bg-slate-700 p-2.5 hover:bg-slate-600"
-                    title="Import DAT"
-                    on:click=move |_| state.import_dat_modal_open.set(true)
-                >
-                    <Icon path=UPLOAD class="h-5 w-5" />
-                </button>
-            </div>
+            <wa-button
+                appearance="plain"
+                title="Import DAT"
+                on:click=move |_| state.import_dat_modal_open.set(true)
+            >
+                <wa-icon name="upload" label="Import DAT"></wa-icon>
+            </wa-button>
 
-            <div class="grow"></div>
+            <div style="flex: 1;"></div>
 
-            <div class="mx-2">
-                <button
-                    class=move || filter_class("blue", one_region.get())
-                    on:click=move |_| one_region.update(|b| *b = !*b)
-                >
-                    {move || if one_region.get() { "Show All" } else { "Show 1G1R only" }}
-                </button>
-            </div>
+            <wa-button
+                variant="brand"
+                appearance=move || filter_appearance(one_region.get())
+                on:click=move |_| one_region.update(|b| *b = !*b)
+            >
+                {move || if one_region.get() { "1G1R only" } else { "All regions" }}
+            </wa-button>
 
-            <div class="mx-2 flex gap-px">
-                <button
-                    class=move || filter_class("green", complete.get())
+            <wa-button-group label="Completion filters">
+                <wa-button
+                    variant="success"
+                    appearance=move || filter_appearance(complete.get())
                     on:click=move |_| complete.update(|b| *b = !*b)
                 >
-                    {move || if complete.get() { "Hide" } else { "Show" }} " Complete"
-                </button>
-                <button
-                    class=move || filter_class("yellow", incomplete.get())
+                    Complete
+                </wa-button>
+                <wa-button
+                    variant="warning"
+                    appearance=move || filter_appearance(incomplete.get())
                     on:click=move |_| incomplete.update(|b| *b = !*b)
                 >
-                    {move || if incomplete.get() { "Hide" } else { "Show" }} " Incomplete"
-                </button>
-                <button
-                    class=move || filter_class("red", wanted.get())
+                    Incomplete
+                </wa-button>
+                <wa-button
+                    variant="danger"
+                    appearance=move || filter_appearance(wanted.get())
                     on:click=move |_| wanted.update(|b| *b = !*b)
                 >
-                    {move || if wanted.get() { "Hide" } else { "Show" }} " Wanted"
-                </button>
-                <button
-                    class=move || filter_class("gray", ignored.get())
+                    Wanted
+                </wa-button>
+                <wa-button
+                    variant="neutral"
+                    appearance=move || filter_appearance(ignored.get())
                     on:click=move |_| ignored.update(|b| *b = !*b)
                 >
-                    {move || if ignored.get() { "Hide" } else { "Show" }} " Ignored"
-                </button>
-            </div>
+                    Ignored
+                </wa-button>
+            </wa-button-group>
 
-            <div class="mx-2">
-                <input
-                    class="rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-base text-white placeholder-gray-400"
-                    type="search"
-                    placeholder="Game Name"
-                    prop:value=move || state.name_filter.get()
-                    on:input=move |ev| state.name_filter.set(event_target_value(&ev))
-                />
-            </div>
+            <wa-input
+                type="search"
+                placeholder="Game Name"
+                size="small"
+                style="width: 14rem;"
+                prop:value=move || state.name_filter.get()
+                on:wa-input=move |ev: web_sys::Event| {
+                    state.name_filter.set(event_target_value(&ev));
+                }
+            ></wa-input>
 
             <NotificationsButton />
 
-            <div class="mx-2 flex gap-px">
-                <button
-                    class="rounded-lg bg-slate-700 p-2.5 hover:bg-slate-600"
-                    title="Settings"
-                    on:click=move |_| state.settings_modal_open.update(|b| *b = !*b)
-                >
-                    <Icon path=ADJUSTMENTS class="h-5 w-5" />
-                </button>
-                <button
-                    class="rounded-lg bg-slate-700 p-2.5 hover:bg-slate-600"
-                    title="About"
-                    on:click=move |_| state.about_modal_open.update(|b| *b = !*b)
-                >
-                    <Icon path=INFO_CIRCLE class="h-5 w-5" />
-                </button>
-            </div>
+            <wa-button
+                appearance="plain"
+                title="Settings"
+                on:click=move |_| state.settings_modal_open.update(|b| *b = !*b)
+            >
+                <wa-icon name="sliders" label="Settings"></wa-icon>
+            </wa-button>
 
-            <button
-                class="rounded-lg p-2.5 text-slate-300 hover:bg-slate-700"
+            <wa-button
+                appearance="plain"
+                title="About"
+                on:click=move |_| state.about_modal_open.update(|b| *b = !*b)
+            >
+                <wa-icon name="circle-info" label="About"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
                 title="Toggle dark mode"
                 on:click=move |_| {
                     let next = !dark.get();
@@ -171,8 +164,11 @@ pub fn Navbar() -> impl IntoView {
                     dark.set(next);
                 }
             >
-                {move || if dark.get() { "☀" } else { "🌙" }}
-            </button>
+                <wa-icon
+                    name=move || if dark.get() { "sun" } else { "moon" }
+                    label="Toggle dark mode"
+                ></wa-icon>
+            </wa-button>
         </nav>
     }
 }
