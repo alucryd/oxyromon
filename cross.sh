@@ -36,3 +36,15 @@ for target in aarch64-apple-darwin x86_64-apple-darwin; do
     tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
     cargo clean
 done
+
+# The desktop app is built for the host only. Tauri links against the platform's
+# own webview, which the cross images do not carry and which has no cross
+# toolchain to begin with, so the other targets have to be built on their own
+# operating system.
+#
+# NO_STRIP because linuxdeploy bundles a binutils too old to read the .relr.dyn
+# sections modern distributions ship, and fails the AppImage on the first
+# library it tries to strip.
+(cd frontend && trunk build --release)
+(cd desktop && NO_STRIP=true cargo tauri build)
+cp desktop/target/release/bundle/*/*.{deb,rpm,AppImage} dist/

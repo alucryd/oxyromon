@@ -154,7 +154,7 @@ Run from the repository root:
 | `build.sh`     | The CLI with the web UI (`--release --features server`)           |
 | `frontend.sh`  | Just the Leptos SPA (`trunk build --release` in `frontend/`)      |
 | `desktop.sh`   | The Tauri desktop app and its installers                          |
-| `cross.sh`     | Release artifacts for every cross-compiled target                 |
+| `cross.sh`     | Release artifacts for every cross-compiled target, plus the desktop bundles for the host |
 | `docker.sh`    | The two container images, then pushes them                        |
 | `test.sh`      | The test suite under `cargo llvm-cov`, then opens the report      |
 
