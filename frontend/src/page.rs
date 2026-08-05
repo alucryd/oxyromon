@@ -8,9 +8,10 @@ use leptos::task::spawn_local;
 
 use crate::api::purge_system;
 use crate::components::settings_modal::SettingsModal;
-use crate::icons::{CHECK_CIRCLE, CLOSE_CIRCLE, EXCLAMATION_CIRCLE, Icon, Spinner};
-use crate::model::{Game, NotificationKind, Rom, Romfile, System};
+use crate::icons::Spinner;
+use crate::model::{Game, NotificationKind, Rom, Romfile, Sizes, System};
 use crate::state::{AppState, format_bytes};
+use crate::ui::{Modal, StatTile};
 use crate::ui::{ScrollWindow, Spacer};
 
 fn system_color(system: &System) -> &'static str {
@@ -414,88 +415,62 @@ fn RomfilesCard() -> impl IntoView {
 fn StatsCard() -> impl IntoView {
     let state = expect_context::<AppState>();
 
-    let tile = "rounded bg-gray-100 p-2 text-center dark:bg-gray-700";
-    let value = "text-lg font-bold text-gray-900 dark:text-white";
-    let label = "text-xs text-gray-500 dark:text-gray-400";
+    // A figure, or a dash while the number behind it is still being fetched.
+    let counted = move |loading: RwSignal<bool>, count: Memo<usize>| {
+        Signal::derive(move || {
+            if loading.get() {
+                "—".to_string()
+            } else {
+                count.get().to_string()
+            }
+        })
+    };
+    let sized = move |value: fn(&Sizes) -> i64| {
+        Signal::derive(move || {
+            if state.loading_sizes.get() {
+                "—".to_string()
+            } else {
+                state.sizes.with(|sizes| format_bytes(value(sizes)))
+            }
+        })
+    };
 
     view! {
-        <div class="mb-4">
-            <div class="max-w-none overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <div class="px-4 py-2 text-left text-base">Statistics</div>
-                <div class="grid grid-cols-4 gap-2 p-4">
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_systems.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>{move || state.system_count.get()}</p>
-                        </Show>
-                        <p class=label>Systems</p>
-                    </div>
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_games.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>{move || state.game_count.get()}</p>
-                        </Show>
-                        <p class=label>Games</p>
-                    </div>
-                    <div class=tile>
-                        <Show when=move || !state.loading_roms.get() fallback=|| view! { <Spinner /> }>
-                            <p class=value>{move || state.rom_count.get()}</p>
-                        </Show>
-                        <p class=label>ROMs</p>
-                    </div>
-                    <div class=tile>
-                        <Show when=move || !state.loading_roms.get() fallback=|| view! { <Spinner /> }>
-                            <p class=value>{move || state.romfiles.with(Vec::len)}</p>
-                        </Show>
-                        <p class=label>ROM Files</p>
-                    </div>
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_sizes.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>
-                                {move || format_bytes(state.sizes.get().total_original_size)}
-                            </p>
-                        </Show>
-                        <p class=label>Total Size (Original)</p>
-                    </div>
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_sizes.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>
-                                {move || format_bytes(state.sizes.get().one_region_original_size)}
-                            </p>
-                        </Show>
-                        <p class=label>1G1R Size (Original)</p>
-                    </div>
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_sizes.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>{move || format_bytes(state.sizes.get().total_actual_size)}</p>
-                        </Show>
-                        <p class=label>Total Size (Actual)</p>
-                    </div>
-                    <div class=tile>
-                        <Show
-                            when=move || !state.loading_sizes.get()
-                            fallback=|| view! { <Spinner /> }
-                        >
-                            <p class=value>
-                                {move || format_bytes(state.sizes.get().one_region_actual_size)}
-                            </p>
-                        </Show>
-                        <p class=label>1G1R Size (Actual)</p>
-                    </div>
-                </div>
+        <div class="wa-card-surface shrink-0">
+            <div class="wa-card-header">Statistics</div>
+            <div
+                class="wa-grid wa-gap-s"
+                style="--min-column-size: 10rem; padding: var(--wa-space-m);"
+            >
+                <StatTile
+                    label="Systems"
+                    value=counted(state.loading_systems, state.system_count)
+                />
+                <StatTile label="Games" value=counted(state.loading_games, state.game_count) />
+                <StatTile label="ROMs" value=counted(state.loading_roms, state.rom_count) />
+                <StatTile
+                    label="ROM Files"
+                    value=Signal::derive(move || {
+                        if state.loading_roms.get() {
+                            "—".to_string()
+                        } else {
+                            state.romfiles.with(Vec::len).to_string()
+                        }
+                    })
+                />
+                <StatTile
+                    label="Total Size (Original)"
+                    value=sized(|sizes| sizes.total_original_size)
+                />
+                <StatTile
+                    label="1G1R Size (Original)"
+                    value=sized(|sizes| sizes.one_region_original_size)
+                />
+                <StatTile label="Total Size (Actual)" value=sized(|sizes| sizes.total_actual_size) />
+                <StatTile
+                    label="1G1R Size (Actual)"
+                    value=sized(|sizes| sizes.one_region_actual_size)
+                />
             </div>
         </div>
     }
@@ -504,8 +479,7 @@ fn StatsCard() -> impl IntoView {
 #[component]
 fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl IntoView {
     let state = expect_context::<AppState>();
-
-    let name = move || target.get().map(|s| s.name).unwrap_or_default();
+    let name = move || target.get().map(|system| system.name).unwrap_or_default();
 
     let confirm = move |_| {
         if let Some(system) = target.get_untracked() {
@@ -516,43 +490,25 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
     };
 
     view! {
-        <Show when=move || open.get()>
-            <div
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                on:click=move |_| open.set(false)
-            >
-                <div
-                    class="relative w-full max-w-sm rounded-lg bg-white p-6 text-center shadow-xl dark:bg-gray-800"
-                    on:click=|ev| ev.stop_propagation()
-                >
-                    <Icon
-                        path=EXCLAMATION_CIRCLE
-                        class="mx-auto mb-4 h-12 w-12 text-red-500 dark:text-red-400"
-                    />
-                    <h3 class="mb-5 text-lg font-normal text-slate-700 dark:text-slate-300">
-                        {move || format!("Are you sure you want to delete system \"{}\"?", name())}
-                    </h3>
-                    <p class="mb-5 text-sm text-slate-500 dark:text-slate-400">
-                        "This action cannot be undone. All data associated with this system will be permanently removed."
-                    </p>
-                    <button
-                        class="me-2 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-                        on:click=confirm
-                    >
-                        "Yes, I'm sure"
-                    </button>
-                    <button
-                        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                        on:click=move |_| {
-                            open.set(false);
-                            target.set(None);
-                        }
-                    >
-                        "No, cancel"
-                    </button>
-                </div>
+        <Modal open=open title=Signal::derive(|| "Delete system".to_string()) size="xs">
+            <div class="wa-stack wa-gap-m">
+                <wa-callout variant="danger">
+                    <wa-icon slot="icon" name="triangle-exclamation"></wa-icon>
+                    {move || {
+                        format!(
+                            "Everything oxyromon knows about \"{}\" will be removed. Files on disk are left alone.",
+                            name(),
+                        )
+                    }}
+                </wa-callout>
             </div>
-        </Show>
+            <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
+                Cancel
+            </wa-button>
+            <wa-button slot="footer" variant="danger" appearance="filled" on:click=confirm>
+                Delete
+            </wa-button>
+        </Modal>
     }
 }
 
@@ -563,21 +519,18 @@ fn Toast() -> impl IntoView {
         <Show when=move || state.notifier.toast.get().is_some()>
             {move || {
                 let notification = state.notifier.toast.get().unwrap();
-                let (color, icon) = match notification.kind {
-                    NotificationKind::Success => {
-                        ("border-green-500 text-green-500", CHECK_CIRCLE)
-                    }
-                    NotificationKind::Error => ("border-red-500 text-red-500", CLOSE_CIRCLE),
-                    _ => ("border-blue-500 text-blue-500", EXCLAMATION_CIRCLE),
+                let (variant, icon) = match notification.kind {
+                    NotificationKind::Success => ("success", "circle-check"),
+                    NotificationKind::Warning => ("warning", "triangle-exclamation"),
+                    NotificationKind::Error => ("danger", "circle-exclamation"),
+                    NotificationKind::Info => ("brand", "circle-info"),
                 };
                 view! {
-                    <div class=format!(
-                        "fixed right-4 bottom-4 z-50 flex items-center gap-3 rounded-lg border-l-4 bg-white p-4 shadow-lg dark:bg-gray-800 {color}",
-                    )>
-                        <Icon path=icon class="h-5 w-5" />
-                        <span class="text-sm text-slate-700 dark:text-slate-200">
+                    <div style="position: fixed; inset-block-end: var(--wa-space-m); inset-inline-end: var(--wa-space-m); z-index: 60; max-width: 28rem;">
+                        <wa-callout variant=variant appearance="filled-outlined">
+                            <wa-icon slot="icon" name=icon></wa-icon>
                             {notification.message.clone()}
-                        </span>
+                        </wa-callout>
                     </div>
                 }
             }}

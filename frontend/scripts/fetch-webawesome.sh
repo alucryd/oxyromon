@@ -17,7 +17,8 @@ FONTAWESOME_VERSION=7.3.1
 # a dialog would lose its close button.
 ICONS="bars check chevron-down circle-xmark clock copy ellipsis eye eye-slash
 grip-vertical minus pause plus star user xmark
-mug-hot upload download bell sliders circle-info sun moon ellipsis-vertical trash"
+mug-hot upload download bell sliders circle-info sun moon ellipsis-vertical trash
+circle-check circle-exclamation triangle-exclamation"
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 vendor="$root/vendor"

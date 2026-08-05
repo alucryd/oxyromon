@@ -9,7 +9,7 @@ use web_sys::FormData;
 use crate::api::report_error;
 use crate::sse::DATS_ENDPOINT;
 use crate::state::AppState;
-use crate::ui::Modal;
+use crate::ui::{Modal, control_checked};
 
 #[component]
 pub fn ImportDatModal() -> impl IntoView {
@@ -89,84 +89,75 @@ pub fn ImportDatModal() -> impl IntoView {
             title=Signal::derive(|| "Import DAT".to_string())
             size="sm"
         >
-            <div class="space-y-4 text-start">
-                <div
-                    class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+            <div class="wa-stack wa-gap-m">
+                <button
+                    class="plain-button dropzone"
                     on:click=move |_| open_picker()
                     on:drop=on_drop
                     on:dragover=move |ev| ev.prevent_default()
                 >
-                    <wa-icon name="upload" style="font-size: 2rem; color: var(--wa-color-text-quiet);"></wa-icon>
+                    <wa-icon
+                        name="upload"
+                        style="font-size: var(--wa-font-size-2xl); color: var(--wa-color-text-quiet);"
+                    ></wa-icon>
                     <Show
                         when=move || selected.get().is_some()
                         fallback=|| {
                             view! {
-                                <p class="text-sm font-medium">Click or drop a file here</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <span>Click or drop a file here</span>
+                                <small style="color: var(--wa-color-text-quiet);">
                                     "Supported formats: .dat, .zip"
-                                </p>
+                                </small>
                             }
                         }
                     >
                         {move || {
                             let file = selected.get().unwrap();
                             view! {
-                                <p class="text-sm font-medium">{file.name()}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <span style="font-weight: var(--wa-font-weight-semibold);">
+                                    {file.name()}
+                                </span>
+                                <small style="color: var(--wa-color-text-quiet);">
                                     {format!("{:.1} KB", file.size() / 1024.0)}
-                                </p>
+                                </small>
                             }
                         }}
                     </Show>
-                </div>
+                </button>
                 <input
                     node_ref=input_ref
                     type="file"
                     accept=".dat,.zip"
-                    class="hidden"
+                    style="display: none;"
                     on:change=on_change
                 />
 
-                <div class="flex flex-col gap-1">
-                    <label class="inline-flex cursor-pointer items-center gap-2">
-                        <input
-                            type="checkbox"
-                            class="h-4 w-4"
-                            prop:checked=move || update_only.get()
-                            on:change=move |ev| update_only.set(event_target_checked(&ev))
-                        />
-                        <span>Update only</span>
-                    </label>
-                    <p class="ml-6 text-sm text-gray-500 dark:text-gray-400">
-                        "Only import DAT files for systems already in the database."
-                    </p>
-                </div>
-
-                <div class="flex gap-2 pt-2">
-                    <button
-                        class="rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled=move || selected.get().is_none() || importing.get()
-                        on:click=move |_| do_import()
-                    >
-                        {move || if importing.get() { "Importing…" } else { "Import" }}
-                    </button>
-                    <button
-                        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                        on:click=move |_| state.import_dat_modal_open.set(false)
-                    >
-                        Cancel
-                    </button>
-                </div>
+                <wa-switch
+                    hint="Only import DAT files for systems already in the database."
+                    prop:checked=move || update_only.get()
+                    on:change=move |ev| update_only.set(control_checked(&ev))
+                >
+                    Update only
+                </wa-switch>
             </div>
+
+            <wa-button
+                slot="footer"
+                appearance="plain"
+                on:click=move |_| state.import_dat_modal_open.set(false)
+            >
+                Cancel
+            </wa-button>
+            <wa-button
+                slot="footer"
+                variant="brand"
+                appearance="filled"
+                prop:disabled=move || selected.get().is_none() || importing.get()
+                prop:loading=move || importing.get()
+                on:click=move |_| do_import()
+            >
+                Import
+            </wa-button>
         </Modal>
     }
-}
-
-/// Read the `checked` state of a checkbox event target.
-fn event_target_checked(ev: &web_sys::Event) -> bool {
-    use wasm_bindgen::JsCast;
-    ev.target()
-        .and_then(|t| t.dyn_into::<web_sys::HtmlInputElement>().ok())
-        .map(|el| el.checked())
-        .unwrap_or(false)
 }

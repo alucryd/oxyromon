@@ -14,7 +14,7 @@ pub fn NotificationsButton() -> impl IntoView {
     let has_any = move || !notifications.get().is_empty();
 
     view! {
-        <div class="relative">
+        <div style="position: relative;">
             <wa-button
                 appearance="plain"
                 title="Notifications"
@@ -22,17 +22,28 @@ pub fn NotificationsButton() -> impl IntoView {
             >
                 <wa-icon name="bell" label="Notifications"></wa-icon>
                 <Show when=move || has_any()>
-                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white">
+                    <wa-badge
+                        variant="danger"
+                        pill=""
+                        style="position: absolute; inset-block-start: 0; inset-inline-end: 0;"
+                    >
                         {move || if count() > 99 { "99+".to_string() } else { count().to_string() }}
-                    </span>
+                    </wa-badge>
                 </Show>
             </wa-button>
 
             <Show when=move || open.get()>
-                <div class="fixed inset-0 z-30" on:click=move |_| open.set(false)></div>
-                <div class="absolute top-full right-0 z-40 mt-1 flex w-80 flex-col rounded-lg border border-slate-600 bg-slate-800 shadow-xl">
-                    <div class="flex items-center justify-between border-b border-slate-600 px-3 py-2">
-                        <span class="text-sm font-semibold text-slate-200">Notifications</span>
+                // Closes when the click lands anywhere else.
+                <div
+                    style="position: fixed; inset: 0; z-index: 30;"
+                    on:click=move |_| open.set(false)
+                ></div>
+                <div
+                    class="wa-card-surface"
+                    style="position: absolute; inset-inline-end: 0; top: 100%; z-index: 40; margin-block-start: var(--wa-space-2xs); width: 20rem;"
+                >
+                    <div class="wa-card-header wa-split" style="align-items: center;">
+                        <span>Notifications</span>
                         <Show when=move || has_any()>
                             <wa-button
                                 appearance="plain"
@@ -43,34 +54,34 @@ pub fn NotificationsButton() -> impl IntoView {
                             </wa-button>
                         </Show>
                     </div>
-                    <div class="max-h-80 overflow-y-auto">
+                    <div style="max-height: 20rem; overflow-y: auto;">
                         <Show
                             when=move || has_any()
                             fallback=|| {
                                 view! {
-                                    <p class="px-3 py-4 text-center text-sm text-slate-400">
+                                    <p style="padding: var(--wa-space-m); text-align: center; color: var(--wa-color-text-quiet);">
                                         No notifications
                                     </p>
                                 }
                             }
                         >
-                            <For
-                                each=move || notifications.get()
-                                key=|n| n.id
-                                let:notification
-                            >
-                                <div class="flex items-start gap-2 border-b border-slate-700 px-3 py-2 last:border-0">
-                                    <span class=format!(
-                                        "mt-1.5 h-2 w-2 shrink-0 rounded-full {}",
-                                        notification.kind.dot_class(),
-                                    )></span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-sm text-slate-200">
-                                            {notification.message.clone()}
-                                        </p>
-                                        <p class="text-xs text-slate-500">
+                            <For each=move || notifications.get() key=|n| n.id let:notification>
+                                <div
+                                    class="wa-flank wa-gap-2xs"
+                                    style="align-items: start; padding: var(--wa-space-2xs) var(--wa-space-s); border-block-end: 1px solid var(--wa-color-surface-border);"
+                                >
+                                    <wa-icon
+                                        name=notification.kind.icon()
+                                        style=format!(
+                                            "color: var(--wa-color-{}-fill-loud); margin-block-start: 0.25rem;",
+                                            notification.kind.variant(),
+                                        )
+                                    ></wa-icon>
+                                    <div class="wa-stack wa-gap-3xs">
+                                        <span>{notification.message.clone()}</span>
+                                        <small style="color: var(--wa-color-text-quiet);">
                                             {notification.time.clone()}
-                                        </p>
+                                        </small>
                                     </div>
                                 </div>
                             </For>

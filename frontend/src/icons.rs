@@ -1,45 +1,12 @@
-//! The few inline SVG icons still drawn by hand.
+//! The loading spinner.
 //!
-//! Everything else now uses `<wa-icon>`, whose icons are vendored from Font
-//! Awesome. What is left are the ones inside the toast and the spinner, which
-//! have not been converted yet.
+//! Every other icon is a `<wa-icon>`, drawn from the Font Awesome set vendored
+//! alongside Web Awesome. This one stays hand-rolled because it is animated and
+//! sized from its class rather than named.
 
 use leptos::prelude::*;
 
-// Path data (viewBox 0 0 24 24).
-pub const EXCLAMATION_CIRCLE: &str =
-    "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z";
-pub const CHECK_CIRCLE: &str = "M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z";
-pub const CLOSE_CIRCLE: &str =
-    "m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z";
-
-#[component]
-pub fn Icon(
-    /// SVG path data (one of the `pub const` strings in this module).
-    #[prop(into)]
-    path: &'static str,
-    #[prop(optional, into)] class: String,
-) -> impl IntoView {
-    let class = if class.is_empty() {
-        "h-4 w-4".to_string()
-    } else {
-        class
-    };
-    view! {
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class=class
-        >
-            <path stroke-linecap="round" stroke-linejoin="round" d=path></path>
-        </svg>
-    }
-}
-
-/// Animated loading spinner (replaces flowbite's `Spinner`).
+/// Animated loading spinner.
 #[component]
 pub fn Spinner(#[prop(optional, into)] class: String) -> impl IntoView {
     let class = if class.is_empty() {

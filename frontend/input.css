@@ -60,10 +60,12 @@
      row, or a bare icon target. Web Awesome's reset gives native buttons real
      button chrome, which is right in general and wrong for these. */
   .plain-button {
-    /* Block, because Web Awesome's reset makes native buttons centred flex
-       containers — which would centre a row label that should read from the
-       leading edge. */
+    /* Web Awesome's reset gives a native button a fixed height, centred flex
+       layout and nowrap text. All three are right for a button and wrong for a
+       row or a drop target, so undo them along with the rest of the chrome. */
     display: block;
+    height: auto;
+    white-space: normal;
     appearance: none;
     margin: 0;
     padding: 0;
@@ -90,6 +92,25 @@
     font-weight: var(--wa-font-weight-semibold);
     background-color: var(--wa-color-surface-lowered);
     border-block-end: 1px solid var(--wa-color-surface-border);
+  }
+
+  /* The click-or-drop target in the import dialog. Lays itself out rather than
+     borrowing wa-stack, because .plain-button above sets display: block and
+     would win over it. */
+  .dropzone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-2xs);
+    width: 100%;
+    align-items: center;
+    padding: var(--wa-space-xl);
+    text-align: center;
+    border: 2px dashed var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  .dropzone:hover {
+    border-color: var(--wa-color-brand-fill-loud);
   }
 
   .list-row {

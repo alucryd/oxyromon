@@ -94,12 +94,22 @@ pub enum NotificationKind {
 }
 
 impl NotificationKind {
-    pub fn dot_class(self) -> &'static str {
+    /// The Web Awesome colour variant that carries this meaning.
+    pub fn variant(self) -> &'static str {
         match self {
-            NotificationKind::Info => "bg-sky-400",
-            NotificationKind::Success => "bg-emerald-400",
-            NotificationKind::Warning => "bg-amber-400",
-            NotificationKind::Error => "bg-rose-400",
+            NotificationKind::Info => "brand",
+            NotificationKind::Success => "success",
+            NotificationKind::Warning => "warning",
+            NotificationKind::Error => "danger",
+        }
+    }
+
+    pub fn icon(self) -> &'static str {
+        match self {
+            NotificationKind::Info => "circle-info",
+            NotificationKind::Success => "circle-check",
+            NotificationKind::Warning => "triangle-exclamation",
+            NotificationKind::Error => "circle-exclamation",
         }
     }
 }

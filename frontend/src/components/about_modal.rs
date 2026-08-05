@@ -6,22 +6,7 @@ use leptos::task::spawn_local;
 use crate::api::{get_info, report_error};
 use crate::model::Info;
 use crate::state::AppState;
-use crate::ui::Modal;
-
-/// One statistic, as a filled card.
-#[component]
-fn Stat(label: &'static str, value: Signal<Option<i64>>) -> impl IntoView {
-    view! {
-        <wa-card appearance="filled-outlined">
-            <div class="wa-stack wa-gap-3xs" style="align-items: center;">
-                <span style="font-size: var(--wa-font-size-xl); font-weight: var(--wa-font-weight-bold);">
-                    {move || value.get().map(|value| value.to_string()).unwrap_or_default()}
-                </span>
-                <small style="color: var(--wa-color-text-quiet);">{label}</small>
-            </div>
-        </wa-card>
-    }
-}
+use crate::ui::{Modal, StatTile};
 
 #[component]
 pub fn AboutModal() -> impl IntoView {
@@ -62,9 +47,24 @@ pub fn AboutModal() -> impl IntoView {
                 <wa-divider></wa-divider>
 
                 <div class="wa-grid wa-gap-s" style="--min-column-size: 6rem;">
-                    <Stat label="Systems" value=Signal::derive(move || info.get().map(|info| info.system_count)) />
-                    <Stat label="Games" value=Signal::derive(move || info.get().map(|info| info.game_count)) />
-                    <Stat label="ROMs" value=Signal::derive(move || info.get().map(|info| info.rom_count)) />
+                    <StatTile
+                        label="Systems"
+                        value=Signal::derive(move || {
+                            info.get().map(|info| info.system_count.to_string()).unwrap_or_default()
+                        })
+                    />
+                    <StatTile
+                        label="Games"
+                        value=Signal::derive(move || {
+                            info.get().map(|info| info.game_count.to_string()).unwrap_or_default()
+                        })
+                    />
+                    <StatTile
+                        label="ROMs"
+                        value=Signal::derive(move || {
+                            info.get().map(|info| info.rom_count.to_string()).unwrap_or_default()
+                        })
+                    />
                 </div>
 
                 <div class="wa-stack wa-gap-xs">
