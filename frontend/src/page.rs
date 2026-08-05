@@ -10,7 +10,7 @@ use crate::api::purge_system;
 use crate::components::settings_modal::SettingsModal;
 use crate::model::{Game, NotificationKind, Rom, Romfile, Sizes, System};
 use crate::state::{AppState, format_bytes};
-use crate::ui::{Modal, StatTile};
+use crate::ui::{Modal, StatTile, control_number, use_media_query};
 use crate::ui::{ScrollWindow, Spacer};
 
 fn system_color(system: &System) -> &'static str {
@@ -67,61 +67,151 @@ fn CardHeader(title: &'static str, loading: RwSignal<bool>) -> impl IntoView {
     }
 }
 
+/// The modals the systems list opens. Grouped into one `Copy` struct so the
+/// panes can be laid out two different ways without threading five props
+/// through each of them.
+#[derive(Clone, Copy)]
+struct SystemModals {
+    settings_open: RwSignal<bool>,
+    settings_id: RwSignal<Option<i64>>,
+    settings_title: RwSignal<String>,
+    delete_open: RwSignal<bool>,
+    delete_target: RwSignal<Option<System>>,
+}
+
+/// Widths of the two dividers, as a percentage of their container, remembered
+/// across visits. The defaults reproduce the 2:3:5 split the panes had while
+/// they were a fixed grid.
+const OUTER_POSITION: (&str, f64) = ("panes-outer", 20.0);
+const INNER_POSITION: (&str, f64) = ("panes-inner", 37.5);
+
+fn stored_position((key, default): (&str, f64)) -> f64 {
+    web_sys::window()
+        .and_then(|window| window.local_storage().ok().flatten())
+        .and_then(|storage| storage.get_item(key).ok().flatten())
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(default)
+}
+
+/// Remember where a divider was dropped.
+///
+/// `wa-reposition` bubbles, so the outer split panel also hears the inner one
+/// move; without the target check it would file the inner divider's position
+/// under its own key.
+fn remember_position(event: &web_sys::Event, key: &str) {
+    if event.target() != event.current_target() {
+        return;
+    }
+    let Some(position) = control_number(event, "position") else {
+        return;
+    };
+    if let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    {
+        let _ = storage.set_item(key, &position.to_string());
+    }
+}
+
 #[component]
 pub fn Page() -> impl IntoView {
-    // Per-system settings modal state (distinct from the global one).
-    let sys_settings_open = RwSignal::new(false);
-    let sys_settings_id = RwSignal::new(Option::<i64>::None);
-    let sys_settings_title = RwSignal::new("Settings".to_string());
-
-    // Delete confirmation modal state.
-    let delete_open = RwSignal::new(false);
-    let delete_target = RwSignal::new(Option::<System>::None);
+    let modals = SystemModals {
+        // Per-system settings modal state (distinct from the global one).
+        settings_open: RwSignal::new(false),
+        settings_id: RwSignal::new(Option::<i64>::None),
+        settings_title: RwSignal::new("Settings".to_string()),
+        delete_open: RwSignal::new(false),
+        delete_target: RwSignal::new(Option::<System>::None),
+    };
 
     view! {
         <div class="page">
-            <div class="panes">
-                <div class="pane">
-                    <SystemsCard
-                        sys_settings_open=sys_settings_open
-                        sys_settings_id=sys_settings_id
-                        sys_settings_title=sys_settings_title
-                        delete_open=delete_open
-                        delete_target=delete_target
-                    />
-                </div>
-                <div class="pane">
-                    <GamesCard />
-                </div>
-                <div class="pane">
-                    <RomsCard />
-                    <RomfilesCard />
-                </div>
-            </div>
+            <Panes modals=modals />
 
             <StatsCard />
 
             <SettingsModal
-                open=sys_settings_open
-                system_id=sys_settings_id
-                title=sys_settings_title
+                open=modals.settings_open
+                system_id=modals.settings_id
+                title=modals.settings_title
             />
 
-            <DeleteModal open=delete_open target=delete_target />
+            <DeleteModal open=modals.delete_open target=modals.delete_target />
 
             <Toast />
         </div>
     }
 }
 
+/// The three lists.
+///
+/// Wide enough and they are columns the user can resize; narrower and they
+/// stack, because a draggable divider is meaningless once everything is the
+/// full width of the window. That is a different tree rather than different
+/// rules, which is why it is a `Show` and not a media query in the stylesheet.
 #[component]
-fn SystemsCard(
-    sys_settings_open: RwSignal<bool>,
-    sys_settings_id: RwSignal<Option<i64>>,
-    sys_settings_title: RwSignal<String>,
-    delete_open: RwSignal<bool>,
-    delete_target: RwSignal<Option<System>>,
-) -> impl IntoView {
+fn Panes(modals: SystemModals) -> impl IntoView {
+    let wide = use_media_query("(min-width: 1100px)");
+
+    view! {
+        <Show
+            when=move || wide.get()
+            fallback=move || {
+                view! {
+                    <div class="panes">
+                        <div class="pane">
+                            <SystemsCard modals=modals />
+                        </div>
+                        <div class="pane">
+                            <GamesCard />
+                        </div>
+                        <div class="pane">
+                            <RomsCard />
+                            <RomfilesCard />
+                        </div>
+                    </div>
+                }
+            }
+        >
+            <wa-split-panel
+                class="panes-split"
+                prop:position=stored_position(OUTER_POSITION)
+                on:wa-reposition=move |event: web_sys::Event| {
+                    remember_position(&event, OUTER_POSITION.0)
+                }
+            >
+                <div slot="start" class="pane">
+                    <SystemsCard modals=modals />
+                </div>
+                <div slot="end" class="pane-split-end">
+                    <wa-split-panel
+                        class="panes-split"
+                        prop:position=stored_position(INNER_POSITION)
+                        on:wa-reposition=move |event: web_sys::Event| {
+                            remember_position(&event, INNER_POSITION.0)
+                        }
+                    >
+                        <div slot="start" class="pane">
+                            <GamesCard />
+                        </div>
+                        <div slot="end" class="pane">
+                            <RomsCard />
+                            <RomfilesCard />
+                        </div>
+                    </wa-split-panel>
+                </div>
+            </wa-split-panel>
+        </Show>
+    }
+}
+
+#[component]
+fn SystemsCard(modals: SystemModals) -> impl IntoView {
+    let SystemModals {
+        settings_open: sys_settings_open,
+        settings_id: sys_settings_id,
+        settings_title: sys_settings_title,
+        delete_open,
+        delete_target,
+    } = modals;
     let state = expect_context::<AppState>();
     // Which system's action dropdown is open (-1 = none).
     let open_dropdown = RwSignal::new(-1_i64);

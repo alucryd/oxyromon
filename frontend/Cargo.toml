@@ -28,6 +28,8 @@ web-sys = { version = "0.3", features = [
     "DragEvent",
     "HtmlInputElement",
     "HtmlDocument",
+    "MediaQueryList",
+    "MediaQueryListEvent",
     "Storage",
     "Window",
 ] }

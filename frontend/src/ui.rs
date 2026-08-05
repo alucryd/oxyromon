@@ -27,6 +27,40 @@ pub fn control_checked(event: &web_sys::Event) -> bool {
         .unwrap_or(false)
 }
 
+/// As [`control_value`], for a numeric property such as a split panel's
+/// `position`.
+pub fn control_number(event: &web_sys::Event, property: &str) -> Option<f64> {
+    event
+        .target()
+        .and_then(|target| js_sys::Reflect::get(&target, &JsValue::from_str(property)).ok())
+        .and_then(|value| value.as_f64())
+}
+
+/// A reactive `matchMedia` query.
+///
+/// Media queries belong in the stylesheet; this exists for the one case CSS
+/// cannot express — swapping the panes between a stack and a set of nested
+/// split panels, which is a different tree, not different rules.
+pub fn use_media_query(query: &str) -> Signal<bool> {
+    let matches = RwSignal::new(false);
+    if let Some(list) = web_sys::window()
+        .and_then(|window| window.match_media(query).ok())
+        .flatten()
+    {
+        matches.set(list.matches());
+        let listener = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MediaQueryListEvent)>::new(
+            move |event: web_sys::MediaQueryListEvent| matches.set(event.matches()),
+        );
+        let _ = list.add_event_listener_with_callback(
+            "change",
+            wasm_bindgen::JsCast::unchecked_ref(listener.as_ref()),
+        );
+        // The app lives for as long as the page does, and so does the query.
+        listener.forget();
+    }
+    matches.into()
+}
+
 use crate::state::ROW_HEIGHT;
 
 /// Tracks how far a scroll container has been scrolled and how tall it is, so a

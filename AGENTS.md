@@ -335,7 +335,7 @@ endpoints, so `server.rs` is unchanged by the framework choice.
 | `frontend/src/api.rs`                  | GraphQL client + query/mutation helpers                    |
 | `frontend/src/sse.rs`                  | SSE client + notification helpers                          |
 | `frontend/src/model.rs`                | Serde types mirroring the GraphQL responses                |
-| `frontend/src/ui.rs` / `icons.rs`      | Reusable modal/pagination + inline SVG icons               |
+| `frontend/src/ui.rs` / `icons.rs`      | Reusable modal/windowing/media-query helpers + inline SVG icons |
 
 ### Frontend Dev
 
@@ -372,6 +372,11 @@ tag; two things are worth knowing:
   `on:` name onto `Custom::new(...)`, but cannot infer the payload:
   `on:wa-after-hide=move |_: web_sys::Event| ...`. Known events (`on:click`)
   keep their own type and must *not* be annotated as `web_sys::Event`.
+- **Custom events bubble.** They are dispatched `{ bubbles: true, composed:
+  true }`, so a component nested inside another of the same kind — a
+  `wa-split-panel` inside a `wa-split-panel` — delivers its events to the
+  outer one's handler too. Compare `target` against `currentTarget` when that
+  matters.
 
 Two things about the cascade, both of which cost real debugging:
 

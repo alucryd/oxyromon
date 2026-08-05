@@ -80,10 +80,50 @@
     gap: var(--wa-space-m);
   }
 
+  /* The three columns, once the panes are wide enough to be columns at all.
+     The divider is the gap: it is as wide as the gap between the stacked panes
+     and normally invisible, showing a line only while it is being used. */
+  .panes-split {
+    --divider-width: var(--wa-space-m);
+    --min: 12rem;
+    --max: calc(100% - 24rem);
+
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Slotted panes fill the cell the split panel gives them rather than sizing
+     to their own content. */
+  .panes-split > .pane,
+  .panes-split > .pane-split-end {
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .panes-split::part(divider) {
+    background-color: transparent;
+  }
+
+  .panes-split::part(divider):hover,
+  .panes-split::part(divider):focus-visible {
+    background-color: var(--wa-color-brand-fill-loud);
+  }
+
+  /* The middle of the outer split is itself a split, not a pane. */
+  .pane-split-end {
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+  }
+
   /* Three columns only once there is genuinely room for them. The panes used to
      split at 768px, where the games column was already too narrow to read a
      name in. Below this the panes stack and the page scrolls as one; above it
-     the page is pinned to the viewport and each pane scrolls on its own. */
+     the page is pinned to the viewport and each pane scrolls on its own. This
+     has to stay in step with the query in `Panes`, which swaps the stack for
+     the split panels. */
   @media (min-width: 1100px) {
     .page {
       height: 100vh;
