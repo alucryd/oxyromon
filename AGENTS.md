@@ -153,7 +153,7 @@ Run from the repository root:
 | -------------- | ----------------------------------------------------------------- |
 | `build.sh`     | The web UI, then the CLI with it embedded (`--release --features server`) |
 | `desktop.sh`   | The Tauri desktop app and its installers                          |
-| `cross.sh`     | Release artifacts for every cross-compiled target, plus the desktop bundles for the host |
+| `dist.sh`      | Release artifacts for every cross-compiled target, plus the desktop bundles for the host, into `dist/` |
 | `docker.sh`    | The two container images, then pushes them                        |
 | `test.sh`      | The test suite under `cargo llvm-cov`, then opens the report      |
 
