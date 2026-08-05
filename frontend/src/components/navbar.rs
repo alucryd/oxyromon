@@ -6,6 +6,7 @@ use leptos::prelude::*;
 
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
+use crate::ui::control_value;
 
 /// A filter toggle: filled while its rows are showing, quiet while they are
 /// hidden, so the lit state means "these are on screen".
@@ -132,9 +133,7 @@ pub fn Navbar() -> impl IntoView {
                 size="small"
                 style="width: 14rem;"
                 prop:value=move || state.name_filter.get()
-                on:wa-input=move |ev: web_sys::Event| {
-                    state.name_filter.set(event_target_value(&ev));
-                }
+                on:input=move |ev| state.name_filter.set(control_value(&ev))
             ></wa-input>
 
             <NotificationsButton />

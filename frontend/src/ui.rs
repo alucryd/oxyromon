@@ -2,6 +2,30 @@
 //! to keep long lists cheap to draw.
 
 use leptos::prelude::*;
+use wasm_bindgen::JsValue;
+
+/// Read a `value` property off the element that raised an event.
+///
+/// Web Awesome's form controls re-dispatch the native `input` and `change`
+/// events from the custom element itself, so the target is a `<wa-*>` rather
+/// than the `<input>` inside its shadow root — which is why `event_target_value`
+/// comes back empty for them.
+pub fn control_value(event: &web_sys::Event) -> String {
+    event
+        .target()
+        .and_then(|target| js_sys::Reflect::get(&target, &JsValue::from_str("value")).ok())
+        .and_then(|value| value.as_string())
+        .unwrap_or_default()
+}
+
+/// As [`control_value`], for the `checked` property of a switch or checkbox.
+pub fn control_checked(event: &web_sys::Event) -> bool {
+    event
+        .target()
+        .and_then(|target| js_sys::Reflect::get(&target, &JsValue::from_str("checked")).ok())
+        .and_then(|checked| checked.as_bool())
+        .unwrap_or(false)
+}
 
 use crate::state::ROW_HEIGHT;
 

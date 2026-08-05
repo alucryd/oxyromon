@@ -19,7 +19,7 @@ use crate::state::{
     PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY,
     SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY, split_list,
 };
-use crate::ui::Modal;
+use crate::ui::{Modal, control_checked, control_value};
 
 /// All the local, editable copies of the settings shown in the modal.
 #[derive(Clone, Copy)]
@@ -177,219 +177,227 @@ pub fn SettingsModal(
 
     view! {
         <Modal open=open title=title size="xl">
-            <div class="grid grid-cols-2 gap-x-8 text-start">
-                // Left column: directories + regions/languages.
-                <div class="space-y-4">
-                    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                        DIRECTORIES
-                    </h6>
-                    <DirectoryField
-                        label="ROM Directory"
-                        value=local.rom_directory
-                        on_change=Callback::new(move |v| change_directory(ROM_DIRECTORY_KEY, v))
-                    />
-                    <DirectoryField
-                        label="TMP Directory"
-                        value=local.tmp_directory
-                        on_change=Callback::new(move |v| change_directory(TMP_DIRECTORY_KEY, v))
-                    />
-                    <ToggleField
-                        label="Group Subsystems"
-                        value=local.group_subsystems
-                        on_toggle=Callback::new(move |v| toggle(GROUP_SUBSYSTEMS_KEY, v))
-                    />
-                    <SelectField
-                        label="1G1R Subfolders"
-                        value=local.one_regions_subfolders
-                        choices=&SUBFOLDER_SCHEMES_CHOICES
-                        on_select=Callback::new(move |v| {
-                            choose_subfolder(ONE_REGIONS_SUBFOLDERS_KEY, v)
-                        })
-                    />
-                    <SelectField
-                        label="All Subfolders"
-                        value=local.all_regions_subfolders
-                        choices=&SUBFOLDER_SCHEMES_CHOICES
-                        on_select=Callback::new(move |v| {
-                            choose_subfolder(ALL_REGIONS_SUBFOLDERS_KEY, v)
-                        })
-                    />
+            // Two columns where there is room, one when there is not.
+            <div class="wa-grid wa-gap-xl" style="--min-column-size: 18rem;">
+                <div class="wa-stack wa-gap-l">
+                    <SettingsSection title="Directories">
+                        <DirectoryField
+                            label="ROM Directory"
+                            hint="Root directory where ROMs will be stored"
+                            value=local.rom_directory
+                            on_change=Callback::new(move |v| change_directory(ROM_DIRECTORY_KEY, v))
+                        />
+                        <DirectoryField
+                            label="TMP Directory"
+                            hint="Temporary directory where ROMs will be extracted"
+                            value=local.tmp_directory
+                            on_change=Callback::new(move |v| change_directory(TMP_DIRECTORY_KEY, v))
+                        />
+                        <ToggleField
+                            label="Group Subsystems"
+                            hint="Group subsystems in the main system directory (eg: PS3 DLCs and updates)"
+                            value=local.group_subsystems
+                            on_toggle=Callback::new(move |v| toggle(GROUP_SUBSYSTEMS_KEY, v))
+                        />
+                        <SelectField
+                            label="1G1R Subfolders"
+                            hint="Store 1G1R games in subfolders"
+                            value=local.one_regions_subfolders
+                            choices=&SUBFOLDER_SCHEMES_CHOICES
+                            on_select=Callback::new(move |v| {
+                                choose_subfolder(ONE_REGIONS_SUBFOLDERS_KEY, v)
+                            })
+                        />
+                        <SelectField
+                            label="All Subfolders"
+                            hint="Store all games in subfolders"
+                            value=local.all_regions_subfolders
+                            choices=&SUBFOLDER_SCHEMES_CHOICES
+                            on_select=Callback::new(move |v| {
+                                choose_subfolder(ALL_REGIONS_SUBFOLDERS_KEY, v)
+                            })
+                        />
+                    </SettingsSection>
 
-                    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                        REGIONS/LANGUAGES
-                    </h6>
-                    <ListField
-                        label="1G1R Regions"
-                        placeholder="1G1R Regions"
-                        setting_key=ONE_REGIONS_KEY
-                        items=local.one_regions
-                        system_id=system_id
-                        reload=reload
-                    />
-                    <ListField
-                        label="All Regions"
-                        placeholder="All Regions"
-                        setting_key=ALL_REGIONS_KEY
-                        items=local.all_regions
-                        system_id=system_id
-                        reload=reload
-                    />
-                    <ListField
-                        label="Languages"
-                        placeholder="Languages"
-                        setting_key=LANGUAGES_KEY
-                        items=local.languages
-                        system_id=system_id
-                        reload=reload
-                    />
+                    <SettingsSection title="Regions and languages">
+                        <ListField
+                            label="1G1R Regions"
+                            hint="2 letters, uppercase, ordered"
+                            setting_key=ONE_REGIONS_KEY
+                            items=local.one_regions
+                            system_id=system_id
+                            reload=reload
+                        />
+                        <ListField
+                            label="All Regions"
+                            hint="2 letters, uppercase, unordered"
+                            setting_key=ALL_REGIONS_KEY
+                            items=local.all_regions
+                            system_id=system_id
+                            reload=reload
+                        />
+                        <ListField
+                            label="Languages"
+                            hint="2 letters, capitalized"
+                            setting_key=LANGUAGES_KEY
+                            items=local.languages
+                            system_id=system_id
+                            reload=reload
+                        />
+                    </SettingsSection>
                 </div>
 
-                // Right column: sorting + filters.
-                <div class="space-y-4">
-                    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                        SORTING
-                    </h6>
-                    <ToggleField
-                        label="Strict 1G1R"
-                        value=local.strict_one_regions
-                        on_toggle=Callback::new(move |v| toggle(STRICT_ONE_REGIONS_KEY, v))
-                    />
-                    <ToggleField
-                        label="Prefer Parents"
-                        value=local.prefer_parents
-                        on_toggle=Callback::new(move |v| toggle(PREFER_PARENTS_KEY, v))
-                    />
-                    <SelectField
-                        label="Prefer Regions"
-                        value=local.prefer_regions
-                        choices=&PREFER_REGIONS_CHOICES
-                        on_select=Callback::new(choose_prefer_regions)
-                    />
-                    <SelectField
-                        label="Prefer Versions"
-                        value=local.prefer_versions
-                        choices=&PREFER_VERSIONS_CHOICES
-                        on_select=Callback::new(choose_prefer_versions)
-                    />
-                    <ListField
-                        label="Prefer Flags"
-                        placeholder="Prefer Flags"
-                        setting_key=PREFER_FLAGS_KEY
-                        items=local.prefer_flags
-                        system_id=system_id
-                        reload=reload
-                    />
+                <div class="wa-stack wa-gap-l">
+                    <SettingsSection title="Sorting">
+                        <ToggleField
+                            label="Strict 1G1R"
+                            hint="Strict mode elects games regardless of their completion"
+                            value=local.strict_one_regions
+                            on_toggle=Callback::new(move |v| toggle(STRICT_ONE_REGIONS_KEY, v))
+                        />
+                        <ToggleField
+                            label="Prefer Parents"
+                            hint="Favor parents vs clones in the election process"
+                            value=local.prefer_parents
+                            on_toggle=Callback::new(move |v| toggle(PREFER_PARENTS_KEY, v))
+                        />
+                        <SelectField
+                            label="Prefer Regions"
+                            hint="Broad favors games targeting more regions, narrow favors fewer"
+                            value=local.prefer_regions
+                            choices=&PREFER_REGIONS_CHOICES
+                            on_select=Callback::new(move |v| choose_prefer_regions(v))
+                        />
+                        <SelectField
+                            label="Prefer Versions"
+                            hint="New favors newer revisions, old favors older"
+                            value=local.prefer_versions
+                            choices=&PREFER_VERSIONS_CHOICES
+                            on_select=Callback::new(move |v| choose_prefer_versions(v))
+                        />
+                        <ListField
+                            label="Prefer Flags"
+                            hint="Favors specific flags in the election process"
+                            setting_key=PREFER_FLAGS_KEY
+                            items=local.prefer_flags
+                            system_id=system_id
+                            reload=reload
+                        />
+                    </SettingsSection>
 
-                    <h6 class="text-sm font-medium text-gray-500 uppercase dark:text-gray-400">
-                        FILTERS
-                    </h6>
-                    <ListField
-                        label="Discard Releases"
-                        placeholder="Discard Releases"
-                        setting_key=DISCARD_RELEASES_KEY
-                        items=local.discard_releases
-                        system_id=system_id
-                        reload=reload
-                    />
-                    <ListField
-                        label="Discard Flags"
-                        placeholder="Discard Flags"
-                        setting_key=DISCARD_FLAGS_KEY
-                        items=local.discard_flags
-                        system_id=system_id
-                        reload=reload
-                    />
+                    <SettingsSection title="Filters">
+                        <ListField
+                            label="Discard Releases"
+                            hint="Discard specific releases"
+                            setting_key=DISCARD_RELEASES_KEY
+                            items=local.discard_releases
+                            system_id=system_id
+                            reload=reload
+                        />
+                        <ListField
+                            label="Discard Flags"
+                            hint="Discard specific flags"
+                            setting_key=DISCARD_FLAGS_KEY
+                            items=local.discard_flags
+                            system_id=system_id
+                            reload=reload
+                        />
+                    </SettingsSection>
                 </div>
             </div>
         </Modal>
     }
 }
 
-const LABEL: &str = "mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300";
-const INPUT: &str = "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white";
+/// A titled group of settings.
+#[component]
+fn SettingsSection(title: &'static str, children: Children) -> impl IntoView {
+    view! {
+        <div class="wa-stack wa-gap-m">
+            <div class="wa-stack wa-gap-3xs">
+                <strong>{title}</strong>
+                <wa-divider style="--spacing: 0;"></wa-divider>
+            </div>
+            {children()}
+        </div>
+    }
+}
 
 #[component]
 fn DirectoryField(
     #[prop(into)] label: String,
+    #[prop(into)] hint: String,
     value: RwSignal<String>,
     on_change: Callback<String>,
 ) -> impl IntoView {
     view! {
-        <div class="mb-4">
-            <label class=LABEL>{label}</label>
-            <input
-                class=INPUT
-                prop:value=move || value.get()
-                on:input=move |ev| value.set(event_target_value(&ev))
-                on:change=move |ev| on_change.run(event_target_value(&ev))
-            />
-        </div>
+        <wa-input
+            label=label
+            hint=hint
+            prop:value=move || value.get()
+            on:change=move |ev| {
+                let entered = control_value(&ev);
+                value.set(entered.clone());
+                on_change.run(entered);
+            }
+        ></wa-input>
     }
 }
 
 #[component]
 fn ToggleField(
     #[prop(into)] label: String,
+    #[prop(into)] hint: String,
     value: RwSignal<bool>,
     on_toggle: Callback<bool>,
 ) -> impl IntoView {
     view! {
-        <div class="mb-4">
-            <label class="inline-flex cursor-pointer items-center gap-2">
-                <input
-                    type="checkbox"
-                    class="h-4 w-4"
-                    prop:checked=move || value.get()
-                    on:change=move |_| {
-                        let next = !value.get_untracked();
-                        value.set(next);
-                        on_toggle.run(next);
-                    }
-                />
-                <span>{label}</span>
-            </label>
-        </div>
+        <wa-switch
+            hint=hint
+            prop:checked=move || value.get()
+            on:change=move |ev| {
+                let checked = control_checked(&ev);
+                value.set(checked);
+                on_toggle.run(checked);
+            }
+        >
+            {label}
+        </wa-switch>
     }
 }
 
 #[component]
 fn SelectField(
     #[prop(into)] label: String,
+    #[prop(into)] hint: String,
     value: RwSignal<String>,
     choices: &'static [&'static str],
     on_select: Callback<String>,
 ) -> impl IntoView {
     view! {
-        <div class="mb-4">
-            <label class=LABEL>{label}</label>
-            <select
-                class=INPUT
-                prop:value=move || value.get()
-                on:change=move |ev| {
-                    let v = event_target_value(&ev);
-                    value.set(v.clone());
-                    on_select.run(v);
-                }
-            >
-                {choices
-                    .iter()
-                    .map(|choice| {
-                        view! {
-                            <option value=*choice selected=move || value.get() == *choice>
-                                {*choice}
-                            </option>
-                        }
-                    })
-                    .collect_view()}
-            </select>
-        </div>
+        <wa-select
+            label=label
+            hint=hint
+            prop:value=move || value.get()
+            on:change=move |ev| {
+                let chosen = control_value(&ev);
+                value.set(chosen.clone());
+                on_select.run(chosen);
+            }
+        >
+            {choices
+                .iter()
+                .map(|choice| view! { <wa-option value=*choice>{*choice}</wa-option> })
+                .collect_view()}
+        </wa-select>
     }
 }
 
+/// A free-form list of short values, entered one at a time and shown as tags.
 #[component]
 fn ListField(
     #[prop(into)] label: String,
-    #[prop(into)] placeholder: String,
+    #[prop(into)] hint: String,
     setting_key: &'static str,
     items: RwSignal<Vec<String>>,
     system_id: RwSignal<Option<i64>>,
@@ -424,45 +432,42 @@ fn ListField(
     };
 
     view! {
-        <div class="mb-4">
-            <label class=LABEL>{label}</label>
-            <div class="flex w-full">
-                <input
-                    class="block w-full rounded-l-lg border border-gray-300 bg-gray-50 p-2.5 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    placeholder=placeholder
-                    prop:value=move || draft.get()
-                    on:input=move |ev| draft.set(event_target_value(&ev))
-                    on:keydown=move |ev| {
-                        if ev.key() == "Enter" {
-                            add();
-                        }
+        <div class="wa-stack wa-gap-2xs">
+            <wa-input
+                label=label
+                hint=hint
+                prop:value=move || draft.get()
+                on:input=move |ev| draft.set(control_value(&ev))
+                on:keydown=move |ev: web_sys::KeyboardEvent| {
+                    if ev.key() == "Enter" {
+                        add();
                     }
-                />
-                <button
-                    class="flex items-center rounded-r-lg bg-primary-600 px-3 text-white hover:bg-primary-700"
-                    on:click=move |_| add()
-                >
+                }
+            >
+                // In the input's own end slot, so it lines up with the field
+                // rather than with the hint underneath it.
+                <wa-button slot="end" appearance="plain" size="small" on:click=move |_| add()>
                     <wa-icon name="plus" label="Add"></wa-icon>
-                </button>
-            </div>
-            <div class="mt-2 flex flex-wrap gap-2">
-                <For each=move || items.get() key=|item| item.clone() let:item>
-                    {
-                        let item_for_remove = item.clone();
-                        view! {
-                            <span class="inline-flex items-center gap-1 rounded-lg bg-primary-100 px-2.5 py-1 text-sm font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-                                {item.clone()}
-                                <button
-                                    class="ml-1 text-primary-600 hover:text-primary-900 dark:text-primary-300"
-                                    on:click=move |_| remove(item_for_remove.clone())
+                </wa-button>
+            </wa-input>
+            <Show when=move || !items.get().is_empty()>
+                <div class="wa-cluster wa-gap-2xs">
+                    <For each=move || items.get() key=|item| item.clone() let:item>
+                        {
+                            let value = item.clone();
+                            view! {
+                                <wa-tag
+                                    with-remove=""
+                                    size="small"
+                                    on:wa-remove=move |_: web_sys::Event| remove(value.clone())
                                 >
-                                    "×"
-                                </button>
-                            </span>
+                                    {item.clone()}
+                                </wa-tag>
+                            }
                         }
-                    }
-                </For>
-            </div>
+                    </For>
+                </div>
+            </Show>
         </div>
     }
 }
