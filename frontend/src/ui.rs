@@ -179,11 +179,9 @@ pub fn Modal(
 pub fn StatTile(#[prop(into)] label: String, #[prop(into)] value: Signal<String>) -> impl IntoView {
     view! {
         <wa-card appearance="filled-outlined">
-            <div class="wa-stack wa-gap-3xs" style="align-items: center;">
-                <span style="font-size: var(--wa-font-size-xl); font-weight: var(--wa-font-weight-bold);">
-                    {move || value.get()}
-                </span>
-                <small style="color: var(--wa-color-text-quiet);">{label}</small>
+            <div class="wa-stack wa-gap-3xs stat-tile">
+                <span class="stat-value">{move || value.get()}</span>
+                <small class="stat-label">{label}</small>
             </div>
         </wa-card>
     }

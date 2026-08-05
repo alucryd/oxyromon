@@ -220,9 +220,11 @@
   }
 
   /* Hover stays neutral, so it reads as "under the pointer" and never competes
-     with the selection below. */
+     with the selection below. It has to be a step louder than `quiet`, which
+     resolves to the same neutral-95 as the stripe above and so was invisible on
+     every other row. */
   .list-row:hover {
-    background-color: var(--wa-color-neutral-fill-quiet);
+    background-color: var(--wa-color-neutral-fill-normal);
   }
 
   /* Which system and game you are looking at is the most important state on
@@ -267,6 +269,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* === Statistics === */
+
+  /* `align-items` centres the two lines as blocks; a label long enough to wrap
+     — "Total Size (Original)" — still needs its own lines centred within its
+     block, which is what the tiles were missing. */
+  .stat-tile {
+    align-items: center;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: var(--wa-font-size-xl);
+    font-weight: var(--wa-font-weight-bold);
+  }
+
+  .stat-label {
+    color: var(--wa-color-text-quiet);
   }
 
   /* Catches the click that dismisses a menu or a popover. */
