@@ -35,14 +35,14 @@ axum = { version = "0.8.9", default-features = false, features = [
 tower-http = { version = "0.7.0", features = ["cors"], optional = true, default-features = false }
 cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.4"
-console = "0.16.3"
+console = "0.16.4"
 chrono = { version = "0.4.45", default-features = false, features = [
     "std",
     "alloc",
     "now",
     "clock",
 ] }
-clap = "4.6.1"
+clap = "4.6.6"
 crc32fast = "1.5.0"
 dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
 digest = "0.11.3"
@@ -50,31 +50,31 @@ dirs = "6.0.0"
 dotenvy = "0.15.7"
 env_logger = "0.11.11"
 flate2 = "1.1.9"
-futures = "0.3.32"
+futures = "0.3.33"
 http-types = { version = "2.12.0", optional = true }
 indexmap = { version = "2.14.0", default-features = false, features = [
     "std",
     "rayon",
 ] }
-indicatif = "0.18.5"
+indicatif = "0.18.6"
 indicatif-log-bridge = "0.2.3"
-infer = "0.19.0"
-itertools = "0.14.0"
+infer = "0.22.0"
+itertools = "0.15.0"
 log = "0.4.33"
 md-5 = "0.11.0"
-num-derive = "0.4.2"
+num-derive = "0.5.1"
 num-traits = "0.2.19"
-phf = { version = "0.13.1", features = ["macros"] }
+phf = { version = "0.14.0", features = ["macros"] }
 quick-xml = { version = "0.41.0", features = ["serialize"] }
 rayon = "1.12.0"
-regex = "1.12.4"
+regex = "1.13.1"
 reqwest = { version = "0.13.4", default-features = false }
-rust-embed = { version = "8.11.0", features = ["compression"] }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+rust-embed = { version = "8.12.0", features = ["compression"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 sha1 = "0.11.0"
 shiratsu-naming = "0.1.7"
-anyhow = "1.0.100"
+anyhow = "1.0.104"
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",
@@ -85,7 +85,7 @@ strsim = "0.11.1"
 strum = { version = "0.28.0", features = ["derive"] }
 tempfile = "3.27.0"
 tokio-util = { version = "0.7", features = ["io"] }
-tokio = { version = "1.52.3", features = [
+tokio = { version = "1.53.1", features = [
     "fs",
     "io-std",
     "io-util",
@@ -97,7 +97,7 @@ tokio = { version = "1.52.3", features = [
 ] }
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
-which = { version = "8.0.4" }
+which = { version = "8.0.5" }
 zip = { version = "8.6.0", features = ["deflate"], default-features = false }
 digest-io = "0.1.0"
 
