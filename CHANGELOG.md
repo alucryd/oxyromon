@@ -11,6 +11,16 @@
 - Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
 - Added DAT import to the web UI
 - Added notification history to the web UI
+- Added an optional native desktop app (`desktop/` crate, built with Tauri) that wraps the web UI in a native window; it bundles the `oxyromon` binary as a sidecar, starts `oxyromon server` on a free loopback port on launch, and shares the CLI's database and settings
+
+## Changes
+
+- Rebuilt the web UI on [Web Awesome](https://webawesome.com) components: the dialogs now trap focus and close on Escape, and the settings form uses real switches, selects and removable tags rather than unstyled browser controls
+- Dropped Tailwind CSS: the UI is now styled entirely by Web Awesome's components, layout utilities and design tokens, plus a small hand-written stylesheet. The Tailwind standalone CLI is no longer a build dependency
+- Made the web UI's three columns resizable: drag the divider between the systems, games and ROMs panes to give any of them more room, and the positions are remembered across visits
+- Restored the per-field descriptions in the settings dialog, which explain what each setting expects (region codes, language codes, and what each sorting option favors)
+- Rewrote the web UI in Rust using Leptos (compiled to WebAssembly), replacing the Svelte/Flowbite frontend; the UI now lives in a standalone `frontend/` crate built with Trunk (no Node.js toolchain required)
+- Replaced the `SKIP_PNPM` build environment variable with `SKIP_TRUNK`
 
 ## Improvements
 
@@ -22,10 +32,25 @@
 - Improved `check-roms` output with per-system pass/fail summary
 - Revamped statistics card in the web UI with a tiled layout
 - Revamped settings modal in the web UI with a two-column layout for easier navigation
+- Cleaned up the entire codebase to be clippy-clean: removed ~900 warnings (needless borrows, redundant references, collapsible ifs, `unwrap` after `is_some` rewritten as `if let`/let-chains)
+- Modernized idioms: replaced the `lazy_static` dependency with `std::sync::LazyLock`, removed the pre-2018 `extern crate` block, and switched to explicit macro imports
+- Simplified the `main()` subcommand dispatch using `matches.subcommand()` destructuring
+- Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
+- Migrated error handling from `simple-error` to `anyhow`: errors now carry a full context chain (displayed with `Caused by:` sections), and external tool failures no longer panic on non-UTF-8 output
+- Deduplicated the 79 partition-by-extension blocks in `convert-roms` and `export-roms` into two shared helpers (`partition_games_by_extensions`, `partition_games_by_all_extensions` in `common.rs`), removing ~560 lines
+- Unified `convert-roms`/`export-roms` CSO and ZSO handling into a single `to_xso` per module, backed by a new shared source-decoding layer (`transcode.rs`) and a `check_and_persist` conversion finalizer, removing another ~440 lines
+- Moved `convert-roms`/`export-roms` NSZ, RVZ, and WBFS handling onto the shared decoding layer as well
+- Simplified `convert-roms` CHD handling: extracted the repeated parent-CHD lookup/resolution into helpers, merged the twin CSO and ZSO loops, and moved the single-file loops onto the shared decoding layer
+- Extracted CUE/BIN and CHD parsing helpers (`archive_to_cue_bin`, `assemble_cue_bin`, `romfile_as_chd`) into `transcode.rs`, shared by `convert-roms`, `export-roms`, and `check-roms`
+- Added a `run_tool` helper that centralizes external tool invocation (debug logging, spawn error context, stderr reporting) and adopted it across the format modules
+- Simplified `convert-roms` back-to-original handling: merged the twin CSO and ZSO loops and moved the tail loops onto the shared conversion finalizer
 
 ## Fixes
 
 - Fixed the server not shutting down cleanly on Ctrl+C when SSE clients were connected
+- Fixed `convert-roms -f rvz --recompress` leaving a stray intermediate `.iso` next to each recompressed RVZ; the intermediate is now extracted to the temporary directory
+- Fixed `convert-roms -f chd` always failing with "Not a valid rdsk" on standalone RIFF (LaserDisc) images; the RIFF branch mistakenly parsed the file as RDSK
+- Fixed `convert-roms -f original` and `export-roms -f original` mispartitioning Switch files: NSZ files were silently ignored and NSP files aborted the run with "Not a valid nsz"
 
 # 0.21.0
 

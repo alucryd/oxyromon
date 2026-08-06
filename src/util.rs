@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,55 +5,56 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 
+use anyhow::{Context, Result, anyhow, bail};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
 use regex::Regex;
-use simple_error::SimpleError;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::time::Duration;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
 use which::which;
 
-lazy_static! {
-    static ref SYSTEM_NAME_REGEX: Regex =
-        Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap();
-}
+static SYSTEM_NAME_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap());
 
-pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> SimpleResult<PathBuf> {
-    let canonicalized_path = try_with!(
-        path.as_ref().canonicalize(),
-        "Failed to get canonicalized path for \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+pub async fn get_canonicalized_path<P: AsRef<Path>>(path: &P) -> Result<PathBuf> {
+    let canonicalized_path = path.as_ref().canonicalize().with_context(|| {
+        format!(
+            "Failed to get canonicalized path for \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(canonicalized_path)
 }
 
-pub async fn open_file<P: AsRef<Path>>(path: &P) -> SimpleResult<File> {
-    let file = try_with!(
-        File::open(path.as_ref()).await,
-        "Failed to open \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+#[cfg(test)]
+pub async fn open_file<P: AsRef<Path>>(path: &P) -> Result<File> {
+    let file = File::open(path.as_ref()).await.with_context(|| {
+        format!(
+            "Failed to open \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(file)
 }
 
-pub fn open_file_sync<P: AsRef<Path>>(path: &P) -> SimpleResult<std::fs::File> {
-    let file = try_with!(
-        std::fs::File::open(path.as_ref()),
-        "Failed to open \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+pub fn open_file_sync<P: AsRef<Path>>(path: &P) -> Result<std::fs::File> {
+    let file = std::fs::File::open(path.as_ref()).with_context(|| {
+        format!(
+            "Failed to open \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(file)
 }
 
-pub fn get_reader_sync<P: AsRef<Path>>(
-    path: &P,
-) -> SimpleResult<std::io::BufReader<std::fs::File>> {
+pub fn get_reader_sync<P: AsRef<Path>>(path: &P) -> Result<std::io::BufReader<std::fs::File>> {
     let f = open_file_sync(path)?;
     Ok(std::io::BufReader::new(f))
 }
@@ -63,7 +63,7 @@ pub async fn create_file<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     path: &P,
     quiet: bool,
-) -> SimpleResult<File> {
+) -> Result<File> {
     if !quiet {
         print_action(
             progress_bar,
@@ -77,11 +77,12 @@ pub async fn create_file<P: AsRef<Path>>(
     if !directory.is_dir() {
         create_directory(progress_bar, &directory, quiet).await?;
     }
-    let file = try_with!(
-        File::create(path).await,
-        "Failed to create \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+    let file = File::create(path).await.with_context(|| {
+        format!(
+            "Failed to create \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(file)
 }
 
@@ -90,7 +91,7 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
     old_path: &P,
     new_path: &Q,
     quiet: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
         if !new_directory.is_dir() {
@@ -105,12 +106,13 @@ pub async fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(
                 ),
             );
         }
-        try_with!(
-            fs::copy(old_path, new_path).await,
-            "Failed to copy \"{}\" to \"{}\"",
-            old_path.as_ref().as_os_str().to_str().unwrap(),
-            new_path.as_ref().as_os_str().to_str().unwrap()
-        );
+        fs::copy(old_path, new_path).await.with_context(|| {
+            format!(
+                "Failed to copy \"{}\" to \"{}\"",
+                old_path.as_ref().as_os_str().to_str().unwrap(),
+                new_path.as_ref().as_os_str().to_str().unwrap()
+            )
+        })?;
     }
     Ok(())
 }
@@ -120,7 +122,7 @@ pub async fn rename_file<P: AsRef<Path>, Q: AsRef<Path>>(
     old_path: &P,
     new_path: &Q,
     quiet: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if old_path.as_ref() != new_path.as_ref() {
         let new_directory = new_path.as_ref().parent().unwrap();
         if !new_directory.is_dir() {
@@ -149,7 +151,7 @@ pub async fn remove_file<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     path: &P,
     quiet: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if !quiet {
         print_action(
             progress_bar,
@@ -159,11 +161,12 @@ pub async fn remove_file<P: AsRef<Path>>(
             ),
         );
     }
-    try_with!(
-        fs::remove_file(path).await,
-        "Failed to delete \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+    fs::remove_file(path).await.with_context(|| {
+        format!(
+            "Failed to delete \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(())
 }
 
@@ -171,7 +174,7 @@ pub async fn create_directory<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     path: &P,
     quiet: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if !quiet {
         print_action(
             progress_bar,
@@ -182,20 +185,19 @@ pub async fn create_directory<P: AsRef<Path>>(
         );
     }
     if !path.as_ref().is_dir() {
-        try_with!(
-            fs::create_dir_all(path).await,
-            "Failed to create \"{}\"",
-            path.as_ref().as_os_str().to_str().unwrap()
-        );
+        fs::create_dir_all(path).await.with_context(|| {
+            format!(
+                "Failed to create \"{}\"",
+                path.as_ref().as_os_str().to_str().unwrap()
+            )
+        })?;
     }
     Ok(())
 }
 
-pub async fn create_tmp_directory(connection: &mut SqliteConnection) -> SimpleResult<TempDir> {
-    let tmp_directory = try_with!(
-        TempDir::new_in(get_tmp_directory(connection).await),
-        "Failed to create temp directory"
-    );
+pub async fn create_tmp_directory(connection: &mut SqliteConnection) -> Result<TempDir> {
+    let tmp_directory = TempDir::new_in(get_tmp_directory(connection).await)
+        .context("Failed to create temp directory")?;
     Ok(tmp_directory)
 }
 
@@ -203,7 +205,7 @@ pub async fn remove_directory<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     path: &P,
     quiet: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if !quiet {
         print_action(
             progress_bar,
@@ -213,18 +215,19 @@ pub async fn remove_directory<P: AsRef<Path>>(
             ),
         );
     }
-    try_with!(
-        fs::remove_dir_all(path).await,
-        "Failed to delete \"{}\"",
-        path.as_ref().as_os_str().to_str().unwrap()
-    );
+    fs::remove_dir_all(path).await.with_context(|| {
+        format!(
+            "Failed to delete \"{}\"",
+            path.as_ref().as_os_str().to_str().unwrap()
+        )
+    })?;
     Ok(())
 }
 
 pub async fn get_system_directory(
     connection: &mut SqliteConnection,
     system: &System,
-) -> SimpleResult<PathBuf> {
+) -> Result<PathBuf> {
     let system_name = match &system.custom_name {
         Some(custom_name) => {
             if get_bool(connection, "GROUP_SUBSYSTEMS", Some(system.id)).await {
@@ -264,7 +267,7 @@ pub async fn get_system_directory(
 pub async fn get_one_region_directory(
     connection: &mut SqliteConnection,
     system: &System,
-) -> SimpleResult<PathBuf> {
+) -> Result<PathBuf> {
     let one_region_directory = get_system_directory(connection, system).await?.join("1G1R");
     Ok(one_region_directory)
 }
@@ -272,7 +275,7 @@ pub async fn get_one_region_directory(
 pub async fn get_trash_directory(
     connection: &mut SqliteConnection,
     system: Option<&System>,
-) -> SimpleResult<PathBuf> {
+) -> Result<PathBuf> {
     let trash_directory = match system {
         Some(system) => get_system_directory(connection, system)
             .await?
@@ -282,14 +285,29 @@ pub async fn get_trash_directory(
     Ok(trash_directory)
 }
 
-pub fn get_executable_path(executables: &[&str]) -> SimpleResult<PathBuf> {
+/// Runs an external tool command, logging it and bailing with the tool's
+/// stderr when it exits unsuccessfully.
+pub async fn run_tool(command: &mut tokio::process::Command) -> Result<std::process::Output> {
+    log::debug!("{:?}", command);
+    let program = command.as_std().get_program().to_string_lossy().to_string();
+    let output = command
+        .output()
+        .await
+        .with_context(|| format!("Failed to spawn {}", program))?;
+    if !output.status.success() {
+        bail!("{}", String::from_utf8_lossy(&output.stderr));
+    }
+    Ok(output)
+}
+
+pub fn get_executable_path(executables: &[&str]) -> Result<PathBuf> {
     let path = executables
         .iter()
         .find_map(|executable| which(executable).ok());
     if let Some(path) = path {
         Ok(path)
     } else {
-        Err(SimpleError::new("No executable in path"))
+        Err(anyhow!("No executable in path"))
     }
 }
 
@@ -326,7 +344,7 @@ async fn create_missing_empty_files(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let partial_games = find_partial_games_by_system_id(connection, system.id).await;
 
     for game in partial_games {
@@ -363,7 +381,7 @@ pub async fn compute_system_completion(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     progress_bar.set_message("Computing completion");
@@ -430,11 +448,7 @@ pub async fn find_parent_chd_romfile_by_game(
 }
 
 /// Format a dependency status for display in `info` output.
-pub fn print_dependency(
-    progress_bar: &ProgressBar,
-    name: &str,
-    version_result: &Result<String, simple_error::SimpleError>,
-) {
+pub fn print_dependency(progress_bar: &ProgressBar, name: &str, version_result: &Result<String>) {
     match version_result {
         Ok(version) => print_success(progress_bar, &format!("{}: {}", name, version)),
         Err(_) => print_skip(progress_bar, &format!("{}: not found", name)),

@@ -5,6 +5,8 @@
 !.env.example
 .idea
 .vscode
+graphify-out/cache
+graphify-out/cost.json
 
 # rust
 *.rs.bk
@@ -18,7 +20,15 @@ dist
 .cargo
 tests/.tmp*
 
-# javascript
-node_modules
-.svelte-kit
-vite.config.js.*
+# frontend (leptos + trunk)
+frontend/target
+frontend/dist
+frontend/node_modules
+# fetched at build time by frontend/scripts/fetch-webawesome.sh
+frontend/vendor
+.claude/skills
+
+# desktop (tauri)
+desktop/target
+desktop/gen
+desktop/binaries

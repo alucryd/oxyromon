@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::mimetype::*;
@@ -6,6 +5,8 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -54,7 +55,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let patch_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
     let name = matches.get_flag("NAME");
     let force = matches.get_flag("FORCE");
@@ -80,7 +81,7 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_patch<P: AsRef<Path>>(path: &P) -> SimpleResult<Option<PatchType>> {
+pub async fn parse_patch<P: AsRef<Path>>(path: &P) -> Result<Option<PatchType>> {
     let mimetype = get_mimetype(path).await?;
     Ok(match mimetype {
         Some(mimetype) => PatchType::from_str(mimetype.extension()).ok(),
@@ -95,7 +96,7 @@ pub async fn import_patch<P: AsRef<Path>>(
     patch_format: &PatchType,
     name: bool,
     force: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system = prompt_for_system(connection, None).await?;
     let games = find_full_games_by_system_id(connection, system.id).await;
     let game = match prompt_for_game(&games, None)? {

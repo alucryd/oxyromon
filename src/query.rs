@@ -31,6 +31,16 @@ impl System {
 
 #[ComplexObject]
 impl Game {
+    /// Human readable title, or null when it is identical to `name` and the
+    /// client can simply fall back to it.
+    async fn description(&self) -> Option<&str> {
+        if self.description == self.name {
+            None
+        } else {
+            Some(&self.description)
+        }
+    }
+
     async fn system(&self, ctx: &Context<'_>) -> Result<Option<System>> {
         ctx.data_unchecked::<DataLoader<SystemLoader>>()
             .load_one(self.system_id)
@@ -244,9 +254,27 @@ impl QueryRoot {
         Ok(find_systems(&mut pool.acquire().await.unwrap()).await)
     }
 
-    async fn games(&self, ctx: &Context<'_>, system_id: i64) -> Result<Vec<Game>> {
+    /// Games of a system, ordered by name.
+    ///
+    /// `offset` and `limit` let a client pull a large system in pieces rather
+    /// than waiting on one multi megabyte response; omitting `limit` returns
+    /// everything.
+    async fn games(
+        &self,
+        ctx: &Context<'_>,
+        system_id: i64,
+        offset: Option<i64>,
+        limit: Option<i64>,
+    ) -> Result<Vec<Game>> {
         let pool = ctx.data_unchecked::<SqlitePool>();
-        Ok(find_games_by_system_id(&mut pool.acquire().await.unwrap(), system_id).await)
+        let connection = &mut pool.acquire().await.unwrap();
+        Ok(match limit {
+            Some(limit) => {
+                find_games_by_system_id_paged(connection, system_id, offset.unwrap_or(0), limit)
+                    .await
+            }
+            None => find_games_by_system_id(connection, system_id).await,
+        })
     }
 
     async fn game_information(&self, game_name: String) -> Result<GameInformation> {

@@ -1,3 +1,4 @@
+use anyhow::Result;
 #[cfg(feature = "server")]
 use async_graphql::{Enum, SimpleObject};
 use num_derive::FromPrimitive;
@@ -73,6 +74,10 @@ pub enum Completion {
 pub struct Game {
     pub id: i64,
     pub name: String,
+    // Resolved by hand in `query.rs`, which omits it when it would only repeat
+    // `name`. For a console DAT that is nearly every game, and the duplicate
+    // accounts for a third of the response for a large system.
+    #[cfg_attr(feature = "server", graphql(skip))]
     pub description: String,
     pub comment: Option<String>,
     pub external_id: Option<String>,
@@ -295,6 +300,8 @@ pub struct Irdfile {
     pub game_version: String,
     pub app_version: String,
     pub regions_count: usize,
+    // parsed from the IRD file but not consumed yet
+    #[allow(dead_code)]
     pub regions_hashes: Vec<String>,
     pub files_count: usize,
     pub files_hashes: HashMap<u64, String>,

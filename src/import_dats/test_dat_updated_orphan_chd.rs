@@ -10,10 +10,10 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    if let Ok(version) = chdman::get_version().await {
-        if version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less {
-            return;
-        }
+    if let Ok(version) = chdman::get_version().await
+        && version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less
+    {
+        return;
     }
 
     // given
@@ -26,9 +26,9 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
@@ -51,14 +51,14 @@ async fn test() {
 
     let cue_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
-        test_directory.join(&cue_romfile_path.file_name().unwrap().to_str().unwrap()),
+        test_directory.join(cue_romfile_path.file_name().unwrap().to_str().unwrap()),
         &cue_romfile_path.as_os_str().to_str().unwrap(),
     )
     .await
     .unwrap();
     let chd_romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).chd");
     fs::copy(
-        test_directory.join(&chd_romfile_path.file_name().unwrap().to_str().unwrap()),
+        test_directory.join(chd_romfile_path.file_name().unwrap().to_str().unwrap()),
         &chd_romfile_path.as_os_str().to_str().unwrap(),
     )
     .await

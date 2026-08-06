@@ -14,7 +14,7 @@ async fn test() {
     let key = "REGIONS_ONE";
 
     add_to_list(&mut connection, &progress_bar, key, "US", None).await;
-    let matches = subcommand().get_matches_from(&["sort-roms", "-y"]);
+    let matches = subcommand().get_matches_from(["sort-roms", "-y"]);
 
     // when
     let all_regions = get_regions(&mut connection, &matches, key, None).await;

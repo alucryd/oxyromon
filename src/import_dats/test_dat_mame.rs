@@ -16,9 +16,9 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let dat_path = test_directory.join("Test System (20200721) (MAME).dat");
@@ -43,7 +43,7 @@ async fn test() {
 
     let system = systems.first().unwrap();
     assert_eq!(system.name, "Test System (MAME)");
-    assert_eq!(system.arcade, true);
+    assert!(system.arcade);
 
     assert_eq!(find_games(&mut connection).await.len(), 1);
     assert_eq!(find_roms(&mut connection).await.len(), 1);

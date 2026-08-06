@@ -18,13 +18,13 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let global_rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let global_rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(global_rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand().get_matches_from(&[
+    let matches = import_dats::subcommand().get_matches_from([
         "import-dats",
         "tests/Test System (20240229) (Single Track).dat",
     ]);
@@ -32,7 +32,7 @@ async fn test() {
         .await
         .unwrap();
 
-    let matches = import_dats::subcommand().get_matches_from(&[
+    let matches = import_dats::subcommand().get_matches_from([
         "import-dats",
         "tests/Test System (20230105) (Multiple Discs).dat",
     ]);
@@ -47,8 +47,8 @@ async fn test() {
     let system_single_track = systems.remove(0);
     let system_multiple_discs = systems.remove(0);
 
-    let rom_directory_single_track = TempDir::new_in(&test_directory).unwrap();
-    let rom_directory_multiple_discs = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory_single_track = TempDir::new_in(test_directory).unwrap();
+    let rom_directory_multiple_discs = TempDir::new_in(test_directory).unwrap();
     set_directory(
         &mut connection,
         "ROM_DIRECTORY",

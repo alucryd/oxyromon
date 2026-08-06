@@ -1,9 +1,10 @@
-use super::SimpleResult;
 use super::progress::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom};
@@ -18,21 +19,21 @@ const TICKET_CERT_OFFSET: u64 = CA_CERT_OFFSET + CA_CERT_SIZE as u64;
 const TMD_CERT_SIZE: usize = 0x300;
 const TMD_CERT_OFFSET: u64 = TICKET_CERT_OFFSET + TICKET_CERT_SIZE as u64;
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
 #[derive(Debug)]
 pub struct ArchiveInfo {
     pub path: String,
+    // parsed from the listing but not consumed yet
+    #[allow(dead_code)]
     pub size: u64,
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(CTRTOOL).output().await,
-        "Failed to spawn ctrtool"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(CTRTOOL)
+        .output()
+        .await
+        .context("Failed to spawn ctrtool")?;
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     let version = stderr
@@ -48,7 +49,7 @@ pub async fn get_version() -> SimpleResult<String> {
 pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
-) -> SimpleResult<Vec<ArchiveInfo>> {
+) -> Result<Vec<ArchiveInfo>> {
     progress_bar.set_message("Parsing cia");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -67,7 +68,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
             .stdout
             .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
     {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str());
+        bail!("{}", String::from_utf8_lossy(&output.stderr));
     }
 
     let stdout = String::from_utf8(output.stdout).unwrap();
@@ -92,14 +93,13 @@ pub async fn parse_cia<P: AsRef<Path>>(
         } else if let Some(content_size_str) = line
             .trim_start_matches([' ', '|', '\\', '-'])
             .strip_prefix("Size:")
+            && let Some(content_id) = content_id.take()
         {
-            if let Some(content_id) = content_id.take() {
-                cia_infos.push(ArchiveInfo {
-                    path: content_id,
-                    size: u64::from_str_radix(content_size_str.trim().trim_start_matches("0x"), 16)
-                        .unwrap(),
-                });
-            }
+            cia_infos.push(ArchiveInfo {
+                path: content_id,
+                size: u64::from_str_radix(content_size_str.trim().trim_start_matches("0x"), 16)
+                    .unwrap(),
+            });
         }
     }
 
@@ -118,7 +118,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     progress_bar: &ProgressBar,
     archive_path: &P,
     directory: &Q,
-) -> SimpleResult<Vec<PathBuf>> {
+) -> Result<Vec<PathBuf>> {
     progress_bar.set_message("Extracting files");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -146,7 +146,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
             .stdout
             .ends_with(b"[ctrtool::NcchProcess ERROR] NcchHeader is corrupted (Bad struct magic).\n")
     {
-        bail!(stderr.as_str())
+        bail!("{}", stderr)
     }
 
     for line in stderr.lines() {

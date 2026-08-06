@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,6 +5,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -20,13 +20,12 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::VariantNames;
 
-lazy_static! {
-    pub static ref LANGUAGE_REGEX: Regex = Regex::new(r"[A-Z][a-z]").unwrap();
-    pub static ref VARIANT_REGEX: Regex = Regex::new(r"[A-Z]{2}").unwrap();
-}
+pub static LANGUAGE_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z][a-z]").unwrap());
+pub static VARIANT_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[A-Z]{2}").unwrap());
 
 pub fn subcommand() -> Command {
     Command::new("sort-roms")
@@ -93,7 +92,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
 
@@ -213,7 +212,7 @@ async fn sort_system(
     all_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_subfolders: &Option<SubfolderScheme>,
     one_regions_strict: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.enable_steady_tick(Duration::from_millis(100));
     print_header(progress_bar, &format!("Sorting \"{}\"", system.name));
 
@@ -655,7 +654,7 @@ async fn sort_game<'a>(
     game: &Game,
     romfiles_by_id: &'a HashMap<i64, Romfile>,
     subfolder_scheme: &Option<SubfolderScheme>,
-) -> SimpleResult<Vec<(&'a Romfile, PathBuf)>> {
+) -> Result<Vec<(&'a Romfile, PathBuf)>> {
     let mut romfile_moves: Vec<(&Romfile, PathBuf)> = vec![];
 
     let roms = find_roms_with_romfile_by_game_id(connection, game.id).await;
@@ -676,7 +675,7 @@ async fn sort_game<'a>(
         let new_romfile_path = romfile
             .as_common(connection)
             .await?
-            .get_sorted_path(connection, system, &game, &rom, subfolder_scheme, &None)
+            .get_sorted_path(connection, system, game, rom, subfolder_scheme, &None)
             .await?;
         if romfile.as_common(connection).await?.path != new_romfile_path {
             let patches = find_patches_by_rom_id(connection, rom.id).await;
@@ -693,8 +692,8 @@ async fn sort_game<'a>(
             romfile_moves.push((romfile, new_romfile_path));
         }
     }
-    if game.playlist_id.is_some() {
-        let playlist_romfile = romfiles_by_id.get(&game.playlist_id.unwrap()).unwrap();
+    if let Some(playlist_id) = game.playlist_id {
+        let playlist_romfile = romfiles_by_id.get(&playlist_id).unwrap();
         let new_playlist_romfile_path = game
             .get_playlist_path(connection, system, subfolder_scheme)
             .await?;
@@ -729,7 +728,7 @@ fn trim_ignored_games(
         })
     } else {
         games.into_iter().partition(|game| {
-            log::debug!("sort_roms::trim_ignored_games(\"{}\")", &game.name);
+            log::debug!("sort_roms::trim_ignored_games(\"{}\")", game.name);
             if let Ok(name) = NoIntroName::try_parse(&game.name) {
                 for token in name.iter() {
                     if let NoIntroToken::Languages(parsed_languages) = token {

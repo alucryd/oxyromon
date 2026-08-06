@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::bchunk;
 use super::chdman;
 use super::ctrtool;
@@ -12,6 +11,7 @@ use super::sevenzip;
 use super::util::*;
 use super::wit;
 use super::xdelta3;
+use anyhow::Result;
 use clap::Command;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -21,10 +21,7 @@ pub fn subcommand() -> Command {
     Command::new("info").about("Print system information")
 }
 
-pub async fn main(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar) -> Result<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 

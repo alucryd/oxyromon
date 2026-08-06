@@ -1,5 +1,4 @@
 use super::chdman;
-use super::chdman::AsChd;
 use super::common::*;
 use super::database::*;
 use super::dolphin;
@@ -14,11 +13,11 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::AsArchive;
+use super::transcode::romfile_as_chd;
 use super::util::*;
+use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
-use simple_error::SimpleError;
-use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 
@@ -55,7 +54,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
     for system in systems {
@@ -102,7 +101,7 @@ async fn check_system(
     system: &System,
     games: Vec<Game>,
     size: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let roms = find_original_roms_with_romfile_by_game_ids(
         connection,
         &games.iter().map(|game| game.id).collect::<Vec<i64>>(),
@@ -161,23 +160,7 @@ async fn check_system(
                 print_error(progress_bar, "Required tool not found: chdman");
                 break;
             }
-            let chd_romfile = match romfile.parent_id {
-                Some(parent_id) => {
-                    let parent_chd_romfile = find_romfile_by_id(&mut transaction, parent_id).await;
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .as_chd_with_parent(
-                            parent_chd_romfile
-                                .as_common(&mut transaction)
-                                .await?
-                                .as_chd()
-                                .await?,
-                        )
-                        .await?
-                }
-                None => romfile.as_common(&mut transaction).await?.as_chd().await?,
-            };
+            let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
             result = chd_romfile
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await;
@@ -292,7 +275,7 @@ async fn check_archive(
     header: &Option<Header>,
     romfile: &Romfile,
     roms: Vec<&Rom>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let archive_romfiles = romfile
         .as_common(connection)
         .await?
@@ -305,9 +288,7 @@ async fn check_archive(
         let rom = roms
             .iter()
             .find(|rom| rom.name == archive_romfile.path)
-            .ok_or_else(|| {
-                SimpleError::new(format!("file not found in DB {}", archive_romfile.path))
-            })?;
+            .ok_or_else(|| anyhow!("file not found in DB {}", archive_romfile.path))?;
         archive_romfile
             .check(connection, progress_bar, header, &[rom])
             .await?;
@@ -320,7 +301,7 @@ async fn move_to_trash(
     progress_bar: &ProgressBar,
     system: &System,
     romfile: &Romfile,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let new_path = get_trash_directory(connection, Some(system)).await?.join(
         romfile
             .as_common(connection)

@@ -15,7 +15,7 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let old_directory = PathBuf::from(&tmp_directory.path()).join("old");
     create_directory(&progress_bar, &old_directory, true)
         .await

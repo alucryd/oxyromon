@@ -44,14 +44,14 @@ async fn test() -> Result<()> {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -66,7 +66,7 @@ async fn test() -> Result<()> {
         romfile_paths.push(romfile_path);
     }
 
-    let matches = import_roms::subcommand().get_matches_from(&[
+    let matches = import_roms::subcommand().get_matches_from([
         "import-roms",
         romfile_paths.first().unwrap().as_os_str().to_str().unwrap(),
         romfile_paths.get(1).unwrap().as_os_str().to_str().unwrap(),
@@ -75,15 +75,8 @@ async fn test() -> Result<()> {
         .await
         .unwrap();
 
-    let matches = sort_roms::subcommand().get_matches_from(&[
-        "sort-roms",
-        "-a",
-        "-y",
-        "-o",
-        "US",
-        "-r",
-        "JP",
-    ]);
+    let matches =
+        sort_roms::subcommand().get_matches_from(["sort-roms", "-a", "-y", "-o", "US", "-r", "JP"]);
     sort_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -91,7 +84,7 @@ async fn test() -> Result<()> {
     let system = find_systems(&mut connection).await.remove(0);
 
     // when
-    let matches = subcommand().get_matches_from(&["server"]);
+    let matches = subcommand().get_matches_from(["server"]);
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -255,7 +248,7 @@ async fn test_upload_dat() -> Result<()> {
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     // when
-    let matches = subcommand().get_matches_from(&["server", "--port", "8001"]);
+    let matches = subcommand().get_matches_from(["server", "--port", "8001"]);
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -323,7 +316,7 @@ async fn test_upload_dat_zip() -> Result<()> {
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     // when
-    let matches = subcommand().get_matches_from(&["server", "--port", "8002"]);
+    let matches = subcommand().get_matches_from(["server", "--port", "8002"]);
     let server = async move {
         main(pool, &matches).await.unwrap();
     };
@@ -393,7 +386,7 @@ async fn test_upload_dat_already_imported() -> Result<()> {
 
     // pre-import the DAT via CLI
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -401,7 +394,7 @@ async fn test_upload_dat_already_imported() -> Result<()> {
     let game_count_before = find_games_by_system_id(&mut connection, 1).await.len();
 
     // when
-    let matches = subcommand().get_matches_from(&["server", "--port", "8003"]);
+    let matches = subcommand().get_matches_from(["server", "--port", "8003"]);
     let server = async move {
         main(pool, &matches).await.unwrap();
     };

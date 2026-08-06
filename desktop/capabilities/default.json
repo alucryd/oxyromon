@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The web UI is a plain SPA served by the sidecar over loopback HTTP; it never calls Tauri IPC, so no plugin permissions are granted to it.",
+  "windows": ["main"],
+  "permissions": []
+}

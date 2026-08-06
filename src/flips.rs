@@ -1,6 +1,6 @@
-use super::SimpleResult;
 use super::common::*;
 use super::progress::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use std::path::Path;
 use std::str::FromStr;
@@ -10,6 +10,8 @@ use tokio::process::Command;
 
 const FLIPS: &str = "flips";
 
+// patch application is not wired up yet, kept for the planned feature
+#[allow(dead_code)]
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
 pub enum XpsType {
@@ -17,6 +19,7 @@ pub enum XpsType {
     Ips,
 }
 
+#[allow(dead_code)]
 pub struct XpsRomfile {
     pub romfile: CommonRomfile,
     pub xps_type: XpsType,
@@ -28,10 +31,10 @@ impl Patch for XpsRomfile {
         progress_bar: &ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<CommonRomfile> {
+    ) -> Result<CommonRomfile> {
         progress_bar.set_message(format!(
             "Applying \"{}\"",
-            &self.romfile.path.file_name().unwrap().to_str().unwrap()
+            self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -40,7 +43,7 @@ impl Patch for XpsRomfile {
             progress_bar,
             &format!(
                 "Patching \"{}\"",
-                &romfile.path.file_name().unwrap().to_str().unwrap()
+                romfile.path.file_name().unwrap().to_str().unwrap()
             ),
         );
 
@@ -58,12 +61,12 @@ impl Patch for XpsRomfile {
             .unwrap_or_else(|_| {
                 panic!(
                     "Failed to patch \"{}\"",
-                    &romfile.path.file_name().unwrap().to_str().unwrap()
+                    romfile.path.file_name().unwrap().to_str().unwrap()
                 )
             });
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -73,24 +76,23 @@ impl Patch for XpsRomfile {
     }
 }
 
+#[allow(dead_code)]
 pub trait AsXps {
-    fn as_xps(self) -> SimpleResult<XpsRomfile>;
+    fn as_xps(self) -> Result<XpsRomfile>;
 }
 
 impl AsXps for CommonRomfile {
-    fn as_xps(self) -> SimpleResult<XpsRomfile> {
-        let xps_type = try_with!(
-            XpsType::from_str(
-                &self
-                    .path
-                    .extension()
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_lowercase()
-            ),
-            "Not a valid xps"
-        );
+    fn as_xps(self) -> Result<XpsRomfile> {
+        let xps_type = XpsType::from_str(
+            &self
+                .path
+                .extension()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_lowercase(),
+        )
+        .context("Not a valid xps")?;
         Ok(XpsRomfile {
             romfile: self,
             xps_type,
@@ -98,11 +100,12 @@ impl AsXps for CommonRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(FLIPS).arg("-v").output().await,
-        "Failed to spawn flips"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(FLIPS)
+        .arg("-v")
+        .output()
+        .await
+        .context("Failed to spawn flips")?;
 
     // flips doesn't advertise any version
     String::from_utf8(output.stderr).unwrap();

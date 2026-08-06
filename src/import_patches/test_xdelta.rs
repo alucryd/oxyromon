@@ -19,14 +19,14 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20240908) (Patches).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20240908) (Patches).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -53,7 +53,7 @@ async fn test() {
         .unwrap();
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();

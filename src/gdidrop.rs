@@ -1,8 +1,8 @@
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
+use anyhow::{Result, anyhow, bail};
 use indicatif::ProgressBar;
-use simple_error::SimpleResult;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tokio::fs::{File, OpenOptions};
@@ -15,7 +15,7 @@ pub struct GdiRomfile {
 }
 
 pub trait AsGdi {
-    fn as_gdi(self, track_romfiles: Vec<CommonRomfile>) -> SimpleResult<GdiRomfile>;
+    fn as_gdi(self, track_romfiles: Vec<CommonRomfile>) -> Result<GdiRomfile>;
 }
 
 pub trait ToGdi {
@@ -23,7 +23,7 @@ pub trait ToGdi {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<GdiRomfile>;
+    ) -> Result<GdiRomfile>;
 }
 
 /// CD sector size in bytes
@@ -57,11 +57,15 @@ pub struct Track {
 #[derive(Debug, Clone)]
 pub struct AudioFile {
     pub filename: String,
+    // parsed for CUE sheet fidelity, not consumed by the GDI conversion
+    #[allow(dead_code)]
     pub file_type: FileType,
 }
 
 #[derive(Debug, Clone)]
 pub struct Index {
+    // parsed for CUE sheet fidelity, not consumed by the GDI conversion
+    #[allow(dead_code)]
     pub number: u32,
     pub minutes: u32,
     pub seconds: u32,
@@ -91,10 +95,10 @@ pub enum FileType {
 
 impl CueSheet {
     /// Parse a CUE sheet from a file
-    pub async fn from_file<P: AsRef<Path>>(path: P) -> SimpleResult<Self> {
+    pub async fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path)
             .await
-            .map_err(|e| simple_error!("Failed to open file: {}", e))?;
+            .map_err(|e| anyhow!("Failed to open file: {}", e))?;
         let reader = BufReader::new(file);
         let mut lines = Vec::new();
         let mut line_reader = reader.lines();
@@ -102,7 +106,7 @@ impl CueSheet {
         while let Some(line) = line_reader
             .next_line()
             .await
-            .map_err(|e| simple_error!("Failed to read line: {}", e))?
+            .map_err(|e| anyhow!("Failed to read line: {}", e))?
         {
             let trimmed = line.trim().to_string();
             if !trimmed.is_empty() {
@@ -114,7 +118,7 @@ impl CueSheet {
     }
 
     /// Parse CUE sheet from lines
-    fn parse_cue(lines: &mut [String]) -> SimpleResult<Self> {
+    fn parse_cue(lines: &mut [String]) -> Result<Self> {
         let mut cue_sheet = CueSheet {
             tracks: Vec::new(),
             catalog: None,
@@ -144,24 +148,24 @@ impl CueSheet {
                 }
                 "PERFORMER" => {
                     let performer = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().performer = Some(performer);
+                    if let Some(track) = current_track.as_mut() {
+                        track.performer = Some(performer);
                     } else {
                         cue_sheet.performer = Some(performer);
                     }
                 }
                 "SONGWRITER" => {
                     let songwriter = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().songwriter = Some(songwriter);
+                    if let Some(track) = current_track.as_mut() {
+                        track.songwriter = Some(songwriter);
                     } else {
                         cue_sheet.songwriter = Some(songwriter);
                     }
                 }
                 "TITLE" => {
                     let title = Self::extract_quoted_string(line);
-                    if current_track.is_some() {
-                        current_track.as_mut().unwrap().title = Some(title);
+                    if let Some(track) = current_track.as_mut() {
+                        track.title = Some(title);
                     } else {
                         cue_sheet.title = Some(title);
                     }
@@ -179,7 +183,7 @@ impl CueSheet {
                     if parts.len() >= 3 {
                         let track_number: u32 = parts[1]
                             .parse()
-                            .map_err(|e| simple_error!("Failed to parse track number: {}", e))?;
+                            .map_err(|e| anyhow!("Failed to parse track number: {}", e))?;
                         let data_type = Self::parse_data_type(parts[2])?;
 
                         current_track = Some(Track {
@@ -197,27 +201,27 @@ impl CueSheet {
                     }
                 }
                 "INDEX" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 3 {
-                            let index = Self::parse_index(parts[1], parts[2])?;
-                            track.indices.push(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 3
+                    {
+                        let index = Self::parse_index(parts[1], parts[2])?;
+                        track.indices.push(index);
                     }
                 }
                 "PREGAP" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 2 {
-                            let index = Self::parse_index("0", parts[1])?;
-                            track.pregap = Some(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 2
+                    {
+                        let index = Self::parse_index("0", parts[1])?;
+                        track.pregap = Some(index);
                     }
                 }
                 "POSTGAP" => {
-                    if let Some(ref mut track) = current_track {
-                        if parts.len() >= 2 {
-                            let index = Self::parse_index("0", parts[1])?;
-                            track.postgap = Some(index);
-                        }
+                    if let Some(ref mut track) = current_track
+                        && parts.len() >= 2
+                    {
+                        let index = Self::parse_index("0", parts[1])?;
+                        track.postgap = Some(index);
                     }
                 }
                 "REM" => {
@@ -243,12 +247,11 @@ impl CueSheet {
     }
 
     fn extract_quoted_string(line: &str) -> String {
-        if let Some(start) = line.find('"') {
-            if let Some(end) = line.rfind('"') {
-                if start < end {
-                    return line[start + 1..end].to_string();
-                }
-            }
+        if let Some(start) = line.find('"')
+            && let Some(end) = line.rfind('"')
+            && start < end
+        {
+            return line[start + 1..end].to_string();
         }
         // Fallback: take everything after the first space
         line.split_whitespace()
@@ -257,7 +260,7 @@ impl CueSheet {
             .join(" ")
     }
 
-    fn parse_file(line: &str) -> SimpleResult<AudioFile> {
+    fn parse_file(line: &str) -> Result<AudioFile> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
             bail!("Invalid FILE command: {}", line);
@@ -279,7 +282,7 @@ impl CueSheet {
         })
     }
 
-    fn parse_data_type(data_type_str: &str) -> SimpleResult<DataType> {
+    fn parse_data_type(data_type_str: &str) -> Result<DataType> {
         match data_type_str.to_uppercase().as_str() {
             "AUDIO" => Ok(DataType::Audio),
             "MODE1/2048" => Ok(DataType::Mode1_2048),
@@ -293,10 +296,10 @@ impl CueSheet {
         }
     }
 
-    fn parse_index(number_str: &str, time_str: &str) -> SimpleResult<Index> {
+    fn parse_index(number_str: &str, time_str: &str) -> Result<Index> {
         let number: u32 = number_str
             .parse()
-            .map_err(|e| simple_error!("Failed to parse index number: {}", e))?;
+            .map_err(|e| anyhow!("Failed to parse index number: {}", e))?;
         let time_parts: Vec<&str> = time_str.split(':').collect();
 
         if time_parts.len() != 3 {
@@ -305,13 +308,13 @@ impl CueSheet {
 
         let minutes: u32 = time_parts[0]
             .parse()
-            .map_err(|e| simple_error!("Failed to parse minutes: {}", e))?;
+            .map_err(|e| anyhow!("Failed to parse minutes: {}", e))?;
         let seconds: u32 = time_parts[1]
             .parse()
-            .map_err(|e| simple_error!("Failed to parse seconds: {}", e))?;
+            .map_err(|e| anyhow!("Failed to parse seconds: {}", e))?;
         let frames: u32 = time_parts[2]
             .parse()
-            .map_err(|e| simple_error!("Failed to parse frames: {}", e))?;
+            .map_err(|e| anyhow!("Failed to parse frames: {}", e))?;
 
         Ok(Index {
             number,
@@ -326,7 +329,7 @@ impl CueSheet {
         &self,
         working_directory: P,
         destination_directory: P,
-    ) -> SimpleResult<(String, Vec<PathBuf>)> {
+    ) -> Result<(String, Vec<PathBuf>)> {
         let mut current_sector = 0;
         let mut gdi_output = String::new();
         let mut track_paths = Vec::new();
@@ -387,10 +390,9 @@ impl CueSheet {
                 .comments
                 .iter()
                 .any(|c| c.contains("HIGH-DENSITY AREA"))
+                && current_sector < 45000
             {
-                if current_sector < 45000 {
-                    current_sector = 45000;
-                }
+                current_sector = 45000;
             }
 
             track_paths.push(output_track_path);
@@ -399,17 +401,13 @@ impl CueSheet {
         Ok((gdi_output, track_paths))
     }
 
-    async fn copy_full_file<P: AsRef<Path>>(
-        &self,
-        input_path: P,
-        output_path: P,
-    ) -> SimpleResult<u32> {
+    async fn copy_full_file<P: AsRef<Path>>(&self, input_path: P, output_path: P) -> Result<u32> {
         tokio::fs::copy(&input_path, &output_path)
             .await
-            .map_err(|e| simple_error!("Failed to copy file: {}", e))?;
+            .map_err(|e| anyhow!("Failed to copy file: {}", e))?;
         let metadata = tokio::fs::metadata(&input_path)
             .await
-            .map_err(|e| simple_error!("Failed to get metadata: {}", e))?;
+            .map_err(|e| anyhow!("Failed to get metadata: {}", e))?;
         let file_size = metadata.len();
         Ok((file_size / SECTOR_SIZE as u64) as u32)
     }
@@ -419,30 +417,30 @@ impl CueSheet {
         input_path: P,
         output_path: P,
         frames: u32,
-    ) -> SimpleResult<u32> {
+    ) -> Result<u32> {
         let mut input_file = File::open(&input_path)
             .await
-            .map_err(|e| simple_error!("Failed to open input file: {}", e))?;
+            .map_err(|e| anyhow!("Failed to open input file: {}", e))?;
         let mut output_file = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(&output_path)
             .await
-            .map_err(|e| simple_error!("Failed to open output file: {}", e))?;
+            .map_err(|e| anyhow!("Failed to open output file: {}", e))?;
 
         // Skip gap frames
         let skip_bytes = frames as u64 * SECTOR_SIZE as u64;
         input_file
             .seek(SeekFrom::Start(skip_bytes))
             .await
-            .map_err(|e| simple_error!("Failed to seek: {}", e))?;
+            .map_err(|e| anyhow!("Failed to seek: {}", e))?;
 
         // Calculate remaining sectors
         let metadata = input_file
             .metadata()
             .await
-            .map_err(|e| simple_error!("Failed to get metadata: {}", e))?;
+            .map_err(|e| anyhow!("Failed to get metadata: {}", e))?;
         let total_size = metadata.len();
         let remaining_size = total_size - skip_bytes;
         let sector_count = (remaining_size / SECTOR_SIZE as u64) as u32;
@@ -455,14 +453,14 @@ impl CueSheet {
             let bytes_read = input_file
                 .read(&mut buffer)
                 .await
-                .map_err(|e| simple_error!("Failed to read: {}", e))?;
+                .map_err(|e| anyhow!("Failed to read: {}", e))?;
             if bytes_read == 0 {
                 break;
             }
             output_file
                 .write_all(&buffer[..bytes_read])
                 .await
-                .map_err(|e| simple_error!("Failed to write: {}", e))?;
+                .map_err(|e| anyhow!("Failed to write: {}", e))?;
             if bytes_read == SECTOR_SIZE {
                 _copied_sectors += 1;
             }
@@ -471,7 +469,7 @@ impl CueSheet {
         output_file
             .flush()
             .await
-            .map_err(|e| simple_error!("Failed to flush: {}", e))?;
+            .map_err(|e| anyhow!("Failed to flush: {}", e))?;
         Ok(sector_count)
     }
 
@@ -483,7 +481,7 @@ impl CueSheet {
 // === GDI TRAIT IMPLEMENTATIONS ===
 
 impl AsGdi for CommonRomfile {
-    fn as_gdi(self, track_romfiles: Vec<CommonRomfile>) -> SimpleResult<GdiRomfile> {
+    fn as_gdi(self, track_romfiles: Vec<CommonRomfile>) -> Result<GdiRomfile> {
         if self
             .path
             .extension()
@@ -520,7 +518,7 @@ impl ToGdi for CueBinRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<GdiRomfile> {
+    ) -> Result<GdiRomfile> {
         progress_bar.set_message("Converting CUE/BIN to GDI");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -543,13 +541,13 @@ impl ToGdi for CueBinRomfile {
             .with_extension(GDI_EXTENSION);
         tokio::fs::write(&gdi_path, gdi_content)
             .await
-            .map_err(|e| simple_error!("Failed to write GDI file: {}", e))?;
+            .map_err(|e| anyhow!("Failed to write GDI file: {}", e))?;
 
         // Collect the track romfiles that were created by the conversion
         let track_romfiles = track_paths
             .into_iter()
             .map(|path| CommonRomfile::from_path(&path))
-            .collect::<SimpleResult<Vec<CommonRomfile>>>()?;
+            .collect::<Result<Vec<CommonRomfile>>>()?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
