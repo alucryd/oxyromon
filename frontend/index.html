@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="description" content="" />
+    <link rel="icon" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>oxyromon</title>
+    <link data-trunk rel="copy-dir" href="vendor/webawesome" />
+    <link data-trunk rel="copy-dir" href="vendor/icons" data-target-path="icons" />
+    <link rel="stylesheet" href="/webawesome/styles/webawesome.css" />
+    <!-- The theme pulls in the colour palette but not the variants built on top
+         of it, so --wa-color-brand-* and friends are only defined inside the
+         components' own shadow styles. Our stylesheet needs them too. -->
+    <link rel="stylesheet" href="/webawesome/styles/color/variants.css" />
+    <script type="module">
+      // Serve icons from our own copy: the default resolver points at the Font
+      // Awesome CDN, which is not reachable when oxyromon is run offline.
+      import { setBasePath, setIconPath } from "/webawesome/webawesome.js";
+      setBasePath("/webawesome");
+      setIconPath("/icons");
+    </script>
+    <script type="module" src="/webawesome/webawesome.loader.js"></script>
+    <link data-trunk rel="css" href="styles.css" />
+    <link data-trunk rel="copy-file" href="icon.svg" />
+    <link data-trunk rel="copy-file" href="logo.svg" />
+    <link data-trunk rel="rust" data-wasm-opt="z" />
+  </head>
+
+  <body></body>
+</html>

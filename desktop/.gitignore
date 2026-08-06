@@ -1,0 +1,6 @@
+# build artifacts
+/target
+# Tauri-generated ACL/capability schemas
+/gen
+# oxyromon server binary staged as a sidecar by scripts/stage-sidecar.sh
+/binaries

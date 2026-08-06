@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -9,6 +8,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -62,7 +62,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
 
@@ -101,7 +101,7 @@ async fn rebuild_system(
     system: &System,
     merging: Merging,
     force: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 
@@ -130,29 +130,29 @@ async fn rebuild_system(
             .await;
             existing_rom = roms.pop();
         }
-        if existing_rom.is_none() {
-            if let Some(md5) = missing_rom.md5 {
-                let mut roms = find_roms_with_romfile_by_size_and_md5_and_system_id(
-                    connection,
-                    missing_rom.size,
-                    &md5,
-                    system.id,
-                )
-                .await;
-                existing_rom = roms.pop();
-            }
+        if existing_rom.is_none()
+            && let Some(md5) = missing_rom.md5
+        {
+            let mut roms = find_roms_with_romfile_by_size_and_md5_and_system_id(
+                connection,
+                missing_rom.size,
+                &md5,
+                system.id,
+            )
+            .await;
+            existing_rom = roms.pop();
         }
-        if existing_rom.is_none() {
-            if let Some(sha1) = missing_rom.sha1 {
-                let mut roms = find_roms_with_romfile_by_size_and_sha1_and_system_id(
-                    connection,
-                    missing_rom.size,
-                    &sha1,
-                    system.id,
-                )
-                .await;
-                existing_rom = roms.pop();
-            }
+        if existing_rom.is_none()
+            && let Some(sha1) = missing_rom.sha1
+        {
+            let mut roms = find_roms_with_romfile_by_size_and_sha1_and_system_id(
+                connection,
+                missing_rom.size,
+                &sha1,
+                system.id,
+            )
+            .await;
+            existing_rom = roms.pop();
         }
         if let Some(existing_rom) = existing_rom {
             let romfile = find_romfile_by_id(connection, existing_rom.romfile_id.unwrap())
@@ -234,7 +234,7 @@ async fn expand_game(
     game: &Game,
     merging: Merging,
     compression_level: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let game_directory = get_system_directory(connection, system)
@@ -242,11 +242,10 @@ async fn expand_game(
         .join(&game.name);
     let game_archive_path = get_system_directory(connection, system)
         .await?
-        .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
-    let relative_game_archive_path = try_with!(
-        game_archive_path.strip_prefix(rom_directory),
-        "Failed to retrieve relative path"
-    );
+        .join(format!("{}.{}", game.name, ZIP_EXTENSION));
+    let relative_game_archive_path = game_archive_path
+        .strip_prefix(rom_directory)
+        .context("Failed to retrieve relative path")?;
     let archive_romfile = find_romfile_by_path(
         connection,
         relative_game_archive_path.as_os_str().to_str().unwrap(),
@@ -284,7 +283,7 @@ async fn expand_game(
             )
             .await?;
         } else {
-            print_warning(progress_bar, &format!("Missing \"{}\"", &rom.name));
+            print_warning(progress_bar, &format!("Missing \"{}\"", rom.name));
             return Ok(());
         }
     }
@@ -305,16 +304,15 @@ async fn trim_game(
     system: &System,
     game: &Game,
     merging: Merging,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
     let romfile_path = get_system_directory(connection, system)
         .await?
-        .join(format!("{}.{}", &game.name, ZIP_EXTENSION));
-    let relative_path = try_with!(
-        romfile_path.strip_prefix(rom_directory),
-        "Failed to retrieve relative path"
-    );
+        .join(format!("{}.{}", game.name, ZIP_EXTENSION));
+    let relative_path = romfile_path
+        .strip_prefix(rom_directory)
+        .context("Failed to retrieve relative path")?;
     let romfile =
         find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap()).await;
     let roms = match merging {
@@ -337,6 +335,7 @@ async fn trim_game(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn add_rom(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -346,7 +345,7 @@ async fn add_rom(
     destination_directory: &PathBuf,
     destination_archive_romfile: &Option<Romfile>,
     compression_level: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let source_romfile = find_romfile_by_id(connection, source_rom.romfile_id.unwrap())
         .await
         .as_common(connection)
@@ -419,7 +418,7 @@ async fn delete_rom(
     progress_bar: &ProgressBar,
     rom: &Rom,
     archive_romfile: &Option<Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if let Some(archive_romfile) = archive_romfile {
         archive_romfile
             .as_common(connection)

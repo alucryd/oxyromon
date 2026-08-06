@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -26,7 +26,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, false, matches.get_flag("EMPTY"), false).await?;
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -42,7 +42,7 @@ pub async fn purge_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;

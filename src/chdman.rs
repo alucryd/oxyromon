@@ -1,14 +1,15 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
@@ -58,9 +59,7 @@ pub enum ChdLdCompressionAlgorithm {
     Avhu,
 }
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ChdType {
@@ -79,15 +78,15 @@ pub trait ToRiff {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<RiffRomfile>;
+    ) -> Result<RiffRomfile>;
 }
 
 pub trait AsRiff {
-    async fn as_riff(self) -> SimpleResult<RiffRomfile>;
+    async fn as_riff(self) -> Result<RiffRomfile>;
 }
 
 impl AsRiff for CommonRomfile {
-    async fn as_riff(self) -> SimpleResult<RiffRomfile> {
+    async fn as_riff(self) -> Result<RiffRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
         if mimetype.is_none() || mimetype.unwrap().extension() != RIFF_EXTENSION {
             bail!("Not a valid riff");
@@ -105,15 +104,15 @@ pub trait ToRdsk {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<RdskRomfile>;
+    ) -> Result<RdskRomfile>;
 }
 
 pub trait AsRdsk {
-    async fn as_rdsk(self) -> SimpleResult<RdskRomfile>;
+    async fn as_rdsk(self) -> Result<RdskRomfile>;
 }
 
 impl AsRdsk for CommonRomfile {
-    async fn as_rdsk(self) -> SimpleResult<RdskRomfile> {
+    async fn as_rdsk(self) -> Result<RdskRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
         if mimetype.is_none() || mimetype.unwrap().extension() != RDSK_EXTENSION {
             bail!("Not a valid rdsk");
@@ -132,12 +131,18 @@ pub struct ChdRomfile {
     pub track_count: usize,
 }
 
+impl GetRomfile for ChdRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 impl Size for ChdRomfile {
     async fn get_size(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-    ) -> SimpleResult<u64> {
+    ) -> Result<u64> {
         if self.size > 0 {
             Ok(self.size)
         } else {
@@ -180,7 +185,7 @@ impl HashAndSize for ChdRomfile {
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
-    ) -> SimpleResult<(String, u64)> {
+    ) -> Result<(String, u64)> {
         if hash_algorithm == &HashAlgorithm::Sha1 && !self.sha1.is_empty() && self.size > 0 {
             Ok((self.sha1.clone(), self.size))
         } else {
@@ -240,7 +245,7 @@ impl Check for ChdRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-    ) -> SimpleResult<()> {
+    ) -> Result<()> {
         print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         match self.chd_type {
@@ -288,7 +293,7 @@ pub trait ToChd {
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
         parent_romfile: Option<CommonRomfile>,
-    ) -> SimpleResult<ChdRomfile>;
+    ) -> Result<ChdRomfile>;
 }
 
 impl ToChd for CueBinRomfile {
@@ -299,7 +304,7 @@ impl ToChd for CueBinRomfile {
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
         parent_romfile: Option<CommonRomfile>,
-    ) -> SimpleResult<ChdRomfile> {
+    ) -> Result<ChdRomfile> {
         let chd_type = ChdType::Cd;
         let path = create_chd(
             progress_bar,
@@ -331,7 +336,7 @@ impl ToChd for IsoRomfile {
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
         parent_romfile: Option<CommonRomfile>,
-    ) -> SimpleResult<ChdRomfile> {
+    ) -> Result<ChdRomfile> {
         let chd_type = ChdType::Dvd;
         let path = create_chd(
             progress_bar,
@@ -363,7 +368,7 @@ impl ToChd for RiffRomfile {
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
         parent_romfile: Option<CommonRomfile>,
-    ) -> SimpleResult<ChdRomfile> {
+    ) -> Result<ChdRomfile> {
         let chd_type = ChdType::Ld;
         let path = create_chd(
             progress_bar,
@@ -395,7 +400,7 @@ impl ToChd for RdskRomfile {
         compression_algorithms: &[String],
         hunk_size: &Option<usize>,
         parent_romfile: Option<CommonRomfile>,
-    ) -> SimpleResult<ChdRomfile> {
+    ) -> Result<ChdRomfile> {
         let chd_type = ChdType::Hd;
         let path = create_chd(
             progress_bar,
@@ -427,7 +432,7 @@ impl ToCueBin for ChdRomfile {
         cue_romfile: Option<CommonRomfile>,
         bin_roms: &[&Rom],
         quiet: bool,
-    ) -> SimpleResult<CueBinRomfile> {
+    ) -> Result<CueBinRomfile> {
         let split = self.track_count > 1;
         let (bin_path, cue_path) = extract_chd(
             progress_bar,
@@ -487,7 +492,7 @@ impl ToIso for ChdRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<IsoRomfile> {
+    ) -> Result<IsoRomfile> {
         let (path, _) = extract_chd(
             progress_bar,
             &self.romfile.path,
@@ -507,7 +512,7 @@ impl ToRiff for ChdRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<RiffRomfile> {
+    ) -> Result<RiffRomfile> {
         let (path, _) = extract_chd(
             progress_bar,
             &self.romfile.path,
@@ -527,7 +532,7 @@ impl ToRdsk for ChdRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<RdskRomfile> {
+    ) -> Result<RdskRomfile> {
         let (path, _) = extract_chd(
             progress_bar,
             &self.romfile.path,
@@ -543,28 +548,14 @@ impl ToRdsk for ChdRomfile {
 }
 
 pub trait AsChd {
-    async fn parse_chd(
-        &self,
-    ) -> SimpleResult<(ChdType, u64, String, String, Option<String>, usize)>;
-    async fn as_chd(self) -> SimpleResult<ChdRomfile>;
-    async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile>;
+    async fn parse_chd(&self) -> Result<(ChdType, u64, String, String, Option<String>, usize)>;
+    async fn as_chd(self) -> Result<ChdRomfile>;
+    async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> Result<ChdRomfile>;
 }
 
 impl AsChd for CommonRomfile {
-    async fn parse_chd(
-        &self,
-    ) -> SimpleResult<(ChdType, u64, String, String, Option<String>, usize)> {
-        let output = Command::new(CHDMAN)
-            .arg("info")
-            .arg("-i")
-            .arg(&self.path)
-            .output()
-            .await
-            .expect("Failed to parse chd");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str());
-        }
+    async fn parse_chd(&self) -> Result<(ChdType, u64, String, String, Option<String>, usize)> {
+        let output = run_tool(Command::new(CHDMAN).arg("info").arg("-i").arg(&self.path)).await?;
 
         let stdout = String::from_utf8(output.stdout).unwrap();
 
@@ -608,22 +599,20 @@ impl AsChd for CommonRomfile {
             ));
         }
 
-        let size: u64 = try_with!(
-            stdout
-                .lines()
-                .find(|&line| line.starts_with("Logical size:"))
-                .unwrap()
-                .split(":")
-                .last()
-                .unwrap()
-                .trim()
-                .split(" ")
-                .next()
-                .unwrap()
-                .replace(",", "")
-                .parse(),
-            "Failed to parse size"
-        );
+        let size: u64 = stdout
+            .lines()
+            .find(|&line| line.starts_with("Logical size:"))
+            .unwrap()
+            .split(":")
+            .last()
+            .unwrap()
+            .trim()
+            .split(" ")
+            .next()
+            .unwrap()
+            .replace(",", "")
+            .parse()
+            .context("Failed to parse size")?;
         let data_sha1 = stdout
             .lines()
             .find(|&line| line.starts_with("Data SHA1:"))
@@ -645,7 +634,7 @@ impl AsChd for CommonRomfile {
         }
         bail!("Unknown CHD type");
     }
-    async fn as_chd(self) -> SimpleResult<ChdRomfile> {
+    async fn as_chd(self) -> Result<ChdRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
@@ -685,11 +674,10 @@ impl AsChd for CommonRomfile {
                             _parent_sha1,
                             _track_count,
                         )) = candidate_romfile.parse_chd().await
+                            && candidate_sha1 == *parent_sha1_value
                         {
-                            if candidate_sha1 == *parent_sha1_value {
-                                parent_romfile = Some(candidate_romfile);
-                                break;
-                            }
+                            parent_romfile = Some(candidate_romfile);
+                            break;
                         }
                     }
                     parent_romfile
@@ -713,7 +701,7 @@ impl AsChd for CommonRomfile {
             track_count,
         })
     }
-    async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> SimpleResult<ChdRomfile> {
+    async fn as_chd_with_parent(self, parent_romfile: ChdRomfile) -> Result<ChdRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
         if mimetype.is_none() || mimetype.unwrap().extension() != CHD_EXTENSION {
             bail!("Not a valid chd");
@@ -753,7 +741,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     hunk_size: &Option<usize>,
     compression_algorithms: &[String],
     parent_romfile: &Option<CommonRomfile>,
-) -> SimpleResult<PathBuf> {
+) -> Result<PathBuf> {
     progress_bar.set_message("Creating chd");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -806,11 +794,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     log::debug!("{:?}", command);
 
-    let output = command.output().await.expect("Failed to create chd");
-
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str())
-    }
+    run_tool(&mut command).await?;
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
@@ -826,7 +810,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     chd_type: &ChdType,
     parent_romfile: &Option<CommonRomfile>,
     split: bool,
-) -> SimpleResult<(PathBuf, Option<PathBuf>)> {
+) -> Result<(PathBuf, Option<PathBuf>)> {
     progress_bar.set_message("Extracting chd");
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -899,11 +883,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     log::debug!("{:?}", command);
 
-    let output = command.output().await.expect("Failed to extract chd");
-
-    if !output.status.success() {
-        bail!(String::from_utf8(output.stderr).unwrap().as_str());
-    }
+    run_tool(&mut command).await?;
 
     progress_bar.set_message("");
     progress_bar.disable_steady_tick();
@@ -911,11 +891,11 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok((bin_path, cue_path))
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(CHDMAN).output().await,
-        "Failed to spawn chdman"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(CHDMAN)
+        .output()
+        .await
+        .context("Failed to spawn chdman")?;
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -26,7 +26,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
     let mut games = find_games_by_system_id(connection, system.id).await;
 
@@ -50,16 +50,12 @@ pub async fn main(
         }
     } else {
         // Interactive mode
-        loop {
-            if let Some(game) = prompt_for_game(&games, None)? {
-                let game_id = game.id;
-                purge_ird(connection, progress_bar, game).await?;
-                games.retain(|g| g.id != game_id);
-                if games.is_empty() {
-                    print_info(progress_bar, "No more IRD games to purge");
-                    break;
-                }
-            } else {
+        while let Some(game) = prompt_for_game(&games, None)? {
+            let game_id = game.id;
+            purge_ird(connection, progress_bar, game).await?;
+            games.retain(|g| g.id != game_id);
+            if games.is_empty() {
+                print_info(progress_bar, "No more IRD games to purge");
                 break;
             }
         }
@@ -74,7 +70,7 @@ pub async fn purge_ird(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     game: &Game,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_header(progress_bar, &format!("Purging IRD for \"{}\"", game.name));
 
     let mut transaction = begin_transaction(connection).await;
@@ -127,7 +123,7 @@ pub async fn purge_ird(
                 common_romfile
                     .rename(
                         progress_bar,
-                        &trash_directory.join(&common_romfile.path.file_name().unwrap()),
+                        &trash_directory.join(common_romfile.path.file_name().unwrap()),
                         false,
                     )
                     .await?

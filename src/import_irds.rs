@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
 use super::mimetype::*;
@@ -6,7 +5,9 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::{Result, bail};
 use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
 use indicatif::ProgressBar;
@@ -54,7 +55,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
     let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
@@ -62,26 +63,23 @@ pub async fn main(
     for ird_path in ird_paths {
         let (irdfile, mut header) = parse_ird(ird_path).await?;
 
-        print_header(progress_bar, &format!("IRD: {}", &irdfile.game_name));
-        print_info(progress_bar, &format!("IRD Version: {}", &irdfile.version));
-        print_info(progress_bar, &format!("Game ID: {}", &irdfile.game_id));
+        print_header(progress_bar, &format!("IRD: {}", irdfile.game_name));
+        print_info(progress_bar, &format!("IRD Version: {}", irdfile.version));
+        print_info(progress_bar, &format!("Game ID: {}", irdfile.game_id));
         print_info(
             progress_bar,
-            &format!("Update Version: {}", &irdfile.update_version),
+            &format!("Update Version: {}", irdfile.update_version),
         );
         print_info(
             progress_bar,
-            &format!("Game Version: {}", &irdfile.game_version),
+            &format!("Game Version: {}", irdfile.game_version),
         );
         print_info(
             progress_bar,
-            &format!("App Version: {}", &irdfile.app_version),
+            &format!("App Version: {}", irdfile.app_version),
         );
-        print_info(
-            progress_bar,
-            &format!("Regions: {}", &irdfile.regions_count),
-        );
-        print_info(progress_bar, &format!("Files: {}", &irdfile.files_count));
+        print_info(progress_bar, &format!("Regions: {}", irdfile.regions_count));
+        print_info(progress_bar, &format!("Files: {}", irdfile.files_count));
 
         if irdfile.version != IRD_VERSION {
             print_warning(progress_bar, "IRD version unsupported");
@@ -113,7 +111,7 @@ pub async fn main(
     Ok(())
 }
 
-pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> SimpleResult<(Irdfile, Vec<u8>)> {
+pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Irdfile, Vec<u8>)> {
     let mimetype = get_mimetype(path).await?;
 
     if mimetype.is_none() {
@@ -268,7 +266,7 @@ pub async fn import_ird(
     game: &Game,
     irdfile: &Irdfile,
     header: &mut [u8],
-) -> SimpleResult<()> {
+) -> Result<()> {
     let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
     let parent_rom = prompt_for_rom(&roms, None)?;
     if parent_rom.is_none() {
@@ -307,13 +305,12 @@ pub async fn import_ird(
                     false,
                 )
                 .await;
-                if size != rom.size
-                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap()
+                if (size != rom.size
+                    || irdfile.files_hashes.get(&location).unwrap() != rom.md5.as_ref().unwrap())
+                    && let Some(romfile_id) = rom.romfile_id
                 {
-                    if let Some(romfile_id) = rom.romfile_id {
-                        orphan_romfile_ids.push(romfile_id);
-                        update_rom_romfile(&mut transaction, rom.id, None).await;
-                    }
+                    orphan_romfile_ids.push(romfile_id);
+                    update_rom_romfile(&mut transaction, rom.id, None).await;
                 }
                 rom.id
             }

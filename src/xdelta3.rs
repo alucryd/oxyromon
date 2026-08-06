@@ -1,18 +1,18 @@
-use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
-use lazy_static::lazy_static;
+use anyhow::{Context, Result, bail};
 use regex::Regex;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::process::Command;
 
 const XDELTA3: &str = "xdelta3";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
+// patch application is not wired up yet, kept for the planned feature
+#[allow(dead_code)]
 pub struct XdeltaRomfile {
     pub romfile: CommonRomfile,
 }
@@ -23,10 +23,10 @@ impl Patch for XdeltaRomfile {
         progress_bar: &indicatif::ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<CommonRomfile> {
+    ) -> Result<CommonRomfile> {
         progress_bar.set_message(format!(
             "Applying \"{}\"",
-            &self.romfile.path.file_name().unwrap().to_str().unwrap()
+            self.romfile.path.file_name().unwrap().to_str().unwrap()
         ));
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -35,7 +35,7 @@ impl Patch for XdeltaRomfile {
             progress_bar,
             &format!(
                 "Patching \"{}\"",
-                &romfile.path.file_name().unwrap().to_str().unwrap()
+                romfile.path.file_name().unwrap().to_str().unwrap()
             ),
         );
 
@@ -54,12 +54,12 @@ impl Patch for XdeltaRomfile {
             .unwrap_or_else(|_| {
                 panic!(
                     "Failed to patch \"{}\"",
-                    &romfile.path.file_name().unwrap().to_str().unwrap()
+                    romfile.path.file_name().unwrap().to_str().unwrap()
                 )
             });
 
         if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
+            bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
         progress_bar.set_message("");
@@ -69,12 +69,13 @@ impl Patch for XdeltaRomfile {
     }
 }
 
+#[allow(dead_code)]
 pub trait AsXdelta {
-    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile>;
+    fn as_xdelta(self) -> Result<XdeltaRomfile>;
 }
 
 impl AsXdelta for CommonRomfile {
-    fn as_xdelta(self) -> SimpleResult<XdeltaRomfile> {
+    fn as_xdelta(self) -> Result<XdeltaRomfile> {
         if self
             .path
             .extension()
@@ -90,11 +91,12 @@ impl AsXdelta for CommonRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(XDELTA3).arg("-V").output().await,
-        "Failed to spawn xdelta3"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(XDELTA3)
+        .arg("-V")
+        .output()
+        .await
+        .context("Failed to spawn xdelta3")?;
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     let version = stderr

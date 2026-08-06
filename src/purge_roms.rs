@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::{Context, Result};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -59,7 +59,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let answer_yes = matches.get_flag("YES");
     if matches.get_flag("MISSING") {
         purge_missing_romfiles(connection, progress_bar).await?;
@@ -82,7 +82,7 @@ pub async fn main(
 async fn purge_missing_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, "Processing missing ROM files");
 
     let romfiles = find_romfiles(connection).await;
@@ -109,7 +109,7 @@ async fn purge_trashed_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     answer_yes: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, "Processing trashed ROM files");
 
     let romfiles = find_romfiles_in_trash(connection).await;
@@ -154,7 +154,7 @@ async fn purge_orphan_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     answer_yes: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, "Processing orphan ROM files");
 
     let romfiles = find_orphan_romfiles(connection).await;
@@ -199,17 +199,17 @@ async fn purge_foreign_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     answer_yes: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     print_subheader(progress_bar, "Processing foreign ROM files");
     let rom_directory = get_rom_directory(connection).await;
     let walker = WalkDir::new(&rom_directory).into_iter();
     let mut count = 0;
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
-            let relative_path = try_with!(
-                entry.path().strip_prefix(&rom_directory),
-                "Failed to retrieve relative path"
-            );
+            let relative_path = entry
+                .path()
+                .strip_prefix(&rom_directory)
+                .context("Failed to retrieve relative path")?;
             if find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap())
                 .await
                 .is_none()

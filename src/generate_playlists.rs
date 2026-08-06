@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::common::*;
 use super::database::*;
 use super::download_dats::REDUMP_SYSTEM_URL;
@@ -7,19 +6,19 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::io::BufWriter;
 
-lazy_static! {
-    pub static ref DISC_REGEX: Regex = Regex::new(r" \(Disc \d+\).*").unwrap();
-}
+pub static DISC_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" \(Disc \d+\).*").unwrap());
 
 pub fn subcommand() -> Command {
     Command::new("generate-playlists")
@@ -38,7 +37,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems = prompt_for_systems(
         connection,
         Some(REDUMP_SYSTEM_URL),
@@ -59,7 +58,7 @@ async fn process_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let mut grouped_games: HashMap<String, Vec<Game>> = HashMap::new();
     find_games_by_system_id(connection, system.id)
         .await
@@ -131,7 +130,7 @@ async fn process_system(
             .expect("Failed to create M3U file");
         let mut writer = BufWriter::new(playlist_file);
 
-        print_action(progress_bar, &format!("Creating \"{}\"", &playlist_name));
+        print_action(progress_bar, &format!("Creating \"{}\"", playlist_name));
 
         for romfile in existing_romfiles {
             writer

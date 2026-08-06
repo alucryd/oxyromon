@@ -66,9 +66,32 @@ You can also target GNU to solve the asm-hashes issue:
 
     cargo build --release --target x86_64-pc-windows-gnu
 
-For the web UI, you will also need pnpm:
+For the web UI, you will also need the [Trunk](https://trunkrs.dev) bundler and
+the `wasm32-unknown-unknown` target:
 
+    rustup target add wasm32-unknown-unknown
+    cargo install --locked trunk
     cargo build --release --features server
+
+The web UI (a [Leptos](https://leptos.dev) app) is compiled to WebAssembly and
+embedded into the binary during the build. Set `SKIP_TRUNK=true` to skip that
+step when the assets are already built.
+
+There is also an optional native desktop app, which wraps the same web UI in a
+[Tauri](https://tauri.app) window. It lives in `desktop/` and needs everything
+listed above for the web UI, plus the Tauri CLI and your platform's webview
+development packages (on Linux: `webkit2gtk-4.1`, `gtk3`, `librsvg` and
+`libayatana-appindicator`):
+
+    cargo install --locked tauri-cli --version "^2"
+    cd desktop
+    cargo tauri build
+
+This produces a `oxyromon-desktop` binary (and installers under
+`desktop/target/release/bundle/`). It bundles the regular `oxyromon` binary as a
+sidecar, starts `oxyromon server` on a free loopback port when launched, and
+points the window at it — so the desktop app and the CLI share the same database
+and settings. Use `cargo tauri dev` while working on it.
 
 The build uses rustls by default, but you can also opt for OpenSSL:
 
@@ -654,7 +677,7 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
 
 Launch the backend server
 
-The server exposes a GraphQL API endpoint at `/graphql`. An associated Svelte.js web UI is also exposed at `/`.
+The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
 
     Usage: oxyromon server [OPTIONS]
 

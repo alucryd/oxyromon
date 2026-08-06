@@ -1,4 +1,5 @@
 use super::config::{PreferredRegion, PreferredVersion, SubfolderScheme};
+use anyhow::Result;
 use async_graphql::{CustomValidator, InputValueError};
 use std::path::Path;
 use strum::VariantNames;

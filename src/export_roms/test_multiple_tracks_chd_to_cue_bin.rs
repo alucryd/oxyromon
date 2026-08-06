@@ -8,10 +8,10 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    if let Ok(version) = chdman::get_version().await {
-        if version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less {
-            return;
-        }
+    if let Ok(version) = chdman::get_version().await
+        && version.as_str().cmp(chdman::MIN_SPLITBIN_VERSION) == Ordering::Less
+    {
+        return;
     }
 
     // given
@@ -24,14 +24,14 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -53,7 +53,7 @@ async fn test() {
 
     let system = find_systems(&mut connection).await.remove(0);
 
-    let matches = import_roms::subcommand().get_matches_from(&[
+    let matches = import_roms::subcommand().get_matches_from([
         "import-roms",
         chd_romfile_path.as_os_str().to_str().unwrap(),
         cue_romfile_path.as_os_str().to_str().unwrap(),

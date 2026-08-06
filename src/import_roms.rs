@@ -1,4 +1,3 @@
-use super::SimpleResult;
 use super::chdman;
 use super::chdman::{AsChd, ChdType};
 use super::common::*;
@@ -18,6 +17,8 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
 use super::util::*;
+use anyhow::{Result, bail};
+use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
@@ -140,7 +141,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let mut systems: Vec<System> = vec![];
     if let Some(system_names) = matches.get_many::<String>("SYSTEM") {
         for system_name in system_names {
@@ -158,7 +159,7 @@ pub async fn main(
 
     // Validate that trash and delete are mutually exclusive
     if trash && delete {
-        return Err("Cannot use both --trash and --delete flags simultaneously".into());
+        bail!("Cannot use both --trash and --delete flags simultaneously");
     }
 
     let force = matches.get_flag("FORCE");
@@ -238,7 +239,7 @@ pub async fn main(
         }
         for system in &systems {
             if let Some(system) = system {
-                print_header(progress_bar, &format!("Searching in \"{}\"", &system.name));
+                print_header(progress_bar, &format!("Searching in \"{}\"", system.name));
             }
             let header = match system {
                 Some(system) => find_header_by_system_id(connection, system.id).await,
@@ -250,7 +251,7 @@ pub async fn main(
                         progress_bar,
                         &format!(
                             "Processing \"{}\"",
-                            &path.file_name().unwrap().to_str().unwrap()
+                            path.file_name().unwrap().to_str().unwrap()
                         ),
                     );
                     match system.as_ref() {
@@ -349,7 +350,7 @@ pub async fn import_rom<P: AsRef<Path>>(
     force: bool,
     unattended_mode: UnattendedMode,
     as_is: bool,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     print_subheader(
         progress_bar,
         &format!(
@@ -372,18 +373,17 @@ pub async fn import_rom<P: AsRef<Path>>(
     }
 
     // abort if the romfile is already in the database
-    if let Ok(relative_path) = romfile.get_relative_path(&mut transaction).await {
-        if !force
-            && find_romfile_by_path(
-                &mut transaction,
-                relative_path.as_os_str().to_str().unwrap(),
-            )
-            .await
-            .is_some()
-        {
-            print_skip(progress_bar, "Already in database");
-            return Ok((system_ids, game_ids));
-        }
+    if let Ok(relative_path) = romfile.get_relative_path(&mut transaction).await
+        && !force
+        && find_romfile_by_path(
+            &mut transaction,
+            relative_path.as_os_str().to_str().unwrap(),
+        )
+        .await
+        .is_some()
+    {
+        print_skip(progress_bar, "Already in database");
+        return Ok((system_ids, game_ids));
     }
 
     let mimetype = get_mimetype(&romfile.path).await?;
@@ -564,7 +564,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
     system: &System,
     path: &P,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<i64> {
+) -> Result<i64> {
     let sfb_romfile_path = path.as_ref().join(PS3_DISC_SFB);
 
     // abort if the romfile is already in the database
@@ -606,7 +606,7 @@ async fn import_jbfolder<P: AsRef<Path>>(
                         progress_bar,
                         &format!(
                             "Processing \"{}\"",
-                            &entry.path().as_os_str().to_str().unwrap()
+                            entry.path().as_os_str().to_str().unwrap()
                         ),
                     );
                     // force MD5 as IRD files only provide those
@@ -701,9 +701,8 @@ async fn import_jbfolder<P: AsRef<Path>>(
 
                     if let Some(rom) = rom {
                         // abort if rom already has a file
-                        if rom.romfile_id.is_some() {
-                            let romfile =
-                                find_romfile_by_id(&mut transaction, rom.romfile_id.unwrap()).await;
+                        if let Some(romfile_id) = rom.romfile_id {
+                            let romfile = find_romfile_by_id(&mut transaction, romfile_id).await;
                             print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
                             continue;
                         }
@@ -760,7 +759,7 @@ async fn import_archive(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
 
@@ -781,7 +780,7 @@ async fn import_archive(
             progress_bar,
             &format!(
                 "Processing \"{} ({})\"",
-                &archive_romfile.path,
+                archive_romfile.path,
                 archive_romfile
                     .romfile
                     .path
@@ -831,12 +830,12 @@ async fn import_archive(
             );
 
             let rom_path = Path::new(&archive_romfile.path);
-            if let Some(path) = rom_path.parent() {
-                if let Some(file_name) = path.file_name() {
-                    let game_name = file_name.to_str().unwrap();
-                    if !game_name.is_empty() {
-                        game_names.push(game_name);
-                    }
+            if let Some(path) = rom_path.parent()
+                && let Some(file_name) = path.file_name()
+            {
+                let game_name = file_name.to_str().unwrap();
+                if !game_name.is_empty() {
+                    game_names.push(game_name);
                 }
             }
             let rom_name = rom_path.file_name().unwrap().to_str();
@@ -933,14 +932,14 @@ async fn import_archive(
                         .unwrap()
                         .to_lowercase();
                     if system.arcade || PS3_EXTENSIONS.contains(&rom_extension.as_str()) {
-                        system_directory.join(format!("{}.{}", &game.name, &romfile_extension))
+                        system_directory.join(format!("{}.{}", game.name, romfile_extension))
                     } else {
                         system_directory
                             .join(&rom.name)
                             .with_extension(romfile_extension)
                     }
                 }
-                _ => system_directory.join(format!("{}.{}", &game.name, &romfile_extension)),
+                _ => system_directory.join(format!("{}.{}", game.name, romfile_extension)),
             };
 
             // move file
@@ -1007,7 +1006,7 @@ async fn import_chd(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let hash_algorithms = HashAlgorithm::iter().rev().collect::<Vec<HashAlgorithm>>(); // reverse iterator so SHA1 is tried first
     let chd_romfile = romfile.as_chd().await?;
@@ -1512,7 +1511,7 @@ async fn import_cia(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<(HashSet<i64>, HashSet<i64>)> {
+) -> Result<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
     let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
 
@@ -1529,7 +1528,7 @@ async fn import_cia(
             progress_bar,
             &format!(
                 "Processing \"{} ({})\"",
-                &cia_info.path,
+                cia_info.path,
                 romfile.path.file_name().unwrap().to_str().unwrap()
             ),
         );
@@ -1601,7 +1600,7 @@ async fn import_cia(
 
             let system_directory = get_system_directory(connection, system).await?;
 
-            let new_path = system_directory.join(format!("{}.cia", &game.name));
+            let new_path = system_directory.join(format!("{}.cia", game.name));
 
             // move file
             romfile.rename(progress_bar, &new_path, false).await?;
@@ -1659,7 +1658,7 @@ async fn import_cso(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let cso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1752,7 +1751,7 @@ async fn import_nsz(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let nsz_romfile = romfile.as_nsz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1845,7 +1844,7 @@ async fn import_rvz(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let rvz_romfile = romfile.as_rvz()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -1938,7 +1937,7 @@ async fn import_zso(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let zso_romfile = romfile.as_xso().await?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
@@ -2032,7 +2031,7 @@ pub async fn import_other(
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<Option<[i64; 2]>> {
+) -> Result<Option<[i64; 2]>> {
     let hash_algorithms = HashAlgorithm::iter().collect::<Vec<HashAlgorithm>>();
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in &hash_algorithms {
@@ -2133,32 +2132,25 @@ async fn find_rom_by_size_and_hash(
     rom_name: Option<&str>,
     hash_algorithm: &HashAlgorithm,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<MatchResult> {
+) -> Result<MatchResult> {
     let mut roms: Vec<Rom> = vec![];
 
     // first try matching with game and rom names
-    if !game_names.is_empty() && rom_name.is_some() {
+    if !game_names.is_empty()
+        && let Some(rom_name) = rom_name
+    {
         match hash_algorithm {
             HashAlgorithm::Crc => {
                 if let Some(system) = system {
                     find_roms_without_romfile_by_name_and_size_and_crc_and_game_names_and_system_id(
-                        connection,
-                        rom_name.unwrap(),
-                        size,
-                        hash,
-                        game_names,
-                        system.id,
+                        connection, rom_name, size, hash, game_names, system.id,
                     )
                     .await
                     .into_iter()
                     .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_name_and_size_and_crc_and_game_names(
-                        connection,
-                        rom_name.unwrap(),
-                        size,
-                        hash,
-                        game_names,
+                        connection, rom_name, size, hash, game_names,
                     )
                     .await
                     .into_iter()
@@ -2168,23 +2160,14 @@ async fn find_rom_by_size_and_hash(
             HashAlgorithm::Md5 => {
                 if let Some(system) = system {
                     find_roms_without_romfile_by_name_and_size_and_md5_and_game_names_and_system_id(
-                        connection,
-                        rom_name.unwrap(),
-                        size,
-                        hash,
-                        game_names,
-                        system.id,
+                        connection, rom_name, size, hash, game_names, system.id,
                     )
                     .await
                     .into_iter()
                     .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_name_and_size_and_md5_and_game_names(
-                        connection,
-                        rom_name.unwrap(),
-                        size,
-                        hash,
-                        game_names,
+                        connection, rom_name, size, hash, game_names,
                     )
                     .await
                     .into_iter()
@@ -2195,7 +2178,7 @@ async fn find_rom_by_size_and_hash(
                 if let Some(system) = system {
                     find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names_and_system_id(
                     connection,
-                    rom_name.unwrap(),
+                    rom_name,
                     size,
                     hash,
                     game_names,
@@ -2206,11 +2189,7 @@ async fn find_rom_by_size_and_hash(
                 .for_each(|rom| roms.push(rom))
                 } else {
                     find_roms_without_romfile_by_name_and_size_and_sha1_and_game_names(
-                        connection,
-                        rom_name.unwrap(),
-                        size,
-                        hash,
-                        game_names,
+                        connection, rom_name, size, hash, game_names,
                     )
                     .await
                     .into_iter()
@@ -2389,7 +2368,7 @@ async fn find_rom_by_size_and_hash(
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game_system = Some((rom, game, system));
     // select the first rom from a game that's been previously imported during this session
     } else if roms.iter().any(|rom| game_ids.contains(&rom.game_id)) {
@@ -2399,7 +2378,7 @@ async fn find_rom_by_size_and_hash(
             .unwrap();
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game_system = Some((rom, game, system));
     // select the first rom by distance to the file name if unattended mode is first
     } else if unattended_mode == UnattendedMode::First
@@ -2413,7 +2392,7 @@ async fn find_rom_by_size_and_hash(
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
         let system = find_system_by_id(connection, game.system_id).await;
-        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game_system = Some((rom, game, system));
     } else if system.is_some() {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
@@ -2446,12 +2425,10 @@ async fn find_rom_by_size_and_hash(
     }
 
     // abort if rom already has a file
-    if rom_game_system.is_some() && rom_game_system.as_ref().unwrap().0.romfile_id.is_some() {
-        let romfile = find_romfile_by_id(
-            connection,
-            rom_game_system.as_ref().unwrap().0.romfile_id.unwrap(),
-        )
-        .await;
+    if let Some((rom, _, _)) = &rom_game_system
+        && let Some(romfile_id) = rom.romfile_id
+    {
+        let romfile = find_romfile_by_id(connection, romfile_id).await;
         print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
         let (rom, game, system) = rom_game_system.unwrap();
         return Ok(MatchResult {
@@ -2482,7 +2459,7 @@ async fn find_sfb_rom_by_md5(
     size: u64,
     md5: &str,
     unattended_mode: UnattendedMode,
-) -> SimpleResult<MatchResult> {
+) -> Result<MatchResult> {
     let mut roms = find_sfb_roms_without_romfile_by_name_and_size_and_md5_and_system_id(
         connection,
         PS3_DISC_SFB,
@@ -2532,7 +2509,7 @@ async fn find_sfb_rom_by_md5(
     if roms.len() == 1 || unattended_mode == UnattendedMode::First {
         let rom = roms.remove(0);
         let game = find_game_by_id(connection, rom.game_id).await;
-        print_success(progress_bar, &format!("Matches \"{}\"", &rom.name));
+        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game = Some((rom, game));
     // skip if unattended mode is none
     } else if unattended_mode == UnattendedMode::Skip {
@@ -2555,9 +2532,10 @@ async fn find_sfb_rom_by_md5(
     }
 
     // abort if rom already has a file
-    if rom_game.is_some() && rom_game.as_ref().unwrap().0.romfile_id.is_some() {
-        let romfile =
-            find_romfile_by_id(connection, rom_game.as_ref().unwrap().0.romfile_id.unwrap()).await;
+    if let Some((rom, _)) = &rom_game
+        && let Some(romfile_id) = rom.romfile_id
+    {
+        let romfile = find_romfile_by_id(connection, romfile_id).await;
         print_skip(progress_bar, &format!("Duplicate of \"{}\"", romfile.path));
         let (rom, game) = rom_game.unwrap();
         return Ok(MatchResult {
@@ -2587,7 +2565,7 @@ async fn create_or_update_romfile<P: AsRef<Path>>(
     romfile_path: &P,
     roms: &[&Rom],
     system_id: Option<i64>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let romfile = CommonRomfile::from_path(&romfile_path)?.with_system(system_id);
     let relative_path = romfile.get_relative_path(connection).await?;
     let existing_romfile =
@@ -2618,7 +2596,7 @@ async fn trash_or_delete_romfile(
     trash: bool,
     delete: bool,
     match_result: &MatchResult,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if delete {
         romfile.delete(progress_bar, false).await?;
     } else if trash {
