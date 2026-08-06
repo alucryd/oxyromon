@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::Path;
@@ -17,8 +17,20 @@ pub struct NspRomfile {
     pub romfile: CommonRomfile,
 }
 
+impl GetRomfile for NspRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 pub struct NszRomfile {
     pub romfile: CommonRomfile,
+}
+
+impl GetRomfile for NszRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
 }
 
 impl HashAndSize for NszRomfile {
@@ -29,7 +41,7 @@ impl HashAndSize for NszRomfile {
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
-    ) -> simple_error::SimpleResult<(String, u64)> {
+    ) -> Result<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
         let (hash, size) = nsp_romfile
@@ -48,7 +60,7 @@ impl Check for NszRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-    ) -> SimpleResult<()> {
+    ) -> Result<()> {
         print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let nsp_romfile = self.to_nsp(progress_bar, &tmp_directory).await?;
@@ -65,7 +77,7 @@ pub trait ToNsp {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<NspRomfile>;
+    ) -> Result<NspRomfile>;
 }
 
 impl ToNsp for NszRomfile {
@@ -73,7 +85,7 @@ impl ToNsp for NszRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<NspRomfile> {
+    ) -> Result<NspRomfile> {
         progress_bar.set_message("Extracting nsz");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -91,19 +103,15 @@ impl ToNsp for NszRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSP_EXTENSION);
 
-        let output = Command::new(NSZ)
-            .arg("-D")
-            .arg("-F")
-            .arg("-o")
-            .arg(destination_directory.as_ref())
-            .arg(&self.romfile.path)
-            .output()
-            .await
-            .expect("Failed to extract nsz");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
-        }
+        run_tool(
+            Command::new(NSZ)
+                .arg("-D")
+                .arg("-F")
+                .arg("-o")
+                .arg(destination_directory.as_ref())
+                .arg(&self.romfile.path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -117,7 +125,7 @@ pub trait ToNsz {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<NszRomfile>;
+    ) -> Result<NszRomfile>;
 }
 
 impl ToNsz for NspRomfile {
@@ -125,7 +133,7 @@ impl ToNsz for NspRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<NszRomfile> {
+    ) -> Result<NszRomfile> {
         progress_bar.set_message("Creating nsz");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -143,21 +151,17 @@ impl ToNsz for NspRomfile {
             ),
         );
 
-        let output = Command::new(NSZ)
-            .arg("-C")
-            .arg("-K")
-            .arg("-L")
-            .arg("-P")
-            .arg("-o")
-            .arg(destination_directory.as_ref())
-            .arg(&self.romfile.path)
-            .output()
-            .await
-            .expect("Failed to create nsz");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
-        }
+        run_tool(
+            Command::new(NSZ)
+                .arg("-C")
+                .arg("-K")
+                .arg("-L")
+                .arg("-P")
+                .arg("-o")
+                .arg(destination_directory.as_ref())
+                .arg(&self.romfile.path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -167,11 +171,11 @@ impl ToNsz for NspRomfile {
 }
 
 pub trait AsNsp {
-    fn as_nsp(self) -> SimpleResult<NspRomfile>;
+    fn as_nsp(self) -> Result<NspRomfile>;
 }
 
 impl AsNsp for CommonRomfile {
-    fn as_nsp(self) -> SimpleResult<NspRomfile> {
+    fn as_nsp(self) -> Result<NspRomfile> {
         if self
             .path
             .extension()
@@ -188,11 +192,11 @@ impl AsNsp for CommonRomfile {
 }
 
 pub trait AsNsz {
-    fn as_nsz(self) -> SimpleResult<NszRomfile>;
+    fn as_nsz(self) -> Result<NszRomfile>;
 }
 
 impl AsNsz for CommonRomfile {
-    fn as_nsz(self) -> SimpleResult<NszRomfile> {
+    fn as_nsz(self) -> Result<NszRomfile> {
         if self
             .path
             .extension()
@@ -208,16 +212,17 @@ impl AsNsz for CommonRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
+pub async fn get_version() -> Result<String> {
     let keys_path = dirs::home_dir().map(|home| home.join(".switch").join("prod.keys"));
     if keys_path.map(|p| p.is_file()) != Some(true) {
         bail!("prod.keys not found");
     }
 
-    let output = try_with!(
-        Command::new(NSZ).arg("-h").output().await,
-        "Failed to spawn nsz"
-    );
+    let output = Command::new(NSZ)
+        .arg("-h")
+        .output()
+        .await
+        .context("Failed to spawn nsz")?;
 
     // nsz doesn't advertise any version
     String::from_utf8(output.stderr).unwrap();

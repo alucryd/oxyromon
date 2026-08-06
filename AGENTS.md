@@ -2,19 +2,19 @@
 
 ## Project Overview
 
-**oxyromon** (oxyROMon) is a cross-platform opinionated CLI ROM organizer written in Rust. It validates ROM files against known-good databases (DAT files), imports them into a managed directory structure, sorts them by region/preference, and can convert between various ROM formats. It also includes an optional web UI (Svelte + GraphQL) behind the `server` feature flag.
+**oxyromon** (oxyROMon) is a cross-platform opinionated CLI ROM organizer written in Rust. It validates ROM files against known-good databases (DAT files), imports them into a managed directory structure, sorts them by region/preference, and can convert between various ROM formats. It also includes an optional web UI (Leptos + GraphQL) behind the `server` feature flag.
 
 - **Author:** Maxime Gauduin (alucryd)
 - **License:** GPL-3.0+
 - **Rust Edition:** 2024
-- **MSRV:** 1.88.0
+- **MSRV:** 1.94.0
 - **Repository:** https://github.com/alucryd/oxyromon
 
 ## Architecture
 
 ### High-Level Design
 
-oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` with SQLite for persistence, and `tokio` as the async runtime. Each CLI subcommand is implemented as its own module following a consistent pattern. An optional web server (GraphQL API + Svelte SPA) is gated behind the `server` Cargo feature.
+oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` with SQLite for persistence, and `tokio` as the async runtime. Each CLI subcommand is implemented as its own module following a consistent pattern. An optional web server (GraphQL API + Leptos WebAssembly SPA) is gated behind the `server` Cargo feature.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -39,7 +39,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
-│    + Svelte SPA (src/routes/, src/components/)      │
+│    + Leptos SPA (frontend/), Tauri shell (desktop/) │
 ├─────────────────────────────────────────────────────┤
 │  SQLite (via sqlx) + migrations/                    │
 └─────────────────────────────────────────────────────┘
@@ -66,7 +66,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
 | `sevenzip.rs`     | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits. Shells out to the `7zz`/`7z` executable.                                                                                                                                                                         |
 | `chdman.rs`       | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`.                                                                                                                                                                                                          |
-| `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Svelte build.                                                                                                                                                                           |
+| `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
 | `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
 | `validator.rs`    | GraphQL input validators.                                                                                                                                                                                                                                                                                  |
@@ -129,7 +129,7 @@ All database queries are standalone `pub async fn` functions in `database.rs`. T
 ### Prerequisites
 
 - Rust 1.88.0+ (edition 2024)
-- For the `server` feature: Node.js (see `.nvmrc`) + pnpm
+- For the `server` feature: the `wasm32-unknown-unknown` target and [Trunk](https://trunkrs.dev)
 
 ### CLI Only
 
@@ -143,7 +143,19 @@ cargo build --release
 cargo build --release --features server
 ```
 
-The `build.rs` script automatically runs `pnpm install` and `pnpm build` when the `server` feature is enabled (skip with `SKIP_PNPM=true`). The Svelte app is built to `target/assets/` and embedded into the binary via `rust-embed`.
+The `build.rs` script automatically runs `trunk build --release` (in `frontend/`) when the `server` feature is enabled (skip with `SKIP_TRUNK=true`). The Leptos app is compiled to WebAssembly, output to `target/assets/`, and embedded into the binary via `rust-embed`.
+
+### Helper Scripts
+
+Run from the repository root:
+
+| Script         | Builds                                                            |
+| -------------- | ----------------------------------------------------------------- |
+| `build.sh`     | The web UI, then the CLI with it embedded (`--release --features server`) |
+| `desktop.sh`   | The Tauri desktop app and its installers                          |
+| `dist.sh`      | Release artifacts for every cross-compiled target, plus the desktop bundles for the host, into `dist/` |
+| `docker.sh`    | The two container images, then pushes them                        |
+| `test.sh`      | The test suite under `cargo llvm-cov`, then opens the report      |
 
 ### Environment Variables
 
@@ -153,14 +165,14 @@ The `build.rs` script automatically runs `pnpm install` and `pnpm build` when th
 | `OXYROMON_ROM_DIRECTORY`  | Override the default ROM directory                                     |
 | `OXYROMON_TMP_DIRECTORY`  | Override the default temp directory                                    |
 | `OXYROMON_LOG_LEVEL`      | Control log verbosity (standard `env_logger` syntax)                   |
-| `SKIP_PNPM`               | Set to `true` to skip frontend build in `build.rs`                     |
+| `SKIP_TRUNK`              | Set to `true` to skip the web UI (`trunk build`) in `build.rs`          |
 | `DATABASE_URL`            | Used by `sqlx` for compile-time query checking                         |
 
 ## Feature Flags
 
 | Feature          | Description                                             | Default |
 | ---------------- | ------------------------------------------------------- | ------- |
-| `server`         | Builds the web server subcommand (GraphQL + Svelte SPA) | Off     |
+| `server`         | Builds the web server subcommand (GraphQL + Leptos SPA) | Off     |
 | `use-rustls`     | Use rustls for TLS                                      | On      |
 | `use-native-tls` | Use system OpenSSL for TLS                              | Off     |
 
@@ -309,48 +321,203 @@ Follow this checklist:
 ### Stack
 
 - **Backend:** Axum + async-graphql + SSE
-- **Frontend:** SvelteKit (static adapter) + Tailwind CSS 4 + Flowbite Svelte
-- **Build:** Vite, output to `target/assets/`, embedded via `rust-embed`
+- **Frontend:** [Leptos](https://leptos.dev) (CSR / client-side rendering, compiled to WebAssembly) + [Web Awesome](https://webawesome.com) web components
+- **Build:** [Trunk](https://trunkrs.dev), output to `target/assets/`, embedded via `rust-embed`
 - **GraphQL:** Single `/graphql` endpoint, schema defined in `query.rs` (queries) and `mutation.rs` (mutations)
 - **SSE:** `/events` endpoint for real-time updates (e.g., purge progress)
 
+The frontend lives in its own standalone crate under `frontend/` (kept separate
+so its WebAssembly dependencies never pollute the native `oxyromon` build). It
+talks to the same backend `/graphql`, `/events`, `/dats` and `/romfiles/{id}`
+endpoints, so `server.rs` is unchanged by the framework choice.
+
 ### Frontend Structure
 
-| Path                        | Purpose                      |
-| --------------------------- | ---------------------------- |
-| `src/routes/+layout.svelte` | Root layout                  |
-| `src/routes/+page.svelte`   | Main page                    |
-| `src/components/`           | Reusable Svelte components   |
-| `src/query.js`              | GraphQL query definitions    |
-| `src/mutation.js`           | GraphQL mutation definitions |
-| `src/store.js`              | Svelte stores                |
-| `src/events.js`             | SSE client helpers           |
-| `src/app.css`               | Global styles (Tailwind)     |
-| `src/app.html`              | HTML template                |
+| Path                                   | Purpose                                                     |
+| -------------------------------------- | ---------------------------------------------------------- |
+| `frontend/index.html`                  | Trunk entry point (links the wasm bundle + generated CSS)  |
+| `frontend/styles.css`                  | The app's own CSS — the shell, the rows, the bare targets  |
+| `frontend/Trunk.toml`                  | Trunk config (pre-build hooks, dev proxies)                |
+| `frontend/scripts/fetch-webawesome.sh` | Vendors Web Awesome + its icons into `frontend/vendor/`    |
+| `frontend/src/main.rs`                 | Mounts the app to the DOM                                  |
+| `frontend/src/app.rs`                  | Root component + reactive data-loading effects             |
+| `frontend/src/page.rs`                 | Main page (systems/games/roms/romfiles tables, stats)      |
+| `frontend/src/components/`             | Navbar, notifications, about/import/settings modals        |
+| `frontend/src/state.rs`                | Global reactive state (`RwSignal`s in a `Copy` `AppState`) |
+| `frontend/src/api.rs`                  | GraphQL client + query/mutation helpers                    |
+| `frontend/src/sse.rs`                  | SSE client + notification helpers                          |
+| `frontend/src/model.rs`                | Serde types mirroring the GraphQL responses                |
+| `frontend/src/ui.rs` / `icons.rs`      | Reusable modal/windowing/media-query helpers + inline SVG icons |
 
 ### Frontend Dev
 
+Requires the `wasm32-unknown-unknown` target and the [Trunk](https://trunkrs.dev)
+bundler (no Node.js toolchain):
+
 ```sh
-# Install dependencies
-pnpm install
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk
 
-# Dev server (proxies API to running oxyromon server)
-pnpm dev
+# From the frontend/ directory:
+cd frontend
 
-# Build for production (outputs to target/assets/)
-pnpm build
+# Dev server with hot reload (proxies /graphql, /events, /dats, /romfiles to a
+# running `oxyromon server` on 127.0.0.1:8000 — see the [[proxy]] entries in Trunk.toml)
+trunk serve
 
-# Lint & format
-pnpm lint
-pnpm format
+# Production build (outputs to ../target/assets/)
+trunk build --release
 ```
+
+The top-level `build.rs` runs `trunk build --release` automatically when the
+`server` feature is enabled (skip with `SKIP_TRUNK=true`).
+
+### Web Awesome
+
+The UI is built from [Web Awesome](https://webawesome.com) (the successor to
+Shoelace) — MIT licensed custom elements. Leptos renders them like any other
+tag; two things are worth knowing:
+
+- **Properties, not attributes, for state.** `prop:open=...` sets the JS
+  property directly, which is what Lit-based components react to.
+- **Custom events need a type annotation.** The `view!` macro maps an unknown
+  `on:` name onto `Custom::new(...)`, but cannot infer the payload:
+  `on:wa-after-hide=move |_: web_sys::Event| ...`. Known events (`on:click`)
+  keep their own type and must *not* be annotated as `web_sys::Event`.
+- **Custom events bubble.** They are dispatched `{ bubbles: true, composed:
+  true }`, so a component nested inside another of the same kind — a
+  `wa-split-panel` inside a `wa-split-panel` — delivers its events to the
+  outer one's handler too. Compare `target` against `currentTarget` when that
+  matters.
+
+Two things about the cascade, both of which cost real debugging:
+
+- **Our stylesheet declares its own layer.** `@layer app { ... }` in
+  `styles.css`, which is loaded after `webawesome.css` and so sits after every
+  `wa-*` layer. That is what lets `.plain-button` beat `native.css` without
+  resorting to specificity. Order *within* the layer still matters: the bare
+  target reset comes before the classes built on top of it, or its `padding: 0`
+  wins over their padding.
+- **The theme does not import the colour variants.** `--wa-color-brand-*` and
+  friends only exist inside the components' shadow styles until
+  `styles/color/variants.css` is loaded, which `index.html` does. Without it a
+  rule using those tokens is silently dropped as invalid.
+
+Because `native.css` styles a native `<button>` like a real button — chrome, a
+fixed height, centred flex layout and nowrap text — anything that is a button
+only for semantics (a whole list row, a drop target) needs `.plain-button` to
+strip all of that back.
+
+The app root carries `wa-cloak`, which holds it hidden until every custom
+element inside has been upgraded. Without it there is a flash where each
+`<wa-*>` is still an unknown inline element, and dialogs spill their contents
+onto the page.
+
+`scripts/fetch-webawesome.sh` vendors the runtime into `frontend/vendor/`
+(gitignored) as a Trunk pre-build hook, pinned by version and skipped when
+already present. It is fetched rather than committed because it is ~3.6 MB,
+all of which is embedded into the `oxyromon` binary.
+
+**Nothing may load from a CDN at runtime** — the UI is served by
+`oxyromon server` and bundled into the desktop app, both of which have to work
+offline. That is why the script also vendors the sixteen Font Awesome icons
+Web Awesome references internally: without them `<wa-icon>` falls back to the
+Font Awesome CDN and, for example, a dialog loses its close button.
+
+Dark mode is the `wa-dark` class on `<html>`, set by `set_dark` in `navbar.rs`.
+Nothing else is needed: the `--wa-*` tokens carry both light and dark values, so
+`styles.css` never mentions a colour scheme.
 
 ### Adding a GraphQL Query/Mutation
 
 1. **Backend:** Add the resolver in `query.rs` (for queries) or `mutation.rs` (for mutations) inside the `#[Object]` impl block.
 2. **Backend:** If new types are needed, add them to `model.rs` with `#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]`.
-3. **Frontend:** Add the query/mutation string in `src/query.js` or `src/mutation.js`.
-4. **Frontend:** Call it from Svelte components using `graphql-request`.
+3. **Frontend:** Add the query/mutation string in `frontend/src/api.rs`, deserializing into a type in `frontend/src/model.rs`.
+4. **Frontend:** Call it from a Leptos component (typically via `spawn_local`, updating `AppState` signals).
+
+## Desktop App (Tauri)
+
+The `desktop/` crate is an optional [Tauri](https://tauri.app) v2 shell that
+presents the same web UI in a native window. Like `frontend/`, it is a
+standalone crate (`[workspace]` in its own `Cargo.toml`) so its webview
+dependencies stay out of the CLI build.
+
+### How it works
+
+It deliberately does **not** reimplement the backend or talk to Tauri IPC:
+
+1. `desktop/src/server.rs` reserves a free loopback port, then spawns the
+   regular `oxyromon` binary — bundled as a Tauri **sidecar** — as
+   `oxyromon server --address 127.0.0.1 --port <port>`.
+2. It polls the port with `TcpStream::connect` until the server accepts
+   connections (30s timeout).
+3. `desktop/src/main.rs` opens a `WebviewUrl::External` window pointed straight
+   at `http://127.0.0.1:<port>`.
+
+Because the window is served **from** the sidecar's origin, the Leptos SPA keeps
+using same-origin relative URLs for `/graphql`, `/events`, `/dats` and
+`/romfiles/{id}`. This means **no CORS handling, no Tauri-specific frontend
+build, and no changes to `server.rs`** — the desktop app is purely additive. The
+sidecar's `CommandChild` is held in Tauri managed state and killed on
+`RunEvent::Exit` so no orphaned server keeps the database locked.
+
+The desktop app shares the CLI's database and settings (same
+`OXYROMON_DATA_DIRECTORY`).
+
+### Layout
+
+| Path                               | Purpose                                                     |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `desktop/tauri.conf.json`          | Tauri config (sidecar, icons, bundle targets, build hooks)  |
+| `desktop/src/main.rs`              | Builder, window creation, exit handling                     |
+| `desktop/src/server.rs`            | Sidecar lifecycle: port, spawn, readiness poll, shutdown    |
+| `desktop/scripts/stage-sidecar.sh` | Builds `oxyromon` and stages it as `binaries/oxyromon-<triple>` |
+| `desktop/capabilities/default.json`| Empty permission set (the SPA never calls Tauri IPC)        |
+| `desktop/icons/`                   | Bundle icons generated from `frontend/icon.svg`             |
+
+`binaries/`, `gen/` and `target/` are generated and gitignored.
+
+### Dev
+
+Requires the Tauri CLI and the platform webview packages (Linux:
+`webkit2gtk-4.1`, `gtk3`, `librsvg`, `libayatana-appindicator`):
+
+```sh
+cargo install --locked tauri-cli --version "^2"
+
+cd desktop
+cargo tauri dev     # stages the sidecar, then runs the shell
+cargo tauri build   # release build + installers in target/release/bundle/
+```
+
+`desktop.sh` in the repository root wraps the release build.
+
+Both commands run `desktop/scripts/stage-sidecar.sh` first (via
+`beforeDevCommand`/`beforeBuildCommand`), which builds
+`cargo build --release --features server` and copies the binary to
+`desktop/binaries/oxyromon-<target-triple>` — the name Tauri's `externalBin`
+expects. Note the hook runs from the **repo root**, not `desktop/`.
+
+Because that build enables the `server` feature, the desktop app transitively
+needs the web UI toolchain too (Trunk + the `wasm32-unknown-unknown` target).
+
+Plain `cargo build` in `desktop/` also works, but only once the sidecar has been
+staged at least once (`tauri-build` fails if `binaries/oxyromon-<triple>` is
+missing).
+
+### Troubleshooting
+
+- **Blank window on Linux.** WebKitGTK's DMA-BUF renderer misbehaves on some
+  GPU/driver combinations (notably NVIDIA under Wayland). Run with
+  `WEBKIT_DISABLE_DMABUF_RENDERER=1` to confirm before chasing it further.
+- **"failed to locate the bundled oxyromon binary".** The sidecar has not been
+  staged for the current target triple; run `sh desktop/scripts/stage-sidecar.sh`.
+- **Server fails to start.** The sidecar's stdout/stderr is forwarded to the
+  desktop app's stderr, prefixed with `[oxyromon]`.
+- **`failed to run linuxdeploy`.** The AppImage bundler ships its own binutils,
+  which is too old to read the `.relr.dyn` sections modern distributions ship,
+  so it fails on the first library it tries to strip. Build with
+  `NO_STRIP=true`, which is what `desktop.sh` does.
 
 ## Error Handling
 
@@ -370,7 +537,7 @@ pnpm format
 - **Module-per-test:** Each test case gets its own file in a subdirectory (e.g., `src/import_roms/test_original.rs`).
 - **Feature gating:** All server-related code uses `#[cfg(feature = "server")]`.
 - **No unwrap in production code** where avoidable — use `try_with!` or `bail!` instead.
-- **Lazy statics** for compiled regexes and shared state (via `lazy_static!`).
+- **Lazy statics** for compiled regexes and shared state (via `std::sync::LazyLock`).
 - **Parallel iteration** with `rayon` where beneficial (e.g., filtering large lists).
 
 ### CLI Output Helpers
@@ -389,7 +556,7 @@ All user-facing output should go through the categorized helpers in `progress.rs
 | `print_action`    | `→` (dim)       | File operations in progress     | `Extracting "game.chd"`, `Compressing "rom.bin"` |
 | `print_separator` | (blank line)    | Visual spacing between sections |                                                  |
 
-All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`lazy_static`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
+All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in the module. The `MultiProgress` instance is global (`std::sync::LazyLock`) and all progress bars should be created via `get_progress_bar()` so they're automatically registered with it. The `indicatif-log-bridge` (`LogWrapper`) in `main.rs` ensures that `log::info!` / `log::warn!` etc. don't collide with active progress bars.
 
 ### File Organization
 
@@ -397,13 +564,13 @@ All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in 
 - Format modules: `src/<tool_name>.rs` (e.g., `chdman.rs`, `sevenzip.rs`)
 - Shared infrastructure: `src/database.rs`, `src/model.rs`, `src/common.rs`, `src/config.rs`, `src/util.rs`
 
-### Frontend (Svelte)
+### Frontend (Leptos)
 
-- Prettier for formatting (config in `package.json`)
-- ESLint for linting
-- Print width: 120, semicolons, double quotes, ES5 trailing commas
-- Tailwind CSS 4 for styling
-- Flowbite Svelte for UI components
+- Rustfmt / clippy, same as the rest of the workspace (run from `frontend/`)
+- Reactivity via `RwSignal`/`Effect`; global state is a `Copy` `AppState` provided through context
+- Async work via `leptos::task::spawn_local`, updating signals imperatively
+- Styling comes from Web Awesome: its components, its layout utilities (`wa-stack`, `wa-cluster`, `wa-grid`, `wa-split`) and its `--wa-*` tokens. Reach for `styles.css` only for what the library does not cover
+- **Gotcha:** inside the `view!` macro, wrap any `>`/`<` comparison in parentheses or a block, otherwise it is parsed as a tag delimiter
 
 ## External Tool Integration Pattern
 

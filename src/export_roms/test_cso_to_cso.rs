@@ -1,6 +1,7 @@
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
+use super::super::maxcso::XsoType;
 use super::*;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -30,14 +31,14 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -53,7 +54,7 @@ async fn test() {
     let system = find_systems(&mut connection).await.remove(0);
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -71,12 +72,13 @@ async fn test() {
         .unwrap();
 
     // when
-    to_cso(
+    to_xso(
         &mut connection,
         &progress_bar,
         &destination_directory,
         roms_by_game_id,
         romfiles_by_id,
+        XsoType::Cso,
     )
     .await
     .unwrap();

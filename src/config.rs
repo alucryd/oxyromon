@@ -9,11 +9,11 @@ use super::progress::*;
 use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
 use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
 use super::util::*;
+use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use phf::phf_map;
-use simple_error::SimpleResult;
 use sqlx::sqlite::SqliteConnection;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -205,7 +205,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let is_editing = matches.contains_id("SET")
         || matches.contains_id("UNSET")
         || matches.contains_id("ADD")
@@ -268,16 +268,15 @@ pub async fn main(
             {
                 add_to_list(connection, progress_bar, key, value, system_id).await;
             };
-        } else if matches.contains_id("REMOVE") {
-            if let [key, value] = matches
+        } else if matches.contains_id("REMOVE")
+            && let [key, value] = matches
                 .get_many::<String>("REMOVE")
                 .unwrap()
                 .collect::<Vec<_>>()
                 .as_slice()
-            {
-                remove_from_list(connection, progress_bar, key, value, system_id).await;
-            };
-        }
+        {
+            remove_from_list(connection, progress_bar, key, value, system_id).await;
+        };
     }
 
     Ok(())
@@ -288,10 +287,10 @@ pub async fn get_setting(
     key: &str,
     system_id: Option<i64>,
 ) -> Option<Setting> {
-    if let Some(id) = system_id {
-        if let Some(setting) = find_setting_by_key(connection, key, Some(id)).await {
-            return Some(setting);
-        }
+    if let Some(id) = system_id
+        && let Some(setting) = find_setting_by_key(connection, key, Some(id)).await
+    {
+        return Some(setting);
     }
     find_setting_by_key(connection, key, None).await
 }
@@ -344,13 +343,13 @@ pub async fn set_setting(
     key: &str,
     value: &str,
     system_id: Option<i64>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if PATHS.contains(&key) {
         let p = get_canonicalized_path(&value.to_owned()).await?;
         create_directory(progress_bar, &p, false).await?;
         set_directory(connection, key, &p, system_id).await;
     } else if BOOLEANS.contains(&key) {
-        let b: bool = try_with!(FromStr::from_str(value), "Failed to parse bool");
+        let b: bool = FromStr::from_str(value).context("Failed to parse bool")?;
         set_bool(connection, key, b, system_id).await;
     } else if CHOICES.keys().any(|&s| s == key) {
         if CHOICES.get(key).unwrap().contains(&value) {
@@ -362,7 +361,7 @@ pub async fn set_setting(
             );
         }
     } else if INTEGERS.keys().any(|&i| i == key) {
-        let i: usize = try_with!(FromStr::from_str(value), "Failed to parse integer");
+        let i: usize = FromStr::from_str(value).context("Failed to parse integer")?;
         if INTEGERS.get(key).unwrap()[0] <= i && i <= INTEGERS.get(key).unwrap()[1] {
             set_integer(connection, key, i, system_id).await;
         } else {
@@ -387,7 +386,7 @@ pub async fn unset_setting(
     progress_bar: &ProgressBar,
     key: &str,
     system_id: Option<i64>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     if NULLABLES.contains(&key) {
         if let Some(setting) = find_setting_by_key(connection, key, system_id).await {
             update_setting(connection, setting.id, None).await;
@@ -554,10 +553,7 @@ pub async fn get_directory(
     system_id: Option<i64>,
 ) -> Option<PathBuf> {
     match get_setting(connection, key, system_id).await {
-        Some(p) => match get_canonicalized_path(&p.value.unwrap()).await {
-            Ok(path) => Some(path),
-            Err(_) => None,
-        },
+        Some(p) => get_canonicalized_path(&p.value.unwrap()).await.ok(),
         None => None,
     }
 }
@@ -603,10 +599,7 @@ pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
         None => {
             let rom_directory = match env::var("OXYROMON_ROM_DIRECTORY") {
                 Ok(rom_directory) => PathBuf::from(rom_directory),
-                Err(_) => dirs::home_dir()
-                    .map(PathBuf::from)
-                    .unwrap()
-                    .join("Emulation"),
+                Err(_) => dirs::home_dir().unwrap().join("Emulation"),
             };
             set_directory(connection, "ROM_DIRECTORY", &rom_directory, None).await;
             rom_directory
@@ -630,11 +623,10 @@ pub async fn get_tmp_directory(connection: &mut SqliteConnection) -> PathBuf {
 
 cfg_if! {
     if #[cfg(test)] {
+        use std::sync::LazyLock;
         use tokio::sync::Mutex;
 
-        lazy_static! {
-            pub static ref MUTEX: Mutex<i32> = Mutex::new(0);
-        }
+        pub static MUTEX: LazyLock<Mutex<i32>> = LazyLock::new(|| Mutex::new(0));
 
         pub async fn set_rom_directory(connection: &mut SqliteConnection, rom_directory: PathBuf) -> PathBuf {
             set_directory(connection, "ROM_DIRECTORY", &rom_directory, None).await;

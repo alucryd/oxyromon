@@ -1,0 +1,346 @@
+/* The application's own styles.
+ *
+ * Everything visual comes from Web Awesome: its components, its layout
+ * utilities (wa-stack, wa-cluster, wa-grid, wa-split) and its design tokens.
+ * What is left here is the handful of pieces the component library does not
+ * cover — the three pane shell, the virtualized rows, and the odd target that
+ * has to be a <button> for semantics but must not look like one.
+ *
+ * Declared in a layer of its own, after webawesome.css has established its
+ * layers, so these rules win over the component library's defaults without
+ * depending on specificity. */
+@layer app {
+  :root {
+    /* Rows are a fixed height so the games list can be virtualized; this has to
+       stay in step with ROW_HEIGHT in src/state.rs. */
+    --row-height: 40px;
+    --nav-height: 3.25rem;
+  }
+
+  /* Chrome's search input draws its own cancel button on top of ours. */
+  input[type="search"]::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  /* === Shell === */
+
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--wa-color-surface-default);
+  }
+
+  .navbar {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: var(--wa-space-2xs);
+    /* One line, always. The page reserves exactly --nav-height for it, so a
+       wrapped navbar would sit on top of the panels; narrow windows scroll it
+       sideways instead. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: var(--nav-height);
+    padding-inline: var(--wa-space-m);
+    background-color: var(--wa-color-surface-raised);
+    border-block-end: 1px solid var(--wa-color-surface-border);
+  }
+
+  /* Overflow rather than compress: a squeezed wa-button-group wraps its own
+     buttons onto a second line, which the fixed height would then clip. The
+     spacer keeps its inline `flex: 1` and so stays shrinkable. */
+  .navbar > * {
+    flex-shrink: 0;
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-m);
+    width: 100%;
+    min-height: 100vh;
+    padding: calc(var(--nav-height) + var(--wa-space-m)) var(--wa-space-m)
+      var(--wa-space-m);
+  }
+
+  .panes {
+    display: grid;
+    flex: 1;
+    gap: var(--wa-space-m);
+    grid-template-columns: 1fr;
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-m);
+  }
+
+  /* The three columns, once the panes are wide enough to be columns at all.
+     The divider is the gap: it is as wide as the gap between the stacked panes
+     and normally invisible, showing a line only while it is being used. */
+  .panes-split {
+    --divider-width: var(--wa-space-m);
+    --min: 12rem;
+    --max: calc(100% - 24rem);
+
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Slotted panes fill the cell the split panel gives them rather than sizing
+     to their own content. */
+  .panes-split > .pane,
+  .panes-split > .pane-split-end {
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .panes-split::part(divider) {
+    background-color: transparent;
+  }
+
+  .panes-split::part(divider):hover,
+  .panes-split::part(divider):focus-visible {
+    background-color: var(--wa-color-brand-fill-loud);
+  }
+
+  /* The middle of the outer split is itself a split, not a pane. */
+  .pane-split-end {
+    display: flex;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* Three columns only once there is genuinely room for them. The panes used to
+     split at 768px, where the games column was already too narrow to read a
+     name in. Below this the panes stack and the page scrolls as one; above it
+     the page is pinned to the viewport and each pane scrolls on its own. This
+     has to stay in step with the query in `Panes`, which swaps the stack for
+     the split panels. */
+  @media (min-width: 1100px) {
+    .page {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .panes {
+      grid-template-columns: 2fr 3fr 5fr;
+      min-height: 0;
+    }
+
+    .pane {
+      min-height: 0;
+    }
+  }
+
+  /* === Panels === */
+
+  .panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background-color: var(--wa-color-surface-raised);
+    border: 1px solid var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--wa-space-xs) var(--wa-space-m);
+    font-weight: var(--wa-font-weight-semibold);
+    background-color: var(--wa-color-surface-lowered);
+    border-block-end: 1px solid var(--wa-color-surface-border);
+  }
+
+  /* The only part of a panel that scrolls; the header stays put above it. */
+  .panel-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* === Bare targets === */
+
+  /* A <button> that is a button for semantics, not for looks: a whole table
+     row, or a bare icon target. Web Awesome's reset gives native buttons real
+     button chrome — including a fixed height, centred flex layout and nowrap
+     text — which is right in general and wrong for these. */
+  .plain-button {
+    display: block;
+    height: auto;
+    white-space: normal;
+    appearance: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  .icon-button {
+    display: inline-flex;
+    padding: var(--wa-space-3xs);
+    color: var(--wa-color-text-quiet);
+    border-radius: var(--wa-border-radius-s);
+  }
+
+  .icon-button:hover {
+    color: var(--wa-color-text-normal);
+    background-color: var(--wa-color-neutral-fill-quiet);
+  }
+
+  /* === Rows === */
+
+  .list-row {
+    display: flex;
+    align-items: center;
+    height: var(--row-height);
+  }
+
+  /* Striping is keyed off the row's absolute position rather than :nth-child,
+     so it does not shift as virtualized rows are recycled. Even rows are left
+     transparent so the panel's own surface shows through. */
+  .list-row.row-odd {
+    background-color: var(--wa-color-surface-lowered);
+  }
+
+  /* Hover stays neutral, so it reads as "under the pointer" and never competes
+     with the selection below. It has to be a step louder than `quiet`, which
+     resolves to the same neutral-95 as the stripe above and so was invisible on
+     every other row. */
+  .list-row:hover {
+    background-color: var(--wa-color-neutral-fill-normal);
+  }
+
+  /* Which system and game you are looking at is the most important state on
+     screen, so selection is the brand colour rather than one more shade of
+     grey, plus a marker down the leading edge. An inset shadow rather than a
+     border, so selecting a row does not shift its contents sideways.
+
+     Declared last, and repeated for :hover, so it wins over both striping and
+     hover however they are combined. */
+  .list-row.row-selected,
+  .list-row.row-selected:hover {
+    background-color: var(--wa-color-brand-fill-quiet);
+    box-shadow: inset 3px 0 0 var(--wa-color-brand-fill-loud);
+  }
+
+  /* How complete a system or game is, and whether a rom is present. The same
+     four meanings the filter buttons in the navbar carry. */
+  .status-complete {
+    color: var(--wa-color-success-fill-loud);
+  }
+
+  .status-incomplete {
+    color: var(--wa-color-warning-fill-loud);
+  }
+
+  .status-wanted {
+    color: var(--wa-color-danger-fill-loud);
+  }
+
+  .status-ignored {
+    color: var(--wa-color-text-quiet);
+  }
+
+  /* The game elected for the 1G1R set. */
+  .row-elected {
+    font-weight: var(--wa-font-weight-semibold);
+  }
+
+  .row-label {
+    flex: 1;
+    padding-inline: var(--wa-space-m);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* === Statistics === */
+
+  /* `align-items` centres the two lines as blocks; a label long enough to wrap
+     — "Total Size (Original)" — still needs its own lines centred within its
+     block, which is what the tiles were missing. */
+  .stat-tile {
+    align-items: center;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: var(--wa-font-size-xl);
+    font-weight: var(--wa-font-weight-bold);
+  }
+
+  .stat-label {
+    color: var(--wa-color-text-quiet);
+  }
+
+  /* Catches the click that dismisses a menu or a popover. */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+  }
+
+  .menu {
+    position: absolute;
+    inset-inline-end: var(--wa-space-2xs);
+    z-index: 40;
+    margin-block-start: var(--wa-space-3xs);
+    width: 11rem;
+    overflow: hidden;
+    background-color: var(--wa-color-surface-raised);
+    border: 1px solid var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+    box-shadow: var(--wa-shadow-l);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--wa-space-xs);
+    width: 100%;
+    padding: var(--wa-space-2xs) var(--wa-space-s);
+  }
+
+  .menu-item:hover {
+    background-color: var(--wa-color-neutral-fill-quiet);
+  }
+
+  .menu-item.danger {
+    color: var(--wa-color-danger-fill-loud);
+  }
+
+  /* === The import dialog's click-or-drop target === */
+
+  .dropzone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-2xs);
+    width: 100%;
+    align-items: center;
+    padding: var(--wa-space-xl);
+    text-align: center;
+    border: 2px dashed var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  .dropzone:hover {
+    border-color: var(--wa-color-brand-fill-loud);
+  }
+}

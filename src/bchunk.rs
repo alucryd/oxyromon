@@ -1,27 +1,25 @@
-use super::SimpleResult;
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
-use lazy_static::lazy_static;
 use regex::Regex;
 use std::path::Path;
+use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::process::Command;
 
 const BCHUNK: &str = "bchunk";
 
-lazy_static! {
-    static ref VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
-}
+static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
 
 impl ToIso for CueBinRomfile {
     async fn to_iso<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> simple_error::SimpleResult<IsoRomfile> {
+    ) -> Result<IsoRomfile> {
         if self.bin_romfiles.len() > 1 {
             bail!("Only single bins are supported");
         }
@@ -35,18 +33,14 @@ impl ToIso for CueBinRomfile {
             .join(self.cue_romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(BCHUNK)
-            .arg(&self.bin_romfiles.first().unwrap().path)
-            .arg(&self.cue_romfile.path)
-            .arg(BCHUNK)
-            .current_dir(destination_directory.as_ref())
-            .output()
-            .await
-            .expect("Failed to create iso");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
-        }
+        run_tool(
+            Command::new(BCHUNK)
+                .arg(&self.bin_romfiles.first().unwrap().path)
+                .arg(&self.cue_romfile.path)
+                .arg(BCHUNK)
+                .current_dir(destination_directory.as_ref()),
+        )
+        .await?;
 
         rename_file(
             progress_bar,
@@ -65,11 +59,11 @@ impl ToIso for CueBinRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(BCHUNK).output().await,
-        "Failed to spawn bchunk"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(BCHUNK)
+        .output()
+        .await
+        .context("Failed to spawn bchunk")?;
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     let version = stdout

@@ -31,13 +31,13 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand().get_matches_from(&[
+    let matches = import_dats::subcommand().get_matches_from([
         "import-dats",
         "tests/Test System (20230105) (Multiple Discs).dat",
     ]);
@@ -57,13 +57,13 @@ async fn test() {
             .await
             .unwrap();
         let matches = import_roms::subcommand()
-            .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
         import_roms::main(&mut connection, &matches, &progress_bar)
             .await
             .unwrap();
     }
 
-    let matches = generate_playlists::subcommand().get_matches_from(&["generate-playlists", "-a"]);
+    let matches = generate_playlists::subcommand().get_matches_from(["generate-playlists", "-a"]);
     generate_playlists::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -111,10 +111,10 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 3);
 
-    let rom = roms.get(0).unwrap();
+    let rom = roms.first().unwrap();
     assert_eq!(rom.name, "Test Game (USA, Europe) (Disc 1).iso");
 
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     let parent_romfile_id = romfile.id;
     assert_eq!(
         romfile.path,

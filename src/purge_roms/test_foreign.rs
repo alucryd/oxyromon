@@ -17,7 +17,7 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     let rom_directory =
         set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
 

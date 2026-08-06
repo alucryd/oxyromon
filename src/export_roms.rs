@@ -1,7 +1,6 @@
-use super::SimpleResult;
 use super::bchunk;
 use super::chdman;
-use super::chdman::{AsChd, ChdType, ToChd, ToRdsk, ToRiff};
+use super::chdman::{ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -18,9 +17,11 @@ use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{AsArchive, ToArchive};
+use super::transcode::*;
 use super::util::*;
 use super::wit;
 use super::wit::ToWbfs;
+use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
@@ -88,7 +89,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
         Some(system_names) => {
             let mut systems: Vec<System> = vec![];
@@ -343,12 +344,13 @@ pub async fn main(
                 .await?
             }
             "CSO" => {
-                to_cso(
+                to_xso(
                     connection,
                     progress_bar,
                     &destination_directory,
                     roms_by_game_id,
                     romfiles_by_id,
+                    XsoType::Cso,
                 )
                 .await?
             }
@@ -411,12 +413,13 @@ pub async fn main(
                 .await?
             }
             "ZSO" => {
-                to_zso(
+                to_xso(
                     connection,
                     progress_bar,
                     &destination_directory,
                     roms_by_game_id,
                     romfiles_by_id,
+                    XsoType::Zso,
                 )
                 .await?
             }
@@ -441,75 +444,33 @@ async fn to_archive(
     archive_type: sevenzip::ArchiveType,
     compression_level: &Option<usize>,
     solid: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition CHDs
-    let (chds, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[CHD_EXTENSION]);
 
     // partition CSOs
-    let (csos, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CSO_EXTENSION)
-            })
-        });
+    let (csos, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition NSZs
-    let (nszs, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(NSZ_EXTENSION)
-            })
-        });
+    let (nszs, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[NSZ_EXTENSION]);
 
     // partition RVZs
-    let (rvzs, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(RVZ_EXTENSION)
-            })
-        });
+    let (rvzs, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[RVZ_EXTENSION]);
 
     // partition ZSOs
-    let (zsos, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
+    let (zsos, roms_by_game_id) =
+        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[ZSO_EXTENSION]);
 
     // partition archives
-    let (archives, roms_by_game_id): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let path = &romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap().path;
-                path.ends_with(SEVENZIP_EXTENSION) || path.ends_with(ZIP_EXTENSION)
-            })
-        });
+    let (archives, roms_by_game_id) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[SEVENZIP_EXTENSION, ZIP_EXTENSION],
+    );
 
     // export CHDs
     for roms in chds.values() {
@@ -521,22 +482,7 @@ async fn to_archive(
         let romfile = romfiles_by_id
             .get(&bin_roms.first().unwrap().romfile_id.unwrap())
             .unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1
@@ -851,81 +797,29 @@ async fn to_chd(
     cd_hunk_size: &Option<usize>,
     dvd_compression_algorithms: &[String],
     dvd_hunk_size: &Option<usize>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition CUE/BINs
-    let (cue_bins, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CUE_EXTENSION)
-            }) && roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(BIN_EXTENSION)
-            })
-        });
+    let (cue_bins, others) =
+        partition_games_by_all_extensions(others, &romfiles_by_id, &[CUE_EXTENSION, BIN_EXTENSION]);
 
     // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
     // partition CSOs
-    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CSO_EXTENSION)
-            })
-        });
+    let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition ZSOs
-    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
+    let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
 
     // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1180,69 +1074,30 @@ async fn to_chd(
     Ok(())
 }
 
-async fn to_cso(
+async fn to_xso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+    xso_type: XsoType,
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
     // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
-    // partition CSOs
-    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CSO_EXTENSION)
-            })
-        });
-
-    // partition ZSOs
-    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
+    // partition XSOs of either type
+    let (xsos, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION, ZSO_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1255,17 +1110,11 @@ async fn to_cso(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .to_xso(progress_bar, destination_directory, xso_type)
             .await?;
     }
 
@@ -1277,7 +1126,7 @@ async fn to_cso(
             .as_common(connection)
             .await?
             .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
+            .to_xso(progress_bar, destination_directory, xso_type)
             .await?;
     }
 
@@ -1289,67 +1138,24 @@ async fn to_cso(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
-        if chd_romfile.chd_type != ChdType::Dvd {
-            continue;
+        if let Some(decoded) = chd_to_iso(connection, progress_bar, romfile, &tmp_directory).await?
+        {
+            decoded
+                .inner
+                .to_xso(progress_bar, destination_directory, xso_type)
+                .await?;
         }
-        chd_romfile
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
-            .to_xso(progress_bar, destination_directory, XsoType::Cso)
-            .await?;
     }
 
-    // export ZSOs
-    for roms in zsos.values() {
+    // export XSOs as-is
+    for roms in xsos.values() {
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let common_romfile = romfile.as_common(connection).await?;
         copy_file(
             progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
-            false,
-        )
-        .await?;
-    }
-
-    // export CSOs
-    for roms in csos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        copy_file(
-            progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
+            &common_romfile.path,
+            &destination_directory.join(common_romfile.path.file_name().unwrap()),
             false,
         )
         .await?;
@@ -1364,57 +1170,23 @@ async fn to_gdi(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
     // partition CUE/BINs
-    let (cue_bins, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CUE_EXTENSION)
-            }) && roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(BIN_EXTENSION)
-            })
-        });
+    let (cue_bins, others) =
+        partition_games_by_all_extensions(others, &romfiles_by_id, &[CUE_EXTENSION, BIN_EXTENSION]);
 
     // partition GDIs (already in GDI format)
-    let (gdis, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(GDI_EXTENSION)
-            })
-        });
+    let (gdis, others) = partition_games_by_extensions(others, &romfiles_by_id, &[GDI_EXTENSION]);
 
     drop(others);
 
@@ -1435,34 +1207,18 @@ async fn to_gdi(
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
             let cue_rom = cue_roms.first().unwrap();
-            let cue_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(cue_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-
-            let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-            for bin_rom in &bin_roms {
-                let bin_romfile = romfile
-                    .as_common(connection)
-                    .await?
-                    .as_archive(progress_bar, Some(bin_rom))
-                    .await?
-                    .first()
-                    .unwrap()
-                    .to_common(progress_bar, &tmp_directory.path())
-                    .await?;
-                bin_romfiles.push(bin_romfile);
-            }
-
-            cue_romfile
-                .as_cue_bin(bin_romfiles)?
-                .to_gdi(progress_bar, destination_directory)
-                .await?;
+            archive_to_cue_bin(
+                connection,
+                progress_bar,
+                cue_rom,
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?
+            .inner
+            .to_gdi(progress_bar, destination_directory)
+            .await?;
         }
     }
 
@@ -1485,22 +1241,7 @@ async fn to_gdi(
             bail!("Multiple CHDs found");
         }
         let romfile = romfiles.first().unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
 
         // Only convert CD-type CHDs (Dreamcast games)
         if chd_romfile.chd_type == ChdType::Cd {
@@ -1557,25 +1298,15 @@ async fn to_gdi(
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-        let cue_romfile = romfiles_by_id
-            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap()
-            .as_common(connection)
-            .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-        for bin_rom in &bin_roms {
-            bin_romfiles.push(
-                romfiles_by_id
-                    .get(&bin_rom.romfile_id.unwrap())
-                    .unwrap()
-                    .as_common(connection)
-                    .await?,
-            );
-        }
-        cue_romfile
-            .as_cue_bin(bin_romfiles)?
-            .to_gdi(progress_bar, destination_directory)
-            .await?;
+        assemble_cue_bin(
+            connection,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?
+        .to_gdi(progress_bar, destination_directory)
+        .await?;
     }
 
     // copy existing GDI files
@@ -1632,27 +1363,16 @@ async fn to_nsz(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition NSPs
-    let (nsps, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(NSP_EXTENSION)
-            })
-        });
+    let (nsps, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSP_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1665,15 +1385,9 @@ async fn to_nsz(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_nsp()?
             .to_nsz(progress_bar, destination_directory)
             .await?;
@@ -1705,39 +1419,19 @@ async fn to_rvz(
     compression_level: usize,
     block_size: usize,
     scrub: bool,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
     // partition RVZs
-    let (rvzs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(RVZ_EXTENSION)
-            })
-        });
+    let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1750,15 +1444,9 @@ async fn to_rvz(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_iso()?
             .to_rvz(
                 progress_bar,
@@ -1796,12 +1484,9 @@ async fn to_rvz(
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         if scrub {
             let tmp_directory = create_tmp_directory(connection).await?;
-            romfile
-                .as_common(connection)
+            rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
                 .await?
-                .as_rvz()?
-                .to_iso(progress_bar, &tmp_directory.path())
-                .await?
+                .inner
                 .to_rvz(
                     progress_bar,
                     destination_directory,
@@ -1839,39 +1524,19 @@ async fn to_wbfs(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
     // partition RVZs
-    let (rvzs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(RVZ_EXTENSION)
-            })
-        });
+    let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
 
     // drop others
     drop(others);
@@ -1884,15 +1549,9 @@ async fn to_wbfs(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
             .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .as_iso()?
             .to_wbfs(progress_bar, destination_directory)
             .await?;
@@ -1915,160 +1574,11 @@ async fn to_wbfs(
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
+        rvz_to_iso(connection, progress_bar, romfile, &tmp_directory)
             .await?
-            .as_rvz()?
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
+            .inner
             .to_wbfs(progress_bar, destination_directory)
             .await?;
-    }
-
-    Ok(())
-}
-
-async fn to_zso(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    destination_directory: &PathBuf,
-    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
-    romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
-    // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
-
-    // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
-
-    // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
-
-    // partition ZSOs
-    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
-
-    // drop others
-    drop(others);
-
-    // export archives
-    for roms in archives.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
-            continue;
-        }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_archive(progress_bar, Some(rom))
-            .await?
-            .first()
-            .unwrap()
-            .to_common(progress_bar, &tmp_directory.path())
-            .await?
-            .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export ISOs
-    for roms in isos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_iso()?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export CHDs
-    for roms in chds.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(ISO_EXTENSION) {
-            continue;
-        }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
-        if chd_romfile.chd_type != ChdType::Dvd {
-            continue;
-        }
-        chd_romfile
-            .to_iso(progress_bar, &tmp_directory.path())
-            .await?
-            .to_xso(progress_bar, destination_directory, XsoType::Zso)
-            .await?;
-    }
-
-    // export ZSOs
-    for roms in zsos.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        copy_file(
-            progress_bar,
-            &romfile.as_common(connection).await?.path,
-            &destination_directory.join(
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .path
-                    .file_name()
-                    .unwrap(),
-            ),
-            false,
-        )
-        .await?;
     }
 
     Ok(())
@@ -2080,81 +1590,29 @@ async fn to_iso(
     destination_directory: &PathBuf,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition CUE/BINs
-    let (cue_bins, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CUE_EXTENSION)
-            }) && roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(BIN_EXTENSION)
-            })
-        });
+    let (cue_bins, others) =
+        partition_games_by_all_extensions(others, &romfiles_by_id, &[CUE_EXTENSION, BIN_EXTENSION]);
 
     // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
     // partition CSOs
-    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CSO_EXTENSION)
-            })
-        });
+    let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition ZSOs
-    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
+    let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
 
     // partition ISOs
-    let (isos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ISO_EXTENSION)
-            })
-        });
+    let (isos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ISO_EXTENSION]);
 
     drop(others);
 
@@ -2181,35 +1639,24 @@ async fn to_iso(
                 .to_common(progress_bar, destination_directory)
                 .await?;
         } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
-            let (mut cue_roms, mut bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
+            let (mut cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
             let tmp_directory = create_tmp_directory(connection).await?;
             let romfile = romfiles.first().unwrap();
             let cue_rom = cue_roms.pop().unwrap();
-            let cue_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(cue_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-            let bin_rom = bin_roms.pop().unwrap();
-            let bin_romfile = romfile
-                .as_common(connection)
-                .await?
-                .as_archive(progress_bar, Some(bin_rom))
-                .await?
-                .first()
-                .unwrap()
-                .to_common(progress_bar, &tmp_directory.path())
-                .await?;
-            cue_romfile
-                .as_cue_bin(vec![bin_romfile])?
-                .to_iso(progress_bar, destination_directory)
-                .await?;
+            archive_to_cue_bin(
+                connection,
+                progress_bar,
+                cue_rom,
+                &bin_roms,
+                romfile,
+                &tmp_directory,
+            )
+            .await?
+            .inner
+            .to_iso(progress_bar, destination_directory)
+            .await?;
         }
     }
 
@@ -2221,25 +1668,15 @@ async fn to_iso(
         if bin_roms.len() > 1 {
             continue;
         }
-        let cue_romfile = romfiles_by_id
-            .get(&cue_roms.first().unwrap().romfile_id.unwrap())
-            .unwrap()
-            .as_common(connection)
-            .await?;
-        let mut bin_romfiles: Vec<CommonRomfile> = vec![];
-        for bin_rom in &bin_roms {
-            bin_romfiles.push(
-                romfiles_by_id
-                    .get(&bin_rom.romfile_id.unwrap())
-                    .unwrap()
-                    .as_common(connection)
-                    .await?,
-            );
-        }
-        cue_romfile
-            .as_cue_bin(bin_romfiles)?
-            .to_iso(progress_bar, destination_directory)
-            .await?;
+        assemble_cue_bin(
+            connection,
+            &romfiles_by_id,
+            cue_roms.first().unwrap(),
+            &bin_roms,
+        )
+        .await?
+        .to_iso(progress_bar, destination_directory)
+        .await?;
     }
 
     // export CHDs
@@ -2269,22 +1706,7 @@ async fn to_iso(
             .unwrap()
             .as_common(connection)
             .await?;
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 chd_romfile
@@ -2372,75 +1794,28 @@ async fn to_original(
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-) -> SimpleResult<()> {
+) -> Result<()> {
     // partition archives
-    let (archives, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        roms_by_game_id.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-                romfile.path.ends_with(ZIP_EXTENSION) || romfile.path.ends_with(SEVENZIP_EXTENSION)
-            })
-        });
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
 
     // partition CHDs
-    let (chds, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CHD_EXTENSION)
-            })
-        });
+    let (chds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CHD_EXTENSION]);
 
     // partition CSOs
-    let (csos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(CSO_EXTENSION)
-            })
-        });
+    let (csos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[CSO_EXTENSION]);
 
     // partition NSZs
-    let (nszs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(NSP_EXTENSION)
-            })
-        });
+    let (nszs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[NSZ_EXTENSION]);
 
     // partition RVZs
-    let (rvzs, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(RVZ_EXTENSION)
-            })
-        });
+    let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
 
     // partition ZSOs
-    let (zsos, others): (IndexMap<i64, Vec<Rom>>, IndexMap<i64, Vec<Rom>>) =
-        others.into_iter().partition(|(_, roms)| {
-            roms.par_iter().any(|rom| {
-                romfiles_by_id
-                    .get(&rom.romfile_id.unwrap())
-                    .unwrap()
-                    .path
-                    .ends_with(ZSO_EXTENSION)
-            })
-        });
+    let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
 
     // export archives
     for roms in archives.values() {
@@ -2500,22 +1875,7 @@ async fn to_original(
             bail!("Multiple CHDs found");
         }
         let romfile = romfiles.first().unwrap();
-        let chd_romfile = match romfile.parent_id {
-            Some(parent_id) => {
-                let parent_chd_romfile = find_romfile_by_id(connection, parent_id)
-                    .await
-                    .as_common(connection)
-                    .await?
-                    .as_chd()
-                    .await?;
-                romfile
-                    .as_common(connection)
-                    .await?
-                    .as_chd_with_parent(parent_chd_romfile)
-                    .await?
-            }
-            None => romfile.as_common(connection).await?.as_chd().await?,
-        };
+        let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
                 if chd_romfile.track_count > 1

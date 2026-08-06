@@ -1,9 +1,9 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::HashAlgorithm;
 use super::database::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::Result;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
@@ -29,7 +29,7 @@ pub async fn main(
     connection: &mut SqliteConnection,
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
-) -> SimpleResult<()> {
+) -> Result<()> {
     progress_bar.set_style(get_none_progress_style());
     progress_bar.enable_steady_tick(Duration::from_millis(100));
 

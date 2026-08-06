@@ -17,19 +17,19 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20200721).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let matches = import_dats::subcommand().get_matches_from(&[
+    let matches = import_dats::subcommand().get_matches_from([
         "import-dats",
         "tests/Test System (20251214) (Shared Roms).dat",
     ]);
@@ -53,18 +53,16 @@ async fn test() {
     let systems = find_systems(&mut connection).await;
     let mut system_directories = vec![];
     for system in &systems {
-        let system_directory = get_system_directory(&mut connection, &system)
-            .await
-            .unwrap();
+        let system_directory = get_system_directory(&mut connection, system).await.unwrap();
         system_directories.push(system_directory);
     }
 
     // when
-    let matches = subcommand().get_matches_from(&[
+    let matches = subcommand().get_matches_from([
         "import-roms",
         "-u",
         "first",
-        romfile_paths.get(0).unwrap().as_os_str().to_str().unwrap(),
+        romfile_paths.first().unwrap().as_os_str().to_str().unwrap(),
         romfile_paths.get(1).unwrap().as_os_str().to_str().unwrap(),
     ]);
     main(&mut connection, &matches, &progress_bar)

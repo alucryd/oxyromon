@@ -1,0 +1,23 @@
+[package]
+name = "oxyromon-desktop"
+version = "0.22.0"
+edition = "2024"
+publish = false
+description = "Native desktop shell for oxyromon"
+
+# Standalone crate: do not let cargo walk up and treat the parent oxyromon
+# package as a workspace root (keeps the Tauri/webkit deps out of the CLI build).
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true

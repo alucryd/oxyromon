@@ -6,52 +6,112 @@
       {
         "name": "id",
         "ordinal": 0,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "id"
+          }
+        }
       },
       {
         "name": "name",
         "ordinal": 1,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "name"
+          }
+        }
       },
       {
         "name": "description",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "description"
+          }
+        }
       },
       {
         "name": "version",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "version"
+          }
+        }
       },
       {
         "name": "url",
         "ordinal": 4,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "url"
+          }
+        }
       },
       {
         "name": "arcade",
         "ordinal": 5,
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "arcade"
+          }
+        }
       },
       {
         "name": "merging",
         "ordinal": 6,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "merging"
+          }
+        }
       },
       {
         "name": "custom_name",
         "ordinal": 7,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "custom_name"
+          }
+        }
       },
       {
         "name": "completion",
         "ordinal": 8,
-        "type_info": "Integer"
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "completion"
+          }
+        }
       },
       {
         "name": "custom_extension",
         "ordinal": 9,
-        "type_info": "Text"
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "systems",
+            "name": "custom_extension"
+          }
+        }
       }
     ],
     "parameters": {

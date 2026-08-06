@@ -1,10 +1,10 @@
-use super::SimpleResult;
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::Path;
@@ -30,6 +30,12 @@ pub struct RvzRomfile {
     pub romfile: CommonRomfile,
 }
 
+impl GetRomfile for RvzRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
 impl HashAndSize for RvzRomfile {
     async fn get_hash_and_size(
         &self,
@@ -38,7 +44,7 @@ impl HashAndSize for RvzRomfile {
         position: usize,
         total: usize,
         hash_algorithm: &HashAlgorithm,
-    ) -> simple_error::SimpleResult<(String, u64)> {
+    ) -> Result<(String, u64)> {
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory).await?;
         let (hash, size) = iso_romfile
@@ -57,7 +63,7 @@ impl Check for RvzRomfile {
         progress_bar: &ProgressBar,
         header: &Option<Header>,
         roms: &[&Rom],
-    ) -> SimpleResult<()> {
+    ) -> Result<()> {
         print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
         let tmp_directory = create_tmp_directory(connection).await?;
         let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
@@ -74,7 +80,7 @@ impl ToIso for RvzRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> SimpleResult<IsoRomfile> {
+    ) -> Result<IsoRomfile> {
         progress_bar.set_message("Extracting rvz");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -92,21 +98,17 @@ impl ToIso for RvzRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
-            .arg("convert")
-            .arg("-f")
-            .arg("iso")
-            .arg("-i")
-            .arg(&self.romfile.path)
-            .arg("-o")
-            .arg(&path)
-            .output()
-            .await
-            .expect("Failed to extract rvz");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
-        }
+        run_tool(
+            Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
+                .arg("convert")
+                .arg("-f")
+                .arg("iso")
+                .arg("-i")
+                .arg(&self.romfile.path)
+                .arg("-o")
+                .arg(&path),
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -124,7 +126,7 @@ pub trait ToRvz {
         compression_level: usize,
         block_size: usize,
         scrub: bool,
-    ) -> SimpleResult<RvzRomfile>;
+    ) -> Result<RvzRomfile>;
 }
 
 impl ToRvz for IsoRomfile {
@@ -136,7 +138,7 @@ impl ToRvz for IsoRomfile {
         compression_level: usize,
         block_size: usize,
         scrub: bool,
-    ) -> SimpleResult<RvzRomfile> {
+    ) -> Result<RvzRomfile> {
         progress_bar.set_message("Creating rvz");
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
@@ -172,11 +174,7 @@ impl ToRvz for IsoRomfile {
         if scrub {
             command.arg("-s");
         }
-        let output = command.output().await.expect("Failed to create rvz");
-
-        if !output.status.success() {
-            bail!(String::from_utf8(output.stderr).unwrap().as_str())
-        }
+        run_tool(&mut command).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -186,11 +184,11 @@ impl ToRvz for IsoRomfile {
 }
 
 pub trait AsRvz {
-    fn as_rvz(self) -> SimpleResult<RvzRomfile>;
+    fn as_rvz(self) -> Result<RvzRomfile>;
 }
 
 impl AsRvz for CommonRomfile {
-    fn as_rvz(self) -> SimpleResult<RvzRomfile> {
+    fn as_rvz(self) -> Result<RvzRomfile> {
         if self
             .path
             .extension()
@@ -206,13 +204,11 @@ impl AsRvz for CommonRomfile {
     }
 }
 
-pub async fn get_version() -> SimpleResult<String> {
-    let output = try_with!(
-        Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
-            .output()
-            .await,
-        "Failed to spawn dolphin-tool"
-    );
+pub async fn get_version() -> Result<String> {
+    let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
+        .output()
+        .await
+        .context("Failed to spawn dolphin-tool")?;
     // dolphin-tool doesn't advertize any version
     String::from_utf8(output.stderr).unwrap();
     let version = String::from("unknown");

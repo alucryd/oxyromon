@@ -624,20 +624,6 @@ pub async fn count_games(connection: &mut SqliteConnection) -> i64 {
     .count
 }
 
-pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
-    sqlx::query_as!(
-        Game,
-        "
-        SELECT *
-        FROM games
-        ORDER BY name
-        ",
-    )
-    .fetch_all(connection)
-    .await
-    .expect("Error while finding games")
-}
-
 pub async fn find_games_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -671,6 +657,47 @@ pub async fn find_wanted_games_by_system_id(
         ORDER BY name
         ",
         system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
+}
+
+#[cfg(test)]
+#[cfg(test)]
+pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        ORDER BY name
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding games")
+}
+
+/// As [`find_games_by_system_id`], for one slice of a large system.
+pub async fn find_games_by_system_id_paged(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+    offset: i64,
+    limit: i64,
+) -> Vec<Game> {
+    sqlx::query_as!(
+        Game,
+        "
+        SELECT *
+        FROM games
+        WHERE system_id = ?
+        ORDER BY name
+        LIMIT ? OFFSET ?
+        ",
+        system_id,
+        limit,
+        offset,
     )
     .fetch_all(connection)
     .await
@@ -957,6 +984,7 @@ pub async fn create_rom_from_xml(
     .last_insert_rowid()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn update_rom(
     connection: &mut SqliteConnection,
     id: i64,
@@ -986,6 +1014,7 @@ pub async fn update_rom(
     .unwrap_or_else(|_| panic!("Error while updating rom with id {}", id));
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn update_rom_from_xml(
     connection: &mut SqliteConnection,
     id: i64,
@@ -1068,20 +1097,6 @@ pub async fn count_roms(connection: &mut SqliteConnection) -> i64 {
     .await
     .expect("Error while counting roms")
     .count
-}
-
-pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
-    sqlx::query_as!(
-        Rom,
-        "
-        SELECT *
-        FROM roms
-        ORDER BY name
-        ",
-    )
-    .fetch_all(connection)
-    .await
-    .expect("Error while finding roms")
 }
 
 pub async fn find_roms_by_game_id_no_parents(
@@ -1227,6 +1242,7 @@ pub async fn find_roms_without_romfile_by_game_ids(
         .expect("Error while finding roms with romfile")
 }
 
+#[cfg(test)]
 pub async fn find_roms_with_romfile_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -1246,6 +1262,21 @@ pub async fn find_roms_with_romfile_by_system_id(
     .fetch_all(connection)
     .await
     .expect("Error while finding roms with romfile")
+}
+
+#[cfg(test)]
+pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        ORDER BY name
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding roms")
 }
 
 pub async fn find_roms_with_romfile_by_game_id(
@@ -2434,36 +2465,6 @@ pub async fn find_rom_by_name_and_game_id(
     })
 }
 
-pub async fn find_rom_by_size_and_crc_and_game_id(
-    connection: &mut SqliteConnection,
-    size: i64,
-    crc: &str,
-    game_id: i64,
-) -> Option<Rom> {
-    let crc = crc.to_lowercase();
-    sqlx::query_as!(
-        Rom,
-        "
-        SELECT *
-        FROM roms
-        WHERE size = ?
-        AND crc = ?
-        AND game_id = ?
-        ",
-        size,
-        crc,
-        game_id,
-    )
-    .fetch_optional(connection)
-    .await
-    .unwrap_or_else(|_| {
-        panic!(
-            "Error while finding rom with size {} and CRC {} and game id {}",
-            size, crc, game_id
-        )
-    })
-}
-
 pub async fn find_rom_by_size_and_crc_and_game_ids(
     connection: &mut SqliteConnection,
     size: i64,
@@ -2557,6 +2558,8 @@ pub async fn create_patch(
     .last_insert_rowid()
 }
 
+// patch application/re-import is not wired up yet, kept for the planned feature
+#[allow(dead_code)]
 pub async fn update_patch(
     connection: &mut SqliteConnection,
     id: i64,

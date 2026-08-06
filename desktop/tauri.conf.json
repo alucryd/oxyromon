@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "oxyromon-desktop",
+  "version": "0.22.0",
+  "identifier": "com.github.alucryd.oxyromon",
+  "build": {
+    "beforeDevCommand": "sh desktop/scripts/stage-sidecar.sh",
+    "beforeBuildCommand": "sh desktop/scripts/stage-sidecar.sh"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "targets": "all",
+    "shortDescription": "Rusty ROM OrgaNizer",
+    "longDescription": "Native desktop shell for oxyromon, an opinionated CLI ROM organizer.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": ["binaries/oxyromon"],
+    "linux": {
+      "deb": {
+        "depends": ["p7zip"]
+      }
+    }
+  }
+}

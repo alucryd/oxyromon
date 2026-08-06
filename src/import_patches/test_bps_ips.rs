@@ -19,14 +19,14 @@ async fn test() {
     let pool = establish_connection(db_file.path().to_str().unwrap()).await;
     let mut connection = pool.acquire().await.unwrap();
 
-    let rom_directory = TempDir::new_in(&test_directory).unwrap();
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
     set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
-    let tmp_directory = TempDir::new_in(&test_directory).unwrap();
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
     let matches = import_dats::subcommand()
-        .get_matches_from(&["import-dats", "tests/Test System (20240908) (Patches).dat"]);
+        .get_matches_from(["import-dats", "tests/Test System (20240908) (Patches).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -60,7 +60,7 @@ async fn test() {
         .unwrap();
 
     let matches = import_roms::subcommand()
-        .get_matches_from(&["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
     import_roms::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -97,11 +97,11 @@ async fn test() {
     let romfiles = find_romfiles(&mut connection).await;
     assert_eq!(romfiles.len(), 3);
 
-    let patch = patches.get(0).unwrap();
+    let patch = patches.first().unwrap();
     assert_eq!(patch.name, "Test Game (USA, Europe) (BPS)");
     assert_eq!(patch.index, 0);
     assert_eq!(patch.rom_id, rom.id);
-    let romfile = romfiles.get(0).unwrap();
+    let romfile = romfiles.first().unwrap();
     assert_eq!(
         romfile.path,
         system_directory
