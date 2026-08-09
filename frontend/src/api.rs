@@ -335,6 +335,43 @@ pub async fn set_directory(key: &str, value: &str, system_id: Option<i64>) -> Re
     .map(|_: serde::de::IgnoredAny| ())
 }
 
+#[derive(Deserialize)]
+struct DownloadableSystemsData {
+    #[serde(rename = "downloadableSystems")]
+    downloadable_systems: Vec<String>,
+}
+
+/// Redump systems the server can fetch: new ones, or with `update`, the ones
+/// already imported whose DATs can be refreshed.
+pub async fn fetch_downloadable_systems(notifier: Notifier, update: bool) -> Vec<String> {
+    let query = r#"query Downloadable($update: Boolean!) {
+        downloadableSystems(update: $update)
+    }"#;
+    match graphql::<DownloadableSystemsData>(query, json!({ "update": update })).await {
+        Ok(data) => data.downloadable_systems,
+        Err(e) => {
+            report_error(notifier, "Loading downloadable systems", &e);
+            Vec::new()
+        }
+    }
+}
+
+/// Ask the server to fetch and import the named systems' DAT files.
+///
+/// Returns once the request is accepted; the work itself reports over SSE.
+pub async fn download_dats(state: AppState, systems: Vec<String>) -> bool {
+    let mutation = r#"mutation DownloadDats($systems: [String!]!) {
+        downloadDats(systems: $systems)
+    }"#;
+    match graphql::<serde::de::IgnoredAny>(mutation, json!({ "systems": systems })).await {
+        Ok(_) => true,
+        Err(e) => {
+            report_error(state.notifier, "Downloading DAT files", &e);
+            false
+        }
+    }
+}
+
 pub async fn purge_system(state: AppState, system_id: i64) {
     state.purging_system_id.set(system_id);
     let mutation = r#"mutation PurgeSystem($systemId: Int!) {

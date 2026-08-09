@@ -351,6 +351,28 @@
     border-block-end: 1px solid var(--wa-color-surface-border);
   }
 
+  /* === The download dialog's system picker === */
+
+  .download-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-2xs);
+    max-height: 20rem;
+    overflow-y: auto;
+    padding: var(--wa-space-2xs);
+    border: 1px solid var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  /* Redump's longer names run to sixty characters. Wrapping them turns the list
+     into ragged two line entries that are hard to scan, so they are cut instead
+     and the full name stays available as the item's tooltip. */
+  .download-item::part(label) {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
   /* === The import dialog's click-or-drop target === */
 
   .dropzone {

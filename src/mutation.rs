@@ -1,5 +1,6 @@
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
 use super::database::*;
+use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::purge_systems::purge_system;
 use super::server::SseMessage;
@@ -127,6 +128,69 @@ impl Mutation {
         log::debug!("mutation::set_directory({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         set_directory(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
+        Ok(true)
+    }
+
+    /// Fetch the named Redump systems' DAT files and import them.
+    ///
+    /// Returns as soon as the work is handed to a background task; progress and
+    /// the outcome arrive over SSE, the same way importing an uploaded DAT does.
+    async fn download_dats(&self, ctx: &Context<'_>, systems: Vec<String>) -> Result<bool> {
+        log::debug!("mutation::download_dats({:?})", systems);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+            let total = systems.len();
+
+            let _ = sse_tx.send(SseMessage {
+                event: "download_dats_started".to_string(),
+                data: json!({
+                    "total": total,
+                    "message": format!("Downloading {} DAT file(s)", total),
+                })
+                .to_string(),
+            });
+
+            // Deliberately quiet between the two: a per-system event would mean
+            // a toast each, and this list can run to the whole catalogue.
+            let mut failed: Vec<String> = Vec::new();
+            for system_name in systems.iter() {
+                if let Err(e) =
+                    download_redump_system(&mut connection, &progress_bar, system_name, false).await
+                {
+                    log::error!("Failed to download {}: {:#}", system_name, e);
+                    failed.push(system_name.clone());
+                }
+            }
+
+            if failed.is_empty() {
+                let _ = sse_tx.send(SseMessage {
+                    event: "download_dats_complete".to_string(),
+                    data: json!({
+                        "total": total,
+                        "success": true,
+                        "message": format!("Downloaded {} DAT file(s)", total),
+                    })
+                    .to_string(),
+                });
+            } else {
+                let _ = sse_tx.send(SseMessage {
+                    event: "download_dats_error".to_string(),
+                    data: json!({
+                        "success": false,
+                        "failed": failed,
+                        "message": format!("Failed to download: {}", failed.join(", ")),
+                    })
+                    .to_string(),
+                });
+            }
+        });
+
         Ok(true)
     }
 
