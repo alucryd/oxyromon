@@ -356,31 +356,3 @@ pub fn split_list(value: &Option<String>) -> Vec<String> {
         _ => Vec::new(),
     }
 }
-
-/// `pretty-bytes`-style human readable size (decimal units, like the JS lib).
-pub fn format_bytes(bytes: i64) -> String {
-    if bytes == 0 {
-        return "0 B".to_string();
-    }
-    let negative = bytes < 0;
-    let mut value = bytes.unsigned_abs() as f64;
-    const UNITS: [&str; 9] = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    let mut unit = 0;
-    while value >= 1000.0 && unit < UNITS.len() - 1 {
-        value /= 1000.0;
-        unit += 1;
-    }
-    let formatted = if unit == 0 {
-        format!("{} {}", value as i64, UNITS[unit])
-    } else {
-        // Trim to at most 3 significant digits like pretty-bytes' default.
-        let s = format!("{:.2}", value);
-        let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
-        format!("{} {}", s, UNITS[unit])
-    };
-    if negative {
-        format!("-{}", formatted)
-    } else {
-        formatted
-    }
-}

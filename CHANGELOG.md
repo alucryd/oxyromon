@@ -2,35 +2,36 @@
 
 ## Features
 
-- Added per-system settings: any setting can now be overridden on a per-system basis, with automatic fallback to the global value when no system-specific override exists
-- Added `-n/--system` flag to `config` to scope all operations (list, get, set, unset, add, remove) to a specific system (supports `%` globs)
-- Added per-system settings to the web UI: a dropdown menu on each system entry gives access to a system-scoped settings modal (all settings except ROM and TMP directories)
+- Added per-system settings, with automatic fallback to the global value
+- Added `-n/--system` flag to `config` to scope operations to a specific system (supports `%` globs)
+- Added per-system settings to the web UI, from a dropdown on each system entry
 - Added romfile download support to the web UI
-- Added About modal to the web UI: shows version, dependency status, and global statistics
-- Added `-u/--update` flag to `import-dats` to only import DAT files for systems already in the database
-- Improved ZIP support in `import-dats` to recursively walk archive contents, finding `.dat` files in subdirectories (supports daily dat-o-matic packs)
+- Added an About modal to the web UI, showing version, dependencies and statistics
 - Added DAT import to the web UI
 - Added notification history to the web UI
-- Added an optional native desktop app (`desktop/` crate, built with Tauri) that wraps the web UI in a native window; it bundles the `oxyromon` binary as a sidecar, starts `oxyromon server` on a free loopback port on launch, and shares the CLI's database and settings
-- Added an optional `sevenz` feature that handles archives with the [sevenz-rust2](https://crates.io/crates/sevenz-rust2) and [zip](https://crates.io/crates/zip) crates instead of spawning 7-Zip, turning listing into a metadata read rather than a process launch; listing is the operation `check-roms` and `import-roms` perform most. ZIP is native throughout, as is reading a 7z and writing one from scratch. Renaming or deleting an entry in a 7z, or adding one to an existing 7z, still uses 7-Zip: those alter metadata while leaving compressed data alone, which sevenz-rust2 cannot express, so doing them natively would mean re-encoding the whole archive
-- Added an optional `nod` feature that handles RVZ and WBFS with the [nod](https://crates.io/crates/nod) crate rather than shelling out to `dolphin-tool` and `wit`, removing both external dependencies and running conversions faster. RVZ output is interchangeable with Dolphin's in both directions, and WBFS output extracts identically to `wit`'s. `RVZ_SCRUB` has no counterpart in nod and is ignored with a warning when the feature is enabled
-- RVZ and WBFS conversions show a real byte progress bar instead of a spinner when built with the `nod` feature, since an in-process decoder can report how far along it is where a subprocess cannot
-- Checking and hashing an RVZ no longer extracts it to a temporary ISO when built with the `nod` feature: the digest consumes the decoded stream directly, saving a full write and read of the extracted image (several gigabytes on a dual layer Wii disc)
+- Added `-u/--update` flag to `import-dats` to only import DATs for systems already in the database
+- Improved ZIP support in `import-dats` to find `.dat` files in subdirectories (supports daily dat-o-matic packs)
+- Added an optional native desktop app built with Tauri, sharing the CLI's database and settings
+- Added an optional `nod` feature to handle RVZ and WBFS natively instead of shelling out to `dolphin-tool` and `wit`
+- Added an optional `sevenz` feature to read archives and write ZIP natively instead of spawning 7-Zip
+- Added real progress bars to RVZ and WBFS conversions with the `nod` feature
 
 ## Changes
 
-- Replaced the `cdfs` git dependency with a native ISO 9660 directory reader in `src/iso9660.rs`, vendored from the GPL-3.0 [`opticaldiscs`](https://crates.io/crates/opticaldiscs) crate. IRD imports are byte for byte identical to before. It is vendored rather than depended on because `opticaldiscs` pulls `nod` 1.4, whose `liblzma-sys` 0.3 collides with the `liblzma-sys` 0.4 that `nod` 2 needs — both declare `links = "lzma"`, which Cargo allows only once per build
-- Rebuilt the web UI on [Web Awesome](https://webawesome.com) components: the dialogs now trap focus and close on Escape, and the settings form uses real switches, selects and removable tags rather than unstyled browser controls
-- Dropped Tailwind CSS: the UI is now styled entirely by Web Awesome's components, layout utilities and design tokens, plus a small hand-written stylesheet. The Tailwind standalone CLI is no longer a build dependency
-- Made the web UI's three columns resizable: drag the divider between the systems, games and ROMs panes to give any of them more room, and the positions are remembered across visits
-- Restored the per-field descriptions in the settings dialog, which explain what each setting expects (region codes, language codes, and what each sorting option favors)
-- Rewrote the web UI in Rust using Leptos (compiled to WebAssembly), replacing the Svelte/Flowbite frontend; the UI now lives in a standalone `frontend/` crate built with Trunk (no Node.js toolchain required)
+- Rewrote the web UI in Rust using Leptos, replacing the Svelte/Flowbite frontend
+- Rebuilt the web UI on Web Awesome components
+- Dropped Tailwind CSS, the UI is now styled by Web Awesome and a small stylesheet
+- Made the web UI's three columns resizable, positions are remembered across visits
+- Restored the per-field descriptions in the settings dialog
 - Replaced the `SKIP_PNPM` build environment variable with `SKIP_TRUNK`
+- Replaced the `cdfs` git dependency with a native ISO 9660 reader vendored from `opticaldiscs`
 
 ## Improvements
 
-- Optimized dependencies in the dev profile (`[profile.dev.package."*"] opt-level = 3`). The compression and hashing crates run about an order of magnitude slower unoptimized, which made debug builds painful and any benchmark taken from one meaningless; the test suite is roughly a third faster as a result
-- Extracted `hash_reader`, `get_hash_algorithm` and `compare_hash_and_size` out of `CommonRomfile`, so a romfile that can produce a stream is able to verify itself without first writing that stream to disk
+- Sizes and notification times in the web UI now follow the reader's locale
+- Notifications in the web UI now stack instead of replacing one another
+- Checking an RVZ no longer extracts it to a temporary ISO with the `nod` feature
+- Optimized dependencies in the dev profile, debug builds and the test suite are much faster
 - Overhauled web UI colors for improved readability in both light and dark themes
 - Fixed statistics table header color in light mode to match the systems and games table headers
 - Overhauled CLI output for a cleaner, more consistent terminal experience
@@ -39,26 +40,31 @@
 - Improved `check-roms` output with per-system pass/fail summary
 - Revamped statistics card in the web UI with a tiled layout
 - Revamped settings modal in the web UI with a two-column layout for easier navigation
-- Cleaned up the entire codebase to be clippy-clean: removed ~900 warnings (needless borrows, redundant references, collapsible ifs, `unwrap` after `is_some` rewritten as `if let`/let-chains)
-- Modernized idioms: replaced the `lazy_static` dependency with `std::sync::LazyLock`, removed the pre-2018 `extern crate` block, and switched to explicit macro imports
+- Cleaned up the entire codebase to be clippy-clean (~900 warnings)
+- Modernized idioms: `std::sync::LazyLock` over `lazy_static`, no more `extern crate`
 - Simplified the `main()` subcommand dispatch using `matches.subcommand()` destructuring
-- Removed dead code (unused `M3uRomfile` wrapper and unused database helpers); helpers only used by tests are now gated behind `#[cfg(test)]`
-- Migrated error handling from `simple-error` to `anyhow`: errors now carry a full context chain (displayed with `Caused by:` sections), and external tool failures no longer panic on non-UTF-8 output
-- Deduplicated the 79 partition-by-extension blocks in `convert-roms` and `export-roms` into two shared helpers (`partition_games_by_extensions`, `partition_games_by_all_extensions` in `common.rs`), removing ~560 lines
-- Unified `convert-roms`/`export-roms` CSO and ZSO handling into a single `to_xso` per module, backed by a new shared source-decoding layer (`transcode.rs`) and a `check_and_persist` conversion finalizer, removing another ~440 lines
-- Moved `convert-roms`/`export-roms` NSZ, RVZ, and WBFS handling onto the shared decoding layer as well
-- Simplified `convert-roms` CHD handling: extracted the repeated parent-CHD lookup/resolution into helpers, merged the twin CSO and ZSO loops, and moved the single-file loops onto the shared decoding layer
-- Extracted CUE/BIN and CHD parsing helpers (`archive_to_cue_bin`, `assemble_cue_bin`, `romfile_as_chd`) into `transcode.rs`, shared by `convert-roms`, `export-roms`, and `check-roms`
-- Added a `run_tool` helper that centralizes external tool invocation (debug logging, spawn error context, stderr reporting) and adopted it across the format modules
-- Simplified `convert-roms` back-to-original handling: merged the twin CSO and ZSO loops and moved the tail loops onto the shared conversion finalizer
+- Removed dead code, test-only helpers are now gated behind `#[cfg(test)]`
+- Migrated error handling from `simple-error` to `anyhow`, errors now carry a full context chain
+- Extracted the hashing and comparison helpers out of `CommonRomfile`
+- Deduplicated the partition-by-extension blocks in `convert-roms` and `export-roms` (~560 lines)
+- Unified `convert-roms`/`export-roms` CSO and ZSO handling behind a shared decoding layer (~440 lines)
+- Moved `convert-roms`/`export-roms` NSZ, RVZ and WBFS handling onto the shared decoding layer
+- Simplified `convert-roms` CHD handling
+- Simplified `convert-roms` back-to-original handling
+- Extracted CUE/BIN and CHD parsing helpers into `transcode.rs`
+- Added a `run_tool` helper that centralizes external tool invocation
 
 ## Fixes
 
-- Fixed `RVZ_COMPRESSION_ALGORITHM` never having worked when set to bzip2: the value was spelled `bzip`, which dolphin-tool rejects outright since it only accepts `bzip2`. The setting is now `bzip2`, and a migration rewrites any stored `bzip`
+- Fixed `RVZ_COMPRESSION_ALGORITHM` never having worked when set to bzip2, it was spelled `bzip`
+- Fixed the notification list in the web UI not opening, it was clipped by the navbar
+- Fixed the notification count badge sitting off the bell in the web UI
+- Fixed the system actions menu in the web UI being clipped by its pane, and given proper alignment and hover
+- Fixed the statistics card shifting up in the web UI whenever a modal opened
 - Fixed the server not shutting down cleanly on Ctrl+C when SSE clients were connected
-- Fixed `convert-roms -f rvz --recompress` leaving a stray intermediate `.iso` next to each recompressed RVZ; the intermediate is now extracted to the temporary directory
-- Fixed `convert-roms -f chd` always failing with "Not a valid rdsk" on standalone RIFF (LaserDisc) images; the RIFF branch mistakenly parsed the file as RDSK
-- Fixed `convert-roms -f original` and `export-roms -f original` mispartitioning Switch files: NSZ files were silently ignored and NSP files aborted the run with "Not a valid nsz"
+- Fixed `convert-roms -f rvz --recompress` leaving a stray intermediate `.iso`
+- Fixed `convert-roms -f chd` failing on standalone RIFF (LaserDisc) images
+- Fixed `convert-roms -f original` and `export-roms -f original` mispartitioning Switch files
 
 # 0.21.0
 

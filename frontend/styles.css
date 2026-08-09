@@ -183,6 +183,10 @@
     appearance: none;
     margin: 0;
     padding: 0;
+    /* native.css centres a button's contents. Harmless while this is a block,
+       but any .plain-button that becomes a flex container inherits it and
+       silently centres its own children. */
+    justify-content: flex-start;
     border: none;
     border-radius: 0;
     background: none;
@@ -290,40 +294,61 @@
     color: var(--wa-color-text-quiet);
   }
 
-  /* Catches the click that dismisses a menu or a popover. */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
+  /* === The notifications bell === */
+
+  /* Hugs the button, so the count anchors to the bell rather than to whatever
+     width the navbar hands the wrapper. */
+  .notifications {
+    position: relative;
+    display: inline-flex;
   }
 
-  .menu {
+  .notifications-count {
     position: absolute;
-    inset-inline-end: var(--wa-space-2xs);
-    z-index: 40;
-    margin-block-start: var(--wa-space-3xs);
-    width: 11rem;
-    overflow: hidden;
-    background-color: var(--wa-color-surface-raised);
-    border: 1px solid var(--wa-color-surface-border);
-    border-radius: var(--wa-border-radius-m);
-    box-shadow: var(--wa-shadow-l);
+    /* Anchored to the middle of the button, which is where it centres the icon
+       whatever padding native.css gives it, then nudged out to the bell's
+       top-right. Anchoring to the button's own corner instead strands the count
+       out in the padding, well away from the glyph. */
+    inset-block-start: 50%;
+    inset-inline-end: 50%;
+    transform: translate(calc(50% + 0.45rem), calc(-50% - 0.45rem));
+    /* wa-badge pads in em and floors itself at 1.25em wide, which next to a
+       16px glyph reads as a blob wider than the bell. Tighten it to a disc a
+       little smaller than the icon. */
+    font-size: var(--wa-font-size-3xs);
+    padding: 0.125em 0.3em;
+    min-width: 1.5em;
+    min-height: 1.5em;
+    /* The count is decoration; the click belongs to the button underneath. */
+    pointer-events: none;
   }
 
-  .menu-item {
+  .notifications-popover {
+    --max-width: none;
+  }
+
+  /* The header and the rows run to the popover's edges, so its own padding
+     would only inset them. */
+  .notifications-popover::part(body) {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .notifications-list {
+    width: 20rem;
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  .notification {
     display: flex;
-    align-items: center;
-    gap: var(--wa-space-xs);
-    width: 100%;
+    align-items: start;
+    gap: var(--wa-space-2xs);
     padding: var(--wa-space-2xs) var(--wa-space-s);
   }
 
-  .menu-item:hover {
-    background-color: var(--wa-color-neutral-fill-quiet);
-  }
-
-  .menu-item.danger {
-    color: var(--wa-color-danger-fill-loud);
+  .notification:not(:last-child) {
+    border-block-end: 1px solid var(--wa-color-surface-border);
   }
 
   /* === The import dialog's click-or-drop target === */

@@ -41,6 +41,22 @@ fn set_dark(dark: bool) {
     }
 }
 
+/// Point Web Awesome's localization at the reader's own locale.
+///
+/// Its components resolve `document.documentElement.lang || navigator.language`,
+/// and `index.html` ships a hardcoded `lang="en"` so that fallback never fires.
+/// Overwriting it here is what makes `<wa-format-bytes>` say "1,23 Mo" to a
+/// French reader rather than "1.23 MB", and the same for the relative times in
+/// the notifications panel. The attribute is set rather than removed so the
+/// document still declares a language for assistive technology.
+pub fn init_language() {
+    if let Some(element) = document_element()
+        && let Some(language) = web_sys::window().and_then(|window| window.navigator().language())
+    {
+        let _ = element.set_attribute("lang", &language);
+    }
+}
+
 /// Apply the persisted (or default-dark) theme on startup.
 pub fn init_theme() {
     let stored = web_sys::window()
