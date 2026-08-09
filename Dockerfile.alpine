@@ -5,12 +5,12 @@ COPY . .
 # NOTE: The web UI build (Trunk) downloads prebuilt wasm-bindgen/wasm-opt tools
 # that are compiled against glibc, so `gcompat` is installed to run them under
 # musl.
-RUN apk add --no-cache build-base curl dolphin-emu gcompat musl-dev 7zip rustup && \
+RUN apk add --no-cache build-base curl gcompat musl-dev 7zip rustup && \
     rustup-init -y --target wasm32-unknown-unknown && \
     source /root/.cargo/env && \
     curl -fsSL https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin && \
     cargo install \
-    --features server \
+    --features nod,server,sevenz \
     --root /usr \
     --path . && \
     cargo clean && \

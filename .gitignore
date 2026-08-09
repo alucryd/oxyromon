@@ -5,8 +5,7 @@
 !.env.example
 .idea
 .vscode
-graphify-out/cache
-graphify-out/cost.json
+graphify-out
 
 # rust
 *.rs.bk
