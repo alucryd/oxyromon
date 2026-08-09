@@ -3,6 +3,7 @@ use super::chdman;
 use super::ctrtool;
 use super::database::*;
 use super::dolphin;
+use super::download_dats::find_redump_systems;
 use super::flips;
 use super::maxcso;
 use super::model::*;
@@ -214,6 +215,17 @@ impl QueryRoot {
                 version: result.ok(),
             })
             .collect())
+    }
+
+    /// Redump systems the server can fetch: those not yet in the database, or
+    /// with `update`, those already in it whose DATs can be refreshed.
+    async fn downloadable_systems(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = false)] update: bool,
+    ) -> Result<Vec<String>> {
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        Ok(find_redump_systems(&mut pool.acquire().await.unwrap(), update).await)
     }
 
     async fn system_count(&self, ctx: &Context<'_>) -> Result<i64> {

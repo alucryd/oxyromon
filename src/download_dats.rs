@@ -4,7 +4,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -86,6 +86,55 @@ cfg_if! {
             "ZAPiT Games - Game Wave Family Entertainment System" => "gamewave",
         };
     }
+}
+
+/// The Redump systems oxyromon knows how to fetch, sorted by name.
+///
+/// `update` picks which half of the catalogue is wanted: the systems already in
+/// the database, whose DATs can be refreshed, or the ones that are not there
+/// yet. Either way the answer is drawn from the catalogue, so a system imported
+/// from a hand-downloaded Redump DAT under some other name is never offered for
+/// an update oxyromon has no code for.
+///
+/// This is what `download-dats -r` offers interactively, with and without `-u`;
+/// the server exposes the same lists so the web UI can offer them as a picker.
+pub async fn find_redump_systems(connection: &mut SqliteConnection, update: bool) -> Vec<String> {
+    let existing: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
+        .await
+        .into_par_iter()
+        .map(|system| system.name)
+        .collect();
+    let mut names: Vec<String> = REDUMP_SYSTEMS_CODES
+        .keys()
+        .filter(|name| existing.contains(**name) == update)
+        .map(|name| name.to_string())
+        .collect();
+    names.sort_unstable();
+    names
+}
+
+/// Fetch one Redump system's DAT and import it.
+///
+/// The name is checked against the catalogue first: unlike the CLI, which can
+/// only offer names it already holds, callers here may pass anything.
+pub async fn download_redump_system(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_name: &str,
+    force: bool,
+) -> Result<()> {
+    if !REDUMP_SYSTEMS_CODES.contains_key(system_name) {
+        bail!("Unknown Redump system \"{}\"", system_name);
+    }
+    download_redump_dat(
+        connection,
+        progress_bar,
+        REDUMP_BASE_URL,
+        system_name,
+        force,
+        None,
+    )
+    .await
 }
 
 pub fn subcommand() -> Command {

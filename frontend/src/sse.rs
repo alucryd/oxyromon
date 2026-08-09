@@ -87,6 +87,24 @@ pub fn connect_sse(state: AppState) {
         NotificationKind::Success,
     );
     on_event(&source, "import_dat_error", state, NotificationKind::Error);
+    on_event(
+        &source,
+        "download_dats_started",
+        state,
+        NotificationKind::Info,
+    );
+    on_complete_event(
+        &source,
+        "download_dats_complete",
+        state,
+        NotificationKind::Success,
+    );
+    on_event(
+        &source,
+        "download_dats_error",
+        state,
+        NotificationKind::Error,
+    );
 
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);

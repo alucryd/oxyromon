@@ -89,10 +89,18 @@ pub fn Navbar() -> impl IntoView {
 
             <wa-button
                 appearance="plain"
-                title="Import DAT"
+                title="Import DATs"
                 on:click=move |_| state.import_dat_modal_open.set(true)
             >
                 <wa-icon name="upload" label="Import DAT"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Download DATs"
+                on:click=move |_| state.download_dat_modal_open.set(true)
+            >
+                <wa-icon name="download" label="Download DATs"></wa-icon>
             </wa-button>
 
             <div style="flex: 1;"></div>
