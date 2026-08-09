@@ -1,12 +1,12 @@
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
+use super::iso9660::{FileEntry, Iso9660Filesystem, SECTOR_SIZE, SectorReader};
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use anyhow::{Result, bail};
-use cdfs::{DirectoryEntry, ExtraAttributes, ISO9660, ISO9660Reader, ISODirectory, ISOFile};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use flate2::read::GzDecoder;
@@ -14,7 +14,6 @@ use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::hash_map::{Entry, HashMap};
 use std::io;
-use std::io::Cursor;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -61,7 +60,7 @@ pub async fn main(
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
 
     for ird_path in ird_paths {
-        let (irdfile, mut header) = parse_ird(ird_path).await?;
+        let (irdfile, header) = parse_ird(ird_path).await?;
 
         print_header(progress_bar, &format!("IRD: {}", irdfile.game_name));
         print_info(progress_bar, &format!("IRD Version: {}", irdfile.version));
@@ -100,7 +99,7 @@ pub async fn main(
                     print_skip(progress_bar, "IRD already exists");
                     continue;
                 }
-                import_ird(connection, progress_bar, game, &irdfile, &mut header).await?;
+                import_ird(connection, progress_bar, game, &irdfile, header).await?;
             }
         }
         print_separator(progress_bar);
@@ -224,40 +223,60 @@ pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Irdfile, Vec<u8>)> {
     ))
 }
 
-fn walk_directory<T: ISO9660Reader>(
-    directory: &ISODirectory<T>,
-    prefix: &str,
-) -> HashMap<String, Vec<ISOFile<T>>> {
-    let mut files: HashMap<String, Vec<ISOFile<T>>> = HashMap::new();
-    let mut directories: Vec<ISODirectory<T>> = vec![];
-    for entry in directory.contents().flatten() {
-        match entry {
-            DirectoryEntry::Directory(directory) => {
-                if directory.identifier != "." && directory.identifier != ".." {
-                    directories.push(directory);
-                }
+/// A [`SectorReader`] backed by the ISO header embedded in an IRD file.
+///
+/// IRD files only carry the beginning of the disc, enough for the volume
+/// descriptors and the directory extents, so reads past its end are zero filled
+/// rather than refused. A short sector would make the default `read_bytes` spin
+/// forever, and an error would abort the whole walk.
+struct HeaderSectorReader {
+    header: Vec<u8>,
+}
+
+impl SectorReader for HeaderSectorReader {
+    fn read_sector(&mut self, lba: u64) -> Result<Vec<u8>> {
+        let mut sector = vec![0u8; SECTOR_SIZE as usize];
+        let offset = usize::try_from(lba.saturating_mul(SECTOR_SIZE)).unwrap_or(usize::MAX);
+        if let Some(available) = self.header.get(offset..) {
+            let length = available.len().min(SECTOR_SIZE as usize);
+            sector[..length].copy_from_slice(&available[..length]);
+        }
+        Ok(sector)
+    }
+}
+
+/// Collect every file below `directory`, keyed by its path relative to the root.
+///
+/// Files larger than 4 GiB span several extents, each of which gets its own
+/// directory record, hence the vector of entries per path.
+fn walk_directory(
+    filesystem: &mut Iso9660Filesystem,
+    directory: &FileEntry,
+) -> Result<HashMap<String, Vec<FileEntry>>> {
+    let mut files: HashMap<String, Vec<FileEntry>> = HashMap::new();
+    let mut directories: Vec<FileEntry> = vec![];
+    for entry in filesystem.list_directory(directory)? {
+        if entry.is_directory() {
+            directories.push(entry);
+            continue;
+        }
+        // Entry paths are absolute, and ISO 9660 spells an extensionless file
+        // "NAME." while DAT files and IRD hashes know it as "NAME"
+        let path = entry.path.trim_start_matches('/');
+        let path = path.strip_suffix('.').unwrap_or(path).to_string();
+        match files.entry(path.clone()) {
+            Entry::Vacant(e) => {
+                e.insert(Vec::from([entry]));
             }
-            DirectoryEntry::File(file) => {
-                let path = format!("{}{}", prefix, file.identifier);
-                match files.entry(path.clone()) {
-                    Entry::Vacant(e) => {
-                        e.insert(Vec::from([file]));
-                    }
-                    _ => {
-                        files.get_mut(&path).unwrap().push(file);
-                    }
-                }
+            _ => {
+                files.get_mut(&path).unwrap().push(entry);
             }
-            _ => {}
         }
     }
     for directory in directories {
-        files.extend(walk_directory(
-            &directory,
-            &format!("{}{}/", prefix, directory.identifier),
-        ));
+        files.extend(walk_directory(filesystem, &directory)?);
     }
-    files
+    Ok(files)
 }
 
 pub async fn import_ird(
@@ -265,7 +284,7 @@ pub async fn import_ird(
     progress_bar: &ProgressBar,
     game: &Game,
     irdfile: &Irdfile,
-    header: &mut [u8],
+    header: Vec<u8>,
 ) -> Result<()> {
     let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
     let parent_rom = prompt_for_rom(&roms, None)?;
@@ -276,8 +295,9 @@ pub async fn import_ird(
     let mut transaction = begin_transaction(connection).await;
 
     // parse ISO header
-    let iso = ISO9660::new(Cursor::new(header)).unwrap();
-    let files = walk_directory(iso.root(), "");
+    let mut filesystem = Iso9660Filesystem::new(Box::new(HeaderSectorReader { header }))?;
+    let root = filesystem.root();
+    let files = walk_directory(&mut filesystem, &root)?;
 
     if files.len() != irdfile.files_count {
         bail!(
@@ -290,8 +310,8 @@ pub async fn import_ird(
     // convert files into roms
     let mut orphan_romfile_ids: Vec<i64> = vec![];
     for file in files {
-        let size = file.1.iter().map(|file| file.size()).sum::<u32>() as i64;
-        let location = file.1.first().unwrap().header().extent_loc as u64;
+        let size = file.1.iter().map(|file| file.size).sum::<u64>() as i64;
+        let location = file.1.first().unwrap().location;
         match find_rom_by_name_and_game_id(&mut transaction, &file.0, game.id).await {
             Some(rom) => {
                 update_rom(

@@ -12,9 +12,14 @@
 - Added DAT import to the web UI
 - Added notification history to the web UI
 - Added an optional native desktop app (`desktop/` crate, built with Tauri) that wraps the web UI in a native window; it bundles the `oxyromon` binary as a sidecar, starts `oxyromon server` on a free loopback port on launch, and shares the CLI's database and settings
+- Added an optional `sevenz` feature that handles archives with the [sevenz-rust2](https://crates.io/crates/sevenz-rust2) and [zip](https://crates.io/crates/zip) crates instead of spawning 7-Zip, turning listing into a metadata read rather than a process launch; listing is the operation `check-roms` and `import-roms` perform most. ZIP is native throughout, as is reading a 7z and writing one from scratch. Renaming or deleting an entry in a 7z, or adding one to an existing 7z, still uses 7-Zip: those alter metadata while leaving compressed data alone, which sevenz-rust2 cannot express, so doing them natively would mean re-encoding the whole archive
+- Added an optional `nod` feature that handles RVZ and WBFS with the [nod](https://crates.io/crates/nod) crate rather than shelling out to `dolphin-tool` and `wit`, removing both external dependencies and running conversions faster. RVZ output is interchangeable with Dolphin's in both directions, and WBFS output extracts identically to `wit`'s. `RVZ_SCRUB` has no counterpart in nod and is ignored with a warning when the feature is enabled
+- RVZ and WBFS conversions show a real byte progress bar instead of a spinner when built with the `nod` feature, since an in-process decoder can report how far along it is where a subprocess cannot
+- Checking and hashing an RVZ no longer extracts it to a temporary ISO when built with the `nod` feature: the digest consumes the decoded stream directly, saving a full write and read of the extracted image (several gigabytes on a dual layer Wii disc)
 
 ## Changes
 
+- Replaced the `cdfs` git dependency with a native ISO 9660 directory reader in `src/iso9660.rs`, vendored from the GPL-3.0 [`opticaldiscs`](https://crates.io/crates/opticaldiscs) crate. IRD imports are byte for byte identical to before. It is vendored rather than depended on because `opticaldiscs` pulls `nod` 1.4, whose `liblzma-sys` 0.3 collides with the `liblzma-sys` 0.4 that `nod` 2 needs — both declare `links = "lzma"`, which Cargo allows only once per build
 - Rebuilt the web UI on [Web Awesome](https://webawesome.com) components: the dialogs now trap focus and close on Escape, and the settings form uses real switches, selects and removable tags rather than unstyled browser controls
 - Dropped Tailwind CSS: the UI is now styled entirely by Web Awesome's components, layout utilities and design tokens, plus a small hand-written stylesheet. The Tailwind standalone CLI is no longer a build dependency
 - Made the web UI's three columns resizable: drag the divider between the systems, games and ROMs panes to give any of them more room, and the positions are remembered across visits
@@ -24,6 +29,8 @@
 
 ## Improvements
 
+- Optimized dependencies in the dev profile (`[profile.dev.package."*"] opt-level = 3`). The compression and hashing crates run about an order of magnitude slower unoptimized, which made debug builds painful and any benchmark taken from one meaningless; the test suite is roughly a third faster as a result
+- Extracted `hash_reader`, `get_hash_algorithm` and `compare_hash_and_size` out of `CommonRomfile`, so a romfile that can produce a stream is able to verify itself without first writing that stream to disk
 - Overhauled web UI colors for improved readability in both light and dark themes
 - Fixed statistics table header color in light mode to match the systems and games table headers
 - Overhauled CLI output for a cleaner, more consistent terminal experience
@@ -47,6 +54,7 @@
 
 ## Fixes
 
+- Fixed `RVZ_COMPRESSION_ALGORITHM` never having worked when set to bzip2: the value was spelled `bzip`, which dolphin-tool rejects outright since it only accepts `bzip2`. The setting is now `bzip2`, and a migration rewrites any stored `bzip`
 - Fixed the server not shutting down cleanly on Ctrl+C when SSE clients were connected
 - Fixed `convert-roms -f rvz --recompress` leaving a stray intermediate `.iso` next to each recompressed RVZ; the intermediate is now extracted to the temporary directory
 - Fixed `convert-roms -f chd` always failing with "Not a valid rdsk" on standalone RIFF (LaserDisc) images; the RIFF branch mistakenly parsed the file as RDSK
