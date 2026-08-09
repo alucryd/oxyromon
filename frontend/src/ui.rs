@@ -48,9 +48,10 @@ pub fn use_media_query(query: &str) -> Signal<bool> {
         .flatten()
     {
         matches.set(list.matches());
-        let listener = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MediaQueryListEvent)>::new(
-            move |event: web_sys::MediaQueryListEvent| matches.set(event.matches()),
-        );
+        let listener =
+            wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MediaQueryListEvent)>::new(
+                move |event: web_sys::MediaQueryListEvent| matches.set(event.matches()),
+            );
         let _ = list.add_event_listener_with_callback(
             "change",
             wasm_bindgen::JsCast::unchecked_ref(listener.as_ref()),
@@ -173,16 +174,44 @@ pub fn Modal(
     }
 }
 
-/// One figure and its label, as a filled card. Used by the statistics panel and
-/// the About dialog.
+/// The card a figure and its label are drawn in.
 #[component]
-pub fn StatTile(#[prop(into)] label: String, #[prop(into)] value: Signal<String>) -> impl IntoView {
+fn Tile(#[prop(into)] label: String, children: Children) -> impl IntoView {
     view! {
         <wa-card appearance="filled-outlined">
             <div class="wa-stack wa-gap-3xs stat-tile">
-                <span class="stat-value">{move || value.get()}</span>
+                <span class="stat-value">{children()}</span>
                 <small class="stat-label">{label}</small>
             </div>
         </wa-card>
+    }
+}
+
+/// One figure and its label. Used by the statistics panel and the About dialog.
+#[component]
+pub fn StatTile(#[prop(into)] label: String, #[prop(into)] value: Signal<String>) -> impl IntoView {
+    view! { <Tile label=label>{move || value.get()}</Tile> }
+}
+
+/// A size and its label, formatted by `<wa-format-bytes>` so the figure, its
+/// decimal separator and its unit all follow the reader's locale.
+///
+/// `value` is set as a property rather than an attribute: the component declares
+/// it as a number, and Lit reads properties directly.
+#[component]
+pub fn SizeTile(
+    #[prop(into)] label: String,
+    #[prop(into)] bytes: Signal<i64>,
+    #[prop(into)] loading: Signal<bool>,
+) -> impl IntoView {
+    view! {
+        <Tile label=label>
+            <Show when=move || !loading.get() fallback=|| view! { "—" }>
+                <wa-format-bytes
+                    prop:value=move || bytes.get() as f64
+                    display="short"
+                ></wa-format-bytes>
+            </Show>
+        </Tile>
     }
 }

@@ -11,10 +11,11 @@ mod ui;
 use leptos::prelude::*;
 
 use crate::app::App;
-use crate::components::navbar::init_theme;
+use crate::components::navbar::{init_language, init_theme};
 
 fn main() {
     console_error_panic_hook::set_once();
+    init_language();
     init_theme();
     mount_to_body(|| view! { <App /> });
 }

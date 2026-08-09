@@ -82,6 +82,8 @@ pub struct Notification {
     pub id: u64,
     pub message: String,
     pub kind: NotificationKind,
+    /// When it arrived, ISO 8601. Stored as an instant rather than a formatted
+    /// string so the bell can show it as "3 minutes ago" and keep that current.
     pub time: String,
 }
 

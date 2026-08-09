@@ -8,9 +8,9 @@ use leptos::task::spawn_local;
 
 use crate::api::purge_system;
 use crate::components::settings_modal::SettingsModal;
-use crate::model::{Game, NotificationKind, Rom, Romfile, Sizes, System};
-use crate::state::{AppState, format_bytes};
-use crate::ui::{Modal, StatTile, control_number, use_media_query};
+use crate::model::{Game, Rom, Romfile, Sizes, System};
+use crate::state::AppState;
+use crate::ui::{Modal, SizeTile, StatTile, control_number, use_media_query};
 use crate::ui::{ScrollWindow, Spacer};
 
 fn system_color(system: &System) -> &'static str {
@@ -105,7 +105,8 @@ fn remember_position(event: &web_sys::Event, key: &str) {
     let Some(position) = control_number(event, "position") else {
         return;
     };
-    if let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    if let Some(storage) =
+        web_sys::window().and_then(|window| window.local_storage().ok().flatten())
     {
         let _ = storage.set_item(key, &position.to_string());
     }
@@ -127,17 +128,21 @@ pub fn Page() -> impl IntoView {
             <Panes modals=modals />
 
             <StatsCard />
-
-            <SettingsModal
-                open=modals.settings_open
-                system_id=modals.settings_id
-                title=modals.settings_title
-            />
-
-            <DeleteModal open=modals.delete_open target=modals.delete_target />
-
-            <Toast />
         </div>
+
+        // Outside `.page` on purpose. A wa-dialog host is `display: none` while
+        // closed and `display: block` once open, so inside that flex column it
+        // becomes a flex item the moment it opens and its gap shoves the page
+        // behind it. Dialogs draw in the top layer regardless of where they sit.
+        <SettingsModal
+            open=modals.settings_open
+            system_id=modals.settings_id
+            title=modals.settings_title
+        />
+
+        <DeleteModal open=modals.delete_open target=modals.delete_target />
+
+        <Toast />
     }
 }
 
@@ -213,8 +218,6 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
         delete_target,
     } = modals;
     let state = expect_context::<AppState>();
-    // Which system's action dropdown is open (-1 = none).
-    let open_dropdown = RwSignal::new(-1_i64);
     let rows = move || {
         let systems: Vec<(usize, System)> = state.systems.get().into_iter().enumerate().collect();
         systems
@@ -248,61 +251,44 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                 >
                                     {name.clone()}
                                 </button>
-                                <div style="position: relative; padding-inline-end: var(--wa-space-2xs);">
+                                <div style="padding-inline-end: var(--wa-space-2xs);">
                                     <Show
                                         when=move || state.purging_system_id.get() == id
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
                                             let system_for_delete = system_for_delete.clone();
                                             view! {
-                                                <button
-                                                    class="plain-button icon-button"
-                                                    aria-label="System actions"
-                                                    on:click=move |_| {
-                                                        open_dropdown.update(|d| *d = if *d == id { -1 } else { id });
-                                                    }
-                                                >
-                                                    <wa-icon name="ellipsis-vertical"></wa-icon>
-                                                </button>
-                                                <Show when=move || open_dropdown.get() == id>
-                                                    {
-                                                        let name_for_settings = name_for_settings.clone();
-                                                        let system_for_delete = system_for_delete.clone();
-                                                        view! {
-                                                            // Closes when the click lands anywhere else.
-                                                            <div
-                                                                class="overlay"
-                                                                on:click=move |_| open_dropdown.set(-1)
-                                                            ></div>
-                                                            <div class="menu">
-                                                                <button
-                                                                    class="plain-button menu-item"
-                                                                    on:click=move |_| {
-                                                                        sys_settings_id.set(Some(id));
-                                                                        sys_settings_title
-                                                                            .set(format!("{name_for_settings} Settings"));
-                                                                        sys_settings_open.set(true);
-                                                                        open_dropdown.set(-1);
-                                                                    }
-                                                                >
-                                                                    <wa-icon name="sliders"></wa-icon>
-                                                                    Settings
-                                                                </button>
-                                                                <button
-                                                                    class="plain-button menu-item danger"
-                                                                    on:click=move |_| {
-                                                                        delete_target.set(Some(system_for_delete.clone()));
-                                                                        delete_open.set(true);
-                                                                        open_dropdown.set(-1);
-                                                                    }
-                                                                >
-                                                                    <wa-icon name="trash"></wa-icon>
-                                                                    Delete
-                                                                </button>
-                                                            </div>
+                                                // A dropdown rather than a hand-placed panel: it
+                                                // draws in the top layer, so the pane's `overflow`
+                                                // cannot clip it the way it clipped the old menu.
+                                                <wa-dropdown>
+                                                    <button
+                                                        slot="trigger"
+                                                        class="plain-button icon-button"
+                                                        aria-label="System actions"
+                                                    >
+                                                        <wa-icon name="ellipsis-vertical"></wa-icon>
+                                                    </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        sys_settings_id.set(Some(id));
+                                                        sys_settings_title
+                                                            .set(format!("{name_for_settings} Settings"));
+                                                        sys_settings_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="sliders"></wa-icon>
+                                                        Settings
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item
+                                                        variant="danger"
+                                                        on:click=move |_| {
+                                                            delete_target.set(Some(system_for_delete.clone()));
+                                                            delete_open.set(true);
                                                         }
-                                                    }
-                                                </Show>
+                                                    >
+                                                        <wa-icon slot="icon" name="trash"></wa-icon>
+                                                        Delete
+                                                    </wa-dropdown-item>
+                                                </wa-dropdown>
                                             }
                                         }
                                     >
@@ -500,15 +486,7 @@ fn StatsCard() -> impl IntoView {
             }
         })
     };
-    let sized = move |value: fn(&Sizes) -> i64| {
-        Signal::derive(move || {
-            if state.loading_sizes.get() {
-                "—".to_string()
-            } else {
-                state.sizes.with(|sizes| format_bytes(value(sizes)))
-            }
-        })
-    };
+    let sized = move |value: fn(&Sizes) -> i64| Signal::derive(move || state.sizes.with(value));
 
     view! {
         <div class="panel" style="flex: none;">
@@ -533,18 +511,25 @@ fn StatsCard() -> impl IntoView {
                         }
                     })
                 />
-                <StatTile
+                <SizeTile
                     label="Total Size (Original)"
-                    value=sized(|sizes| sizes.total_original_size)
+                    bytes=sized(|sizes| sizes.total_original_size)
+                    loading=state.loading_sizes
                 />
-                <StatTile
+                <SizeTile
                     label="1G1R Size (Original)"
-                    value=sized(|sizes| sizes.one_region_original_size)
+                    bytes=sized(|sizes| sizes.one_region_original_size)
+                    loading=state.loading_sizes
                 />
-                <StatTile label="Total Size (Actual)" value=sized(|sizes| sizes.total_actual_size) />
-                <StatTile
+                <SizeTile
+                    label="Total Size (Actual)"
+                    bytes=sized(|sizes| sizes.total_actual_size)
+                    loading=state.loading_sizes
+                />
+                <SizeTile
                     label="1G1R Size (Actual)"
-                    value=sized(|sizes| sizes.one_region_actual_size)
+                    bytes=sized(|sizes| sizes.one_region_actual_size)
+                    loading=state.loading_sizes
                 />
             </div>
         </div>
@@ -587,28 +572,17 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
     }
 }
 
+/// The stack transient notifications appear in.
+///
+/// One element for the whole app, and empty on purpose: `push_notification`
+/// hands messages to it, and it owns their placement, timing and dismissal.
+/// Previously this was a hand-placed `wa-callout` holding a single message, so
+/// a second notification arriving replaced the first rather than stacking under
+/// it.
 #[component]
 fn Toast() -> impl IntoView {
-    let state = expect_context::<AppState>();
-    view! {
-        <Show when=move || state.notifier.toast.get().is_some()>
-            {move || {
-                let notification = state.notifier.toast.get().unwrap();
-                let (variant, icon) = match notification.kind {
-                    NotificationKind::Success => ("success", "circle-check"),
-                    NotificationKind::Warning => ("warning", "triangle-exclamation"),
-                    NotificationKind::Error => ("danger", "circle-exclamation"),
-                    NotificationKind::Info => ("brand", "circle-info"),
-                };
-                view! {
-                    <div style="position: fixed; inset-block-end: var(--wa-space-m); inset-inline-end: var(--wa-space-m); z-index: 60; max-width: 28rem;">
-                        <wa-callout variant=variant appearance="filled-outlined">
-                            <wa-icon slot="icon" name=icon></wa-icon>
-                            {notification.message.clone()}
-                        </wa-callout>
-                    </div>
-                }
-            }}
-        </Show>
-    }
+    // Bottom-end, where the hand-placed callout used to sit. The default
+    // top-end would land the stack on the navbar, over the search field and the
+    // notifications bell the toast is telling you to look at.
+    view! { <wa-toast placement="bottom-end"></wa-toast> }
 }
