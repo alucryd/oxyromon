@@ -18,8 +18,15 @@ default = ["use-rustls"]
 use-native-tls = ["reqwest/native-tls"]
 use-rustls = ["reqwest/rustls"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
+# Handle GameCube/Wii disc images with the `nod` crate instead of shelling out
+# to dolphin-tool and wit
+nod = ["dep:nod"]
+# Handle 7z and ZIP with the `sevenz-rust2` and `zip` crates instead of shelling
+# out to 7-Zip
+sevenz = ["dep:sevenz-rust2"]
 
 [dependencies]
+anyhow = "1.0.104"
 async-graphql = { version = "7.2.1", features = [
     "dataloader",
 ], default-features = false, optional = true }
@@ -32,8 +39,6 @@ axum = { version = "0.8.9", default-features = false, features = [
     "tokio",
     "ws",
 ], optional = true }
-tower-http = { version = "0.7.0", features = ["cors"], optional = true, default-features = false }
-cdfs = { git = "https://git.sr.ht/~az1/iso9660-rs", branch = "master", default-features = false }
 cfg-if = "1.0.4"
 console = "0.16.4"
 chrono = { version = "0.4.45", default-features = false, features = [
@@ -46,6 +51,7 @@ clap = "4.6.6"
 crc32fast = "1.5.0"
 dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
 digest = "0.11.3"
+digest-io = "0.1.0"
 dirs = "6.0.0"
 dotenvy = "0.15.7"
 env_logger = "0.11.11"
@@ -62,6 +68,7 @@ infer = "0.22.0"
 itertools = "0.15.0"
 log = "0.4.33"
 md-5 = "0.11.0"
+nod = { version = "2.0.0-alpha.9", optional = true }
 num-derive = "0.5.1"
 num-traits = "0.2.19"
 phf = { version = "0.14.0", features = ["macros"] }
@@ -74,7 +81,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha1 = "0.11.0"
 shiratsu-naming = "0.1.7"
-anyhow = "1.0.104"
+sevenz-rust2 = { version = "0.21.4", optional = true }
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",
@@ -95,11 +102,11 @@ tokio = { version = "1.53.1", features = [
     "signal",
     "sync",
 ] }
+tower-http = { version = "0.7.0", features = ["cors"], optional = true, default-features = false }
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
 which = { version = "8.0.5" }
 zip = { version = "8.6.0", features = ["deflate"], default-features = false }
-digest-io = "0.1.0"
 
 [dev-dependencies]
 wiremock = "0.6.5"
@@ -107,6 +114,12 @@ wiremock = "0.6.5"
 [[bin]]
 name = "oxyromon"
 path = "src/main.rs"
+
+# Compression and hashing live in dependencies, and at opt-level 0 the pure Rust
+# codecs run roughly an order of magnitude slower than their release selves. That
+# makes debug builds miserable to use and benchmarks taken from them meaningless.
+[profile.dev.package."*"]
+opt-level = 3
 
 [profile.release]
 lto = "thin"

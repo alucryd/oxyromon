@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use strum::{Display, EnumIter, EnumString, VariantNames};
 
-#[derive(Display, PartialEq, EnumIter, EnumString, VariantNames)]
+#[derive(Clone, Copy, Display, PartialEq, EnumIter, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
 pub enum HashAlgorithm {
     Crc,

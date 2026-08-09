@@ -28,18 +28,22 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
     // Dependencies
     print_header(progress_bar, "Dependencies");
 
-    let deps: Vec<(&str, Result<String, _>)> = vec![
+    let mut deps: Vec<(&str, Result<String, _>)> = vec![
         ("7-zip", sevenzip::get_version().await),
         ("bchunk", bchunk::get_version().await),
         ("chdman", chdman::get_version().await),
         ("ctrtool", ctrtool::get_version().await),
-        ("dolphin-tool", dolphin::get_version().await),
         ("flips", flips::get_version().await),
         ("maxcso", maxcso::get_version().await),
         ("nsz", nsz::get_version().await),
-        ("wit", wit::get_version().await),
         ("xdelta3", xdelta3::get_version().await),
     ];
+    // RVZ and WBFS share a backend when it is the native one, so list it once
+    deps.push((dolphin::BACKEND_NAME, dolphin::get_version().await));
+    if wit::BACKEND_NAME != dolphin::BACKEND_NAME {
+        deps.push((wit::BACKEND_NAME, wit::get_version().await));
+    }
+    deps.sort_by_key(|(name, _)| *name);
 
     for (name, result) in &deps {
         print_dependency(progress_bar, name, result);

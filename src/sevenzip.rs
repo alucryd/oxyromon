@@ -6,24 +6,24 @@ use super::progress::*;
 use super::util::*;
 use anyhow::{Context, Result};
 use indicatif::ProgressBar;
-use itertools::izip;
-use regex::Regex;
 use sqlx::SqliteConnection;
 use std::fs::{File, OpenOptions};
 use std::iter::zip;
 use std::path::Path;
 use std::str::FromStr;
-use std::sync::LazyLock;
 use std::time::Duration;
 use strum::{Display, EnumString};
-use tokio::process::Command;
 use zip::{ZipArchive, ZipWriter};
 
-pub const SEVENZIP_EXECUTABLES: &[&str] = &["7zz", "7z"];
+// Whichever backend handles archives in this build. Both expose the same items,
+// so nothing below this line names either of them.
+#[cfg(not(feature = "sevenz"))]
+use self::tool as backend;
+#[cfg(feature = "sevenz")]
+use super::sevenz as backend;
+
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
-
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
@@ -70,16 +70,7 @@ impl ArchiveFile for ArchiveRomfile {
             &format!("Renaming \"{}\" to \"{}\"", self.path, new_path),
         );
 
-        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command
-            .arg("rn")
-            .arg("--")
-            .arg(&self.romfile.path)
-            .arg(&self.path)
-            .arg(new_path);
-        log::debug!("{:?}", command);
-
-        run_tool(&mut command).await?;
+        backend::rename(&self.romfile.path, &self.path, new_path).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -100,14 +91,7 @@ impl ArchiveFile for ArchiveRomfile {
 
         print_action(progress_bar, &format!("Deleting \"{}\"", self.path));
 
-        run_tool(
-            Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-                .arg("d")
-                .arg("--")
-                .arg(&self.romfile.path)
-                .arg(&self.path),
-        )
-        .await?;
+        backend::delete(&self.romfile.path, &self.path).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -201,18 +185,7 @@ impl ToCommon for ArchiveRomfile {
 
         print_action(progress_bar, &format!("Extracting \"{}\"", self.path));
 
-        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command
-            .arg("x")
-            .arg("-aoa")
-            .arg("--")
-            .arg(&self.romfile.path)
-            .arg(&self.path)
-            .current_dir(directory.as_ref());
-
-        log::debug!("{:?}", command);
-
-        run_tool(&mut command).await?;
+        backend::extract(&self.romfile.path, &self.path, directory.as_ref()).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -262,20 +235,15 @@ impl ToArchive for CommonRomfile {
         ));
         let path = self.path.strip_prefix(working_directory).unwrap();
 
-        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command.arg("a");
-        if let Some(compression_level) = compression_level {
-            command.arg(format!("-mx={}", compression_level));
-        }
-        if solid {
-            command.arg("-ms=on");
-        }
-        command
-            .arg("--")
-            .arg(&archive_path)
-            .arg(path)
-            .current_dir(working_directory.as_ref());
-        run_tool(&mut command).await?;
+        backend::create(
+            &archive_path,
+            working_directory.as_ref(),
+            path,
+            archive_type,
+            compression_level,
+            solid,
+        )
+        .await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
@@ -341,38 +309,12 @@ impl AsArchive for CommonRomfile {
         progress_bar.set_style(get_none_progress_style());
         progress_bar.enable_steady_tick(Duration::from_millis(100));
 
-        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
-        command.arg("l").arg("-slt").arg("--").arg(&self.path);
-        if let Some(rom) = rom {
-            command.arg(&rom.name);
-        }
-
-        log::debug!("{:?}", command);
-
-        let output = run_tool(&mut command).await?;
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let paths: Vec<String> = stdout
-            .lines()
-            .filter(|&line| line.starts_with("Path ="))
-            .skip(1) // the first line is the archive itself
-            .map(|line| line.to_string().split_off(7)) // keep only the rhs
-            .collect();
-        let sizes: Vec<u64> = stdout
-            .lines()
-            .filter(|&line| line.starts_with("Size ="))
-            .map(|line| line.to_string().split_off(7).parse().unwrap()) // keep only the rhs
-            .collect();
-        let crcs: Vec<String> = stdout
-            .lines()
-            .filter(|&line| line.starts_with("CRC ="))
-            .map(|line| line.to_string().split_off(6).to_lowercase()) // keep only the rhs
-            .collect();
+        let entries = backend::parse(&self.path, rom.map(|rom| rom.name.as_str())).await?;
 
         progress_bar.set_message("");
         progress_bar.disable_steady_tick();
 
-        Ok(izip!(paths, sizes, crcs).collect())
+        Ok(entries)
     }
     async fn as_archive(
         &self,
@@ -465,19 +407,148 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     Ok(())
 }
 
+/// 7-Zip is still required for writing 7z even with the native backend, so its
+/// version is what `info` reports either way.
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-        .output()
-        .await
-        .context("Failed to spawn executable")?;
+    tool::get_version().await
+}
 
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let version = stdout
-        .lines()
-        .nth(1)
-        .and_then(|line| VERSION_REGEX.find(line))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown"));
+/// The 7-Zip backend: every archive operation by way of the external executable.
+///
+/// Always compiled, because the native backend still routes 7z writes here.
+pub(crate) mod tool {
+    use super::ArchiveType;
+    use crate::util::{get_executable_path, run_tool};
+    use anyhow::{Context, Result};
+    #[cfg(not(feature = "sevenz"))]
+    use itertools::izip;
+    use regex::Regex;
+    use std::path::Path;
+    use std::sync::LazyLock;
+    use tokio::process::Command;
 
-    Ok(version)
+    pub const SEVENZIP_EXECUTABLES: &[&str] = &["7zz", "7z"];
+
+    static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
+
+    /// Reading goes to the native backend when it is compiled in.
+    #[cfg(not(feature = "sevenz"))]
+    pub async fn parse<P: AsRef<Path>>(
+        path: P,
+        name: Option<&str>,
+    ) -> Result<Vec<(String, u64, String)>> {
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
+        command.arg("l").arg("-slt").arg("--").arg(path.as_ref());
+        if let Some(name) = name {
+            command.arg(name);
+        }
+
+        let output = run_tool(&mut command).await?;
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let paths: Vec<String> = stdout
+            .lines()
+            .filter(|&line| line.starts_with("Path ="))
+            .skip(1) // the first line is the archive itself
+            .map(|line| line.to_string().split_off(7)) // keep only the rhs
+            .collect();
+        let sizes: Vec<u64> = stdout
+            .lines()
+            .filter(|&line| line.starts_with("Size ="))
+            .map(|line| line.to_string().split_off(7).parse().unwrap()) // keep only the rhs
+            .collect();
+        let crcs: Vec<String> = stdout
+            .lines()
+            .filter(|&line| line.starts_with("CRC ="))
+            .map(|line| line.to_string().split_off(6).to_lowercase()) // keep only the rhs
+            .collect();
+
+        Ok(izip!(paths, sizes, crcs).collect())
+    }
+
+    #[cfg(not(feature = "sevenz"))]
+    pub async fn extract<P: AsRef<Path>, Q: AsRef<Path>>(
+        path: P,
+        name: &str,
+        directory: Q,
+    ) -> Result<()> {
+        run_tool(
+            Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+                .arg("x")
+                .arg("-aoa")
+                .arg("--")
+                .arg(path.as_ref())
+                .arg(name)
+                .current_dir(directory.as_ref()),
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn create<P: AsRef<Path>, Q: AsRef<Path>>(
+        archive_path: P,
+        working_directory: Q,
+        entry_path: &Path,
+        _archive_type: &ArchiveType,
+        compression_level: &Option<usize>,
+        solid: bool,
+    ) -> Result<()> {
+        let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
+        command.arg("a");
+        if let Some(compression_level) = compression_level {
+            command.arg(format!("-mx={}", compression_level));
+        }
+        if solid {
+            command.arg("-ms=on");
+        }
+        command
+            .arg("--")
+            .arg(archive_path.as_ref())
+            .arg(entry_path)
+            .current_dir(working_directory.as_ref());
+        run_tool(&mut command).await?;
+        Ok(())
+    }
+
+    pub async fn rename<P: AsRef<Path>>(path: P, from: &str, to: &str) -> Result<()> {
+        run_tool(
+            Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+                .arg("rn")
+                .arg("--")
+                .arg(path.as_ref())
+                .arg(from)
+                .arg(to),
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete<P: AsRef<Path>>(path: P, name: &str) -> Result<()> {
+        run_tool(
+            Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+                .arg("d")
+                .arg("--")
+                .arg(path.as_ref())
+                .arg(name),
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn get_version() -> Result<String> {
+        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
+            .output()
+            .await
+            .context("Failed to spawn executable")?;
+
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let version = stdout
+            .lines()
+            .nth(1)
+            .and_then(|line| VERSION_REGEX.find(line))
+            .map(|version| version.as_str().to_string())
+            .unwrap_or(String::from("unknown"));
+
+        Ok(version)
+    }
 }

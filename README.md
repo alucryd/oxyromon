@@ -101,9 +101,28 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
+| nod            | handle RVZ and WBFS natively                   |         |
+| sevenz         | read archives natively, write ZIP natively     |         |
 | server         | build the server subcommand                    |         |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
+
+The `sevenz` feature handles archives with the
+[sevenz-rust2](https://crates.io/crates/sevenz-rust2) and
+[zip](https://crates.io/crates/zip) crates rather than spawning 7-Zip. Listing in
+particular becomes a metadata read instead of a process launch, which is what
+`check-roms` and `import-roms` do most. ZIP is native throughout; so is reading
+7z and writing one from scratch. Renaming or deleting an entry in a 7z, or adding
+one to an existing 7z, still goes to 7-Zip, because those change metadata without
+touching the compressed data and sevenz-rust2 offers no way to do the same. `7z`
+therefore remains a requirement unless your collection is ZIP only.
+
+The `nod` feature links the [nod](https://crates.io/crates/nod) crate in place of
+shelling out to `dolphin-tool` and `wit`, so RVZ and WBFS work with neither
+program installed. Conversions are faster, and RVZ files are interchangeable with
+Dolphin's own in both directions. Two caveats: `RVZ_SCRUB` has no equivalent in
+nod and is ignored (with a warning), and nod needs a C toolchain to build its
+compression libraries.
 
 ### Configuration
 
@@ -141,7 +160,7 @@ Available settings:
 - `CHD_DVD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for DVDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`
 - `CHD_PARENTS`: Enables the CHD parents feature, needs playlists to have been generated, defaults to `false`
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
-- `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip`, `lzma`, `lzma2`
+- `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
 - `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
 - `SEVENZIP_COMPRESSION_LEVEL`: The 7Z compression level, defaults to `9`, valid range: `1-9`
@@ -195,11 +214,11 @@ These should be in your `${PATH}` for extra features.
 - [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
-- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support
+- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
 - [flips](https://github.com/Alcaro/Flips): BPS and IPS support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
 - [nsz](https://github.com/nicoboss/nsz): NSZ support
-- [wit](https://wit.wiimm.de/): WBFS support
+- [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
 - [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
 
 ### TODO

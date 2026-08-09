@@ -24,11 +24,14 @@ mod import_irds;
 mod import_patches;
 mod import_roms;
 mod info;
+mod iso9660;
 mod maxcso;
 mod mimetype;
 mod model;
 #[cfg(feature = "server")]
 mod mutation;
+#[cfg(feature = "nod")]
+mod nod;
 mod nsz;
 mod progress;
 mod prompt;
@@ -40,6 +43,8 @@ mod query;
 mod rebuild_roms;
 #[cfg(feature = "server")]
 mod server;
+#[cfg(feature = "sevenz")]
+mod sevenz;
 mod sevenzip;
 mod sort_roms;
 mod transcode;

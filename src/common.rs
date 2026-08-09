@@ -427,32 +427,82 @@ impl HashAndSize for CommonRomfile {
         ));
 
         let mut file = open_file_sync(&self.path)?;
-        let hash = match hash_algorithm {
-            HashAlgorithm::Crc => {
-                let mut digest = Crc32::new();
-                io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest))
-                    .context("Failed to copy data")?;
-                to_hex(&digest.finalize())
-            }
-            HashAlgorithm::Md5 => {
-                let mut digest = IoWrapper(Md5::new());
-                io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest))
-                    .context("Failed to copy data")?;
-                to_hex(&digest.0.finalize())
-            }
-            HashAlgorithm::Sha1 => {
-                let mut digest = IoWrapper(Sha1::new());
-                io::copy(&mut file, &mut progress_bar.wrap_write(&mut digest))
-                    .context("Failed to copy data")?;
-                to_hex(&digest.0.finalize())
-            }
-        };
+        let (hash, _) = hash_reader(&mut file, progress_bar, hash_algorithm)?;
         let size = self.get_size(connection, progress_bar).await?;
 
         progress_bar.set_message("");
 
         Ok((hash, size))
     }
+}
+
+/// Hash everything `reader` yields, advancing `progress_bar` as it goes, and
+/// return the hash alongside the number of bytes read.
+///
+/// Kept separate from any particular romfile so that a backend able to decode a
+/// disc image on the fly can hash the stream without writing it out first.
+pub fn hash_reader<R: Read + ?Sized>(
+    reader: &mut R,
+    progress_bar: &ProgressBar,
+    hash_algorithm: &HashAlgorithm,
+) -> Result<(String, u64)> {
+    let size;
+    let hash = match hash_algorithm {
+        HashAlgorithm::Crc => {
+            let mut digest = Crc32::new();
+            size = io::copy(reader, &mut progress_bar.wrap_write(&mut digest))
+                .context("Failed to copy data")?;
+            to_hex(&digest.finalize())
+        }
+        HashAlgorithm::Md5 => {
+            let mut digest = IoWrapper(Md5::new());
+            size = io::copy(reader, &mut progress_bar.wrap_write(&mut digest))
+                .context("Failed to copy data")?;
+            to_hex(&digest.0.finalize())
+        }
+        HashAlgorithm::Sha1 => {
+            let mut digest = IoWrapper(Sha1::new());
+            size = io::copy(reader, &mut progress_bar.wrap_write(&mut digest))
+                .context("Failed to copy data")?;
+            to_hex(&digest.0.finalize())
+        }
+    };
+    Ok((hash, size))
+}
+
+/// The algorithm to verify `rom` with, picked from whichever checksum the
+/// database holds for it.
+pub fn get_hash_algorithm(rom: &Rom) -> Result<HashAlgorithm> {
+    if rom.crc.is_some() {
+        Ok(HashAlgorithm::Crc)
+    } else if rom.md5.is_some() {
+        Ok(HashAlgorithm::Md5)
+    } else if rom.sha1.is_some() {
+        Ok(HashAlgorithm::Sha1)
+    } else {
+        bail!("Not possible")
+    }
+}
+
+/// Compare a computed hash and size against what the database expects of `rom`.
+pub fn compare_hash_and_size(
+    rom: &Rom,
+    hash: &str,
+    size: u64,
+    hash_algorithm: &HashAlgorithm,
+) -> Result<()> {
+    if rom.size > 0 && size != rom.size as u64 {
+        bail!("Size mismatch");
+    };
+    let expected = match hash_algorithm {
+        HashAlgorithm::Crc => rom.crc.as_ref(),
+        HashAlgorithm::Md5 => rom.md5.as_ref(),
+        HashAlgorithm::Sha1 => rom.sha1.as_ref(),
+    };
+    if Some(&hash.to_string()) != expected {
+        bail!("Checksum mismatch");
+    }
+    Ok(())
 }
 
 impl HeaderedHashAndSize for CommonRomfile {
@@ -568,16 +618,7 @@ impl Check for CommonRomfile {
     ) -> Result<()> {
         print_action(progress_bar, &format!("Checking \"{}\"", self));
         let rom = roms[0];
-        let hash_algorithm: HashAlgorithm;
-        if rom.crc.is_some() {
-            hash_algorithm = HashAlgorithm::Crc;
-        } else if rom.md5.is_some() {
-            hash_algorithm = HashAlgorithm::Md5;
-        } else if rom.sha1.is_some() {
-            hash_algorithm = HashAlgorithm::Sha1;
-        } else {
-            bail!("Not possible")
-        }
+        let hash_algorithm = get_hash_algorithm(rom)?;
         let (hash, size) = match header {
             Some(header) => {
                 self.get_headered_hash_and_size(
@@ -597,27 +638,7 @@ impl Check for CommonRomfile {
                 (hash, size)
             }
         };
-        if rom.size > 0 && size != rom.size as u64 {
-            bail!("Size mismatch");
-        };
-        match hash_algorithm {
-            HashAlgorithm::Crc => {
-                if &hash != rom.crc.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Md5 => {
-                if &hash != rom.md5.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-            HashAlgorithm::Sha1 => {
-                if &hash != rom.sha1.as_ref().unwrap() {
-                    bail!("Checksum mismatch");
-                }
-            }
-        }
-        Ok(())
+        compare_hash_and_size(rom, &hash, size, &hash_algorithm)
     }
 }
 
