@@ -199,8 +199,8 @@ async fn rebuild_system(
     if (system.merging == Merging::Split as i64 || system.merging == Merging::NonMerged as i64)
         && (merging == Merging::NonMerged || merging == Merging::FullNonMerged)
     {
-        let compression_level =
-            get_integer(connection, "ZIP_COMPRESSION_LEVEL", Some(system.id)).await;
+        let compression =
+            get_archive_compression(connection, &ArchiveType::Zip, Some(system.id)).await;
         for game in games {
             expand_game(
                 connection,
@@ -208,7 +208,7 @@ async fn rebuild_system(
                 system,
                 &game,
                 merging,
-                &compression_level,
+                &compression,
             )
             .await?;
         }
@@ -233,7 +233,7 @@ async fn expand_game(
     system: &System,
     game: &Game,
     merging: Merging,
-    compression_level: &Option<usize>,
+    compression: &ArchiveCompression,
 ) -> Result<()> {
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
     let rom_directory = get_rom_directory(connection).await;
@@ -279,7 +279,7 @@ async fn expand_game(
                 &source_rom,
                 &game_directory,
                 &archive_romfile,
-                compression_level,
+                compression,
             )
             .await?;
         } else {
@@ -344,7 +344,7 @@ async fn add_rom(
     source_rom: &Rom,
     destination_directory: &PathBuf,
     destination_archive_romfile: &Option<Romfile>,
-    compression_level: &Option<usize>,
+    compression: &ArchiveCompression,
 ) -> Result<()> {
     let source_romfile = find_romfile_by_id(connection, source_rom.romfile_id.unwrap())
         .await
@@ -378,7 +378,7 @@ async fn add_rom(
                         .unwrap(),
                     &game.name,
                     &ArchiveType::Zip,
-                    compression_level,
+                    compression,
                     false,
                 )
                 .await?;

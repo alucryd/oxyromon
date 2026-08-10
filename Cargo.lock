@@ -3702,6 +3702,7 @@ dependencies = [
  "ppmd-rust",
  "sha2 0.11.0",
  "wasm-bindgen",
+ "zstd",
 ]
 
 [[package]]
@@ -5212,6 +5213,7 @@ dependencies = [
  "memchr",
  "typed-path",
  "zopfli",
+ "zstd",
 ]
 
 [[package]]

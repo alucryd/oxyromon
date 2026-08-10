@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use crate::sevenzip::ArchiveCompression;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -75,7 +76,7 @@ async fn test() {
         true,
         false,
         true,
-        &None,
+        &ArchiveCompression::Default,
         false,
     )
     .await

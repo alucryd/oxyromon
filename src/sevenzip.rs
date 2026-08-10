@@ -12,7 +12,7 @@ use std::iter::zip;
 use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
-use strum::{Display, EnumString};
+use strum::{Display, EnumString, VariantNames};
 use zip::{ZipArchive, ZipWriter};
 
 // Whichever backend handles archives in this build. Both expose the same items,
@@ -24,6 +24,93 @@ use super::sevenz as backend;
 
 pub const SEVENZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
 pub const ZIP_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 9];
+/// Zstandard's own scale, which is why it gets a setting of its own rather than
+/// sharing the 1-9 the other algorithms use.
+pub const ZSTD_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+/// Levels used when a setting is unset. 19 for Zstandard is what RomVault
+/// writes, and what the migration seeds.
+const DEFAULT_COMPRESSION_LEVEL: usize = 9;
+const DEFAULT_ZSTD_COMPRESSION_LEVEL: usize = 19;
+
+#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum SevenzipCompressionAlgorithm {
+    Lzma2,
+    Zstd,
+}
+
+#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum ZipCompressionAlgorithm {
+    Deflate,
+    Zstd,
+}
+
+/// How to compress an archive: which algorithm, and the level on that
+/// algorithm's own scale.
+///
+/// Carried as one value because the two are only meaningful together — a level
+/// of 19 means nothing to Deflate, and 9 barely asks anything of Zstandard.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ArchiveCompression {
+    Deflate(usize),
+    Lzma2(usize),
+    Zstd(usize),
+    /// Whatever the tool or crate picks for itself.
+    Default,
+}
+
+impl ArchiveCompression {
+    /// True when only the native backend can write this, because 7-Zip carries
+    /// no Zstandard codec.
+    pub fn is_zstd(&self) -> bool {
+        matches!(self, ArchiveCompression::Zstd(_))
+    }
+}
+
+/// Read the configured algorithm and its level for one archive format.
+///
+/// The level lives under a key of its own per algorithm, since Zstandard runs
+/// 1-22 while Deflate and LZMA2 stop at 9; sharing one key would make any value
+/// above 9 unsettable, and 9 itself mean two very different things.
+pub async fn get_archive_compression(
+    connection: &mut SqliteConnection,
+    archive_type: &ArchiveType,
+    system_id: Option<i64>,
+) -> ArchiveCompression {
+    let (algorithm_key, zstd_level_key, level_key) = match archive_type {
+        ArchiveType::Sevenzip => (
+            "SEVENZIP_COMPRESSION_ALGORITHM",
+            "SEVENZIP_ZSTD_COMPRESSION_LEVEL",
+            "SEVENZIP_COMPRESSION_LEVEL",
+        ),
+        ArchiveType::Zip => (
+            "ZIP_COMPRESSION_ALGORITHM",
+            "ZIP_ZSTD_COMPRESSION_LEVEL",
+            "ZIP_COMPRESSION_LEVEL",
+        ),
+    };
+    let algorithm = get_string(connection, algorithm_key, system_id).await;
+    match algorithm.as_deref() {
+        Some("zstd") => ArchiveCompression::Zstd(
+            get_integer(connection, zstd_level_key, system_id)
+                .await
+                .unwrap_or(DEFAULT_ZSTD_COMPRESSION_LEVEL),
+        ),
+        Some("lzma2") => ArchiveCompression::Lzma2(
+            get_integer(connection, level_key, system_id)
+                .await
+                .unwrap_or(DEFAULT_COMPRESSION_LEVEL),
+        ),
+        Some("deflate") => ArchiveCompression::Deflate(
+            get_integer(connection, level_key, system_id)
+                .await
+                .unwrap_or(DEFAULT_COMPRESSION_LEVEL),
+        ),
+        _ => ArchiveCompression::Default,
+    }
+}
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
@@ -203,7 +290,7 @@ pub trait ToArchive {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: &Option<usize>,
+        compression: &ArchiveCompression,
         solid: bool,
     ) -> Result<ArchiveRomfile>;
 }
@@ -216,7 +303,7 @@ impl ToArchive for CommonRomfile {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: &Option<usize>,
+        compression: &ArchiveCompression,
         solid: bool,
     ) -> Result<ArchiveRomfile> {
         progress_bar.set_message(format!("Creating {}", archive_type));
@@ -240,7 +327,7 @@ impl ToArchive for CommonRomfile {
             working_directory.as_ref(),
             path,
             archive_type,
-            compression_level,
+            compression,
             solid,
         )
         .await?;
@@ -266,7 +353,7 @@ impl ToArchive for ArchiveRomfile {
         destination_directory: &Q,
         archive_name: &str,
         archive_type: &ArchiveType,
-        compression_level: &Option<usize>,
+        compression: &ArchiveCompression,
         solid: bool,
     ) -> Result<ArchiveRomfile> {
         let original_romfile = self.to_common(progress_bar, source_directory).await?;
@@ -277,7 +364,7 @@ impl ToArchive for ArchiveRomfile {
                 destination_directory,
                 archive_name,
                 archive_type,
-                compression_level,
+                compression,
                 solid,
             )
             .await?;
@@ -417,9 +504,9 @@ pub async fn get_version() -> Result<String> {
 ///
 /// Always compiled, because the native backend still routes 7z writes here.
 pub(crate) mod tool {
-    use super::ArchiveType;
+    use super::{ArchiveCompression, ArchiveType};
     use crate::util::{get_executable_path, run_tool};
-    use anyhow::{Context, Result};
+    use anyhow::{Context, Result, bail};
     #[cfg(not(feature = "sevenz"))]
     use itertools::izip;
     use regex::Regex;
@@ -490,13 +577,26 @@ pub(crate) mod tool {
         working_directory: Q,
         entry_path: &Path,
         _archive_type: &ArchiveType,
-        compression_level: &Option<usize>,
+        compression: &ArchiveCompression,
         solid: bool,
     ) -> Result<()> {
+        // 7-Zip ships no Zstandard codec, in either container, so this cannot be
+        // silently downgraded to whatever it does support.
+        if compression.is_zstd() {
+            bail!(
+                "7-Zip cannot write Zstandard archives; build with the `sevenz` \
+                 feature (on by default) or choose another compression algorithm"
+            );
+        }
         let mut command = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?);
         command.arg("a");
-        if let Some(compression_level) = compression_level {
-            command.arg(format!("-mx={}", compression_level));
+        if let Some(level) = match compression {
+            ArchiveCompression::Deflate(level)
+            | ArchiveCompression::Lzma2(level)
+            | ArchiveCompression::Zstd(level) => Some(*level),
+            ArchiveCompression::Default => None,
+        } {
+            command.arg(format!("-mx={}", level));
         }
         if solid {
             command.arg("-ms=on");

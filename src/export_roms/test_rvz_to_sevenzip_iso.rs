@@ -2,6 +2,7 @@ use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use crate::sevenzip::ArchiveCompression;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -71,7 +72,7 @@ async fn test() {
         roms_by_game_id,
         romfiles_by_id,
         sevenzip::ArchiveType::Sevenzip,
-        &None,
+        &ArchiveCompression::Default,
         false,
     )
     .await

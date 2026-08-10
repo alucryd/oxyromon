@@ -14,7 +14,7 @@ version = "0.22.0"
 rust-version = "1.94.0"
 
 [features]
-default = ["use-rustls"]
+default = ["sevenz", "use-rustls"]
 use-native-tls = ["reqwest/native-tls"]
 use-rustls = ["reqwest/rustls"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
@@ -22,7 +22,8 @@ server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-ht
 # to dolphin-tool and wit
 nod = ["dep:nod"]
 # Handle 7z and ZIP with the `sevenz-rust2` and `zip` crates instead of shelling
-# out to 7-Zip
+# out to 7-Zip. On by default: 7-Zip carries no Zstandard codec, so zstd archives
+# can only be read or written here.
 sevenz = ["dep:sevenz-rust2"]
 
 [dependencies]
@@ -81,7 +82,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha1 = "0.11.0"
 shiratsu-naming = "0.1.7"
-sevenz-rust2 = { version = "0.21.4", optional = true }
+sevenz-rust2 = { version = "0.21.4", features = ["zstd"], optional = true }
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",
@@ -106,7 +107,10 @@ tower-http = { version = "0.7.0", features = ["cors"], optional = true, default-
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
 which = { version = "8.0.5" }
-zip = { version = "8.6.0", features = ["deflate"], default-features = false }
+zip = { version = "8.6.0", features = [
+    "deflate",
+    "zstd",
+], default-features = false }
 
 [dev-dependencies]
 wiremock = "0.6.5"

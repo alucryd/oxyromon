@@ -52,10 +52,10 @@
 //!   size, so at level 9 (64 MB dictionary) anything smaller than that is a
 //!   single chunk and threading buys nothing. It gave 1.4x at level 6.
 
-use super::sevenzip::{ArchiveType, tool};
+use super::sevenzip::{ArchiveCompression, ArchiveType, tool};
 use anyhow::{Context, Result};
-use sevenz_rust2::encoder_options::Lzma2Options;
-use sevenz_rust2::{ArchiveEntry, ArchiveReader, ArchiveWriter, Password};
+use sevenz_rust2::encoder_options::{Lzma2Options, ZstandardOptions};
+use sevenz_rust2::{ArchiveEntry, ArchiveReader, ArchiveWriter, EncoderMethod, Password};
 use std::fs::File;
 use std::io;
 use std::path::Path;
@@ -177,23 +177,28 @@ pub async fn create<P: AsRef<Path>, Q: AsRef<Path>>(
     working_directory: Q,
     entry_path: &Path,
     archive_type: &ArchiveType,
-    compression_level: &Option<usize>,
+    compression: &ArchiveCompression,
     solid: bool,
 ) -> Result<()> {
     // Appending to an existing 7z means rewriting it, and `to_archive` is called
     // once per file, so a multi track game would recompress its whole archive
     // for every track it adds. 7-Zip appends a block instead, so it keeps that
-    // case until there is an API here to write every entry in one go.
+    // case — but only when it can read the archive at all, which rules out
+    // Zstandard.
     // TODO: batch `to_archive` so all of a game's files are written at once,
     // which would let this be native throughout and produce a better packed
     // archive besides.
-    if archive_type == &ArchiveType::Sevenzip && archive_path.as_ref().is_file() {
+    if archive_type == &ArchiveType::Sevenzip
+        && archive_path.as_ref().is_file()
+        && !compression.is_zstd()
+        && !is_zstd(archive_path.as_ref())
+    {
         return tool::create(
             archive_path,
             working_directory,
             entry_path,
             archive_type,
-            compression_level,
+            compression,
             solid,
         )
         .await;
@@ -203,15 +208,26 @@ pub async fn create<P: AsRef<Path>, Q: AsRef<Path>>(
     let working_directory = working_directory.as_ref().to_path_buf();
     let entry_path = entry_path.to_path_buf();
     let archive_type = *archive_type;
-    let compression_level = *compression_level;
+    let compression = *compression;
     spawn_blocking(move || {
         let name = entry_path.to_string_lossy().replace('\\', "/");
         let source = working_directory.join(&entry_path);
         match archive_type {
             ArchiveType::Zip => {
+                // Zstandard is method 93 in the ZIP spec. Nothing else in the
+                // toolchain reads it, so it is only ever written on request.
+                let (method, level) = match compression {
+                    ArchiveCompression::Zstd(level) => {
+                        (CompressionMethod::Zstd, Some(level as i64))
+                    }
+                    ArchiveCompression::Deflate(level) => {
+                        (CompressionMethod::Deflated, Some(level as i64))
+                    }
+                    _ => (CompressionMethod::Deflated, None),
+                };
                 let options = SimpleFileOptions::default()
-                    .compression_method(CompressionMethod::Deflated)
-                    .compression_level(compression_level.map(|level| level as i64))
+                    .compression_method(method)
+                    .compression_level(level)
                     .large_file(true);
                 let mut writer = if archive_path.is_file() {
                     ZipWriter::new_append(
@@ -228,7 +244,7 @@ pub async fn create<P: AsRef<Path>, Q: AsRef<Path>>(
                 write_sevenzip(
                     &archive_path,
                     vec![(name, std::fs::read(&source)?)],
-                    compression_level,
+                    compression,
                     solid,
                 )?;
             }
@@ -245,7 +261,7 @@ pub async fn create<P: AsRef<Path>, Q: AsRef<Path>>(
 /// would re-encode every byte to change a name: measured at 8.86s against
 /// 0.05s on a 28MB archive. See the module TODO.
 pub async fn rename<P: AsRef<Path>>(path: P, from: &str, to: &str) -> Result<()> {
-    if archive_type(path.as_ref())? == ArchiveType::Sevenzip {
+    if archive_type(path.as_ref())? == ArchiveType::Sevenzip && !is_zstd(path.as_ref()) {
         return tool::rename(path, from, to).await;
     }
     let (from, to) = (from.to_string(), to.to_string());
@@ -264,7 +280,7 @@ pub async fn rename<P: AsRef<Path>>(path: P, from: &str, to: &str) -> Result<()>
 /// 7z goes to 7-Zip for the same reason as [`rename`]: it can drop an entry
 /// without re-encoding the ones that remain.
 pub async fn delete<P: AsRef<Path>>(path: P, name: &str) -> Result<()> {
-    if archive_type(path.as_ref())? == ArchiveType::Sevenzip {
+    if archive_type(path.as_ref())? == ArchiveType::Sevenzip && !is_zstd(path.as_ref()) {
         return tool::delete(path, name).await;
     }
     let name = name.to_string();
@@ -309,6 +325,13 @@ where
             }
             ArchiveType::Sevenzip => {
                 let solid = sevenz_rust2::Archive::open(&path)?.is_solid;
+                // Rewrite it as it was found, so a rename never silently
+                // re-encodes a Zstandard archive as LZMA2 or the other way.
+                let compression = if is_zstd(&path) {
+                    ArchiveCompression::Zstd(DEFAULT_ZSTD_LEVEL)
+                } else {
+                    ArchiveCompression::Default
+                };
                 let entries: Vec<(String, Vec<u8>)> = read_sevenzip(&path)?
                     .into_iter()
                     .filter_map(|(name, data)| map(&name).map(|name| (name, data)))
@@ -317,7 +340,7 @@ where
                     std::fs::remove_file(&path)?;
                     return Ok(());
                 }
-                write_sevenzip(&temporary, entries, None, solid)?;
+                write_sevenzip(&temporary, entries, compression, solid)?;
             }
         }
         std::fs::rename(&temporary, &path)?;
@@ -330,11 +353,33 @@ where
 /// 7-Zip's own default, used when no level is configured.
 const DEFAULT_COMPRESSION_LEVEL: usize = 9;
 
+/// What a rebuilt Zstandard archive is re-encoded at when the caller has no
+/// level to offer, matching the setting's own default.
+const DEFAULT_ZSTD_LEVEL: usize = 19;
+
 /// Threads to hand the LZMA2 codec, which is where the bulk of the time goes.
 fn threads() -> u32 {
     std::thread::available_parallelism()
         .map(|available| available.get() as u32)
         .unwrap_or(1)
+}
+
+/// True when a 7z archive is Zstandard compressed, which 7-Zip cannot read.
+///
+/// Answered from the block headers, so it costs a metadata read rather than a
+/// decode. An archive that cannot be opened at all is reported as not zstd:
+/// whatever is wrong with it is 7-Zip's to report, not ours to guess at.
+fn is_zstd(path: &Path) -> bool {
+    sevenz_rust2::Archive::open(path)
+        .map(|archive| {
+            archive.blocks.iter().any(|block| {
+                block
+                    .coders
+                    .iter()
+                    .any(|coder| coder.encoder_method_id() == EncoderMethod::ID_ZSTD)
+            })
+        })
+        .unwrap_or(false)
 }
 
 /// Read every entry of a 7z archive into memory as `(name, contents)`.
@@ -364,19 +409,20 @@ fn read_sevenzip(path: &Path) -> Result<Vec<(String, Vec<u8>)>> {
 fn write_sevenzip(
     path: &Path,
     entries: Vec<(String, Vec<u8>)>,
-    compression_level: Option<usize>,
+    compression: ArchiveCompression,
     solid: bool,
 ) -> Result<()> {
     let mut writer = ArchiveWriter::create(path)
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
-    writer.set_content_methods(vec![
-        Lzma2Options::from_level_mt(
-            compression_level.unwrap_or(DEFAULT_COMPRESSION_LEVEL) as u32,
-            threads(),
-            1,
-        )
-        .into(),
-    ]);
+    writer.set_content_methods(vec![match compression {
+        // Zstandard's own encoder is already threaded, and takes the level
+        // straight through on its 1-22 scale.
+        ArchiveCompression::Zstd(level) => ZstandardOptions::from_level(level as u32).into(),
+        ArchiveCompression::Lzma2(level) => {
+            Lzma2Options::from_level_mt(level as u32, threads(), 1).into()
+        }
+        _ => Lzma2Options::from_level_mt(DEFAULT_COMPRESSION_LEVEL as u32, threads(), 1).into(),
+    }]);
     if solid {
         writer.push_archive_entries(
             entries
