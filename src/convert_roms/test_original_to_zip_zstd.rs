@@ -1,3 +1,10 @@
+//! Converting to a Zstandard compressed ZIP.
+//!
+//! Zstandard is the default for both formats, and only the native
+//! backend can read or write it: 7-Zip carries no Zstandard codec. The
+//! round trip through `as_archive` is the point of the test — it proves
+//! what was written can be listed and its entry checked afterwards.
+
 use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
@@ -31,9 +38,9 @@ async fn test() {
         .await
         .unwrap();
 
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom.zip");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe).rom.zip"),
+        test_directory.join("Test Game (USA, Europe).rom"),
         &romfile_path,
     )
     .await
@@ -51,7 +58,8 @@ async fn test() {
         .unwrap();
 
     let games = find_full_games_by_system_id(&mut connection, system.id).await;
-    let roms = find_roms_with_romfile_by_game_ids(&mut connection, &[games[0].id]).await;
+    let roms =
+        find_roms_with_romfile_by_game_ids(&mut connection, &[games.first().unwrap().id]).await;
     let romfile = find_romfile_by_id(&mut connection, roms[0].romfile_id.unwrap()).await;
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     roms_by_game_id.insert(roms[0].game_id, roms);
@@ -67,11 +75,11 @@ async fn test() {
         games_by_id,
         roms_by_game_id,
         romfiles_by_id,
-        sevenzip::ArchiveType::Sevenzip,
+        sevenzip::ArchiveType::Zip,
         false,
         false,
         true,
-        &ArchiveCompression::Default,
+        &ArchiveCompression::Zstd(19),
         false,
     )
     .await
@@ -90,7 +98,7 @@ async fn test() {
     assert_eq!(
         romfile.path,
         system_directory
-            .join("Test Game (USA, Europe).7z")
+            .join("Test Game (USA, Europe).zip")
             .strip_prefix(&rom_directory)
             .unwrap()
             .as_os_str()
@@ -99,4 +107,17 @@ async fn test() {
     );
     assert!(rom_directory.path().join(&romfile.path).is_file());
     assert_eq!(rom.romfile_id, Some(romfile.id));
+
+    let archive_romfiles = romfile
+        .as_common(&mut connection)
+        .await
+        .unwrap()
+        .as_archive(&progress_bar, None)
+        .await
+        .unwrap();
+    assert_eq!(archive_romfiles.len(), 1);
+    let entry = archive_romfiles.first().unwrap();
+    assert_eq!(entry.path, "Test Game (USA, Europe).rom");
+    assert_eq!(entry.size, 256);
+    assert_eq!(entry.crc, rom.crc.clone().unwrap());
 }

@@ -7,7 +7,10 @@ use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompr
 use super::model::Setting;
 use super::progress::*;
 use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
-use super::sevenzip::{SEVENZIP_COMPRESSION_LEVEL_RANGE, ZIP_COMPRESSION_LEVEL_RANGE};
+use super::sevenzip::{
+    SEVENZIP_COMPRESSION_LEVEL_RANGE, SevenzipCompressionAlgorithm, ZIP_COMPRESSION_LEVEL_RANGE,
+    ZSTD_COMPRESSION_LEVEL_RANGE, ZipCompressionAlgorithm,
+};
 use super::util::*;
 use anyhow::{Context, Result};
 use cfg_if::cfg_if;
@@ -73,6 +76,8 @@ const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
     "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
     "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,
+    "SEVENZIP_COMPRESSION_ALGORITHM" => SevenzipCompressionAlgorithm::VARIANTS,
+    "ZIP_COMPRESSION_ALGORITHM" => ZipCompressionAlgorithm::VARIANTS,
 };
 const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
     "CHD_CD_COMPRESSION_ALGORITHMS" => ChdCdCompressionAlgorithm::VARIANTS,
@@ -90,7 +95,9 @@ const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
     "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
     "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
     "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
+    "SEVENZIP_ZSTD_COMPRESSION_LEVEL" => &ZSTD_COMPRESSION_LEVEL_RANGE,
     "ZIP_COMPRESSION_LEVEL" => &ZIP_COMPRESSION_LEVEL_RANGE,
+    "ZIP_ZSTD_COMPRESSION_LEVEL" => &ZSTD_COMPRESSION_LEVEL_RANGE,
 };
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
@@ -116,7 +123,9 @@ const NULLABLES: &[&str] = &[
     "REGIONS_ONE",
     "REGIONS_ONE_ARCADE",
     "SEVENZIP_COMPRESSION_LEVEL",
+    "SEVENZIP_ZSTD_COMPRESSION_LEVEL",
     "ZIP_COMPRESSION_LEVEL",
+    "ZIP_ZSTD_COMPRESSION_LEVEL",
 ];
 
 const SORTED_LISTS: &[&str] = &[

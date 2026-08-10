@@ -16,7 +16,7 @@ use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::progress::*;
 use super::prompt::*;
 use super::sevenzip;
-use super::sevenzip::{AsArchive, ToArchive};
+use super::sevenzip::{ArchiveCompression, AsArchive, ToArchive};
 use super::transcode::*;
 use super::util::*;
 use super::wit;
@@ -271,8 +271,12 @@ pub async fn main(
                 .await?
             }
             "7Z" => {
-                let compression_level =
-                    get_integer(connection, "SEVENZIP_COMPRESSION_LEVEL", Some(system.id)).await;
+                let compression = sevenzip::get_archive_compression(
+                    connection,
+                    &sevenzip::ArchiveType::Sevenzip,
+                    Some(system.id),
+                )
+                .await;
                 let solid =
                     get_bool(connection, "SEVENZIP_SOLID_COMPRESSION", Some(system.id)).await;
                 to_archive(
@@ -284,14 +288,18 @@ pub async fn main(
                     roms_by_game_id,
                     romfiles_by_id,
                     sevenzip::ArchiveType::Sevenzip,
-                    &compression_level,
+                    &compression,
                     solid,
                 )
                 .await?
             }
             "ZIP" => {
-                let compression_level =
-                    get_integer(connection, "ZIP_COMPRESSION_LEVEL", Some(system.id)).await;
+                let compression = sevenzip::get_archive_compression(
+                    connection,
+                    &sevenzip::ArchiveType::Zip,
+                    Some(system.id),
+                )
+                .await;
                 to_archive(
                     connection,
                     progress_bar,
@@ -301,7 +309,7 @@ pub async fn main(
                     roms_by_game_id,
                     romfiles_by_id,
                     sevenzip::ArchiveType::Zip,
-                    &compression_level,
+                    &compression,
                     false,
                 )
                 .await?
@@ -442,7 +450,7 @@ async fn to_archive(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
     archive_type: sevenzip::ArchiveType,
-    compression_level: &Option<usize>,
+    compression: &ArchiveCompression,
     solid: bool,
 ) -> Result<()> {
     // partition CHDs
@@ -524,7 +532,7 @@ async fn to_archive(
                         destination_directory,
                         &game.name,
                         &archive_type,
-                        compression_level,
+                        compression,
                         solid,
                     )
                     .await?;
@@ -536,7 +544,7 @@ async fn to_archive(
                             destination_directory,
                             &game.name,
                             &archive_type,
-                            compression_level,
+                            compression,
                             solid,
                         )
                         .await?;
@@ -553,7 +561,7 @@ async fn to_archive(
                         destination_directory,
                         &game.name,
                         &archive_type,
-                        compression_level,
+                        compression,
                         solid,
                     )
                     .await?;
@@ -569,7 +577,7 @@ async fn to_archive(
                         destination_directory,
                         &game.name,
                         &archive_type,
-                        compression_level,
+                        compression,
                         solid,
                     )
                     .await?;
@@ -585,7 +593,7 @@ async fn to_archive(
                         destination_directory,
                         &game.name,
                         &archive_type,
-                        compression_level,
+                        compression,
                         solid,
                     )
                     .await?;
@@ -613,7 +621,7 @@ async fn to_archive(
                 destination_directory,
                 &game.name,
                 &archive_type,
-                compression_level,
+                compression,
                 solid,
             )
             .await?;
@@ -638,7 +646,7 @@ async fn to_archive(
                 destination_directory,
                 &game.name,
                 &archive_type,
-                compression_level,
+                compression,
                 solid,
             )
             .await?;
@@ -663,7 +671,7 @@ async fn to_archive(
                 destination_directory,
                 &game.name,
                 &archive_type,
-                compression_level,
+                compression,
                 solid,
             )
             .await?;
@@ -689,7 +697,7 @@ async fn to_archive(
                 destination_directory,
                 &game.name,
                 &archive_type,
-                compression_level,
+                compression,
                 solid,
             )
             .await?;
@@ -726,7 +734,7 @@ async fn to_archive(
                     destination_directory,
                     &game.name,
                     &archive_type,
-                    compression_level,
+                    compression,
                     solid,
                 )
                 .await?;
@@ -748,7 +756,7 @@ async fn to_archive(
                     destination_directory,
                     &game.name,
                     &archive_type,
-                    compression_level,
+                    compression,
                     solid,
                 )
                 .await?;
@@ -775,7 +783,7 @@ async fn to_archive(
                         destination_directory,
                         &game.name,
                         &archive_type,
-                        compression_level,
+                        compression,
                         solid,
                     )
                     .await?;
