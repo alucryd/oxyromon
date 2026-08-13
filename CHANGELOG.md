@@ -9,6 +9,7 @@
 - Added an About modal to the web UI, showing version, dependencies and statistics
 - Added DAT import to the web UI
 - Added Redump DAT download and update to the web UI
+- Added ROM import to the web UI, by upload or by a URL the server downloads
 - Added notification history to the web UI
 - Added `-u/--update` flag to `import-dats` to only import DATs for systems already in the database
 - Improved ZIP support in `import-dats` to find `.dat` files in subdirectories (supports daily dat-o-matic packs)

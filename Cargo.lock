@@ -2723,6 +2723,7 @@ dependencies = [
  "nod",
  "num-derive",
  "num-traits",
+ "percent-encoding",
  "phf 0.14.0",
  "quick-xml",
  "rayon",

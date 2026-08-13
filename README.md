@@ -719,6 +719,10 @@ Launch the backend server
 
 The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
 
+From the web UI you can browse systems, games and ROM files, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
+
+ROM files are imported either by uploading them, or by giving a URL which the **server** downloads. That download is made by the server, so it can reach anything the server can, including hosts on its own network. This is fine for the default loopback address; think twice before exposing the server beyond it.
+
     Usage: oxyromon server [OPTIONS]
 
     Options:

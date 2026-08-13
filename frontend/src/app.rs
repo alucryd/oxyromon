@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use crate::components::about_modal::AboutModal;
 use crate::components::download_dat_modal::DownloadDatModal;
 use crate::components::import_dat_modal::ImportDatModal;
+use crate::components::import_rom_modal::ImportRomModal;
 use crate::components::navbar::Navbar;
 use crate::components::settings_modal::SettingsModal;
 use crate::page::Page;
@@ -40,6 +41,7 @@ pub fn App() -> impl IntoView {
             <AboutModal />
             <DownloadDatModal />
             <ImportDatModal />
+            <ImportRomModal />
             <SettingsModal
                 open=state.settings_modal_open
                 system_id=global_settings_id
