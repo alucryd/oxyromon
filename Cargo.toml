@@ -17,7 +17,7 @@ rust-version = "1.94.0"
 default = ["sevenz", "use-rustls"]
 use-native-tls = ["reqwest/native-tls"]
 use-rustls = ["reqwest/rustls"]
-server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "tower-http"]
+server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "percent-encoding", "tower-http"]
 # Handle GameCube/Wii disc images with the `nod` crate instead of shelling out
 # to dolphin-tool and wit
 nod = ["dep:nod"]
@@ -72,6 +72,7 @@ md-5 = "0.11.0"
 nod = { version = "2.0.0-alpha.9", optional = true }
 num-derive = "0.5.1"
 num-traits = "0.2.19"
+percent-encoding = { version = "2.3.2", optional = true }
 phf = { version = "0.14.0", features = ["macros"] }
 quick-xml = { version = "0.41.0", features = ["serialize"] }
 rayon = "1.12.0"

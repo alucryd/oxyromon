@@ -87,21 +87,31 @@ pub fn Navbar() -> impl IntoView {
                 <img src="/icon.svg" alt="oxyROMon" style="height: 2rem;" />
             </a>
 
+            // ROMs are imported constantly and DATs set up rarely, so the
+            // frequent action keeps a button of its own and the two DAT actions
+            // share a labelled menu — which also says which is which, where
+            // three similar icons in a row did not.
             <wa-button
                 appearance="plain"
-                title="Import DATs"
-                on:click=move |_| state.import_dat_modal_open.set(true)
+                title="Import ROMs"
+                on:click=move |_| state.import_rom_modal_open.set(true)
             >
-                <wa-icon name="upload" label="Import DAT"></wa-icon>
+                <wa-icon name="upload" label="Import ROMs"></wa-icon>
             </wa-button>
 
-            <wa-button
-                appearance="plain"
-                title="Download DATs"
-                on:click=move |_| state.download_dat_modal_open.set(true)
-            >
-                <wa-icon name="download" label="Download DATs"></wa-icon>
-            </wa-button>
+            <wa-dropdown>
+                <wa-button slot="trigger" appearance="plain" title="DAT files" with-caret="">
+                    <wa-icon name="database" label="DAT files"></wa-icon>
+                </wa-button>
+                <wa-dropdown-item on:click=move |_| state.import_dat_modal_open.set(true)>
+                    <wa-icon slot="icon" name="upload"></wa-icon>
+                    Import DATs
+                </wa-dropdown-item>
+                <wa-dropdown-item on:click=move |_| state.download_dat_modal_open.set(true)>
+                    <wa-icon slot="icon" name="download"></wa-icon>
+                    Download DATs
+                </wa-dropdown-item>
+            </wa-dropdown>
 
             <div style="flex: 1;"></div>
 

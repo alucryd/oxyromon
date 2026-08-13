@@ -18,12 +18,15 @@ FONTAWESOME_VERSION=7.3.1
 ICONS="bars check chevron-down circle-xmark clock copy ellipsis eye eye-slash
 grip-vertical minus pause plus star user xmark
 mug-hot upload download bell sliders circle-info sun moon ellipsis-vertical trash
-circle-check circle-exclamation triangle-exclamation"
+circle-check circle-exclamation triangle-exclamation database"
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 vendor="$root/vendor"
 stamp="$vendor/.version"
-want="webawesome-$WEBAWESOME_VERSION fontawesome-$FONTAWESOME_VERSION"
+# The icon list is part of the stamp, not just the versions: adding an icon has
+# to re-run the fetch, or it stays missing until the next version bump and only
+# shows up as an icon that silently renders nothing.
+want="webawesome-$WEBAWESOME_VERSION fontawesome-$FONTAWESOME_VERSION icons-$(echo "$ICONS" | cksum | cut -d' ' -f1)"
 
 if [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$want" ]; then
     exit 0
