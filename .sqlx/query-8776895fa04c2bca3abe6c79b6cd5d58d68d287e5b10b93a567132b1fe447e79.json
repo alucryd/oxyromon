@@ -1,0 +1,170 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM roms\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "size"
+          }
+        }
+      },
+      {
+        "name": "rom_status",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "rom_status"
+          }
+        }
+      },
+      {
+        "name": "game_id",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "game_id"
+          }
+        }
+      },
+      {
+        "name": "romfile_id",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "romfile_id"
+          }
+        }
+      },
+      {
+        "name": "md5",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "md5"
+          }
+        }
+      },
+      {
+        "name": "sha1",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "sha1"
+          }
+        }
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 8,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "parent_id"
+          }
+        }
+      },
+      {
+        "name": "bios",
+        "ordinal": 9,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "bios"
+          }
+        }
+      },
+      {
+        "name": "crc",
+        "ordinal": 10,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "crc"
+          }
+        }
+      },
+      {
+        "name": "disk",
+        "ordinal": 11,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "disk"
+          }
+        }
+      },
+      {
+        "name": "original",
+        "ordinal": 12,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "roms",
+            "name": "original"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "8776895fa04c2bca3abe6c79b6cd5d58d68d287e5b10b93a567132b1fe447e79"
+}

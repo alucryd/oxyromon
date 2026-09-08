@@ -1,5 +1,4 @@
 use super::super::config::{MUTEX, set_rom_directory};
-use super::super::database::*;
 use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
