@@ -87,6 +87,14 @@ pub fn connect_sse(state: AppState) {
         NotificationKind::Success,
     );
     on_event(&source, "import_dat_error", state, NotificationKind::Error);
+    on_event(&source, "import_rom_started", state, NotificationKind::Info);
+    on_complete_event(
+        &source,
+        "import_rom_complete",
+        state,
+        NotificationKind::Success,
+    );
+    on_event(&source, "import_rom_error", state, NotificationKind::Error);
     on_event(
         &source,
         "download_dats_started",

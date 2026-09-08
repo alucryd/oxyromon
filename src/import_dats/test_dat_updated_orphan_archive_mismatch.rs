@@ -1,5 +1,4 @@
 use super::super::config::*;
-use super::super::database::*;
 use super::super::import_roms::UnattendedMode;
 use super::*;
 use std::path::PathBuf;

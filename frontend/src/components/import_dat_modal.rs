@@ -118,7 +118,7 @@ pub fn ImportDatModal() -> impl IntoView {
                                     {file.name()}
                                 </span>
                                 <small style="color: var(--wa-color-text-quiet);">
-                                    {format!("{:.1} KB", file.size() / 1024.0)}
+                                    <wa-format-bytes value=file.size()></wa-format-bytes>
                                 </small>
                             }
                         }}

@@ -1,3 +1,13 @@
+# 0.22.1
+
+## Changes
+
+- Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
+
+## Fixes
+
+- Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries
+
 # 0.22.0
 
 ## Features
@@ -9,11 +19,14 @@
 - Added an About modal to the web UI, showing version, dependencies and statistics
 - Added DAT import to the web UI
 - Added Redump DAT download and update to the web UI
+- Added ROM import to the web UI, by upload or by a URL the server downloads
 - Added notification history to the web UI
 - Added `-u/--update` flag to `import-dats` to only import DATs for systems already in the database
 - Improved ZIP support in `import-dats` to find `.dat` files in subdirectories (supports daily dat-o-matic packs)
 - Added an optional native desktop app built with Tauri, sharing the CLI's database and settings
 - Added an optional `nod` feature to handle RVZ and WBFS natively instead of shelling out to `dolphin-tool` and `wit`
+- Added opt-in Zstandard compression for 7z and ZIP, with `SEVENZIP_COMPRESSION_ALGORITHM` and `ZIP_COMPRESSION_ALGORITHM`; LZMA2 and Deflate remain the defaults
+- Added `SEVENZIP_ZSTD_COMPRESSION_LEVEL` and `ZIP_ZSTD_COMPRESSION_LEVEL`, since Zstandard runs 1-22 rather than 1-9
 - Added an optional `sevenz` feature to read archives and write ZIP natively instead of spawning 7-Zip
 - Added real progress bars to RVZ and WBFS conversions with the `nod` feature
 

@@ -98,6 +98,7 @@ cfg_if! {
 ///
 /// This is what `download-dats -r` offers interactively, with and without `-u`;
 /// the server exposes the same lists so the web UI can offer them as a picker.
+#[cfg(feature = "server")]
 pub async fn find_redump_systems(connection: &mut SqliteConnection, update: bool) -> Vec<String> {
     let existing: HashSet<String> = find_systems_by_url(connection, REDUMP_SYSTEM_URL)
         .await
@@ -117,6 +118,7 @@ pub async fn find_redump_systems(connection: &mut SqliteConnection, update: bool
 ///
 /// The name is checked against the catalogue first: unlike the CLI, which can
 /// only offer names it already holds, callers here may pass anything.
+#[cfg(feature = "server")]
 pub async fn download_redump_system(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,

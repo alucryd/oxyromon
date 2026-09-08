@@ -420,7 +420,11 @@ fn get_regions_from_game_name(name: &str) -> Result<String> {
     match NoIntroName::try_parse(name) {
         Ok(v) => {
             for token in v.iter() {
-                if let NoIntroToken::Region(_, regions) = token {
+                if let NoIntroToken::Region {
+                    region_strings: _,
+                    regions,
+                } = token
+                {
                     return Ok(Region::to_normalized_region_string(regions));
                 }
             }
@@ -428,7 +432,11 @@ fn get_regions_from_game_name(name: &str) -> Result<String> {
         Err(_) => match TOSECName::try_parse(name) {
             Ok(v) => {
                 for token in v.iter() {
-                    if let TOSECToken::Region(_, regions) = token {
+                    if let TOSECToken::Region {
+                        region_strings: _,
+                        regions,
+                    } = token
+                    {
                         return Ok(Region::to_normalized_region_string(regions));
                     }
                 }

@@ -266,6 +266,15 @@ pub async fn main(
                             .await?;
                             system_ids.insert(system_id);
                         }
+                        // A jukebox folder names no system of its own, so
+                        // without one on the command line there is nothing to
+                        // resolve it against but a question.
+                        None if unattended_mode != UnattendedMode::None => {
+                            print_warning(
+                                progress_bar,
+                                "PlayStation 3 folder needs a system, skipping",
+                            );
+                        }
                         None => {
                             let system =
                                 prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
@@ -669,7 +678,10 @@ async fn import_jbfolder<P: AsRef<Path>>(
                             progress_bar,
                             &format!("Matches \"{}\"", rom.as_ref().unwrap().name),
                         );
-                    } else if unattended_mode == UnattendedMode::Skip {
+                    // Either unattended mode takes the closest name rather than
+                    // asking: nobody is there to answer, and inside a jukebox
+                    // folder the file name is the only thing to go on.
+                    } else if unattended_mode != UnattendedMode::None {
                         // order roms by distance to the file name
                         roms.sort_by(|a, b| {
                             let a_distance = jaro_winkler(
@@ -2394,7 +2406,7 @@ async fn find_rom_by_size_and_hash(
         let system = find_system_by_id(connection, game.system_id).await;
         print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
         rom_game_system = Some((rom, game, system));
-    } else if system.is_some() {
+    } else if system.is_some() && unattended_mode == UnattendedMode::None {
         let mut roms_games: Vec<(Rom, Game)> = vec![];
         for rom in roms {
             let game = find_game_by_id(connection, rom.game_id).await;
@@ -2404,7 +2416,10 @@ async fn find_rom_by_size_and_hash(
             let system = find_system_by_id(connection, game.system_id).await;
             rom_game_system = Some((rom, game, system));
         };
-    } else if unattended_mode == UnattendedMode::Skip {
+    // Anything unattended that got this far could not be resolved on its own —
+    // `first` only picks a match when there is a file name to rank against — so
+    // skip rather than falling through to a prompt nobody is there to answer.
+    } else if unattended_mode != UnattendedMode::None {
         print_warning(progress_bar, "Multiple matches, skipping");
         return Ok(MatchResult {
             state: MatchState::Skipped,

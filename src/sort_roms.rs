@@ -13,7 +13,7 @@ use itertools::Itertools;
 use rayon::prelude::*;
 use regex::Regex;
 use shiratsu_naming::naming::TokenizedName;
-use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
+use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken, NoIntroVersion};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
@@ -736,12 +736,12 @@ fn trim_ignored_games(
                         if !languages.is_empty() {
                             let clean_parsed_languages = parsed_languages
                                 .iter()
-                                .filter(|(language, variant)| {
-                                    LANGUAGE_REGEX.is_match(language)
-                                        && (variant.is_none()
-                                            || VARIANT_REGEX.is_match(variant.unwrap()))
+                                .filter(|l| {
+                                    LANGUAGE_REGEX.is_match(l.code)
+                                        && (l.variant.is_none()
+                                            || VARIANT_REGEX.is_match(l.variant.unwrap()))
                                 })
-                                .map(|(language, _)| language.to_string())
+                                .map(|l| l.code.to_string())
                                 .collect::<Vec<String>>();
                             if !clean_parsed_languages.is_empty()
                                 && !clean_parsed_languages
@@ -752,14 +752,22 @@ fn trim_ignored_games(
                             }
                         }
                     }
-                    if let NoIntroToken::Release(release, _) = token {
+                    if let NoIntroToken::Release {
+                        status: release,
+                        number: _,
+                    } = token
+                    {
                         log::debug!("release: {}", release);
                         if ignored_releases.contains(release) {
                             log::debug!("ignoring release");
                             return true;
                         }
                     }
-                    if let NoIntroToken::Flag(_, flags) = token {
+                    if let NoIntroToken::Flag {
+                        flag_type: _,
+                        flag: flags,
+                    } = token
+                    {
                         log::debug!("flags: {}", flags);
                         if ignored_flags.contains(flags) {
                             log::debug!("ignoring flag: {}", flags);
@@ -777,6 +785,21 @@ fn trim_ignored_games(
             false
         })
     }
+}
+
+fn compare_versions(a: &[NoIntroVersion], b: &[NoIntroVersion]) -> Ordering {
+    let (first_a, first_b) = match (a.first(), b.first()) {
+        (Some(a), Some(b)) => (a, b),
+        (Some(_), None) => return Ordering::Greater,
+        (None, Some(_)) => return Ordering::Less,
+        (None, None) => return Ordering::Equal,
+    };
+    let parse = |v: &NoIntroVersion| -> (u64, u64) {
+        let major = v.major.parse::<u64>().unwrap_or(0);
+        let minor = v.minor.and_then(|m| m.parse::<u64>().ok()).unwrap_or(0);
+        (major, minor)
+    };
+    parse(first_a).cmp(&parse(first_b))
 }
 
 fn sort_games_by_weight(
@@ -836,13 +859,13 @@ fn sort_games_by_weight(
             }
         }
         if let (Some(version_a), Some(version_b)) = (version_a.as_ref(), version_b.as_ref()) {
-            match version_b.partial_cmp(version_a).unwrap() {
-                Ordering::Less => match *preferred_versions {
+            match compare_versions(version_a, version_b) {
+                Ordering::Greater => match *preferred_versions {
                     PreferredVersion::New => weight_a += 1,
                     PreferredVersion::Old => weight_b += 1,
                     PreferredVersion::None => {}
                 },
-                Ordering::Greater => match *preferred_versions {
+                Ordering::Less => match *preferred_versions {
                     PreferredVersion::New => weight_b += 1,
                     PreferredVersion::Old => weight_a += 1,
                     PreferredVersion::None => {}
@@ -867,7 +890,11 @@ fn sort_games_by_weight(
     if !preferred_flags.is_empty() {
         if let Ok(name) = NoIntroName::try_parse(&game_a.name) {
             for token in name.iter() {
-                if let NoIntroToken::Flag(_, flags) = token {
+                if let NoIntroToken::Flag {
+                    flag_type: _,
+                    flag: flags,
+                } = token
+                {
                     for flag in flags.split(", ") {
                         if preferred_flags.contains(&flag) {
                             weight_a += 1;
@@ -878,7 +905,11 @@ fn sort_games_by_weight(
         }
         if let Ok(name) = NoIntroName::try_parse(&game_b.name) {
             for token in name.iter() {
-                if let NoIntroToken::Flag(_, flags) = token {
+                if let NoIntroToken::Flag {
+                    flag_type: _,
+                    flag: flags,
+                } = token
+                {
                     for flag in flags.split(", ") {
                         if preferred_flags.contains(&flag) {
                             weight_b += 1;

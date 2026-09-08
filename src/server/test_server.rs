@@ -1,5 +1,4 @@
 use super::super::config::{MUTEX, set_rom_directory, set_tmp_directory};
-use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::super::sort_roms;
@@ -444,4 +443,36 @@ async fn test_upload_dat_already_imported() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_url_filename() {
+    assert_eq!(
+        url_filename("http://example.com/Test%20Game%20(USA).zip"),
+        "Test Game (USA).zip"
+    );
+    assert_eq!(url_filename("http://example.com/rom.zip"), "rom.zip");
+    // Query strings and fragments are not part of the name.
+    assert_eq!(
+        url_filename("http://example.com/rom.zip?token=abc#frag"),
+        "rom.zip"
+    );
+    // Nothing usable to name it after.
+    assert_eq!(url_filename("http://example.com/"), "download");
+    // Decoding must not be able to climb out of the directory it is joined onto.
+    assert_eq!(
+        url_filename("http://example.com/%2E%2E%2F%2E%2E%2Fetc%2Fpasswd"),
+        "passwd"
+    );
+    assert_eq!(url_filename("http://example.com/%2E%2E%2F"), "download");
+}
+
+#[test]
+fn test_safe_filename() {
+    assert_eq!(safe_filename("Test Game (USA).zip"), "Test Game (USA).zip");
+    // A client-chosen name is joined onto a directory, so it may not climb out.
+    assert_eq!(safe_filename("../../etc/passwd"), "passwd");
+    assert_eq!(safe_filename("..\\..\\windows\\system32"), "system32");
+    assert_eq!(safe_filename("../.."), "download");
+    assert_eq!(safe_filename(""), "download");
 }

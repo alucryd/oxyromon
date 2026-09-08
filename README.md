@@ -102,7 +102,7 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
 | nod            | handle RVZ and WBFS natively                   |         |
-| sevenz         | read archives natively, write ZIP natively     |         |
+| sevenz         | handle 7z and ZIP natively, and enable zstd    | x       |
 | server         | build the server subcommand                    |         |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
@@ -111,11 +111,16 @@ The `sevenz` feature handles archives with the
 [sevenz-rust2](https://crates.io/crates/sevenz-rust2) and
 [zip](https://crates.io/crates/zip) crates rather than spawning 7-Zip. Listing in
 particular becomes a metadata read instead of a process launch, which is what
-`check-roms` and `import-roms` do most. ZIP is native throughout; so is reading
-7z and writing one from scratch. Renaming or deleting an entry in a 7z, or adding
-one to an existing 7z, still goes to 7-Zip, because those change metadata without
-touching the compressed data and sevenz-rust2 offers no way to do the same. `7z`
-therefore remains a requirement unless your collection is ZIP only.
+`check-roms` and `import-roms` do most. It is on by default because Zstandard
+archives can be read and written nowhere else: 7-Zip has no such codec.
+
+ZIP is native throughout. For 7z, renaming or deleting an entry, or adding one to
+an archive that already exists, goes to 7-Zip when it can read the archive —
+those change metadata without touching the compressed data, and sevenz-rust2
+offers no way to do the same, so doing it natively means a full rebuild.
+Zstandard archives are rebuilt natively instead, since 7-Zip cannot open them at
+all. `7z` therefore remains useful for LZMA2 collections, and is unnecessary for
+Zstandard or ZIP-only ones.
 
 The `nod` feature links the [nod](https://crates.io/crates/nod) crate in place of
 shelling out to `dolphin-tool` and `wit`, so RVZ and WBFS work with neither
@@ -163,9 +168,19 @@ Available settings:
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
 - `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
-- `SEVENZIP_COMPRESSION_LEVEL`: The 7Z compression level, defaults to `9`, valid range: `1-9`
+- `SEVENZIP_COMPRESSION_ALGORITHM`: The 7Z compression algorithm, defaults to `lzma2`, valid choices: `lzma2`, `zstd`
+- `SEVENZIP_COMPRESSION_LEVEL`: The 7Z LZMA2 compression level, defaults to `9`, valid range: `1-9`
+- `SEVENZIP_ZSTD_COMPRESSION_LEVEL`: The 7Z Zstandard compression level, defaults to `19`, valid range: `1-22`
 - `SEVENZIP_SOLID_COMPRESSION`: Toggles 7Z solid compression, defaults to `false`
-- `ZIP_COMPRESSION_LEVEL`: The ZIP compression level, defaults to `9`, valid range: `1-9`
+- `ZIP_COMPRESSION_ALGORITHM`: The ZIP compression algorithm, defaults to `deflate`, valid choices: `deflate`, `zstd`
+- `ZIP_COMPRESSION_LEVEL`: The ZIP Deflate compression level, defaults to `9`, valid range: `1-9`
+- `ZIP_ZSTD_COMPRESSION_LEVEL`: The ZIP Zstandard compression level, defaults to `19`, valid range: `1-22`
+
+Zstandard is opt-in. It compresses a good deal faster than LZMA2 at a comparable
+size, but nothing else reads it: 7-Zip ships no Zstandard codec, and neither do
+emulators or Windows Explorer, so a zstd `.zip` or `.7z` opens in oxyromon and
+nowhere else. Worth it for archival, a poor idea for a library you play from.
+It also needs the `sevenz` feature, which is on by default.
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -189,10 +204,16 @@ REGIONS_ONE_SUBFOLDERS = none
 ROM_DIRECTORY = /home/alucryd/Emulation
 RVZ_COMPRESSION_ALGORITHM = zstd
 RVZ_COMPRESSION_LEVEL = 5
-SEVENZIP_COMPRESSION_LEVEL = 9
-SEVENZIP_SOLID_COMPRESSION = false
-TMP_DIRECTORY = /tmp
+SEVENZIP_COMPRESSION_ALGORITHM = lzma2
+SEVENZIP_COMPRESSION_ALGORITHM = lzma2
 ZIP_COMPRESSION_LEVEL = 9
+ZIP_ZSTD_COMPRESSION_LEVEL = 19
+SEVENZIP_SOLID_COMPRESSION = false
+SEVENZIP_ZSTD_COMPRESSION_LEVEL = 19
+TMP_DIRECTORY = /tmp
+ZIP_COMPRESSION_ALGORITHM = deflate
+ZIP_COMPRESSION_LEVEL = 9
+ZIP_ZSTD_COMPRESSION_LEVEL = 19
 ```
 
 ### Directory Layout
@@ -697,6 +718,10 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
 Launch the backend server
 
 The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
+
+From the web UI you can browse systems, games and ROM files, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
+
+ROM files are imported either by uploading them, or by giving a URL which the **server** downloads. That download is made by the server, so it can reach anything the server can, including hosts on its own network. This is fine for the default loopback address; think twice before exposing the server beyond it.
 
     Usage: oxyromon server [OPTIONS]
 
