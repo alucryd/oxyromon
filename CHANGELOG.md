@@ -1,3 +1,13 @@
+# 0.22.1
+
+## Changes
+
+- Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
+
+## Fixes
+
+- Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries
+
 # 0.22.0
 
 ## Features

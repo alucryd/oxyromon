@@ -304,7 +304,11 @@ impl QueryRoot {
             for token in name.iter() {
                 if let NoIntroToken::Title(parsed_title) = token {
                     title = parsed_title.to_string();
-                } else if let NoIntroToken::Region(_, parsed_regions) = token {
+                } else if let NoIntroToken::Region {
+                    region_strings: _,
+                    regions: parsed_regions,
+                } = token
+                {
                     regions.append(
                         &mut Region::to_normalized_region_string(parsed_regions)
                             .split('-')
@@ -315,18 +319,13 @@ impl QueryRoot {
                     languages.append(
                         &mut parsed_languages
                             .iter()
-                            .map(|(language, _)| language.to_string())
+                            .map(|l| l.code.to_string())
                             .collect_vec(),
                     );
-                } else if let NoIntroToken::Release(parsed_release, _) = token {
-                    release = Some(parsed_release.to_string());
-                } else if let NoIntroToken::Flag(_, parsed_flags) = token {
-                    flags.append(
-                        &mut parsed_flags
-                            .split(", ")
-                            .map(|flag| flag.to_string())
-                            .collect_vec(),
-                    );
+                } else if let NoIntroToken::Release { status, number: _ } = token {
+                    release = Some(status.to_string());
+                } else if let NoIntroToken::Flag { flag_type: _, flag } = token {
+                    flags.append(&mut flag.split(", ").map(|flag| flag.to_string()).collect_vec());
                 }
             }
         }

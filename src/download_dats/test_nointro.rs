@@ -1,7 +1,6 @@
 extern crate wiremock;
 
 use super::super::config::*;
-use super::super::database::*;
 use super::super::import_dats;
 use super::*;
 use std::path::{Path, PathBuf};

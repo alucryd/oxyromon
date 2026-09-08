@@ -5,7 +5,6 @@
 //! round trip through `as_archive` is the point of the test — it proves
 //! what was written can be listed and its entry checked afterwards.
 
-use super::super::database::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;

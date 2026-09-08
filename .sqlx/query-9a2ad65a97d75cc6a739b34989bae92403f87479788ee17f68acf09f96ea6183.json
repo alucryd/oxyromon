@@ -1,0 +1,194 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT *\n        FROM games\n        ORDER BY name\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "name"
+          }
+        }
+      },
+      {
+        "name": "description",
+        "ordinal": 2,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "name": "regions",
+        "ordinal": 3,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "regions"
+          }
+        }
+      },
+      {
+        "name": "system_id",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "system_id"
+          }
+        }
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 5,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "parent_id"
+          }
+        }
+      },
+      {
+        "name": "sorting",
+        "ordinal": 6,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "sorting"
+          }
+        }
+      },
+      {
+        "name": "comment",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "comment"
+          }
+        }
+      },
+      {
+        "name": "bios",
+        "ordinal": 8,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "bios"
+          }
+        }
+      },
+      {
+        "name": "bios_id",
+        "ordinal": 9,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "bios_id"
+          }
+        }
+      },
+      {
+        "name": "external_id",
+        "ordinal": 10,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "external_id"
+          }
+        }
+      },
+      {
+        "name": "jbfolder",
+        "ordinal": 11,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "jbfolder"
+          }
+        }
+      },
+      {
+        "name": "playlist_id",
+        "ordinal": 12,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "playlist_id"
+          }
+        }
+      },
+      {
+        "name": "device",
+        "ordinal": 13,
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "device"
+          }
+        }
+      },
+      {
+        "name": "completion",
+        "ordinal": 14,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "completion"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "9a2ad65a97d75cc6a739b34989bae92403f87479788ee17f68acf09f96ea6183"
+}

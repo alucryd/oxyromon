@@ -1,4 +1,3 @@
-use super::super::database::*;
 use super::super::import_dats;
 use super::*;
 use std::path::PathBuf;

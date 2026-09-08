@@ -1,8 +1,6 @@
 extern crate wiremock;
 
 use super::super::config::*;
-use super::super::database::*;
-use super::super::util::*;
 use super::*;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
