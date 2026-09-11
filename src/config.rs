@@ -427,18 +427,25 @@ pub async fn get_bool(
         .unwrap()
 }
 
+async fn upsert_setting(
+    connection: &mut SqliteConnection,
+    key: &str,
+    value: Option<String>,
+    system_id: Option<i64>,
+) {
+    match find_setting_by_key(connection, key, system_id).await {
+        Some(setting) => update_setting(connection, setting.id, value).await,
+        None => create_setting(connection, key, value, system_id).await,
+    };
+}
+
 pub async fn set_bool(
     connection: &mut SqliteConnection,
     key: &str,
     value: bool,
     system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key, system_id).await;
-    let value = value.to_string();
-    match setting {
-        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value), system_id).await,
-    };
+    upsert_setting(connection, key, Some(value.to_string()), system_id).await;
 }
 
 pub async fn get_integer(
@@ -459,12 +466,7 @@ async fn set_integer(
     value: usize,
     system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key, system_id).await;
-    let value = value.to_string();
-    match setting {
-        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value), system_id).await,
-    };
+    upsert_setting(connection, key, Some(value.to_string()), system_id).await;
 }
 
 pub async fn get_list(
@@ -488,34 +490,25 @@ pub async fn add_to_list(
     value: &str,
     system_id: Option<i64>,
 ) {
-    if LISTS.contains(&key) {
-        let mut list = get_list(connection, key, system_id).await;
-        if !list.contains(&String::from(value)) {
-            list.push(value.to_owned());
-            if !SORTED_LISTS.contains(&key) {
-                list.sort();
-            }
-            set_list(connection, key, &list, system_id).await;
-        } else {
-            print_skip(progress_bar, "Value already in list");
-        }
-    } else if let Some(options) = choice_list_options(key) {
-        if options.contains(&value) {
-            let mut list = get_list(connection, key, system_id).await;
-            if !list.contains(&String::from(value)) {
-                list.push(value.to_owned());
-                if !SORTED_LISTS.contains(&key) {
-                    list.sort();
-                }
-                set_list(connection, key, &list, system_id).await;
-            } else {
-                print_skip(progress_bar, "Value already in list");
-            }
-        } else {
+    if let Some(options) = choice_list_options(key) {
+        if !options.contains(&value) {
             print_warning(progress_bar, &format!("Valid choices: {:?}", options));
+            return;
         }
-    } else {
+    } else if !LISTS.contains(&key) {
         print_error(progress_bar, "Only list settings support --add");
+        return;
+    }
+
+    let mut list = get_list(connection, key, system_id).await;
+    if !list.contains(&String::from(value)) {
+        list.push(value.to_owned());
+        if !SORTED_LISTS.contains(&key) {
+            list.sort();
+        }
+        set_list(connection, key, &list, system_id).await;
+    } else {
+        print_skip(progress_bar, "Value already in list");
     }
 }
 
@@ -545,16 +538,12 @@ async fn set_list(
     value: &[String],
     system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = if value.is_empty() {
         None
     } else {
         Some(value.join(LIST_SEPARATOR))
     };
-    match setting {
-        Some(setting) => update_setting(connection, setting.id, value).await,
-        None => create_setting(connection, key, value, system_id).await,
-    };
+    upsert_setting(connection, key, value, system_id).await;
 }
 
 pub async fn get_directory(
@@ -574,12 +563,8 @@ pub async fn set_directory<P: AsRef<Path>>(
     value: &P,
     system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key, system_id).await;
     let value = value.as_ref().as_os_str().to_str().unwrap().to_owned();
-    match setting {
-        Some(setting) => update_setting(connection, setting.id, Some(value)).await,
-        None => create_setting(connection, key, Some(value), system_id).await,
-    };
+    upsert_setting(connection, key, Some(value), system_id).await;
 }
 
 pub async fn get_string(
@@ -596,11 +581,7 @@ pub async fn set_string(
     value: &str,
     system_id: Option<i64>,
 ) {
-    let setting = find_setting_by_key(connection, key, system_id).await;
-    match setting {
-        Some(setting) => update_setting(connection, setting.id, Some(value.to_string())).await,
-        None => create_setting(connection, key, Some(value.to_string()), system_id).await,
-    };
+    upsert_setting(connection, key, Some(value.to_string()), system_id).await;
 }
 
 pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
