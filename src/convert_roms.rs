@@ -129,45 +129,17 @@ pub async fn main(
     let diff = matches.get_flag("DIFF");
     let check = matches.get_flag("CHECK");
 
-    match format.as_str() {
-        "7Z" | "ZIP" => {
-            if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: sevenzip");
-                return Ok(());
-            }
-        }
-        "CHD" => {
-            if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: chdman");
-                return Ok(());
-            }
-        }
-        "CSO" => {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                return Ok(());
-            }
-        }
-        "NSZ" => {
-            if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: nsz");
-                return Ok(());
-            }
-        }
-        "RVZ" => {
-            if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: dolphin-tool");
-                return Ok(());
-            }
-        }
-        "ZSO" => {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                return Ok(());
-            }
-        }
-        "ORIGINAL" => {}
+    let available = match format.as_str() {
+        "7Z" | "ZIP" => tool_available(|| sevenzip::get_version(), "sevenzip", progress_bar).await,
+        "CHD" => tool_available(|| chdman::get_version(), "chdman", progress_bar).await,
+        "CSO" | "ZSO" => tool_available(|| maxcso::get_version(), "maxcso", progress_bar).await,
+        "NSZ" => tool_available(|| nsz::get_version(), "nsz", progress_bar).await,
+        "RVZ" => tool_available(|| dolphin::get_version(), "dolphin-tool", progress_bar).await,
+        "ORIGINAL" => true,
         _ => bail!("Not supported"),
+    };
+    if !available {
+        return Ok(());
     }
 
     for system in systems {

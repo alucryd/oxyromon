@@ -113,57 +113,19 @@ pub async fn main(
         get_canonicalized_path(matches.get_one::<String>("DIRECTORY").unwrap()).await?;
     create_directory(progress_bar, &destination_directory, true).await?;
 
-    match format.as_str() {
-        "7Z" | "ZIP" => {
-            if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: sevenzip");
-                return Ok(());
-            }
-        }
-        "CHD" => {
-            if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: chdman");
-                return Ok(());
-            }
-        }
-        "CSO" => {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                return Ok(());
-            }
-        }
-        "ISO" => {
-            if bchunk::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: bchunk");
-                return Ok(());
-            }
-        }
-        "NSZ" => {
-            if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: nsz");
-                return Ok(());
-            }
-        }
-        "RVZ" => {
-            if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: dolphin-tool");
-                return Ok(());
-            }
-        }
-        "WBFS" => {
-            if wit::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: wit");
-                return Ok(());
-            }
-        }
-        "ZSO" => {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                return Ok(());
-            }
-        }
-        "GDI" | "ORIGINAL" => {}
+    let available = match format.as_str() {
+        "7Z" | "ZIP" => tool_available(|| sevenzip::get_version(), "sevenzip", progress_bar).await,
+        "CHD" => tool_available(|| chdman::get_version(), "chdman", progress_bar).await,
+        "CSO" | "ZSO" => tool_available(|| maxcso::get_version(), "maxcso", progress_bar).await,
+        "ISO" => tool_available(|| bchunk::get_version(), "bchunk", progress_bar).await,
+        "NSZ" => tool_available(|| nsz::get_version(), "nsz", progress_bar).await,
+        "RVZ" => tool_available(|| dolphin::get_version(), "dolphin-tool", progress_bar).await,
+        "WBFS" => tool_available(|| wit::get_version(), "wit", progress_bar).await,
+        "GDI" | "ORIGINAL" => true,
         _ => bail!("Not supported"),
+    };
+    if !available {
+        return Ok(());
     }
 
     for system in systems {
