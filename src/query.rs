@@ -128,7 +128,7 @@ pub type SystemLoader = IdLoader<System>;
 pub type GameLoader = IdLoader<Game>;
 pub type RomfileLoader = IdLoader<Romfile>;
 
-trait TableRow:
+pub(crate) trait TableRow:
     for<'r> FromRow<'r, SqliteRow> + Clone + Send + Sync + Unpin + 'static
 {
     const TABLE: &'static str;
