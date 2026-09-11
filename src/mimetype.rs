@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
-use async_once_cell::OnceCell;
 use infer::{Infer, Type};
 use std::path::Path;
+use std::sync::LazyLock;
 
 pub const BIN_EXTENSION: &str = "bin";
 pub const BPS_EXTENSION: &str = "bps";
@@ -43,8 +43,6 @@ pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[
     SEVENZIP_EXTENSION,
     ZIP_EXTENSION,
 ];
-
-static MATCHER: OnceCell<Infer> = OnceCell::new();
 
 fn bps_matcher(buf: &[u8]) -> bool {
     buf.len() >= 4 && buf[0] == 0x42 && buf[1] == 0x50 && buf[2] == 0x53 && buf[3] == 0x31
@@ -99,7 +97,9 @@ fn zso_matcher(buf: &[u8]) -> bool {
     buf.len() >= 4 && buf[0] == 0x5A && buf[1] == 0x49 && buf[2] == 0x53 && buf[3] == 0x4F
 }
 
-async fn init_matcher() -> Infer {
+static MATCHER: LazyLock<Infer> = LazyLock::new(init_matcher);
+
+fn init_matcher() -> Infer {
     let mut matcher = Infer::new();
     matcher.add("application/x-bps", BPS_EXTENSION, bps_matcher);
     matcher.add("application/x-chd", CHD_EXTENSION, chd_matcher);
@@ -115,7 +115,7 @@ async fn init_matcher() -> Infer {
 }
 
 pub async fn get_mimetype<P: AsRef<Path>>(path: &P) -> Result<Option<Type>> {
-    let matcher = MATCHER.get_or_init(init_matcher()).await;
+    let matcher = &*MATCHER;
     matcher
         .get_from_path(path)
         .context("Failed to infer MIME type")
