@@ -32,7 +32,6 @@ async-graphql = { version = "7.2.1", features = [
     "dataloader",
 ], default-features = false, optional = true }
 async-graphql-axum = { version = "7.2.1", optional = true }
-async-once-cell = "0.5.4"
 async-stream = "0.3.6"
 axum = { version = "0.8.9", default-features = false, features = [
     "http2",
