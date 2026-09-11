@@ -17,6 +17,7 @@
 - Removed the `async-once-cell` dependency in favor of `std::sync::LazyLock`
 - Replaced the small phf setting maps in `config` with match statements
 - Collapsed the three identical variant validators into one generic validator
+- Collapsed the three identical DataLoader loaders into one generic loader
 
 ## Fixes
 
