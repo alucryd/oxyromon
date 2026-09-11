@@ -2412,7 +2412,9 @@ async fn find_rom_by_size_and_hash(
             let game = find_game_by_id(connection, rom.game_id).await;
             roms_games.push((rom, game));
         }
-        if let Some((rom, game)) = prompt_for_rom_game(&mut roms_games)? {
+        if let Some((rom, game)) =
+            prompt_for_roms(&mut roms_games, |(rom, game)| format!("{} ({})", rom.name, game.name))?
+        {
             let system = find_system_by_id(connection, game.system_id).await;
             rom_game_system = Some((rom, game, system));
         };
@@ -2436,7 +2438,10 @@ async fn find_rom_by_size_and_hash(
             let system = find_system_by_id(connection, game.system_id).await;
             roms_games_systems.push((rom, game, system));
         }
-        rom_game_system = prompt_for_rom_game_system(&mut roms_games_systems)?;
+        rom_game_system = prompt_for_roms(
+            &mut roms_games_systems,
+            |(rom, game, system)| format!("{} ({}) [{}]", rom.name, game.name, system.name),
+        )?;
     }
 
     // abort if rom already has a file
@@ -2543,7 +2548,10 @@ async fn find_sfb_rom_by_md5(
             let game = find_game_by_id(connection, rom.game_id).await;
             roms_games.push((rom, game));
         }
-        rom_game = prompt_for_rom_game(&mut roms_games)?;
+        rom_game = prompt_for_roms(
+            &mut roms_games,
+            |(rom, game)| format!("{} ({})", rom.name, game.name),
+        )?;
     }
 
     // abort if rom already has a file

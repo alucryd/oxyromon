@@ -177,32 +177,13 @@ pub fn prompt_for_rom(roms: &[Rom], default: Option<usize>) -> Result<Option<&Ro
     }
 }
 
-pub fn prompt_for_rom_game(roms_games: &mut Vec<(Rom, Game)>) -> Result<Option<(Rom, Game)>> {
-    let mut items = roms_games
-        .iter()
-        .map(|(rom, game)| format!("{} ({})", rom.name, game.name))
-        .collect::<Vec<String>>();
+pub fn prompt_for_roms<T>(roms: &mut Vec<T>, label: impl Fn(&T) -> String) -> Result<Option<T>> {
+    let mut items: Vec<String> = roms.iter().map(label).collect();
     items.insert(0, String::from("None"));
     let index = select_opt(&items, "Please select a ROM", Some(0), Some(10))?;
     Ok(match index {
         Some(0) => None,
-        Some(_) => index.map(|i| roms_games.remove(i - 1)),
-        None => None,
-    })
-}
-
-pub fn prompt_for_rom_game_system(
-    roms_games_systems: &mut Vec<(Rom, Game, System)>,
-) -> Result<Option<(Rom, Game, System)>> {
-    let mut items = roms_games_systems
-        .iter()
-        .map(|(rom, game, system)| format!("{} ({}) [{}]", rom.name, game.name, system.name))
-        .collect::<Vec<String>>();
-    items.insert(0, String::from("None"));
-    let index = select_opt(&items, "Please select a ROM", Some(0), Some(10))?;
-    Ok(match index {
-        Some(0) => None,
-        Some(_) => index.map(|i| roms_games_systems.remove(i - 1)),
+        Some(_) => index.map(|i| roms.remove(i - 1)),
         None => None,
     })
 }
@@ -248,10 +229,6 @@ pub async fn prompt_for_parent_romfile(
     Ok(index.map(|index| romfiles.remove(index)))
 }
 
-pub fn prompt_for_name(prompt: &str) -> Result<Option<String>> {
-    editor(prompt)
-}
-
 pub fn confirm(default: bool) -> Result<bool> {
     Confirm::new()
         .with_prompt("Proceed?")
@@ -272,15 +249,10 @@ pub fn select<T: ToString + std::fmt::Display>(
     default: Option<usize>,
     max_length: Option<usize>,
 ) -> Result<usize> {
-    let mut select = FuzzySelect::new();
-    select = select.items(items).with_prompt(prompt);
-    if let Some(default) = default {
-        select = select.default(default);
+    match select_opt(items, prompt, default, max_length)? {
+        Some(index) => Ok(index),
+        None => bail!("Failed to get user input"),
     }
-    if let Some(max_length) = max_length {
-        select = select.max_length(max_length);
-    }
-    select.interact().context("Failed to get user input")
 }
 
 pub fn select_opt<T: ToString + std::fmt::Display>(

@@ -116,7 +116,7 @@ pub async fn import_patch<P: AsRef<Path>>(
     };
 
     let patch_name = match name {
-        true => match prompt_for_name("Please enter a name for the patch")? {
+        true => match editor("Please enter a name for the patch")? {
             Some(name) => name,
             None => {
                 print_skip(progress_bar, "Skipping patch");
