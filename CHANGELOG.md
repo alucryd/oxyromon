@@ -9,6 +9,10 @@
 
 - Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
 
+## Improvements
+
+- Merged the duplicate skip and dim progress styles into one
+
 ## Fixes
 
 - Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries

@@ -18,7 +18,6 @@ static STYLE_SUBHEADER: LazyLock<Style> = LazyLock::new(|| Style::new().bold());
 static STYLE_SUCCESS: LazyLock<Style> = LazyLock::new(|| Style::new().green());
 static STYLE_WARNING: LazyLock<Style> = LazyLock::new(|| Style::new().yellow());
 static STYLE_ERROR: LazyLock<Style> = LazyLock::new(|| Style::new().red().bold());
-static STYLE_SKIP: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
 static STYLE_DIM: LazyLock<Style> = LazyLock::new(|| Style::new().dim());
 
 /// Returns the global MultiProgress instance.
@@ -113,8 +112,8 @@ pub fn print_error(progress_bar: &ProgressBar, message: &str) {
 pub fn print_skip(progress_bar: &ProgressBar, message: &str) {
     progress_bar.println(format!(
         "    {} {}",
-        STYLE_SKIP.apply_to("↪"),
-        STYLE_SKIP.apply_to(message),
+        STYLE_DIM.apply_to("↪"),
+        STYLE_DIM.apply_to(message),
     ));
 }
 
