@@ -24,6 +24,45 @@ use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
+async fn system_size(ctx: &Context<'_>, system_id: i64, actual: bool, one_region: bool) -> Result<i64> {
+    let pool = ctx.data_unchecked::<SqlitePool>();
+    let sorting = if one_region {
+        "AND g.sorting = 1\n                    "
+    } else {
+        ""
+    };
+    let sql = if actual {
+        format!(
+            "
+                SELECT COALESCE(SUM(rf.size), 0)
+                FROM romfiles AS rf
+                WHERE rf.id IN (
+                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
+                    JOIN games AS g ON r.game_id = g.id
+                    WHERE r.romfile_id IS NOT NULL
+                    {}AND g.system_id = {}
+                );
+            ",
+            sorting, system_id
+        )
+    } else {
+        format!(
+            "
+                SELECT COALESCE(SUM(r.size), 0)
+                FROM roms AS r
+                JOIN games AS g ON r.game_id = g.id
+                WHERE r.romfile_id IS NOT NULL
+                {}AND g.system_id = {};
+            ",
+            sorting, system_id
+        )
+    };
+    let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
+        .fetch_one(&mut *pool.acquire().await.unwrap())
+        .await?;
+    Ok(row.0)
+}
+
 #[ComplexObject]
 impl System {
     async fn header(&self, ctx: &Context<'_>) -> Result<Option<Header>> {
@@ -339,82 +378,18 @@ impl QueryRoot {
     }
 
     async fn total_original_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
-        let pool = ctx.data_unchecked::<SqlitePool>();
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(r.size), 0)
-                FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                AND g.system_id = {};
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_one(&mut *pool.acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
+        system_size(ctx, system_id, false, false).await
     }
 
     async fn one_region_original_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
-        let pool = ctx.data_unchecked::<SqlitePool>();
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(r.size), 0)
-                FROM roms AS r
-                JOIN games AS g ON r.game_id = g.id
-                WHERE r.romfile_id IS NOT NULL
-                AND g.sorting = 1
-                AND g.system_id = {};
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_one(&mut *pool.acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
+        system_size(ctx, system_id, false, true).await
     }
 
     async fn total_actual_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
-        let pool = ctx.data_unchecked::<SqlitePool>();
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles AS rf
-                WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                    JOIN games AS g ON r.game_id = g.id
-                    WHERE r.romfile_id IS NOT NULL
-                    AND g.system_id = {}
-                );
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_one(&mut *pool.acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
+        system_size(ctx, system_id, true, false).await
     }
 
     async fn one_region_actual_size(&self, ctx: &Context<'_>, system_id: i64) -> Result<i64> {
-        let pool = ctx.data_unchecked::<SqlitePool>();
-        let sql = format!(
-            "
-                SELECT COALESCE(SUM(rf.size), 0)
-                FROM romfiles AS rf
-                WHERE rf.id IN (
-                    SELECT DISTINCT(r.romfile_id) FROM roms AS r
-                    JOIN games AS g ON r.game_id = g.id
-                    WHERE r.romfile_id IS NOT NULL
-                    AND g.sorting = 1
-                    AND g.system_id = {}
-                );
-            ",
-            system_id
-        );
-        let row: (i64,) = sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch_one(&mut *pool.acquire().await.unwrap())
-            .await?;
-        Ok(row.0)
+        system_size(ctx, system_id, true, true).await
     }
 }
