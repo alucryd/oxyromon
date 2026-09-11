@@ -12,6 +12,7 @@
 ## Improvements
 
 - Merged the duplicate skip and dim progress styles into one
+- Removed the single-caller `print_dependency` helper from `util`
 
 ## Fixes
 

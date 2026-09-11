@@ -8,7 +8,6 @@ use super::maxcso;
 use super::nsz;
 use super::progress::*;
 use super::sevenzip;
-use super::util::*;
 use super::wit;
 use super::xdelta3;
 use anyhow::Result;
@@ -46,7 +45,10 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
     deps.sort_by_key(|(name, _)| *name);
 
     for (name, result) in &deps {
-        print_dependency(progress_bar, name, result);
+        match result {
+            Ok(version) => print_success(progress_bar, &format!("{}: {}", name, version)),
+            Err(_) => print_skip(progress_bar, &format!("{}: not found", name)),
+        }
     }
 
     print_separator(progress_bar);
