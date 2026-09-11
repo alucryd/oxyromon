@@ -19,6 +19,7 @@
 - Collapsed the three identical variant validators into one generic validator
 - Collapsed the three identical DataLoader loaders into one generic loader
 - Merged the identical trashed and orphan ROM file purge paths
+- Deduplicated the prompt helpers in `prompt`
 
 ## Fixes
 
