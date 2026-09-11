@@ -1,4 +1,9 @@
-# 0.22.1
+# 0.23.0
+
+## Features
+
+- Added opt-in Zstandard compression for 7z and ZIP archives
+- Added ROM upload and URL download to the web UI
 
 ## Changes
 
