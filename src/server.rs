@@ -172,15 +172,15 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
 
     let schema = Schema::build(QueryRoot, Mutation, EmptySubscription)
         .data(DataLoader::new(
-            SystemLoader { pool: pool.clone() },
+            SystemLoader::new(pool.clone()),
             tokio::task::spawn,
         ))
         .data(DataLoader::new(
-            GameLoader { pool: pool.clone() },
+            GameLoader::new(pool.clone()),
             tokio::task::spawn,
         ))
         .data(DataLoader::new(
-            RomfileLoader { pool: pool.clone() },
+            RomfileLoader::new(pool.clone()),
             tokio::task::spawn,
         ))
         .data(pool.clone())

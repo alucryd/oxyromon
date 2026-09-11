@@ -19,8 +19,10 @@ use num_traits::FromPrimitive;
 use shiratsu_naming::naming::TokenizedName;
 use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::region::Region;
-use sqlx::{AssertSqlSafe, SqlitePool};
+use sqlx::sqlite::SqliteRow;
+use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 #[ComplexObject]
 impl System {
@@ -108,76 +110,69 @@ impl Rom {
     }
 }
 
-pub struct SystemLoader {
+pub struct IdLoader<T: TableRow> {
     pub pool: SqlitePool,
+    _marker: PhantomData<T>,
 }
 
-impl Loader<i64> for SystemLoader {
-    type Value = System;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let sql = format!(
-            "
-        SELECT *
-        FROM systems
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch(&mut *self.pool.acquire().await.unwrap())
-            .map_ok(|system: System| (system.id, system))
-            .try_collect()
-            .await?)
+impl<T: TableRow> IdLoader<T> {
+    pub fn new(pool: SqlitePool) -> Self {
+        IdLoader {
+            pool,
+            _marker: PhantomData,
+        }
     }
 }
 
-pub struct GameLoader {
-    pub pool: SqlitePool,
+pub type SystemLoader = IdLoader<System>;
+pub type GameLoader = IdLoader<Game>;
+pub type RomfileLoader = IdLoader<Romfile>;
+
+trait TableRow:
+    for<'r> FromRow<'r, SqliteRow> + Clone + Send + Sync + Unpin + 'static
+{
+    const TABLE: &'static str;
+    fn row_id(&self) -> i64;
 }
 
-impl Loader<i64> for GameLoader {
-    type Value = Game;
-    type Error = Error;
-
-    async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
-        let sql = format!(
-            "
-        SELECT *
-        FROM games
-        WHERE id in ({})
-        ",
-            ids.iter().join(",")
-        );
-        Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
-            .fetch(&mut *self.pool.acquire().await.unwrap())
-            .map_ok(|game: Game| (game.id, game))
-            .try_collect()
-            .await?)
+impl TableRow for System {
+    const TABLE: &'static str = "systems";
+    fn row_id(&self) -> i64 {
+        self.id
     }
 }
 
-pub struct RomfileLoader {
-    pub pool: SqlitePool,
+impl TableRow for Game {
+    const TABLE: &'static str = "games";
+    fn row_id(&self) -> i64 {
+        self.id
+    }
 }
 
-impl Loader<i64> for RomfileLoader {
-    type Value = Romfile;
+impl TableRow for Romfile {
+    const TABLE: &'static str = "romfiles";
+    fn row_id(&self) -> i64 {
+        self.id
+    }
+}
+
+impl<T: TableRow + 'static> Loader<i64> for IdLoader<T> {
+    type Value = T;
     type Error = Error;
 
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let sql = format!(
             "
         SELECT *
-        FROM romfiles
+        FROM {}
         WHERE id in ({})
         ",
+            T::TABLE,
             ids.iter().join(",")
         );
         Ok(sqlx::query_as(AssertSqlSafe(sql.as_str()))
             .fetch(&mut *self.pool.acquire().await.unwrap())
-            .map_ok(|romfile: Romfile| (romfile.id, romfile))
+            .map_ok(|row: T| (row.row_id(), row))
             .try_collect()
             .await?)
     }
