@@ -447,14 +447,6 @@ pub async fn find_parent_chd_romfile_by_game(
     }
 }
 
-/// Format a dependency status for display in `info` output.
-pub fn print_dependency(progress_bar: &ProgressBar, name: &str, version_result: &Result<String>) {
-    match version_result {
-        Ok(version) => print_success(progress_bar, &format!("{}: {}", name, version)),
-        Err(_) => print_skip(progress_bar, &format!("{}: not found", name)),
-    }
-}
-
 pub fn compute_alpha_subfolder(name: &str) -> String {
     let first_char = name.chars().next().unwrap();
     if first_char.is_ascii_alphabetic() {
