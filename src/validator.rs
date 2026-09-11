@@ -1,71 +1,34 @@
 use super::config::{PreferredRegion, PreferredVersion, SubfolderScheme};
 use anyhow::Result;
 use async_graphql::{CustomValidator, InputValueError};
+use std::marker::PhantomData;
 use std::path::Path;
 use strum::VariantNames;
 
-pub struct PreferRegionValidator;
+pub struct VariantValidator<E>(PhantomData<E>);
 
-impl PreferRegionValidator {
+impl<E: VariantNames + 'static> VariantValidator<E> {
     pub fn new() -> Self {
-        PreferRegionValidator {}
+        VariantValidator(PhantomData)
     }
 }
 
-impl CustomValidator<String> for PreferRegionValidator {
+impl<E: VariantNames + 'static> CustomValidator<String> for VariantValidator<E> {
     fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
-        if PreferredRegion::VARIANTS.contains(&value.as_str()) {
+        if E::VARIANTS.contains(&value.as_str()) {
             Ok(())
         } else {
             Err(InputValueError::custom(format!(
                 "Valid choices: {:?}",
-                PreferredRegion::VARIANTS
+                E::VARIANTS
             )))
         }
     }
 }
 
-pub struct PreferVersionValidator;
-
-impl PreferVersionValidator {
-    pub fn new() -> Self {
-        PreferVersionValidator {}
-    }
-}
-
-impl CustomValidator<String> for PreferVersionValidator {
-    fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
-        if PreferredVersion::VARIANTS.contains(&value.as_str()) {
-            Ok(())
-        } else {
-            Err(InputValueError::custom(format!(
-                "Valid choices: {:?}",
-                PreferredVersion::VARIANTS
-            )))
-        }
-    }
-}
-
-pub struct SubfolderSchemeValidator;
-
-impl SubfolderSchemeValidator {
-    pub fn new() -> Self {
-        SubfolderSchemeValidator {}
-    }
-}
-
-impl CustomValidator<String> for SubfolderSchemeValidator {
-    fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
-        if SubfolderScheme::VARIANTS.contains(&value.as_str()) {
-            Ok(())
-        } else {
-            Err(InputValueError::custom(format!(
-                "Valid choices: {:?}",
-                SubfolderScheme::VARIANTS
-            )))
-        }
-    }
-}
+pub type PreferRegionValidator = VariantValidator<PreferredRegion>;
+pub type PreferVersionValidator = VariantValidator<PreferredVersion>;
+pub type SubfolderSchemeValidator = VariantValidator<SubfolderScheme>;
 
 pub struct DirectoryValidator;
 
