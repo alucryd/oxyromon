@@ -56,7 +56,8 @@ async fn test() {
         .unwrap();
 
     // when
-    purge_trashed_romfiles(&mut connection, &progress_bar, true)
+    let romfiles = find_romfiles_in_trash(&mut connection).await;
+    purge_romfiles(&mut connection, &progress_bar, true, "trashed", romfiles)
         .await
         .unwrap();
 
