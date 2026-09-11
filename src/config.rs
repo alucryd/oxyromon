@@ -16,7 +16,6 @@ use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
-use phf::phf_map;
 use sqlx::sqlite::SqliteConnection;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -70,35 +69,46 @@ const BOOLEANS: &[&str] = &[
     "RVZ_SCRUB",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
-const CHOICES: phf::Map<&str, &[&str]> = phf_map! {
-    "PREFER_REGIONS" => PreferredRegion::VARIANTS,
-    "PREFER_VERSIONS" => PreferredVersion::VARIANTS,
-    "REGIONS_ALL_SUBFOLDERS" => SubfolderScheme::VARIANTS,
-    "REGIONS_ONE_SUBFOLDERS" => SubfolderScheme::VARIANTS,
-    "RVZ_COMPRESSION_ALGORITHM" => RvzCompressionAlgorithm::VARIANTS,
-    "SEVENZIP_COMPRESSION_ALGORITHM" => SevenzipCompressionAlgorithm::VARIANTS,
-    "ZIP_COMPRESSION_ALGORITHM" => ZipCompressionAlgorithm::VARIANTS,
-};
-const CHOICE_LISTS: phf::Map<&str, &[&str]> = phf_map! {
-    "CHD_CD_COMPRESSION_ALGORITHMS" => ChdCdCompressionAlgorithm::VARIANTS,
-    "CHD_DVD_COMPRESSION_ALGORITHMS" => ChdDvdCompressionAlgorithm::VARIANTS,
-    "CHD_HD_COMPRESSION_ALGORITHMS" => ChdHdCompressionAlgorithm::VARIANTS,
-    "CHD_LD_COMPRESSION_ALGORITHMS" => ChdLdCompressionAlgorithm::VARIANTS,
-    "REGIONS_ALL_ARCADE" => ArcadeRomType::VARIANTS,
-    "REGIONS_ONE_ARCADE" => ArcadeRomType::VARIANTS,
-};
-const INTEGERS: phf::Map<&str, &[usize; 2]> = phf_map! {
-    "CHD_CD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
-    "CHD_DVD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
-    "CHD_HD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
-    "CHD_LD_HUNK_SIZE" => &CHD_HUNK_SIZE_RANGE,
-    "RVZ_BLOCK_SIZE" => &RVZ_BLOCK_SIZE_RANGE,
-    "RVZ_COMPRESSION_LEVEL" => &RVZ_COMPRESSION_LEVEL_RANGE,
-    "SEVENZIP_COMPRESSION_LEVEL" => &SEVENZIP_COMPRESSION_LEVEL_RANGE,
-    "SEVENZIP_ZSTD_COMPRESSION_LEVEL" => &ZSTD_COMPRESSION_LEVEL_RANGE,
-    "ZIP_COMPRESSION_LEVEL" => &ZIP_COMPRESSION_LEVEL_RANGE,
-    "ZIP_ZSTD_COMPRESSION_LEVEL" => &ZSTD_COMPRESSION_LEVEL_RANGE,
-};
+fn choice_options(key: &str) -> Option<&[&str]> {
+    match key {
+        "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
+        "PREFER_VERSIONS" => Some(PreferredVersion::VARIANTS),
+        "REGIONS_ALL_SUBFOLDERS" => Some(SubfolderScheme::VARIANTS),
+        "REGIONS_ONE_SUBFOLDERS" => Some(SubfolderScheme::VARIANTS),
+        "RVZ_COMPRESSION_ALGORITHM" => Some(RvzCompressionAlgorithm::VARIANTS),
+        "SEVENZIP_COMPRESSION_ALGORITHM" => Some(SevenzipCompressionAlgorithm::VARIANTS),
+        "ZIP_COMPRESSION_ALGORITHM" => Some(ZipCompressionAlgorithm::VARIANTS),
+        _ => None,
+    }
+}
+
+fn choice_list_options(key: &str) -> Option<&[&str]> {
+    match key {
+        "CHD_CD_COMPRESSION_ALGORITHMS" => Some(ChdCdCompressionAlgorithm::VARIANTS),
+        "CHD_DVD_COMPRESSION_ALGORITHMS" => Some(ChdDvdCompressionAlgorithm::VARIANTS),
+        "CHD_HD_COMPRESSION_ALGORITHMS" => Some(ChdHdCompressionAlgorithm::VARIANTS),
+        "CHD_LD_COMPRESSION_ALGORITHMS" => Some(ChdLdCompressionAlgorithm::VARIANTS),
+        "REGIONS_ALL_ARCADE" => Some(ArcadeRomType::VARIANTS),
+        "REGIONS_ONE_ARCADE" => Some(ArcadeRomType::VARIANTS),
+        _ => None,
+    }
+}
+
+fn integer_range(key: &str) -> Option<&[usize; 2]> {
+    match key {
+        "CHD_CD_HUNK_SIZE" | "CHD_DVD_HUNK_SIZE" | "CHD_HD_HUNK_SIZE" | "CHD_LD_HUNK_SIZE" => {
+            Some(&CHD_HUNK_SIZE_RANGE)
+        }
+        "RVZ_BLOCK_SIZE" => Some(&RVZ_BLOCK_SIZE_RANGE),
+        "RVZ_COMPRESSION_LEVEL" => Some(&RVZ_COMPRESSION_LEVEL_RANGE),
+        "SEVENZIP_COMPRESSION_LEVEL" => Some(&SEVENZIP_COMPRESSION_LEVEL_RANGE),
+        "SEVENZIP_ZSTD_COMPRESSION_LEVEL" | "ZIP_ZSTD_COMPRESSION_LEVEL" => {
+            Some(&ZSTD_COMPRESSION_LEVEL_RANGE)
+        }
+        "ZIP_COMPRESSION_LEVEL" => Some(&ZIP_COMPRESSION_LEVEL_RANGE),
+        _ => None,
+    }
+}
 const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
@@ -360,24 +370,18 @@ pub async fn set_setting(
     } else if BOOLEANS.contains(&key) {
         let b: bool = FromStr::from_str(value).context("Failed to parse bool")?;
         set_bool(connection, key, b, system_id).await;
-    } else if CHOICES.keys().any(|&s| s == key) {
-        if CHOICES.get(key).unwrap().contains(&value) {
+    } else if let Some(options) = choice_options(key) {
+        if options.contains(&value) {
             set_string(connection, key, value, system_id).await;
         } else {
-            print_warning(
-                progress_bar,
-                &format!("Valid choices: {:?}", CHOICES.get(key).unwrap()),
-            );
+            print_warning(progress_bar, &format!("Valid choices: {:?}", options));
         }
-    } else if INTEGERS.keys().any(|&i| i == key) {
+    } else if let Some(range) = integer_range(key) {
         let i: usize = FromStr::from_str(value).context("Failed to parse integer")?;
-        if INTEGERS.get(key).unwrap()[0] <= i && i <= INTEGERS.get(key).unwrap()[1] {
+        if range[0] <= i && i <= range[1] {
             set_integer(connection, key, i, system_id).await;
         } else {
-            print_warning(
-                progress_bar,
-                &format!("Valid range: {:?}", INTEGERS.get(key).unwrap()),
-            );
+            print_warning(progress_bar, &format!("Valid range: {:?}", range));
         }
     } else if LISTS.contains(&key) {
         print_warning(
@@ -495,8 +499,8 @@ pub async fn add_to_list(
         } else {
             print_skip(progress_bar, "Value already in list");
         }
-    } else if CHOICE_LISTS.keys().any(|&s| s == key) {
-        if CHOICE_LISTS.get(key).unwrap().contains(&value) {
+    } else if let Some(options) = choice_list_options(key) {
+        if options.contains(&value) {
             let mut list = get_list(connection, key, system_id).await;
             if !list.contains(&String::from(value)) {
                 list.push(value.to_owned());
@@ -508,10 +512,7 @@ pub async fn add_to_list(
                 print_skip(progress_bar, "Value already in list");
             }
         } else {
-            print_warning(
-                progress_bar,
-                &format!("Valid choices: {:?}", CHOICE_LISTS.get(key).unwrap()),
-            );
+            print_warning(progress_bar, &format!("Valid choices: {:?}", options));
         }
     } else {
         print_error(progress_bar, "Only list settings support --add");
@@ -525,7 +526,7 @@ pub async fn remove_from_list(
     value: &str,
     system_id: Option<i64>,
 ) {
-    if LISTS.contains(&key) || CHOICE_LISTS.keys().any(|&s| s == key) {
+    if LISTS.contains(&key) || choice_list_options(key).is_some() {
         let mut list = get_list(connection, key, system_id).await;
         if list.contains(&String::from(value)) {
             list.remove(list.iter().position(|v| v == value).unwrap());

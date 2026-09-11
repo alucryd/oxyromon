@@ -15,6 +15,7 @@
 - Removed the single-caller `print_dependency` helper from `util`
 - Reused the existing `to_hex` helper in header rule matching
 - Removed the `async-once-cell` dependency in favor of `std::sync::LazyLock`
+- Replaced the small phf setting maps in `config` with match statements
 
 ## Fixes
 
