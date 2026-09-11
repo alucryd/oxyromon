@@ -2,6 +2,7 @@ use super::common::*;
 use super::config::*;
 use super::database::*;
 use super::progress::*;
+use super::model::Romfile;
 use super::prompt::*;
 use super::util::*;
 use anyhow::{Context, Result};
@@ -65,10 +66,12 @@ pub async fn main(
         purge_missing_romfiles(connection, progress_bar).await?;
     }
     if matches.get_flag("TRASH") {
-        purge_trashed_romfiles(connection, progress_bar, answer_yes).await?;
+        let romfiles = find_romfiles_in_trash(connection).await;
+        purge_romfiles(connection, progress_bar, answer_yes, "trashed", romfiles).await?;
     }
     if matches.get_flag("ORPHAN") {
-        purge_orphan_romfiles(connection, progress_bar, answer_yes).await?;
+        let romfiles = find_orphan_romfiles(connection).await;
+        purge_romfiles(connection, progress_bar, answer_yes, "orphan", romfiles).await?;
     }
     if matches.get_flag("FOREIGN") {
         purge_foreign_romfiles(connection, progress_bar, answer_yes).await?;
@@ -105,14 +108,15 @@ async fn purge_missing_romfiles(
     Ok(())
 }
 
-async fn purge_trashed_romfiles(
+async fn purge_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     answer_yes: bool,
+    label: &str,
+    romfiles: Vec<Romfile>,
 ) -> Result<()> {
-    print_subheader(progress_bar, "Processing trashed ROM files");
+    print_subheader(progress_bar, &format!("Processing {} ROM files", label));
 
-    let romfiles = find_romfiles_in_trash(connection).await;
     let mut count = 0;
 
     if !romfiles.is_empty() {
@@ -141,52 +145,7 @@ async fn purge_trashed_romfiles(
             if count > 0 {
                 print_success(
                     progress_bar,
-                    &format!("Deleted {} trashed ROM file(s)", count),
-                );
-            }
-        }
-    }
-
-    Ok(())
-}
-
-async fn purge_orphan_romfiles(
-    connection: &mut SqliteConnection,
-    progress_bar: &ProgressBar,
-    answer_yes: bool,
-) -> Result<()> {
-    print_subheader(progress_bar, "Processing orphan ROM files");
-
-    let romfiles = find_orphan_romfiles(connection).await;
-    let mut count = 0;
-
-    if !romfiles.is_empty() {
-        print_subheader(progress_bar, "Summary:");
-        for romfile in &romfiles {
-            print_info(progress_bar, &romfile.path);
-        }
-
-        if answer_yes || confirm(true)? {
-            let mut transaction = begin_transaction(connection).await;
-
-            for romfile in &romfiles {
-                if romfile.as_common(&mut transaction).await?.path.is_file() {
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .delete(progress_bar, false)
-                        .await?;
-                    delete_romfile_by_id(&mut transaction, romfile.id).await;
-                    count += 1;
-                }
-            }
-
-            commit_transaction(transaction).await;
-
-            if count > 0 {
-                print_success(
-                    progress_bar,
-                    &format!("Deleted {} orphan ROM file(s)", count),
+                    &format!("Deleted {} {} ROM file(s)", count, label),
                 );
             }
         }

@@ -54,7 +54,8 @@ async fn test() {
     delete_game_by_name_and_system_id(&mut connection, "Test Game (USA, Europe)", system.id).await;
 
     // when
-    purge_orphan_romfiles(&mut connection, &progress_bar, true)
+    let romfiles = find_orphan_romfiles(&mut connection).await;
+    purge_romfiles(&mut connection, &progress_bar, true, "orphan", romfiles)
         .await
         .unwrap();
 
