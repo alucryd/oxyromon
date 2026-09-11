@@ -526,11 +526,7 @@ impl HeaderedHashAndSize for CommonRomfile {
         let mut matches: Vec<bool> = vec![];
         for rule in rules {
             let start_byte = rule.start_byte as usize;
-            let hex_values: Vec<String> = buffer[start_byte..]
-                .iter()
-                .map(|b| format!("{:02x}", b))
-                .collect();
-            let hex_value = hex_values.join("").to_lowercase();
+            let hex_value = to_hex(&buffer[start_byte..]);
             matches.push(hex_value.starts_with(&rule.hex_value.to_lowercase()));
         }
 
