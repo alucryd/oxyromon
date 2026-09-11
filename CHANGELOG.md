@@ -13,6 +13,7 @@
 
 - Merged the duplicate skip and dim progress styles into one
 - Removed the single-caller `print_dependency` helper from `util`
+- Reused the existing `to_hex` helper in header rule matching
 
 ## Fixes
 
