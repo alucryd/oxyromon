@@ -1,5 +1,6 @@
 use super::common::*;
 use super::progress::*;
+use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use std::path::Path;
@@ -101,15 +102,5 @@ impl AsXps for CommonRomfile {
 }
 
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(FLIPS)
-        .arg("-v")
-        .output()
-        .await
-        .context("Failed to spawn flips")?;
-
-    // flips doesn't advertise any version
-    String::from_utf8(output.stderr).unwrap();
-    let version = String::from("unknown");
-
-    Ok(version)
+    tool_version(FLIPS, "flips", &["-v"], false, 0, None).await
 }

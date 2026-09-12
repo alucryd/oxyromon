@@ -23,6 +23,7 @@
 - Routed all setting writers through a single upsert helper in `config`
 - Shrunk the tool availability checks in `convert-roms` and `export-roms`
 - Parameterized the four system size resolvers into one query
+- Routed all `get_version` implementations through a shared helper in `util`
 
 ## Fixes
 

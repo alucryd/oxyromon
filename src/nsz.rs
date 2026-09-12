@@ -4,7 +4,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::Path;
@@ -218,15 +218,5 @@ pub async fn get_version() -> Result<String> {
         bail!("prod.keys not found");
     }
 
-    let output = Command::new(NSZ)
-        .arg("-h")
-        .output()
-        .await
-        .context("Failed to spawn nsz")?;
-
-    // nsz doesn't advertise any version
-    String::from_utf8(output.stderr).unwrap();
-    let version = String::from("unknown");
-
-    Ok(version)
+    tool_version(NSZ, "nsz", &["-h"], false, 0, None).await
 }

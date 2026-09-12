@@ -505,8 +505,8 @@ pub async fn get_version() -> Result<String> {
 /// Always compiled, because the native backend still routes 7z writes here.
 pub(crate) mod tool {
     use super::{ArchiveCompression, ArchiveType};
-    use crate::util::{get_executable_path, run_tool};
-    use anyhow::{Context, Result, bail};
+    use crate::util::{get_executable_path, run_tool, tool_version};
+    use anyhow::{Result, bail};
     #[cfg(not(feature = "sevenz"))]
     use itertools::izip;
     use regex::Regex;
@@ -636,19 +636,14 @@ pub(crate) mod tool {
     }
 
     pub async fn get_version() -> Result<String> {
-        let output = Command::new(get_executable_path(SEVENZIP_EXECUTABLES)?)
-            .output()
-            .await
-            .context("Failed to spawn executable")?;
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let version = stdout
-            .lines()
-            .nth(1)
-            .and_then(|line| VERSION_REGEX.find(line))
-            .map(|version| version.as_str().to_string())
-            .unwrap_or(String::from("unknown"));
-
-        Ok(version)
+        tool_version(
+            get_executable_path(SEVENZIP_EXECUTABLES)?,
+            "executable",
+            &[],
+            true,
+            1,
+            Some(&VERSION_REGEX),
+        )
+        .await
     }
 }

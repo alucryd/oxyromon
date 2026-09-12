@@ -2,7 +2,7 @@ use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::Path;
@@ -60,18 +60,5 @@ impl ToIso for CueBinRomfile {
 }
 
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(BCHUNK)
-        .output()
-        .await
-        .context("Failed to spawn bchunk")?;
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let version = stdout
-        .lines()
-        .next()
-        .and_then(|line| VERSION_REGEX.find(line))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown"));
-
-    Ok(version)
+    tool_version(BCHUNK, "bchunk", &[], true, 0, Some(&VERSION_REGEX)).await
 }
