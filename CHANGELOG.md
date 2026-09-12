@@ -31,6 +31,7 @@
 ## Fixes
 
 - Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries
+- Restricted the web UI's URL download to http/https, with a connect timeout and a 100 GiB size cap
 
 # 0.22.0
 

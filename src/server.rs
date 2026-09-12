@@ -3,7 +3,7 @@ use super::import_dats::{ImportDatResult, process_dat_upload};
 use super::mutation::Mutation;
 use super::progress::*;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
-use anyhow::Result;
+use anyhow::{bail, Result};
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
@@ -26,6 +26,7 @@ use serde_json::{json, Value};
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
@@ -430,6 +431,10 @@ fn url_filename(url: &str) -> String {
     safe_filename(&decoded)
 }
 
+/// ROMs can be large, but not this large: the cap exists to stop a hostile or
+/// misconfigured URL from filling the disk.
+const MAX_ROM_DOWNLOAD_SIZE: u64 = 100 * 1024 * 1024 * 1024;
+
 /// Land the ROM in a temporary directory and hand it to `import-roms`.
 ///
 /// Unattended, because there is no one at a terminal to answer a prompt: a file
@@ -451,12 +456,30 @@ async fn import_rom_source(
             (path, directory)
         }
         RomSource::Url(url) => {
+            // The server fetches this on the user's behalf, so it must not be
+            // used to reach past the web: http(s) only, a connect timeout so a
+            // dead host cannot hang the import, and a size cap so a hostile
+            // or misconfigured host cannot fill the disk.
+            if !url.starts_with("http://") && !url.starts_with("https://") {
+                bail!("Only http:// and https:// URLs can be imported");
+            }
             let directory = tempfile::TempDir::new()?;
             let path = directory.path().join(url_filename(&url));
+            let client = reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(30))
+                .build()?;
             // Streamed for the same reason uploads are: the response is a ROM.
-            let mut response = reqwest::get(&url).await?.error_for_status()?;
+            let mut response = client.get(&url).send().await?.error_for_status()?;
             let mut file = tokio::fs::File::create(&path).await?;
+            let mut written = 0u64;
             while let Some(chunk) = response.chunk().await? {
+                written += chunk.len() as u64;
+                if written > MAX_ROM_DOWNLOAD_SIZE {
+                    bail!(
+                        "Download exceeds the {} GiB limit",
+                        MAX_ROM_DOWNLOAD_SIZE / 1024 / 1024 / 1024
+                    );
+                }
                 file.write_all(&chunk).await?;
             }
             file.flush().await?;
