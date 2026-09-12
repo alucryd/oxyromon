@@ -5,6 +5,7 @@
 - Added opt-in Zstandard compression for 7z and ZIP archives
 - Added ROM upload and URL download to the web UI
 - Added ROM sorting to the web UI, for a single system or all of them at once
+- Added a multiple-matches option (first match or skip) to the web UI's import dialog
 
 ## Changes
 

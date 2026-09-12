@@ -245,6 +245,7 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
     let mut upload = None;
     let mut url = None;
     let mut system = None;
+    let mut unattended = None;
 
     loop {
         let field = match multipart.next_field().await {
@@ -283,6 +284,13 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
                 Ok(_) => {}
                 Err(e) => log::warn!("upload_rom: failed to read system field: {}", e),
             },
+            Some("unattended") => match field.text().await {
+                Ok(text) if !text.trim().is_empty() => {
+                    unattended = Some(text.trim().to_owned());
+                }
+                Ok(_) => {}
+                Err(e) => log::warn!("upload_rom: failed to read unattended field: {}", e),
+            },
             other => {
                 log::debug!("upload_rom: skipping unknown field {:?}", other);
                 let _ = field.bytes().await;
@@ -316,7 +324,7 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
             }),
         );
 
-        match import_rom_source(&mut connection, &progress_bar, source, system.as_deref()).await {
+        match import_rom_source(&mut connection, &progress_bar, source, system.as_deref(), unattended.as_deref()).await {
             Ok(()) => {
                 sse_send(
                     &sse_tx,
@@ -438,13 +446,26 @@ const MAX_ROM_DOWNLOAD_SIZE: u64 = 100 * 1024 * 1024 * 1024;
 /// Land the ROM in a temporary directory and hand it to `import-roms`.
 ///
 /// Unattended, because there is no one at a terminal to answer a prompt: a file
-/// matching several games auto-selects by closest name rather than asking.
+/// matching several games auto-selects by closest name rather than asking,
+/// unless the caller chose to skip such files.
 async fn import_rom_source(
     connection: &mut sqlx::SqliteConnection,
     progress_bar: &ProgressBar,
     source: RomSource,
     system: Option<&str>,
+    unattended: Option<&str>,
 ) -> Result<()> {
+    // "first" when absent: it is the mode that resolves an ambiguous match on
+    // its own, and this function is only ever called from the server, where no
+    // one is at a terminal.
+    let unattended = match unattended {
+        Some(mode) if mode == "skip" || mode == "first" => mode,
+        Some(mode) => bail!(
+            "Invalid unattended mode '{}'; expected 'skip' or 'first'",
+            mode
+        ),
+        None => "first",
+    };
     // Held for the rest of the function: dropping it deletes the file being
     // imported.
     let (path, _tmp_directory) = match source {
@@ -491,7 +512,7 @@ async fn import_rom_source(
     let mut arguments = vec![
         "import-roms".to_string(),
         "-u".to_string(),
-        "first".to_string(),
+        unattended.to_string(),
     ];
     if let Some(system) = system {
         arguments.push("-s".to_string());
