@@ -8,8 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUSTC_WRAPPER: "sccache"
-  SCCACHE_GHA_ENABLED: "true"
   # The web UI (Leptos + Trunk) is built once by the "Build web UI" step below;
   # all cargo invocations reuse those assets instead of rebuilding the wasm.
   SKIP_TRUNK: "true"
@@ -24,8 +22,6 @@ jobs:
         uses: actions/checkout@v3
       - name: Install dependencies
         run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
