@@ -18,7 +18,7 @@ FONTAWESOME_VERSION=7.3.1
 ICONS="bars check chevron-down circle-xmark clock copy ellipsis eye eye-slash
 grip-vertical minus pause plus star user xmark
 mug-hot upload download bell sliders circle-info sun moon ellipsis-vertical trash
-circle-check circle-exclamation triangle-exclamation database"
+circle-check circle-exclamation triangle-exclamation database arrows-up-down"
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 vendor="$root/vendor"
