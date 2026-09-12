@@ -7,7 +7,6 @@ use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::Path;
 use std::sync::LazyLock;
-use std::time::Duration;
 use tokio::process::Command;
 
 const BCHUNK: &str = "bchunk";
@@ -24,9 +23,7 @@ impl ToIso for CueBinRomfile {
             bail!("Only single bins are supported");
         }
 
-        progress_bar.set_message("Creating iso");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Creating iso"));
 
         let path = destination_directory
             .as_ref()
@@ -52,8 +49,7 @@ impl ToIso for CueBinRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_iso()
     }

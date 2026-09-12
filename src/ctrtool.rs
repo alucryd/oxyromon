@@ -6,7 +6,6 @@ use regex::Regex;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::time::Duration;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom};
 use tokio::process::Command;
@@ -38,9 +37,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
     progress_bar: &ProgressBar,
     cia_path: &P,
 ) -> Result<Vec<ArchiveInfo>> {
-    progress_bar.set_message("Parsing cia");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, Some("Parsing cia"));
 
     let output = Command::new(CTRTOOL)
         .arg("-p")
@@ -96,8 +93,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
         size: tmd_size + TMD_CERT_SIZE as u64 + CA_CERT_SIZE as u64,
     });
 
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    stop_action(progress_bar);
 
     Ok(cia_infos)
 }
@@ -107,9 +103,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     archive_path: &P,
     directory: &Q,
 ) -> Result<Vec<PathBuf>> {
-    progress_bar.set_message("Extracting files");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, Some("Extracting files"));
 
     let directory = directory.as_ref();
     let mut extracted_paths = vec![];
@@ -161,8 +155,7 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
 
     extracted_paths.push(tmd_path);
 
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    stop_action(progress_bar);
 
     Ok(extracted_paths)
 }

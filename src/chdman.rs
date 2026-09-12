@@ -10,7 +10,6 @@ use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
 
@@ -742,9 +741,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     compression_algorithms: &[String],
     parent_romfile: &Option<CommonRomfile>,
 ) -> Result<PathBuf> {
-    progress_bar.set_message("Creating chd");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, Some("Creating chd"));
 
     let chd_path = destination_directory
         .as_ref()
@@ -796,8 +793,7 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     run_tool(&mut command).await?;
 
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    stop_action(progress_bar);
 
     Ok(chd_path)
 }
@@ -811,9 +807,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
     parent_romfile: &Option<CommonRomfile>,
     split: bool,
 ) -> Result<(PathBuf, Option<PathBuf>)> {
-    progress_bar.set_message("Extracting chd");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, Some("Extracting chd"));
 
     let bin_path = destination_directory
         .as_ref()
@@ -885,8 +879,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
 
     run_tool(&mut command).await?;
 
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    stop_action(progress_bar);
 
     Ok((bin_path, cue_path))
 }

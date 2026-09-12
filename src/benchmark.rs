@@ -8,7 +8,6 @@ use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::path::Path;
-use std::time::Duration;
 use std::time::Instant;
 use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter, copy};
@@ -30,8 +29,7 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, None);
 
     let rom_directory = find_setting_by_key(connection, "ROM_DIRECTORY", None)
         .await

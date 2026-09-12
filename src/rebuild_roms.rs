@@ -16,7 +16,6 @@ use num_traits::FromPrimitive;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::time::Duration;
 
 const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
 
@@ -102,8 +101,7 @@ async fn rebuild_system(
     merging: Merging,
     force: bool,
 ) -> Result<()> {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, None);
 
     let tmp_directory = create_tmp_directory(connection).await?;
     let partial_games = find_partial_games_by_system_id(connection, system.id).await;

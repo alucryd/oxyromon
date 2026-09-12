@@ -14,15 +14,13 @@ use anyhow::Result;
 use clap::Command;
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::time::Duration;
 
 pub fn subcommand() -> Command {
     Command::new("info").about("Print system information")
 }
 
 pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar) -> Result<()> {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, None);
 
     // Dependencies
     print_header(progress_bar, "Dependencies");

@@ -11,7 +11,6 @@ use std::fs::{File, OpenOptions};
 use std::iter::zip;
 use std::path::Path;
 use std::str::FromStr;
-use std::time::Duration;
 use strum::{Display, EnumString, VariantNames};
 use zip::{ZipArchive, ZipWriter};
 
@@ -149,9 +148,7 @@ impl ArchiveFile for ArchiveRomfile {
         progress_bar: &ProgressBar,
         new_path: &str,
     ) -> Result<ArchiveRomfile> {
-        progress_bar.set_message("Renaming file in archive");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Renaming file in archive"));
         print_action(
             progress_bar,
             &format!("Renaming \"{}\" to \"{}\"", self.path, new_path),
@@ -159,8 +156,7 @@ impl ArchiveFile for ArchiveRomfile {
 
         backend::rename(&self.romfile.path, &self.path, new_path).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(ArchiveRomfile {
             romfile: self.romfile.clone(),
@@ -172,16 +168,13 @@ impl ArchiveFile for ArchiveRomfile {
     }
 
     async fn delete_file(&self, progress_bar: &ProgressBar) -> Result<()> {
-        progress_bar.set_message("Deleting files");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Deleting files"));
 
         print_action(progress_bar, &format!("Deleting \"{}\"", self.path));
 
         backend::delete(&self.romfile.path, &self.path).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         if self
             .romfile
@@ -266,16 +259,13 @@ impl ToCommon for ArchiveRomfile {
         progress_bar: &ProgressBar,
         directory: &P,
     ) -> Result<CommonRomfile> {
-        progress_bar.set_message("Extracting file");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Extracting file"));
 
         print_action(progress_bar, &format!("Extracting \"{}\"", self.path));
 
         backend::extract(&self.romfile.path, &self.path, directory.as_ref()).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&directory.as_ref().join(&self.path))
     }
@@ -306,9 +296,7 @@ impl ToArchive for CommonRomfile {
         compression: &ArchiveCompression,
         solid: bool,
     ) -> Result<ArchiveRomfile> {
-        progress_bar.set_message(format!("Creating {}", archive_type));
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some(&format!("Creating {}", archive_type)));
 
         print_action(progress_bar, &format!("Compressing \"{}\"", self));
 
@@ -332,8 +320,7 @@ impl ToArchive for CommonRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(ArchiveRomfile {
             romfile: CommonRomfile::from_path(&archive_path)?,
@@ -392,14 +379,11 @@ impl AsArchive for CommonRomfile {
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
     ) -> Result<Vec<(String, u64, String)>> {
-        progress_bar.set_message("Parsing archive");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Parsing archive"));
 
         let entries = backend::parse(&self.path, rom.map(|rom| rom.name.as_str())).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(entries)
     }
@@ -408,9 +392,7 @@ impl AsArchive for CommonRomfile {
         progress_bar: &ProgressBar,
         rom: Option<&Rom>,
     ) -> Result<Vec<ArchiveRomfile>> {
-        progress_bar.set_message("Parsing archive");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Parsing archive"));
 
         let paths_sizes_crcs = self.parse_archive(progress_bar, rom).await?;
 
@@ -433,8 +415,7 @@ impl AsArchive for CommonRomfile {
             })
             .collect();
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(archived_romfiles)
     }
@@ -447,9 +428,7 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
     source_names: &[&str],
     destination_names: &[&str],
 ) -> Result<()> {
-    progress_bar.set_message("Copying files between archives");
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    start_action(progress_bar, Some("Copying files between archives"));
 
     let source_archive_file =
         File::open(source_archive_path.as_ref()).expect("Failed to read archive");

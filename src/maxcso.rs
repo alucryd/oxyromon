@@ -11,7 +11,6 @@ use sqlx::SqliteConnection;
 use std::path::Path;
 use std::str::FromStr;
 use std::sync::LazyLock;
-use std::time::Duration;
 use strum::{Display, EnumString};
 use tokio::process::Command;
 
@@ -98,9 +97,7 @@ impl ToIso for XsoRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> Result<IsoRomfile> {
-        progress_bar.set_message(format!("Extracting {}", self.xso_type));
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some(&format!("Extracting {}", self.xso_type)));
 
         print_action(
             progress_bar,
@@ -124,8 +121,7 @@ impl ToIso for XsoRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_iso()
     }
@@ -147,9 +143,7 @@ impl ToXso for IsoRomfile {
         destination_directory: &P,
         xso_type: XsoType,
     ) -> Result<XsoRomfile> {
-        progress_bar.set_message(format!("Creating {}", xso_type));
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some(&format!("Creating {}", xso_type)));
 
         let path = destination_directory
             .as_ref()
@@ -180,8 +174,7 @@ impl ToXso for IsoRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_xso().await
     }

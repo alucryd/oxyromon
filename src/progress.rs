@@ -1,5 +1,6 @@
 use console::Style;
 use std::sync::LazyLock;
+use std::time::Duration;
 
 // Re-export indicatif types so consumers of `progress::*` have them available
 pub use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -35,6 +36,19 @@ pub fn get_none_progress_style() -> ProgressStyle {
         .tick_chars(TICK_CHARS)
         .template(NONE_TEMPLATE)
         .expect("Failed to create progress bar")
+}
+
+pub fn start_action(progress_bar: &ProgressBar, message: Option<&str>) {
+    if let Some(message) = message {
+        progress_bar.set_message(message.to_string());
+    }
+    progress_bar.set_style(get_none_progress_style());
+    progress_bar.enable_steady_tick(Duration::from_millis(100));
+}
+
+pub fn stop_action(progress_bar: &ProgressBar) {
+    progress_bar.set_message("");
+    progress_bar.disable_steady_tick();
 }
 
 pub fn get_count_progress_style() -> ProgressStyle {
