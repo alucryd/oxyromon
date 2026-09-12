@@ -5,6 +5,7 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
+use crate::api::check_roms;
 use crate::api::sort_roms;
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
@@ -111,6 +112,18 @@ pub fn Navbar() -> impl IntoView {
                 }
             >
                 <wa-icon name="arrows-up-down" label="Sort all systems"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Check all systems"
+                on:click=move |_| {
+                    if state.checking_system_id.get() == -1 {
+                        spawn_local(async move { check_roms(state, -1).await });
+                    }
+                }
+            >
+                <wa-icon name="circle-check" label="Check all systems"></wa-icon>
             </wa-button>
 
             <wa-dropdown>

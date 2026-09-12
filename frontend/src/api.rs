@@ -400,3 +400,19 @@ pub async fn sort_roms(state: AppState, system_id: i64) {
     }
     state.sorting_system_id.set(-1);
 }
+
+/// Ask the server to check the integrity of one system's ROMs, or of all
+/// systems when the id is negative; the work itself reports over SSE.
+pub async fn check_roms(state: AppState, system_id: i64) {
+    state
+        .checking_system_id
+        .set(if system_id > 0 { system_id } else { -2 });
+    let mutation = r#"mutation CheckRoms($systemId: Int) {
+        checkRoms(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Checking ROMs", &e);
+    }
+    state.checking_system_id.set(-1);
+}

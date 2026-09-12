@@ -48,6 +48,13 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("SYSTEM")
+                .long("system")
+                .help("Select systems by name")
+                .required(false)
+                .action(ArgAction::Append),
+        )
 }
 
 pub async fn main(
@@ -55,8 +62,17 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    let systems =
-        prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
+    let systems = match matches.get_many::<String>("SYSTEM") {
+        Some(system_names) => {
+            let mut systems: Vec<System> = vec![];
+            for system_name in system_names {
+                systems.append(&mut find_systems_by_name_like(connection, system_name).await);
+            }
+            systems.dedup_by_key(|system| system.id);
+            systems
+        }
+        None => prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?,
+    };
     for system in systems {
         print_header(progress_bar, &format!("Checking \"{}\"", system.name));
         let games = match matches.get_many::<String>("GAME") {
@@ -320,6 +336,8 @@ async fn move_to_trash(
     Ok(())
 }
 
+#[cfg(test)]
+mod test_check_by_name;
 #[cfg(test)]
 mod test_cso;
 #[cfg(test)]
