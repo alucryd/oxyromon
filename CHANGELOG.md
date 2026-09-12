@@ -32,6 +32,7 @@
 
 - Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries
 - Restricted the web UI's URL download to http/https, with a connect timeout and a 100 GiB size cap
+- Made the `server` feature buildable from the published crate, shipping an empty web UI when none was built
 
 # 0.22.0
 

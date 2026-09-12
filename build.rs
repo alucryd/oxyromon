@@ -32,6 +32,11 @@ fn main() {
         assert!(status.success(), "`trunk build` failed");
     }
 
+    // rust-embed needs the folder to exist at compile time even when no UI was
+    // built (e.g. building the published crate, where `frontend/` is absent):
+    // an empty folder still yields a working binary, just with an empty UI.
+    let _ = std::fs::create_dir_all(Path::new("target").join("assets"));
+
     println!("cargo:rerun-if-changed=frontend/src");
     println!("cargo:rerun-if-changed=frontend/index.html");
     println!("cargo:rerun-if-changed=frontend/styles.css");
