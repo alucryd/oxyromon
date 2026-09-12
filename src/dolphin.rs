@@ -137,8 +137,7 @@ impl ToIso for RvzRomfile {
 
         backend::to_iso(&self.romfile.path, &path, progress_bar).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_iso()
     }
@@ -200,8 +199,7 @@ impl ToRvz for IsoRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_rvz()
     }
@@ -236,12 +234,11 @@ pub async fn get_version() -> Result<String> {
 #[cfg(not(feature = "nod"))]
 mod tool {
     use super::RvzCompressionAlgorithm;
-    use crate::progress::get_none_progress_style;
+    use crate::progress::start_action;
     use crate::util::{get_executable_path, run_tool, tool_version};
     use anyhow::Result;
     use indicatif::ProgressBar;
     use std::path::Path;
-    use std::time::Duration;
     use tokio::process::Command;
 
     pub const DOLPHIN_TOOL_EXECUTABLES: &[&str] = &["dolphin-tool", "DolphinTool"];
@@ -250,18 +247,12 @@ mod tool {
 
     pub const SUPPORTS_SCRUB: bool = true;
 
-    /// A subprocess reports nothing usable, so all it gets is a spinner.
-    fn spin(progress_bar: &ProgressBar) {
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
-    }
-
     pub async fn to_iso<P: AsRef<Path>, Q: AsRef<Path>>(
         source: P,
         destination: Q,
         progress_bar: &ProgressBar,
     ) -> Result<()> {
-        spin(progress_bar);
+        start_action(progress_bar, None);
         run_tool(
             Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
                 .arg("convert")
@@ -285,7 +276,7 @@ mod tool {
         block_size: usize,
         scrub: bool,
     ) -> Result<()> {
-        spin(progress_bar);
+        start_action(progress_bar, None);
         let mut command = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?);
         command
             .arg("convert")

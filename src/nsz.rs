@@ -8,7 +8,6 @@ use anyhow::{Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::Path;
-use std::time::Duration;
 use tokio::process::Command;
 
 const NSZ: &str = "nsz";
@@ -86,9 +85,7 @@ impl ToNsp for NszRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> Result<NspRomfile> {
-        progress_bar.set_message("Extracting nsz");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Extracting nsz"));
 
         print_action(
             progress_bar,
@@ -113,8 +110,7 @@ impl ToNsp for NszRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_nsp()
     }
@@ -134,9 +130,7 @@ impl ToNsz for NspRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> Result<NszRomfile> {
-        progress_bar.set_message("Creating nsz");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Creating nsz"));
 
         let path = destination_directory
             .as_ref()
@@ -163,8 +157,7 @@ impl ToNsz for NspRomfile {
         )
         .await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)?.as_nsz()
     }

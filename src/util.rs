@@ -16,7 +16,6 @@ use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-use std::time::Duration;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::process::Command;
@@ -423,9 +422,7 @@ pub async fn compute_system_completion(
     progress_bar: &ProgressBar,
     system: &System,
 ) -> Result<()> {
-    progress_bar.set_style(get_none_progress_style());
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
-    progress_bar.set_message("Computing completion");
+    start_action(progress_bar, Some("Computing completion"));
 
     // Create missing empty files for partial games
     create_missing_empty_files(connection, progress_bar, system).await?;
@@ -450,8 +447,7 @@ pub async fn compute_system_completion(
     }
     update_system_completion(connection, system.id).await;
 
-    progress_bar.set_message("");
-    progress_bar.disable_steady_tick();
+    stop_action(progress_bar);
 
     Ok(())
 }

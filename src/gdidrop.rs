@@ -4,7 +4,6 @@ use super::progress::*;
 use anyhow::{Result, anyhow, bail};
 use indicatif::ProgressBar;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufReader, SeekFrom};
 
@@ -519,9 +518,7 @@ impl ToGdi for CueBinRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> Result<GdiRomfile> {
-        progress_bar.set_message("Converting CUE/BIN to GDI");
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, Some("Converting CUE/BIN to GDI"));
 
         // Parse the CUE file to understand the track structure
         let cue_sheet = CueSheet::from_file(&self.cue_romfile.path).await?;
@@ -549,8 +546,7 @@ impl ToGdi for CueBinRomfile {
             .map(|path| CommonRomfile::from_path(&path))
             .collect::<Result<Vec<CommonRomfile>>>()?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(GdiRomfile {
             gdi_romfile: CommonRomfile::from_path(&gdi_path)?,

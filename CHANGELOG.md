@@ -24,6 +24,7 @@
 - Shrunk the tool availability checks in `convert-roms` and `export-roms`
 - Parameterized the four system size resolvers into one query
 - Routed all `get_version` implementations through a shared helper in `util`
+- Replaced the spinner begin/end boilerplate with `start_action` and `stop_action`
 
 ## Fixes
 

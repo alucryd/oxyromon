@@ -5,7 +5,6 @@ use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use std::path::Path;
 use std::str::FromStr;
-use std::time::Duration;
 use strum::{Display, EnumString};
 use tokio::process::Command;
 
@@ -33,12 +32,13 @@ impl Patch for XpsRomfile {
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> Result<CommonRomfile> {
-        progress_bar.set_message(format!(
-            "Applying \"{}\"",
-            self.romfile.path.file_name().unwrap().to_str().unwrap()
-        ));
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(
+            progress_bar,
+            Some(&format!(
+                "Applying \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            )),
+        );
 
         print_action(
             progress_bar,
@@ -70,8 +70,7 @@ impl Patch for XpsRomfile {
             bail!("{}", String::from_utf8_lossy(&output.stderr))
         }
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)
     }
