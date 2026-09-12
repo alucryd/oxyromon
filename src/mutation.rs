@@ -3,7 +3,7 @@ use super::database::*;
 use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::purge_systems::purge_system;
-use super::server::SseMessage;
+use super::server::{SseMessage, sse_send};
 use super::validator::*;
 use async_graphql::{Context, Object, Result};
 use serde_json::json;
@@ -147,14 +147,14 @@ impl Mutation {
             let progress_bar = ProgressBar::hidden();
             let total = systems.len();
 
-            let _ = sse_tx.send(SseMessage {
-                event: "download_dats_started".to_string(),
-                data: json!({
+            sse_send(
+                &sse_tx,
+                "download_dats_started",
+                json!({
                     "total": total,
                     "message": format!("Downloading {} DAT file(s)", total),
-                })
-                .to_string(),
-            });
+                }),
+            );
 
             // Deliberately quiet between the two: a per-system event would mean
             // a toast each, and this list can run to the whole catalogue.
@@ -169,25 +169,25 @@ impl Mutation {
             }
 
             if failed.is_empty() {
-                let _ = sse_tx.send(SseMessage {
-                    event: "download_dats_complete".to_string(),
-                    data: json!({
+                sse_send(
+                    &sse_tx,
+                    "download_dats_complete",
+                    json!({
                         "total": total,
                         "success": true,
                         "message": format!("Downloaded {} DAT file(s)", total),
-                    })
-                    .to_string(),
-                });
+                    }),
+                );
             } else {
-                let _ = sse_tx.send(SseMessage {
-                    event: "download_dats_error".to_string(),
-                    data: json!({
+                sse_send(
+                    &sse_tx,
+                    "download_dats_error",
+                    json!({
                         "success": false,
                         "failed": failed,
                         "message": format!("Failed to download: {}", failed.join(", ")),
-                    })
-                    .to_string(),
-                });
+                    }),
+                );
             }
         });
 
@@ -211,42 +211,43 @@ impl Mutation {
             let progress_bar = ProgressBar::hidden();
 
             // Send start notification
-            let _ = sse_tx.send(SseMessage {
-                event: "purge_started".to_string(),
-                data: json!({
+            sse_send(
+                &sse_tx,
+                "purge_started",
+                json!({
                     "system_id": system_id,
                     "system_name": system_name,
                     "message": format!("Starting deletion of system '{}'", system_name)
-                })
-                .to_string(),
-            });
+                }),
+            );
 
             // Perform the actual deletion
             match purge_system(&mut connection, &progress_bar, &system).await {
                 Ok(_) => {
-                    let _ = sse_tx.send(SseMessage {
-                        event: "purge_complete".to_string(),
-                        data: json!({
+                    sse_send(
+                        &sse_tx,
+                        "purge_complete",
+                        json!({
                             "system_id": system_id,
                             "system_name": system_name,
                             "success": true,
                             "message": format!("System '{}' has been successfully deleted", system_name)
-                        }).to_string(),
-                    });
+                        }),
+                    );
                     log::info!("Successfully purged system: {}", system_name);
                 }
                 Err(e) => {
-                    let _ = sse_tx.send(SseMessage {
-                        event: "purge_error".to_string(),
-                        data: json!({
+                    sse_send(
+                        &sse_tx,
+                        "purge_error",
+                        json!({
                             "system_id": system_id,
                             "system_name": system_name,
                             "success": false,
                             "error": format!("{:#}", e),
                             "message": format!("Failed to delete system '{}': {:#}", system_name, e)
-                        })
-                        .to_string(),
-                    });
+                        }),
+                    );
                     log::error!("Failed to purge system {}: {:#}", system_name, e);
                 }
             }

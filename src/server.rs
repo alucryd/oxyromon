@@ -22,7 +22,7 @@ use http_types::Mime;
 use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{json, Value};
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
 use std::path::PathBuf;
@@ -62,6 +62,14 @@ struct Assets;
 pub struct SseMessage {
     pub event: String,
     pub data: String,
+}
+
+/// Broadcast a message to every connected SSE client, ignoring a full or closed channel.
+pub fn sse_send(tx: &broadcast::Sender<SseMessage>, event: &str, data: Value) {
+    let _ = tx.send(SseMessage {
+        event: event.to_string(),
+        data: data.to_string(),
+    });
 }
 
 /// Shared application state
@@ -298,39 +306,39 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
         let progress_bar = ProgressBar::hidden();
         let label = source.label();
 
-        let _ = sse_tx.send(SseMessage {
-            event: "import_rom_started".to_string(),
-            data: json!({
+        sse_send(
+            &sse_tx,
+            "import_rom_started",
+            json!({
                 "name": label,
                 "message": format!("Importing \"{}\"", label),
-            })
-            .to_string(),
-        });
+            }),
+        );
 
         match import_rom_source(&mut connection, &progress_bar, source, system.as_deref()).await {
             Ok(()) => {
-                let _ = sse_tx.send(SseMessage {
-                    event: "import_rom_complete".to_string(),
-                    data: json!({
+                sse_send(
+                    &sse_tx,
+                    "import_rom_complete",
+                    json!({
                         "name": label,
                         "success": true,
                         "message": format!("Imported \"{}\"", label),
-                    })
-                    .to_string(),
-                });
+                    }),
+                );
             }
             Err(e) => {
                 log::error!("upload_rom: import failed: {:#}", e);
-                let _ = sse_tx.send(SseMessage {
-                    event: "import_rom_error".to_string(),
-                    data: json!({
+                sse_send(
+                    &sse_tx,
+                    "import_rom_error",
+                    json!({
                         "name": label,
                         "success": false,
                         "error": format!("{:#}", e),
                         "message": format!("Failed to import \"{}\": {:#}", label, e),
-                    })
-                    .to_string(),
-                });
+                    }),
+                );
             }
         }
     });
@@ -595,42 +603,42 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
         let mut connection = pool.acquire().await.unwrap();
         let progress_bar = ProgressBar::hidden();
 
-        let _ = sse_tx.send(SseMessage {
-            event: "import_dat_started".to_string(),
-            data: json!({
+        sse_send(
+            &sse_tx,
+            "import_dat_started",
+            json!({
                 "filename": filename,
                 "message": format!("Importing '{}'", filename),
-            })
-            .to_string(),
-        });
+            }),
+        );
 
         let tmp_dir = match tempfile::TempDir::new() {
             Ok(d) => d,
             Err(e) => {
-                let _ = sse_tx.send(SseMessage {
-                    event: "import_dat_error".to_string(),
-                    data: json!({
+                sse_send(
+                    &sse_tx,
+                    "import_dat_error",
+                    json!({
                         "filename": filename,
                         "error": e.to_string(),
                         "message": format!("Failed to create temp directory: {}", e),
-                    })
-                    .to_string(),
-                });
+                    }),
+                );
                 return;
             }
         };
 
         let upload_path = tmp_dir.path().join(&filename);
         if let Err(e) = tokio::fs::write(&upload_path, &data).await {
-            let _ = sse_tx.send(SseMessage {
-                event: "import_dat_error".to_string(),
-                data: json!({
+            sse_send(
+                &sse_tx,
+                "import_dat_error",
+                json!({
                     "filename": filename,
                     "error": e.to_string(),
                     "message": format!("Failed to save uploaded file: {}", e),
-                })
-                .to_string(),
-            });
+                }),
+            );
             return;
         }
 
@@ -640,38 +648,38 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
         for result in results {
             match result {
                 Ok(ImportDatResult::Imported(summary)) => {
-                    let _ = sse_tx.send(SseMessage {
-                        event: "import_dat_complete".to_string(),
-                        data: json!({
+                    sse_send(
+                        &sse_tx,
+                        "import_dat_complete",
+                        json!({
                             "system_name": summary.system_name,
                             "system_version": summary.system_version,
                             "game_count": summary.game_count,
                             "message": format!("Imported '{}' ({} games)", summary.system_name, summary.game_count),
-                        })
-                        .to_string(),
-                    });
+                        }),
+                    );
                 }
                 Ok(ImportDatResult::UpToDate(system_name)) => {
-                    let _ = sse_tx.send(SseMessage {
-                        event: "import_dat_complete".to_string(),
-                        data: json!({
+                    sse_send(
+                        &sse_tx,
+                        "import_dat_complete",
+                        json!({
                             "skipped": true,
                             "message": format!("'{}' is already up to date", system_name),
-                        })
-                        .to_string(),
-                    });
+                        }),
+                    );
                 }
                 Ok(ImportDatResult::Skipped) => {}
                 Err(e) => {
-                    let _ = sse_tx.send(SseMessage {
-                        event: "import_dat_error".to_string(),
-                        data: json!({
+                    sse_send(
+                        &sse_tx,
+                        "import_dat_error",
+                        json!({
                             "filename": filename,
                             "error": e.to_string(),
                             "message": format!("Failed to import '{}': {}", filename, e),
-                        })
-                        .to_string(),
-                    });
+                        }),
+                    );
                 }
             }
         }
