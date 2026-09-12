@@ -7,7 +7,7 @@
   <img src="https://github.com/alucryd/oxyromon/raw/refs/heads/master/resources/logo.svg" alt="logo" width="40%">
 </p>
 
-<h1 align="center">oxyROMon 0.22.0</h1>
+<h1 align="center">oxyROMon 0.23.0</h1>
 
 <h2 align="center">Rusty ROM OrgaNizer</h2>
 
