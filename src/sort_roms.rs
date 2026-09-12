@@ -79,6 +79,14 @@ pub fn subcommand() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("SYSTEM")
+                .short('s')
+                .long("system")
+                .help("Select systems by name")
+                .required(false)
+                .action(ArgAction::Append),
+        )
+        .arg(
             Arg::new("YES")
                 .short('y')
                 .long("yes")
@@ -93,8 +101,17 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    let systems =
-        prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?;
+    let systems = match matches.get_many::<String>("SYSTEM") {
+        Some(system_names) => {
+            let mut systems: Vec<System> = vec![];
+            for system_name in system_names {
+                systems.append(&mut find_systems_by_name_like(connection, system_name).await);
+            }
+            systems.dedup_by_key(|system| system.id);
+            systems
+        }
+        None => prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?,
+    };
 
     let all_regions_subfolders = matches
         .get_one::<String>("REGIONS_ALL_SUBFOLDERS")
@@ -996,6 +1013,8 @@ mod test_sort_1g1r_without_parent_clone;
 mod test_sort_1g1r_without_roms;
 #[cfg(test)]
 mod test_sort_archive_custom_extension;
+#[cfg(test)]
+mod test_sort_by_name;
 #[cfg(test)]
 mod test_sort_custom_extension;
 #[cfg(test)]

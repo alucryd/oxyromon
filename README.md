@@ -557,6 +557,8 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
                 Show wanted games
         -a, --all
                 Sort all systems
+        -s, --system <SYSTEM>...
+                Select systems by name
         -y, --yes
                 Automatically say yes to prompts
         -h, --help

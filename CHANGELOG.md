@@ -4,10 +4,12 @@
 
 - Added opt-in Zstandard compression for 7z and ZIP archives
 - Added ROM upload and URL download to the web UI
+- Added ROM sorting to the web UI, for a single system or all of them at once
 
 ## Changes
 
 - Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
+- `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 
 ## Improvements
 
