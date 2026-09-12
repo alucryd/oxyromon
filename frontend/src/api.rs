@@ -384,3 +384,19 @@ pub async fn purge_system(state: AppState, system_id: i64) {
     }
     state.purging_system_id.set(-1);
 }
+
+/// Ask the server to sort the ROMs of one system, or of all systems when the
+/// id is negative; the work itself reports over SSE.
+pub async fn sort_roms(state: AppState, system_id: i64) {
+    state
+        .sorting_system_id
+        .set(if system_id > 0 { system_id } else { -2 });
+    let mutation = r#"mutation SortRoms($systemId: Int) {
+        sortRoms(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Sorting ROMs", &e);
+    }
+    state.sorting_system_id.set(-1);
+}

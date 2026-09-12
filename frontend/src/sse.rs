@@ -5,6 +5,8 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen::closure::Closure;
 use web_sys::{EventSource, MessageEvent};
 
+use leptos::prelude::*;
+
 use crate::model::NotificationKind;
 use crate::notify::push_notification;
 use crate::state::AppState;
@@ -113,6 +115,39 @@ pub fn connect_sse(state: AppState) {
         state,
         NotificationKind::Error,
     );
+    on_event(&source, "sort_roms_started", state, NotificationKind::Info);
+    on_event(&source, "sort_roms_error", state, NotificationKind::Error);
+
+    // Sorting rearranges the selected system's files, so besides the set of
+    // systems the selected system's own fetches must run again: bouncing the
+    // selection off its sentinel re-triggers them (Leptos skips a set to the
+    // same value, which is why the -1 round-trip is there at all).
+    let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
+        let data: Value = event
+            .data()
+            .as_string()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or(Value::Null);
+        push_notification(state.notifier, message_field(&data), NotificationKind::Success);
+        state.systems_resource.refetch();
+        let system_id = state.system_id.get();
+        if system_id > 0 {
+            state.system_id.set(-1);
+            state.system_id.set(system_id);
+        }
+        let game_id = state.game_id.get();
+        if game_id > 0 {
+            state.game_id.set(-1);
+            state.game_id.set(game_id);
+        }
+    });
+    source
+        .add_event_listener_with_callback(
+            "sort_roms_complete",
+            handler.as_ref().unchecked_ref(),
+        )
+        .ok();
+    handler.forget();
 
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);

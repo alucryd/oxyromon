@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::purge_system;
+use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
 use crate::model::{Game, Rom, Romfile, Sizes, System};
 use crate::state::AppState;
@@ -253,7 +254,10 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                 </button>
                                 <div style="padding-inline-end: var(--wa-space-2xs);">
                                     <Show
-                                        when=move || state.purging_system_id.get() == id
+                                        when=move || {
+                                            state.purging_system_id.get() == id
+                                                || state.sorting_system_id.get() == id
+                                        }
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
                                             let system_for_delete = system_for_delete.clone();
@@ -269,6 +273,16 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                     >
                                                         <wa-icon name="ellipsis-vertical"></wa-icon>
                                                     </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        if state.sorting_system_id.get() == -1 {
+                                                            spawn_local(async move {
+                                                                sort_roms(state, id).await;
+                                                            });
+                                                        }
+                                                    }>
+                                                        <wa-icon slot="icon" name="arrows-up-down"></wa-icon>
+                                                        Sort
+                                                    </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));
                                                         sys_settings_title

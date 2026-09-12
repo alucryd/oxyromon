@@ -4,6 +4,7 @@ use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::purge_systems::purge_system;
 use super::server::{SseMessage, sse_send};
+use super::sort_roms;
 use super::validator::*;
 use async_graphql::{Context, Object, Result};
 use serde_json::json;
@@ -249,6 +250,78 @@ impl Mutation {
                         }),
                     );
                     log::error!("Failed to purge system {}: {:#}", system_name, e);
+                }
+            }
+        });
+
+        Ok(true)
+    }
+
+    /// Sort the ROMs of the given system, or of every system when none is
+    /// given, according to the region and version preferences.
+    ///
+    /// Returns as soon as the work is handed to a background task; the outcome
+    /// arrives over SSE, the same way purging a system does.
+    async fn sort_roms(&self, ctx: &Context<'_>, system_id: Option<i64>) -> Result<bool> {
+        log::debug!("mutation::sort_roms({:?})", system_id);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+        let mut connection = pool.acquire().await.unwrap();
+
+        let system_name = match system_id {
+            Some(system_id) => {
+                let system = find_system_by_id(&mut connection, system_id).await;
+                Some(system.name)
+            }
+            None => None,
+        };
+
+        let message = match &system_name {
+            Some(name) => format!("Sorting the ROMs of '{}'", name),
+            None => "Sorting the ROMs of all systems".to_string(),
+        };
+        let complete_message = match &system_name {
+            Some(name) => format!("Sorted the ROMs of '{}'", name),
+            None => "Sorted the ROMs of all systems".to_string(),
+        };
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+
+            sse_send(&sse_tx, "sort_roms_started", json!({ "message": message }));
+
+            let mut arguments: Vec<String> = vec!["sort-roms".to_string()];
+            match system_name {
+                Some(name) => {
+                    arguments.push("-s".to_string());
+                    arguments.push(name);
+                }
+                None => arguments.push("-a".to_string()),
+            }
+            // The action was asked for from the UI, so answer the per-system
+            // confirmation instead of waiting on a TTY that is not there.
+            arguments.push("-y".to_string());
+
+            let matches = sort_roms::subcommand().get_matches_from(arguments);
+            match sort_roms::main(&mut connection, &matches, &progress_bar).await {
+                Ok(_) => {
+                    log::info!("Successfully sorted ROMs: {}", complete_message);
+                    sse_send(
+                        &sse_tx,
+                        "sort_roms_complete",
+                        json!({ "success": true, "message": complete_message }),
+                    );
+                }
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "sort_roms_error",
+                        json!({ "success": false, "message": format!("Failed to sort ROMs: {:#}", e) }),
+                    );
+                    log::error!("Failed to sort ROMs: {:#}", e);
                 }
             }
         });

@@ -3,7 +3,9 @@
 //! of `+layout.svelte`.
 
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 
+use crate::api::sort_roms;
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
 use crate::ui::control_value;
@@ -97,6 +99,18 @@ pub fn Navbar() -> impl IntoView {
                 on:click=move |_| state.import_rom_modal_open.set(true)
             >
                 <wa-icon name="upload" label="Import ROMs"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Sort all systems"
+                on:click=move |_| {
+                    if state.sorting_system_id.get() == -1 {
+                        spawn_local(async move { sort_roms(state, -1).await });
+                    }
+                }
+            >
+                <wa-icon name="arrows-up-down" label="Sort all systems"></wa-icon>
             </wa-button>
 
             <wa-dropdown>
