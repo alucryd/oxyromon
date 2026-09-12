@@ -19,17 +19,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Install dependencies
         run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit
       - name: Install rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          profile: minimal
           target: wasm32-unknown-unknown
           components: clippy, llvm-tools-preview
-          override: true
+      - name: Use the installed toolchain
+        run: rustup default stable
       - name: Configure rust cache
         uses: Swatinem/rust-cache@v2
       - name: Install Trunk
@@ -39,30 +39,18 @@ jobs:
       - name: Build web UI
         run: cd frontend && trunk build --release
       - name: Install llvm-cov
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
       - name: Run clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          args: --features server
-          token: ${{secrets.GITHUB_TOKEN}}
+        run: cargo clippy --features server
       # - name: Run audit
       #   uses: actions-rs/audit-check@v1
       #   with:
       #     token: ${{secrets.GITHUB_TOKEN}}
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --features server
+        run: cargo build --release --features server
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: llvm-cov
-          args: --features server --lcov --output-path lcov.info
+        run: cargo llvm-cov --features server --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
         with:
           token: ${{secrets.CODECOV_TOKEN}}
