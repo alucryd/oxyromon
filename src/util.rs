@@ -12,12 +12,14 @@ use rayon::prelude::*;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
+use std::ffi::OsStr;
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::Duration;
 use tempfile::TempDir;
 use tokio::fs;
+use tokio::process::Command;
 use tokio::fs::File;
 use which::which;
 
@@ -313,6 +315,30 @@ where
             false
         }
     }
+}
+
+pub async fn tool_version(
+    command: impl AsRef<OsStr>,
+    name: &str,
+    args: &[&str],
+    stdout: bool,
+    line: usize,
+    regex: Option<&Regex>,
+) -> Result<String> {
+    let output = Command::new(command.as_ref())
+        .args(args)
+        .output()
+        .await
+        .context(format!("Failed to spawn {}", name))?;
+    let text = if stdout {
+        String::from_utf8(output.stdout).unwrap()
+    } else {
+        String::from_utf8(output.stderr).unwrap()
+    };
+    Ok(regex
+        .and_then(|regex| text.lines().nth(line).and_then(|l| regex.find(l)))
+        .map(|version| version.as_str().to_string())
+        .unwrap_or(String::from("unknown")))
 }
 
 pub fn get_executable_path(executables: &[&str]) -> Result<PathBuf> {

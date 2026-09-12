@@ -237,8 +237,8 @@ pub async fn get_version() -> Result<String> {
 mod tool {
     use super::RvzCompressionAlgorithm;
     use crate::progress::get_none_progress_style;
-    use crate::util::{get_executable_path, run_tool};
-    use anyhow::{Context, Result};
+    use crate::util::{get_executable_path, run_tool, tool_version};
+    use anyhow::Result;
     use indicatif::ProgressBar;
     use std::path::Path;
     use std::time::Duration;
@@ -309,13 +309,14 @@ mod tool {
     }
 
     pub async fn get_version() -> Result<String> {
-        let output = Command::new(get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?)
-            .output()
-            .await
-            .context("Failed to spawn dolphin-tool")?;
-        // dolphin-tool doesn't advertize any version
-        String::from_utf8(output.stderr).unwrap();
-        let version = String::from("unknown");
-        Ok(version)
+        tool_version(
+            get_executable_path(DOLPHIN_TOOL_EXECUTABLES)?,
+            "dolphin-tool",
+            &[],
+            false,
+            0,
+            None,
+        )
+        .await
     }
 }

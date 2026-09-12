@@ -207,18 +207,5 @@ impl AsXso for CommonRomfile {
 }
 
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(MAXCSO)
-        .output()
-        .await
-        .context("Failed to spawn maxcso")?;
-
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    let version = stderr
-        .lines()
-        .next()
-        .and_then(|line| VERSION_REGEX.find(line))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown"));
-
-    Ok(version)
+    tool_version(MAXCSO, "maxcso", &[], false, 0, Some(&VERSION_REGEX)).await
 }

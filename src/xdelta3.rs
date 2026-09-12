@@ -1,7 +1,8 @@
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
-use anyhow::{Context, Result, bail};
+use super::util::*;
+use anyhow::{Result, bail};
 use regex::Regex;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -92,19 +93,5 @@ impl AsXdelta for CommonRomfile {
 }
 
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(XDELTA3)
-        .arg("-V")
-        .output()
-        .await
-        .context("Failed to spawn xdelta3")?;
-
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    let version = stderr
-        .lines()
-        .next()
-        .and_then(|line| VERSION_REGEX.find(line))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown"));
-
-    Ok(version)
+    tool_version(XDELTA3, "xdelta3", &["-V"], false, 0, Some(&VERSION_REGEX)).await
 }

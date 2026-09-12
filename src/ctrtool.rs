@@ -1,5 +1,6 @@
 use super::progress::*;
-use anyhow::{Context, Result, bail};
+use super::util::*;
+use anyhow::{Result, bail};
 use indicatif::ProgressBar;
 use regex::Regex;
 use std::path::{Path, PathBuf};
@@ -30,20 +31,7 @@ pub struct ArchiveInfo {
 }
 
 pub async fn get_version() -> Result<String> {
-    let output = Command::new(CTRTOOL)
-        .output()
-        .await
-        .context("Failed to spawn ctrtool")?;
-
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    let version = stderr
-        .lines()
-        .next()
-        .and_then(|line| VERSION_REGEX.find(line))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown"));
-
-    Ok(version)
+    tool_version(CTRTOOL, "ctrtool", &[], false, 0, Some(&VERSION_REGEX)).await
 }
 
 pub async fn parse_cia<P: AsRef<Path>>(
