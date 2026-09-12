@@ -6,6 +6,7 @@ use leptos::html;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
+use crate::api::check_roms;
 use crate::api::purge_system;
 use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
@@ -257,6 +258,7 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                         when=move || {
                                             state.purging_system_id.get() == id
                                                 || state.sorting_system_id.get() == id
+                                                || state.checking_system_id.get() == id
                                         }
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
@@ -273,6 +275,16 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                     >
                                                         <wa-icon name="ellipsis-vertical"></wa-icon>
                                                     </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        if state.checking_system_id.get() == -1 {
+                                                            spawn_local(async move {
+                                                                check_roms(state, id).await;
+                                                            });
+                                                        }
+                                                    }>
+                                                        <wa-icon slot="icon" name="circle-check"></wa-icon>
+                                                        Check
+                                                    </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
                                                         if state.sorting_system_id.get() == -1 {
                                                             spawn_local(async move {

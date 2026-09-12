@@ -557,7 +557,7 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
                 Show wanted games
         -a, --all
                 Sort all systems
-        -s, --system <SYSTEM>...
+        -s, --system <SYSTEM>
                 Select systems by name
         -y, --yes
                 Automatically say yes to prompts
@@ -649,10 +649,11 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
     Usage: oxyromon check-roms [OPTIONS]
 
     Options:
-        -a, --all   Check all systems
-        -g, --game <GAME>  Select games by name
-        -s, --size  Recalculate ROM file sizes
-        -h, --help  Print help information
+        -a, --all              Check all systems
+        -g, --game <GAME>      Select games by name
+        -s, --size             Recalculate ROM file sizes
+            --system <SYSTEM>  Select systems by name
+        -h, --help             Print help information
 
 ## oxyromon-purge-roms
 
