@@ -42,10 +42,6 @@ jobs:
         run: cargo install cargo-llvm-cov
       - name: Run clippy
         run: cargo clippy --features server
-      # - name: Run audit
-      #   uses: actions-rs/audit-check@v1
-      #   with:
-      #     token: ${{secrets.GITHUB_TOKEN}}
       - name: Build
         run: cargo build --release --features server
       - name: Test
