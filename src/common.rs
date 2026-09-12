@@ -6,8 +6,10 @@ use super::generate_playlists::DISC_REGEX;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
+use super::prompt::prompt_for_games;
 use super::util::*;
 use anyhow::{Context, Result, bail};
+use clap::ArgMatches;
 use core::fmt;
 use digest::Digest;
 use digest_io::IoWrapper;
@@ -26,6 +28,69 @@ use std::{fs::File, str::FromStr};
 
 fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+/// Selects the games to process: the named ones, resolved and narrowed down
+/// interactively, or every game of the system.
+pub async fn select_games(
+    connection: &mut SqliteConnection,
+    matches: &ArgMatches,
+    system_id: i64,
+) -> Result<Vec<Game>> {
+    let games = match matches.get_many::<String>("GAME") {
+        Some(game_names) => {
+            let mut games: Vec<Game> = vec![];
+            for game_name in game_names {
+                games.append(
+                    &mut find_full_games_by_name_and_system_id(
+                        connection, game_name, system_id,
+                    )
+                    .await,
+                );
+            }
+            games.dedup_by_key(|game| game.id);
+            prompt_for_games(games, cfg!(test))?
+        }
+        None => find_full_games_by_system_id(connection, system_id).await,
+    };
+    Ok(games)
+}
+
+/// Loads the roms and romfiles of the given games, indexed for the conversion
+/// functions. `original_roms` limits the roms to the original files.
+pub async fn load_rom_data(
+    connection: &mut SqliteConnection,
+    games: Vec<Game>,
+    original_roms: bool,
+) -> (IndexMap<i64, Vec<Rom>>, HashMap<i64, Game>, HashMap<i64, Romfile>) {
+    let game_ids: Vec<i64> = games.par_iter().map(|game| game.id).collect();
+    let roms = if original_roms {
+        find_original_roms_with_romfile_by_game_ids(connection, &game_ids).await
+    } else {
+        find_roms_with_romfile_by_game_ids(connection, &game_ids).await
+    };
+    let romfiles = find_romfiles_by_ids(
+        connection,
+        roms.par_iter()
+            .map(|rom| rom.romfile_id.unwrap())
+            .collect::<Vec<i64>>()
+            .as_slice(),
+    )
+    .await;
+
+    let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
+    roms.into_iter().for_each(|rom| {
+        let group = roms_by_game_id.entry(rom.game_id).or_default();
+        group.push(rom);
+    });
+    let games_by_id: HashMap<i64, Game> =
+        games.into_par_iter().map(|game| (game.id, game)).collect();
+    let romfiles_by_id: HashMap<i64, Romfile> = romfiles
+        .into_par_iter()
+        .map(|romfile| (romfile.id, romfile))
+        .collect();
+
+    (roms_by_game_id, games_by_id, romfiles_by_id)
 }
 
 /// Splits games into those whose romfiles match any of the given extensions and the rest.

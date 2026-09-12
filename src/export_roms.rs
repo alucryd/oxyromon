@@ -165,22 +165,7 @@ pub async fn main(
             continue;
         }
 
-        let mut games = match matches.get_many::<String>("GAME") {
-            Some(game_names) => {
-                let mut games: Vec<Game> = vec![];
-                for game_name in game_names {
-                    games.append(
-                        &mut find_full_games_by_name_and_system_id(
-                            connection, game_name, system.id,
-                        )
-                        .await,
-                    );
-                }
-                games.dedup_by_key(|game| game.id);
-                prompt_for_games(games, cfg!(test))?
-            }
-            None => find_full_games_by_system_id(connection, system.id).await,
-        };
+        let mut games = select_games(connection, matches, system.id).await?;
 
         if matches.get_flag("1G1R") {
             games.retain(|game| game.sorting == Sorting::OneRegion as i64);
@@ -193,31 +178,8 @@ pub async fn main(
             continue;
         }
 
-        let roms = find_roms_with_romfile_by_game_ids(
-            connection,
-            &games.par_iter().map(|game| game.id).collect::<Vec<i64>>(),
-        )
-        .await;
-        let romfiles = find_romfiles_by_ids(
-            connection,
-            roms.par_iter()
-                .map(|rom| rom.romfile_id.unwrap())
-                .collect::<Vec<i64>>()
-                .as_slice(),
-        )
-        .await;
-
-        let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
-        roms.into_iter().for_each(|rom| {
-            let group = roms_by_game_id.entry(rom.game_id).or_default();
-            group.push(rom);
-        });
-        let games_by_id: HashMap<i64, Game> =
-            games.into_par_iter().map(|game| (game.id, game)).collect();
-        let romfiles_by_id: HashMap<i64, Romfile> = romfiles
-            .into_par_iter()
-            .map(|romfile| (romfile.id, romfile))
-            .collect();
+        let (roms_by_game_id, games_by_id, romfiles_by_id) =
+            load_rom_data(connection, games, false).await;
 
         match format.as_str() {
             "ORIGINAL" => {
