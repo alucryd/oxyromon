@@ -21,6 +21,7 @@ pub fn ImportRomModal() -> impl IntoView {
     let importing = RwSignal::new(false);
     let selected = RwSignal::new(Option::<web_sys::File>::None);
     let url = RwSignal::new(String::new());
+    let unattended = RwSignal::new("first".to_string());
     let input_ref = NodeRef::<html::Input>::new();
 
     let clear = move || {
@@ -78,6 +79,7 @@ pub fn ImportRomModal() -> impl IntoView {
                     let _ = form.append_with_str("url", &link);
                 }
             }
+            let _ = form.append_with_str("unattended", &unattended.get_untracked());
             // The import reports progress over SSE; this only covers failures to
             // hand the job over in the first place.
             let outcome = match Request::post(ROMS_ENDPOINT).body(form) {
@@ -165,6 +167,19 @@ pub fn ImportRomModal() -> impl IntoView {
                         url.set(value);
                     }
                 ></wa-input>
+
+                <wa-select
+                    label="Multiple matches"
+                    hint="How to handle a file that matches several games."
+                    prop:value=move || unattended.get()
+                    on:change=move |ev| {
+                        let chosen = control_value(&ev);
+                        unattended.set(chosen);
+                    }
+                >
+                    <wa-option value="first">First match</wa-option>
+                    <wa-option value="skip">Skip</wa-option>
+                </wa-select>
             </div>
 
             <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
