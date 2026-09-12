@@ -1,5 +1,6 @@
 use super::common::*;
 use super::mimetype::*;
+use super::progress::stop_action;
 use anyhow::Result;
 use indicatif::ProgressBar;
 use std::path::Path;
@@ -42,8 +43,7 @@ impl ToWbfs for IsoRomfile {
 
         backend::to_wbfs(&self.romfile.path, &path, progress_bar).await?;
 
-        progress_bar.set_message("");
-        progress_bar.disable_steady_tick();
+        stop_action(progress_bar);
 
         Ok(WbfsRomfile {
             romfile: CommonRomfile::from_path(&path)?,
@@ -58,14 +58,13 @@ pub async fn get_version() -> Result<String> {
 /// The wit backend: WBFS by way of the external executable.
 #[cfg(not(feature = "nod"))]
 mod tool {
-    use crate::progress::get_none_progress_style;
-    use crate::util::run_tool;
-    use anyhow::{Context, Result};
+    use crate::progress::start_action;
+    use crate::util::{run_tool, tool_version};
+    use anyhow::Result;
     use indicatif::ProgressBar;
     use regex::Regex;
     use std::path::Path;
     use std::sync::LazyLock;
-    use std::time::Duration;
     use tokio::process::Command;
 
     const WIT: &str = "wit";
@@ -80,8 +79,7 @@ mod tool {
         progress_bar: &ProgressBar,
     ) -> Result<()> {
         // A subprocess reports nothing usable, so all it gets is a spinner
-        progress_bar.set_style(get_none_progress_style());
-        progress_bar.enable_steady_tick(Duration::from_millis(100));
+        start_action(progress_bar, None);
         run_tool(
             Command::new(WIT)
                 .arg("COPY")
@@ -96,20 +94,6 @@ mod tool {
     }
 
     pub async fn get_version() -> Result<String> {
-        let output = Command::new(WIT)
-            .arg("--version")
-            .output()
-            .await
-            .context("Failed to spawn wit")?;
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let version = stdout
-            .lines()
-            .next()
-            .and_then(|line| VERSION_REGEX.find(line))
-            .map(|version| version.as_str().to_string())
-            .unwrap_or(String::from("unknown"));
-
-        Ok(version)
+        tool_version(WIT, "wit", &["--version"], true, 0, Some(&VERSION_REGEX)).await
     }
 }
