@@ -27,6 +27,7 @@
 ## Fixes
 
 - Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
+- Fixed the web UI's statistics cards being cut off at the right edge at some window widths, the grid's minimum column size left no room for the scrollbar
 
 # 0.23.0
 
