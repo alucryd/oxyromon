@@ -9,6 +9,7 @@ use crate::components::download_dat_modal::DownloadDatModal;
 use crate::components::import_dat_modal::ImportDatModal;
 use crate::components::import_rom_modal::ImportRomModal;
 use crate::components::navbar::Navbar;
+use crate::components::purge_rom_modal::PurgeRomModal;
 use crate::components::settings_modal::SettingsModal;
 use crate::page::Page;
 #[allow(unused_imports)]
@@ -42,6 +43,7 @@ pub fn App() -> impl IntoView {
             <DownloadDatModal />
             <ImportDatModal />
             <ImportRomModal />
+            <PurgeRomModal />
             <SettingsModal
                 open=state.settings_modal_open
                 system_id=global_settings_id

@@ -3,6 +3,7 @@ use super::database::*;
 use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::check_roms;
+use super::purge_roms;
 use super::purge_systems::purge_system;
 use super::server::{SseMessage, sse_send};
 use super::sort_roms;
@@ -390,6 +391,77 @@ impl Mutation {
                         json!({ "success": false, "message": format!("Failed to check ROMs: {:#}", e) }),
                     );
                     log::error!("Failed to check ROMs: {:#}", e);
+                }
+            }
+        });
+
+        Ok(true)
+    }
+
+    /// Purge the selected categories of ROM files: missing, orphan, trashed,
+    /// and foreign.
+    async fn purge_roms(
+        &self,
+        ctx: &Context<'_>,
+        missing: bool,
+        orphan: bool,
+        trash: bool,
+        foreign: bool,
+    ) -> Result<bool> {
+        log::debug!(
+            "mutation::purge_roms({}, {}, {}, {})",
+            missing,
+            orphan,
+            trash,
+            foreign
+        );
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+
+            sse_send(
+                &sse_tx,
+                "purge_roms_started",
+                json!({ "message": "Purging ROM files" }),
+            );
+
+            let mut arguments: Vec<String> = vec!["purge-roms".to_string()];
+            if missing {
+                arguments.push("-m".to_string());
+            }
+            if orphan {
+                arguments.push("-o".to_string());
+            }
+            if trash {
+                arguments.push("-t".to_string());
+            }
+            if foreign {
+                arguments.push("-f".to_string());
+            }
+            arguments.push("-y".to_string());
+
+            let matches = purge_roms::subcommand().get_matches_from(arguments);
+            match purge_roms::main(&mut connection, &matches, &progress_bar).await {
+                Ok(_) => {
+                    log::info!("Successfully purged ROM files");
+                    sse_send(
+                        &sse_tx,
+                        "purge_roms_complete",
+                        json!({ "success": true, "message": "Purged ROM files" }),
+                    );
+                }
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "purge_roms_error",
+                        json!({ "success": false, "message": format!("Failed to purge ROM files: {:#}", e) }),
+                    );
+                    log::error!("Failed to purge ROM files: {:#}", e);
                 }
             }
         });
