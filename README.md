@@ -495,6 +495,7 @@ Supported formats are BPS, IPS and XDELTA. Patches are named after the ROM files
     Options:
     -n, --name   Customize patch names
     -f, --force  Force import of already imported patch files
+    --rom <ROM>  Select the target ROM by id, skipping the prompts
     -h, --help   Print help
 
 ## oxyromon-sort-roms

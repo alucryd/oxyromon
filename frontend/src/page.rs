@@ -303,6 +303,13 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                         Convert
                                                     </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
+                                                        state.import_patch_system_id.set(id);
+                                                        state.import_patch_modal_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="puzzle-piece"></wa-icon>
+                                                        Import patch
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));
                                                         sys_settings_title
                                                             .set(format!("{name_for_settings} Settings"));
