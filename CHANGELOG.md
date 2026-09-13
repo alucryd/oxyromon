@@ -24,6 +24,8 @@
 - Added a non-colour status cue (a leading glyph) to the web UI's system, game, and ROM rows, so the completion state is legible without relying on colour alone
 - Grouped the purge dialog's options by risk, styling the file-deleting ones in a warning so the danger is visible at a glance
 - Applied the orange brand colour to the web UI and set the page title to oxyROMon, matching the logo
+- Refined web UI copy and accessibility: the games filter field has an accessible label and a clearer placeholder, the import dialog's multiple-matches control is reworded, the settings spell out what 1G1R means, and the page description is filled in
+- Adjusted the web UI's default pane split so the ROM and ROM-file pane starts a little narrower, giving the games list more room
 
 ## Fixes
 
