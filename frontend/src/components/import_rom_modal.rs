@@ -169,16 +169,15 @@ pub fn ImportRomModal() -> impl IntoView {
                 ></wa-input>
 
                 <wa-select
-                    label="Multiple matches"
-                    hint="How to handle a file that matches several games."
+                    label="If a file matches several games"
                     prop:value=move || unattended.get()
                     on:change=move |ev| {
                         let chosen = control_value(&ev);
                         unattended.set(chosen);
                     }
                 >
-                    <wa-option value="first">First match</wa-option>
-                    <wa-option value="skip">Skip</wa-option>
+                    <wa-option value="first">Import the first</wa-option>
+                    <wa-option value="skip">Skip the file</wa-option>
                 </wa-select>
             </div>
 

@@ -83,10 +83,10 @@ struct SystemModals {
 }
 
 /// Widths of the two dividers, as a percentage of their container, remembered
-/// across visits. The defaults reproduce the 2:3:5 split the panes had while
-/// they were a fixed grid.
-const OUTER_POSITION: (&str, f64) = ("panes-outer", 20.0);
-const INNER_POSITION: (&str, f64) = ("panes-inner", 37.5);
+/// across visits. The defaults split the panes roughly 2:3:4, giving the dense
+/// games list more room than the ROM and ROM-file panes, which are often short.
+const OUTER_POSITION: (&str, f64) = ("panes-outer", 22.2);
+const INNER_POSITION: (&str, f64) = ("panes-inner", 42.9);
 
 fn stored_position((key, default): (&str, f64)) -> f64 {
     web_sys::window()

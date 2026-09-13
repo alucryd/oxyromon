@@ -204,7 +204,8 @@ pub fn Navbar() -> impl IntoView {
 
             <wa-input
                 type="search"
-                placeholder="Game Name"
+                aria-label="Filter games"
+                placeholder="Filter games"
                 size="small"
                 style="width: 14rem;"
                 prop:value=move || state.name_filter.get()
