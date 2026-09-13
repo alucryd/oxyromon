@@ -5,7 +5,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use anyhow::Result;
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, ArgMatches, Command, value_parser};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
@@ -20,6 +20,14 @@ pub fn subcommand() -> Command {
                 .num_args(1..)
                 .index(1),
         )
+        .arg(
+            Arg::new("SYSTEM")
+                .long("system")
+                .help("Select the system to purge from, skipping the prompt and purging every IRD game when no names are given")
+                .required(false)
+                .num_args(1)
+                .value_parser(value_parser!(String)),
+        )
 }
 
 pub async fn main(
@@ -27,7 +35,22 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
+    // A system given on the command line (or by the server) skips the prompt and,
+    // with no game names, purges every IRD game unattended.
+    let (system, headless) = match matches.get_one::<String>("SYSTEM") {
+        Some(name) => {
+            let systems = find_systems_by_name_like(connection, name).await;
+            let system = systems
+                .into_iter()
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("No system matching \"{}\"", name))?;
+            (system, true)
+        }
+        None => (
+            prompt_for_system_like(connection, None, "%PlayStation 3%").await?,
+            false,
+        ),
+    };
     let mut games = find_games_by_system_id(connection, system.id).await;
 
     // Filter to only jbfolder games
@@ -47,6 +70,11 @@ pub async fn main(
             } else {
                 print_warning(progress_bar, &format!("Game \"{}\" not found", game_name));
             }
+        }
+    } else if headless {
+        // Unattended: purge every remaining IRD game.
+        for game in games.iter() {
+            purge_ird(connection, progress_bar, game).await?;
         }
     } else {
         // Interactive mode

@@ -98,6 +98,7 @@ pub struct AppState {
     pub purging_system_id: RwSignal<i64>,
     pub sorting_system_id: RwSignal<i64>,
     pub checking_system_id: RwSignal<i64>,
+    pub purging_irds_system_id: RwSignal<i64>,
 
     // Filters.
     pub complete_filter: RwSignal<bool>,
@@ -116,6 +117,8 @@ pub struct AppState {
     pub convert_rom_system_id: RwSignal<i64>,
     pub import_patch_modal_open: RwSignal<bool>,
     pub import_patch_system_id: RwSignal<i64>,
+    pub import_ird_modal_open: RwSignal<bool>,
+    pub import_ird_system_id: RwSignal<i64>,
     pub settings_modal_open: RwSignal<bool>,
     pub about_modal_open: RwSignal<bool>,
 
@@ -174,6 +177,7 @@ impl AppState {
         let purging_system_id = RwSignal::new(-1);
         let sorting_system_id = RwSignal::new(-1);
         let checking_system_id = RwSignal::new(-1);
+        let purging_irds_system_id = RwSignal::new(-1);
 
         let complete_filter = RwSignal::new(true);
         let incomplete_filter = RwSignal::new(true);
@@ -321,6 +325,7 @@ impl AppState {
             purging_system_id,
             sorting_system_id,
             checking_system_id,
+            purging_irds_system_id,
 
             complete_filter,
             incomplete_filter,
@@ -337,6 +342,8 @@ impl AppState {
             convert_rom_system_id: RwSignal::new(-1),
             import_patch_modal_open: RwSignal::new(false),
             import_patch_system_id: RwSignal::new(-1),
+            import_ird_modal_open: RwSignal::new(false),
+            import_ird_system_id: RwSignal::new(-1),
             settings_modal_open: RwSignal::new(false),
             about_modal_open: RwSignal::new(false),
 

@@ -4,6 +4,7 @@ use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::check_roms;
 use super::convert_roms;
+use super::purge_irds;
 use super::purge_roms;
 use super::purge_systems::purge_system;
 use super::server::{SseMessage, sse_send};
@@ -528,6 +529,57 @@ impl Mutation {
                         json!({ "success": false, "message": format!("Failed to convert ROMs: {:#}", e) }),
                     );
                     log::error!("Failed to convert ROMs: {:#}", e);
+                }
+            }
+        });
+
+        Ok(true)
+    }
+
+    /// Purge every IRD (JB folder) game of one system.
+    async fn purge_irds(&self, ctx: &Context<'_>, system_id: i64) -> Result<bool> {
+        log::debug!("mutation::purge_irds({})", system_id);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+        let mut connection = pool.acquire().await.unwrap();
+        let system_name = match find_system_by_id_opt(&mut connection, system_id).await {
+            Some(system) => system.name,
+            None => {
+                return Err(async_graphql::Error::new(format!(
+                    "System {system_id} not found"
+                )))
+            }
+        };
+
+        let message = format!("Purging the IRDs of '{}'", system_name);
+        let complete_message = format!("Purged the IRDs of '{}'", system_name);
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+
+            sse_send(&sse_tx, "purge_irds_started", json!({ "message": message }));
+
+            let arguments = vec!["purge-irds".to_string(), "--system".to_string(), system_name];
+            let matches = purge_irds::subcommand().get_matches_from(arguments);
+            match purge_irds::main(&mut connection, &matches, &progress_bar).await {
+                Ok(_) => {
+                    log::info!("Successfully purged IRDs: {}", complete_message);
+                    sse_send(
+                        &sse_tx,
+                        "purge_irds_complete",
+                        json!({ "success": true, "message": complete_message }),
+                    );
+                }
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "purge_irds_error",
+                        json!({ "success": false, "message": format!("Failed to purge IRDs: {:#}", e) }),
+                    );
+                    log::error!("Failed to purge IRDs: {:#}", e);
                 }
             }
         });

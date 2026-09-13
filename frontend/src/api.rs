@@ -417,6 +417,20 @@ pub async fn check_roms(state: AppState, system_id: i64) {
     state.checking_system_id.set(-1);
 }
 
+/// Ask the server to purge every IRD (JB folder) game of one system; the work
+/// itself reports over SSE.
+pub async fn purge_irds(state: AppState, system_id: i64) {
+    state.purging_irds_system_id.set(system_id);
+    let mutation = r#"mutation PurgeIrds($systemId: Int!) {
+        purgeIrds(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": system_id });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Purging the IRDs", &e);
+    }
+    state.purging_irds_system_id.set(-1);
+}
+
 /// Ask the server to purge the selected categories of ROM files; the work
 /// itself reports over SSE, and only a failure to hand the job over is
 /// returned here (and reported).

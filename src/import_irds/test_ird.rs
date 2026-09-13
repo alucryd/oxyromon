@@ -45,10 +45,19 @@ async fn test() {
 
     let (ird_file, header) = parse_ird(&ird_path).await.unwrap();
 
+    let parent_roms = find_roms_by_game_id_no_parents(&mut connection, game.id).await;
+
     // when
-    import_ird(&mut connection, &progress_bar, &game, &ird_file, header)
-        .await
-        .unwrap();
+    import_ird(
+        &mut connection,
+        &progress_bar,
+        &game,
+        &ird_file,
+        header,
+        parent_roms.first(),
+    )
+    .await
+    .unwrap();
 
     // then
     let roms = find_roms(&mut connection).await;
