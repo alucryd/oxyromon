@@ -431,6 +431,19 @@ pub async fn purge_irds(state: AppState, system_id: i64) {
     state.purging_irds_system_id.set(-1);
 }
 
+/// Ask the server to generate M3U playlists for every system; the work itself
+/// reports over SSE.
+pub async fn generate_playlists(state: AppState) {
+    state.generating_playlists.set(true);
+    let mutation = r#"mutation GeneratePlaylists {
+        generatePlaylists
+    }"#;
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, json!({})).await {
+        report_error(state.notifier, "Generating playlists", &e);
+    }
+    state.generating_playlists.set(false);
+}
+
 /// Ask the server to purge the selected categories of ROM files; the work
 /// itself reports over SSE, and only a failure to hand the job over is
 /// returned here (and reported).

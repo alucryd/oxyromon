@@ -99,6 +99,7 @@ pub struct AppState {
     pub sorting_system_id: RwSignal<i64>,
     pub checking_system_id: RwSignal<i64>,
     pub purging_irds_system_id: RwSignal<i64>,
+    pub generating_playlists: RwSignal<bool>,
 
     // Filters.
     pub complete_filter: RwSignal<bool>,
@@ -178,6 +179,7 @@ impl AppState {
         let sorting_system_id = RwSignal::new(-1);
         let checking_system_id = RwSignal::new(-1);
         let purging_irds_system_id = RwSignal::new(-1);
+        let generating_playlists = RwSignal::new(false);
 
         let complete_filter = RwSignal::new(true);
         let incomplete_filter = RwSignal::new(true);
@@ -326,6 +328,7 @@ impl AppState {
             sorting_system_id,
             checking_system_id,
             purging_irds_system_id,
+            generating_playlists,
 
             complete_filter,
             incomplete_filter,

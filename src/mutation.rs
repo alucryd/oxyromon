@@ -4,6 +4,7 @@ use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::check_roms;
 use super::convert_roms;
+use super::generate_playlists;
 use super::purge_irds;
 use super::purge_roms;
 use super::purge_systems::purge_system;
@@ -393,6 +394,49 @@ impl Mutation {
                         json!({ "success": false, "message": format!("Failed to check ROMs: {:#}", e) }),
                     );
                     log::error!("Failed to check ROMs: {:#}", e);
+                }
+            }
+        });
+
+        Ok(true)
+    }
+
+    /// Generate M3U playlists for every multi-disc game, across all systems.
+    async fn generate_playlists(&self, ctx: &Context<'_>) -> Result<bool> {
+        log::debug!("mutation::generate_playlists()");
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+
+            sse_send(
+                &sse_tx,
+                "generate_playlists_started",
+                json!({ "message": "Generating playlists for all systems" }),
+            );
+
+            let arguments = vec!["generate-playlists".to_string(), "-a".to_string()];
+            let matches = generate_playlists::subcommand().get_matches_from(arguments);
+            match generate_playlists::main(&mut connection, &matches, &progress_bar).await {
+                Ok(_) => {
+                    log::info!("Successfully generated playlists");
+                    sse_send(
+                        &sse_tx,
+                        "generate_playlists_complete",
+                        json!({ "success": true, "message": "Generated playlists for all systems" }),
+                    );
+                }
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "generate_playlists_error",
+                        json!({ "success": false, "message": format!("Failed to generate playlists: {:#}", e) }),
+                    );
+                    log::error!("Failed to generate playlists: {:#}", e);
                 }
             }
         });
