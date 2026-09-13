@@ -561,7 +561,7 @@ fn StatsCard() -> impl IntoView {
             <div class="panel-header">Statistics</div>
             <div
                 class="wa-grid wa-gap-s"
-                style="--min-column-size: 10rem; padding: var(--wa-space-m);"
+                style="--min-column-size: 9rem; padding: var(--wa-space-m);"
             >
                 <StatTile
                     label="Systems"
