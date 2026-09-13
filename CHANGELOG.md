@@ -1,9 +1,7 @@
-# 0.23.0
+# 0.24.0
 
 ## Features
 
-- Added opt-in Zstandard compression for 7z and ZIP archives
-- Added ROM upload and URL download to the web UI
 - Added ROM sorting to the web UI, for a single system or all of them at once
 - Added an integrity check to the web UI, for a single system or all of them at once
 - Added a purge dialog to the web UI, for missing, orphan, trashed, and foreign ROM files
@@ -15,11 +13,25 @@
 
 ## Changes
 
-- Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
 - `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 - `check-roms` now accepts `--system` to check named systems without an interactive prompt
 - `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts
 - `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended, matching the game and ROM automatically
+
+## Fixes
+
+- Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
+
+# 0.23.0
+
+## Features
+
+- Added opt-in Zstandard compression for 7z and ZIP archives
+- Added ROM upload and URL download to the web UI
+
+## Changes
+
+- Updated `shiratsu-naming` to 1.1.0 (token variants are now struct variants)
 
 ## Improvements
 
@@ -45,7 +57,6 @@
 - Regenerated `.sqlx/` offline query data to include `#[cfg(test)]`-gated queries
 - Restricted the web UI's URL download to http/https, with a connect timeout and a 100 GiB size cap
 - Made the `server` feature buildable from the published crate, shipping an empty web UI when none was built
-- Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
 
 # 0.22.0
 
