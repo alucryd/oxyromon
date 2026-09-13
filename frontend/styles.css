@@ -17,6 +17,26 @@
     --nav-height: 3.25rem;
   }
 
+  :root {
+    /* The logo is orange but Web Awesome defaults the brand to blue. Re-point
+       the whole brand scale at the orange palette so every brand surface —
+       buttons, links, focus rings — matches the logo. This layer is declared
+       after the library's wa-color-variant, so it wins without specificity. */
+    --wa-color-brand-95: var(--wa-color-orange-95);
+    --wa-color-brand-90: var(--wa-color-orange-90);
+    --wa-color-brand-80: var(--wa-color-orange-80);
+    --wa-color-brand-70: var(--wa-color-orange-70);
+    --wa-color-brand-60: var(--wa-color-orange-60);
+    --wa-color-brand-50: var(--wa-color-orange-50);
+    --wa-color-brand-40: var(--wa-color-orange-40);
+    --wa-color-brand-30: var(--wa-color-orange-30);
+    --wa-color-brand-20: var(--wa-color-orange-20);
+    --wa-color-brand-10: var(--wa-color-orange-10);
+    --wa-color-brand-05: var(--wa-color-orange-05);
+    --wa-color-brand: var(--wa-color-orange);
+    --wa-color-brand-on: var(--wa-color-orange-on);
+  }
+
   /* Chrome's search input draws its own cancel button on top of ours. */
   input[type="search"]::-webkit-search-cancel-button {
     display: none;
