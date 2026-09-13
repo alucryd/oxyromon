@@ -336,6 +336,37 @@ pub fn connect_sse(state: AppState) {
         .ok();
     handler.forget();
 
+    on_event(&source, "generate_playlists_started", state, NotificationKind::Info);
+    on_event(&source, "generate_playlists_error", state, NotificationKind::Error);
+    let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
+        let data: Value = event
+            .data()
+            .as_string()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or(Value::Null);
+        push_notification(state.notifier, message_field(&data), NotificationKind::Success);
+        state.systems_resource.refetch();
+        // Generated playlists link to a game's completion, so bounce the
+        // selection off its sentinel to re-run its fetches.
+        let system_id = state.system_id.get();
+        if system_id > 0 {
+            state.system_id.set(-1);
+            state.system_id.set(system_id);
+        }
+        let game_id = state.game_id.get();
+        if game_id > 0 {
+            state.game_id.set(-1);
+            state.game_id.set(game_id);
+        }
+    });
+    source
+        .add_event_listener_with_callback(
+            "generate_playlists_complete",
+            handler.as_ref().unchecked_ref(),
+        )
+        .ok();
+    handler.forget();
+
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);
 }

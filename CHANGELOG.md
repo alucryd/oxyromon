@@ -11,6 +11,7 @@
 - Added a multiple-matches option (first match or skip) to the web UI's import dialog
 - Added patch file import to the web UI, for a single ROM
 - Added PlayStation 3 IRD import and purge to the web UI
+- Added M3U playlist generation to the web UI, for every system at once
 
 ## Changes
 

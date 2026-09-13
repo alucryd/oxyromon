@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::check_roms;
+use crate::api::generate_playlists;
 use crate::api::sort_roms;
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
@@ -132,6 +133,18 @@ pub fn Navbar() -> impl IntoView {
                 on:click=move |_| state.purge_rom_modal_open.set(true)
             >
                 <wa-icon name="trash" label="Purge ROM files"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Generate playlists"
+                on:click=move |_| {
+                    if !state.generating_playlists.get() {
+                        spawn_local(async move { generate_playlists(state).await });
+                    }
+                }
+            >
+                <wa-icon name="bars" label="Generate playlists"></wa-icon>
             </wa-button>
 
             <wa-dropdown>
