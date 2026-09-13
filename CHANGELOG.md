@@ -7,6 +7,7 @@
 - Added ROM sorting to the web UI, for a single system or all of them at once
 - Added an integrity check to the web UI, for a single system or all of them at once
 - Added a purge dialog to the web UI, for missing, orphan, trashed, and foreign ROM files
+- Added ROM format conversion to the web UI, for a single system
 - Added a multiple-matches option (first match or skip) to the web UI's import dialog
 
 ## Changes

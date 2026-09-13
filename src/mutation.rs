@@ -3,6 +3,7 @@ use super::database::*;
 use super::download_dats::download_redump_system;
 use super::progress::*;
 use super::check_roms;
+use super::convert_roms;
 use super::purge_roms;
 use super::purge_systems::purge_system;
 use super::server::{SseMessage, sse_send};
@@ -462,6 +463,71 @@ impl Mutation {
                         json!({ "success": false, "message": format!("Failed to purge ROM files: {:#}", e) }),
                     );
                     log::error!("Failed to purge ROM files: {:#}", e);
+                }
+            }
+        });
+
+        Ok(true)
+    }
+
+    /// Convert the ROM files of the given system to the given format.
+    async fn convert_roms(&self, ctx: &Context<'_>, system_id: i64, format: String) -> Result<bool> {
+        log::debug!("mutation::convert_roms({}, {:?})", system_id, format);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+        let mut connection = pool.acquire().await.unwrap();
+
+        let system = find_system_by_id(&mut connection, system_id).await;
+        let system_name = system.name;
+        if !convert_roms::ALL_FORMATS.contains(&format.as_str()) {
+            return Err(async_graphql::Error::new(format!(
+                "Unsupported format '{}'; expected one of {}",
+                format,
+                convert_roms::ALL_FORMATS.join(", ")
+            )));
+        }
+
+        let message = format!("Converting the ROMs of '{}' to {}", system_name, format);
+        let complete_message =
+            format!("Converted the ROMs of '{}' to {}", system_name, format);
+
+        tokio::spawn(async move {
+            let mut connection = pool.acquire().await.unwrap();
+            let progress_bar = ProgressBar::hidden();
+
+            sse_send(
+                &sse_tx,
+                "convert_roms_started",
+                json!({ "message": message }),
+            );
+
+            let arguments: Vec<String> = vec![
+                "convert-roms".to_string(),
+                "-s".to_string(),
+                system_name,
+                "-f".to_string(),
+                format,
+            ];
+
+            let matches = convert_roms::subcommand().get_matches_from(arguments);
+            match convert_roms::main(&mut connection, &matches, &progress_bar).await {
+                Ok(_) => {
+                    log::info!("Successfully converted ROMs: {}", complete_message);
+                    sse_send(
+                        &sse_tx,
+                        "convert_roms_complete",
+                        json!({ "success": true, "message": complete_message }),
+                    );
+                }
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "convert_roms_error",
+                        json!({ "success": false, "message": format!("Failed to convert ROMs: {:#}", e) }),
+                    );
+                    log::error!("Failed to convert ROMs: {:#}", e);
                 }
             }
         });

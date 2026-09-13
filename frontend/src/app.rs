@@ -5,6 +5,7 @@
 use leptos::prelude::*;
 
 use crate::components::about_modal::AboutModal;
+use crate::components::convert_rom_modal::ConvertRomModal;
 use crate::components::download_dat_modal::DownloadDatModal;
 use crate::components::import_dat_modal::ImportDatModal;
 use crate::components::import_rom_modal::ImportRomModal;
@@ -44,6 +45,7 @@ pub fn App() -> impl IntoView {
             <ImportDatModal />
             <ImportRomModal />
             <PurgeRomModal />
+            <ConvertRomModal />
             <SettingsModal
                 open=state.settings_modal_open
                 system_id=global_settings_id
