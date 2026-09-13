@@ -264,6 +264,10 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
                                             let system_for_delete = system_for_delete.clone();
+                                            // The IRD actions only make sense on PlayStation 3, mirroring
+                                            // the name filter the backend's import-irds and purge-irds use.
+                                            let is_ps3 =
+                                                name_for_settings.to_lowercase().contains("playstation 3");
                                             view! {
                                                 // A dropdown rather than a hand-placed panel: it
                                                 // draws in the top layer, so the pane's `overflow`
@@ -310,23 +314,29 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                         <wa-icon slot="icon" name="puzzle-piece"></wa-icon>
                                                         Import patch
                                                     </wa-dropdown-item>
-                                                    <wa-dropdown-item on:click=move |_| {
-                                                        state.import_ird_system_id.set(id);
-                                                        state.import_ird_modal_open.set(true);
-                                                    }>
-                                                        <wa-icon slot="icon" name="database"></wa-icon>
-                                                        Import IRDs
-                                                    </wa-dropdown-item>
-                                                    <wa-dropdown-item on:click=move |_| {
-                                                        if state.purging_irds_system_id.get() == -1 {
-                                                            spawn_local(async move {
-                                                                purge_irds(state, id).await;
-                                                            });
-                                                        }
-                                                    }>
-                                                        <wa-icon slot="icon" name="trash"></wa-icon>
-                                                        Purge IRDs
-                                                    </wa-dropdown-item>
+                                                    {move || if is_ps3 {
+                                                        Some(view! {
+                                                            <wa-dropdown-item on:click=move |_| {
+                                                                state.import_ird_system_id.set(id);
+                                                                state.import_ird_modal_open.set(true);
+                                                            }>
+                                                                <wa-icon slot="icon" name="database"></wa-icon>
+                                                                Import IRDs
+                                                            </wa-dropdown-item>
+                                                            <wa-dropdown-item on:click=move |_| {
+                                                                if state.purging_irds_system_id.get() == -1 {
+                                                                    spawn_local(async move {
+                                                                        purge_irds(state, id).await;
+                                                                    });
+                                                                }
+                                                            }>
+                                                                <wa-icon slot="icon" name="trash"></wa-icon>
+                                                                Purge IRDs
+                                                            </wa-dropdown-item>
+                                                        })
+                                                    } else {
+                                                        None
+                                                    }}
                                                     <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));
                                                         sys_settings_title

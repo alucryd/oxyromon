@@ -18,6 +18,10 @@
 - `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts
 - `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended, matching the game and ROM automatically
 
+## Improvements
+
+- Only show the IRD import and purge actions in the web UI's system menu for PlayStation 3 systems, matching the backend's system filter
+
 ## Fixes
 
 - Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
