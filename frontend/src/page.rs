@@ -296,6 +296,13 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                         Sort
                                                     </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
+                                                        state.convert_rom_system_id.set(id);
+                                                        state.convert_rom_modal_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="copy"></wa-icon>
+                                                        Convert
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));
                                                         sys_settings_title
                                                             .set(format!("{name_for_settings} Settings"));

@@ -444,3 +444,20 @@ pub async fn purge_roms(
         }
     }
 }
+
+/// Ask the server to convert the ROM files of one system to a format; the
+/// work itself reports over SSE, and only a failure to hand the job over is
+/// returned here (and reported).
+pub async fn convert_roms(state: AppState, system_id: i64, format: String) -> Result<(), String> {
+    let mutation = r#"mutation ConvertRoms($systemId: Int!, $format: String!) {
+        convertRoms(systemId: $systemId, format: $format)
+    }"#;
+    let variables = json!({ "systemId": system_id, "format": format });
+    match graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            report_error(state.notifier, "Converting the ROM files", &e);
+            Err(e)
+        }
+    }
+}
