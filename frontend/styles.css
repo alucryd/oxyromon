@@ -332,6 +332,18 @@
     white-space: nowrap;
   }
 
+  /* The "482/500" progress count on a system row. Dim and tabular so a column
+     of them aligns; it sits right of the (ellipsis) name and left of the
+     actions. Sits at the end of the flex line, so `flex: 1` on the label pushes
+     it here. */
+  .row-count {
+    margin-inline-end: var(--wa-space-m);
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-s, 0.875em);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
   /* === Statistics === */
 
   /* `align-items` centres the two lines as blocks; a label long enough to wrap

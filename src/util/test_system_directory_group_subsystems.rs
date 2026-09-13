@@ -29,6 +29,8 @@ async fn test() {
         completion: 0,
         merging: Merging::NonMerged as i64,
         custom_extension: None,
+        games_complete: 0,
+        games_total: 0,
     };
 
     // when

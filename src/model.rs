@@ -31,6 +31,10 @@ pub struct System {
     pub completion: i64,
     pub arcade: bool,
     pub merging: i64,
+    /// Games in the system that are complete (not trashed).
+    pub games_complete: i64,
+    /// Games in the system that are not trashed.
+    pub games_total: i64,
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
