@@ -1086,6 +1086,24 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
 }
 
+/// The same lookup as `find_rom_by_id`, but `None` instead of a panic when the
+/// row is missing, for validating ids that come from untrusted input.
+pub async fn find_rom_by_id_opt(connection: &mut SqliteConnection, id: i64) -> Option<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_optional(connection)
+    .await
+    .ok()
+    .flatten()
+}
+
 pub async fn count_roms(connection: &mut SqliteConnection) -> i64 {
     sqlx::query!(
         "

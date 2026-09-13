@@ -49,6 +49,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("ROM")
+                .long("rom")
+                .help("Select the target ROM by id, skipping the prompts")
+                .required(false)
+                .num_args(1)
+                .value_parser(value_parser!(i64)),
+        )
 }
 
 pub async fn main(
@@ -56,9 +64,10 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    let patch_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
+    let patch_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("PATCHES").unwrap().collect();
     let name = matches.get_flag("NAME");
     let force = matches.get_flag("FORCE");
+    let rom_id = matches.get_one::<i64>("ROM").copied();
     for patch_path in patch_paths {
         match parse_patch(patch_path).await? {
             Some(patch_format) => {
@@ -69,6 +78,7 @@ pub async fn main(
                     &patch_format,
                     name,
                     force,
+                    rom_id,
                 )
                 .await?;
             }
@@ -96,25 +106,75 @@ pub async fn import_patch<P: AsRef<Path>>(
     patch_format: &PatchType,
     name: bool,
     force: bool,
+    rom_id: Option<i64>,
 ) -> Result<()> {
-    let system = prompt_for_system(connection, None).await?;
-    let games = find_full_games_by_system_id(connection, system.id).await;
-    let game = match prompt_for_game(&games, None)? {
-        Some(game) => game,
-        None => {
-            print_skip(progress_bar, "Skipping patch");
-            return Ok(());
+    // When the target ROM is known, the system and game are resolved straight
+    // from the database; otherwise the interactive prompts pick them.
+    match rom_id {
+        Some(rom_id) => {
+            let rom = find_rom_by_id_opt(connection, rom_id)
+                .await
+                .ok_or_else(|| anyhow::anyhow!("ROM with id {} not found", rom_id))?;
+            let game = find_game_by_id(connection, rom.game_id).await;
+            let system = find_system_by_id(connection, game.system_id).await;
+            do_import_patch(
+                connection,
+                progress_bar,
+                patch_path,
+                patch_format,
+                name,
+                force,
+                &system,
+                &game,
+                &rom,
+            )
+            .await
         }
-    };
-    let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
-    let rom = match prompt_for_rom(&roms, None)? {
-        Some(rom) => rom,
         None => {
-            print_skip(progress_bar, "Skipping patch");
-            return Ok(());
+            let system = prompt_for_system(connection, None).await?;
+            let games = find_full_games_by_system_id(connection, system.id).await;
+            let game = match prompt_for_game(&games, None)? {
+                Some(game) => game,
+                None => {
+                    print_skip(progress_bar, "Skipping patch");
+                    return Ok(());
+                }
+            };
+            let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
+            let rom = match prompt_for_rom(&roms, None)? {
+                Some(rom) => rom,
+                None => {
+                    print_skip(progress_bar, "Skipping patch");
+                    return Ok(());
+                }
+            };
+            do_import_patch(
+                connection,
+                progress_bar,
+                patch_path,
+                patch_format,
+                name,
+                force,
+                &system,
+                game,
+                rom,
+            )
+            .await
         }
-    };
+    }
+}
 
+async fn do_import_patch<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    patch_path: &P,
+    patch_format: &PatchType,
+    name: bool,
+    force: bool,
+    system: &System,
+    game: &Game,
+    rom: &Rom,
+) -> Result<()> {
     let patch_name = match name {
         true => match editor("Please enter a name for the patch")? {
             Some(name) => name,
@@ -187,6 +247,8 @@ pub async fn import_patch<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod test_bps;
+#[cfg(test)]
+mod test_bps_by_rom_id;
 #[cfg(test)]
 mod test_bps_ips;
 #[cfg(test)]

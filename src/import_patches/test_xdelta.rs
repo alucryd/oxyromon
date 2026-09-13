@@ -65,6 +65,7 @@ async fn test() {
         &PatchType::Xdelta,
         false,
         false,
+        None,
     )
     .await
     .unwrap();

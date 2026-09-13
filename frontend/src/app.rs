@@ -8,6 +8,7 @@ use crate::components::about_modal::AboutModal;
 use crate::components::convert_rom_modal::ConvertRomModal;
 use crate::components::download_dat_modal::DownloadDatModal;
 use crate::components::import_dat_modal::ImportDatModal;
+use crate::components::import_patch_modal::ImportPatchModal;
 use crate::components::import_rom_modal::ImportRomModal;
 use crate::components::navbar::Navbar;
 use crate::components::purge_rom_modal::PurgeRomModal;
@@ -44,6 +45,7 @@ pub fn App() -> impl IntoView {
             <DownloadDatModal />
             <ImportDatModal />
             <ImportRomModal />
+            <ImportPatchModal />
             <PurgeRomModal />
             <ConvertRomModal />
             <SettingsModal
