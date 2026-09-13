@@ -47,30 +47,36 @@ pub fn PurgeRomModal() -> impl IntoView {
     view! {
         <Modal open=open title=Signal::derive(|| "Purge ROM files".to_string()) size="sm">
             <div class="wa-stack wa-gap-m">
-                <wa-checkbox
-                    prop:checked=move || missing.get()
-                    on:change=move |ev| missing.set(control_checked(&ev))
-                >
-                    Delete missing ROM files from the database
-                </wa-checkbox>
-                <wa-checkbox
-                    prop:checked=move || orphan.get()
-                    on:change=move |ev| orphan.set(control_checked(&ev))
-                >
-                    Delete ROM files without an associated ROM from the database
-                </wa-checkbox>
-                <wa-checkbox
-                    prop:checked=move || trash.get()
-                    on:change=move |ev| trash.set(control_checked(&ev))
-                >
-                    Physically delete ROM files from the trash directories
-                </wa-checkbox>
-                <wa-checkbox
-                    prop:checked=move || foreign.get()
-                    on:change=move |ev| foreign.set(control_checked(&ev))
-                >
-                    Physically delete ROM files unknown to the database
-                </wa-checkbox>
+                <div class="wa-stack wa-gap-s">
+                    <div class="purge-group-heading">Remove from database</div>
+                    <wa-checkbox
+                        prop:checked=move || missing.get()
+                        on:change=move |ev| missing.set(control_checked(&ev))
+                    >
+                        Delete missing ROM files
+                    </wa-checkbox>
+                    <wa-checkbox
+                        prop:checked=move || orphan.get()
+                        on:change=move |ev| orphan.set(control_checked(&ev))
+                    >
+                        Delete ROM files without an associated ROM
+                    </wa-checkbox>
+                </div>
+                <div class="wa-stack wa-gap-s purge-danger">
+                    <div class="purge-group-heading">Delete files from disk</div>
+                    <wa-checkbox
+                        prop:checked=move || trash.get()
+                        on:change=move |ev| trash.set(control_checked(&ev))
+                    >
+                        Delete ROM files in the trash
+                    </wa-checkbox>
+                    <wa-checkbox
+                        prop:checked=move || foreign.get()
+                        on:change=move |ev| foreign.set(control_checked(&ev))
+                    >
+                        Delete ROM files unknown to the database
+                    </wa-checkbox>
+                </div>
             </div>
 
             <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
