@@ -42,6 +42,25 @@
     display: none;
   }
 
+  /* === Logo theme variants ===
+   * The logo ships in two variants: the white-cross one (icon.svg / logo.svg),
+   * which reads on dark surfaces, and a dark-cross one (-light.svg) for light
+   * mode, where the white cross and the "oxy"/"on" text would vanish on the
+   * white navbar and modal. The theme lives on :root as .wa-dark, so we just
+   * swap which variant is shown. The default theme is dark, hence the light
+   * one is hidden unless :root is not .wa-dark. */
+  .brand-logo--light {
+    display: none;
+  }
+
+  :root:not(.wa-dark) .brand-logo--light {
+    display: inline;
+  }
+
+  :root:not(.wa-dark) .brand-logo:not(.brand-logo--light) {
+    display: none;
+  }
+
   /* === Shell === */
 
   .app-shell {

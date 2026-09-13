@@ -26,6 +26,7 @@
 - Applied the orange brand colour to the web UI and set the page title to oxyROMon, matching the logo
 - Refined web UI copy and accessibility: the games filter field has an accessible label and a clearer placeholder, the import dialog's multiple-matches control is reworded, the settings spell out what 1G1R means, and the page description is filled in
 - Adjusted the web UI's default pane split so the ROM and ROM-file pane starts a little narrower, giving the games list more room
+- Added a light-mode variant of the logo with a dark cross and wordmark, shown in the light theme so the white-cross logo stays legible on the white navbar and About dialog
 
 ## Fixes
 

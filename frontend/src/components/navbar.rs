@@ -88,7 +88,8 @@ pub fn Navbar() -> impl IntoView {
     view! {
         <nav class="navbar">
             <a href="/" style="display: flex;">
-                <img src="/icon.svg" alt="oxyROMon" style="height: 2rem;" />
+                <img src="/icon.svg" class="brand-logo" alt="oxyROMon" style="height: 2rem;" />
+                <img src="/icon-light.svg" class="brand-logo brand-logo--light" alt="oxyROMon" style="height: 2rem;" />
             </a>
 
             // ROMs are imported constantly and DATs set up rarely, so the
