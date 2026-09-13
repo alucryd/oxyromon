@@ -10,6 +10,7 @@
 - Added ROM format conversion to the web UI, for a single system
 - Added a multiple-matches option (first match or skip) to the web UI's import dialog
 - Added patch file import to the web UI, for a single ROM
+- Added PlayStation 3 IRD import and purge to the web UI
 
 ## Changes
 
@@ -17,6 +18,7 @@
 - `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 - `check-roms` now accepts `--system` to check named systems without an interactive prompt
 - `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts
+- `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended, matching the game and ROM automatically
 
 ## Improvements
 

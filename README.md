@@ -419,9 +419,10 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
         <IRDS>...  Set the IRD files to import
 
     Options:
-        -i, --info   Show the IRD information and exit
-        -f, --force  Force import of already imported IRD files
-        -h, --help   Print help information
+        -i, --info             Show the IRD information and exit
+        -f, --force            Force import of already imported IRD files
+            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+        -h, --help             Print help information
 
 ## oxyromon-purge-irds
 
@@ -431,13 +432,14 @@ This will remove all child ROMs that were created when importing an IRD file, ef
 All ROM files associated with the deleted ROMs will be moved to the system's `Trash` directory.
 The game will be marked as not being a JB folder anymore, allowing you to re-import a different IRD if needed.
 
-    Usage: oxyromon purge-irds [GAMES]...
+    Usage: oxyromon purge-irds [OPTIONS] [GAMES]...
 
     Arguments:
         [GAMES]...  Set the game names to purge
 
     Options:
-        -h, --help  Print help
+            --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
+        -h, --help             Print help
 
 ## oxyromon-import-roms
 
@@ -713,9 +715,10 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
         <IRDS>...  Set the IRD files to import
 
     Options:
-        -i, --info   Show the IRD information and exit
-        -f, --force  Force import of already imported IRD files
-        -h, --help   Print help information
+        -i, --info             Show the IRD information and exit
+        -f, --force            Force import of already imported IRD files
+            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+        -h, --help             Print help information
 
 ## oxyromon-server
 

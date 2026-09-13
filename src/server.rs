@@ -1,5 +1,6 @@
 use super::database::*;
 use super::import_dats::{ImportDatResult, process_dat_upload};
+use super::import_irds;
 use super::import_patches::{import_patch, parse_patch};
 use super::mutation::Mutation;
 use super::progress::*;
@@ -203,6 +204,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
         .route("/dats", post(upload_dat).layer(DefaultBodyLimit::disable()))
         .route("/roms", post(upload_rom).layer(DefaultBodyLimit::disable()))
         .route("/patches", post(upload_patch).layer(DefaultBodyLimit::disable()))
+        .route("/irds", post(upload_ird).layer(DefaultBodyLimit::disable()))
         .route("/romfiles/{id}", get(download_romfile))
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index))
@@ -493,6 +495,125 @@ fn bad_request(message: String) -> Response<Body> {
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .body(Body::from(message))
+        .unwrap()
+}
+
+/// Import an uploaded PlayStation 3 IRD against a given system.
+async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> Response<Body> {
+    let mut upload = None;
+    let mut system_id = None;
+
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                log::error!("upload_ird: multipart error: {}", e);
+                return bad_request(e.to_string());
+            }
+        };
+
+        let field_name = field.name().map(|name| name.to_owned());
+        let file_name = field.file_name().map(|name| name.to_owned());
+
+        match field_name.as_deref() {
+            Some("file") => {
+                let filename = safe_filename(file_name.as_deref().unwrap_or_default());
+                match stream_field_to_directory(field, &filename).await {
+                    Ok(directory) => upload = Some((filename, directory)),
+                    Err(e) => {
+                        log::error!("upload_ird: failed to store the upload: {:#}", e);
+                        return bad_request(e.to_string());
+                    }
+                }
+            }
+            Some("system") => match field.text().await {
+                Ok(text) if !text.trim().is_empty() => match text.trim().parse::<i64>() {
+                    Ok(id) => system_id = Some(id),
+                    Err(_) => log::warn!("upload_ird: invalid system field: {text}"),
+                },
+                Ok(_) => {}
+                Err(e) => log::warn!("upload_ird: failed to read system field: {}", e),
+            },
+            other => {
+                log::debug!("upload_ird: skipping unknown field {:?}", other);
+                let _ = field.bytes().await;
+            }
+        }
+    }
+
+    let (filename, directory) = match upload {
+        Some(upload) => upload,
+        None => return bad_request("No file provided".to_string()),
+    };
+    let system_id = match system_id {
+        Some(id) => id,
+        None => {
+            drop(directory);
+            return bad_request("No system provided".to_string());
+        }
+    };
+
+    // Reject an unknown system up front so the client gets a 400, and keep the
+    // name the unattended import matches against.
+    let system_name = {
+        let pool = state.pool.clone();
+        let mut connection = pool.acquire().await.unwrap();
+        match find_system_by_id_opt(&mut connection, system_id).await {
+            Some(system) => system.name,
+            None => {
+                drop(directory);
+                return bad_request(format!("System {system_id} not found"));
+            }
+        }
+    };
+
+    let sse_tx = state.sse_tx.clone();
+    let pool = state.pool.clone();
+
+    tokio::spawn(async move {
+        let mut connection = pool.acquire().await.unwrap();
+        let progress_bar = ProgressBar::hidden();
+        let ird_path = directory.path().join(&filename);
+
+        sse_send(
+            &sse_tx,
+            "import_irds_started",
+            json!({ "name": filename, "message": format!("Importing IRD \"{}\"", filename) }),
+        );
+
+        // The IRD path is the single positional; `--system` keeps it unattended.
+        let arguments = vec![
+            "import-irds".to_string(),
+            ird_path.to_string_lossy().to_string(),
+            "--system".to_string(),
+            system_name,
+        ];
+        let matches = import_irds::subcommand().get_matches_from(arguments);
+
+        match import_irds::main(&mut connection, &matches, &progress_bar).await {
+            Ok(()) => {
+                sse_send(
+                    &sse_tx,
+                    "import_irds_complete",
+                    json!({ "name": filename, "success": true, "message": format!("Imported IRD \"{}\"", filename) }),
+                );
+            }
+            Err(e) => {
+                log::error!("upload_ird: import failed: {:#}", e);
+                sse_send(
+                    &sse_tx,
+                    "import_irds_error",
+                    json!({ "name": filename, "success": false, "error": format!("{:#}", e), "message": format!("Failed to import IRD \"{}\": {:#}", filename, e) }),
+                );
+            }
+        }
+        // `directory` is dropped here, removing the now-imported temporary file.
+    });
+
+    Response::builder()
+        .status(StatusCode::ACCEPTED)
+        .body(Body::from("Import queued"))
         .unwrap()
 }
 

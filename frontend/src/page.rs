@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::check_roms;
+use crate::api::purge_irds;
 use crate::api::purge_system;
 use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
@@ -308,6 +309,23 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                     }>
                                                         <wa-icon slot="icon" name="puzzle-piece"></wa-icon>
                                                         Import patch
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        state.import_ird_system_id.set(id);
+                                                        state.import_ird_modal_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="database"></wa-icon>
+                                                        Import IRDs
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        if state.purging_irds_system_id.get() == -1 {
+                                                            spawn_local(async move {
+                                                                purge_irds(state, id).await;
+                                                            });
+                                                        }
+                                                    }>
+                                                        <wa-icon slot="icon" name="trash"></wa-icon>
+                                                        Purge IRDs
                                                     </wa-dropdown-item>
                                                     <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));

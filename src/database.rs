@@ -314,6 +314,24 @@ pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> Sy
     .unwrap_or_else(|_| panic!("Error while finding system with id {}", id))
 }
 
+/// The same lookup as `find_system_by_id`, but `None` instead of a panic when
+/// the row is missing, for validating ids that come from untrusted input.
+pub async fn find_system_by_id_opt(connection: &mut SqliteConnection, id: i64) -> Option<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *
+        FROM systems
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_optional(connection)
+    .await
+    .ok()
+    .flatten()
+}
+
 pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) -> Option<System> {
     let name = name.replace(" (Parent-Clone)", "");
     sqlx::query_as!(

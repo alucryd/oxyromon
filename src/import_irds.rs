@@ -48,6 +48,14 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("SYSTEM")
+                .long("system")
+                .help("Select the system to import into, matching the game and ROM automatically")
+                .required(false)
+                .num_args(1)
+                .value_parser(value_parser!(String)),
+        )
 }
 
 pub async fn main(
@@ -56,8 +64,29 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> Result<()> {
     let ird_paths: Vec<&PathBuf> = matches.get_many::<PathBuf>("IRDS").unwrap().collect();
-    let system = prompt_for_system_like(connection, None, "%PlayStation 3%").await?;
+    // A system given on the command line (or by the server) skips the prompt and
+    // matches the game and ROM automatically, so the whole import is unattended.
+    let (system, headless) = match matches.get_one::<String>("SYSTEM") {
+        Some(name) => {
+            let systems = find_systems_by_name_like(connection, name).await;
+            let system = systems
+                .into_iter()
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("No system matching \"{}\"", name))?;
+            (system, true)
+        }
+        None => (
+            prompt_for_system_like(connection, None, "%PlayStation 3%").await?,
+            false,
+        ),
+    };
     let mut games = find_wanted_games_by_system_id(connection, system.id).await;
+
+    // In unattended mode there is nothing to fall back to, so a system with no
+    // matching games is a hard error instead of a silent no-op.
+    if headless && games.is_empty() {
+        bail!("No games found for system \"{}\", import its DAT first", system.name);
+    }
 
     for ird_path in ird_paths {
         let (irdfile, header) = parse_ird(ird_path).await?;
@@ -94,12 +123,26 @@ pub async fn main(
                     ))
                     .unwrap()
             });
-            if let Some(game) = prompt_for_game(&games, None)? {
+            let game = if headless {
+                games.first()
+            } else {
+                prompt_for_game(&games, None)?
+            };
+            if let Some(game) = game {
                 if game.jbfolder && !matches.get_flag("FORCE") {
                     print_skip(progress_bar, "IRD already exists");
                     continue;
                 }
-                import_ird(connection, progress_bar, game, &irdfile, header).await?;
+                // Resolve the parent ROM the same way: the single candidate when
+                // unattended, an explicit pick otherwise.
+                let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
+                let parent_rom = if headless {
+                    roms.first()
+                } else {
+                    prompt_for_rom(&roms, None)?
+                };
+                import_ird(connection, progress_bar, game, &irdfile, header, parent_rom)
+                    .await?;
             }
         }
         print_separator(progress_bar);
@@ -285,19 +328,22 @@ pub async fn import_ird(
     game: &Game,
     irdfile: &Irdfile,
     header: Vec<u8>,
+    parent_rom: Option<&Rom>,
 ) -> Result<()> {
-    let roms = find_roms_by_game_id_no_parents(connection, game.id).await;
-    let parent_rom = prompt_for_rom(&roms, None)?;
     if parent_rom.is_none() {
         return Ok(());
     }
 
     let mut transaction = begin_transaction(connection).await;
 
-    // parse ISO header
-    let mut filesystem = Iso9660Filesystem::new(Box::new(HeaderSectorReader { header }))?;
-    let root = filesystem.root();
-    let files = walk_directory(&mut filesystem, &root)?;
+    // parse ISO header, enumerating the files up front so the non-Send
+    // filesystem is dropped before the awaits that follow (which lets the
+    // server spawn this work).
+    let files = {
+        let mut filesystem = Iso9660Filesystem::new(Box::new(HeaderSectorReader { header }))?;
+        let root = filesystem.root();
+        walk_directory(&mut filesystem, &root)?
+    };
 
     if files.len() != irdfile.files_count {
         bail!(
