@@ -22,6 +22,7 @@
 
 - Only show the IRD import and purge actions in the web UI's system menu for PlayStation 3 systems, matching the backend's system filter
 - Added a non-colour status cue (a leading glyph) to the web UI's system, game, and ROM rows, so the completion state is legible without relying on colour alone
+- Grouped the purge dialog's options by risk, styling the file-deleting ones in a warning so the danger is visible at a glance
 
 ## Fixes
 

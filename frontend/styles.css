@@ -408,4 +408,20 @@
   .dropzone:hover {
     border-color: var(--wa-color-brand-fill-loud);
   }
+
+  /* === The purge dialog's risk groups === */
+
+  /* The four purge options split by how far the damage goes: two remove rows
+     from the database, two delete files from disk. The file group is set off
+     in a danger tone so the risk is visible at a glance. */
+  .purge-group-heading {
+    font-weight: 600;
+    color: var(--wa-color-text-quiet);
+  }
+
+  .purge-danger {
+    padding: var(--wa-space-s);
+    border-inline-start: 3px solid var(--wa-color-danger-fill-loud);
+    background-color: var(--wa-color-danger-fill-quiet);
+  }
 }
