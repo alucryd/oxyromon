@@ -262,6 +262,24 @@
     color: var(--wa-color-text-quiet);
   }
 
+  /* A non-colour cue for colour-blind users: the glyph carries the state the
+     hue already carries. It is leading (not trailing) so it survives the
+     row's ellipsis, and `ignored` is the muted state and gets none. */
+  .status-complete::before {
+    content: "●";
+    margin-inline-end: var(--wa-space-xs);
+  }
+
+  .status-incomplete::before {
+    content: "◐";
+    margin-inline-end: var(--wa-space-xs);
+  }
+
+  .status-wanted::before {
+    content: "–";
+    margin-inline-end: var(--wa-space-xs);
+  }
+
   /* The game elected for the 1G1R set. */
   .row-elected {
     font-weight: var(--wa-font-weight-semibold);
