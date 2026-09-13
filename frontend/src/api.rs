@@ -416,3 +416,31 @@ pub async fn check_roms(state: AppState, system_id: i64) {
     }
     state.checking_system_id.set(-1);
 }
+
+/// Ask the server to purge the selected categories of ROM files; the work
+/// itself reports over SSE, and only a failure to hand the job over is
+/// returned here (and reported).
+pub async fn purge_roms(
+    state: AppState,
+    missing: bool,
+    orphan: bool,
+    trash: bool,
+    foreign: bool,
+) -> Result<(), String> {
+    let mutation = r#"mutation PurgeRoms($missing: Boolean!, $orphan: Boolean!, $trash: Boolean!, $foreign: Boolean!) {
+        purgeRoms(missing: $missing, orphan: $orphan, trash: $trash, foreign: $foreign)
+    }"#;
+    let variables = json!({
+        "missing": missing,
+        "orphan": orphan,
+        "trash": trash,
+        "foreign": foreign
+    });
+    match graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            report_error(state.notifier, "Purging ROM files", &e);
+            Err(e)
+        }
+    }
+}

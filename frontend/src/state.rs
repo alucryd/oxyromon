@@ -111,6 +111,7 @@ pub struct AppState {
     pub download_dat_modal_open: RwSignal<bool>,
     pub import_dat_modal_open: RwSignal<bool>,
     pub import_rom_modal_open: RwSignal<bool>,
+    pub purge_rom_modal_open: RwSignal<bool>,
     pub settings_modal_open: RwSignal<bool>,
     pub about_modal_open: RwSignal<bool>,
 
@@ -327,6 +328,7 @@ impl AppState {
             download_dat_modal_open: RwSignal::new(false),
             import_dat_modal_open: RwSignal::new(false),
             import_rom_modal_open: RwSignal::new(false),
+            purge_rom_modal_open: RwSignal::new(false),
             settings_modal_open: RwSignal::new(false),
             about_modal_open: RwSignal::new(false),
 

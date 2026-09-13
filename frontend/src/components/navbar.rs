@@ -126,6 +126,14 @@ pub fn Navbar() -> impl IntoView {
                 <wa-icon name="circle-check" label="Check all systems"></wa-icon>
             </wa-button>
 
+            <wa-button
+                appearance="plain"
+                title="Purge ROM files"
+                on:click=move |_| state.purge_rom_modal_open.set(true)
+            >
+                <wa-icon name="trash" label="Purge ROM files"></wa-icon>
+            </wa-button>
+
             <wa-dropdown>
                 <wa-button slot="trigger" appearance="plain" title="DAT files" with-caret="">
                     <wa-icon name="database" label="DAT files"></wa-icon>
