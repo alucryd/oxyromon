@@ -244,6 +244,10 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                         let selected = move || state.system_id.get() == id;
                         let system_for_delete = system.clone();
                         let name_for_settings = name.clone();
+                        // "482/500": games complete out of the non-trashed games.
+                        // Hidden for an empty system rather than shown as "0/0".
+                        let count = (system.games_total > 0)
+                            .then(|| format!("{}/{}", system.games_complete, system.games_total));
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
@@ -254,6 +258,7 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                 >
                                     {name.clone()}
                                 </button>
+                                {count.map(|c| view! { <span class="row-count">{c}</span> })}
                                 <div style="padding-inline-end: var(--wa-space-2xs);">
                                     <Show
                                         when=move || {

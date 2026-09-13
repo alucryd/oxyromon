@@ -115,7 +115,7 @@ struct SystemsData {
 /// Fetch every system.
 pub async fn fetch_systems(notifier: Notifier) -> Vec<System> {
     let query = r#"{
-        systems { id name description completion merging arcade }
+        systems { id name description completion merging arcade gamesComplete gamesTotal }
     }"#;
     match graphql::<SystemsData>(query, Value::Null).await {
         Ok(data) => data.systems,

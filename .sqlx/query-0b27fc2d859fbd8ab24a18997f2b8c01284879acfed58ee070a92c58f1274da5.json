@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM systems\n        WHERE id = ?\n        ",
+  "query": "\n        SELECT *,\n            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,\n            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total\n        FROM systems\n        WHERE id = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -112,6 +112,18 @@
             "name": "custom_extension"
           }
         }
+      },
+      {
+        "name": "games_complete",
+        "ordinal": 10,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "games_total",
+        "ordinal": 11,
+        "type_info": "Integer",
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -127,8 +139,10 @@
       false,
       true,
       false,
-      true
+      true,
+      false,
+      false
     ]
   },
-  "hash": "0cf1e903d705704d912476b70a980da875df78ae8b6de1370bafc802259143a1"
+  "hash": "0b27fc2d859fbd8ab24a18997f2b8c01284879acfed58ee070a92c58f1274da5"
 }

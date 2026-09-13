@@ -220,7 +220,9 @@ pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         ORDER BY name
         ",
@@ -234,7 +236,9 @@ pub async fn find_arcade_systems(connection: &mut SqliteConnection) -> Vec<Syste
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE arcade = true
         ORDER BY name
@@ -249,7 +253,9 @@ pub async fn find_empty_systems(connection: &mut SqliteConnection) -> Vec<System
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE systems.completion = 0
         AND NOT EXISTS (
@@ -269,7 +275,9 @@ pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE url = ?
         ORDER BY name
@@ -288,7 +296,9 @@ pub async fn find_systems_by_name_like(
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE name LIKE ?
         ",
@@ -303,7 +313,9 @@ pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> Sy
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE id = ?
         ",
@@ -320,7 +332,9 @@ pub async fn find_system_by_id_opt(connection: &mut SqliteConnection, id: i64) -
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE id = ?
         ",
@@ -337,7 +351,9 @@ pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) 
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE name = ?
         ",
