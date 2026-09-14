@@ -283,6 +283,14 @@
     box-shadow: inset 3px 0 0 var(--wa-color-brand-fill-loud);
   }
 
+  /* Keyboard focus on a games-list option: an inset ring, so it reads as
+     "the row the cursor is on" without shifting the row's contents. Only the
+     games list exposes options, so this scopes to it. */
+  [role="option"]:focus-visible {
+    outline: 2px solid var(--wa-color-brand-fill-loud);
+    outline-offset: -3px;
+  }
+
   /* How complete a system or game is, and whether a rom is present. The same
      four meanings the filter buttons in the navbar carry. */
   .status-complete {

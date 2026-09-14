@@ -12,7 +12,7 @@ use crate::api::purge_system;
 use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
 use crate::model::{Game, Rom, Romfile, Sizes, System};
-use crate::state::AppState;
+use crate::state::{AppState, ROW_HEIGHT};
 use crate::ui::{Modal, SizeTile, StatTile, control_number, use_media_query};
 use crate::ui::{ScrollWindow, Spacer};
 
@@ -377,6 +377,21 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
     }
 }
 
+/// Focus a games row by its DOM id. Called after a keyboard selection, which
+/// has already scrolled the row into the drawn window; the row is looked up
+/// live, so a row that is still unmounted (past the overscan) simply does not
+/// take focus yet.
+fn focus_row(game_id: i64) {
+    let Some(document) = web_sys::window().and_then(|window| window.document()) else {
+        return;
+    };
+    if let Some(element) = document.get_element_by_id(&format!("game-{game_id}")) {
+        if let Some(row) = wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlElement>(&element) {
+            let _ = row.focus();
+        }
+    }
+}
+
 #[component]
 fn GamesCard() -> impl IntoView {
     let state = expect_context::<AppState>();
@@ -397,6 +412,19 @@ fn GamesCard() -> impl IntoView {
                     .enumerate()
                     .map(|(offset, &index)| (start + offset, games[index].clone()))
                     .collect::<Vec<_>>()
+            })
+        })
+    });
+
+    // The option the keyboard is on: the selected game, or the first game when
+    // nothing is selected, so the listbox always has exactly one focusable row.
+    let active_index = Memo::new(move |_| {
+        state.game_id.with(|game_id| {
+            state.filtered_games.with(|indices| {
+                state.games.with(|games| {
+                    let selected = indices.iter().position(|&i| games[i].id == *game_id);
+                    selected.or_else(|| (!indices.is_empty()).then_some(0))
+                })
             })
         })
     });
@@ -436,10 +464,38 @@ fn GamesCard() -> impl IntoView {
             <div
                 node_ref=viewport
                 class="panel-body"
+                role="listbox"
+                aria-label="Games"
                 on:scroll=move |_| {
                     if let Some(element) = viewport.get_untracked() {
                         window.measure(&element);
                     }
+                }
+                on:keydown=move |ev: web_sys::KeyboardEvent| {
+                    let total = state.filtered_games.with(Vec::len);
+                    if total == 0 {
+                        return;
+                    }
+                    let current = active_index.get().unwrap_or(0);
+                    let target = match ev.key().as_str() {
+                        "ArrowDown" | "ArrowRight" => (current + 1).min(total - 1),
+                        "ArrowUp" | "ArrowLeft" => current.saturating_sub(1),
+                        "Home" => 0,
+                        "End" => total - 1,
+                        "Enter" | " " => current,
+                        _ => return,
+                    };
+                    ev.prevent_default();
+                    // Arrow = select, matching a click: choosing a game loads its ROMs.
+                    let new_id = state.filtered_games.with(|indices| {
+                        state.games.with(|games| games[indices[target]].id)
+                    });
+                    state.game_id.set(new_id);
+                    if let Some(element) = viewport.get_untracked() {
+                        element.set_scroll_top((target as f64 * ROW_HEIGHT) as i32);
+                        window.measure(&element);
+                    }
+                    focus_row(new_id);
                 }
             >
                 <Spacer rows=Signal::derive(move || range.get().0) />
@@ -455,9 +511,18 @@ fn GamesCard() -> impl IntoView {
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
+                                    id=format!("game-{id}")
+                                    role="option"
                                     class=format!("plain-button row-label {weight} {color}")
                                     title=description
-                                    aria-current=move || selected().then_some("true")
+                                    aria-selected=move || selected().then_some("true")
+                                    tabindex=move || {
+                                        if active_index.get() == Some(position) {
+                                            "0"
+                                        } else {
+                                            "-1"
+                                        }
+                                    }
                                     on:click=move |_| state.game_id.set(id)
                                 >
                                     {name.clone()}
