@@ -323,7 +323,7 @@
   }
 
   .status-wanted::before {
-    content: "–";
+    content: "○";
     margin-inline-end: var(--wa-space-xs);
   }
 
