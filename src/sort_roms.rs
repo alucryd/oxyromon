@@ -102,14 +102,7 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> Result<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
-        Some(system_names) => {
-            let mut systems: Vec<System> = vec![];
-            for system_name in system_names {
-                systems.append(&mut find_systems_by_name_like(connection, system_name).await);
-            }
-            systems.dedup_by_key(|system| system.id);
-            systems
-        }
+        Some(system_names) => resolve_systems_by_name_like(connection, system_names).await,
         None => prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?,
     };
 
