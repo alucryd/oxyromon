@@ -406,3 +406,5 @@ async fn download_redump_dat(
 mod test_nointro;
 #[cfg(test)]
 mod test_redump;
+#[cfg(test)]
+mod test_redump_failures;

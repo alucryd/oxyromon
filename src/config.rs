@@ -638,6 +638,8 @@ mod test_add_to_list_already_exists;
 #[cfg(test)]
 mod test_bool;
 #[cfg(test)]
+mod test_cli;
+#[cfg(test)]
 mod test_directory;
 #[cfg(test)]
 mod test_list;

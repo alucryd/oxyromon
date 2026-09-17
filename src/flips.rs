@@ -103,3 +103,6 @@ impl AsXps for CommonRomfile {
 pub async fn get_version() -> Result<String> {
     tool_version(FLIPS, "flips", &["-v"], false, 0, None).await
 }
+
+#[cfg(test)]
+mod test_patch;

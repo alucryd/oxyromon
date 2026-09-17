@@ -71,3 +71,6 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_info;
