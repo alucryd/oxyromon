@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (MAME Rebuild)</name>
+		<description>Test System (MAME Rebuild)</description>
+		<version>20200721</version>
+		<date>20200721</date>
+		<author>Maxime Gauduin</author>
+		<url>www.no-intro.org</url>
+	</header>
+	<machine name="Test BIOS" isbios="yes">
+		<description>Test BIOS</description>
+		<rom name="Test BIOS.rom" size="256" crc="1c3321f3"
+			md5="2b9e40254b661c1970524071059965c7" sha1="31b561b11280b242e797147d4b39aa4d33920d8d"
+			status="verified" />
+	</machine>
+	<machine name="Test Parent">
+		<description>Test Parent</description>
+		<rom name="Test Parent.rom" size="256" crc="cc721e14"
+			md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d"
+			status="verified" />
+		<rom name="Test Parent Common.rom" size="256" crc="310212e8"
+			md5="d14b417004b9cc868286a0eafb257d2b" sha1="5fcce2e41101d4e0f22a9279e65839145fa61846"
+			status="verified" />
+	</machine>
+	<machine name="Test Clone" cloneof="Test Parent" romof="Test BIOS">
+		<description>Test Clone</description>
+		<rom name="Test Clone.rom" size="256" crc="cc721e14"
+			md5="c1fe7a7ed317bd069b0cb7bdbc40be01" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d"
+			merge="Test Parent" status="verified" />
+		<rom name="Test Clone Common.rom" size="256" crc="310212e8"
+			md5="d14b417004b9cc868286a0eafb257d2b" sha1="5fcce2e41101d4e0f22a9279e65839145fa61846"
+			merge="Test Parent" status="verified" />
+		<rom name="Test Clone Bios.rom" size="256" crc="1c3321f3"
+			md5="2b9e40254b661c1970524071059965c7" sha1="31b561b11280b242e797147d4b39aa4d33920d8d"
+			merge="Test BIOS" status="verified" />
+		<rom name="Test Clone Only.rom" size="256" crc="e2565a1f"
+			md5="d7e858f64accac2032b993bd62d453dc" sha1="91a6396e9069879aa6e6cc18efc15429d219d4e0"
+			status="verified" />
+	</machine>
+</datafile>

@@ -1041,4 +1041,10 @@ async fn sse_handler(
 }
 
 #[cfg(test)]
+mod test_mutations;
+#[cfg(test)]
+mod test_queries;
+#[cfg(test)]
+mod test_uploads;
+#[cfg(test)]
 mod test_server;

@@ -438,3 +438,14 @@ async fn delete_rom(
     update_rom_romfile(connection, rom.id, None).await;
     Ok(())
 }
+
+#[cfg(test)]
+mod test_full_non_merged_to_non_merged;
+#[cfg(test)]
+mod test_nothing_to_do;
+#[cfg(test)]
+mod test_non_merged_to_split;
+#[cfg(test)]
+mod test_split_to_full_non_merged;
+#[cfg(test)]
+mod test_split_to_non_merged;
