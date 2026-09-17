@@ -15,13 +15,13 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
       - name: Install dependencies
-        run: sudo apt-get install bchunk liblz4-1 libuv1 libzopfli1 mame-tools wit
+        run: sudo apt-get install bchunk dolphin-emu liblz4-1 libuv1 libzopfli1 mame-tools wit xdelta3
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
