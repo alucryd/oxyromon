@@ -33,6 +33,10 @@
 ## Fixes
 
 - Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
+- Fixed `xdelta3` patching swapping the output and patch arguments, so applying an XDELTA patch overwrote the patch instead of producing the patched ROM
+- Fixed the web UI's sort, check, convert, and purge-system actions panicking on an unknown `system_id`; they now return a typed GraphQL error instead
+- Fixed web UI background actions hanging forever when a database connection could not be acquired; the task now emits an SSE error so the UI recovers instead of waiting on a completion event that never arrives
+- Fixed overlapping system name patterns (e.g. `PlayStation` and `PlayStation 3`) causing the same system to be sorted, checked, or converted twice
 - Fixed the web UI's statistics cards being cut off at the right edge at some window widths, the grid's minimum column size left no room for the scrollbar
 
 # 0.23.0

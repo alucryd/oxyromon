@@ -12,9 +12,75 @@ use super::server::{SseMessage, sse_send};
 use super::sort_roms;
 use super::validator::*;
 use async_graphql::{Context, Object, Result};
+use futures::future::BoxFuture;
 use serde_json::json;
+use sqlx::SqliteConnection;
 use sqlx::SqlitePool;
 use tokio::sync::broadcast;
+
+/// Spawn a background task that runs a CLI subcommand's `main()` and reports the
+/// outcome over SSE as `{prefix}_started` / `{prefix}_complete` / `{prefix}_error`.
+///
+/// The connection is acquired *inside* the task and a failure to acquire is
+/// reported as an SSE error rather than a panic, so the UI never hangs waiting
+/// for a completion event that will never arrive.
+fn spawn_cli_action(
+    pool: SqlitePool,
+    sse_tx: broadcast::Sender<SseMessage>,
+    prefix: &'static str,
+    start_message: String,
+    complete_message: String,
+    fail_prefix: String,
+    run: impl for<'a> FnOnce(&'a mut SqliteConnection) -> BoxFuture<'a, anyhow::Result<()>>
+    + Send
+    + 'static,
+) {
+    tokio::spawn(async move {
+        let mut connection = match pool.acquire().await {
+            Ok(connection) => connection,
+            Err(e) => {
+                let message = format!("{fail_prefix}: {e}");
+                sse_send(
+                    &sse_tx,
+                    &format!("{prefix}_error"),
+                    json!({ "success": false, "message": message }),
+                );
+                log::error!("{message}");
+                return;
+            }
+        };
+        sse_send(
+            &sse_tx,
+            &format!("{prefix}_started"),
+            json!({ "message": start_message }),
+        );
+        match run(&mut connection).await {
+            Ok(()) => {
+                log::info!("{complete_message}");
+                sse_send(
+                    &sse_tx,
+                    &format!("{prefix}_complete"),
+                    json!({ "success": true, "message": complete_message }),
+                );
+            }
+            Err(e) => {
+                let message = format!("{fail_prefix}: {e:#}");
+                sse_send(
+                    &sse_tx,
+                    &format!("{prefix}_error"),
+                    json!({ "success": false, "message": message }),
+                );
+                log::error!("{message}");
+            }
+        }
+    });
+}
+
+/// The typed error returned by every mutation that resolves a caller-supplied
+/// `system_id` before doing work.
+fn system_not_found(system_id: i64) -> async_graphql::Error {
+    async_graphql::Error::new(format!("System {system_id} not found"))
+}
 
 pub struct Mutation;
 
@@ -149,7 +215,21 @@ impl Mutation {
             .clone();
 
         tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
+            let mut connection = match pool.acquire().await {
+                Ok(connection) => connection,
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "download_dats_error",
+                        json!({
+                            "success": false,
+                            "message": format!("Failed to download DAT files: {e}"),
+                        }),
+                    );
+                    log::error!("Failed to acquire connection to download DAT files: {e}");
+                    return;
+                }
+            };
             let progress_bar = ProgressBar::hidden();
             let total = systems.len();
 
@@ -208,12 +288,32 @@ impl Mutation {
             .clone();
         let mut connection = pool.acquire().await.unwrap();
 
-        let system = find_system_by_id(&mut connection, system_id).await;
+        let system = match find_system_by_id_opt(&mut connection, system_id).await {
+            Some(system) => system,
+            None => return Err(system_not_found(system_id)),
+        };
         let system_name = system.name.clone();
 
         // Spawn background task for deletion
         tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
+            let mut connection = match pool.acquire().await {
+                Ok(connection) => connection,
+                Err(e) => {
+                    sse_send(
+                        &sse_tx,
+                        "purge_error",
+                        json!({
+                            "system_id": system_id,
+                            "system_name": system_name,
+                            "success": false,
+                            "error": format!("{e}"),
+                            "message": format!("Failed to delete system '{}': {e}", system_name)
+                        }),
+                    );
+                    log::error!("Failed to acquire connection to purge system {system_id}: {e}");
+                    return;
+                }
+            };
             let progress_bar = ProgressBar::hidden();
 
             // Send start notification
@@ -276,10 +376,10 @@ impl Mutation {
         let mut connection = pool.acquire().await.unwrap();
 
         let system_name = match system_id {
-            Some(system_id) => {
-                let system = find_system_by_id(&mut connection, system_id).await;
-                Some(system.name)
-            }
+            Some(system_id) => match find_system_by_id_opt(&mut connection, system_id).await {
+                Some(system) => Some(system.name),
+                None => return Err(system_not_found(system_id)),
+            },
             None => None,
         };
 
@@ -292,44 +392,32 @@ impl Mutation {
             None => "Sorted the ROMs of all systems".to_string(),
         };
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(&sse_tx, "sort_roms_started", json!({ "message": message }));
-
-            let mut arguments: Vec<String> = vec!["sort-roms".to_string()];
-            match system_name {
-                Some(name) => {
-                    arguments.push("-s".to_string());
-                    arguments.push(name);
-                }
-                None => arguments.push("-a".to_string()),
-            }
-            // The action was asked for from the UI, so answer the per-system
-            // confirmation instead of waiting on a TTY that is not there.
-            arguments.push("-y".to_string());
-
-            let matches = sort_roms::subcommand().get_matches_from(arguments);
-            match sort_roms::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully sorted ROMs: {}", complete_message);
-                    sse_send(
-                        &sse_tx,
-                        "sort_roms_complete",
-                        json!({ "success": true, "message": complete_message }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "sort_roms_error",
-                        json!({ "success": false, "message": format!("Failed to sort ROMs: {:#}", e) }),
-                    );
-                    log::error!("Failed to sort ROMs: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "sort_roms",
+            message,
+            complete_message,
+            "Failed to sort ROMs".to_string(),
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let mut arguments: Vec<String> = vec!["sort-roms".to_string()];
+                    match system_name {
+                        Some(name) => {
+                            arguments.push("-s".to_string());
+                            arguments.push(name);
+                        }
+                        None => arguments.push("-a".to_string()),
+                    }
+                    // The action was asked for from the UI, so answer the
+                    // per-system confirmation instead of waiting on a TTY.
+                    arguments.push("-y".to_string());
+                    let matches = sort_roms::subcommand().get_matches_from(arguments);
+                    sort_roms::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }
@@ -346,10 +434,10 @@ impl Mutation {
         let mut connection = pool.acquire().await.unwrap();
 
         let system_name = match system_id {
-            Some(system_id) => {
-                let system = find_system_by_id(&mut connection, system_id).await;
-                Some(system.name)
-            }
+            Some(system_id) => match find_system_by_id_opt(&mut connection, system_id).await {
+                Some(system) => Some(system.name),
+                None => return Err(system_not_found(system_id)),
+            },
             None => None,
         };
 
@@ -362,41 +450,29 @@ impl Mutation {
             None => "Checked the ROMs of all systems".to_string(),
         };
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(&sse_tx, "check_roms_started", json!({ "message": message }));
-
-            let mut arguments: Vec<String> = vec!["check-roms".to_string()];
-            match system_name {
-                Some(name) => {
-                    arguments.push("--system".to_string());
-                    arguments.push(name);
-                }
-                None => arguments.push("-a".to_string()),
-            }
-
-            let matches = check_roms::subcommand().get_matches_from(arguments);
-            match check_roms::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully checked ROMs: {}", complete_message);
-                    sse_send(
-                        &sse_tx,
-                        "check_roms_complete",
-                        json!({ "success": true, "message": complete_message }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "check_roms_error",
-                        json!({ "success": false, "message": format!("Failed to check ROMs: {:#}", e) }),
-                    );
-                    log::error!("Failed to check ROMs: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "check_roms",
+            message,
+            complete_message,
+            "Failed to check ROMs".to_string(),
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let mut arguments: Vec<String> = vec!["check-roms".to_string()];
+                    match system_name {
+                        Some(name) => {
+                            arguments.push("--system".to_string());
+                            arguments.push(name);
+                        }
+                        None => arguments.push("-a".to_string()),
+                    }
+                    let matches = check_roms::subcommand().get_matches_from(arguments);
+                    check_roms::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }
@@ -409,37 +485,22 @@ impl Mutation {
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(
-                &sse_tx,
-                "generate_playlists_started",
-                json!({ "message": "Generating playlists for all systems" }),
-            );
-
-            let arguments = vec!["generate-playlists".to_string(), "-a".to_string()];
-            let matches = generate_playlists::subcommand().get_matches_from(arguments);
-            match generate_playlists::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully generated playlists");
-                    sse_send(
-                        &sse_tx,
-                        "generate_playlists_complete",
-                        json!({ "success": true, "message": "Generated playlists for all systems" }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "generate_playlists_error",
-                        json!({ "success": false, "message": format!("Failed to generate playlists: {:#}", e) }),
-                    );
-                    log::error!("Failed to generate playlists: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "generate_playlists",
+            "Generating playlists for all systems".to_string(),
+            "Generated playlists for all systems".to_string(),
+            "Failed to generate playlists".to_string(),
+            |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let arguments = vec!["generate-playlists".to_string(), "-a".to_string()];
+                    let matches = generate_playlists::subcommand().get_matches_from(arguments);
+                    generate_playlists::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }
@@ -466,51 +527,35 @@ impl Mutation {
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(
-                &sse_tx,
-                "purge_roms_started",
-                json!({ "message": "Purging ROM files" }),
-            );
-
-            let mut arguments: Vec<String> = vec!["purge-roms".to_string()];
-            if missing {
-                arguments.push("-m".to_string());
-            }
-            if orphan {
-                arguments.push("-o".to_string());
-            }
-            if trash {
-                arguments.push("-t".to_string());
-            }
-            if foreign {
-                arguments.push("-f".to_string());
-            }
-            arguments.push("-y".to_string());
-
-            let matches = purge_roms::subcommand().get_matches_from(arguments);
-            match purge_roms::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully purged ROM files");
-                    sse_send(
-                        &sse_tx,
-                        "purge_roms_complete",
-                        json!({ "success": true, "message": "Purged ROM files" }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "purge_roms_error",
-                        json!({ "success": false, "message": format!("Failed to purge ROM files: {:#}", e) }),
-                    );
-                    log::error!("Failed to purge ROM files: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "purge_roms",
+            "Purging ROM files".to_string(),
+            "Purged ROM files".to_string(),
+            "Failed to purge ROM files".to_string(),
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let mut arguments: Vec<String> = vec!["purge-roms".to_string()];
+                    if missing {
+                        arguments.push("-m".to_string());
+                    }
+                    if orphan {
+                        arguments.push("-o".to_string());
+                    }
+                    if trash {
+                        arguments.push("-t".to_string());
+                    }
+                    if foreign {
+                        arguments.push("-f".to_string());
+                    }
+                    arguments.push("-y".to_string());
+                    let matches = purge_roms::subcommand().get_matches_from(arguments);
+                    purge_roms::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }
@@ -524,8 +569,10 @@ impl Mutation {
             .clone();
         let mut connection = pool.acquire().await.unwrap();
 
-        let system = find_system_by_id(&mut connection, system_id).await;
-        let system_name = system.name;
+        let system_name = match find_system_by_id_opt(&mut connection, system_id).await {
+            Some(system) => system.name,
+            None => return Err(system_not_found(system_id)),
+        };
         if !convert_roms::ALL_FORMATS.contains(&format.as_str()) {
             return Err(async_graphql::Error::new(format!(
                 "Unsupported format '{}'; expected one of {}",
@@ -538,44 +585,28 @@ impl Mutation {
         let complete_message =
             format!("Converted the ROMs of '{}' to {}", system_name, format);
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(
-                &sse_tx,
-                "convert_roms_started",
-                json!({ "message": message }),
-            );
-
-            let arguments: Vec<String> = vec![
-                "convert-roms".to_string(),
-                "-s".to_string(),
-                system_name,
-                "-f".to_string(),
-                format,
-            ];
-
-            let matches = convert_roms::subcommand().get_matches_from(arguments);
-            match convert_roms::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully converted ROMs: {}", complete_message);
-                    sse_send(
-                        &sse_tx,
-                        "convert_roms_complete",
-                        json!({ "success": true, "message": complete_message }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "convert_roms_error",
-                        json!({ "success": false, "message": format!("Failed to convert ROMs: {:#}", e) }),
-                    );
-                    log::error!("Failed to convert ROMs: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "convert_roms",
+            message,
+            complete_message,
+            "Failed to convert ROMs".to_string(),
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let arguments: Vec<String> = vec![
+                        "convert-roms".to_string(),
+                        "-s".to_string(),
+                        system_name,
+                        "-f".to_string(),
+                        format,
+                    ];
+                    let matches = convert_roms::subcommand().get_matches_from(arguments);
+                    convert_roms::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }
@@ -590,43 +621,29 @@ impl Mutation {
         let mut connection = pool.acquire().await.unwrap();
         let system_name = match find_system_by_id_opt(&mut connection, system_id).await {
             Some(system) => system.name,
-            None => {
-                return Err(async_graphql::Error::new(format!(
-                    "System {system_id} not found"
-                )))
-            }
+            None => return Err(system_not_found(system_id)),
         };
 
         let message = format!("Purging the IRDs of '{}'", system_name);
         let complete_message = format!("Purged the IRDs of '{}'", system_name);
 
-        tokio::spawn(async move {
-            let mut connection = pool.acquire().await.unwrap();
-            let progress_bar = ProgressBar::hidden();
-
-            sse_send(&sse_tx, "purge_irds_started", json!({ "message": message }));
-
-            let arguments = vec!["purge-irds".to_string(), "--system".to_string(), system_name];
-            let matches = purge_irds::subcommand().get_matches_from(arguments);
-            match purge_irds::main(&mut connection, &matches, &progress_bar).await {
-                Ok(_) => {
-                    log::info!("Successfully purged IRDs: {}", complete_message);
-                    sse_send(
-                        &sse_tx,
-                        "purge_irds_complete",
-                        json!({ "success": true, "message": complete_message }),
-                    );
-                }
-                Err(e) => {
-                    sse_send(
-                        &sse_tx,
-                        "purge_irds_error",
-                        json!({ "success": false, "message": format!("Failed to purge IRDs: {:#}", e) }),
-                    );
-                    log::error!("Failed to purge IRDs: {:#}", e);
-                }
-            }
-        });
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "purge_irds",
+            message,
+            complete_message,
+            "Failed to purge IRDs".to_string(),
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    let arguments =
+                        vec!["purge-irds".to_string(), "--system".to_string(), system_name];
+                    let matches = purge_irds::subcommand().get_matches_from(arguments);
+                    purge_irds::main(connection, &matches, &progress_bar).await
+                })
+            },
+        );
 
         Ok(true)
     }

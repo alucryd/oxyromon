@@ -309,6 +309,25 @@ pub async fn find_systems_by_name_like(
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
+/// Resolve a list of user-supplied system name patterns into systems, sorted by
+/// id and de-duplicated.
+///
+/// `Vec::dedup_by_key` only collapses *adjacent* duplicates, so the sort first
+/// ensures two overlapping patterns (e.g. `"PlayStation"` and `"PlayStation 3"`)
+/// cannot leave the same system id twice in the list and get processed twice.
+pub async fn resolve_systems_by_name_like(
+    connection: &mut SqliteConnection,
+    system_names: impl Iterator<Item = impl AsRef<str>>,
+) -> Vec<System> {
+    let mut systems: Vec<System> = vec![];
+    for system_name in system_names {
+        systems.append(&mut find_systems_by_name_like(connection, system_name.as_ref()).await);
+    }
+    systems.sort_by_key(|system| system.id);
+    systems.dedup_by_key(|system| system.id);
+    systems
+}
+
 pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
     sqlx::query_as!(
         System,
