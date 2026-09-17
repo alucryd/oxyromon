@@ -82,6 +82,18 @@ fn system_not_found(system_id: i64) -> async_graphql::Error {
     async_graphql::Error::new(format!("System {system_id} not found"))
 }
 
+/// Acquire a pooled connection for a request-path mutation, turning a pool
+/// failure into a typed GraphQL error instead of a panic. The spawned actions
+/// hold their connections for the whole run, so under concurrency a request-path
+/// acquire can genuinely fail; that must surface as an error, not a 500.
+async fn acquire_connection(
+    pool: &SqlitePool,
+) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>> {
+    pool.acquire()
+        .await
+        .map_err(|e| async_graphql::Error::new(format!("Failed to acquire database connection: {e}")))
+}
+
 pub struct Mutation;
 
 #[Object]
@@ -96,14 +108,8 @@ impl Mutation {
         log::debug!("mutation::add_to_list({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         let progress_bar = get_progress_bar(0, get_none_progress_style());
-        add_to_list(
-            &mut pool.acquire().await.unwrap(),
-            &progress_bar,
-            &key,
-            &value,
-            system_id,
-        )
-        .await;
+        let mut connection = acquire_connection(pool).await?;
+        add_to_list(&mut connection, &progress_bar, &key, &value, system_id).await;
         Ok(true)
     }
 
@@ -117,14 +123,8 @@ impl Mutation {
         log::debug!("mutation::remove_to_list({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
         let progress_bar = get_progress_bar(0, get_none_progress_style());
-        remove_from_list(
-            &mut pool.acquire().await.unwrap(),
-            &progress_bar,
-            &key,
-            &value,
-            system_id,
-        )
-        .await;
+        let mut connection = acquire_connection(pool).await?;
+        remove_from_list(&mut connection, &progress_bar, &key, &value, system_id).await;
         Ok(true)
     }
 
@@ -137,7 +137,8 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_bool({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_bool(&mut pool.acquire().await.unwrap(), &key, value, system_id).await;
+        let mut connection = acquire_connection(pool).await?;
+        set_bool(&mut connection, &key, value, system_id).await;
         Ok(true)
     }
 
@@ -149,13 +150,8 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_prefer_regions({})", value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(
-            &mut pool.acquire().await.unwrap(),
-            "PREFER_REGIONS",
-            &value,
-            system_id,
-        )
-        .await;
+        let mut connection = acquire_connection(pool).await?;
+        set_string(&mut connection, "PREFER_REGIONS", &value, system_id).await;
         Ok(true)
     }
 
@@ -167,13 +163,8 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_prefer_versions({})", value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(
-            &mut pool.acquire().await.unwrap(),
-            "PREFER_VERSIONS",
-            &value,
-            system_id,
-        )
-        .await;
+        let mut connection = acquire_connection(pool).await?;
+        set_string(&mut connection, "PREFER_VERSIONS", &value, system_id).await;
         Ok(true)
     }
 
@@ -186,7 +177,8 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_subfolder_scheme({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_string(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
+        let mut connection = acquire_connection(pool).await?;
+        set_string(&mut connection, &key, &value, system_id).await;
         Ok(true)
     }
 
@@ -199,7 +191,8 @@ impl Mutation {
     ) -> Result<bool> {
         log::debug!("mutation::set_directory({}, {})", key, value);
         let pool = ctx.data_unchecked::<SqlitePool>();
-        set_directory(&mut pool.acquire().await.unwrap(), &key, &value, system_id).await;
+        let mut connection = acquire_connection(pool).await?;
+        set_directory(&mut connection, &key, &value, system_id).await;
         Ok(true)
     }
 
@@ -286,7 +279,7 @@ impl Mutation {
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = acquire_connection(&pool).await?;
 
         let system = match find_system_by_id_opt(&mut connection, system_id).await {
             Some(system) => system,
@@ -373,7 +366,7 @@ impl Mutation {
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = acquire_connection(&pool).await?;
 
         let system_name = match system_id {
             Some(system_id) => match find_system_by_id_opt(&mut connection, system_id).await {
@@ -431,7 +424,7 @@ impl Mutation {
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = acquire_connection(&pool).await?;
 
         let system_name = match system_id {
             Some(system_id) => match find_system_by_id_opt(&mut connection, system_id).await {
@@ -567,7 +560,7 @@ impl Mutation {
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = acquire_connection(&pool).await?;
 
         let system_name = match find_system_by_id_opt(&mut connection, system_id).await {
             Some(system) => system.name,
@@ -618,7 +611,7 @@ impl Mutation {
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
             .clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = acquire_connection(&pool).await?;
         let system_name = match find_system_by_id_opt(&mut connection, system_id).await {
             Some(system) => system.name,
             None => return Err(system_not_found(system_id)),
