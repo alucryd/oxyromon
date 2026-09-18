@@ -89,20 +89,28 @@ fn string_table_too_small_for_names_still_decompresses() {
 }
 
 #[test]
-fn missing_cnmt_leaves_ncas_unverified_not_corrupted() {
+fn missing_cnmt_verification() {
     let dir = tempfile::tempdir().unwrap();
     let (input, output) = (dir.path().join("a.nsz"), dir.path().join("a.nsp"));
-    std::fs::write(&input, build_pfs0(&[("x.nca", b"data")])).unwrap();
-    let report = decompress_nsz(
-        &input,
-        &output,
-        &build_keys(),
-        false,
-        true,
-        false,
-        &mut |_| {},
-    )
-    .unwrap();
+    let decompress = |files: &[(&str, &[u8])], strict| {
+        std::fs::write(&input, build_pfs0(files)).unwrap();
+        decompress_nsz(
+            &input,
+            &output,
+            &build_keys(),
+            false,
+            true,
+            strict,
+            &mut |_| {},
+        )
+    };
+
+    // NCAs but no CNMT: strict fails, non-strict reports them unverified.
+    assert!(decompress(&[("x.nca", b"data")], true).is_err());
+    let report = decompress(&[("x.nca", b"data")], false).unwrap();
     assert_eq!((report.verified, report.corrupted), (0, 0));
     assert!(!report.files[0].verified);
+
+    // No NCAs: nothing to verify, so even strict succeeds.
+    assert!(decompress(&[("x.bin", b"data")], true).is_ok());
 }

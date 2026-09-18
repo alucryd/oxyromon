@@ -133,8 +133,8 @@ pub struct FileReport {
 ///   table; a mismatch is reported, and returned as an error when `strict`.
 ///
 /// `progress` is called with each newly consumed chunk of the input, in bytes;
-/// the calls add up to the input file size. On error the partial output file
-/// is removed.
+/// for a well-formed container the calls add up to the input file size. On
+/// error the partial output file is removed.
 pub fn decompress_nsz(
     input: &Path,
     output: &Path,
@@ -148,9 +148,7 @@ pub fn decompress_nsz(
     let (entries, in_header_size) = read_pfs0(&mut in_file)?;
     // `None` = nothing to verify against: NCAs are reported unverified, not
     // corrupted. A container without NCAs has nothing to verify, CNMT or not.
-    let has_ncas = entries.iter().any(|e| {
-        (e.name.ends_with(".nca") || e.name.ends_with(".ncz")) && !e.name.contains(".cnmt.")
-    });
+    let has_ncas = entries.iter().any(|e| is_content_nca(&e.name));
     let content_hashes = if verify && has_ncas {
         let title_keys = collect_title_keys(&mut in_file, &entries)?;
         match collect_content_hashes(&mut in_file, &entries, keys, &title_keys) {
@@ -175,9 +173,7 @@ pub fn decompress_nsz(
                 None => (e.name.clone(), copy_and_hash(&mut sub, out)?),
             };
             let hashes = content_hashes.as_ref();
-            let verified = if let Some(hashes) =
-                hashes.filter(|_| name.ends_with(".nca") && !name.ends_with(".cnmt.nca"))
-            {
+            let verified = if let Some(hashes) = hashes.filter(|_| is_content_nca(&name)) {
                 let ok = hashes.contains(&sha);
                 if ok {
                     report.verified += 1;
@@ -210,7 +206,8 @@ pub fn decompress_nsz(
 /// `.ncz` members; everything else is copied verbatim (as nsz does). Title keys
 /// for rights-managed NCAs come from the NSP's tickets, then `keys`'
 /// `title.keys`. `progress` is called with each newly consumed chunk of the
-/// input, in bytes; the calls add up to the input file size. On error the
+/// input, in bytes; for a well-formed container the calls add up to the input
+/// file size. On error the
 /// partial output file is removed.
 pub fn compress_nsp(
     input: &Path,
@@ -374,6 +371,17 @@ impl<R: Read + Seek> Read for BodyReader<'_, R> {
     }
 }
 
+/// Stem of an `.nca` / `.ncz` member name.
+fn nca_stem(name: &str) -> Option<&str> {
+    name.strip_suffix(".nca")
+        .or_else(|| name.strip_suffix(".ncz"))
+}
+
+/// Content NCAs are the ones the CNMT lists hashes for: every NCA but the CNMT.
+fn is_content_nca(name: &str) -> bool {
+    nca_stem(name).is_some_and(|stem| !stem.ends_with(".cnmt"))
+}
+
 /// Read and XTS-decrypt the first 0xC00 bytes of an NCA.
 fn decrypt_nca_header<R: Read + Seek>(nca: &mut R, keys: &Keys) -> Result<Vec<u8>> {
     let mut hdr = vec![0u8; HEADER_ENCRYPTED_SIZE];
@@ -487,7 +495,7 @@ fn collect_content_hashes(
 ) -> Result<HashSet<String>> {
     let entry = entries
         .iter()
-        .find(|e| e.name.ends_with(".cnmt.nca") || e.name.ends_with(".cnmt.ncz"))
+        .find(|e| nca_stem(&e.name).is_some_and(|stem| stem.ends_with(".cnmt")))
         .ok_or_else(|| Error::Corrupt("no cnmt member found in container".into()))?;
     let mut sub = SubReader::new(f, entry);
     let mut bytes = Vec::new();
