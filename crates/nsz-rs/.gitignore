@@ -1,0 +1,5 @@
+# Rust build output. Cargo.lock stays tracked: this crate ships the `nszrs` binary.
+/target/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
