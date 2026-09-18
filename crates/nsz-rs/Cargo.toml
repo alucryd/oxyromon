@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "Rust port of nsz (NSP <-> NSZ zstd compression)"
 license = "MIT"
+repository = "https://github.com/alucryd/nsz-rs"
+keywords = ["nintendo-switch", "nsz", "nsp", "zstd", "compression"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [lib]
 name = "nsz_rs"
@@ -30,5 +34,10 @@ tempfile = "3"
 
 [features]
 default = ["cli"]
-# The `nszrs` binary. Library users can opt out with `default-features = false`.
 cli = ["dep:indicatif"]
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
