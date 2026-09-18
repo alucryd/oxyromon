@@ -222,12 +222,20 @@ fn nsp_roundtrips_byte_for_byte_with_verification() {
     std::fs::write(&nsp_path, &nsp).unwrap();
 
     for c in [SOLID, BLOCK] {
-        compress_nsp(&nsp_path, &nsz_path, &keys, &c, false).unwrap();
+        // Progress reports add up to exactly the input size, both ways.
+        let mut read = 0;
+        compress_nsp(&nsp_path, &nsz_path, &keys, &c, false, &mut |n| read += n).unwrap();
+        assert_eq!(read, nsp.len() as u64);
         let nsz = std::fs::read(&nsz_path).unwrap();
         assert!(nsz.len() < nsp.len());
         assert!(nsz.windows(11).any(|w| w == b"program.ncz"));
 
-        let report = decompress_nsz(&nsz_path, &out_path, &keys, false, true, true).unwrap();
+        let mut read = 0;
+        let report = decompress_nsz(&nsz_path, &out_path, &keys, false, true, true, &mut |n| {
+            read += n
+        })
+        .unwrap();
+        assert_eq!(read, nsz.len() as u64);
         assert_eq!((report.verified, report.corrupted), (1, 0));
         assert_eq!(
             std::fs::read(&out_path).unwrap(),
@@ -249,15 +257,15 @@ fn failed_decompression_removes_the_output() {
 
     // Hash mismatch under strict verification.
     std::fs::write(&nsp_path, build_nsp(&keys, Some([0xFF; 32]))).unwrap();
-    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true).unwrap();
-    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, true, true).is_err());
+    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true, &mut |_| {}).unwrap();
+    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, true, true, &mut |_| {}).is_err());
     assert!(!out_path.exists());
 
     // Truncated container.
     std::fs::write(&nsp_path, build_nsp(&keys, None)).unwrap();
-    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true).unwrap();
+    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true, &mut |_| {}).unwrap();
     let nsz = std::fs::read(&nsz_path).unwrap();
     std::fs::write(&nsz_path, &nsz[..nsz.len() - 0x100]).unwrap();
-    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, false, false).is_err());
+    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, false, false, &mut |_| {}).is_err());
     assert!(!out_path.exists());
 }

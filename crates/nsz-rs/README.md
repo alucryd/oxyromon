@@ -24,6 +24,7 @@ sections tile the file are compressed; everything else is copied verbatim.
 Both directions stream one member at a time, so memory use doesn't grow with
 the dump size, and a failed run removes its partial output.
 
+`nszrs` shows a progress bar per file when stderr is a terminal.
 `nszrs -D` verifies every NCA against the CNMT and fails on a mismatch.
 Compressing a rights-managed NCA without its ticket (or a `title.keys` entry)
 is an error rather than a silent uncompressed copy.
@@ -52,15 +53,26 @@ nszrs -C -B -s 20 -o out/ game.nsp    # block compress, 1 MiB blocks
 
 ## Library
 
+The CLI and its progress bar sit behind the default `cli` feature; embed the
+library without them:
+
+```toml
+nsz-rs = { version = "0.1", default-features = false }
+```
+
 ```rust
 use nsz_rs::keys::Keys;
 use nsz_rs::pipeline::{Compression, compress_nsp, decompress_nsz};
 
 let keys = Keys::load("prod.keys", true)?;
 let solid = Compression { level: 18, ldm: true, block_size_exponent: None };
-compress_nsp("game.nsp".as_ref(), "game.nsz".as_ref(), &keys, &solid, false)?;
-// keys, fix_padding, verify, strict
-let report = decompress_nsz("game.nsz".as_ref(), "game.nsp".as_ref(), &keys, false, true, true)?;
+// The last argument receives input bytes consumed; the calls add up to the
+// input file size, ready to feed a progress bar.
+compress_nsp("game.nsp".as_ref(), "game.nsz".as_ref(), &keys, &solid, false, &mut |_| {})?;
+// keys, fix_padding, verify, strict, progress
+let report = decompress_nsz(
+    "game.nsz".as_ref(), "game.nsp".as_ref(), &keys, false, true, true, &mut |n| bar.inc(n),
+)?;
 ```
 
 You need your own `prod.keys` dumped from your own console.

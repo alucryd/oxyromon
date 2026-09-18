@@ -37,11 +37,16 @@ pub struct Compression {
 
 /// A seekable reader over a window `[base, base+len)` of an inner reader, so a
 /// member inside a PFS0 can be treated as a standalone file.
+///
+/// With a progress callback, each byte of the window is reported once, the
+/// first time it's read (re-reads and seeks back don't count twice).
 struct SubReader<'a> {
     inner: &'a mut File,
     base: u64,
     len: u64,
     pos: u64,
+    progress: Option<&'a mut dyn FnMut(u64)>,
+    reported: u64,
 }
 
 impl<'a> SubReader<'a> {
@@ -51,6 +56,19 @@ impl<'a> SubReader<'a> {
             base: entry.offset,
             len: entry.size,
             pos: 0,
+            progress: None,
+            reported: 0,
+        }
+    }
+
+    fn with_progress(
+        inner: &'a mut File,
+        entry: &Pfs0Entry,
+        progress: &'a mut dyn FnMut(u64),
+    ) -> Self {
+        SubReader {
+            progress: Some(progress),
+            ..SubReader::new(inner, entry)
         }
     }
 }
@@ -71,6 +89,10 @@ impl Read for SubReader<'_> {
             ));
         }
         self.pos += n as u64;
+        if let Some(progress) = self.progress.as_mut().filter(|_| self.pos > self.reported) {
+            progress(self.pos - self.reported);
+            self.reported = self.pos;
+        }
         Ok(n)
     }
 }
@@ -110,7 +132,9 @@ pub struct FileReport {
 /// - `verify`: check each decompressed NCA's SHA-256 against the CNMT content
 ///   table; a mismatch is reported, and returned as an error when `strict`.
 ///
-/// On error the partial output file is removed.
+/// `progress` is called with each newly consumed chunk of the input, in bytes;
+/// the calls add up to the input file size. On error the partial output file
+/// is removed.
 pub fn decompress_nsz(
     input: &Path,
     output: &Path,
@@ -118,12 +142,16 @@ pub fn decompress_nsz(
     fix_padding: bool,
     verify: bool,
     strict: bool,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<Report> {
     let mut in_file = File::open(input)?;
     let (entries, in_header_size) = read_pfs0(&mut in_file)?;
     // `None` = nothing to verify against: NCAs are reported unverified, not
-    // corrupted.
-    let content_hashes = if verify {
+    // corrupted. A container without NCAs has nothing to verify, CNMT or not.
+    let has_ncas = entries.iter().any(|e| {
+        (e.name.ends_with(".nca") || e.name.ends_with(".ncz")) && !e.name.contains(".cnmt.")
+    });
+    let content_hashes = if verify && has_ncas {
         let title_keys = collect_title_keys(&mut in_file, &entries)?;
         match collect_content_hashes(&mut in_file, &entries, keys, &title_keys) {
             Ok(h) => Some(h),
@@ -138,9 +166,10 @@ pub fn decompress_nsz(
     with_output(output, header_size, string_table_size, |out| {
         let mut report = Report::default();
         let mut laid = Vec::with_capacity(entries.len());
+        progress(entries.first().map_or(in_header_size, |e| e.offset));
         for e in &entries {
             let start = out.stream_position()?;
-            let mut sub = SubReader::new(&mut in_file, e);
+            let mut sub = SubReader::with_progress(&mut in_file, e, progress);
             let (name, sha) = match e.name.strip_suffix(".ncz") {
                 Some(stem) => (format!("{stem}.nca"), decompress_ncz(&mut sub, out)?.1),
                 None => (e.name.clone(), copy_and_hash(&mut sub, out)?),
@@ -180,13 +209,16 @@ pub fn decompress_nsz(
 /// Program and PublicData NCAs whose sections tile the file are compressed to
 /// `.ncz` members; everything else is copied verbatim (as nsz does). Title keys
 /// for rights-managed NCAs come from the NSP's tickets, then `keys`'
-/// `title.keys`. On error the partial output file is removed.
+/// `title.keys`. `progress` is called with each newly consumed chunk of the
+/// input, in bytes; the calls add up to the input file size. On error the
+/// partial output file is removed.
 pub fn compress_nsp(
     input: &Path,
     output: &Path,
     keys: &Keys,
     compression: &Compression,
     fix_padding: bool,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<()> {
     let mut in_file = File::open(input)?;
     let (entries, in_header_size) = read_pfs0(&mut in_file)?;
@@ -196,9 +228,10 @@ pub fn compress_nsp(
     let (header_size, string_table_size) = header_geometry(&entries, in_header_size, fix_padding);
     with_output(output, header_size, string_table_size, |out| {
         let mut laid = Vec::with_capacity(entries.len());
+        progress(entries.first().map_or(in_header_size, |e| e.offset));
         for e in &entries {
             let start = out.stream_position()?;
-            let mut sub = SubReader::new(&mut in_file, e);
+            let mut sub = SubReader::with_progress(&mut in_file, e, progress);
             let compressed = match e.name.strip_suffix(".nca") {
                 Some(stem) => compress_nca(&mut sub, e.size, keys, &title_keys, compression, out)?
                     .map(|_| format!("{stem}.ncz")),
