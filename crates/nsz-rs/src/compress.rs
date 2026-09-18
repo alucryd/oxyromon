@@ -7,9 +7,11 @@
 //! section order — exactly what the decompressor reads back and re-encrypts.
 //! It is streamed from a reader so NCAs never have to fit in memory.
 
-use std::io::{self, BufReader, Read, Seek, SeekFrom, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 
 use rayon::prelude::*;
+use zstd::zstd_safe::zstd_sys::ZSTD_EndDirective;
+use zstd::zstd_safe::{self, CCtx, CParameter, InBuffer, OutBuffer};
 
 use crate::error::{Error, Result};
 use crate::format::ncz::{self, BlockHeader, Section};
@@ -31,14 +33,18 @@ impl<W: Write> Write for Counting<W> {
 }
 
 /// Solid-compress an NCZ: `header` (0x4000) + section table + one zstd stream
-/// over `body`. zstd runs on all available cores. Returns bytes written.
+/// over `body`. zstd runs on all available cores. `progress` is called with the
+/// number of body bytes compressed so far; zstd buffers input ahead of its
+/// workers, so this is measured from the encoder, not from reads. Returns
+/// bytes written.
 pub fn solid_compress_ncz<R: Read, W: Write>(
     header: &[u8],
     sections: &[Section],
-    body: R,
+    mut body: R,
     level: i32,
     ldm: bool,
     out: &mut W,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<u64> {
     let mut cw = Counting {
         inner: &mut *out,
@@ -47,20 +53,55 @@ pub fn solid_compress_ncz<R: Read, W: Write>(
     cw.write_all(header)?;
     cw.write_all(&ncz::write_header(sections, None))?;
 
-    let mut enc = zstd::Encoder::new(&mut cw, level).map_err(zstd_err)?;
-    enc.long_distance_matching(ldm).map_err(zstd_err)?;
+    // Driven through zstd-safe rather than `zstd::Encoder` so the context can
+    // be asked how much input its workers have actually compressed.
     let threads = std::thread::available_parallelism().map_or(1, |n| n.get() as u32);
-    enc.multithread(threads).map_err(zstd_err)?;
-    io::copy(&mut BufReader::with_capacity(1 << 20, body), &mut enc)?;
-    enc.finish().map_err(zstd_err)?;
-    Ok(cw.n)
+    let mut cctx = CCtx::create();
+    for param in [
+        CParameter::CompressionLevel(level),
+        CParameter::EnableLongDistanceMatching(ldm),
+        CParameter::NbWorkers(threads),
+    ] {
+        cctx.set_parameter(param).map_err(zstd_code_err)?;
+    }
+    let mut input = vec![0u8; 1 << 20];
+    let mut output = vec![0u8; CCtx::out_size()];
+    loop {
+        let n = body.read(&mut input)?;
+        let directive = if n == 0 {
+            ZSTD_EndDirective::ZSTD_e_end
+        } else {
+            ZSTD_EndDirective::ZSTD_e_continue
+        };
+        let mut src = InBuffer::around(&input[..n]);
+        loop {
+            let mut dst = OutBuffer::around(&mut output[..]);
+            let remaining = cctx
+                .compress_stream2(&mut dst, &mut src, directive)
+                .map_err(zstd_code_err)?;
+            cw.write_all(dst.as_slice())?;
+            progress(cctx.get_frame_progression().consumed);
+            let done = if n == 0 {
+                remaining == 0
+            } else {
+                src.pos() == n
+            };
+            if done {
+                break;
+            }
+        }
+        if n == 0 {
+            return Ok(cw.n);
+        }
+    }
 }
 
 /// Block-compress an NCZ: `header` (0x4000) + section table + NCZBLOCK header +
 /// independently compressed blocks, compressed in parallel on the rayon pool.
 /// A block that doesn't shrink is stored raw. `body_len` must be the exact body
 /// length. The block size list is back-patched once all blocks are written, so
-/// `out` must be seekable. Returns bytes written.
+/// `out` must be seekable. `progress` is called with the number of body bytes
+/// compressed so far. Returns bytes written.
 #[allow(clippy::too_many_arguments)]
 pub fn block_compress_ncz<R: Read, W: Write + Seek>(
     header: &[u8],
@@ -71,6 +112,7 @@ pub fn block_compress_ncz<R: Read, W: Write + Seek>(
     ldm: bool,
     block_size_exponent: i8,
     out: &mut W,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<u64> {
     if !(14..=32).contains(&block_size_exponent) {
         return Err(Error::Unsupported(
@@ -121,6 +163,7 @@ pub fn block_compress_ncz<R: Read, W: Write + Seek>(
                 .map_err(|_| Error::Unsupported("block larger than 4 GiB".into()))?;
             out.write_all(&c)?;
         }
+        progress(body_len - remaining);
     }
 
     let end = out.stream_position()?;
@@ -142,4 +185,8 @@ fn zstd_compress(data: &[u8], level: i32, ldm: bool) -> Result<Vec<u8>> {
 
 fn zstd_err(e: io::Error) -> Error {
     Error::Corrupt(format!("zstd: {e}"))
+}
+
+fn zstd_code_err(code: usize) -> Error {
+    Error::Corrupt(format!("zstd: {}", zstd_safe::get_error_name(code)))
 }

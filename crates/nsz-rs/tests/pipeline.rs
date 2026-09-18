@@ -32,6 +32,7 @@ fn compress(nca: &[u8], keys: &Keys, title_keys: &TitleKeys, c: &Compression) ->
         title_keys,
         c,
         &mut out,
+        &mut |_| {},
     )
     .unwrap();
     assert_eq!(
@@ -122,6 +123,7 @@ fn rights_managed_nca_needs_a_title_key() {
         &TitleKeys::new(),
         &SOLID,
         &mut out,
+        &mut |_| {},
     );
     assert!(
         err.is_err(),
@@ -129,44 +131,80 @@ fn rights_managed_nca_needs_a_title_key() {
     );
 }
 
-#[test]
-fn bktr_sections_are_split_per_subsection() {
-    let keys = build_keys();
+/// An update-style NCA: one BKTR section holding `data_len` bytes of data in two
+/// subsections (ctr 5 and 6), followed by the 0x8000-byte BKTR table. Returns
+/// the NCA and the section's plaintext.
+fn build_bktr_nca(keys: &Keys, data_len: u64) -> (Vec<u8>, Vec<u8>) {
     let title_key = [0x66; 16];
     let (base, abs) = (0x4000u64, |rel: u64| 0x4000 + rel);
-    // Section: 0x8000 of data (two subsections, ctr 5 and 6) then the BKTR table.
     let mut table = vec![0u8; 0x8000];
     table[4..8].copy_from_slice(&1u32.to_le_bytes()); // bucket count
     table[0x4004..0x4008].copy_from_slice(&2u32.to_le_bytes()); // entry count
-    table[0x4008..0x4010].copy_from_slice(&0x8000u64.to_le_bytes()); // end offset
+    table[0x4008..0x4010].copy_from_slice(&data_len.to_le_bytes()); // end offset
     table[0x4010..0x4018].copy_from_slice(&0u64.to_le_bytes());
     table[0x401C..0x4020].copy_from_slice(&5u32.to_le_bytes());
     table[0x4020..0x4028].copy_from_slice(&0x4000u64.to_le_bytes());
     table[0x402C..0x4030].copy_from_slice(&6u32.to_le_bytes());
-    let data = pattern(0x21, 0x8000);
-    let mut sec = Sec::new(base, [&data[..], &table[..]].concat(), 4);
+    let plain = [&pattern(0x21, data_len as usize)[..], &table[..]].concat();
+    let mut sec = Sec::new(base, plain.clone(), 4);
     sec.fs_hdr = vec![
-        (0x120, 0x8000u64.to_le_bytes().to_vec()),
+        (0x120, data_len.to_le_bytes().to_vec()),
         (0x128, 0x8000u64.to_le_bytes().to_vec()),
     ];
-    let mut nca = build_nca(&keys, nca::CONTENT_PROGRAM, [0; 16], title_key, &[sec]);
+    let mut nca = build_nca(keys, nca::CONTENT_PROGRAM, [0; 16], title_key, &[sec]);
 
     // Re-encrypt each subsection with its own counter instead of the base one.
     let mut base_ctr = [0u8; 16];
     base_ctr[..8].copy_from_slice(&[0x10; 8]);
-    for (rel, ctr_val) in [(0u64, 5u32), (0x4000, 6)] {
+    for (rel, end, ctr_val) in [(0u64, 0x4000, 5u32), (0x4000, data_len, 6)] {
         let mut sub_ctr = base_ctr;
         sub_ctr[4..8].copy_from_slice(&ctr_val.to_be_bytes());
-        let range = abs(rel) as usize..abs(rel + 0x4000) as usize;
+        let range = abs(rel) as usize..abs(end) as usize;
         ctr::keystream_xor(&title_key, &base_ctr, abs(rel), &mut nca[range.clone()]);
         ctr::keystream_xor(&title_key, &sub_ctr, abs(rel), &mut nca[range]);
     }
+    (nca, plain)
+}
 
+#[test]
+fn bktr_sections_are_split_per_subsection() {
+    let keys = build_keys();
+    let (nca, plain) = build_bktr_nca(&keys, 0x8000);
     let ncz = compress(&nca, &keys, &TitleKeys::new(), &SOLID).unwrap();
     let (sections, _, _) = read_ncz_header(&mut Cursor::new(&ncz)).unwrap();
     assert_eq!(sections.len(), 3, "two subsections + table remainder");
-    assert_eq!(solid_body(&ncz), [&data[..], &table[..]].concat());
+    assert_eq!(solid_body(&ncz), plain);
     assert_eq!(decompress(&ncz), nca);
+}
+
+#[test]
+fn progress_follows_compression_not_read_ahead() {
+    // The BKTR table at the end of an update NCA is read before compressing;
+    // that read must not make the progress jump to (almost) done.
+    let keys = build_keys();
+    let (nca, _) = build_bktr_nca(&keys, 0x80000);
+    let dir = tempfile::tempdir().unwrap();
+    let (nsp_path, nsz_path) = (dir.path().join("u.nsp"), dir.path().join("u.nsz"));
+    std::fs::write(&nsp_path, build_pfs0(&[("update.nca", &nca)])).unwrap();
+
+    // One thread: blocks are compressed (and reported) two at a time.
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(1)
+        .build()
+        .unwrap();
+    let mut calls = Vec::new();
+    pool.install(|| {
+        compress_nsp(&nsp_path, &nsz_path, &keys, &BLOCK, false, &mut |n| {
+            calls.push(n)
+        })
+    })
+    .unwrap();
+    let total: u64 = calls.iter().sum();
+    assert_eq!(total, std::fs::metadata(&nsp_path).unwrap().len());
+    assert!(
+        calls.iter().all(|&n| n < total / 4),
+        "no big jump: {calls:x?}"
+    );
 }
 
 #[test]

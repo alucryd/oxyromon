@@ -38,8 +38,9 @@ pub struct Compression {
 /// A seekable reader over a window `[base, base+len)` of an inner reader, so a
 /// member inside a PFS0 can be treated as a standalone file.
 ///
-/// With a progress callback, each byte of the window is reported once, the
-/// first time it's read (re-reads and seeks back don't count twice).
+/// With a progress callback, it's called with the end of the prefix read so
+/// far, as sequential reads extend it. Reads ahead (e.g. the BKTR table at the
+/// end of an update NCA) don't count until the sequential pass gets there.
 struct SubReader<'a> {
     inner: &'a mut File,
     base: u64,
@@ -88,10 +89,13 @@ impl Read for SubReader<'_> {
                 "container truncated",
             ));
         }
+        let start = self.pos;
         self.pos += n as u64;
-        if let Some(progress) = self.progress.as_mut().filter(|_| self.pos > self.reported) {
-            progress(self.pos - self.reported);
+        if start <= self.reported && self.pos > self.reported {
             self.reported = self.pos;
+            if let Some(progress) = self.progress.as_mut() {
+                progress(self.pos);
+            }
         }
         Ok(n)
     }
@@ -167,11 +171,13 @@ pub fn decompress_nsz(
         progress(entries.first().map_or(in_header_size, |e| e.offset));
         for e in &entries {
             let start = out.stream_position()?;
-            let mut sub = SubReader::with_progress(&mut in_file, e, progress);
+            let mut at = member_progress(progress);
+            let mut sub = SubReader::with_progress(&mut in_file, e, &mut at);
             let (name, sha) = match e.name.strip_suffix(".ncz") {
                 Some(stem) => (format!("{stem}.nca"), decompress_ncz(&mut sub, out)?.1),
-                None => (e.name.clone(), copy_and_hash(&mut sub, out)?),
+                None => (e.name.clone(), copy_and_hash(&mut sub, out, &mut |_| {})?),
             };
+            at(e.size);
             let hashes = content_hashes.as_ref();
             let verified = if let Some(hashes) = hashes.filter(|_| is_content_nca(&name)) {
                 let ok = hashes.contains(&sha);
@@ -228,20 +234,30 @@ pub fn compress_nsp(
         progress(entries.first().map_or(in_header_size, |e| e.offset));
         for e in &entries {
             let start = out.stream_position()?;
-            let mut sub = SubReader::with_progress(&mut in_file, e, progress);
+            let mut at = member_progress(progress);
+            let mut sub = SubReader::new(&mut in_file, e);
             let compressed = match e.name.strip_suffix(".nca") {
-                Some(stem) => compress_nca(&mut sub, e.size, keys, &title_keys, compression, out)?
-                    .map(|_| format!("{stem}.ncz")),
+                Some(stem) => compress_nca(
+                    &mut sub,
+                    e.size,
+                    keys,
+                    &title_keys,
+                    compression,
+                    out,
+                    &mut at,
+                )?
+                .map(|_| format!("{stem}.ncz")),
                 None => None,
             };
             let name = match compressed {
                 Some(name) => name,
                 None => {
                     sub.seek(SeekFrom::Start(0))?;
-                    copy_and_hash(&mut sub, out)?;
+                    copy_and_hash(&mut sub, out, &mut at)?;
                     e.name.clone()
                 }
             };
+            at(e.size);
             laid.push((name, start, out.stream_position()? - start));
         }
         Ok((laid, ()))
@@ -253,6 +269,8 @@ pub fn compress_nsp(
 /// Returns `Ok(None)` without writing anything when the NCA isn't eligible:
 /// not a Program/PublicData NCA, too small, or its sections don't tile the file
 /// (`isNcaPacked` in nsz) — compressing those would lose the bytes in between.
+///
+/// `progress` is called with how far into the NCA compression has got.
 pub fn compress_nca<R: Read + Seek, W: Write + Seek>(
     nca: &mut R,
     nca_size: u64,
@@ -260,6 +278,7 @@ pub fn compress_nca<R: Read + Seek, W: Write + Seek>(
     title_keys: &TitleKeys,
     compression: &Compression,
     out: &mut W,
+    progress: &mut dyn FnMut(u64),
 ) -> Result<Option<u64>> {
     if nca_size <= INCOMPRESSIBLE_HEADER_SIZE {
         return Ok(None);
@@ -290,11 +309,21 @@ pub fn compress_nca<R: Read + Seek, W: Write + Seek>(
         ldm,
         block_size_exponent,
     } = *compression;
+    // The body is the NCA from the verbatim header onwards.
+    let body_progress = &mut |n| progress(INCOMPRESSIBLE_HEADER_SIZE + n);
     let written = match block_size_exponent {
-        None => solid_compress_ncz(&raw_header, &sections, body, level, ldm, out)?,
-        Some(exp) => {
-            block_compress_ncz(&raw_header, &sections, body, body_len, level, ldm, exp, out)?
-        }
+        None => solid_compress_ncz(&raw_header, &sections, body, level, ldm, out, body_progress)?,
+        Some(exp) => block_compress_ncz(
+            &raw_header,
+            &sections,
+            body,
+            body_len,
+            level,
+            ldm,
+            exp,
+            out,
+            body_progress,
+        )?,
     };
     Ok(Some(written))
 }
@@ -368,6 +397,19 @@ impl<R: Read + Seek> Read for BodyReader<'_, R> {
         }
         self.pos += n as u64;
         Ok(n)
+    }
+}
+
+/// Adapts `progress` (which takes deltas) to a callback taking positions within
+/// one member: each byte is reported once, however often or out of order
+/// positions arrive.
+fn member_progress(progress: &mut dyn FnMut(u64)) -> impl FnMut(u64) + '_ {
+    let mut done = 0;
+    move |pos| {
+        if pos > done {
+            progress(pos - done);
+            done = pos;
+        }
     }
 }
 
@@ -552,11 +594,17 @@ fn collect_content_hashes(
         .collect())
 }
 
-/// Copy a whole member to `out`, returning its hex SHA-256.
-fn copy_and_hash<R: Read, W: Write>(r: &mut R, out: &mut W) -> Result<String> {
+/// Copy a whole member to `out`, returning its hex SHA-256. `progress` is
+/// called with the bytes copied so far.
+fn copy_and_hash<R: Read, W: Write>(
+    r: &mut R,
+    out: &mut W,
+    progress: &mut dyn FnMut(u64),
+) -> Result<String> {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     let mut buf = vec![0u8; 0x100000];
+    let mut copied = 0;
     loop {
         let n = r.read(&mut buf)?;
         if n == 0 {
@@ -564,6 +612,8 @@ fn copy_and_hash<R: Read, W: Write>(r: &mut R, out: &mut W) -> Result<String> {
         }
         hasher.update(&buf[..n]);
         out.write_all(&buf[..n])?;
+        copied += n as u64;
+        progress(copied);
     }
     Ok(hex::encode(hasher.finalize()))
 }

@@ -69,7 +69,16 @@ fn run_roundtrip(solid: bool) {
 
     let mut ncz = Cursor::new(Vec::new());
     if solid {
-        solid_compress_ncz(&header, &sections, &body[..], 12, false, &mut ncz).unwrap();
+        solid_compress_ncz(
+            &header,
+            &sections,
+            &body[..],
+            12,
+            false,
+            &mut ncz,
+            &mut |_| {},
+        )
+        .unwrap();
     } else {
         block_compress_ncz(
             &header,
@@ -80,6 +89,7 @@ fn run_roundtrip(solid: bool) {
             false,
             16,
             &mut ncz,
+            &mut |_| {},
         )
         .unwrap();
     }
