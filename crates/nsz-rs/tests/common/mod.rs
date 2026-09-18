@@ -5,8 +5,8 @@ use nsz_rs::crypto::{ctr, ecb, xtsn};
 use nsz_rs::format::nca;
 use nsz_rs::keys::Keys;
 
-#[path = "../vectors_gen.rs"]
-mod v;
+pub mod vectors_gen;
+use vectors_gen as v;
 
 pub const HEADER_KEY: &str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
 
@@ -129,7 +129,8 @@ pub fn build_meta_nca(keys: &Keys, content_hashes: &[[u8; 32]]) -> Vec<u8> {
 pub fn build_ticket(keys: &Keys, rights_id: [u8; 16], title_key: [u8; 16]) -> Vec<u8> {
     let mut tik = vec![0u8; 0x2C0];
     tik[..4].copy_from_slice(&0x010004u32.to_le_bytes());
-    let enc = ecb::encrypt_blocks(&keys.title_kek(0).unwrap(), &title_key);
+    let mut enc = title_key;
+    ecb::encrypt_block(&keys.title_kek(0).unwrap(), &mut enc);
     tik[0x180..0x190].copy_from_slice(&enc);
     tik[0x2A0..0x2B0].copy_from_slice(&rights_id);
     tik

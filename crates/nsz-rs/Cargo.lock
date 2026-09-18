@@ -210,7 +210,6 @@ name = "nsz-rs"
 version = "0.1.0"
 dependencies = [
  "aes",
- "cipher",
  "crc32fast",
  "hex",
  "rayon",

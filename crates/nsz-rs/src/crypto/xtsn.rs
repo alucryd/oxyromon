@@ -9,7 +9,10 @@
 //!   T_i = mul_alpha_le(T_{i-1})
 //!   C_i = K1_ecb(P_i ^ T_i) ^ T_i
 
-use crate::crypto::ecb::{self, BLOCK_SIZE};
+use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyInit};
+use aes::Aes128;
+
+use crate::crypto::ecb::BLOCK_SIZE;
 
 /// GF(2^128) multiply-by-alpha in little-endian byte order.
 ///
@@ -54,30 +57,23 @@ pub fn crypt(
         "xtsn: bad sector size"
     );
 
-    let mut sector = start_sector;
-    let mut idx = 0;
-    while idx < buf.len() {
-        let sector_end = (idx + sector_size).min(buf.len());
+    let k1 = Aes128::new(GenericArray::from_slice(key1));
+    let k2 = Aes128::new(GenericArray::from_slice(key2));
+    for (sector, data) in (start_sector..).zip(buf.chunks_mut(sector_size)) {
         // T_0 for this sector
         let mut tweak = tweak_block(sector);
-        ecb::encrypt_block(key2, &mut tweak);
-        while idx < sector_end {
-            let mut block = [0u8; 16];
-            for (b, (x, t)) in block.iter_mut().zip(buf[idx..].iter().zip(&tweak)) {
-                *b = x ^ t;
-            }
+        k2.encrypt_block(GenericArray::from_mut_slice(&mut tweak));
+        for block in data.as_chunks_mut::<BLOCK_SIZE>().0 {
+            let mut b =
+                GenericArray::from(std::array::from_fn::<u8, 16, _>(|i| block[i] ^ tweak[i]));
             if decrypt {
-                ecb::decrypt_block(key1, &mut block);
+                k1.decrypt_block(&mut b);
             } else {
-                ecb::encrypt_block(key1, &mut block);
+                k1.encrypt_block(&mut b);
             }
-            for (x, (b, t)) in buf[idx..idx + 16].iter_mut().zip(block.iter().zip(&tweak)) {
-                *x = b ^ t;
-            }
+            *block = std::array::from_fn(|i| b[i] ^ tweak[i]);
             tweak = mul_alpha_le(tweak);
-            idx += BLOCK_SIZE;
         }
-        sector += 1;
     }
 }
 

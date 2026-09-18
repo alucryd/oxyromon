@@ -10,13 +10,16 @@ use std::path::Path;
 
 use crate::compress::{block_compress_ncz, solid_compress_ncz};
 use crate::crypto::ctr;
-use crate::decompress::decompress_ncz;
+use crate::decompress::{decompress_ncz, read_ncz_header};
 use crate::error::{Error, Result};
 use crate::format::cnmt::Cnmt;
 use crate::format::nca::{self, NcaHeader, HEADER_ENCRYPTED_SIZE};
 use crate::format::ncz::{Section, INCOMPRESSIBLE_HEADER_SIZE};
 use crate::format::pfs0::{self, Pfs0Entry, Pfs0Reader};
 use crate::keys::Keys;
+
+/// Upper bound on a Meta NCA decompressed for verification.
+const MAX_META_NCA_SIZE: i64 = 0x100_0000;
 
 /// Rights id -> encrypted title key, as found in the container's tickets.
 pub type TitleKeys = HashMap<[u8; 16], [u8; 16]>;
@@ -118,15 +121,17 @@ pub fn decompress_nsz(
 ) -> Result<Report> {
     let mut in_file = File::open(input)?;
     let (entries, in_header_size) = read_pfs0(&mut in_file)?;
+    // `None` = nothing to verify against: NCAs are reported unverified, not
+    // corrupted.
     let content_hashes = if verify {
         let title_keys = collect_title_keys(&mut in_file, &entries)?;
         match collect_content_hashes(&mut in_file, &entries, keys, &title_keys) {
-            Ok(h) => h,
+            Ok(h) => Some(h),
             Err(e) if strict => return Err(e),
-            Err(_) => HashSet::new(),
+            Err(_) => None,
         }
     } else {
-        HashSet::new()
+        None
     };
 
     let (header_size, string_table_size) = header_geometry(&entries, in_header_size, fix_padding);
@@ -140,8 +145,11 @@ pub fn decompress_nsz(
                 Some(stem) => (format!("{stem}.nca"), decompress_ncz(&mut sub, out)?.1),
                 None => (e.name.clone(), copy_and_hash(&mut sub, out)?),
             };
-            let verified = if verify && name.ends_with(".nca") && !name.ends_with(".cnmt.nca") {
-                let ok = content_hashes.contains(&sha);
+            let hashes = content_hashes.as_ref();
+            let verified = if let Some(hashes) =
+                hashes.filter(|_| name.ends_with(".nca") && !name.ends_with(".cnmt.nca"))
+            {
+                let ok = hashes.contains(&sha);
                 if ok {
                     report.verified += 1;
                 } else {
@@ -364,13 +372,17 @@ fn read_pfs0(f: &mut File) -> Result<(Vec<Pfs0Entry>, u64)> {
 /// Member renames (`.nca` <-> `.ncz`) keep name lengths, so input names work.
 fn header_geometry(entries: &[Pfs0Entry], in_header_size: u64, fix_padding: bool) -> (u64, usize) {
     let fixed = 0x10 + entries.len() * 0x18;
-    if fix_padding {
+    let in_sts = in_header_size as usize - fixed;
+    let names_len: usize = entries.iter().map(|e| e.name.len() + 1).sum();
+    // A malformed input whose string table can't hold its own names gets the
+    // padded layout too.
+    if fix_padding || in_sts < names_len {
         let names: Vec<&str> = entries.iter().map(|e| e.name.as_str()).collect();
         let sts = pfs0::padded_string_table_size(&names);
         ((fixed + sts) as u64, sts)
     } else {
         let first = entries.first().map_or(in_header_size, |e| e.offset);
-        (first, in_header_size as usize - fixed)
+        (first, in_sts)
     }
 }
 
@@ -447,6 +459,16 @@ fn collect_content_hashes(
     let mut sub = SubReader::new(f, entry);
     let mut bytes = Vec::new();
     if entry.name.ends_with(".ncz") {
+        // A Meta NCA is a few KiB; don't let a crafted header inflate it.
+        let (sections, _, _) = read_ncz_header(&mut sub)?;
+        let size = sections
+            .iter()
+            .try_fold(INCOMPRESSIBLE_HEADER_SIZE as i64, |acc, s| {
+                acc.checked_add(s.size)
+            });
+        if !size.is_some_and(|size| size <= MAX_META_NCA_SIZE) {
+            return Err(Error::Corrupt(format!("{}: implausible size", entry.name)));
+        }
         decompress_ncz(&mut sub, &mut bytes)?;
     } else {
         sub.read_to_end(&mut bytes)?;

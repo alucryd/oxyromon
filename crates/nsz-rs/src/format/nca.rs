@@ -4,11 +4,12 @@
 //! AES-XTSN-encrypted with the 32-byte `header_key`; the keyblock at 0x300 is an
 //! AES-wrapped titlekey unwrapped with the master-key-derived kek.
 
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{self, Read, Seek, SeekFrom};
 
 use crate::crypto::{ctr, xtsn};
 use crate::error::{Error, Result};
 use crate::format::ncz::Section;
+use crate::format::read_vec;
 use crate::keys::Keys;
 
 pub const MEDIA_SIZE: u64 = 0x200;
@@ -245,13 +246,19 @@ fn bktr_subsections<R: Read + Seek>(
         return Ok(None);
     }
 
-    // The table is a 0x4000 header node followed by 0x4000 bucket nodes, CTR
-    // encrypted with the section's base counter.
-    let table_len = table_size.min(section_size - table_offset) as usize;
+    // The table is a 0x4000 header node followed by at most 0x7FE bucket nodes
+    // (the header's bucket offset list), CTR encrypted with the section's base
+    // counter.
+    let table_len = table_size
+        .min(section_size - table_offset)
+        .min(NODE as u64 * 0x7FF);
     let abs = section.offset as u64 + table_offset;
-    let mut table = vec![0u8; table_len];
     nca.seek(SeekFrom::Start(abs))?;
-    nca.read_exact(&mut table)?;
+    let mut table = match read_vec(nca, table_len) {
+        Ok(t) => t,
+        Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(None),
+        Err(e) => return Err(e.into()),
+    };
     ctr::keystream_xor(
         &section.crypto_key,
         &section.crypto_counter,
