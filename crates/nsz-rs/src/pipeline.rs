@@ -525,8 +525,8 @@ fn parse_ticket(tik: &[u8]) -> Option<([u8; 16], [u8; 16])> {
     Some((rights_id, key))
 }
 
-/// Read the CNMT (inside the Meta NCA's first section, a PFS0) and return the
-/// set of content-entry hashes (lowercase hex). Mirrors
+/// Return the content-entry hashes (lowercase hex) of every CNMT in the
+/// container: merged NSPs (base + update + DLC) carry one per title. Mirrors
 /// `FileExistingChecks.ExtractHashes`.
 fn collect_content_hashes(
     f: &mut File,
@@ -534,10 +534,29 @@ fn collect_content_hashes(
     keys: &Keys,
     title_keys: &TitleKeys,
 ) -> Result<HashSet<String>> {
-    let entry = entries
+    let mut hashes = HashSet::new();
+    let mut found = false;
+    for entry in entries
         .iter()
-        .find(|e| nca_stem(&e.name).is_some_and(|stem| stem.ends_with(".cnmt")))
-        .ok_or_else(|| Error::Corrupt("no cnmt member found in container".into()))?;
+        .filter(|e| nca_stem(&e.name).is_some_and(|stem| stem.ends_with(".cnmt")))
+    {
+        hashes.extend(cnmt_hashes(f, entry, keys, title_keys)?);
+        found = true;
+    }
+    if !found {
+        return Err(Error::Corrupt("no cnmt member found in container".into()));
+    }
+    Ok(hashes)
+}
+
+/// Read the CNMT inside one Meta NCA member (a PFS0 in its first section) and
+/// return its content-entry hashes (lowercase hex).
+fn cnmt_hashes(
+    f: &mut File,
+    entry: &Pfs0Entry,
+    keys: &Keys,
+    title_keys: &TitleKeys,
+) -> Result<Vec<String>> {
     let mut sub = SubReader::new(f, entry);
     let mut bytes = Vec::new();
     if entry.name.ends_with(".ncz") {
