@@ -132,10 +132,10 @@ pub fn parse_header(buf: &[u8]) -> Result<(Vec<Section>, Option<BlockHeader>)> {
         return Err(Error::Corrupt("negative section count".into()));
     }
     let n = section_count as usize;
-    let table_end = 16 + n * Section::WIRE_SIZE;
-    if buf.len() < table_end {
+    if n > (buf.len() - 16) / Section::WIRE_SIZE {
         return Err(Error::Corrupt("section table truncated".into()));
     }
+    let table_end = 16 + n * Section::WIRE_SIZE;
     let mut sections = Vec::with_capacity(n);
     for i in 0..n {
         sections.push(Section::read(&buf[16 + i * Section::WIRE_SIZE..])?);

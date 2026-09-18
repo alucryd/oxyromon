@@ -2,19 +2,17 @@
 //! Verifies the reconstructed NCA bytes and SHA-256 match a hand-computed
 //! expectation (header + CTR-re-encrypted sections).
 
+mod common;
+
 use std::io::Cursor;
+
+use common::pattern;
 
 use sha2::{Digest, Sha256};
 
 use nsz_rs::compress::{block_compress_ncz, solid_compress_ncz};
 use nsz_rs::crypto::ctr;
 use nsz_rs::format::ncz::Section;
-
-fn pattern(seed: u8, len: usize) -> Vec<u8> {
-    (0..len)
-        .map(|i| (i as u8).wrapping_mul(seed).wrapping_add(seed))
-        .collect()
-}
 
 fn k16(seed: u8) -> [u8; 16] {
     std::array::from_fn(|i| (i as u8).wrapping_mul(seed).wrapping_add(1))

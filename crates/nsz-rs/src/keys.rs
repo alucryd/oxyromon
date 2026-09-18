@@ -99,7 +99,9 @@ impl Keys {
             }
         }
 
-        let get = |name: &str| -> Result<Vec<u8>> {
+        // Every key-derivation input is one AES block; reject anything else up
+        // front so the ECB steps below can't fail.
+        let get = |name: &str| -> Result<[u8; 16]> {
             let bytes = raw
                 .get(name)
                 .cloned()
@@ -117,7 +119,9 @@ impl Keys {
                     }
                 }
             }
-            Ok(bytes)
+            bytes
+                .try_into()
+                .map_err(|_| Error::InvalidKey(format!("{name} is not 16 bytes")))
         };
 
         let aes_kek_gen = get("aes_kek_generation_source")?;
@@ -132,20 +136,15 @@ impl Keys {
 
         for rev in 0..32 {
             let name = format!("master_key_{rev:02x}");
-            let master = match get(&name) {
+            let mk = match get(&name) {
                 Ok(m) => m,
                 Err(Error::MissingKey(_)) => continue,
                 Err(e) => return Err(e),
             };
-            let mk: [u8; 16] = master
-                .try_into()
-                .map_err(|_| Error::InvalidKey(format!("{name} is not 16 bytes")))?;
             // titleKek = ECB(master).decrypt(titlekek_source)
-            let tk = ecb::decrypt_blocks(&mk, &titlekek_source);
-            title_keks[rev] = Some(tk.try_into().unwrap());
-            key_area_keys[rev][0] = Some(generate_kek(&kaa, &mk, &aes_kek_gen, &aes_key_gen)?);
-            key_area_keys[rev][1] = Some(generate_kek(&kao, &mk, &aes_kek_gen, &aes_key_gen)?);
-            key_area_keys[rev][2] = Some(generate_kek(&kas, &mk, &aes_kek_gen, &aes_key_gen)?);
+            title_keks[rev] = Some(ecb_decrypt(&mk, titlekek_source));
+            key_area_keys[rev] =
+                [kaa, kao, kas].map(|src| Some(generate_kek(src, &mk, aes_kek_gen, aes_key_gen)));
         }
 
         Ok(Keys {
@@ -197,9 +196,7 @@ impl Keys {
     /// Decrypt a title key wrapped with the titlekek of revision `rev`
     /// (`Keys.decryptTitleKey`).
     pub fn decrypt_title_key(&self, wrapped: &[u8; 16], rev: usize) -> Result<[u8; 16]> {
-        let kek = self.title_kek(rev)?;
-        let out = ecb::decrypt_blocks(&kek, wrapped);
-        Ok(out.try_into().unwrap())
+        Ok(ecb_decrypt(&self.title_kek(rev)?, *wrapped))
     }
 
     /// Unwrap an AES-wrapped titlekey from an NCA header keyblock
@@ -207,15 +204,19 @@ impl Keys {
     /// matching the Python implementation.
     pub fn unwrap_title_key(&self, wrapped: &[u8; 16], key_generation: usize) -> Result<[u8; 16]> {
         let kek = self.key_area_key(key_generation, KeyArea::Application)?;
-        Ok(ecb::decrypt_blocks(&kek, wrapped).try_into().unwrap())
+        Ok(ecb_decrypt(&kek, *wrapped))
     }
 
     /// Inverse of [`Self::unwrap_title_key`]: wrap a plaintext key so that
     /// `unwrap_title_key(wrapped, key_generation)` returns `plain`. Used to build
     /// synthetic NCA keyblocks in tests.
     pub fn wrap_title_key(&self, plain: &[u8; 16], key_generation: usize) -> Result<[u8; 16]> {
-        let kek = self.key_area_key(key_generation, KeyArea::Application)?;
-        Ok(ecb::encrypt_blocks(&kek, plain).try_into().unwrap())
+        let mut out = *plain;
+        ecb::encrypt_block(
+            &self.key_area_key(key_generation, KeyArea::Application)?,
+            &mut out,
+        );
+        Ok(out)
     }
 
     /// The 32-byte XTS key protecting the first 0xC00 bytes of every NCA.
@@ -233,27 +234,19 @@ impl Keys {
 }
 
 /// `Keys.generateKek`: kek = ECB(master).decrypt(kek_seed);
-/// src_kek = ECB(kek).decrypt(src); if key_seed: ECB(src_kek).decrypt(key_seed).
+/// src_kek = ECB(kek).decrypt(src); key = ECB(src_kek).decrypt(key_seed).
 fn generate_kek(
-    src: &[u8],
+    src: [u8; 16],
     master: &[u8; 16],
-    kek_seed: &[u8],
-    key_seed: &[u8],
-) -> Result<[u8; 16]> {
-    let kek = ecb::decrypt_blocks(master, kek_seed);
-    let kek: [u8; 16] = kek
-        .try_into()
-        .map_err(|_| Error::InvalidKey("kek len".into()))?;
-    let src_kek = ecb::decrypt_blocks(&kek, src);
-    let src_kek: [u8; 16] = src_kek
-        .try_into()
-        .map_err(|_| Error::InvalidKey("src_kek len".into()))?;
-    if !key_seed.is_empty() {
-        let out = ecb::decrypt_blocks(&src_kek, key_seed);
-        Ok(out
-            .try_into()
-            .map_err(|_| Error::InvalidKey("key len".into()))?)
-    } else {
-        Ok(src_kek)
-    }
+    kek_seed: [u8; 16],
+    key_seed: [u8; 16],
+) -> [u8; 16] {
+    let kek = ecb_decrypt(master, kek_seed);
+    let src_kek = ecb_decrypt(&kek, src);
+    ecb_decrypt(&src_kek, key_seed)
+}
+
+fn ecb_decrypt(key: &[u8; 16], mut block: [u8; 16]) -> [u8; 16] {
+    ecb::decrypt_block(key, &mut block);
+    block
 }

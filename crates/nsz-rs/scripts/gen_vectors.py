@@ -5,14 +5,15 @@ Uses the *actual* nsz Python primitives (nsz.nut.aes128, nsz.nut.Keys) with
 synthetic keys so the Rust port can assert byte-identical results. CRC32 source
 checks are disabled so we can feed arbitrary synthetic source bytes.
 
-Run from the repo root:  python3 nsz-rs/scripts/gen_vectors.py
-Writes: nsz-rs/tests/vectors.json
+Run:  python3 scripts/gen_vectors.py
+Reads the nsz sources from $NSZ_SRC (default: a sibling `nsz` checkout).
+Writes: tests/common/vectors_gen.rs
 """
-import sys, os, json
+import sys, os
 from binascii import hexlify as hx, unhexlify as uhx
 
-REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, REPO)
+CRATE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.environ.get("NSZ_SRC", os.path.join(os.path.dirname(CRATE), "nsz")))
 
 from nsz.nut import aes128
 from nsz.nut import Keys
@@ -103,7 +104,7 @@ for idx, mk in MASTER_KEYS.items():
 
 # CTR vectors: exercise block-aligned and unaligned offsets.
 ctr_key = synth(0x71)
-ctr_nonce = synth(0x72) + b"\x00" * 0  # 16 bytes; only first 8 used as prefix
+ctr_nonce = synth(0x72)  # 16 bytes; only first 8 used as prefix
 for off in (0, 1, 15, 16, 17, 0x1000, 0x10001, 0x100000, 0x10000F):
     data = bytes((i * 13 + 5) & 0xFF for i in range(64))
     c = aes128.AESCTR(ctr_key, ctr_nonce, offset=off)
@@ -143,11 +144,7 @@ for i in range(6):
         "output": h(aes128._mul_alpha_le(t)),
     })
 
-out = os.path.join(REPO, "nsz-rs", "tests", "vectors.json")
-with open(out, "w") as f:
-    json.dump(vectors, f, indent=2)
-
-# Also emit a self-contained Rust module so the integration test needs no JSON dep.
+# Emit a self-contained Rust module so the tests need no JSON dep.
 def rs_strs(items):
     return ",\n    ".join(items)
 
@@ -189,10 +186,9 @@ lines.append("    " + rs_strs('("{0}", "{1}")'.format(m["input"], m["output"]) f
 lines.append("];")
 lines.append("")
 
-rs_out = os.path.join(REPO, "nsz-rs", "tests", "vectors_gen.rs")
+rs_out = os.path.join(CRATE, "tests", "common", "vectors_gen.rs")
 with open(rs_out, "w") as f:
     f.write("\n".join(lines))
-print("wrote", out)
 print("wrote", rs_out)
 print("titlekek[00] =", vectors["titlekeks"]["00"])
 print("key_area[05].application =", vectors["key_area_keys"]["05"]["application"])

@@ -5,6 +5,7 @@
 use std::io::{Read, Seek, SeekFrom};
 
 use crate::error::{Error, Result};
+use crate::format::read_vec;
 
 pub const PFS0_MAGIC: &[u8; 4] = b"PFS0";
 
@@ -39,10 +40,8 @@ impl<R: Read + Seek> Pfs0Reader<R> {
         // head[12..16] = hashSize (0 for NSP)
         let header_size = 16 + file_count * 24 + string_table_size;
 
-        let mut table = vec![0u8; file_count * 24];
-        reader.read_exact(&mut table)?;
-        let mut string_table = vec![0u8; string_table_size];
-        reader.read_exact(&mut string_table)?;
+        let table = read_vec(&mut reader, (file_count * 24) as u64)?;
+        let string_table = read_vec(&mut reader, string_table_size as u64)?;
 
         let mut entries = Vec::with_capacity(file_count);
         for i in 0..file_count {
@@ -53,9 +52,13 @@ impl<R: Read + Seek> Pfs0Reader<R> {
                 u32::from_le_bytes(table[base + 16..base + 20].try_into().unwrap()) as usize;
             let flag = u32::from_le_bytes(table[base + 20..base + 24].try_into().unwrap());
             let name = read_cstr(&string_table, string_offset)?;
+            let offset = (header_size as u64)
+                .checked_add(rel_offset)
+                .filter(|off| off.checked_add(size).is_some())
+                .ok_or_else(|| Error::Corrupt(format!("{name}: offset out of range")))?;
             entries.push(Pfs0Entry {
                 name,
-                offset: header_size as u64 + rel_offset,
+                offset,
                 size,
                 flag,
             });
@@ -70,9 +73,7 @@ impl<R: Read + Seek> Pfs0Reader<R> {
     /// Read one file's payload into a Vec.
     pub fn read_file(&mut self, entry: &Pfs0Entry) -> Result<Vec<u8>> {
         self.reader.seek(SeekFrom::Start(entry.offset))?;
-        let mut buf = vec![0u8; entry.size as usize];
-        self.reader.read_exact(&mut buf)?;
-        Ok(buf)
+        Ok(read_vec(&mut self.reader, entry.size)?)
     }
 
     pub fn into_inner(self) -> R {
@@ -107,6 +108,11 @@ pub fn align0x20(n: usize) -> usize {
 }
 
 /// Build a PFS0 header for the given entries (offsets are absolute in the file).
+///
+/// # Panics
+///
+/// If `string_table_size` can't hold the names, or an offset precedes the end
+/// of the header.
 pub fn build_header(entries: &[(String, u64, u64)], string_table_size: usize) -> Vec<u8> {
     let names: Vec<&str> = entries.iter().map(|(n, _, _)| n.as_str()).collect();
     let non_padded: usize = names.iter().map(|n| n.len() + 1).sum();

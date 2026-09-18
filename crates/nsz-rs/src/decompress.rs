@@ -10,6 +10,7 @@ use crate::crypto::ctr;
 use crate::error::{Error, Result};
 use crate::format::nca::is_ctr;
 use crate::format::ncz::{self, BlockHeader, Section, INCOMPRESSIBLE_HEADER_SIZE};
+use crate::format::read_vec;
 
 const CHUNK: usize = 0x100000;
 
@@ -103,11 +104,11 @@ pub fn read_ncz_header<R: Read + Seek>(
     f.seek(SeekFrom::Start(INCOMPRESSIBLE_HEADER_SIZE))?;
     let mut head = [0u8; 16];
     f.read_exact(&mut head)?;
-    let n = usize::try_from(ncz::le_i64(&head, 8))
-        .map_err(|_| Error::Corrupt("negative section count".into()))?;
-    let mut buf = head.to_vec();
-    buf.resize(16 + n * Section::WIRE_SIZE, 0);
-    f.read_exact(&mut buf[16..])?;
+    let table_len = u64::try_from(ncz::le_i64(&head, 8))
+        .ok()
+        .and_then(|n| n.checked_mul(Section::WIRE_SIZE as u64))
+        .ok_or_else(|| Error::Corrupt("bad section count".into()))?;
+    let buf = [&head[..], &read_vec(f, table_len)?].concat();
     let (mut sections, _) = ncz::parse_header(&buf)?;
     let block_start = INCOMPRESSIBLE_HEADER_SIZE + buf.len() as u64;
 
@@ -115,11 +116,9 @@ pub fn read_ncz_header<R: Read + Seek>(
     let mut fixed = [0u8; BlockHeader::FIXED_SIZE];
     let has_block = f.read_exact(&mut fixed).is_ok() && fixed[..8] == *ncz::BLOCK_MAGIC;
     let (block, payload_start) = if has_block {
-        let nblocks = usize::try_from(ncz::le_i32(&fixed, 12))
+        let nblocks = u64::try_from(ncz::le_i32(&fixed, 12))
             .map_err(|_| Error::Corrupt("negative block count".into()))?;
-        let mut bh = fixed.to_vec();
-        bh.resize(BlockHeader::FIXED_SIZE + nblocks * 4, 0);
-        f.read_exact(&mut bh[BlockHeader::FIXED_SIZE..])?;
+        let bh = [&fixed[..], &read_vec(f, nblocks * 4)?].concat();
         (Some(BlockHeader::read(&bh)?), block_start + bh.len() as u64)
     } else {
         (None, block_start)
@@ -181,7 +180,7 @@ fn decompress_body<S: Read, W: Write>(
     let mut chunk = vec![0u8; CHUNK];
     for (idx, s) in sections.iter().enumerate() {
         let mut i = s.offset;
-        let end = s.offset + s.size;
+        let end = s.offset.saturating_add(s.size);
         if idx == 0 {
             // The part of the first section inside the 0x4000 header was stored verbatim.
             i = i.max(INCOMPRESSIBLE_HEADER_SIZE as i64);
