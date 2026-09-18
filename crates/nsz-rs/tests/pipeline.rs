@@ -307,3 +307,43 @@ fn failed_decompression_removes_the_output() {
     assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, false, false, &mut |_| {}).is_err());
     assert!(!out_path.exists());
 }
+
+#[test]
+fn merged_nsp_verifies_against_every_cnmt() {
+    // Base game + update in one container, each with its own CNMT listing only
+    // its own Program NCA.
+    let keys = build_keys();
+    let program = |seed| {
+        build_nca(
+            &keys,
+            nca::CONTENT_PROGRAM,
+            [0; 16],
+            [seed; 16],
+            &[Sec::new(0x4000, pattern(seed, 0x8000), 3)],
+        )
+    };
+    let (base, update) = (program(0x31), program(0x32));
+    let (base_meta, update_meta) = (
+        build_meta_nca(&keys, &[sha256(&base)]),
+        build_meta_nca(&keys, &[sha256(&update)]),
+    );
+    let nsp = build_pfs0(&[
+        ("base.nca", &base),
+        ("base.cnmt.nca", &base_meta),
+        ("update.nca", &update),
+        ("update.cnmt.nca", &update_meta),
+    ]);
+
+    let dir = tempfile::tempdir().unwrap();
+    let (nsp_path, nsz_path, out_path) = (
+        dir.path().join("a.nsp"),
+        dir.path().join("a.nsz"),
+        dir.path().join("b.nsp"),
+    );
+    std::fs::write(&nsp_path, &nsp).unwrap();
+    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, false, &mut |_| {}).unwrap();
+    let report =
+        decompress_nsz(&nsz_path, &out_path, &keys, false, true, true, &mut |_| {}).unwrap();
+    assert_eq!((report.verified, report.corrupted), (2, 0));
+    assert_eq!(std::fs::read(&out_path).unwrap(), nsp);
+}
