@@ -197,7 +197,14 @@ fn main() {
 
     let mut failures = 0usize;
     for input in &args.inputs {
-        let size = std::fs::metadata(input).map_or(0, |m| m.len());
+        let size = match std::fs::metadata(input) {
+            Ok(m) => m.len(),
+            Err(e) => {
+                eprintln!("nszrs: {}: {e}", input.display());
+                failures += 1;
+                continue;
+            }
+        };
         let bar = ProgressBar::new(size).with_style(style.clone());
         bar.set_prefix(match args.mode {
             Mode::Compress => "Compressing",
