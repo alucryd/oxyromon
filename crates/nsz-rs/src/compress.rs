@@ -184,9 +184,9 @@ fn zstd_compress(data: &[u8], level: i32, ldm: bool) -> Result<Vec<u8>> {
 }
 
 fn zstd_err(e: io::Error) -> Error {
-    Error::Corrupt(format!("zstd: {e}"))
+    Error::Compression(format!("zstd: {e}"))
 }
 
 fn zstd_code_err(code: usize) -> Error {
-    Error::Corrupt(format!("zstd: {}", zstd_safe::get_error_name(code)))
+    Error::Compression(format!("zstd: {}", zstd_safe::get_error_name(code)))
 }
