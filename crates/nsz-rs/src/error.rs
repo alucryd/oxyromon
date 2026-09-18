@@ -25,6 +25,9 @@ pub enum Error {
     #[error("corrupt data: {0}")]
     Corrupt(String),
 
+    #[error("compression failed: {0}")]
+    Compression(String),
+
     #[error("hex decode error: {0}")]
     Hex(#[from] hex::FromHexError),
 }

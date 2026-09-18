@@ -211,10 +211,9 @@ pub fn decompress_nsz(
 /// Program and PublicData NCAs whose sections tile the file are compressed to
 /// `.ncz` members; everything else is copied verbatim (as nsz does). Title keys
 /// for rights-managed NCAs come from the NSP's tickets, then `keys`'
-/// `title.keys`. `progress` is called with each newly consumed chunk of the
+/// `title.keys`. `progress` is called with each newly compressed chunk of the
 /// input, in bytes; for a well-formed container the calls add up to the input
-/// file size. On error the
-/// partial output file is removed.
+/// file size. On error the partial output file is removed.
 pub fn compress_nsp(
     input: &Path,
     output: &Path,
