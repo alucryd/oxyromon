@@ -22,6 +22,7 @@
 
 use std::path::{Path, PathBuf};
 
+use indicatif::{ProgressBar, ProgressStyle};
 use nsz_rs::keys::Keys;
 use nsz_rs::pipeline::{compress_nsp, decompress_nsz, Compression};
 
@@ -187,13 +188,43 @@ fn main() {
         }
     };
 
+    // Hidden automatically when stderr isn't a terminal.
+    let style = ProgressStyle::with_template(
+        "{prefix:>13.bold} [{bar:30}] {percent:>3}% {binary_bytes_per_sec:>12} ETA {eta:>3} {wide_msg}",
+    )
+    .unwrap()
+    .progress_chars("=> ");
+
     let mut failures = 0usize;
     for input in &args.inputs {
+        let size = std::fs::metadata(input).map_or(0, |m| m.len());
+        let bar = ProgressBar::new(size).with_style(style.clone());
+        bar.set_prefix(match args.mode {
+            Mode::Compress => "Compressing",
+            Mode::Decompress => "Decompressing",
+        });
+        bar.set_message(
+            input
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned(),
+        );
+        let mut progress = |n| bar.inc(n);
         let result = match args.mode {
             Mode::Decompress => {
                 let out = out_path(input, args.output_dir.as_ref(), ".nsp");
                 // Strict: a hash mismatch is an error and the output is removed.
-                decompress_nsz(input, &out, &keys, args.fix_padding, true, true).map(|_| out)
+                decompress_nsz(
+                    input,
+                    &out,
+                    &keys,
+                    args.fix_padding,
+                    true,
+                    true,
+                    &mut progress,
+                )
+                .map(|_| out)
             }
             Mode::Compress => {
                 let out = out_path(input, args.output_dir.as_ref(), ".nsz");
@@ -205,9 +236,18 @@ fn main() {
                         Stream::Block => Some(args.block_exp),
                     },
                 };
-                compress_nsp(input, &out, &keys, &compression, args.fix_padding).map(|()| out)
+                compress_nsp(
+                    input,
+                    &out,
+                    &keys,
+                    &compression,
+                    args.fix_padding,
+                    &mut progress,
+                )
+                .map(|()| out)
             }
         };
+        bar.finish_and_clear();
         match result {
             Ok(out) => println!("nszrs: wrote {}", out.display()),
             Err(e) => {

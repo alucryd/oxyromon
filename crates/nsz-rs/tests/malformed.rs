@@ -72,7 +72,16 @@ fn string_table_too_small_for_names_still_decompresses() {
     let dir = tempfile::tempdir().unwrap();
     let (input, output) = (dir.path().join("a.nsz"), dir.path().join("a.nsp"));
     std::fs::write(&input, &pfs0).unwrap();
-    decompress_nsz(&input, &output, &build_keys(), false, false, false).unwrap();
+    decompress_nsz(
+        &input,
+        &output,
+        &build_keys(),
+        false,
+        false,
+        false,
+        &mut |_| {},
+    )
+    .unwrap();
     let mut out = Pfs0Reader::new(std::fs::File::open(&output).unwrap()).unwrap();
     let entry = out.entries[0].clone();
     assert_eq!(entry.name, "a");
@@ -84,7 +93,16 @@ fn missing_cnmt_leaves_ncas_unverified_not_corrupted() {
     let dir = tempfile::tempdir().unwrap();
     let (input, output) = (dir.path().join("a.nsz"), dir.path().join("a.nsp"));
     std::fs::write(&input, build_pfs0(&[("x.nca", b"data")])).unwrap();
-    let report = decompress_nsz(&input, &output, &build_keys(), false, true, false).unwrap();
+    let report = decompress_nsz(
+        &input,
+        &output,
+        &build_keys(),
+        false,
+        true,
+        false,
+        &mut |_| {},
+    )
+    .unwrap();
     assert_eq!((report.verified, report.corrupted), (0, 0));
     assert!(!report.files[0].verified);
 }
