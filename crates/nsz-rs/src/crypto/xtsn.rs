@@ -9,7 +9,7 @@
 //!   T_i = mul_alpha_le(T_{i-1})
 //!   C_i = K1_ecb(P_i ^ T_i) ^ T_i
 
-use aes::cipher::{generic_array::GenericArray, BlockDecrypt, BlockEncrypt, KeyInit};
+use aes::cipher::{Array, BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 use aes::Aes128;
 
 use crate::crypto::ecb::BLOCK_SIZE;
@@ -57,15 +57,14 @@ pub fn crypt(
         "xtsn: bad sector size"
     );
 
-    let k1 = Aes128::new(GenericArray::from_slice(key1));
-    let k2 = Aes128::new(GenericArray::from_slice(key2));
+    let k1 = Aes128::new(key1.into());
+    let k2 = Aes128::new(key2.into());
     for (sector, data) in (start_sector..).zip(buf.chunks_mut(sector_size)) {
         // T_0 for this sector
         let mut tweak = tweak_block(sector);
-        k2.encrypt_block(GenericArray::from_mut_slice(&mut tweak));
+        k2.encrypt_block((&mut tweak).into());
         for block in data.as_chunks_mut::<BLOCK_SIZE>().0 {
-            let mut b =
-                GenericArray::from(std::array::from_fn::<u8, 16, _>(|i| block[i] ^ tweak[i]));
+            let mut b = Array::from(std::array::from_fn::<u8, 16, _>(|i| block[i] ^ tweak[i]));
             if decrypt {
                 k1.decrypt_block(&mut b);
             } else {
