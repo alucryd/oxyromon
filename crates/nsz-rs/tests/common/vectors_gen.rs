@@ -3,40 +3,99 @@
 #![allow(dead_code)]
 
 pub const SOURCES: [(&str, &str); 6] = [
-    ("aes_kek_generation_source", "222930373e454c535a61686f767d848b"),
-    ("aes_key_generation_source", "41484f565d646b727980878e959ca3aa"),
+    (
+        "aes_kek_generation_source",
+        "222930373e454c535a61686f767d848b",
+    ),
+    (
+        "aes_key_generation_source",
+        "41484f565d646b727980878e959ca3aa",
+    ),
     ("titlekek_source", "60676e757c838a91989fa6adb4bbc2c9"),
-    ("key_area_key_application_source", "7f868d949ba2a9b0b7bec5ccd3dae1e8"),
-    ("key_area_key_ocean_source", "9ea5acb3bac1c8cfd6dde4ebf2f90007"),
-    ("key_area_key_system_source", "bdc4cbd2d9e0e7eef5fc030a11181f26")
+    (
+        "key_area_key_application_source",
+        "7f868d949ba2a9b0b7bec5ccd3dae1e8",
+    ),
+    (
+        "key_area_key_ocean_source",
+        "9ea5acb3bac1c8cfd6dde4ebf2f90007",
+    ),
+    (
+        "key_area_key_system_source",
+        "bdc4cbd2d9e0e7eef5fc030a11181f26",
+    ),
 ];
 
 pub const MASTER_KEYS: [(&str, &str); 4] = [
     ("00", "f3fa01080f161d242b323940474e555c"),
     ("05", "8e959ca3aab1b8bfc6cdd4dbe2e9f0f7"),
     ("0a", "2930373e454c535a61686f767d848b92"),
-    ("14", "5f666d747b828990979ea5acb3bac1c8")
+    ("14", "5f666d747b828990979ea5acb3bac1c8"),
 ];
 
 pub const TITLEKEKS: [(&str, &str); 4] = [
     ("00", "d6aebc7b3a2ef4da3e72dc0af67eaa44"),
     ("05", "2bda23dbbc7603c1da059d6173dac587"),
     ("0a", "7f90093cd440f3954b19ce4fd5e52d59"),
-    ("14", "393e5e0bfa780740845b69b27a596fe6")
+    ("14", "393e5e0bfa780740845b69b27a596fe6"),
 ];
 
 pub const KEY_AREA_KEYS: [(&str, (&str, &str, &str)); 4] = [
-    ("00", ("4e81d3098d77f5d1b5ed9b0b77b00843", "c4b8365c49d64d6d62282db1afe4168d", "e54c3aa6a34a7714bbc54333bd0d1f0e")),
-    ("05", ("17b6159feeebecac15abd67e8567a7b1", "1c68b596adba2c66ce914488d6114ed0", "383b9f2a6259dfe8295e381d06155d39")),
-    ("0a", ("87a1b169b3b317ad3a2275c87ab0873a", "18716f8022a9699bba1529d11b1e83d2", "1c9616a4d06536dbd4aabb6c2f74a9b3")),
-    ("14", ("3b4d0b371ce50940efbece0d60c0b72e", "c6032af67d33f20f220928500de837c3", "8daca9b581a635005b661d61706b465e"))
+    (
+        "00",
+        (
+            "4e81d3098d77f5d1b5ed9b0b77b00843",
+            "c4b8365c49d64d6d62282db1afe4168d",
+            "e54c3aa6a34a7714bbc54333bd0d1f0e",
+        ),
+    ),
+    (
+        "05",
+        (
+            "17b6159feeebecac15abd67e8567a7b1",
+            "1c68b596adba2c66ce914488d6114ed0",
+            "383b9f2a6259dfe8295e381d06155d39",
+        ),
+    ),
+    (
+        "0a",
+        (
+            "87a1b169b3b317ad3a2275c87ab0873a",
+            "18716f8022a9699bba1529d11b1e83d2",
+            "1c9616a4d06536dbd4aabb6c2f74a9b3",
+        ),
+    ),
+    (
+        "14",
+        (
+            "3b4d0b371ce50940efbece0d60c0b72e",
+            "c6032af67d33f20f220928500de837c3",
+            "8daca9b581a635005b661d61706b465e",
+        ),
+    ),
 ];
 
 pub const UNWRAP_TITLEKEY: [(&str, &str, &str); 4] = [
-    ("0", "30d70f1f120ac373025f10977e465f8c", "c3cad1d8dfe6edf4fb020910171e252c"),
-    ("5", "26c05278540d3501d634d12d985a1d0c", "5e656c737a81888f969da4abb2b9c0c7"),
-    ("a", "af96419e0fb113de32c7fb4393eff202", "f900070e151c232a31383f464d545b62"),
-    ("14", "147c63b062ca62fd40ef8dc159536a57", "2f363d444b525960676e757c838a9198")
+    (
+        "0",
+        "30d70f1f120ac373025f10977e465f8c",
+        "c3cad1d8dfe6edf4fb020910171e252c",
+    ),
+    (
+        "5",
+        "26c05278540d3501d634d12d985a1d0c",
+        "5e656c737a81888f969da4abb2b9c0c7",
+    ),
+    (
+        "a",
+        "af96419e0fb113de32c7fb4393eff202",
+        "f900070e151c232a31383f464d545b62",
+    ),
+    (
+        "14",
+        "147c63b062ca62fd40ef8dc159536a57",
+        "2f363d444b525960676e757c838a9198",
+    ),
 ];
 
 pub const CTR: [(&str, &str, u64, &str, &str); 9] = [
@@ -60,10 +119,28 @@ pub const XTSN: [(&str, &str, u64, &str, &str); 5] = [
 ];
 
 pub const MUL_ALPHA_LE: [(&str, &str); 6] = [
-    ("c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8", "17919191919191919191919191919191"),
-    ("e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5", "4dcbcbcbcbcbcbcbcbcbcbcbcbcbcbcb"),
-    ("02020202020202020202020202020202", "04040404040404040404040404040404"),
-    ("1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f", "3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e"),
-    ("3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c", "78787878787878787878787878787878"),
-    ("00000000000000000000000000000080", "87000000000000000000000000000000")
+    (
+        "c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8",
+        "17919191919191919191919191919191",
+    ),
+    (
+        "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "4dcbcbcbcbcbcbcbcbcbcbcbcbcbcbcb",
+    ),
+    (
+        "02020202020202020202020202020202",
+        "04040404040404040404040404040404",
+    ),
+    (
+        "1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f",
+        "3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e",
+    ),
+    (
+        "3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c",
+        "78787878787878787878787878787878",
+    ),
+    (
+        "00000000000000000000000000000080",
+        "87000000000000000000000000000000",
+    ),
 ];
