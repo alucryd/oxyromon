@@ -189,7 +189,7 @@ and keeps its upstream's license:
 | Crate    | Port of                                     | CLI     | License | Used by oxyromon for |
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
-| `cso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `csors` | ISC     | not yet (CSO/ZSO still go through `maxcso`) |
+| `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | not yet (CSO/ZSO still go through `maxcso`) |
 
 `frontend/` and `desktop/` are *not* members: they declare their own
 `[workspace]` so their WebAssembly and webview dependencies stay out of the
@@ -229,9 +229,9 @@ Every crate follows these, and a new port should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p nsz-rs -p cso-rs      # the CLIs
-cargo test -p cso-rs                           # one crate
-cargo test --release -p cso-rs -- --ignored    # its slow tests
+cargo build --release -p nsz-rs -p xso-rs      # the CLIs
+cargo test -p xso-rs                           # one crate
+cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```
 
 ## Testing

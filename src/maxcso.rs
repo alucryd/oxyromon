@@ -158,7 +158,7 @@ impl ToXso for IsoRomfile {
             ),
         );
 
-        // The block sizes cso-rs defaults to (`default_block_size`): 8 KiB for
+        // The block sizes xso-rs defaults to (`default_block_size`): 8 KiB for
         // CSO, which an ARK-5 PSP plays, or 16 KiB from 2 GiB, where only PS2
         // DVDs are; 2 KiB for ZSO, the only size Open PS2 Loader reads.
         let block_size = match xso_type {

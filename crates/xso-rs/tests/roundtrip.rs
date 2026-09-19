@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use cso_rs::{CompressOptions, DecompressOptions, Format};
+use xso_rs::{CompressOptions, DecompressOptions, Format};
 
 mod common;
 use common::write_iso;
@@ -20,10 +20,10 @@ fn roundtrip(format: Format, block: u32, sectors: usize, seed: u64) {
         threads: 2,
         ..CompressOptions::new(format)
     };
-    let stats = cso_rs::compress(&iso, &packed, &opts, &mut |_| {}).unwrap();
+    let stats = xso_rs::compress(&iso, &packed, &opts, &mut |_| {}).unwrap();
     assert_eq!(stats.input_size, original.len() as u64);
 
-    cso_rs::decompress(
+    xso_rs::decompress(
         &packed,
         &back,
         &DecompressOptions { threads: 2 },
@@ -36,7 +36,7 @@ fn roundtrip(format: Format, block: u32, sectors: usize, seed: u64) {
         "{format:?} block={block} did not round-trip"
     );
 
-    let header = cso_rs::probe(&packed).unwrap();
+    let header = xso_rs::probe(&packed).unwrap();
     assert_eq!(header.format, format);
     assert_eq!(header.block_size, block);
     assert_eq!(header.uncompressed_size, original.len() as u64);
@@ -64,7 +64,7 @@ fn zso_large_blocks() {
 
 #[test]
 fn cso_max_block() {
-    roundtrip(Format::Cso, cso_rs::MAX_BLOCK_SIZE, 256, 5);
+    roundtrip(Format::Cso, xso_rs::MAX_BLOCK_SIZE, 256, 5);
 }
 
 #[test]
@@ -87,12 +87,12 @@ fn progress_adds_up_to_the_input_size() {
     };
 
     let mut read = 0;
-    cso_rs::compress(&iso, &packed, &options, &mut |n| read += n).unwrap();
+    xso_rs::compress(&iso, &packed, &options, &mut |n| read += n).unwrap();
     assert_eq!(read, original.len() as u64);
 
     let mut read = 0;
     let options = DecompressOptions::default();
-    cso_rs::decompress(&packed, &back, &options, &mut |n| read += n).unwrap();
+    xso_rs::decompress(&packed, &back, &options, &mut |n| read += n).unwrap();
     assert_eq!(read, std::fs::metadata(&packed).unwrap().len());
 }
 
@@ -103,7 +103,7 @@ fn a_failed_run_removes_its_output() {
     let packed = dir.path().join("out.cso");
     let back = dir.path().join("back.iso");
     write_iso(&iso, 64, 23);
-    cso_rs::compress(
+    xso_rs::compress(
         &iso,
         &packed,
         &CompressOptions::new(Format::Cso),
@@ -120,7 +120,7 @@ fn a_failed_run_removes_its_output() {
         .set_len(len / 2)
         .unwrap();
     let options = DecompressOptions::default();
-    assert!(cso_rs::decompress(&packed, &back, &options, &mut |_| {}).is_err());
+    assert!(xso_rs::decompress(&packed, &back, &options, &mut |_| {}).is_err());
     assert!(!back.exists());
 }
 
@@ -133,7 +133,7 @@ fn a_rejected_input_leaves_an_existing_output_alone() {
     let out = dir.path().join("out.cso");
     std::fs::write(&iso, b"not a sector multiple").unwrap();
     std::fs::write(&out, b"keep me").unwrap();
-    assert!(cso_rs::compress(&iso, &out, &CompressOptions::new(Format::Cso), &mut |_| {}).is_err());
+    assert!(xso_rs::compress(&iso, &out, &CompressOptions::new(Format::Cso), &mut |_| {}).is_err());
     assert_eq!(std::fs::read(&out).unwrap(), b"keep me");
 }
 
@@ -144,8 +144,8 @@ fn rejects_input_that_is_not_sector_aligned() {
     std::fs::write(&iso, b"not a sector multiple").unwrap();
     let out: &Path = &dir.path().join("out.cso");
     assert!(matches!(
-        cso_rs::compress(&iso, out, &CompressOptions::new(Format::Cso), &mut |_| {}),
-        Err(cso_rs::Error::InvalidOption(_))
+        xso_rs::compress(&iso, out, &CompressOptions::new(Format::Cso), &mut |_| {}),
+        Err(xso_rs::Error::InvalidOption(_))
     ));
 }
 
@@ -161,7 +161,7 @@ fn rejects_bad_block_sizes() {
             ..CompressOptions::new(Format::Cso)
         };
         assert!(
-            cso_rs::compress(&iso, &dir.path().join("o"), &opts, &mut |_| {}).is_err(),
+            xso_rs::compress(&iso, &dir.path().join("o"), &opts, &mut |_| {}).is_err(),
             "block {bad} should have been rejected"
         );
     }
@@ -176,9 +176,9 @@ fn refuses_to_read_a_non_cso_file() {
         b"definitely not a CSO or ZSO file at all, no header here",
     )
     .unwrap();
-    assert!(cso_rs::probe(&junk).is_err());
+    assert!(xso_rs::probe(&junk).is_err());
     assert!(
-        cso_rs::decompress(
+        xso_rs::decompress(
             &junk,
             &dir.path().join("o"),
             &DecompressOptions::default(),

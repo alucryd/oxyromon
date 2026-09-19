@@ -1,5 +1,5 @@
 [package]
-name = "cso-rs"
+name = "xso-rs"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -11,12 +11,12 @@ categories = ["compression", "command-line-utilities"]
 include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
 
 [lib]
-name = "cso_rs"
+name = "xso_rs"
 path = "src/lib.rs"
 
 [[bin]]
-name = "csors"
-path = "src/bin/csors.rs"
+name = "xsors"
+path = "src/bin/xsors.rs"
 required-features = ["cli"]
 
 [dependencies]

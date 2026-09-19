@@ -34,7 +34,7 @@ pub fn write_iso(path: &Path, sectors: usize, seed: u64) -> Vec<u8> {
         let chunk = match (state >> 16) % 4 {
             0 => vec![0u8; SECTOR],
             1 => {
-                let unit = b"cso-rs integration fixture region. ".repeat(64);
+                let unit = b"xso-rs integration fixture region. ".repeat(64);
                 unit[..SECTOR].to_vec()
             }
             2 => noise(SECTOR, state),

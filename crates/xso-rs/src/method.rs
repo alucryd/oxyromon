@@ -125,7 +125,7 @@ mod tests {
     fn compressible() -> Vec<u8> {
         let mut v = Vec::new();
         while v.len() < 2048 {
-            v.extend_from_slice(b"cso-rs compresses blocks of repetitive data. ");
+            v.extend_from_slice(b"xso-rs compresses blocks of repetitive data. ");
         }
         v.truncate(2048);
         v

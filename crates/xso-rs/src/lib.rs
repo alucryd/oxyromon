@@ -6,15 +6,15 @@
 //!
 //! ```no_run
 //! use std::path::Path;
-//! use cso_rs::{CompressOptions, DecompressOptions, Format};
+//! use xso_rs::{CompressOptions, DecompressOptions, Format};
 //!
 //! let iso = Path::new("game.iso");
 //! let cso = Path::new("game.cso");
 //! let zso = Path::new("game.zso");
 //!
-//! cso_rs::compress(iso, cso, &CompressOptions::new(Format::Cso), &mut |_| {}).unwrap();
-//! cso_rs::compress(iso, zso, &CompressOptions::new(Format::Zso), &mut |_| {}).unwrap();
-//! cso_rs::decompress(cso, Path::new("out.iso"), &DecompressOptions::default(), &mut |_| {}).unwrap();
+//! xso_rs::compress(iso, cso, &CompressOptions::new(Format::Cso), &mut |_| {}).unwrap();
+//! xso_rs::compress(iso, zso, &CompressOptions::new(Format::Zso), &mut |_| {}).unwrap();
+//! xso_rs::decompress(cso, Path::new("out.iso"), &DecompressOptions::default(), &mut |_| {}).unwrap();
 //! ```
 //!
 //! Compression takes a raw ISO. To turn a CSO into a ZSO, decompress first and
