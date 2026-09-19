@@ -1,10 +1,10 @@
+use super::check_roms;
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
+use super::convert_roms;
 use super::database::*;
 use super::download_dats::download_redump_system;
-use super::progress::*;
-use super::check_roms;
-use super::convert_roms;
 use super::generate_playlists;
+use super::progress::*;
 use super::purge_irds;
 use super::purge_roms;
 use super::purge_systems::purge_system;
@@ -86,12 +86,10 @@ fn system_not_found(system_id: i64) -> async_graphql::Error {
 /// failure into a typed GraphQL error instead of a panic. The spawned actions
 /// hold their connections for the whole run, so under concurrency a request-path
 /// acquire can genuinely fail; that must surface as an error, not a 500.
-async fn acquire_connection(
-    pool: &SqlitePool,
-) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>> {
-    pool.acquire()
-        .await
-        .map_err(|e| async_graphql::Error::new(format!("Failed to acquire database connection: {e}")))
+async fn acquire_connection(pool: &SqlitePool) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>> {
+    pool.acquire().await.map_err(|e| {
+        async_graphql::Error::new(format!("Failed to acquire database connection: {e}"))
+    })
 }
 
 pub struct Mutation;
@@ -554,7 +552,12 @@ impl Mutation {
     }
 
     /// Convert the ROM files of the given system to the given format.
-    async fn convert_roms(&self, ctx: &Context<'_>, system_id: i64, format: String) -> Result<bool> {
+    async fn convert_roms(
+        &self,
+        ctx: &Context<'_>,
+        system_id: i64,
+        format: String,
+    ) -> Result<bool> {
         log::debug!("mutation::convert_roms({}, {:?})", system_id, format);
         let pool = ctx.data_unchecked::<SqlitePool>().clone();
         let sse_tx = ctx
@@ -575,8 +578,7 @@ impl Mutation {
         }
 
         let message = format!("Converting the ROMs of '{}' to {}", system_name, format);
-        let complete_message =
-            format!("Converted the ROMs of '{}' to {}", system_name, format);
+        let complete_message = format!("Converted the ROMs of '{}' to {}", system_name, format);
 
         spawn_cli_action(
             pool,
@@ -630,8 +632,11 @@ impl Mutation {
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
-                    let arguments =
-                        vec!["purge-irds".to_string(), "--system".to_string(), system_name];
+                    let arguments = vec![
+                        "purge-irds".to_string(),
+                        "--system".to_string(),
+                        system_name,
+                    ];
                     let matches = purge_irds::subcommand().get_matches_from(arguments);
                     purge_irds::main(connection, &matches, &progress_bar).await
                 })

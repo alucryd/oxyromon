@@ -10,12 +10,14 @@ async fn import_file(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    tmp_directory: &PathBuf,
+    tmp_directory: &Path,
     fixture: &str,
     name: &str,
 ) {
     let path = tmp_directory.join(name);
-    fs::copy(Path::new("tests").join(fixture), &path).await.unwrap();
+    fs::copy(Path::new("tests").join(fixture), &path)
+        .await
+        .unwrap();
     let result = import_other(
         connection,
         progress_bar,
@@ -50,14 +52,18 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721) (MAME Rebuild).dat"]);
+    let matches = import_dats::subcommand().get_matches_from([
+        "import-dats",
+        "tests/Test System (20200721) (MAME Rebuild).dat",
+    ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
     let system = find_arcade_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system).await.unwrap();
+    let system_directory = get_system_directory(&mut connection, &system)
+        .await
+        .unwrap();
 
     // import the parent fully and the clone only its exclusive rom
     import_file(
@@ -95,7 +101,9 @@ async fn test() {
 
     // first expand to NON_MERGED so the clone owns copies of the shared roms
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "NON_MERGED"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
     let system = find_system_by_id(&mut connection, system.id).await;
     assert_eq!(system.merging, Merging::NonMerged as i64);
 
@@ -111,18 +119,24 @@ async fn test() {
             .await
             .unwrap();
     assert!(clone_rom.romfile_id.is_some());
-    let clone_rom_path = rom_directory
-        .path()
-        .join(find_romfile_by_id(&mut connection, clone_rom.romfile_id.unwrap()).await.path);
-    let clone_only_path = rom_directory
-        .path()
-        .join(find_romfile_by_id(&mut connection, clone_only_rom.romfile_id.unwrap()).await.path);
+    let clone_rom_path = rom_directory.path().join(
+        find_romfile_by_id(&mut connection, clone_rom.romfile_id.unwrap())
+            .await
+            .path,
+    );
+    let clone_only_path = rom_directory.path().join(
+        find_romfile_by_id(&mut connection, clone_only_rom.romfile_id.unwrap())
+            .await
+            .path,
+    );
     assert!(clone_rom_path.is_file());
     assert!(clone_only_path.is_file());
 
     // when trimming back to SPLIT
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "SPLIT"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     // then the clone's shared roms lost their files, the exclusive one is kept
     let system = find_system_by_id(&mut connection, system.id).await;

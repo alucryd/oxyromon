@@ -16,9 +16,12 @@ async fn test() {
 
     // base rom and a BPS patch, both at absolute paths
     let base_path = dir.path().join("base.rom");
-    fs::copy(test_directory.join("Test Game (USA, Europe).rom"), &base_path)
-        .await
-        .unwrap();
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe).rom"),
+        &base_path,
+    )
+    .await
+    .unwrap();
     let patch_path = dir.path().join("patch.bps");
     fs::copy(
         test_directory.join("Test Game (USA, Europe).bps"),
@@ -28,7 +31,10 @@ async fn test() {
     .unwrap();
 
     let base = CommonRomfile::from_path(&base_path).unwrap();
-    let patch = CommonRomfile::from_path(&patch_path).unwrap().as_xps().unwrap();
+    let patch = CommonRomfile::from_path(&patch_path)
+        .unwrap()
+        .as_xps()
+        .unwrap();
     assert!(patch.xps_type == XpsType::Bps);
 
     let dest = dir.path().join("out");
@@ -49,9 +55,17 @@ async fn test() {
     )
     .await
     .unwrap();
-    let ips = CommonRomfile::from_path(&ips_path).unwrap().as_xps().unwrap();
+    let ips = CommonRomfile::from_path(&ips_path)
+        .unwrap()
+        .as_xps()
+        .unwrap();
     assert!(ips.xps_type == XpsType::Ips);
 
     // a non-patch extension is rejected
-    assert!(CommonRomfile::from_path(&base_path).unwrap().as_xps().is_err());
+    assert!(
+        CommonRomfile::from_path(&base_path)
+            .unwrap()
+            .as_xps()
+            .is_err()
+    );
 }

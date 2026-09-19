@@ -347,6 +347,7 @@ pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> Sy
 
 /// The same lookup as `find_system_by_id`, but `None` instead of a panic when
 /// the row is missing, for validating ids that come from untrusted input.
+#[cfg(feature = "server")]
 pub async fn find_system_by_id_opt(connection: &mut SqliteConnection, id: i64) -> Option<System> {
     sqlx::query_as!(
         System,
@@ -733,6 +734,7 @@ pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
 }
 
 /// As [`find_games_by_system_id`], for one slice of a large system.
+#[cfg(feature = "server")]
 pub async fn find_games_by_system_id_paged(
     connection: &mut SqliteConnection,
     system_id: i64,

@@ -489,9 +489,12 @@ async fn test_import_rom_source() -> Result<()> {
     // Absent means "first", so the import lands on its own.
     let directory = TempDir::new_in(test_directory).unwrap();
     let filename = "Test Game (USA, Europe).rom";
-    fs::copy(test_directory.join(filename), directory.path().join(filename))
-        .await
-        .unwrap();
+    fs::copy(
+        test_directory.join(filename),
+        directory.path().join(filename),
+    )
+    .await
+    .unwrap();
     import_rom_source(
         &mut connection,
         &progress_bar,

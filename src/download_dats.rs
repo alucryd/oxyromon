@@ -4,7 +4,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -126,7 +126,7 @@ pub async fn download_redump_system(
     force: bool,
 ) -> Result<()> {
     if !REDUMP_SYSTEMS_CODES.contains_key(system_name) {
-        bail!("Unknown Redump system \"{}\"", system_name);
+        anyhow::bail!("Unknown Redump system \"{}\"", system_name);
     }
     download_redump_dat(
         connection,

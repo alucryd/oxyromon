@@ -24,7 +24,9 @@ async fn test() {
     let m = subcommand().get_matches_from(["config", "--set", "PREFER_REGIONS", "broad"]);
     main(&mut connection, &m, &pb).await.unwrap();
     assert_eq!(
-        get_string(&mut connection, "PREFER_REGIONS", None).await.as_deref(),
+        get_string(&mut connection, "PREFER_REGIONS", None)
+            .await
+            .as_deref(),
         Some("broad")
     );
 
@@ -32,7 +34,9 @@ async fn test() {
     let m = subcommand().get_matches_from(["config", "--set", "PREFER_REGIONS", "bogus"]);
     main(&mut connection, &m, &pb).await.unwrap();
     assert_eq!(
-        get_string(&mut connection, "PREFER_REGIONS", None).await.as_deref(),
+        get_string(&mut connection, "PREFER_REGIONS", None)
+            .await
+            .as_deref(),
         Some("broad")
     );
 
@@ -77,7 +81,11 @@ async fn test() {
     main(&mut connection, &m, &pb).await.unwrap();
     let m = subcommand().get_matches_from(["config", "--unset", "REGIONS_ALL"]);
     main(&mut connection, &m, &pb).await.unwrap();
-    assert!(get_list(&mut connection, "REGIONS_ALL", None).await.is_empty());
+    assert!(
+        get_list(&mut connection, "REGIONS_ALL", None)
+            .await
+            .is_empty()
+    );
 
     // UNSET a non-nullable setting is rejected, value preserved
     let m = subcommand().get_matches_from(["config", "--unset", "PREFER_PARENTS"]);

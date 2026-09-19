@@ -1,8 +1,8 @@
 use super::common::*;
 use super::config::*;
 use super::database::*;
-use super::progress::*;
 use super::model::Romfile;
+use super::progress::*;
 use super::prompt::*;
 use super::util::*;
 use anyhow::{Context, Result};

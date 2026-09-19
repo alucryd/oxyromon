@@ -238,9 +238,10 @@ These should be in your `${PATH}` for extra features.
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
 - [flips](https://github.com/Alcaro/Flips): BPS and IPS support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
-- [nsz](https://github.com/nicoboss/nsz): NSZ support
 - [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
 - [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
+
+NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 
 ### TODO
 
@@ -248,7 +249,7 @@ These should be in your `${PATH}` for extra features.
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
-- Craft some unit tests for NSZ
+- Craft some unit tests for NSZ with a compressible NCA
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible, and requested
 - Add a metadata scraper in the retroarch format

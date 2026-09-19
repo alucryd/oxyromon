@@ -11,7 +11,6 @@ use super::maxcso;
 use super::maxcso::{AsXso, ToXso, XsoType};
 use super::mimetype::*;
 use super::model::*;
-use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::progress::*;
 use super::prompt::*;
@@ -114,14 +113,13 @@ pub async fn main(
     create_directory(progress_bar, &destination_directory, true).await?;
 
     let available = match format.as_str() {
-        "7Z" | "ZIP" => tool_available(|| sevenzip::get_version(), "sevenzip", progress_bar).await,
-        "CHD" => tool_available(|| chdman::get_version(), "chdman", progress_bar).await,
-        "CSO" | "ZSO" => tool_available(|| maxcso::get_version(), "maxcso", progress_bar).await,
-        "ISO" => tool_available(|| bchunk::get_version(), "bchunk", progress_bar).await,
-        "NSZ" => tool_available(|| nsz::get_version(), "nsz", progress_bar).await,
-        "RVZ" => tool_available(|| dolphin::get_version(), "dolphin-tool", progress_bar).await,
-        "WBFS" => tool_available(|| wit::get_version(), "wit", progress_bar).await,
-        "GDI" | "ORIGINAL" => true,
+        "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
+        "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
+        "CSO" | "ZSO" => tool_available(maxcso::get_version, "maxcso", progress_bar).await,
+        "ISO" => tool_available(bchunk::get_version, "bchunk", progress_bar).await,
+        "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
+        "WBFS" => tool_available(wit::get_version, "wit", progress_bar).await,
+        "GDI" | "NSZ" | "ORIGINAL" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -1887,10 +1885,6 @@ async fn to_original(
 
     // export NSZs
     for roms in nszs.values() {
-        if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: nsz");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile

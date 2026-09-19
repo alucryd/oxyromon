@@ -13,6 +13,7 @@
 
 ## Changes
 
+- NSP/NSZ support now comes from the [nsz-rs](https://crates.io/crates/nsz-rs) crate instead of the external `nsz` tool, with a progress bar during (de)compression; unlike `nod` and `sevenz` this is always on, with no feature flag to opt out. A `prod.keys` at `~/.switch/prod.keys` is only needed to compress NSPs containing NCAs: importing, checking and decompressing NSZs no longer need one, and `info` says when it is missing
 - `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 - `check-roms` now accepts `--system` to check named systems without an interactive prompt
 - `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts

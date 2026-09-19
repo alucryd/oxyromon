@@ -5,7 +5,7 @@ use super::import_patches::{import_patch, parse_patch};
 use super::mutation::Mutation;
 use super::progress::*;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
@@ -24,7 +24,7 @@ use http_types::Mime;
 use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
 use std::path::PathBuf;
@@ -203,7 +203,10 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
         .route("/events", get(sse_handler))
         .route("/dats", post(upload_dat).layer(DefaultBodyLimit::disable()))
         .route("/roms", post(upload_rom).layer(DefaultBodyLimit::disable()))
-        .route("/patches", post(upload_patch).layer(DefaultBodyLimit::disable()))
+        .route(
+            "/patches",
+            post(upload_patch).layer(DefaultBodyLimit::disable()),
+        )
         .route("/irds", post(upload_ird).layer(DefaultBodyLimit::disable()))
         .route("/romfiles/{id}", get(download_romfile))
         .route("/{*path}", get(serve_asset))
@@ -328,7 +331,15 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
             }),
         );
 
-        match import_rom_source(&mut connection, &progress_bar, source, system.as_deref(), unattended.as_deref()).await {
+        match import_rom_source(
+            &mut connection,
+            &progress_bar,
+            source,
+            system.as_deref(),
+            unattended.as_deref(),
+        )
+        .await
+        {
             Ok(()) => {
                 sse_send(
                     &sse_tx,
@@ -449,7 +460,8 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
         );
 
         let outcome = async {
-            let patch_format = parse_patch(&patch_path).await?
+            let patch_format = parse_patch(&patch_path)
+                .await?
                 .ok_or_else(|| anyhow::anyhow!("Unsupported patch format"))?;
             import_patch(
                 &mut connection,
@@ -1045,6 +1057,6 @@ mod test_mutations;
 #[cfg(test)]
 mod test_queries;
 #[cfg(test)]
-mod test_uploads;
-#[cfg(test)]
 mod test_server;
+#[cfg(test)]
+mod test_uploads;

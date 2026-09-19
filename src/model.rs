@@ -20,6 +20,8 @@ pub enum Merging {
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
+// Some fields are only read by the GraphQL layer.
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct System {
     pub id: i64,
     pub name: String,
@@ -38,6 +40,7 @@ pub struct System {
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Header {
     pub id: i64,
     pub name: String,
@@ -47,6 +50,7 @@ pub struct Header {
 }
 
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Rule {
     pub id: i64,
     pub start_byte: i64,
@@ -75,6 +79,7 @@ pub enum Completion {
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Game {
     pub id: i64,
     pub name: String,
@@ -97,14 +102,15 @@ pub struct Game {
     pub playlist_id: Option<i64>,
 }
 
-#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg(feature = "server")]
+#[derive(Clone, SimpleObject)]
 pub struct Dependency {
     pub name: String,
     pub version: Option<String>,
 }
 
-#[derive(FromRow)]
-#[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg(feature = "server")]
+#[derive(Clone, FromRow, SimpleObject)]
 pub struct GameInformation {
     pub title: String,
     pub regions: Vec<String>,
@@ -116,6 +122,7 @@ pub struct GameInformation {
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
 #[cfg_attr(feature = "server", graphql(complex))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Rom {
     pub id: i64,
     pub name: String,
@@ -134,6 +141,7 @@ pub struct Rom {
 
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Patch {
     pub id: i64,
     pub name: String,
@@ -163,6 +171,7 @@ pub struct Romfile {
 
 #[derive(FromRow)]
 #[cfg_attr(feature = "server", derive(Clone, SimpleObject))]
+#[cfg_attr(not(feature = "server"), allow(dead_code))]
 pub struct Setting {
     pub id: i64,
     pub key: String,

@@ -75,7 +75,11 @@ async fn test() -> Result<()> {
         assert!(v["data"]["downloadableSystems"].is_array());
 
         // system_settings merges global settings for the system
-        let v = gql(&client, r#"{"query":"{ systemSettings(systemId: 1) { key value } }"}"#).await;
+        let v = gql(
+            &client,
+            r#"{"query":"{ systemSettings(systemId: 1) { key value } }"}"#,
+        )
+        .await;
         assert!(v["data"]["systemSettings"].is_array());
 
         // game_information parses a No-Intro style name

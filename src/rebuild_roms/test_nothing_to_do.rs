@@ -20,15 +20,19 @@ async fn test() {
     let tmp_directory = TempDir::new_in(test_directory).unwrap();
     set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721) (MAME Rebuild).dat"]);
+    let matches = import_dats::subcommand().get_matches_from([
+        "import-dats",
+        "tests/Test System (20200721) (MAME Rebuild).dat",
+    ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
     // when rebuilding to the merging strategy the system already uses
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "SPLIT"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     // then nothing changed
     let system = find_arcade_systems(&mut connection).await.remove(0);

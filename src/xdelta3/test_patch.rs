@@ -15,9 +15,12 @@ async fn test() {
     let dir = TempDir::new_in(&test_directory).unwrap();
 
     let base_path = dir.path().join("base.rom");
-    fs::copy(test_directory.join("Test Game (USA, Europe).rom"), &base_path)
-        .await
-        .unwrap();
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe).rom"),
+        &base_path,
+    )
+    .await
+    .unwrap();
     let patch_path = dir.path().join("patch.xdelta");
     fs::copy(
         test_directory.join("Test Game (USA, Europe).xdelta"),
@@ -27,7 +30,10 @@ async fn test() {
     .unwrap();
 
     let base = CommonRomfile::from_path(&base_path).unwrap();
-    let patch = CommonRomfile::from_path(&patch_path).unwrap().as_xdelta().unwrap();
+    let patch = CommonRomfile::from_path(&patch_path)
+        .unwrap()
+        .as_xdelta()
+        .unwrap();
 
     let dest = dir.path().join("out");
     fs::create_dir(&dest).await.unwrap();
@@ -40,5 +46,10 @@ async fn test() {
     assert!(result.path.starts_with(&dest));
 
     // a non-xdelta extension is rejected
-    assert!(CommonRomfile::from_path(&base_path).unwrap().as_xdelta().is_err());
+    assert!(
+        CommonRomfile::from_path(&base_path)
+            .unwrap()
+            .as_xdelta()
+            .is_err()
+    );
 }
