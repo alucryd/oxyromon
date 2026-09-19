@@ -6,7 +6,7 @@
 //! offset `off` is `off >> 4`. This makes the keystream a pure function of the
 //! absolute offset, so any position can be seeked to without replaying.
 
-use aes::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
+use aes::cipher::{Array, BlockCipherEncrypt, KeyInit};
 use aes::Aes128;
 
 use crate::crypto::ecb::BLOCK_SIZE;
@@ -19,10 +19,10 @@ const BATCH: usize = 256;
 /// `nonce` is 16 bytes; only its first 8 bytes are used as the counter prefix
 /// (matching `Counter.new(64, prefix=nonce[0:8], initial_value=off>>4)`).
 pub fn keystream_xor(key: &[u8; 16], nonce: &[u8; 16], abs_offset: u64, buf: &mut [u8]) {
-    let cipher = Aes128::new(GenericArray::from_slice(key));
+    let cipher = Aes128::new(key.into());
     let mut counter = abs_offset >> 4;
     let mut skip = (abs_offset & 0xF) as usize; // keystream bytes to discard in the first block
-    let mut blocks = [GenericArray::<u8, _>::default(); BATCH];
+    let mut blocks = [Array::<u8, _>::default(); BATCH];
     let mut pos = 0;
     while pos < buf.len() {
         let n = (skip + buf.len() - pos).div_ceil(BLOCK_SIZE).min(BATCH);

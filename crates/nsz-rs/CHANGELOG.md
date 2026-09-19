@@ -1,3 +1,9 @@
+# 0.2.1
+
+## Changes
+
+- Update dependencies to their latest versions
+
 # 0.2.0
 
 ## Changes
