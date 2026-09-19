@@ -1,0 +1,45 @@
+[package]
+name = "cso-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.81"
+description = "Rust port of maxcso: CSO/ZSO (compressed PSP/PS2 ISO) compression and decompression"
+license = "ISC"
+repository = "https://github.com/alucryd/cso-rs"
+keywords = ["cso", "zso", "psp", "iso", "compression"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "cso_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "csors"
+path = "src/bin/csors.rs"
+required-features = ["cli"]
+
+[dependencies]
+# Raw deflate with all four zlib strategies, matching maxcso's zlib trials byte for byte.
+libz-sys = "1.1"
+# libdeflate's deflate, which beats zlib on most blocks.
+libdeflater = "1.26"
+# Opt-in best-ratio deflate.
+zopfli = { version = "0.8", optional = true }
+# LZ4_compress_default / LZ4_compress_HC for ZSO.
+lz4-sys = "1.11"
+rayon = "1"
+thiserror = "2"
+indicatif = { version = "0.18", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["cli", "zopfli"]
+cli = ["dep:indicatif"]
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
