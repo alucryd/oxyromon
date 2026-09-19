@@ -6,10 +6,13 @@ use leptos::html;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
+use crate::api::check_roms;
+use crate::api::purge_irds;
 use crate::api::purge_system;
+use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
 use crate::model::{Game, Rom, Romfile, Sizes, System};
-use crate::state::AppState;
+use crate::state::{AppState, ROW_HEIGHT};
 use crate::ui::{Modal, SizeTile, StatTile, control_number, use_media_query};
 use crate::ui::{ScrollWindow, Spacer};
 
@@ -80,10 +83,10 @@ struct SystemModals {
 }
 
 /// Widths of the two dividers, as a percentage of their container, remembered
-/// across visits. The defaults reproduce the 2:3:5 split the panes had while
-/// they were a fixed grid.
-const OUTER_POSITION: (&str, f64) = ("panes-outer", 20.0);
-const INNER_POSITION: (&str, f64) = ("panes-inner", 37.5);
+/// across visits. The defaults split the panes roughly 2:3:4, giving the dense
+/// games list more room than the ROM and ROM-file panes, which are often short.
+const OUTER_POSITION: (&str, f64) = ("panes-outer", 22.2);
+const INNER_POSITION: (&str, f64) = ("panes-inner", 42.9);
 
 fn stored_position((key, default): (&str, f64)) -> f64 {
     web_sys::window()
@@ -241,6 +244,10 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                         let selected = move || state.system_id.get() == id;
                         let system_for_delete = system.clone();
                         let name_for_settings = name.clone();
+                        // "482/500": games complete out of the non-trashed games.
+                        // Hidden for an empty system rather than shown as "0/0".
+                        let count = (system.games_total > 0)
+                            .then(|| format!("{}/{}", system.games_complete, system.games_total));
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
@@ -251,12 +258,21 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                 >
                                     {name.clone()}
                                 </button>
+                                {count.map(|c| view! { <span class="row-count">{c}</span> })}
                                 <div style="padding-inline-end: var(--wa-space-2xs);">
                                     <Show
-                                        when=move || state.purging_system_id.get() == id
+                                        when=move || {
+                                            state.purging_system_id.get() == id
+                                                || state.sorting_system_id.get() == id
+                                                || state.checking_system_id.get() == id
+                                        }
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();
                                             let system_for_delete = system_for_delete.clone();
+                                            // The IRD actions only make sense on PlayStation 3, mirroring
+                                            // the name filter the backend's import-irds and purge-irds use.
+                                            let is_ps3 =
+                                                name_for_settings.to_lowercase().contains("playstation 3");
                                             view! {
                                                 // A dropdown rather than a hand-placed panel: it
                                                 // draws in the top layer, so the pane's `overflow`
@@ -269,6 +285,63 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                                     >
                                                         <wa-icon name="ellipsis-vertical"></wa-icon>
                                                     </button>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        if state.checking_system_id.get() == -1 {
+                                                            spawn_local(async move {
+                                                                check_roms(state, id).await;
+                                                            });
+                                                        }
+                                                    }>
+                                                        <wa-icon slot="icon" name="circle-check"></wa-icon>
+                                                        Check
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        if state.sorting_system_id.get() == -1 {
+                                                            spawn_local(async move {
+                                                                sort_roms(state, id).await;
+                                                            });
+                                                        }
+                                                    }>
+                                                        <wa-icon slot="icon" name="arrows-up-down"></wa-icon>
+                                                        Sort
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        state.convert_rom_system_id.set(id);
+                                                        state.convert_rom_modal_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="copy"></wa-icon>
+                                                        Convert
+                                                    </wa-dropdown-item>
+                                                    <wa-dropdown-item on:click=move |_| {
+                                                        state.import_patch_system_id.set(id);
+                                                        state.import_patch_modal_open.set(true);
+                                                    }>
+                                                        <wa-icon slot="icon" name="puzzle-piece"></wa-icon>
+                                                        Import patch
+                                                    </wa-dropdown-item>
+                                                    {move || if is_ps3 {
+                                                        Some(view! {
+                                                            <wa-dropdown-item on:click=move |_| {
+                                                                state.import_ird_system_id.set(id);
+                                                                state.import_ird_modal_open.set(true);
+                                                            }>
+                                                                <wa-icon slot="icon" name="database"></wa-icon>
+                                                                Import IRDs
+                                                            </wa-dropdown-item>
+                                                            <wa-dropdown-item on:click=move |_| {
+                                                                if state.purging_irds_system_id.get() == -1 {
+                                                                    spawn_local(async move {
+                                                                        purge_irds(state, id).await;
+                                                                    });
+                                                                }
+                                                            }>
+                                                                <wa-icon slot="icon" name="trash"></wa-icon>
+                                                                Purge IRDs
+                                                            </wa-dropdown-item>
+                                                        })
+                                                    } else {
+                                                        None
+                                                    }}
                                                     <wa-dropdown-item on:click=move |_| {
                                                         sys_settings_id.set(Some(id));
                                                         sys_settings_title
@@ -304,6 +377,21 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
     }
 }
 
+/// Focus a games row by its DOM id. Called after a keyboard selection, which
+/// has already scrolled the row into the drawn window; the row is looked up
+/// live, so a row that is still unmounted (past the overscan) simply does not
+/// take focus yet.
+fn focus_row(game_id: i64) {
+    let Some(document) = web_sys::window().and_then(|window| window.document()) else {
+        return;
+    };
+    if let Some(element) = document.get_element_by_id(&format!("game-{game_id}")) {
+        if let Some(row) = wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlElement>(&element) {
+            let _ = row.focus();
+        }
+    }
+}
+
 #[component]
 fn GamesCard() -> impl IntoView {
     let state = expect_context::<AppState>();
@@ -324,6 +412,19 @@ fn GamesCard() -> impl IntoView {
                     .enumerate()
                     .map(|(offset, &index)| (start + offset, games[index].clone()))
                     .collect::<Vec<_>>()
+            })
+        })
+    });
+
+    // The option the keyboard is on: the selected game, or the first game when
+    // nothing is selected, so the listbox always has exactly one focusable row.
+    let active_index = Memo::new(move |_| {
+        state.game_id.with(|game_id| {
+            state.filtered_games.with(|indices| {
+                state.games.with(|games| {
+                    let selected = indices.iter().position(|&i| games[i].id == *game_id);
+                    selected.or_else(|| (!indices.is_empty()).then_some(0))
+                })
             })
         })
     });
@@ -363,10 +464,38 @@ fn GamesCard() -> impl IntoView {
             <div
                 node_ref=viewport
                 class="panel-body"
+                role="listbox"
+                aria-label="Games"
                 on:scroll=move |_| {
                     if let Some(element) = viewport.get_untracked() {
                         window.measure(&element);
                     }
+                }
+                on:keydown=move |ev: web_sys::KeyboardEvent| {
+                    let total = state.filtered_games.with(Vec::len);
+                    if total == 0 {
+                        return;
+                    }
+                    let current = active_index.get().unwrap_or(0);
+                    let target = match ev.key().as_str() {
+                        "ArrowDown" | "ArrowRight" => (current + 1).min(total - 1),
+                        "ArrowUp" | "ArrowLeft" => current.saturating_sub(1),
+                        "Home" => 0,
+                        "End" => total - 1,
+                        "Enter" | " " => current,
+                        _ => return,
+                    };
+                    ev.prevent_default();
+                    // Arrow = select, matching a click: choosing a game loads its ROMs.
+                    let new_id = state.filtered_games.with(|indices| {
+                        state.games.with(|games| games[indices[target]].id)
+                    });
+                    state.game_id.set(new_id);
+                    if let Some(element) = viewport.get_untracked() {
+                        element.set_scroll_top((target as f64 * ROW_HEIGHT) as i32);
+                        window.measure(&element);
+                    }
+                    focus_row(new_id);
                 }
             >
                 <Spacer rows=Signal::derive(move || range.get().0) />
@@ -382,9 +511,18 @@ fn GamesCard() -> impl IntoView {
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
+                                    id=format!("game-{id}")
+                                    role="option"
                                     class=format!("plain-button row-label {weight} {color}")
                                     title=description
-                                    aria-current=move || selected().then_some("true")
+                                    aria-selected=move || selected().then_some("true")
+                                    tabindex=move || {
+                                        if active_index.get() == Some(position) {
+                                            "0"
+                                        } else {
+                                            "-1"
+                                        }
+                                    }
                                     on:click=move |_| state.game_id.set(id)
                                 >
                                     {name.clone()}
@@ -493,7 +631,7 @@ fn StatsCard() -> impl IntoView {
             <div class="panel-header">Statistics</div>
             <div
                 class="wa-grid wa-gap-s"
-                style="--min-column-size: 10rem; padding: var(--wa-space-m);"
+                style="--min-column-size: 9rem; padding: var(--wa-space-m);"
             >
                 <StatTile
                     label="Systems"

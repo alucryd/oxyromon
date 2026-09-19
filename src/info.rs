@@ -32,7 +32,7 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
         ("ctrtool", ctrtool::get_version().await),
         ("flips", flips::get_version().await),
         ("maxcso", maxcso::get_version().await),
-        ("nsz", nsz::get_version().await),
+        ("nsz-rs", nsz::get_version().await),
         ("xdelta3", xdelta3::get_version().await),
     ];
     // RVZ and WBFS share a backend when it is the native one, so list it once
@@ -71,3 +71,6 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
 
     Ok(())
 }
+
+#[cfg(test)]
+mod test_info;

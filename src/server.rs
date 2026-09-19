@@ -1,9 +1,11 @@
 use super::database::*;
 use super::import_dats::{ImportDatResult, process_dat_upload};
+use super::import_irds;
+use super::import_patches::{import_patch, parse_patch};
 use super::mutation::Mutation;
 use super::progress::*;
 use super::query::{GameLoader, QueryRoot, RomfileLoader, SystemLoader};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use async_graphql::dataloader::DataLoader;
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_axum::GraphQL;
@@ -22,7 +24,7 @@ use http_types::Mime;
 use http_types::mime::{BYTE_STREAM, HTML};
 use rust_embed::RustEmbed;
 use serde::Serialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sqlx::sqlite::SqlitePool;
 use std::convert::Infallible;
 use std::path::PathBuf;
@@ -201,6 +203,11 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
         .route("/events", get(sse_handler))
         .route("/dats", post(upload_dat).layer(DefaultBodyLimit::disable()))
         .route("/roms", post(upload_rom).layer(DefaultBodyLimit::disable()))
+        .route(
+            "/patches",
+            post(upload_patch).layer(DefaultBodyLimit::disable()),
+        )
+        .route("/irds", post(upload_ird).layer(DefaultBodyLimit::disable()))
         .route("/romfiles/{id}", get(download_romfile))
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index))
@@ -245,6 +252,7 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
     let mut upload = None;
     let mut url = None;
     let mut system = None;
+    let mut unattended = None;
 
     loop {
         let field = match multipart.next_field().await {
@@ -283,6 +291,13 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
                 Ok(_) => {}
                 Err(e) => log::warn!("upload_rom: failed to read system field: {}", e),
             },
+            Some("unattended") => match field.text().await {
+                Ok(text) if !text.trim().is_empty() => {
+                    unattended = Some(text.trim().to_owned());
+                }
+                Ok(_) => {}
+                Err(e) => log::warn!("upload_rom: failed to read unattended field: {}", e),
+            },
             other => {
                 log::debug!("upload_rom: skipping unknown field {:?}", other);
                 let _ = field.bytes().await;
@@ -316,7 +331,15 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
             }),
         );
 
-        match import_rom_source(&mut connection, &progress_bar, source, system.as_deref()).await {
+        match import_rom_source(
+            &mut connection,
+            &progress_bar,
+            source,
+            system.as_deref(),
+            unattended.as_deref(),
+        )
+        .await
+        {
             Ok(()) => {
                 sse_send(
                     &sse_tx,
@@ -350,10 +373,259 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
         .unwrap()
 }
 
+/// Import a patch file for a specific ROM, uploaded by the client.
+///
+/// Takes multipart with a `file` field and a `rom` field (the id of the target
+/// ROM). Returns as soon as the work is queued; progress arrives over SSE.
+async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -> Response<Body> {
+    let mut upload = None;
+    let mut rom_id = None;
+
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                log::error!("upload_patch: multipart error: {}", e);
+                return bad_request(e.to_string());
+            }
+        };
+
+        let field_name = field.name().map(|name| name.to_owned());
+        let file_name = field.file_name().map(|name| name.to_owned());
+
+        match field_name.as_deref() {
+            Some("file") => {
+                // Straight to disk, a chunk at a time, for the same reason as
+                // `upload_rom` — although patches are small, the path is shared.
+                let filename = safe_filename(file_name.as_deref().unwrap_or_default());
+                match stream_field_to_directory(field, &filename).await {
+                    Ok(directory) => upload = Some((filename, directory)),
+                    Err(e) => {
+                        log::error!("upload_patch: failed to store the upload: {:#}", e);
+                        return bad_request(e.to_string());
+                    }
+                }
+            }
+            Some("rom") => match field.text().await {
+                Ok(text) if !text.trim().is_empty() => match text.trim().parse::<i64>() {
+                    Ok(id) => rom_id = Some(id),
+                    Err(_) => log::warn!("upload_patch: invalid rom field: {text}"),
+                },
+                Ok(_) => {}
+                Err(e) => log::warn!("upload_patch: failed to read rom field: {}", e),
+            },
+            other => {
+                log::debug!("upload_patch: skipping unknown field {:?}", other);
+                let _ = field.bytes().await;
+            }
+        }
+    }
+
+    let (filename, directory) = match upload {
+        Some(upload) => upload,
+        None => return bad_request("No file provided".to_string()),
+    };
+    let rom_id = match rom_id {
+        Some(rom_id) => rom_id,
+        None => {
+            drop(directory);
+            return bad_request("No rom provided".to_string());
+        }
+    };
+
+    // Reject an unknown ROM up front so the client gets a 400 rather than a task
+    // that only dies once it tries to resolve the id.
+    {
+        let pool = state.pool.clone();
+        let mut connection = pool.acquire().await.unwrap();
+        if find_rom_by_id_opt(&mut connection, rom_id).await.is_none() {
+            drop(directory);
+            return bad_request(format!("ROM {rom_id} not found"));
+        }
+    }
+
+    let sse_tx = state.sse_tx.clone();
+    let pool = state.pool.clone();
+    let patch_path = directory.path().join(&filename);
+
+    tokio::spawn(async move {
+        let mut connection = pool.acquire().await.unwrap();
+        let progress_bar = ProgressBar::hidden();
+
+        sse_send(
+            &sse_tx,
+            "import_patch_started",
+            json!({ "name": filename, "message": format!("Importing patch \"{}\"", filename) }),
+        );
+
+        let outcome = async {
+            let patch_format = parse_patch(&patch_path)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Unsupported patch format"))?;
+            import_patch(
+                &mut connection,
+                &progress_bar,
+                &patch_path,
+                &patch_format,
+                false,
+                false,
+                Some(rom_id),
+            )
+            .await?;
+            Ok::<(), anyhow::Error>(())
+        }
+        .await;
+
+        match outcome {
+            Ok(()) => {
+                sse_send(
+                    &sse_tx,
+                    "import_patch_complete",
+                    json!({ "name": filename, "success": true, "message": format!("Imported patch \"{}\"", filename) }),
+                );
+            }
+            Err(e) => {
+                log::error!("upload_patch: import failed: {:#}", e);
+                sse_send(
+                    &sse_tx,
+                    "import_patch_error",
+                    json!({ "name": filename, "success": false, "error": format!("{:#}", e), "message": format!("Failed to import patch \"{}\": {:#}", filename, e) }),
+                );
+            }
+        }
+        // `directory` is dropped here, removing the now-imported temporary file.
+    });
+
+    Response::builder()
+        .status(StatusCode::ACCEPTED)
+        .body(Body::from("Import queued"))
+        .unwrap()
+}
+
 fn bad_request(message: String) -> Response<Body> {
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .body(Body::from(message))
+        .unwrap()
+}
+
+/// Import an uploaded PlayStation 3 IRD against a given system.
+async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> Response<Body> {
+    let mut upload = None;
+    let mut system_id = None;
+
+    loop {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                log::error!("upload_ird: multipart error: {}", e);
+                return bad_request(e.to_string());
+            }
+        };
+
+        let field_name = field.name().map(|name| name.to_owned());
+        let file_name = field.file_name().map(|name| name.to_owned());
+
+        match field_name.as_deref() {
+            Some("file") => {
+                let filename = safe_filename(file_name.as_deref().unwrap_or_default());
+                match stream_field_to_directory(field, &filename).await {
+                    Ok(directory) => upload = Some((filename, directory)),
+                    Err(e) => {
+                        log::error!("upload_ird: failed to store the upload: {:#}", e);
+                        return bad_request(e.to_string());
+                    }
+                }
+            }
+            Some("system") => match field.text().await {
+                Ok(text) if !text.trim().is_empty() => match text.trim().parse::<i64>() {
+                    Ok(id) => system_id = Some(id),
+                    Err(_) => log::warn!("upload_ird: invalid system field: {text}"),
+                },
+                Ok(_) => {}
+                Err(e) => log::warn!("upload_ird: failed to read system field: {}", e),
+            },
+            other => {
+                log::debug!("upload_ird: skipping unknown field {:?}", other);
+                let _ = field.bytes().await;
+            }
+        }
+    }
+
+    let (filename, directory) = match upload {
+        Some(upload) => upload,
+        None => return bad_request("No file provided".to_string()),
+    };
+    let system_id = match system_id {
+        Some(id) => id,
+        None => {
+            drop(directory);
+            return bad_request("No system provided".to_string());
+        }
+    };
+
+    // Reject an unknown system up front so the client gets a 400, and keep the
+    // name the unattended import matches against.
+    let system_name = {
+        let pool = state.pool.clone();
+        let mut connection = pool.acquire().await.unwrap();
+        match find_system_by_id_opt(&mut connection, system_id).await {
+            Some(system) => system.name,
+            None => {
+                drop(directory);
+                return bad_request(format!("System {system_id} not found"));
+            }
+        }
+    };
+
+    let sse_tx = state.sse_tx.clone();
+    let pool = state.pool.clone();
+
+    tokio::spawn(async move {
+        let mut connection = pool.acquire().await.unwrap();
+        let progress_bar = ProgressBar::hidden();
+        let ird_path = directory.path().join(&filename);
+
+        sse_send(
+            &sse_tx,
+            "import_irds_started",
+            json!({ "name": filename, "message": format!("Importing IRD \"{}\"", filename) }),
+        );
+
+        // The IRD path is the single positional; `--system` keeps it unattended.
+        let arguments = vec![
+            "import-irds".to_string(),
+            ird_path.to_string_lossy().to_string(),
+            "--system".to_string(),
+            system_name,
+        ];
+        let matches = import_irds::subcommand().get_matches_from(arguments);
+
+        match import_irds::main(&mut connection, &matches, &progress_bar).await {
+            Ok(()) => {
+                sse_send(
+                    &sse_tx,
+                    "import_irds_complete",
+                    json!({ "name": filename, "success": true, "message": format!("Imported IRD \"{}\"", filename) }),
+                );
+            }
+            Err(e) => {
+                log::error!("upload_ird: import failed: {:#}", e);
+                sse_send(
+                    &sse_tx,
+                    "import_irds_error",
+                    json!({ "name": filename, "success": false, "error": format!("{:#}", e), "message": format!("Failed to import IRD \"{}\": {:#}", filename, e) }),
+                );
+            }
+        }
+        // `directory` is dropped here, removing the now-imported temporary file.
+    });
+
+    Response::builder()
+        .status(StatusCode::ACCEPTED)
+        .body(Body::from("Import queued"))
         .unwrap()
 }
 
@@ -438,13 +710,26 @@ const MAX_ROM_DOWNLOAD_SIZE: u64 = 100 * 1024 * 1024 * 1024;
 /// Land the ROM in a temporary directory and hand it to `import-roms`.
 ///
 /// Unattended, because there is no one at a terminal to answer a prompt: a file
-/// matching several games auto-selects by closest name rather than asking.
+/// matching several games auto-selects by closest name rather than asking,
+/// unless the caller chose to skip such files.
 async fn import_rom_source(
     connection: &mut sqlx::SqliteConnection,
     progress_bar: &ProgressBar,
     source: RomSource,
     system: Option<&str>,
+    unattended: Option<&str>,
 ) -> Result<()> {
+    // "first" when absent: it is the mode that resolves an ambiguous match on
+    // its own, and this function is only ever called from the server, where no
+    // one is at a terminal.
+    let unattended = match unattended {
+        Some(mode) if mode == "skip" || mode == "first" => mode,
+        Some(mode) => bail!(
+            "Invalid unattended mode '{}'; expected 'skip' or 'first'",
+            mode
+        ),
+        None => "first",
+    };
     // Held for the rest of the function: dropping it deletes the file being
     // imported.
     let (path, _tmp_directory) = match source {
@@ -491,7 +776,7 @@ async fn import_rom_source(
     let mut arguments = vec![
         "import-roms".to_string(),
         "-u".to_string(),
-        "first".to_string(),
+        unattended.to_string(),
     ];
     if let Some(system) = system {
         arguments.push("-s".to_string());
@@ -768,4 +1053,10 @@ async fn sse_handler(
 }
 
 #[cfg(test)]
+mod test_mutations;
+#[cfg(test)]
+mod test_queries;
+#[cfg(test)]
 mod test_server;
+#[cfg(test)]
+mod test_uploads;

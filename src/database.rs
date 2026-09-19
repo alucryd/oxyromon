@@ -220,7 +220,9 @@ pub async fn find_systems(connection: &mut SqliteConnection) -> Vec<System> {
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         ORDER BY name
         ",
@@ -234,7 +236,9 @@ pub async fn find_arcade_systems(connection: &mut SqliteConnection) -> Vec<Syste
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE arcade = true
         ORDER BY name
@@ -249,7 +253,9 @@ pub async fn find_empty_systems(connection: &mut SqliteConnection) -> Vec<System
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE systems.completion = 0
         AND NOT EXISTS (
@@ -269,7 +275,9 @@ pub async fn find_systems_by_url(connection: &mut SqliteConnection, url: &str) -
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE url = ?
         ORDER BY name
@@ -288,7 +296,9 @@ pub async fn find_systems_by_name_like(
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE name LIKE ?
         ",
@@ -299,11 +309,32 @@ pub async fn find_systems_by_name_like(
     .unwrap_or_else(|_| panic!("Error while finding system with name {}", name))
 }
 
+/// Resolve a list of user-supplied system name patterns into systems, sorted by
+/// id and de-duplicated.
+///
+/// `Vec::dedup_by_key` only collapses *adjacent* duplicates, so the sort first
+/// ensures two overlapping patterns (e.g. `"PlayStation"` and `"PlayStation 3"`)
+/// cannot leave the same system id twice in the list and get processed twice.
+pub async fn resolve_systems_by_name_like(
+    connection: &mut SqliteConnection,
+    system_names: impl Iterator<Item = impl AsRef<str>>,
+) -> Vec<System> {
+    let mut systems: Vec<System> = vec![];
+    for system_name in system_names {
+        systems.append(&mut find_systems_by_name_like(connection, system_name.as_ref()).await);
+    }
+    systems.sort_by_key(|system| system.id);
+    systems.dedup_by_key(|system| system.id);
+    systems
+}
+
 pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> System {
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE id = ?
         ",
@@ -314,12 +345,35 @@ pub async fn find_system_by_id(connection: &mut SqliteConnection, id: i64) -> Sy
     .unwrap_or_else(|_| panic!("Error while finding system with id {}", id))
 }
 
+/// The same lookup as `find_system_by_id`, but `None` instead of a panic when
+/// the row is missing, for validating ids that come from untrusted input.
+#[cfg(feature = "server")]
+pub async fn find_system_by_id_opt(connection: &mut SqliteConnection, id: i64) -> Option<System> {
+    sqlx::query_as!(
+        System,
+        "
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
+        FROM systems
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_optional(connection)
+    .await
+    .ok()
+    .flatten()
+}
+
 pub async fn find_system_by_name(connection: &mut SqliteConnection, name: &str) -> Option<System> {
     let name = name.replace(" (Parent-Clone)", "");
     sqlx::query_as!(
         System,
         "
-        SELECT *
+        SELECT *,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete,
+            (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total
         FROM systems
         WHERE name = ?
         ",
@@ -680,6 +734,7 @@ pub async fn find_games(connection: &mut SqliteConnection) -> Vec<Game> {
 }
 
 /// As [`find_games_by_system_id`], for one slice of a large system.
+#[cfg(feature = "server")]
 pub async fn find_games_by_system_id_paged(
     connection: &mut SqliteConnection,
     system_id: i64,
@@ -1084,6 +1139,24 @@ pub async fn find_rom_by_id(connection: &mut SqliteConnection, id: i64) -> Rom {
     .fetch_one(connection)
     .await
     .unwrap_or_else(|_| panic!("Error while finding rom with id {}", id))
+}
+
+/// The same lookup as `find_rom_by_id`, but `None` instead of a panic when the
+/// row is missing, for validating ids that come from untrusted input.
+pub async fn find_rom_by_id_opt(connection: &mut SqliteConnection, id: i64) -> Option<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE id = ?
+        ",
+        id,
+    )
+    .fetch_optional(connection)
+    .await
+    .ok()
+    .flatten()
 }
 
 pub async fn count_roms(connection: &mut SqliteConnection) -> i64 {

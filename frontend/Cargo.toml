@@ -1,6 +1,6 @@
 [package]
 name = "oxyromon-frontend"
-version = "0.23.0"
+version = "0.24.0"
 edition = "2024"
 publish = false
 
@@ -28,6 +28,7 @@ web-sys = { version = "0.3", features = [
     "DataTransfer",
     "DragEvent",
     "HtmlInputElement",
+    "HtmlElement",
     "HtmlDocument",
     "MediaQueryList",
     "Navigator",

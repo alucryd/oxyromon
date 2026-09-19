@@ -26,6 +26,8 @@ async fn test() {
         merging: Merging::Split as i64,
         completion: 0,
         custom_extension: Some(String::from("cci")),
+        games_complete: 0,
+        games_total: 0,
     };
     let game = Game {
         id: 1,

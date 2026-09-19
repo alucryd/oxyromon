@@ -1,16 +1,78 @@
+//! Nintendo Switch NSP/NSZ handling backed by the [`nsz_rs`] crate.
+//!
+//! This replaces the external `nsz` subprocess. Everything the crate does is
+//! synchronous and CPU bound, so each entry point hands its work to the blocking
+//! pool rather than occupying a runtime worker for the length of a (de)compression.
+//!
+//! Keys are handed over as a loader that only runs when needed: decompression
+//! is unverified so never needs them, and compression only does for NSPs
+//! holding NCAs. Homebrew NSPs, for instance, need no `prod.keys` at all.
+//!
+//! The flag mapping from the old subprocess calls:
+//! - `to_nsp` ran `nsz -D -F` → [`decompress_nsz`] with `fix_padding = true`
+//!   (re-pad the header to 0x20), `verify = false`, `strict = false`.
+//! - `to_nsz` ran `nsz -C -K -L -P` → [`compress_nsp`] with a solid stream
+//!   (`block_size_exponent = None`), long-distance matching (`ldm = true`) at the
+//!   nsz default level 18, and `fix_padding = false`. The `-K` (keep) behaviour
+//!   is inherent to the crate: members it cannot compress are copied verbatim, and
+//!   `-P` (always-parse-cnmt) is only needed by the Python tool for metadata.
+
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
+use nsz_rs::keys::Keys;
+use nsz_rs::pipeline::{Compression, compress_nsp, decompress_nsz};
 use sqlx::SqliteConnection;
-use std::path::Path;
-use tokio::process::Command;
+use std::io;
+use std::path::{Path, PathBuf};
+use tokio::task::spawn_blocking;
 
-const NSZ: &str = "nsz";
+/// zstd level nsz compresses at by default.
+const COMPRESSION_LEVEL: i32 = 18;
+
+/// `~/.switch/prod.keys`, where nsz keeps the Switch keys.
+fn keys_path() -> Option<PathBuf> {
+    dirs::home_dir().map(|home| home.join(".switch").join("prod.keys"))
+}
+
+/// Load and derive the Switch key set.
+///
+/// Keys are CRC-verified, matching the external tool's own sanity check: a
+/// tampered `prod.keys` is rejected rather than producing garbage output.
+fn load_keys() -> nsz_rs::Result<Keys> {
+    let path = keys_path().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            "no home directory to look for .switch/prod.keys in",
+        )
+    })?;
+    Keys::load(path, true)
+}
+
+/// Run an nsz-rs pipeline on the blocking pool, since it is synchronous and CPU
+/// bound, feeding the input bytes it reports consumed to `progress_bar`.
+async fn run_pipeline(
+    progress_bar: &ProgressBar,
+    input: &Path,
+    pipeline: impl FnOnce(&mut dyn FnMut(u64)) -> nsz_rs::Result<()> + Send + 'static,
+) -> Result<()> {
+    let bar = progress_bar.clone();
+    let input = input.to_path_buf();
+    spawn_blocking(move || {
+        // Unlike a subprocess, the library can say how far along it is
+        bar.reset();
+        bar.set_style(get_bytes_progress_style());
+        bar.set_length(input.metadata()?.len());
+        Ok(pipeline(&mut |n| bar.inc(n))?)
+    })
+    .await
+    .context("nsz-rs task failed")?
+}
 
 pub struct NspRomfile {
     pub romfile: CommonRomfile,
@@ -99,16 +161,12 @@ impl ToNsp for NszRomfile {
             .as_ref()
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSP_EXTENSION);
-
-        run_tool(
-            Command::new(NSZ)
-                .arg("-D")
-                .arg("-F")
-                .arg("-o")
-                .arg(destination_directory.as_ref())
-                .arg(&self.romfile.path),
-        )
-        .await?;
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
+            decompress_nsz(&input, &output, load_keys, true, false, false, progress).map(|_| ())
+        })
+        .await
+        .with_context(|| format!("Failed to decompress \"{}\"", self.romfile.path.display()))?;
 
         stop_action(progress_bar);
 
@@ -145,17 +203,17 @@ impl ToNsz for NspRomfile {
             ),
         );
 
-        run_tool(
-            Command::new(NSZ)
-                .arg("-C")
-                .arg("-K")
-                .arg("-L")
-                .arg("-P")
-                .arg("-o")
-                .arg(destination_directory.as_ref())
-                .arg(&self.romfile.path),
-        )
-        .await?;
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        let compression = Compression {
+            level: COMPRESSION_LEVEL,
+            ldm: true,
+            block_size_exponent: None,
+        };
+        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
+            compress_nsp(&input, &output, load_keys, &compression, false, progress)
+        })
+        .await
+        .with_context(|| format!("Failed to compress \"{}\"", self.romfile.path.display()))?;
 
         stop_action(progress_bar);
 
@@ -205,11 +263,25 @@ impl AsNsz for CommonRomfile {
     }
 }
 
+/// Reported by `info`. Like nod, a linked library has no version to query at
+/// runtime. It never fails, since only compressing NCAs needs keys, but says
+/// when `prod.keys` is missing so that isn't first discovered mid-compression.
 pub async fn get_version() -> Result<String> {
-    let keys_path = dirs::home_dir().map(|home| home.join(".switch").join("prod.keys"));
-    if keys_path.map(|p| p.is_file()) != Some(true) {
-        bail!("prod.keys not found");
-    }
-
-    tool_version(NSZ, "nsz", &["-h"], false, 0, None).await
+    Ok(match keys_path().is_some_and(|path| path.is_file()) {
+        true => String::from("built-in"),
+        false => String::from("built-in, prod.keys not found"),
+    })
 }
+
+#[cfg(test)]
+mod test_as_nsp_as_nsz;
+#[cfg(test)]
+mod test_check;
+#[cfg(test)]
+mod test_check_mismatch;
+#[cfg(test)]
+mod test_hash_and_size;
+#[cfg(test)]
+mod test_to_nsp;
+#[cfg(test)]
+mod test_to_nsz;

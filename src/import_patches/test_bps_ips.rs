@@ -72,6 +72,7 @@ async fn test() {
         &PatchType::Bps,
         false,
         false,
+        None,
     )
     .await
     .unwrap();
@@ -82,6 +83,7 @@ async fn test() {
         &PatchType::Ips,
         false,
         false,
+        None,
     )
     .await
     .unwrap();

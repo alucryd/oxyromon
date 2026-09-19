@@ -24,7 +24,12 @@ use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-async fn system_size(ctx: &Context<'_>, system_id: i64, actual: bool, one_region: bool) -> Result<i64> {
+async fn system_size(
+    ctx: &Context<'_>,
+    system_id: i64,
+    actual: bool,
+    one_region: bool,
+) -> Result<i64> {
     let pool = ctx.data_unchecked::<SqlitePool>();
     let sorting = if one_region {
         "AND g.sorting = 1\n                    "
@@ -171,11 +176,20 @@ pub(crate) trait TableRow:
     for<'r> FromRow<'r, SqliteRow> + Clone + Send + Sync + Unpin + 'static
 {
     const TABLE: &'static str;
+    // The `SELECT` list. Plain tables use `*`, but a table may carry computed
+    // columns (e.g. `System`'s completion counts) that are not real columns and
+    // so are absent from `*` — the loader would then fail to map the row.
+    const SELECT: &'static str = "*";
     fn row_id(&self) -> i64;
 }
 
 impl TableRow for System {
     const TABLE: &'static str = "systems";
+    // Must match the count subqueries the System-mapping queries in database.rs
+    // select, so a row loaded this way maps to the full `System`.
+    const SELECT: &'static str = "systems.*, \
+        (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.completion = 2 AND games.sorting != 2) AS games_complete, \
+        (SELECT COUNT(*) FROM games WHERE games.system_id = systems.id AND games.sorting != 2) AS games_total";
     fn row_id(&self) -> i64 {
         self.id
     }
@@ -202,10 +216,11 @@ impl<T: TableRow + 'static> Loader<i64> for IdLoader<T> {
     async fn load(&self, ids: &[i64]) -> Result<HashMap<i64, Self::Value>, Self::Error> {
         let sql = format!(
             "
-        SELECT *
+        SELECT {}
         FROM {}
         WHERE id in ({})
         ",
+            T::SELECT,
             T::TABLE,
             ids.iter().join(",")
         );
@@ -233,7 +248,7 @@ impl QueryRoot {
             ("ctrtool", ctrtool::get_version().await),
             ("flips", flips::get_version().await),
             ("maxcso", maxcso::get_version().await),
-            ("nsz", nsz::get_version().await),
+            ("nsz-rs", nsz::get_version().await),
             ("xdelta3", xdelta3::get_version().await),
         ];
         // RVZ and WBFS share a backend when it is the native one, so list it once

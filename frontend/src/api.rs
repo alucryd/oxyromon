@@ -115,7 +115,7 @@ struct SystemsData {
 /// Fetch every system.
 pub async fn fetch_systems(notifier: Notifier) -> Vec<System> {
     let query = r#"{
-        systems { id name description completion merging arcade }
+        systems { id name description completion merging arcade gamesComplete gamesTotal }
     }"#;
     match graphql::<SystemsData>(query, Value::Null).await {
         Ok(data) => data.systems,
@@ -383,4 +383,108 @@ pub async fn purge_system(state: AppState, system_id: i64) {
         report_error(state.notifier, "Purging the system", &e);
     }
     state.purging_system_id.set(-1);
+}
+
+/// Ask the server to sort the ROMs of one system, or of all systems when the
+/// id is negative; the work itself reports over SSE.
+pub async fn sort_roms(state: AppState, system_id: i64) {
+    state
+        .sorting_system_id
+        .set(if system_id > 0 { system_id } else { -2 });
+    let mutation = r#"mutation SortRoms($systemId: Int) {
+        sortRoms(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Sorting ROMs", &e);
+    }
+    state.sorting_system_id.set(-1);
+}
+
+/// Ask the server to check the integrity of one system's ROMs, or of all
+/// systems when the id is negative; the work itself reports over SSE.
+pub async fn check_roms(state: AppState, system_id: i64) {
+    state
+        .checking_system_id
+        .set(if system_id > 0 { system_id } else { -2 });
+    let mutation = r#"mutation CheckRoms($systemId: Int) {
+        checkRoms(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Checking ROMs", &e);
+    }
+    state.checking_system_id.set(-1);
+}
+
+/// Ask the server to purge every IRD (JB folder) game of one system; the work
+/// itself reports over SSE.
+pub async fn purge_irds(state: AppState, system_id: i64) {
+    state.purging_irds_system_id.set(system_id);
+    let mutation = r#"mutation PurgeIrds($systemId: Int!) {
+        purgeIrds(systemId: $systemId)
+    }"#;
+    let variables = json!({ "systemId": system_id });
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        report_error(state.notifier, "Purging the IRDs", &e);
+    }
+    state.purging_irds_system_id.set(-1);
+}
+
+/// Ask the server to generate M3U playlists for every system; the work itself
+/// reports over SSE.
+pub async fn generate_playlists(state: AppState) {
+    state.generating_playlists.set(true);
+    let mutation = r#"mutation GeneratePlaylists {
+        generatePlaylists
+    }"#;
+    if let Err(e) = graphql::<serde::de::IgnoredAny>(mutation, json!({})).await {
+        report_error(state.notifier, "Generating playlists", &e);
+    }
+    state.generating_playlists.set(false);
+}
+
+/// Ask the server to purge the selected categories of ROM files; the work
+/// itself reports over SSE, and only a failure to hand the job over is
+/// returned here (and reported).
+pub async fn purge_roms(
+    state: AppState,
+    missing: bool,
+    orphan: bool,
+    trash: bool,
+    foreign: bool,
+) -> Result<(), String> {
+    let mutation = r#"mutation PurgeRoms($missing: Boolean!, $orphan: Boolean!, $trash: Boolean!, $foreign: Boolean!) {
+        purgeRoms(missing: $missing, orphan: $orphan, trash: $trash, foreign: $foreign)
+    }"#;
+    let variables = json!({
+        "missing": missing,
+        "orphan": orphan,
+        "trash": trash,
+        "foreign": foreign
+    });
+    match graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            report_error(state.notifier, "Purging ROM files", &e);
+            Err(e)
+        }
+    }
+}
+
+/// Ask the server to convert the ROM files of one system to a format; the
+/// work itself reports over SSE, and only a failure to hand the job over is
+/// returned here (and reported).
+pub async fn convert_roms(state: AppState, system_id: i64, format: String) -> Result<(), String> {
+    let mutation = r#"mutation ConvertRoms($systemId: Int!, $format: String!) {
+        convertRoms(systemId: $systemId, format: $format)
+    }"#;
+    let variables = json!({ "systemId": system_id, "format": format });
+    match graphql::<serde::de::IgnoredAny>(mutation, variables).await {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            report_error(state.notifier, "Converting the ROM files", &e);
+            Err(e)
+        }
+    }
 }

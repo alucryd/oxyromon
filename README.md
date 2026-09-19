@@ -238,9 +238,10 @@ These should be in your `${PATH}` for extra features.
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
 - [flips](https://github.com/Alcaro/Flips): BPS and IPS support
 - [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
-- [nsz](https://github.com/nicoboss/nsz): NSZ support
 - [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
 - [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
+
+NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 
 ### TODO
 
@@ -248,7 +249,7 @@ These should be in your `${PATH}` for extra features.
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
 - Craft some unit tests for arcade systems
-- Craft some unit tests for NSZ
+- Craft some unit tests for NSZ with a compressible NCA
 - Craft some unit tests for IRD and PS3 in general
 - Support rebuilding PS3 ISOs using IRD files, if possible, and requested
 - Add a metadata scraper in the retroarch format
@@ -419,9 +420,10 @@ Note: Currently supports IRD version 9 only. Should cover most online sources as
         <IRDS>...  Set the IRD files to import
 
     Options:
-        -i, --info   Show the IRD information and exit
-        -f, --force  Force import of already imported IRD files
-        -h, --help   Print help information
+        -i, --info             Show the IRD information and exit
+        -f, --force            Force import of already imported IRD files
+            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+        -h, --help             Print help information
 
 ## oxyromon-purge-irds
 
@@ -431,13 +433,14 @@ This will remove all child ROMs that were created when importing an IRD file, ef
 All ROM files associated with the deleted ROMs will be moved to the system's `Trash` directory.
 The game will be marked as not being a JB folder anymore, allowing you to re-import a different IRD if needed.
 
-    Usage: oxyromon purge-irds [GAMES]...
+    Usage: oxyromon purge-irds [OPTIONS] [GAMES]...
 
     Arguments:
         [GAMES]...  Set the game names to purge
 
     Options:
-        -h, --help  Print help
+            --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
+        -h, --help             Print help
 
 ## oxyromon-import-roms
 
@@ -495,6 +498,7 @@ Supported formats are BPS, IPS and XDELTA. Patches are named after the ROM files
     Options:
     -n, --name   Customize patch names
     -f, --force  Force import of already imported patch files
+    --rom <ROM>  Select the target ROM by id, skipping the prompts
     -h, --help   Print help
 
 ## oxyromon-sort-roms
@@ -557,6 +561,8 @@ The region format uses 2-letter codes according to [TOSEC's naming convention](h
                 Show wanted games
         -a, --all
                 Sort all systems
+        -s, --system <SYSTEM>
+                Select systems by name
         -y, --yes
                 Automatically say yes to prompts
         -h, --help
@@ -647,10 +653,11 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
     Usage: oxyromon check-roms [OPTIONS]
 
     Options:
-        -a, --all   Check all systems
-        -g, --game <GAME>  Select games by name
-        -s, --size  Recalculate ROM file sizes
-        -h, --help  Print help information
+        -a, --all              Check all systems
+        -g, --game <GAME>      Select games by name
+        -s, --size             Recalculate ROM file sizes
+            --system <SYSTEM>  Select systems by name
+        -h, --help             Print help information
 
 ## oxyromon-purge-roms
 
@@ -709,9 +716,10 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
         <IRDS>...  Set the IRD files to import
 
     Options:
-        -i, --info   Show the IRD information and exit
-        -f, --force  Force import of already imported IRD files
-        -h, --help   Print help information
+        -i, --info             Show the IRD information and exit
+        -f, --force            Force import of already imported IRD files
+            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+        -h, --help             Print help information
 
 ## oxyromon-server
 
@@ -719,7 +727,7 @@ Launch the backend server
 
 The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
 
-From the web UI you can browse systems, games and ROM files, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
+From the web UI you can browse systems, games and ROM files, see how many games in each system are complete, navigate the games list with the keyboard, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
 
 ROM files are imported either by uploading them, or by giving a URL which the **server** downloads. That download is made by the server, so it can reach anything the server can, including hosts on its own network. This is fine for the default loopback address; think twice before exposing the server beyond it.
 

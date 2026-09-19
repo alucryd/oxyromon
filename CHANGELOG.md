@@ -1,3 +1,46 @@
+# 0.24.0
+
+## Features
+
+- Added ROM sorting to the web UI, for a single system or all of them at once
+- Added an integrity check to the web UI, for a single system or all of them at once
+- Added a purge dialog to the web UI, for missing, orphan, trashed, and foreign ROM files
+- Added ROM format conversion to the web UI, for a single system
+- Added a multiple-matches option (first match or skip) to the web UI's import dialog
+- Added patch file import to the web UI, for a single ROM
+- Added PlayStation 3 IRD import and purge to the web UI
+- Added M3U playlist generation to the web UI, for every system at once
+
+## Changes
+
+- NSP/NSZ support now comes from the [nsz-rs](https://crates.io/crates/nsz-rs) crate instead of the external `nsz` tool, with a progress bar during (de)compression; unlike `nod` and `sevenz` this is always on, with no feature flag to opt out. A `prod.keys` at `~/.switch/prod.keys` is only needed to compress NSPs containing NCAs: importing, checking and decompressing NSZs no longer need one, and `info` says when it is missing
+- `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
+- `check-roms` now accepts `--system` to check named systems without an interactive prompt
+- `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts
+- `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended, matching the game and ROM automatically
+
+## Improvements
+
+- Only show the IRD import and purge actions in the web UI's system menu for PlayStation 3 systems, matching the backend's system filter
+- Added a non-colour status cue (a leading glyph) to the web UI's system, game, and ROM rows, so the completion state is legible without relying on colour alone
+- Grouped the purge dialog's options by risk, styling the file-deleting ones in a warning so the danger is visible at a glance
+- Applied the orange brand colour to the web UI and set the page title to oxyROMon, matching the logo
+- Refined web UI copy and accessibility: the games filter field has an accessible label and a clearer placeholder, the import dialog's multiple-matches control is reworded, the settings spell out what 1G1R means, and the page description is filled in
+- Adjusted the web UI's default pane split so the ROM and ROM-file pane starts a little narrower, giving the games list more room
+- Added a light-mode variant of the logo with a dark cross and wordmark, shown in the light theme so the white-cross logo stays legible on the white navbar and About dialog
+- Added a per-system completion count to the web UI's system list (e.g. "482/500"), showing how many of a system's games are complete alongside the colour status, so near-finished systems are easy to spot
+- Made the web UI's games list keyboard-navigable: it is now a WAI-ARIA listbox with a roving tabindex, so the arrow keys move the selection (loading the highlighted game's ROMs), Home and End jump to the first and last games, and Enter or Space confirms the highlighted game
+
+## Fixes
+
+- Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
+- Fixed `xdelta3` patching swapping the output and patch arguments, so applying an XDELTA patch overwrote the patch instead of producing the patched ROM
+- Fixed the web UI's sort, check, convert, and purge-system actions panicking on an unknown `system_id`; they now return a typed GraphQL error instead
+- Fixed web UI background actions hanging forever when a database connection could not be acquired; the task now emits an SSE error so the UI recovers instead of waiting on a completion event that never arrives
+- Fixed the web UI's settings and action mutations panicking when a database connection could not be acquired — realistic under concurrent load, since long-running actions hold the pool — they now return a typed GraphQL error instead of a 500
+- Fixed overlapping system name patterns (e.g. `PlayStation` and `PlayStation 3`) causing the same system to be sorted, checked, or converted twice
+- Fixed the web UI's statistics cards being cut off at the right edge at some window widths, the grid's minimum column size left no room for the scrollbar
+
 # 0.23.0
 
 ## Features

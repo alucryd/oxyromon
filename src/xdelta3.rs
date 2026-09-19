@@ -48,8 +48,8 @@ impl Patch for XdeltaRomfile {
             .arg("-d")
             .arg("-s")
             .arg(&romfile.path)
-            .arg(&path)
             .arg(&self.romfile.path)
+            .arg(&path)
             .output()
             .await
             .unwrap_or_else(|_| {
@@ -94,3 +94,6 @@ impl AsXdelta for CommonRomfile {
 pub async fn get_version() -> Result<String> {
     tool_version(XDELTA3, "xdelta3", &["-V"], false, 0, Some(&VERSION_REGEX)).await
 }
+
+#[cfg(test)]
+mod test_patch;

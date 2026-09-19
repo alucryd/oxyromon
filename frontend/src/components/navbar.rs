@@ -3,7 +3,11 @@
 //! of `+layout.svelte`.
 
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 
+use crate::api::check_roms;
+use crate::api::generate_playlists;
+use crate::api::sort_roms;
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
 use crate::ui::control_value;
@@ -84,7 +88,8 @@ pub fn Navbar() -> impl IntoView {
     view! {
         <nav class="navbar">
             <a href="/" style="display: flex;">
-                <img src="/icon.svg" alt="oxyROMon" style="height: 2rem;" />
+                <img src="/icon.svg" class="brand-logo" alt="oxyROMon" style="height: 2rem;" />
+                <img src="/icon-light.svg" class="brand-logo brand-logo--light" alt="oxyROMon" style="height: 2rem;" />
             </a>
 
             // ROMs are imported constantly and DATs set up rarely, so the
@@ -97,6 +102,50 @@ pub fn Navbar() -> impl IntoView {
                 on:click=move |_| state.import_rom_modal_open.set(true)
             >
                 <wa-icon name="upload" label="Import ROMs"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Sort all systems"
+                on:click=move |_| {
+                    if state.sorting_system_id.get() == -1 {
+                        spawn_local(async move { sort_roms(state, -1).await });
+                    }
+                }
+            >
+                <wa-icon name="arrows-up-down" label="Sort all systems"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Check all systems"
+                on:click=move |_| {
+                    if state.checking_system_id.get() == -1 {
+                        spawn_local(async move { check_roms(state, -1).await });
+                    }
+                }
+            >
+                <wa-icon name="circle-check" label="Check all systems"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Purge ROM files"
+                on:click=move |_| state.purge_rom_modal_open.set(true)
+            >
+                <wa-icon name="trash" label="Purge ROM files"></wa-icon>
+            </wa-button>
+
+            <wa-button
+                appearance="plain"
+                title="Generate playlists"
+                on:click=move |_| {
+                    if !state.generating_playlists.get() {
+                        spawn_local(async move { generate_playlists(state).await });
+                    }
+                }
+            >
+                <wa-icon name="bars" label="Generate playlists"></wa-icon>
             </wa-button>
 
             <wa-dropdown>
@@ -156,7 +205,8 @@ pub fn Navbar() -> impl IntoView {
 
             <wa-input
                 type="search"
-                placeholder="Game Name"
+                aria-label="Filter games"
+                placeholder="Filter games"
                 size="small"
                 style="width: 14rem;"
                 prop:value=move || state.name_filter.get()

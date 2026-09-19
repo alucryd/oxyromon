@@ -4,6 +4,7 @@
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct System {
     pub id: i64,
     pub name: String,
@@ -11,6 +12,10 @@ pub struct System {
     pub completion: i64,
     pub merging: i64,
     pub arcade: bool,
+    /// Games in the system that are complete (not trashed).
+    pub games_complete: i64,
+    /// Games in the system that are not trashed.
+    pub games_total: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]

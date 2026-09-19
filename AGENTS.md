@@ -241,8 +241,9 @@ async fn test() {
 
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
-- Runs on Ubuntu 24.04
-- Installs system dependencies: `bchunk`, `mame-tools` (for chdman), `wit`
+- Runs on Ubuntu 26.04
+- Installs system dependencies: `bchunk`, `dolphin-emu`, `liblz4-1`, `libuv1`, `libzopfli1`, `mame-tools` (for chdman), `wit`, `xdelta3`
+- Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` with `--features server`
 - Builds with `--release --features server`
 - Runs tests with `cargo llvm-cov` for coverage

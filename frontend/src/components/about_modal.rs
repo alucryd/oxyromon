@@ -33,7 +33,8 @@ pub fn AboutModal() -> impl IntoView {
         >
             <div class="wa-stack wa-gap-l">
                 <div class="wa-stack wa-gap-2xs" style="align-items: center; text-align: center;">
-                    <img src="/logo.svg" alt="oxyROMon" style="height: 3rem;" />
+                    <img src="/logo.svg" class="brand-logo" alt="oxyROMon" style="height: 3rem;" />
+                    <img src="/logo-light.svg" class="brand-logo brand-logo--light" alt="oxyROMon" style="height: 3rem;" />
                     <span style="font-weight: var(--wa-font-weight-semibold);">
                         {move || {
                             info.get()

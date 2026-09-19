@@ -9,7 +9,6 @@ use super::maxcso;
 use super::maxcso::{AsXso, ToXso, XsoType};
 use super::mimetype::*;
 use super::model::*;
-use super::nsz;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::progress::*;
 use super::prompt::*;
@@ -29,7 +28,7 @@ use std::collections::HashMap;
 use std::mem::drop;
 use std::str::FromStr;
 
-const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
+pub const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
 const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
 pub fn subcommand() -> Command {
@@ -108,14 +107,7 @@ pub async fn main(
     progress_bar: &ProgressBar,
 ) -> Result<()> {
     let systems = match matches.get_many::<String>("SYSTEM") {
-        Some(system_names) => {
-            let mut systems: Vec<System> = vec![];
-            for system_name in system_names {
-                systems.append(&mut find_systems_by_name_like(connection, system_name).await);
-            }
-            systems.dedup_by_key(|system| system.id);
-            systems
-        }
+        Some(system_names) => resolve_systems_by_name_like(connection, system_names).await,
         None => prompt_for_systems(connection, None, false, false, matches.get_flag("ALL")).await?,
     };
     let format = match matches.get_one::<String>("FORMAT") {
@@ -130,12 +122,11 @@ pub async fn main(
     let check = matches.get_flag("CHECK");
 
     let available = match format.as_str() {
-        "7Z" | "ZIP" => tool_available(|| sevenzip::get_version(), "sevenzip", progress_bar).await,
-        "CHD" => tool_available(|| chdman::get_version(), "chdman", progress_bar).await,
-        "CSO" | "ZSO" => tool_available(|| maxcso::get_version(), "maxcso", progress_bar).await,
-        "NSZ" => tool_available(|| nsz::get_version(), "nsz", progress_bar).await,
-        "RVZ" => tool_available(|| dolphin::get_version(), "dolphin-tool", progress_bar).await,
-        "ORIGINAL" => true,
+        "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
+        "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
+        "CSO" | "ZSO" => tool_available(maxcso::get_version, "maxcso", progress_bar).await,
+        "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
+        "NSZ" | "ORIGINAL" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -2845,10 +2836,6 @@ async fn to_original(
 
     // convert NSZs
     for roms in nszs.values() {
-        if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: nsz");
-            break;
-        }
         let mut transaction = begin_transaction(connection).await;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();

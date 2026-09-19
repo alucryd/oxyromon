@@ -10,7 +10,7 @@ license = "GPL-3.0+"
 name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
-version = "0.23.0"
+version = "0.24.0"
 rust-version = "1.94.0"
 
 [features]
@@ -40,7 +40,7 @@ axum = { version = "0.8.9", default-features = false, features = [
     "ws",
 ], optional = true }
 cfg-if = "1.0.4"
-console = "0.16.4"
+console = "0.16.6"
 chrono = { version = "0.4.45", default-features = false, features = [
     "std",
     "alloc",
@@ -48,7 +48,7 @@ chrono = { version = "0.4.45", default-features = false, features = [
     "clock",
 ] }
 clap = "4.6.6"
-crc32fast = "1.5.1"
+crc32fast = "1.5.2"
 dialoguer = { version = "0.12.0", features = ["fuzzy-select"] }
 digest = "0.11.3"
 digest-io = "0.1.0"
@@ -69,6 +69,7 @@ itertools = "0.15.0"
 log = "0.4.34"
 md-5 = "0.11.0"
 nod = { version = "2.0.0-alpha.9", optional = true }
+nsz-rs = { version = "0.2.0", default-features = false }
 num-derive = "0.5.1"
 num-traits = "0.2.19"
 percent-encoding = { version = "2.3.2", optional = true }

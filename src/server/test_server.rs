@@ -445,6 +445,75 @@ async fn test_upload_dat_already_imported() -> Result<()> {
     Ok(())
 }
 
+#[tokio::test]
+async fn test_import_rom_source() -> Result<()> {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+    let progress_bar = ProgressBar::hidden();
+
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+
+    let matches = import_dats::subcommand()
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
+    import_dats::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
+
+    let system = find_systems(&mut connection).await.remove(0);
+
+    // when
+    // An unknown mode is rejected before the file is even touched.
+    let bogus_directory = TempDir::new_in(test_directory).unwrap();
+    let result = import_rom_source(
+        &mut connection,
+        &progress_bar,
+        RomSource::Upload {
+            filename: "unused".to_string(),
+            directory: bogus_directory,
+        },
+        None,
+        Some("bogus"),
+    )
+    .await;
+    assert!(result.is_err());
+
+    // Absent means "first", so the import lands on its own.
+    let directory = TempDir::new_in(test_directory).unwrap();
+    let filename = "Test Game (USA, Europe).rom";
+    fs::copy(
+        test_directory.join(filename),
+        directory.path().join(filename),
+    )
+    .await
+    .unwrap();
+    import_rom_source(
+        &mut connection,
+        &progress_bar,
+        RomSource::Upload {
+            filename: filename.to_string(),
+            directory,
+        },
+        None,
+        None,
+    )
+    .await?;
+
+    // then
+    let romfiles = find_romfiles_by_system_id(&mut connection, system.id).await;
+    assert_eq!(1, romfiles.len());
+
+    Ok(())
+}
+
 #[test]
 fn test_url_filename() {
     assert_eq!(

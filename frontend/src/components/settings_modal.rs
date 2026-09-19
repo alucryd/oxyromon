@@ -201,7 +201,7 @@ pub fn SettingsModal(
                         />
                         <SelectField
                             label="1G1R Subfolders"
-                            hint="Store 1G1R games in subfolders"
+                            hint="One game, one region (1G1R): store those games in subfolders"
                             value=local.one_regions_subfolders
                             choices=&SUBFOLDER_SCHEMES_CHOICES
                             on_select=Callback::new(move |v| {
