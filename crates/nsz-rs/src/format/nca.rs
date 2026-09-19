@@ -159,7 +159,7 @@ impl NcaHeader {
                     return Err(Error::MissingKey(format!(
                         "title key for rights-managed NCA rightsId={}",
                         hex::encode(rights_id).to_uppercase()
-                    )))
+                    )));
                 }
             }
         } else {

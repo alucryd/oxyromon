@@ -32,7 +32,7 @@ is an error rather than a silent uncompressed copy.
 ## CLI
 
 ```
-cargo build --release
+cargo build --release -p nsz-rs
 nszrs -D -F -o out/ game.nsz          # decompress
 nszrs -C -L -o out/ game.nsp          # solid compress, long-distance matching
 nszrs -C -B -s 20 -o out/ game.nsp    # block compress, 1 MiB blocks

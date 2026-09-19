@@ -10,7 +10,7 @@ use nsz_rs::crypto::ctr;
 use nsz_rs::decompress::{decompress_ncz, read_ncz_header};
 use nsz_rs::format::nca;
 use nsz_rs::keys::Keys;
-use nsz_rs::pipeline::{compress_nca, compress_nsp, decompress_nsz, Compression, TitleKeys};
+use nsz_rs::pipeline::{Compression, TitleKeys, compress_nca, compress_nsp, decompress_nsz};
 
 const SOLID: Compression = Compression {
     level: 3,
@@ -323,16 +323,18 @@ fn failed_decompression_removes_the_output() {
         &mut |_| {},
     )
     .unwrap();
-    assert!(decompress_nsz(
-        &nsz_path,
-        &out_path,
-        || Ok(keys.clone()),
-        true,
-        true,
-        true,
-        &mut |_| {}
-    )
-    .is_err());
+    assert!(
+        decompress_nsz(
+            &nsz_path,
+            &out_path,
+            || Ok(keys.clone()),
+            true,
+            true,
+            true,
+            &mut |_| {}
+        )
+        .is_err()
+    );
     assert!(!out_path.exists());
 
     // Truncated container.
@@ -348,16 +350,18 @@ fn failed_decompression_removes_the_output() {
     .unwrap();
     let nsz = std::fs::read(&nsz_path).unwrap();
     std::fs::write(&nsz_path, &nsz[..nsz.len() - 0x100]).unwrap();
-    assert!(decompress_nsz(
-        &nsz_path,
-        &out_path,
-        || Ok(keys.clone()),
-        true,
-        false,
-        false,
-        &mut |_| {}
-    )
-    .is_err());
+    assert!(
+        decompress_nsz(
+            &nsz_path,
+            &out_path,
+            || Ok(keys.clone()),
+            true,
+            false,
+            false,
+            &mut |_| {}
+        )
+        .is_err()
+    );
     assert!(!out_path.exists());
 }
 

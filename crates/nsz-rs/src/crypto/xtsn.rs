@@ -9,8 +9,8 @@
 //!   T_i = mul_alpha_le(T_{i-1})
 //!   C_i = K1_ecb(P_i ^ T_i) ^ T_i
 
-use aes::cipher::{Array, BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 use aes::Aes128;
+use aes::cipher::{Array, BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 
 use crate::crypto::ecb::BLOCK_SIZE;
 

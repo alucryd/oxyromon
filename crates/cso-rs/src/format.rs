@@ -83,7 +83,7 @@ impl Header {
             Format::Zso
         } else {
             return Err(Error::BadMagic {
-                expected: "CISO or ZISO",
+                expected: "CISO or ZISO".into(),
                 found: escape_tag(tag),
             });
         };
@@ -116,7 +116,9 @@ impl Header {
             ));
         }
         if index_shift > 32 {
-            return Err(Error::Corrupt(format!("index shift {index_shift} is out of range")));
+            return Err(Error::Corrupt(format!(
+                "index shift {index_shift} is out of range"
+            )));
         }
 
         Ok(Header {
@@ -233,10 +235,7 @@ mod tests {
     fn rejects_unknown_magic() {
         let mut buf = [0u8; HEADER_SIZE];
         buf[0..4].copy_from_slice(b"ABCD");
-        assert!(matches!(
-            Header::parse(&buf),
-            Err(Error::BadMagic { .. })
-        ));
+        assert!(matches!(Header::parse(&buf), Err(Error::BadMagic { .. })));
     }
 
     #[test]
@@ -250,10 +249,7 @@ mod tests {
         let mut buf = [0u8; HEADER_SIZE];
         h.write(&mut buf);
         buf[20] = 2;
-        assert!(matches!(
-            Header::parse(&buf),
-            Err(Error::Unsupported(_))
-        ));
+        assert!(matches!(Header::parse(&buf), Err(Error::Unsupported(_))));
     }
 
     #[test]

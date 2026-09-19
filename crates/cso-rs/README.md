@@ -1,7 +1,7 @@
 # cso-rs
 
 CSO and ZSO compression and decompression in Rust — a port of
-[maxcso](https://github.com/mattlewis92/maxcso)'s core, without the GUI and
+[maxcso](https://github.com/unknownbrackets/maxcso)'s core, without the GUI and
 without the formats nobody uses. Built to replace the `maxcso` subprocess in
 [oxyromon](https://github.com/alucryd/oxyromon).
 
@@ -50,21 +50,32 @@ Deliberately narrow, so it is worth trusting:
 - **No checksums.** maxcso's optional CRC of the decompressed stream is not
   ported.
 
-## Compressors
+## Encoders
 
-maxcso compresses every block several ways and keeps the winner under a cost
-allowance, because paying CPU on every read to save a handful of bytes is a
-bad trade. This crate reproduces that selection, including the rule that
-reverts a block to stored when the alignment padding would swallow the
-savings, and the tie-break that favours LZ4 because it decodes faster.
+Each format has one encoder:
 
-| Method | Backend | Default |
+| Format | Encoder | Backend |
 | --- | --- | --- |
-| zlib, level 9, all four strategies | `libz-sys` | cso |
-| libdeflate, level 12 | `libdeflater` | off |
-| Zopfli | `zopfli` | off |
-| LZ4 fast | `lz4-sys` | zso |
-| LZ4 HC, level 16 | `lz4-sys` | zso |
+| CSO | zlib, level 9, best of its four strategies | `libz-sys` |
+| ZSO | LZ4 HC, level 16 | `lz4-sys` |
+
+Every block is stored raw unless compressing it saves space even after the
+alignment padding, as maxcso does: otherwise every read would pay for
+decompression, for nothing.
+
+**CSO: zlib, because the rest don't load.** libdeflate and Zopfli both
+compress better (on Patapon, 0.3% and 0.6% smaller than zlib, Zopfli even
+beating maxcso), but a PSP running ARK-5 could not load into a level from
+either, while the zlib CSO played fine. maxcso's own default adds 7-Zip's
+deflate, which has no Rust port; without it, CSOs come out 0.4% (Patapon) to
+1.7% (a sample of system libraries) larger than maxcso's. The CSO output is
+byte-identical to `maxcso --only-zlib`.
+
+**ZSO: LZ4 HC 16, because nothing beats it.** On its own it matched every LZ4
+setting combined, fast LZ4 and HC at levels 4 to 13 included, and it decodes
+as fast as plain LZ4: on an ARK-5 PSP, both HC and fast LZ4 ZSOs played fine.
+It is 2.5% (Patapon) to 3.7% smaller than maxcso's default ZSO, which is fast
+LZ4 alone: maxcso only runs HC in brute-force mode.
 
 Two notes on the backends, both forced by what the crates actually expose:
 
@@ -82,43 +93,51 @@ Two notes on the backends, both forced by what the crates actually expose:
 
 ## CLI
 
-`csors` mirrors the maxcso flags that matter, including the
-`--use-`/`--no-` toggles, which apply on top of the format's default set.
+`csors` takes the maxcso flags oxyromon used, so it can stand in for maxcso
+there.
 
 ```
+cargo build --release -p cso-rs
 csors --format=cso --block=2048 game.iso -o game.cso
 csors --format=zso game.iso -o game.zso
 csors --decompress game.cso -o game.iso
-csors --format=cso --use-zopfli game.iso -o game.cso   # slower, smaller
 ```
 
 The format is inferred from the output extension when `--format` is omitted.
-Block size defaults to 2048, or 16384 for inputs of 2 GiB or more, as
-maxcso does.
+
+## Block sizes
+
+Larger blocks compress better but make every read decompress more, and not
+every reader takes them, so the defaults follow the readers:
+
+- **CSO: 8 KiB**, 3.8% smaller than 2 KiB on Patapon; 16 KiB saves only 0.7
+  points more. An ARK-5 PSP plays 8 KiB CSOs, PPSSPP reads larger blocks, and
+  PCSX2 reads any power of two. From 2 GiB, where only PS2 DVDs are, it is
+  16 KiB, as in maxcso.
+- **ZSO: 2 KiB**, whatever the size. Open PS2 Loader hard-codes 2 KiB blocks
+  and silently misreads anything else. (An ARK-5 PSP and PCSX2 do read larger
+  ZSO blocks, if you ask for them with `--block`.)
 
 ## Verification
 
-The tests that matter are the ones against the reference binary: a CSO is
-only worth producing if the tools that consume it can read it back.
+`tests/interop.rs` checks the crate against the reference binary, which is
+what matters: a CSO is only worth producing if the tools that consume it can
+read it back.
 
-`tests/interop.rs` runs maxcso in both directions — our output through
-`maxcso --decompress`, and maxcso's output through us — and requires a
-byte-identical image. It is skipped unless a maxcso binary is reachable
-through `$MAXCSO` or at `../maxcso/maxcso`:
+- Each tool decompresses the other's CSO and ZSO back to the original image.
+- Our CSO is byte-identical to `maxcso --only-zlib`. The fixture is
+  pseudo-text, on which the zlib strategies often tie, so a change in trial
+  order fails the test.
+- An ignored test round-trips a sparse 2 GiB image, where `index_shift` is 1
+  and every block is padded, through both decoders.
+
+They are skipped unless a maxcso binary is reachable through `$MAXCSO` or
+`$PATH`:
 
 ```sh
-MAXCSO=/path/to/maxcso cargo test
+cargo test -p cso-rs
+cargo test --release -p cso-rs -- --ignored   # the 2 GiB image, ~35 s
 ```
-
-Verified against maxcso 1.13.0 on images of 1, 5 and 20 MiB of mixed
-content, at block sizes 2048, 4096, 16384, 65536 and 262144, with every
-method combination, and on 2.5 GiB and 4.5 GiB images that exercise
-`index_shift` of 1 and 2 — the padding cases where a naive LZ4 decoder
-breaks. ZSO output is byte-identical to maxcso at the default settings.
-
-CSO output lands about 0.1–0.3% larger than maxcso's. maxcso also trials
-7-zip's deflate, which has no Rust port; everything else matches. ZSO is
-equal or slightly smaller at larger block sizes.
 
 ## License
 

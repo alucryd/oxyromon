@@ -20,7 +20,7 @@
 //! Compression takes a raw ISO. To turn a CSO into a ZSO, decompress first and
 //! then compress; there is no direct transcode.
 //!
-//! [maxcso]: https://github.com/mattlewis92/maxcso
+//! [maxcso]: https://github.com/unknownbrackets/maxcso
 
 mod compress;
 mod decompress;
@@ -30,37 +30,13 @@ mod io;
 mod lz4;
 mod method;
 
-pub use compress::{
-    compress, CompressOptions, DEFAULT_BLOCK_SIZE, LARGE_BLOCK_SIZE,
-};
-pub use decompress::{decompress, DecompressOptions};
+pub use compress::{CompressOptions, compress, default_block_size};
+pub use decompress::{DecompressOptions, decompress};
 pub use error::{Error, Result};
 pub use format::{
-    Format, Header, Codec, HEADER_SIZE, INDEX_OFFSET_MASK, INDEX_UNCOMPRESSED, MAX_BLOCK_SIZE,
+    Codec, Format, HEADER_SIZE, Header, INDEX_OFFSET_MASK, INDEX_UNCOMPRESSED, MAX_BLOCK_SIZE,
     SECTOR_SIZE,
 };
-pub use method::{BlockKind, CostModel, Methods};
-
-/// Byte-level progress, reported from the calling thread after each block.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Progress {
-    /// Bytes of the source consumed so far.
-    pub done: u64,
-    /// Total bytes the source will contribute.
-    pub total: u64,
-    /// Bytes placed in the output so far.
-    pub written: u64,
-}
-
-impl Progress {
-    pub fn fraction(&self) -> f64 {
-        if self.total == 0 {
-            1.0
-        } else {
-            self.done as f64 / self.total as f64
-        }
-    }
-}
 
 /// Sizes of the two files a run touched.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -45,12 +45,14 @@ jobs:
         run: cd frontend && trunk build --release
       - name: Install llvm-cov
         run: cargo install cargo-llvm-cov
+      # The whole workspace: oxyromon and the format crates under crates/. A
+      # feature has to name its package once several are selected.
       - name: Run clippy
-        run: cargo clippy --features server
+        run: cargo clippy --workspace --all-targets --features oxyromon/server
       - name: Build
         run: cargo build --release --features server
       - name: Test
-        run: cargo llvm-cov --features server --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:

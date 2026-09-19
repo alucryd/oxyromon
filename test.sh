@@ -1,4 +1,4 @@
 #!/bin/sh
 
-cargo llvm-cov --features server --lcov --output-path lcov.info
-cargo llvm-cov --features nod,server,sevenz --lcov --output-path lcov.info
+cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
+cargo llvm-cov --workspace --features oxyromon/nod,oxyromon/server,oxyromon/sevenz --lcov --output-path lcov.info

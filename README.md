@@ -97,6 +97,11 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 
     cargo build --no-default-features --features use-native-tls
 
+The repository also holds the Rust ports oxyromon uses in place of external
+tools, under `crates/`. Each builds a standalone CLI too:
+
+    cargo build --release -p nsz-rs -p cso-rs    # nszrs and csors
+
 ### Features
 
 | feature        | description                                    | default |

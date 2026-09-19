@@ -13,8 +13,8 @@ use crate::crypto::ctr;
 use crate::decompress::{decompress_ncz, read_ncz_header};
 use crate::error::{Error, Result};
 use crate::format::cnmt::Cnmt;
-use crate::format::nca::{self, NcaHeader, HEADER_ENCRYPTED_SIZE};
-use crate::format::ncz::{Section, INCOMPRESSIBLE_HEADER_SIZE};
+use crate::format::nca::{self, HEADER_ENCRYPTED_SIZE, NcaHeader};
+use crate::format::ncz::{INCOMPRESSIBLE_HEADER_SIZE, Section};
 use crate::format::pfs0::{self, Pfs0Entry, Pfs0Reader};
 use crate::keys::Keys;
 

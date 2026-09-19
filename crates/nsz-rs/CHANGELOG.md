@@ -3,6 +3,9 @@
 ## Changes
 
 - Update dependencies to their latest versions
+- Move into the [oxyromon](https://github.com/alucryd/oxyromon) repository, under `crates/nsz-rs`
+- Require Rust 1.94, as the crate moves to the 2024 edition along with the rest of the oxyromon workspace
+- `nszrs` parses its arguments with clap: the flags are unchanged, `-V`/`--version` is new, and `-h` lists every flag
 
 # 0.2.0
 
