@@ -1,14 +1,14 @@
-//! `csors`: the slice of maxcso that matters, as a CLI.
+//! `xsors`: the slice of maxcso that matters, as a CLI.
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command, value_parser};
-use cso_rs::{CompressOptions, DecompressOptions, Format};
 use indicatif::{ProgressBar, ProgressStyle};
+use xso_rs::{CompressOptions, DecompressOptions, Format};
 
 fn cli() -> Command {
-    Command::new("csors")
+    Command::new("xsors")
         .version(env!("CARGO_PKG_VERSION"))
         .about("CSO/ZSO compression and decompression")
         .after_help("CSO blocks are compressed with zlib, ZSO blocks with LZ4 HC.")
@@ -74,7 +74,7 @@ fn main() -> ExitCode {
     match run(&cli().get_matches()) {
         Ok(()) => ExitCode::SUCCESS,
         Err(message) => {
-            eprintln!("csors: {message}");
+            eprintln!("xsors: {message}");
             ExitCode::FAILURE
         }
     }
@@ -109,7 +109,7 @@ fn run(matches: &ArgMatches) -> Result<(), String> {
     let mut progress = |n| bar.inc(n);
 
     let result = if decompress {
-        cso_rs::decompress(input, output, &DecompressOptions { threads }, &mut progress)
+        xso_rs::decompress(input, output, &DecompressOptions { threads }, &mut progress)
     } else {
         let format = match matches.get_one::<String>("format").map(String::as_str) {
             Some("zso") => Format::Zso,
@@ -121,17 +121,17 @@ fn run(matches: &ArgMatches) -> Result<(), String> {
             block_size: matches.get_one::<u32>("block").copied(),
             threads,
         };
-        cso_rs::compress(input, output, &options, &mut progress)
+        xso_rs::compress(input, output, &options, &mut progress)
     };
     bar.finish_and_clear();
 
     let stats = result.map_err(|e| format!("{}: {e}", input.display()))?;
     if decompress {
-        println!("csors: wrote {}", output.display());
+        println!("xsors: wrote {}", output.display());
     } else {
         // How big the output is next to the original.
         println!(
-            "csors: wrote {} ({:.1}%)",
+            "xsors: wrote {} ({:.1}%)",
             output.display(),
             stats.ratio_percent()
         );
@@ -175,7 +175,7 @@ mod tests {
     fn accepts_the_flags_oxyromon_used_with_maxcso() {
         for argv in [
             [
-                "csors",
+                "xsors",
                 "--block=2048",
                 "--format=cso1",
                 "in.iso",
@@ -184,7 +184,7 @@ mod tests {
             ]
             .as_slice(),
             [
-                "csors",
+                "xsors",
                 "--block=2048",
                 "--format=zso",
                 "in.iso",
@@ -192,7 +192,7 @@ mod tests {
                 "out.zso",
             ]
             .as_slice(),
-            ["csors", "--decompress", "in.cso", "-o", "out.iso"].as_slice(),
+            ["xsors", "--decompress", "in.cso", "-o", "out.iso"].as_slice(),
         ] {
             cli().try_get_matches_from(argv).unwrap();
         }

@@ -11,7 +11,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::process::Command;
 
-use cso_rs::{CompressOptions, DecompressOptions, Format};
+use xso_rs::{CompressOptions, DecompressOptions, Format};
 
 mod common;
 use common::{maxcso_binary, write_iso, write_text_iso};
@@ -46,7 +46,7 @@ fn maxcso_reads_ours(format: Format, block: u32, seed: u64) {
         threads: 4,
         ..CompressOptions::new(format)
     };
-    cso_rs::compress(&iso, &packed, &opts, &mut |_| {}).unwrap();
+    xso_rs::compress(&iso, &packed, &opts, &mut |_| {}).unwrap();
 
     run(&maxcso, &["--decompress", path(&packed), "-o", path(&back)]);
     assert_eq!(
@@ -79,7 +79,7 @@ fn we_read_maxcos(format: Format, maxcso_format: &str, block: u32, seed: u64) {
         ],
     );
 
-    cso_rs::decompress(
+    xso_rs::decompress(
         &packed,
         &back,
         &DecompressOptions { threads: 4 },
@@ -159,7 +159,7 @@ fn same_bytes_as_maxcso_zlib_cso() {
             block_size: Some(block),
             ..CompressOptions::new(Format::Cso)
         };
-        cso_rs::compress(&iso, &ours, &options, &mut |_| {}).unwrap();
+        xso_rs::compress(&iso, &ours, &options, &mut |_| {}).unwrap();
         let block_arg = format!("--block={block}");
         run(
             &maxcso,
@@ -198,16 +198,16 @@ fn index_shift_round_trips() {
         file.seek(SeekFrom::Start(mib << 20)).unwrap();
         file.write_all(&common::noise(1 << 20, i as u64 + 1))
             .unwrap();
-        file.write_all(&b"cso-rs ".repeat(1 << 17)).unwrap();
+        file.write_all(&b"xso-rs ".repeat(1 << 17)).unwrap();
     }
     drop(file);
 
     let options = CompressOptions::new(Format::Zso);
-    cso_rs::compress(&iso, &packed, &options, &mut |_| {}).unwrap();
-    assert_eq!(cso_rs::probe(&packed).unwrap().index_shift, 1);
+    xso_rs::compress(&iso, &packed, &options, &mut |_| {}).unwrap();
+    assert_eq!(xso_rs::probe(&packed).unwrap().index_shift, 1);
 
     let back = dir.path().join("back.iso");
-    cso_rs::decompress(&packed, &back, &DecompressOptions::default(), &mut |_| {}).unwrap();
+    xso_rs::decompress(&packed, &back, &DecompressOptions::default(), &mut |_| {}).unwrap();
     assert_same_file(&iso, &back);
     std::fs::remove_file(&back).unwrap();
 

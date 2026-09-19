@@ -1,19 +1,20 @@
-# cso-rs
+# xso-rs
 
 CSO and ZSO compression and decompression in Rust — a port of
 [maxcso](https://github.com/unknownbrackets/maxcso)'s core, without the GUI and
 without the formats nobody uses. Built to replace the `maxcso` subprocess in
-[oxyromon](https://github.com/alucryd/oxyromon).
+[oxyromon](https://github.com/alucryd/oxyromon), whose name for the pair it
+borrows: an XSO is either a CSO or a ZSO.
 
 ```rust
 use std::path::Path;
-use cso_rs::{CompressOptions, DecompressOptions, Format};
+use xso_rs::{CompressOptions, DecompressOptions, Format};
 
 let (iso, cso, zso) = (Path::new("game.iso"), Path::new("game.cso"), Path::new("game.zso"));
 
-cso_rs::compress(iso, cso, &CompressOptions::new(Format::Cso), &mut |_| {}).unwrap();
-cso_rs::compress(iso, zso, &CompressOptions::new(Format::Zso), &mut |_| {}).unwrap();
-cso_rs::decompress(cso, Path::new("out.iso"), &DecompressOptions::default(), &mut |_| {}).unwrap();
+xso_rs::compress(iso, cso, &CompressOptions::new(Format::Cso), &mut |_| {}).unwrap();
+xso_rs::compress(iso, zso, &CompressOptions::new(Format::Zso), &mut |_| {}).unwrap();
+xso_rs::decompress(cso, Path::new("out.iso"), &DecompressOptions::default(), &mut |_| {}).unwrap();
 ```
 
 ## The format
@@ -93,14 +94,14 @@ Two notes on the backends, both forced by what the crates actually expose:
 
 ## CLI
 
-`csors` takes the maxcso flags oxyromon used, so it can stand in for maxcso
+`xsors` takes the maxcso flags oxyromon used, so it can stand in for maxcso
 there.
 
 ```
-cargo build --release -p cso-rs
-csors --format=cso --block=2048 game.iso -o game.cso
-csors --format=zso game.iso -o game.zso
-csors --decompress game.cso -o game.iso
+cargo build --release -p xso-rs
+xsors --format=cso --block=2048 game.iso -o game.cso
+xsors --format=zso game.iso -o game.zso
+xsors --decompress game.cso -o game.iso
 ```
 
 The format is inferred from the output extension when `--format` is omitted.
@@ -135,8 +136,8 @@ They are skipped unless a maxcso binary is reachable through `$MAXCSO` or
 `$PATH`:
 
 ```sh
-cargo test -p cso-rs
-cargo test --release -p cso-rs -- --ignored   # the 2 GiB image, ~35 s
+cargo test -p xso-rs
+cargo test --release -p xso-rs -- --ignored   # the 2 GiB image, ~35 s
 ```
 
 ## License

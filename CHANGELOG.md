@@ -14,7 +14,7 @@
 ## Changes
 
 - NSP/NSZ support now comes from the [nsz-rs](https://crates.io/crates/nsz-rs) crate instead of the external `nsz` tool, with a progress bar during (de)compression; unlike `nod` and `sevenz` this is always on, with no feature flag to opt out. A `prod.keys` at `~/.switch/prod.keys` is only needed to compress NSPs containing NCAs: importing, checking and decompressing NSZs no longer need one, and `info` says when it is missing
-- The nsz-rs crate now lives in this repository, under `crates/`, alongside cso-rs, a port of maxcso; both also build standalone CLIs (`nszrs`, `csors`), which the release archives now include
+- The nsz-rs crate now lives in this repository, under `crates/`, alongside xso-rs, a port of maxcso; both also build standalone CLIs (`nszrs`, `xsors`), which the release archives now include
 - CSO conversions now use 8 KiB blocks (16 KiB from 2 GiB), which PSP CFW, PPSSPP and PCSX2 read, for files around 4% smaller; ZSO stays at 2 KiB blocks, the only size Open PS2 Loader reads
 - `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 - `check-roms` now accepts `--system` to check named systems without an interactive prompt
