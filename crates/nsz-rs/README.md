@@ -57,25 +57,28 @@ The CLI and its progress bar sit behind the default `cli` feature; embed the
 library without them:
 
 ```toml
-nsz-rs = { version = "0.1", default-features = false }
+nsz-rs = { version = "0.2", default-features = false }
 ```
 
 ```rust
 use nsz_rs::keys::Keys;
 use nsz_rs::pipeline::{Compression, compress_nsp, decompress_nsz};
 
-let keys = Keys::load("prod.keys", true)?;
+// Keys are passed as a loader, called only if the container needs them.
+let keys = || Keys::load("prod.keys", true);
 let solid = Compression { level: 18, ldm: true, block_size_exponent: None };
 // The last argument receives input bytes consumed; the calls add up to the
 // input file size, ready to feed a progress bar.
-compress_nsp("game.nsp".as_ref(), "game.nsz".as_ref(), &keys, &solid, false, &mut |_| {})?;
+compress_nsp("game.nsp".as_ref(), "game.nsz".as_ref(), keys, &solid, false, &mut |_| {})?;
 // keys, fix_padding, verify, strict, progress
 let report = decompress_nsz(
-    "game.nsz".as_ref(), "game.nsp".as_ref(), &keys, false, true, true, &mut |n| bar.inc(n),
+    "game.nsz".as_ref(), "game.nsp".as_ref(), keys, false, true, true, &mut |n| bar.inc(n),
 )?;
 ```
 
-You need your own `prod.keys` dumped from your own console.
+You need your own `prod.keys` dumped from your own console, but only to
+compress NCAs or to verify against a CNMT: containers without NCAs (homebrew,
+for instance) and unverified decompression never load it.
 
 ## Credits
 

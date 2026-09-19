@@ -75,7 +75,7 @@ fn string_table_too_small_for_names_still_decompresses() {
     decompress_nsz(
         &input,
         &output,
-        &build_keys(),
+        || Ok(build_keys()),
         false,
         false,
         false,
@@ -97,7 +97,7 @@ fn missing_cnmt_verification() {
         decompress_nsz(
             &input,
             &output,
-            &build_keys(),
+            || Ok(build_keys()),
             false,
             true,
             strict,

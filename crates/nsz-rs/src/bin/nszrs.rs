@@ -177,16 +177,9 @@ fn main() {
         }
     };
 
-    let keys = match Keys::load(
-        args.keys_path.clone().unwrap_or_else(default_keys_path),
-        !args.skip_key_check,
-    ) {
-        Ok(k) => k,
-        Err(e) => {
-            eprintln!("nszrs: failed to load keys: {e}");
-            std::process::exit(1);
-        }
-    };
+    // Only loaded for files that need them: containers without NCAs don't.
+    let keys_path = args.keys_path.clone().unwrap_or_else(default_keys_path);
+    let keys = || Keys::load(&keys_path, !args.skip_key_check);
 
     // Hidden automatically when stderr isn't a terminal.
     let style = ProgressStyle::with_template(
@@ -225,7 +218,7 @@ fn main() {
                 decompress_nsz(
                     input,
                     &out,
-                    &keys,
+                    keys,
                     args.fix_padding,
                     true,
                     true,
@@ -246,7 +239,7 @@ fn main() {
                 compress_nsp(
                     input,
                     &out,
-                    &keys,
+                    keys,
                     &compression,
                     args.fix_padding,
                     &mut progress,

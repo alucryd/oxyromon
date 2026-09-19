@@ -1,3 +1,11 @@
+# 0.2.0
+
+## Changes
+
+- `compress_nsp` and `decompress_nsz` now take a key loader (`impl FnOnce() -> Result<Keys>`) instead of `&Keys`, and only call it when keys are actually needed: compressing an NCA, or verifying against a CNMT. Containers without NCAs and unverified decompressions no longer need a `prod.keys`
+- `nszrs` loads `prod.keys` per file, only when that file needs it, instead of refusing to start without one
+- Errors reading `prod.keys` or `title.keys` now name the file
+
 # 0.1.0
 
 ## Features
