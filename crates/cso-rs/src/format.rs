@@ -171,15 +171,8 @@ pub fn align_up(v: u64, a: u64) -> u64 {
 /// `worst_case_size` is the largest possible output size: header plus index plus
 /// the whole payload uncompressed.
 pub fn compute_index_shift(worst_case_size: u64) -> u32 {
-    let mut shift = 0u32;
-    for i in (31..=62u32).rev() {
-        if worst_case_size >= (1u64 << i) {
-            // Need i + 1 bits to store the position; shave the excess off 31.
-            shift = i + 1 - 31;
-            break;
-        }
-    }
-    shift
+    let bits = 64 - worst_case_size.leading_zeros();
+    bits.saturating_sub(31)
 }
 
 fn escape_tag(tag: &[u8]) -> String {

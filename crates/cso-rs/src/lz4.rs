@@ -106,7 +106,12 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
 }
 
 /// Compress one block with the fast LZ4 compressor.
+///
+/// # Safety (internal)
+/// `dst` must be at least `compress_bound(src.len())` bytes long.
 pub fn compress_default(src: &[u8], dst: &mut [u8]) -> Option<usize> {
+    // SAFETY: the caller (method::compress_block) allocates scratch via
+    // scratch_size(), which is >= compress_bound(src.len()).
     let n = unsafe {
         lz4_sys::LZ4_compress_default(
             src.as_ptr().cast::<std::ffi::c_char>(),
@@ -123,7 +128,12 @@ pub fn compress_default(src: &[u8], dst: &mut [u8]) -> Option<usize> {
 }
 
 /// Compress one block with LZ4 HC at `level` (1..=16).
+///
+/// # Safety (internal)
+/// `dst` must be at least `compress_bound(src.len())` bytes long.
 pub fn compress_hc(src: &[u8], dst: &mut [u8], level: i32) -> Option<usize> {
+    // SAFETY: the caller (method::compress_block) allocates scratch via
+    // scratch_size(), which is >= compress_bound(src.len()).
     let n = unsafe {
         lz4_sys::LZ4_compress_HC(
             src.as_ptr().cast::<std::ffi::c_char>(),

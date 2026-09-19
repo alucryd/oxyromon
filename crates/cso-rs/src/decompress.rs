@@ -196,8 +196,11 @@ impl BlockReader<'_> {
 /// alignment padding that follows a block's stream.
 fn inflate_raw(src: &[u8], dst: &mut [u8]) -> Result<usize> {
     unsafe {
-        // MaybeUninit because z_stream carries non-null function pointers that
-        // zeroing would violate; inflateInit2_ fills every field in.
+        // SAFETY: z_stream contains non-null function pointers, so a zeroed
+        // instance is not a valid z_stream on its own. We use MaybeUninit to
+        // avoid creating an invalid value in safe Rust, then immediately pass
+        // the pointer to inflateInit2_, which overwrites every field before
+        // any read occurs.
         let mut z = mem::MaybeUninit::<libz_sys::z_stream>::zeroed();
         let zp = z.as_mut_ptr();
         let init = libz_sys::inflateInit2_(

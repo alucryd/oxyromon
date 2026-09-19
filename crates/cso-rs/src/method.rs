@@ -274,8 +274,11 @@ const Z_RLE: c_int = 3;
 /// stream a CSO block holds.
 fn deflate_raw(src: &[u8], dst: &mut [u8], strategy: c_int) -> Option<usize> {
     unsafe {
-        // MaybeUninit because z_stream carries non-null function pointers that
-        // zeroing would violate; deflateInit2_ fills every field in.
+        // SAFETY: z_stream contains non-null function pointers, so a zeroed
+        // instance is not a valid z_stream on its own. We use MaybeUninit to
+        // avoid creating an invalid value in safe Rust, then immediately pass
+        // the pointer to deflateInit2_, which overwrites every field before
+        // any read occurs.
         let mut z = mem::MaybeUninit::<libz_sys::z_stream>::zeroed();
         let zp = z.as_mut_ptr();
         let init = libz_sys::deflateInit2_(
