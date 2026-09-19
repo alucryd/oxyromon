@@ -161,10 +161,7 @@ pub fn compress(
     header.write(&mut header_bytes);
     out_file.write_all(&header_bytes)?;
 
-    let mut index_bytes = Vec::with_capacity(index_len as usize);
-    for entry in &index {
-        index_bytes.extend_from_slice(&entry.to_le_bytes());
-    }
+    let index_bytes: Vec<u8> = index.iter().flat_map(|e| e.to_le_bytes()).collect();
     out_file.write_all(&index_bytes)?;
     // Make sure trailing padding is part of the file even though nothing was
     // written into it.
