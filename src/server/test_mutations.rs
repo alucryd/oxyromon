@@ -59,7 +59,11 @@ async fn test() -> Result<()> {
         let client = reqwest::Client::new();
 
         // set_bool round-trips
-        let v = gql(&client, r#"{"query":"mutation { setBool(key: \"PREFER_PARENTS\", value: true) }"}"#).await;
+        let v = gql(
+            &client,
+            r#"{"query":"mutation { setBool(key: \"PREFER_PARENTS\", value: true) }"}"#,
+        )
+        .await;
         assert_eq!(v["data"]["setBool"], json!(true));
         let v = gql(&client, r#"{"query":"{ settings { key value } }"}"#).await;
         assert_eq!(
@@ -68,21 +72,37 @@ async fn test() -> Result<()> {
         );
 
         // add_to_list / remove_from_list round-trip on a free-form list
-        gql(&client, r#"{"query":"mutation { addToList(key: \"REGIONS_ALL\", value: \"us\") }"}"#).await;
-        gql(&client, r#"{"query":"mutation { addToList(key: \"REGIONS_ALL\", value: \"eu\") }"}"#).await;
+        gql(
+            &client,
+            r#"{"query":"mutation { addToList(key: \"REGIONS_ALL\", value: \"us\") }"}"#,
+        )
+        .await;
+        gql(
+            &client,
+            r#"{"query":"mutation { addToList(key: \"REGIONS_ALL\", value: \"eu\") }"}"#,
+        )
+        .await;
         let v = gql(&client, r#"{"query":"{ settings { key value } }"}"#).await;
         let regions = setting_value(&v["data"]["settings"], "REGIONS_ALL").unwrap();
         assert!(regions.contains("us"), "regions: {}", regions);
         assert!(regions.contains("eu"), "regions: {}", regions);
 
-        gql(&client, r#"{"query":"mutation { removeFromList(key: \"REGIONS_ALL\", value: \"us\") }"}"#).await;
+        gql(
+            &client,
+            r#"{"query":"mutation { removeFromList(key: \"REGIONS_ALL\", value: \"us\") }"}"#,
+        )
+        .await;
         let v = gql(&client, r#"{"query":"{ settings { key value } }"}"#).await;
         let regions = setting_value(&v["data"]["settings"], "REGIONS_ALL").unwrap();
         assert!(!regions.contains("us"), "regions: {}", regions);
         assert!(regions.contains("eu"), "regions: {}", regions);
 
         // validated string settings accept a known variant
-        let v = gql(&client, r#"{"query":"mutation { setPreferRegions(value: \"broad\") }"}"#).await;
+        let v = gql(
+            &client,
+            r#"{"query":"mutation { setPreferRegions(value: \"broad\") }"}"#,
+        )
+        .await;
         assert_eq!(v["data"]["setPreferRegions"], json!(true));
         let v = gql(&client, r#"{"query":"{ settings { key value } }"}"#).await;
         assert_eq!(
@@ -90,7 +110,11 @@ async fn test() -> Result<()> {
             Some("broad".to_string())
         );
 
-        let v = gql(&client, r#"{"query":"mutation { setPreferVersions(value: \"new\") }"}"#).await;
+        let v = gql(
+            &client,
+            r#"{"query":"mutation { setPreferVersions(value: \"new\") }"}"#,
+        )
+        .await;
         assert_eq!(v["data"]["setPreferVersions"], json!(true));
 
         let v = gql(
@@ -116,8 +140,16 @@ async fn test() -> Result<()> {
         assert_eq!(v["data"]["setDirectory"], json!(true));
 
         // a value rejected by the validator surfaces as a GraphQL error, not a panic
-        let v = gql(&client, r#"{"query":"mutation { setPreferRegions(value: \"not-a-region\") }"}"#).await;
-        assert!(v["errors"].is_array(), "expected validator error, got: {}", v);
+        let v = gql(
+            &client,
+            r#"{"query":"mutation { setPreferRegions(value: \"not-a-region\") }"}"#,
+        )
+        .await;
+        assert!(
+            v["errors"].is_array(),
+            "expected validator error, got: {}",
+            v
+        );
         assert!(v["data"].is_null() || v["data"]["setPreferRegions"].is_null());
     };
 

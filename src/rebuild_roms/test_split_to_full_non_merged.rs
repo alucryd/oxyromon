@@ -10,12 +10,14 @@ async fn import_file(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    tmp_directory: &PathBuf,
+    tmp_directory: &Path,
     fixture: &str,
     name: &str,
 ) {
     let path = tmp_directory.join(name);
-    fs::copy(Path::new("tests").join(fixture), &path).await.unwrap();
+    fs::copy(Path::new("tests").join(fixture), &path)
+        .await
+        .unwrap();
     let result = import_other(
         connection,
         progress_bar,
@@ -50,14 +52,18 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721) (MAME Rebuild).dat"]);
+    let matches = import_dats::subcommand().get_matches_from([
+        "import-dats",
+        "tests/Test System (20200721) (MAME Rebuild).dat",
+    ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
     let system = find_arcade_systems(&mut connection).await.remove(0);
-    let system_directory = get_system_directory(&mut connection, &system).await.unwrap();
+    let system_directory = get_system_directory(&mut connection, &system)
+        .await
+        .unwrap();
 
     // import BIOS and parent fully, clone only its exclusive rom
     import_file(
@@ -102,13 +108,16 @@ async fn test() {
         .await
         .unwrap();
 
-    let clone = find_game_by_name_and_bios_and_system_id(&mut connection, "Test Clone", false, system.id)
-        .await
-        .unwrap();
+    let clone =
+        find_game_by_name_and_bios_and_system_id(&mut connection, "Test Clone", false, system.id)
+            .await
+            .unwrap();
 
     // when rebuilding to FULL_NON_MERGED
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "FULL_NON_MERGED"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     // then the clone got its own copies of the shared roms including the BIOS rom
     let system = find_system_by_id(&mut connection, system.id).await;

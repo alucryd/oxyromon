@@ -10,12 +10,14 @@ async fn import_file(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
-    tmp_directory: &PathBuf,
+    tmp_directory: &Path,
     fixture: &str,
     name: &str,
 ) {
     let path = tmp_directory.join(name);
-    fs::copy(Path::new("tests").join(fixture), &path).await.unwrap();
+    fs::copy(Path::new("tests").join(fixture), &path)
+        .await
+        .unwrap();
     let result = import_other(
         connection,
         progress_bar,
@@ -50,8 +52,10 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand()
-        .get_matches_from(["import-dats", "tests/Test System (20200721) (MAME Rebuild).dat"]);
+    let matches = import_dats::subcommand().get_matches_from([
+        "import-dats",
+        "tests/Test System (20200721) (MAME Rebuild).dat",
+    ]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
@@ -103,7 +107,9 @@ async fn test() {
 
     // first expand to FULL_NON_MERGED so the clone owns a copy of the BIOS rom too
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "FULL_NON_MERGED"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
     let system = find_system_by_id(&mut connection, system.id).await;
     assert_eq!(system.merging, Merging::FullNonMerged as i64);
 
@@ -116,14 +122,18 @@ async fn test() {
             .await
             .unwrap();
     assert!(clone_bios_rom.romfile_id.is_some());
-    let clone_bios_path = rom_directory
-        .path()
-        .join(find_romfile_by_id(&mut connection, clone_bios_rom.romfile_id.unwrap()).await.path);
+    let clone_bios_path = rom_directory.path().join(
+        find_romfile_by_id(&mut connection, clone_bios_rom.romfile_id.unwrap())
+            .await
+            .path,
+    );
     assert!(clone_bios_path.is_file());
 
     // when trimming to NON_MERGED
     let matches = subcommand().get_matches_from(["rebuild-roms", "--all", "-m", "NON_MERGED"]);
-    main(&mut connection, &matches, &progress_bar).await.unwrap();
+    main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     // then only the clone's BIOS rom was dropped
     let system = find_system_by_id(&mut connection, system.id).await;
@@ -137,10 +147,18 @@ async fn test() {
     assert!(!clone_bios_path.is_file());
 
     // the parent-shared roms are kept
-    for name in ["Test Clone.rom", "Test Clone Common.rom", "Test Clone Only.rom"] {
+    for name in [
+        "Test Clone.rom",
+        "Test Clone Common.rom",
+        "Test Clone Only.rom",
+    ] {
         let rom = find_rom_by_name_and_game_id(&mut connection, name, clone.id)
             .await
             .unwrap();
-        assert!(rom.romfile_id.is_some(), "\"{}\" should have been kept", name);
+        assert!(
+            rom.romfile_id.is_some(),
+            "\"{}\" should have been kept",
+            name
+        );
     }
 }

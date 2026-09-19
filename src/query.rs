@@ -24,7 +24,12 @@ use sqlx::{AssertSqlSafe, FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-async fn system_size(ctx: &Context<'_>, system_id: i64, actual: bool, one_region: bool) -> Result<i64> {
+async fn system_size(
+    ctx: &Context<'_>,
+    system_id: i64,
+    actual: bool,
+    one_region: bool,
+) -> Result<i64> {
     let pool = ctx.data_unchecked::<SqlitePool>();
     let sorting = if one_region {
         "AND g.sorting = 1\n                    "
@@ -243,7 +248,7 @@ impl QueryRoot {
             ("ctrtool", ctrtool::get_version().await),
             ("flips", flips::get_version().await),
             ("maxcso", maxcso::get_version().await),
-            ("nsz", nsz::get_version().await),
+            ("nsz-rs", nsz::get_version().await),
             ("xdelta3", xdelta3::get_version().await),
         ];
         // RVZ and WBFS share a backend when it is the native one, so list it once

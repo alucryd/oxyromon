@@ -42,10 +42,8 @@ pub async fn select_games(
             let mut games: Vec<Game> = vec![];
             for game_name in game_names {
                 games.append(
-                    &mut find_full_games_by_name_and_system_id(
-                        connection, game_name, system_id,
-                    )
-                    .await,
+                    &mut find_full_games_by_name_and_system_id(connection, game_name, system_id)
+                        .await,
                 );
             }
             games.dedup_by_key(|game| game.id);
@@ -62,7 +60,11 @@ pub async fn load_rom_data(
     connection: &mut SqliteConnection,
     games: Vec<Game>,
     original_roms: bool,
-) -> (IndexMap<i64, Vec<Rom>>, HashMap<i64, Game>, HashMap<i64, Romfile>) {
+) -> (
+    IndexMap<i64, Vec<Rom>>,
+    HashMap<i64, Game>,
+    HashMap<i64, Romfile>,
+) {
     let game_ids: Vec<i64> = games.par_iter().map(|game| game.id).collect();
     let roms = if original_roms {
         find_original_roms_with_romfile_by_game_ids(connection, &game_ids).await

@@ -85,7 +85,10 @@ pub async fn main(
     // In unattended mode there is nothing to fall back to, so a system with no
     // matching games is a hard error instead of a silent no-op.
     if headless && games.is_empty() {
-        bail!("No games found for system \"{}\", import its DAT first", system.name);
+        bail!(
+            "No games found for system \"{}\", import its DAT first",
+            system.name
+        );
     }
 
     for ird_path in ird_paths {
@@ -141,8 +144,7 @@ pub async fn main(
                 } else {
                     prompt_for_rom(&roms, None)?
                 };
-                import_ird(connection, progress_bar, game, &irdfile, header, parent_rom)
-                    .await?;
+                import_ird(connection, progress_bar, game, &irdfile, header, parent_rom).await?;
             }
         }
         print_separator(progress_bar);

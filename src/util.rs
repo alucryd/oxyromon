@@ -18,8 +18,8 @@ use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use tempfile::TempDir;
 use tokio::fs;
-use tokio::process::Command;
 use tokio::fs::File;
+use tokio::process::Command;
 use which::which;
 
 static SYSTEM_NAME_REGEX: LazyLock<Regex> =

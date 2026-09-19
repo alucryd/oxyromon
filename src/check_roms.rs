@@ -7,7 +7,6 @@ use super::maxcso;
 use super::maxcso::AsXso;
 use super::mimetype::*;
 use super::model::*;
-use super::nsz;
 use super::nsz::AsNsz;
 use super::progress::*;
 use super::prompt::*;
@@ -150,82 +149,77 @@ async fn check_system(
             ),
         );
 
-        let result;
-        if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
+        let result = if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
             if sevenzip::get_version().await.is_err() {
                 print_error(progress_bar, "Required tool not found: sevenzip");
                 break;
             }
-            result = check_archive(
+            check_archive(
                 &mut transaction,
                 progress_bar,
                 &header,
                 romfile,
                 romfile_roms,
             )
-            .await;
+            .await
         } else if CHD_EXTENSION == romfile_extension {
             if chdman::get_version().await.is_err() {
                 print_error(progress_bar, "Required tool not found: chdman");
                 break;
             }
             let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
-            result = chd_romfile
+            chd_romfile
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
+                .await
         } else if CSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
                 print_error(progress_bar, "Required tool not found: maxcso");
                 break;
             }
-            result = romfile
+            romfile
                 .as_common(&mut transaction)
                 .await?
                 .as_xso()
                 .await?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
+                .await
         } else if NSZ_EXTENSION == romfile_extension {
-            if nsz::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: nsz");
-                break;
-            }
-            result = romfile
+            romfile
                 .as_common(&mut transaction)
                 .await?
                 .as_nsz()?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
+                .await
         } else if RVZ_EXTENSION == romfile_extension {
             if dolphin::get_version().await.is_err() {
                 print_error(progress_bar, "Required tool not found: dolphin-tool");
                 break;
             }
-            result = romfile
+            romfile
                 .as_common(&mut transaction)
                 .await?
                 .as_rvz()?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
+                .await
         } else if ZSO_EXTENSION == romfile_extension {
             if maxcso::get_version().await.is_err() {
                 print_error(progress_bar, "Required tool not found: maxcso");
                 break;
             }
-            result = romfile
+            romfile
                 .as_common(&mut transaction)
                 .await?
                 .as_xso()
                 .await?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
+                .await
         } else {
-            result = romfile
+            romfile
                 .as_common(&mut transaction)
                 .await?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
-                .await;
-        }
+                .await
+        };
 
         if result.is_err() {
             errors += 1;

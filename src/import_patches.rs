@@ -108,15 +108,13 @@ pub async fn import_patch<P: AsRef<Path>>(
     force: bool,
     rom_id: Option<i64>,
 ) -> Result<()> {
-    // When the target ROM is known, the system and game are resolved straight
-    // from the database; otherwise the interactive prompts pick them.
+    // When the target ROM is known it is used directly; otherwise the
+    // interactive prompts pick it.
     match rom_id {
         Some(rom_id) => {
             let rom = find_rom_by_id_opt(connection, rom_id)
                 .await
                 .ok_or_else(|| anyhow::anyhow!("ROM with id {} not found", rom_id))?;
-            let game = find_game_by_id(connection, rom.game_id).await;
-            let system = find_system_by_id(connection, game.system_id).await;
             do_import_patch(
                 connection,
                 progress_bar,
@@ -124,8 +122,6 @@ pub async fn import_patch<P: AsRef<Path>>(
                 patch_format,
                 name,
                 force,
-                &system,
-                &game,
                 &rom,
             )
             .await
@@ -155,8 +151,6 @@ pub async fn import_patch<P: AsRef<Path>>(
                 patch_format,
                 name,
                 force,
-                &system,
-                game,
                 rom,
             )
             .await
@@ -171,8 +165,6 @@ async fn do_import_patch<P: AsRef<Path>>(
     patch_format: &PatchType,
     name: bool,
     force: bool,
-    system: &System,
-    game: &Game,
     rom: &Rom,
 ) -> Result<()> {
     let patch_name = match name {
@@ -204,6 +196,8 @@ async fn do_import_patch<P: AsRef<Path>>(
         extension = format!("{}{}", extension, existing_patches.len());
     }
 
+    let game = find_game_by_id(connection, rom.game_id).await;
+    let system = find_system_by_id(connection, game.system_id).await;
     let mut romfile_path = if game.sorting == Sorting::OneRegion as i64 {
         get_one_region_directory(connection, &system).await?
     } else {

@@ -10,7 +10,6 @@ use super::maxcso;
 use super::maxcso::AsXso;
 use super::mimetype::*;
 use super::model::*;
-use super::nsz;
 use super::nsz::AsNsz;
 use super::progress::*;
 use super::prompt::*;
@@ -486,10 +485,6 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if NSZ_EXTENSION == extension && !as_is {
-        if nsz::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: nsz");
-            return Ok((system_ids, game_ids));
-        }
         if let Some(ids) = import_nsz(
             &mut transaction,
             progress_bar,
@@ -982,14 +977,13 @@ async fn import_archive(
 
         let system_directory = get_system_directory(connection, &system).await?;
 
-        let new_path;
         // put arcade roms and JB folders in subdirectories
-        if system.arcade || game.jbfolder {
+        let new_path = if system.arcade || game.jbfolder {
             let game = find_game_by_id(connection, rom.game_id).await;
-            new_path = system_directory.join(game.name).join(&rom.name);
+            system_directory.join(game.name).join(&rom.name)
         } else {
-            new_path = system_directory.join(&rom.name);
-        }
+            system_directory.join(&rom.name)
+        };
 
         // move file
         copy_file(progress_bar, &original_romfile.path, &new_path, false).await?;
@@ -2412,9 +2406,9 @@ async fn find_rom_by_size_and_hash(
             let game = find_game_by_id(connection, rom.game_id).await;
             roms_games.push((rom, game));
         }
-        if let Some((rom, game)) =
-            prompt_for_roms(&mut roms_games, |(rom, game)| format!("{} ({})", rom.name, game.name))?
-        {
+        if let Some((rom, game)) = prompt_for_roms(&mut roms_games, |(rom, game)| {
+            format!("{} ({})", rom.name, game.name)
+        })? {
             let system = find_system_by_id(connection, game.system_id).await;
             rom_game_system = Some((rom, game, system));
         };
@@ -2438,10 +2432,9 @@ async fn find_rom_by_size_and_hash(
             let system = find_system_by_id(connection, game.system_id).await;
             roms_games_systems.push((rom, game, system));
         }
-        rom_game_system = prompt_for_roms(
-            &mut roms_games_systems,
-            |(rom, game, system)| format!("{} ({}) [{}]", rom.name, game.name, system.name),
-        )?;
+        rom_game_system = prompt_for_roms(&mut roms_games_systems, |(rom, game, system)| {
+            format!("{} ({}) [{}]", rom.name, game.name, system.name)
+        })?;
     }
 
     // abort if rom already has a file
@@ -2523,36 +2516,34 @@ async fn find_sfb_rom_by_md5(
         }
     }
 
-    let rom_game: Option<(Rom, Game)>;
-
     // let user choose the rom if there are multiple matches
-    if roms.len() == 1 || unattended_mode == UnattendedMode::First {
-        let rom = roms.remove(0);
-        let game = find_game_by_id(connection, rom.game_id).await;
-        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
-        rom_game = Some((rom, game));
-    // skip if unattended mode is none
-    } else if unattended_mode == UnattendedMode::Skip {
-        print_warning(progress_bar, "Multiple matches, skipping");
-        return Ok(MatchResult {
-            state: MatchState::Skipped,
-            system: None,
-            game: None,
-            rom: None,
-            hash_algorithm: None,
-            hash: None,
-        });
-    } else {
-        let mut roms_games: Vec<(Rom, Game)> = vec![];
-        for rom in roms {
+    let rom_game: Option<(Rom, Game)> =
+        if roms.len() == 1 || unattended_mode == UnattendedMode::First {
+            let rom = roms.remove(0);
             let game = find_game_by_id(connection, rom.game_id).await;
-            roms_games.push((rom, game));
-        }
-        rom_game = prompt_for_roms(
-            &mut roms_games,
-            |(rom, game)| format!("{} ({})", rom.name, game.name),
-        )?;
-    }
+            print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
+            Some((rom, game))
+        // skip if unattended mode is none
+        } else if unattended_mode == UnattendedMode::Skip {
+            print_warning(progress_bar, "Multiple matches, skipping");
+            return Ok(MatchResult {
+                state: MatchState::Skipped,
+                system: None,
+                game: None,
+                rom: None,
+                hash_algorithm: None,
+                hash: None,
+            });
+        } else {
+            let mut roms_games: Vec<(Rom, Game)> = vec![];
+            for rom in roms {
+                let game = find_game_by_id(connection, rom.game_id).await;
+                roms_games.push((rom, game));
+            }
+            prompt_for_roms(&mut roms_games, |(rom, game)| {
+                format!("{} ({})", rom.name, game.name)
+            })?
+        };
 
     // abort if rom already has a file
     if let Some((rom, _)) = &rom_game
