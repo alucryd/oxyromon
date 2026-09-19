@@ -1,0 +1,43 @@
+[package]
+name = "nsz-rs"
+version = "0.2.0"
+edition = "2021"
+description = "Rust port of nsz (NSP <-> NSZ zstd compression)"
+license = "MIT"
+repository = "https://github.com/alucryd/nsz-rs"
+keywords = ["nintendo-switch", "nsz", "nsp", "zstd", "compression"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "nsz_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nszrs"
+path = "src/bin/nszrs.rs"
+required-features = ["cli"]
+
+[dependencies]
+aes = "0.9"
+sha2 = "0.11"
+crc32fast = "1.5"
+hex = "0.4"
+rayon = "1.12"
+thiserror = "2"
+# `experimental` exposes frame progression, used for accurate solid progress.
+zstd = { version = "0.14", features = ["zstdmt", "experimental"] }
+indicatif = { version = "0.18.6", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["cli"]
+cli = ["dep:indicatif"]
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"
