@@ -194,9 +194,14 @@ fn progress_follows_compression_not_read_ahead() {
         .unwrap();
     let mut calls = Vec::new();
     pool.install(|| {
-        compress_nsp(&nsp_path, &nsz_path, &keys, &BLOCK, false, &mut |n| {
-            calls.push(n)
-        })
+        compress_nsp(
+            &nsp_path,
+            &nsz_path,
+            || Ok(keys.clone()),
+            &BLOCK,
+            false,
+            &mut |n| calls.push(n),
+        )
     })
     .unwrap();
     let total: u64 = calls.iter().sum();
@@ -262,16 +267,30 @@ fn nsp_roundtrips_byte_for_byte_with_verification() {
     for c in [SOLID, BLOCK] {
         // Progress reports add up to exactly the input size, both ways.
         let mut read = 0;
-        compress_nsp(&nsp_path, &nsz_path, &keys, &c, false, &mut |n| read += n).unwrap();
+        compress_nsp(
+            &nsp_path,
+            &nsz_path,
+            || Ok(keys.clone()),
+            &c,
+            false,
+            &mut |n| read += n,
+        )
+        .unwrap();
         assert_eq!(read, nsp.len() as u64);
         let nsz = std::fs::read(&nsz_path).unwrap();
         assert!(nsz.len() < nsp.len());
         assert!(nsz.windows(11).any(|w| w == b"program.ncz"));
 
         let mut read = 0;
-        let report = decompress_nsz(&nsz_path, &out_path, &keys, false, true, true, &mut |n| {
-            read += n
-        })
+        let report = decompress_nsz(
+            &nsz_path,
+            &out_path,
+            || Ok(keys.clone()),
+            false,
+            true,
+            true,
+            &mut |n| read += n,
+        )
         .unwrap();
         assert_eq!(read, nsz.len() as u64);
         assert_eq!((report.verified, report.corrupted), (1, 0));
@@ -295,16 +314,50 @@ fn failed_decompression_removes_the_output() {
 
     // Hash mismatch under strict verification.
     std::fs::write(&nsp_path, build_nsp(&keys, Some([0xFF; 32]))).unwrap();
-    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true, &mut |_| {}).unwrap();
-    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, true, true, &mut |_| {}).is_err());
+    compress_nsp(
+        &nsp_path,
+        &nsz_path,
+        || Ok(keys.clone()),
+        &SOLID,
+        true,
+        &mut |_| {},
+    )
+    .unwrap();
+    assert!(decompress_nsz(
+        &nsz_path,
+        &out_path,
+        || Ok(keys.clone()),
+        true,
+        true,
+        true,
+        &mut |_| {}
+    )
+    .is_err());
     assert!(!out_path.exists());
 
     // Truncated container.
     std::fs::write(&nsp_path, build_nsp(&keys, None)).unwrap();
-    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, true, &mut |_| {}).unwrap();
+    compress_nsp(
+        &nsp_path,
+        &nsz_path,
+        || Ok(keys.clone()),
+        &SOLID,
+        true,
+        &mut |_| {},
+    )
+    .unwrap();
     let nsz = std::fs::read(&nsz_path).unwrap();
     std::fs::write(&nsz_path, &nsz[..nsz.len() - 0x100]).unwrap();
-    assert!(decompress_nsz(&nsz_path, &out_path, &keys, true, false, false, &mut |_| {}).is_err());
+    assert!(decompress_nsz(
+        &nsz_path,
+        &out_path,
+        || Ok(keys.clone()),
+        true,
+        false,
+        false,
+        &mut |_| {}
+    )
+    .is_err());
     assert!(!out_path.exists());
 }
 
@@ -341,9 +394,60 @@ fn merged_nsp_verifies_against_every_cnmt() {
         dir.path().join("b.nsp"),
     );
     std::fs::write(&nsp_path, &nsp).unwrap();
-    compress_nsp(&nsp_path, &nsz_path, &keys, &SOLID, false, &mut |_| {}).unwrap();
-    let report =
-        decompress_nsz(&nsz_path, &out_path, &keys, false, true, true, &mut |_| {}).unwrap();
+    compress_nsp(
+        &nsp_path,
+        &nsz_path,
+        || Ok(keys.clone()),
+        &SOLID,
+        false,
+        &mut |_| {},
+    )
+    .unwrap();
+    let report = decompress_nsz(
+        &nsz_path,
+        &out_path,
+        || Ok(keys.clone()),
+        false,
+        true,
+        true,
+        &mut |_| {},
+    )
+    .unwrap();
     assert_eq!((report.verified, report.corrupted), (2, 0));
     assert_eq!(std::fs::read(&out_path).unwrap(), nsp);
+}
+
+#[test]
+fn keys_are_only_loaded_when_needed() {
+    // No NCAs (like a homebrew NSP): neither direction touches the keys, even
+    // with strict verification.
+    let nsp = build_pfs0(&[("main", b"code"), ("main.npdm", b"meta")]);
+    let dir = tempfile::tempdir().unwrap();
+    let (nsp_path, nsz_path, out_path) = (
+        dir.path().join("a.nsp"),
+        dir.path().join("a.nsz"),
+        dir.path().join("b.nsp"),
+    );
+    std::fs::write(&nsp_path, &nsp).unwrap();
+    let no_keys = || -> nsz_rs::error::Result<Keys> { panic!("keys loaded") };
+    compress_nsp(&nsp_path, &nsz_path, no_keys, &SOLID, false, &mut |_| {}).unwrap();
+    decompress_nsz(
+        &nsz_path,
+        &out_path,
+        no_keys,
+        false,
+        true,
+        true,
+        &mut |_| {},
+    )
+    .unwrap();
+    assert_eq!(std::fs::read(&out_path).unwrap(), nsp);
+
+    // An NCA does need them, and a failed load fails the run.
+    let keys = build_keys();
+    std::fs::write(&nsp_path, build_nsp(&keys, None)).unwrap();
+    let missing = || Keys::load(dir.path().join("prod.keys"), true);
+    let err = compress_nsp(&nsp_path, &nsz_path, missing, &SOLID, false, &mut |_| {}).unwrap_err();
+    assert!(err.to_string().contains("prod.keys"), "{err}");
+    assert!(!nsz_path.exists());
 }

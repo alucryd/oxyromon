@@ -131,6 +131,8 @@ pub struct FileReport {
 
 /// Decompress an NSZ file into an NSP at `output`.
 ///
+/// - `keys`: loads the key set; only called when `verify` has a CNMT to read,
+///   since NCZ members carry their own section keys.
 /// - `fix_padding`: re-pad the output header to 0x20 alignment instead of
 ///   preserving the input's first-file offset.
 /// - `verify`: check each decompressed NCA's SHA-256 against the CNMT content
@@ -142,7 +144,7 @@ pub struct FileReport {
 pub fn decompress_nsz(
     input: &Path,
     output: &Path,
-    keys: &Keys,
+    keys: impl FnOnce() -> Result<Keys>,
     fix_padding: bool,
     verify: bool,
     strict: bool,
@@ -209,15 +211,16 @@ pub fn decompress_nsz(
 /// Compress an NSP into an NSZ at `output`.
 ///
 /// Program and PublicData NCAs whose sections tile the file are compressed to
-/// `.ncz` members; everything else is copied verbatim (as nsz does). Title keys
-/// for rights-managed NCAs come from the NSP's tickets, then `keys`'
+/// `.ncz` members; everything else is copied verbatim (as nsz does). `keys`
+/// loads the key set, and is only called once the first NCA is reached. Title
+/// keys for rights-managed NCAs come from the NSP's tickets, then the key set's
 /// `title.keys`. `progress` is called with each newly compressed chunk of the
 /// input, in bytes; for a well-formed container the calls add up to the input
 /// file size. On error the partial output file is removed.
 pub fn compress_nsp(
     input: &Path,
     output: &Path,
-    keys: &Keys,
+    keys: impl FnOnce() -> Result<Keys>,
     compression: &Compression,
     fix_padding: bool,
     progress: &mut dyn FnMut(u64),
@@ -225,6 +228,8 @@ pub fn compress_nsp(
     let mut in_file = File::open(input)?;
     let (entries, in_header_size) = read_pfs0(&mut in_file)?;
     let title_keys = collect_title_keys(&mut in_file, &entries)?;
+    let mut load_keys = Some(keys);
+    let mut loaded = None;
 
     // `.nca` -> `.ncz` keeps name lengths, so the header size is known up front.
     let (header_size, string_table_size) = header_geometry(&entries, in_header_size, fix_padding);
@@ -236,16 +241,22 @@ pub fn compress_nsp(
             let mut at = member_progress(progress);
             let mut sub = SubReader::new(&mut in_file, e);
             let compressed = match e.name.strip_suffix(".nca") {
-                Some(stem) => compress_nca(
-                    &mut sub,
-                    e.size,
-                    keys,
-                    &title_keys,
-                    compression,
-                    out,
-                    &mut at,
-                )?
-                .map(|_| format!("{stem}.ncz")),
+                Some(stem) => {
+                    if let Some(load) = load_keys.take() {
+                        loaded = Some(load()?);
+                    }
+                    let keys = loaded.as_ref().expect("keys loaded before the first NCA");
+                    compress_nca(
+                        &mut sub,
+                        e.size,
+                        keys,
+                        &title_keys,
+                        compression,
+                        out,
+                        &mut at,
+                    )?
+                    .map(|_| format!("{stem}.ncz"))
+                }
                 None => None,
             };
             let name = match compressed {
@@ -527,24 +538,25 @@ fn parse_ticket(tik: &[u8]) -> Option<([u8; 16], [u8; 16])> {
 
 /// Return the content-entry hashes (lowercase hex) of every CNMT in the
 /// container: merged NSPs (base + update + DLC) carry one per title. Mirrors
-/// `FileExistingChecks.ExtractHashes`.
+/// `FileExistingChecks.ExtractHashes`. `keys` is only called once a CNMT is
+/// found.
 fn collect_content_hashes(
     f: &mut File,
     entries: &[Pfs0Entry],
-    keys: &Keys,
+    keys: impl FnOnce() -> Result<Keys>,
     title_keys: &TitleKeys,
 ) -> Result<HashSet<String>> {
-    let mut hashes = HashSet::new();
-    let mut found = false;
-    for entry in entries
+    let cnmts: Vec<_> = entries
         .iter()
         .filter(|e| nca_stem(&e.name).is_some_and(|stem| stem.ends_with(".cnmt")))
-    {
-        hashes.extend(cnmt_hashes(f, entry, keys, title_keys)?);
-        found = true;
-    }
-    if !found {
+        .collect();
+    if cnmts.is_empty() {
         return Err(Error::Corrupt("no cnmt member found in container".into()));
+    }
+    let keys = keys()?;
+    let mut hashes = HashSet::new();
+    for entry in cnmts {
+        hashes.extend(cnmt_hashes(f, entry, &keys, title_keys)?);
     }
     Ok(hashes)
 }

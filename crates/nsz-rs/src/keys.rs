@@ -62,6 +62,13 @@ pub struct Keys {
     title_keys: HashMap<String, [u8; 16]>,
 }
 
+/// Read a keys file, naming it in the error: with keys loaded lazily, the
+/// failure can surface far from where the path was given.
+fn read_text(path: &Path) -> Result<String> {
+    std::fs::read_to_string(path)
+        .map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", path.display())).into())
+}
+
 fn parse_line(line: &str) -> Option<(String, String)> {
     // Mirrors: r"\s*([a-z0-9_]+)\s*=\s*([A-F0-9]+)\s*" (case-insensitive)
     let eq = line.find('=')?;
@@ -86,8 +93,7 @@ impl Keys {
     /// CRC32-verified and a mismatch is an error. Synthetic test keys should pass
     /// `false`.
     pub fn load(path: impl AsRef<Path>, verify_crc: bool) -> Result<Self> {
-        let text = std::fs::read_to_string(path)?;
-        Self::from_str(&text, verify_crc)
+        Self::from_str(&read_text(path.as_ref())?, verify_crc)
     }
 
     pub fn from_str(text: &str, verify_crc: bool) -> Result<Self> {
@@ -157,7 +163,7 @@ impl Keys {
 
     /// Load a `title.keys` file (rightsId = titleKeyHex) into the rights map.
     pub fn load_title_keys(&mut self, path: impl AsRef<Path>) -> Result<()> {
-        let text = std::fs::read_to_string(path)?;
+        let text = read_text(path.as_ref())?;
         for line in text.lines() {
             if let Some((k, v)) = parse_line(line) {
                 let bytes = hex::decode(&v)?;
