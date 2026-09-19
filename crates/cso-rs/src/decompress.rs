@@ -12,13 +12,11 @@ use std::path::Path;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rayon::{ThreadPool, ThreadPoolBuilder};
 
+use crate::Stats;
 use crate::error::{Error, Result};
-use crate::format::{
-    Format, Header, HEADER_SIZE, INDEX_OFFSET_MASK, INDEX_UNCOMPRESSED,
-};
+use crate::format::{Format, HEADER_SIZE, Header, INDEX_OFFSET_MASK, INDEX_UNCOMPRESSED};
 use crate::io::read_exact_at;
 use crate::lz4;
-use crate::{Progress, Stats};
 
 /// Tuning for a decompression run.
 #[derive(Debug, Clone, Copy, Default)]
@@ -28,11 +26,15 @@ pub struct DecompressOptions {
 }
 
 /// Decompress a CSO or ZSO into the original ISO.
+///
+/// `progress` is called with each newly consumed chunk of the input, in bytes;
+/// for a well-formed file the calls add up to the input file size. On error the
+/// partial output file is removed.
 pub fn decompress(
     input: &Path,
     output: &Path,
     options: &DecompressOptions,
-    progress: &mut dyn FnMut(Progress),
+    progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
     let in_file = File::open(input)?;
     let file_size = in_file.metadata()?.len();
@@ -47,9 +49,12 @@ pub fn decompress(
     read_exact_at(&in_file, &mut index_bytes, HEADER_SIZE as u64)
         .map_err(|e| Error::Corrupt(format!("could not read the block index: {e}")))?;
     let index: Vec<u32> = index_bytes
-        .chunks_exact(4)
-        .map(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|w| u32::from_le_bytes(*w))
         .collect();
+    let offset = |i: usize| u64::from(index[i] & INDEX_OFFSET_MASK) * align;
 
     // A block's stored span is the gap between index entries, which includes the
     // alignment padding. Bound it so a corrupt index cannot ask for gigabytes.
@@ -75,42 +80,45 @@ pub fn decompress(
         .create(true)
         .truncate(true)
         .open(output)?;
-    let mut writer = BufWriter::with_capacity(256 * 1024, out_file);
+    // Everything from here on writes to `output`, so a failure removes it.
+    let result = (|| {
+        let mut writer = BufWriter::with_capacity(256 * 1024, out_file);
+        // The header and index, up to where the first block starts.
+        progress(offset(0));
 
-    for wave_start in (0..blocks).step_by(wave) {
-        let wave_end = (wave_start + wave as u64).min(blocks);
-        let chunks: Vec<Vec<u8>> = pool.install(|| {
-            (wave_start..wave_end)
-                .into_par_iter()
-                .map(|i| {
-                    let block_off = i * u64::from(block_size);
-                    let out_len = u64::from(block_size).min(total - block_off) as usize;
-                    reader.read(i, out_len)
-                })
-                .collect::<Result<Vec<_>>>()
-        })?;
+        for wave_start in (0..blocks).step_by(wave) {
+            let wave_end = (wave_start + wave as u64).min(blocks);
+            let chunks: Vec<Vec<u8>> = pool.install(|| {
+                (wave_start..wave_end)
+                    .into_par_iter()
+                    .map(|i| {
+                        let block_off = i * u64::from(block_size);
+                        let out_len = u64::from(block_size).min(total - block_off) as usize;
+                        reader.read(i, out_len)
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })?;
 
-        for (offset_in_wave, chunk) in chunks.into_iter().enumerate() {
-            let i = wave_start + offset_in_wave as u64;
-            writer.write_all(&chunk)?;
-            let done = ((i + 1) * u64::from(block_size)).min(total);
-            progress(Progress {
-                done,
-                total,
-                written: i * u64::from(block_size) + chunk.len() as u64,
-            });
+            for (offset_in_wave, chunk) in chunks.into_iter().enumerate() {
+                let i = wave_start + offset_in_wave as u64;
+                writer.write_all(&chunk)?;
+                // The block's stored span, padding included; `read` validated it.
+                progress(offset(i as usize + 1) - offset(i as usize));
+            }
         }
+
+        let out_file = writer.into_inner().map_err(|e| Error::Io(e.into_error()))?;
+        out_file.set_len(total)?;
+
+        Ok(Stats {
+            input_size: file_size,
+            output_size: total,
+        })
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
     }
-
-    let out_file = writer
-        .into_inner()
-        .map_err(|e| Error::Io(e.into_error()))?;
-    out_file.set_len(total)?;
-
-    Ok(Stats {
-        input_size: file_size,
-        output_size: total,
-    })
+    result
 }
 
 /// Read and validate just the header.
@@ -196,11 +204,11 @@ impl BlockReader<'_> {
 /// alignment padding that follows a block's stream.
 fn inflate_raw(src: &[u8], dst: &mut [u8]) -> Result<usize> {
     unsafe {
-        // SAFETY: z_stream contains non-null function pointers, so a zeroed
-        // instance is not a valid z_stream on its own. We use MaybeUninit to
-        // avoid creating an invalid value in safe Rust, then immediately pass
-        // the pointer to inflateInit2_, which overwrites every field before
-        // any read occurs.
+        // SAFETY: z_stream holds non-nullable function pointers, so an
+        // all-zero one is not a valid Rust value: it stays behind MaybeUninit
+        // and is only touched through the raw pointer. Zero is what zlib wants
+        // there, though: inflateInit2_ reads zalloc, zfree and opaque, and Z_NULL
+        // makes it install its default allocator in their place.
         let mut z = mem::MaybeUninit::<libz_sys::z_stream>::zeroed();
         let zp = z.as_mut_ptr();
         let init = libz_sys::inflateInit2_(

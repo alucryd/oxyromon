@@ -8,10 +8,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
 
     #[error("bad magic: expected {expected}, found {found}")]
-    BadMagic {
-        expected: &'static str,
-        found: String,
-    },
+    BadMagic { expected: String, found: String },
 
     #[error("unsupported format: {0}")]
     Unsupported(String),
@@ -19,14 +16,8 @@ pub enum Error {
     #[error("invalid option: {0}")]
     InvalidOption(String),
 
-    #[error("corrupt input: {0}")]
+    #[error("corrupt data: {0}")]
     Corrupt(String),
-
-    #[error("compression failed: {0}")]
-    Compression(String),
-
-    #[error("could not write output: {0}")]
-    Output(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

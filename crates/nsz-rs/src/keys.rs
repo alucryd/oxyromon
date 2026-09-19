@@ -113,16 +113,16 @@ impl Keys {
                 .cloned()
                 .or_else(|| raw.get(&name.replace("nca_", "")).cloned())
                 .ok_or_else(|| Error::MissingKey(name.to_string()))?;
-            if verify_crc {
-                if let Some(&(_, expected)) = CRC32_CHECKSUMS.iter().find(|(k, _)| *k == name) {
-                    let mut hasher = crc32fast::Hasher::new();
-                    hasher.update(&bytes);
-                    let got = hasher.finalize();
-                    if got != expected {
-                        return Err(Error::InvalidKey(format!(
-                            "{name} crc32 mismatch (expected {expected}, got {got})"
-                        )));
-                    }
+            if verify_crc
+                && let Some(&(_, expected)) = CRC32_CHECKSUMS.iter().find(|(k, _)| *k == name)
+            {
+                let mut hasher = crc32fast::Hasher::new();
+                hasher.update(&bytes);
+                let got = hasher.finalize();
+                if got != expected {
+                    return Err(Error::InvalidKey(format!(
+                        "{name} crc32 mismatch (expected {expected}, got {got})"
+                    )));
                 }
             }
             bytes

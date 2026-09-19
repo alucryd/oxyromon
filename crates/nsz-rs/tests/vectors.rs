@@ -57,11 +57,15 @@ fn key_area_key_derivation_matches_python() {
 #[test]
 fn unwrap_titlekey_matches_python() {
     let keys = build_keys();
-    for (gen, wrapped, expected) in v::UNWRAP_TITLEKEY {
-        let g = usize::from_str_radix(gen, 16).unwrap();
+    for (generation, wrapped, expected) in v::UNWRAP_TITLEKEY {
+        let g = usize::from_str_radix(generation, 16).unwrap();
         let w = key16(wrapped);
         let got = keys.unwrap_title_key(&w, g).unwrap();
-        assert_eq!(hex::encode(got), *expected, "unwrap gen {gen}");
+        assert_eq!(
+            hex::encode(got),
+            *expected,
+            "unwrap generation {generation}"
+        );
     }
 }
 

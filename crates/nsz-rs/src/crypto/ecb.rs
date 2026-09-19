@@ -3,8 +3,8 @@
 //! Mirrors `nsz.nut.aes128.AESECB` for the block-aligned operations the rest of
 //! the library actually uses (key derivation, keyblock unwrap).
 
-use aes::cipher::{BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 use aes::Aes128;
+use aes::cipher::{BlockCipherDecrypt, BlockCipherEncrypt, KeyInit};
 
 pub const BLOCK_SIZE: usize = 0x10;
 

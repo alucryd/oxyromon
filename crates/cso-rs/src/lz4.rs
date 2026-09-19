@@ -1,7 +1,7 @@
 //! LZ4 block helpers.
 //!
-//! Compression goes straight to liblz4 so the output matches what maxcso
-//! writes. Decompression is done here instead, because a CSO/ZSO block's stored
+//! Compression goes straight to liblz4's HC compressor. Decompression is done
+//! here instead, because a CSO/ZSO block's stored
 //! span is `next_offset - offset`, which includes the alignment padding that
 //! `index_shift > 0` inserts after every block. liblz4's exact-length decoder
 //! rejects that trailing garbage and `lz4_flex` has no partial mode at all, so
@@ -24,7 +24,9 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
 
     while op < dst.len() {
         let Some(&token) = src.get(ip) else {
-            return Err(Error::Corrupt("lz4 block ended before the output was full".into()));
+            return Err(Error::Corrupt(
+                "lz4 block ended before the output was full".into(),
+            ));
         };
         ip += 1;
 
@@ -33,7 +35,9 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
         if lit_len == 15 {
             loop {
                 let Some(&b) = src.get(ip) else {
-                    return Err(Error::Corrupt("lz4 literal length ran off the end of the block".into()));
+                    return Err(Error::Corrupt(
+                        "lz4 literal length ran off the end of the block".into(),
+                    ));
                 };
                 ip += 1;
                 lit_len = lit_len
@@ -49,7 +53,9 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
         // is cut off by the output limit.
         let take = lit_len.min(dst.len() - op);
         let Some(lits) = src.get(ip..ip + take) else {
-            return Err(Error::Corrupt("lz4 literals ran off the end of the block".into()));
+            return Err(Error::Corrupt(
+                "lz4 literals ran off the end of the block".into(),
+            ));
         };
         dst[op..op + take].copy_from_slice(lits);
         op += take;
@@ -77,7 +83,9 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
         if (token & 0xF) == 15 {
             loop {
                 let Some(&b) = src.get(ip) else {
-                    return Err(Error::Corrupt("lz4 match length ran off the end of the block".into()));
+                    return Err(Error::Corrupt(
+                        "lz4 match length ran off the end of the block".into(),
+                    ));
                 };
                 ip += 1;
                 match_len = match_len
@@ -105,28 +113,6 @@ pub fn decompress_bounded(src: &[u8], dst: &mut [u8]) -> Result<usize> {
     Ok(op)
 }
 
-/// Compress one block with the fast LZ4 compressor.
-///
-/// # Safety (internal)
-/// `dst` must be at least `compress_bound(src.len())` bytes long.
-pub fn compress_default(src: &[u8], dst: &mut [u8]) -> Option<usize> {
-    // SAFETY: the caller (method::compress_block) allocates scratch via
-    // scratch_size(), which is >= compress_bound(src.len()).
-    let n = unsafe {
-        lz4_sys::LZ4_compress_default(
-            src.as_ptr().cast::<std::ffi::c_char>(),
-            dst.as_mut_ptr().cast::<std::ffi::c_char>(),
-            src.len() as i32,
-            dst.len() as i32,
-        )
-    };
-    if n > 0 {
-        Some(n as usize)
-    } else {
-        None
-    }
-}
-
 /// Compress one block with LZ4 HC at `level` (1..=16).
 ///
 /// # Safety (internal)
@@ -143,11 +129,7 @@ pub fn compress_hc(src: &[u8], dst: &mut [u8], level: i32) -> Option<usize> {
             level,
         )
     };
-    if n > 0 {
-        Some(n as usize)
-    } else {
-        None
-    }
+    if n > 0 { Some(n as usize) } else { None }
 }
 
 /// Upper bound on the compressed size of `len` input bytes.
@@ -195,15 +177,14 @@ mod tests {
                 let n = compress_hc(&src, &mut buf, level).unwrap();
                 let mut back = vec![0u8; src.len()];
                 let got = decompress_bounded(&buf[..n], &mut back).unwrap();
-                assert_eq!(got, src.len(), "level {level} filled {got} of {}", src.len());
+                assert_eq!(
+                    got,
+                    src.len(),
+                    "level {level} filled {got} of {}",
+                    src.len()
+                );
                 assert_eq!(back, src, "level {level} mismatch");
             }
-            let mut buf = vec![0u8; compress_bound(src.len())];
-            let n = compress_default(&src, &mut buf).unwrap();
-            let mut back = vec![0u8; src.len()];
-            let got = decompress_bounded(&buf[..n], &mut back).unwrap();
-            assert_eq!(got, src.len());
-            assert_eq!(back, src);
         }
     }
 
@@ -276,4 +257,3 @@ mod tests {
         assert_eq!(back, encoded[3..]);
     }
 }
-

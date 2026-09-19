@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use crate::crypto::ctr;
 use crate::error::{Error, Result};
 use crate::format::nca::is_ctr;
-use crate::format::ncz::{self, BlockHeader, Section, INCOMPRESSIBLE_HEADER_SIZE};
+use crate::format::ncz::{self, BlockHeader, INCOMPRESSIBLE_HEADER_SIZE, Section};
 use crate::format::read_vec;
 
 const CHUNK: usize = 0x100000;

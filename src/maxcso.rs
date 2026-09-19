@@ -158,9 +158,18 @@ impl ToXso for IsoRomfile {
             ),
         );
 
+        // The block sizes cso-rs defaults to (`default_block_size`): 8 KiB for
+        // CSO, which an ARK-5 PSP plays, or 16 KiB from 2 GiB, where only PS2
+        // DVDs are; 2 KiB for ZSO, the only size Open PS2 Loader reads.
+        let block_size = match xso_type {
+            XsoType::Cso if self.romfile.path.metadata()?.len() >= 0x8000_0000 => 16384,
+            XsoType::Cso => 8192,
+            XsoType::Zso => 2048,
+        };
+
         run_tool(
             Command::new(MAXCSO)
-                .arg("--block=2048")
+                .arg(format!("--block={block_size}"))
                 .arg(format!(
                     "--format={}",
                     match xso_type {

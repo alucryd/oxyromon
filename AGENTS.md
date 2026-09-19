@@ -9,6 +9,7 @@
 - **Rust Edition:** 2024
 - **MSRV:** 1.94.0
 - **Repository:** https://github.com/alucryd/oxyromon
+- **Workspace:** the `oxyromon` package at the root, plus ports of the external tools it used to shell out to under `crates/` (see [Format Crates](#format-crates))
 
 ## Architecture
 
@@ -178,16 +179,71 @@ Run from the repository root:
 
 Server-only code is gated with `#[cfg(feature = "server")]` throughout the codebase.
 
+## Format Crates
+
+The repository is a Cargo workspace. Next to the `oxyromon` package at the
+root, `crates/` holds ports of the external tools oxyromon used to shell out
+to. Each is a standalone library and CLI, published to crates.io on its own,
+and keeps its upstream's license:
+
+| Crate    | Port of                                     | CLI     | License | Used by oxyromon for |
+| -------- | ------------------------------------------- | ------- | ------- | -------------------- |
+| `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
+| `cso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `csors` | ISC     | not yet (CSO/ZSO still go through `maxcso`) |
+
+`frontend/` and `desktop/` are *not* members: they declare their own
+`[workspace]` so their WebAssembly and webview dependencies stay out of the
+native build.
+
+### Conventions
+
+Every crate follows these, and a new port should too:
+
+- **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
+  crate by `path` and `version` with `default-features = false`.
+- **Synchronous, file to file.** Entry points take the input path, the output
+  path, their settings, and `progress: &mut dyn FnMut(u64)`, called with the
+  input bytes consumed since the last call; the calls add up to the input
+  size. oxyromon runs them on the blocking pool and feeds that to its progress
+  bar (see `run_pipeline` in `src/nsz.rs`).
+- **A failed run removes its partial output**, but only output it created:
+  validate the input before opening the output.
+- **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
+  variants keep shared wording: `Io` ("io error: …"), `BadMagic { expected,
+  found }`, `Unsupported` ("unsupported format: …"), `Corrupt` ("corrupt
+  data: …").
+- **CLIs** use clap's builder API, as oxyromon does, and one indicatif bar per
+  file with the same template. They print `<cli>: wrote <path>` on success and
+  `<cli>: <input>: <error>` on failure, exiting non-zero. Where a CLI stands in
+  for its upstream tool, it keeps the upstream flag names.
+- **Tests** check against the reference implementation, by known-answer
+  vectors or by running the upstream tool, and skip rather than fail when it is
+  missing. Slow ones are `#[ignore]`d.
+- **Manifests** take `edition`, `rust-version` and `repository` from
+  `[workspace.package]` and shared dependencies from
+  `[workspace.dependencies]`. They carry no `[profile]`: only the root's
+  applies.
+- **Releases** are per crate: its own version, a `CHANGELOG.md` in
+  oxyromon's format, and tags named `<crate>-<version>`. Publish a crate before
+  an oxyromon release that needs its new version. `dist.sh` builds the CLIs
+  alongside oxyromon.
+
+```sh
+cargo build --release -p nsz-rs -p cso-rs      # the CLIs
+cargo test -p cso-rs                           # one crate
+cargo test --release -p cso-rs -- --ignored    # its slow tests
+```
+
 ## Testing
 
 ### Running Tests
 
 ```sh
-# Run all tests (includes server feature tests)
-cargo test --features server
+# Run all tests: oxyromon with the server feature, and the format crates
+cargo test --workspace --features oxyromon/server
 
 # Run with coverage
-cargo llvm-cov --features server --lcov --output-path lcov.info
+cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
 
 # Or use the helper script
 ./test.sh
@@ -244,9 +300,9 @@ GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 - Runs on Ubuntu 26.04
 - Installs system dependencies: `bchunk`, `dolphin-emu`, `liblz4-1`, `libuv1`, `libzopfli1`, `mame-tools` (for chdman), `wit`, `xdelta3`
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
-- Runs `clippy` with `--features server`
+- Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`
-- Runs tests with `cargo llvm-cov` for coverage
+- Runs the workspace's tests with `cargo llvm-cov` for coverage
 - Uploads coverage to Codecov
 
 ## Adding a New Subcommand

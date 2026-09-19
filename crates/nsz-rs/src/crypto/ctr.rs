@@ -6,8 +6,8 @@
 //! offset `off` is `off >> 4`. This makes the keystream a pure function of the
 //! absolute offset, so any position can be seeked to without replaying.
 
-use aes::cipher::{Array, BlockCipherEncrypt, KeyInit};
 use aes::Aes128;
+use aes::cipher::{Array, BlockCipherEncrypt, KeyInit};
 
 use crate::crypto::ecb::BLOCK_SIZE;
 

@@ -18,7 +18,9 @@ pub fn read_at(file: &File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
     #[cfg(not(any(unix, windows)))]
     {
         let _ = (file, buf, offset);
-        Err(io::Error::other("positional reads are not supported on this platform"))
+        Err(io::Error::other(
+            "positional reads are not supported on this platform",
+        ))
     }
 }
 
@@ -31,7 +33,7 @@ pub fn read_exact_at(file: &File, buf: &mut [u8], offset: u64) -> io::Result<()>
                 return Err(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
                     "reached end of file early",
-                ))
+                ));
             }
             n => done += n,
         }
