@@ -1,4 +1,3 @@
-use super::bchunk;
 use super::chdman;
 use super::ctrtool;
 use super::database::*;
@@ -27,7 +26,6 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
 
     let mut deps: Vec<(&str, Result<String, _>)> = vec![
         ("7-zip", sevenzip::get_version().await),
-        ("bchunk", bchunk::get_version().await),
         ("chdman", chdman::get_version().await),
         ("ctrtool", ctrtool::get_version().await),
         ("flips", flips::get_version().await),

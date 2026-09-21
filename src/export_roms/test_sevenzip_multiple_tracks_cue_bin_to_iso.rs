@@ -24,41 +24,28 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20240229) (Single Track).dat",
-    ]);
+    let matches = import_dats::subcommand()
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
-    let mut romfile_paths: Vec<PathBuf> = vec![];
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).cue");
+    // The cue and both bins, as the other archived multiple tracks tests use.
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Full).7z");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Single Track).cue"),
+        test_directory.join("Test Game (USA, Europe) (Full).7z"),
         &romfile_path,
     )
     .await
     .unwrap();
-    romfile_paths.push(romfile_path);
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
-    fs::copy(
-        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
-        &romfile_path,
-    )
-    .await
-    .unwrap();
-    romfile_paths.push(romfile_path);
 
     let system = find_systems(&mut connection).await.remove(0);
 
-    for romfile_path in romfile_paths {
-        let matches = import_roms::subcommand()
-            .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
-        import_roms::main(&mut connection, &matches, &progress_bar)
-            .await
-            .unwrap();
-    }
+    let matches = import_roms::subcommand()
+        .get_matches_from(["import-roms", romfile_path.as_os_str().to_str().unwrap()]);
+    import_roms::main(&mut connection, &matches, &progress_bar)
+        .await
+        .unwrap();
 
     let mut roms_by_game_id: IndexMap<i64, Vec<Rom>> = IndexMap::new();
     let mut romfiles_by_id: HashMap<i64, Romfile> = HashMap::new();
@@ -93,8 +80,7 @@ async fn test() {
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect();
-    // What bchunk made of the same CUE/BIN: the 231-sector pregap skipped, then
-    // 2048 bytes of each of the remaining 8404 sectors.
+    // The first track alone, as the loose CUE/BIN set gives.
     assert_eq!(iso.len(), 8404 * 2048);
     assert_eq!(sha1, "9ec402052624dbb7748235a6d9fb4299bba44848");
 }

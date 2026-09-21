@@ -1,4 +1,3 @@
-use super::bchunk;
 use super::chdman;
 use super::ctrtool;
 use super::database::*;
@@ -243,7 +242,6 @@ impl QueryRoot {
     async fn dependencies(&self) -> Result<Vec<Dependency>> {
         let mut deps = vec![
             ("7-zip", sevenzip::get_version().await),
-            ("bchunk", bchunk::get_version().await),
             ("chdman", chdman::get_version().await),
             ("ctrtool", ctrtool::get_version().await),
             ("flips", flips::get_version().await),

@@ -24,18 +24,16 @@ async fn test() {
     let tmp_directory =
         set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
 
-    let matches = import_dats::subcommand().get_matches_from([
-        "import-dats",
-        "tests/Test System (20240229) (Single Track).dat",
-    ]);
+    let matches = import_dats::subcommand()
+        .get_matches_from(["import-dats", "tests/Test System (20200721).dat"]);
     import_dats::main(&mut connection, &matches, &progress_bar)
         .await
         .unwrap();
 
     let mut romfile_paths: Vec<PathBuf> = vec![];
-    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Single Track).cue");
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue");
     fs::copy(
-        test_directory.join("Test Game (USA, Europe) (Single Track).cue"),
+        test_directory.join("Test Game (USA, Europe) (Multiple Tracks).cue"),
         &romfile_path,
     )
     .await
@@ -44,6 +42,14 @@ async fn test() {
     let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin");
     fs::copy(
         test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    romfile_paths.push(romfile_path);
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 02).bin"),
         &romfile_path,
     )
     .await
@@ -93,8 +99,8 @@ async fn test() {
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect();
-    // What bchunk made of the same CUE/BIN: the 231-sector pregap skipped, then
-    // 2048 bytes of each of the remaining 8404 sectors.
+    // Only the first track, from the bin the cue names first: the same ISO the
+    // single track set produces, since both describe that track identically.
     assert_eq!(iso.len(), 8404 * 2048);
     assert_eq!(sha1, "9ec402052624dbb7748235a6d9fb4299bba44848");
 }

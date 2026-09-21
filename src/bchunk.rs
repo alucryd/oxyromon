@@ -1,17 +1,128 @@
+//! CUE/BIN to ISO: a port of the part of [bchunk] oxyromon used, which cuts the
+//! first track of a CUE/BIN down to the 2048-byte user data of each sector.
+//! That is the ISO Open PS2 Loader reads for PlayStation 2 CD games.
+//!
+//! bchunk writes every track; this writes only the first, which is all the ISO
+//! ever held, and says why when that track is not data it can convert. A CUE
+//! with a BIN per track works too: the first track is in the BIN the CUE names
+//! first, and ends with it.
+//!
+//! [bchunk]: https://github.com/extramaster/bchunk
+
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
-use super::util::*;
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
-use regex::Regex;
-use std::path::Path;
-use std::sync::LazyLock;
-use tokio::process::Command;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+use tokio::task::spawn_blocking;
 
-const BCHUNK: &str = "bchunk";
+/// A raw CD sector, as a BIN stores it.
+const SECTOR_SIZE: u64 = 2352;
+/// The user data of a data sector, which is what an ISO keeps.
+const USER_DATA_SIZE: usize = 2048;
+/// CD sectors per second, the unit of a CUE's `mm:ss:ff` timestamps.
+const SECTORS_PER_SECOND: u64 = 75;
 
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
+/// Where a CUE's first track lies in its BIN, in sectors, and where the user
+/// data sits in each of them.
+#[derive(Debug, PartialEq)]
+struct DataTrack {
+    /// The BIN the CUE names for this track, when it names one.
+    bin: Option<String>,
+    start: u64,
+    /// Exclusive; `None` when the track runs to the end of the BIN.
+    end: Option<u64>,
+    offset: usize,
+}
+
+/// Find a CUE's first track the way bchunk does: it starts at its last INDEX
+/// (INDEX 01, past any pregap) and ends one sector before the next track's
+/// first INDEX, or with its BIN.
+fn first_track(cue: &str) -> Result<DataTrack> {
+    let mut bin = None;
+    let mut mode = None;
+    let mut start = None;
+    let mut end = None;
+    let mut tracks = 0;
+    for line in cue.lines() {
+        match line.split_whitespace().collect::<Vec<_>>().as_slice() {
+            // The name is quoted, so take it from the line rather than a word.
+            ["FILE", ..] if tracks == 0 => bin = line.split('"').nth(1).map(str::to_string),
+            // The next track lives in another BIN: this one runs to its end.
+            ["FILE", ..] => break,
+            ["TRACK", _, track_mode] => {
+                tracks += 1;
+                if tracks == 1 {
+                    mode = Some(track_mode.to_uppercase());
+                }
+            }
+            ["INDEX", _, time] if tracks == 1 => start = Some(sectors(time)?),
+            ["INDEX", _, time] if tracks == 2 => {
+                end = Some(sectors(time)?);
+                break;
+            }
+            _ => {}
+        }
+    }
+    let offset = match mode.as_deref() {
+        Some("MODE1/2352") => 16,
+        Some("MODE2/2352") => 24,
+        Some(mode) => bail!(
+            "The first track is {mode}, but only MODE1/2352 and MODE2/2352 data tracks convert to ISO"
+        ),
+        None => bail!("No track in the CUE"),
+    };
+    let start = start.context("The first track has no INDEX")?;
+    Ok(DataTrack {
+        bin,
+        start,
+        end,
+        offset,
+    })
+}
+
+/// A CUE `mm:ss:ff` timestamp, in sectors.
+fn sectors(time: &str) -> Result<u64> {
+    let parts = time
+        .split(':')
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()
+        .filter(|parts| parts.len() == 3)
+        .with_context(|| format!("Invalid CUE timestamp \"{time}\""))?;
+    Ok((parts[0] * 60 + parts[1]) * SECTORS_PER_SECOND + parts[2])
+}
+
+/// Write the user data of `track`'s sectors from `bin` to `iso`.
+fn extract(bin: &Path, iso: &Path, track: &DataTrack, progress_bar: &ProgressBar) -> Result<()> {
+    let mut input =
+        File::open(bin).with_context(|| format!("Failed to open \"{}\"", bin.display()))?;
+    // Only whole sectors count, as in bchunk.
+    let sectors = input.metadata()?.len() / SECTOR_SIZE;
+    let end = track.end.unwrap_or(sectors).min(sectors);
+
+    progress_bar.reset();
+    progress_bar.set_style(get_bytes_progress_style());
+    progress_bar.set_length(end.saturating_sub(track.start) * SECTOR_SIZE);
+
+    input.seek(SeekFrom::Start(track.start * SECTOR_SIZE))?;
+    let mut reader = BufReader::with_capacity(1 << 20, input);
+    let mut writer = BufWriter::with_capacity(
+        1 << 20,
+        File::create(iso).with_context(|| format!("Failed to create \"{}\"", iso.display()))?,
+    );
+    let mut sector = [0u8; SECTOR_SIZE as usize];
+    for _ in track.start..end {
+        reader.read_exact(&mut sector)?;
+        writer.write_all(&sector[track.offset..track.offset + USER_DATA_SIZE])?;
+        progress_bar.inc(SECTOR_SIZE);
+    }
+    writer.flush()?;
+    Ok(())
+}
 
 impl ToIso for CueBinRomfile {
     async fn to_iso<P: AsRef<Path>>(
@@ -19,10 +130,6 @@ impl ToIso for CueBinRomfile {
         progress_bar: &ProgressBar,
         destination_directory: &P,
     ) -> Result<IsoRomfile> {
-        if self.bin_romfiles.len() > 1 {
-            bail!("Only single bins are supported");
-        }
-
         start_action(progress_bar, Some("Creating iso"));
 
         let path = destination_directory
@@ -30,24 +137,33 @@ impl ToIso for CueBinRomfile {
             .join(self.cue_romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        run_tool(
-            Command::new(BCHUNK)
-                .arg(&self.bin_romfiles.first().unwrap().path)
-                .arg(&self.cue_romfile.path)
-                .arg(BCHUNK)
-                .current_dir(destination_directory.as_ref()),
-        )
-        .await?;
-
-        rename_file(
+        print_action(
             progress_bar,
-            &destination_directory
-                .as_ref()
-                .join(format!("{}01.iso", BCHUNK)),
-            &path,
-            true,
-        )
-        .await?;
+            &format!(
+                "Creating \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+
+        let track = first_track(&tokio::fs::read_to_string(&self.cue_romfile.path).await?)?;
+        // With a BIN per track, only the one holding the first track is read.
+        let bin: PathBuf = track
+            .bin
+            .as_deref()
+            .and_then(|name| {
+                self.bin_romfiles
+                    .iter()
+                    .find(|romfile| romfile.path.file_name().and_then(|f| f.to_str()) == Some(name))
+            })
+            .or_else(|| self.bin_romfiles.first())
+            .context("The CUE/BIN has no bin")?
+            .path
+            .clone();
+        let iso = path.clone();
+        let bar = progress_bar.clone();
+        spawn_blocking(move || extract(&bin, &iso, &track, &bar))
+            .await
+            .context("CUE/BIN conversion task failed")??;
 
         stop_action(progress_bar);
 
@@ -55,6 +171,53 @@ impl ToIso for CueBinRomfile {
     }
 }
 
-pub async fn get_version() -> Result<String> {
-    tool_version(BCHUNK, "bchunk", &[], true, 0, Some(&VERSION_REGEX)).await
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_single_track_starts_past_its_pregap() {
+        let cue = "FILE \"game.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 00 00:00:00\n    INDEX 01 00:03:06\n";
+        assert_eq!(
+            first_track(cue).unwrap(),
+            DataTrack {
+                bin: Some("game.bin".to_string()),
+                start: 231,
+                end: None,
+                offset: 16
+            }
+        );
+    }
+
+    #[test]
+    fn the_next_track_ends_the_first_at_its_first_index() {
+        let cue = "FILE \"game.bin\" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n  TRACK 02 AUDIO\n    INDEX 00 00:30:00\n    INDEX 01 00:32:00\n";
+        assert_eq!(
+            first_track(cue).unwrap(),
+            DataTrack {
+                bin: Some("game.bin".to_string()),
+                start: 0,
+                end: Some(2250),
+                offset: 24
+            }
+        );
+    }
+
+    #[test]
+    fn a_next_track_in_another_bin_leaves_the_first_whole() {
+        let cue = "FILE \"1.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 01 00:00:00\nFILE \"2.bin\" BINARY\n  TRACK 02 AUDIO\n    INDEX 01 00:00:00\n";
+        let track = first_track(cue).unwrap();
+        assert_eq!(track.end, None);
+        // The first track is in the first BIN, not whichever arrives first.
+        assert_eq!(track.bin.as_deref(), Some("1.bin"));
+    }
+
+    #[test]
+    fn only_2352_byte_data_tracks_convert() {
+        for mode in ["AUDIO", "MODE1/2048", "MODE2/2336"] {
+            let cue =
+                format!("FILE \"game.bin\" BINARY\n  TRACK 01 {mode}\n    INDEX 01 00:00:00\n");
+            assert!(first_track(&cue).is_err(), "{mode}");
+        }
+    }
 }
