@@ -1,4 +1,3 @@
-use super::bchunk;
 use super::chdman;
 use super::chdman::{ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
@@ -116,10 +115,9 @@ pub async fn main(
         "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
         "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
         "CSO" | "ZSO" => tool_available(maxcso::get_version, "maxcso", progress_bar).await,
-        "ISO" => tool_available(bchunk::get_version, "bchunk", progress_bar).await,
         "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
         "WBFS" => tool_available(wit::get_version, "wit", progress_bar).await,
-        "GDI" | "NSZ" | "ORIGINAL" => true,
+        "GDI" | "ISO" | "NSZ" | "ORIGINAL" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -1568,7 +1566,7 @@ async fn to_iso(
                 .unwrap()
                 .to_common(progress_bar, destination_directory)
                 .await?;
-        } else if roms.len() == 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
+        } else if roms.len() >= 2 && roms.par_iter().any(|rom| rom.name.ends_with(CUE_EXTENSION)) {
             let (mut cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
                 .iter()
                 .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
@@ -1595,9 +1593,6 @@ async fn to_iso(
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
-        if bin_roms.len() > 1 {
-            continue;
-        }
         assemble_cue_bin(
             connection,
             &romfiles_by_id,
@@ -1993,6 +1988,8 @@ mod test_multiple_tracks_cue_bin_to_chd;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_gdi;
 #[cfg(test)]
+mod test_multiple_tracks_cue_bin_to_iso;
+#[cfg(test)]
 mod test_original_to_original_should_copy;
 #[cfg(test)]
 mod test_original_to_sevenzip;
@@ -2020,6 +2017,8 @@ mod test_sevenzip_iso_to_cso;
 mod test_sevenzip_iso_to_zso;
 #[cfg(test)]
 mod test_sevenzip_multiple_tracks_cue_bin_to_chd;
+#[cfg(test)]
+mod test_sevenzip_multiple_tracks_cue_bin_to_iso;
 #[cfg(test)]
 mod test_sevenzip_single_track_cue_bin_to_iso;
 #[cfg(test)]

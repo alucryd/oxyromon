@@ -237,7 +237,6 @@ ZIP_ZSTD_COMPRESSION_LEVEL = 19
 These should be in your `${PATH}` for extra features.
 
 - [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
-- [bchunk](https://github.com/extramaster/bchunk): CUE/BIN to ISO support
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
@@ -636,7 +635,7 @@ Export ROM files to common formats
 
 Similar to `convert-roms`, however, this one leaves your original ROM files untouched, thus allowing the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
 
-Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO using bchunk.
+Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO, keeping the first track's 2048-byte data sectors as bchunk does. Games split over several tracks are converted too, keeping that first track alone.
 
     Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
 
