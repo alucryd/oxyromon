@@ -128,6 +128,7 @@ tower-http = { version = "0.7.1", features = ["cors"], optional = true, default-
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
 which = { version = "8.0.6" }
+xso-rs = { path = "crates/xso-rs", version = "0.1.0", default-features = false }
 zip = { version = "8.6.0", features = [
     "deflate",
     "zstd",

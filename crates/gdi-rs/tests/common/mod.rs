@@ -1,10 +1,8 @@
-//! Shared fixture builders and the gdidrop reference, for the integration
-//! tests. Each test crate uses a subset, so nothing here is dead on its own.
+//! Shared fixture builders for the integration tests. Each test crate uses a
+//! subset, so nothing here is dead on its own.
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::sync::OnceLock;
 
 pub const SECTOR: usize = 2352;
 
@@ -135,68 +133,4 @@ fn msf(frames: u64) -> String {
         frames / 75 % 60,
         frames % 75
     )
-}
-
-/// gdidrop's conversion, built once from `tests/reference` against a gdidrop
-/// checkout, or `None` when dotnet or the checkout is missing. The checkout is
-/// `$GDIDROP_SOURCE`, or `gdidrop-Dreamcast-Redump-Tool` next to the oxyromon
-/// repository.
-pub fn reference() -> Option<&'static Path> {
-    static REFERENCE: OnceLock<Option<PathBuf>> = OnceLock::new();
-    REFERENCE.get_or_init(build_reference).as_deref()
-}
-
-fn build_reference() -> Option<PathBuf> {
-    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let source = std::env::var_os("GDIDROP_SOURCE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| manifest.join("../../../gdidrop-Dreamcast-Redump-Tool"));
-    if !source.join("Source/gdidrop/CueSharp.cs").is_file() {
-        return None;
-    }
-    Command::new("dotnet").arg("--version").output().ok()?;
-
-    // Built outside the source tree, so no obj/ lands in the crate.
-    let project = Path::new(env!("CARGO_TARGET_TMPDIR")).join("gdidrop-reference");
-    let out = project.join("out");
-    std::fs::create_dir_all(&project).unwrap();
-    for file in ["GdidropReference.csproj", "Program.cs"] {
-        std::fs::copy(
-            manifest.join("tests/reference").join(file),
-            project.join(file),
-        )
-        .unwrap();
-    }
-    let build = Command::new("dotnet")
-        .current_dir(&project)
-        .args(["build", "-c", "Release", "-o"])
-        .arg(&out)
-        .arg(format!(
-            "-p:GdidropSource={}",
-            source.canonicalize().unwrap().display()
-        ))
-        .output()
-        .unwrap();
-    assert!(
-        build.status.success(),
-        "building the gdidrop reference failed:\n{}",
-        String::from_utf8_lossy(&build.stdout)
-    );
-    Some(out.join("GdidropReference.dll"))
-}
-
-/// Run gdidrop on `cue`: it writes the GDI and `<stem> [gdidrop].bin|raw`
-/// tracks next to it.
-pub fn run_reference(reference: &Path, cue: &Path) {
-    let run = Command::new("dotnet")
-        .arg(reference)
-        .arg(cue)
-        .output()
-        .unwrap();
-    assert!(
-        run.status.success(),
-        "gdidrop failed on {}: {}",
-        cue.display(),
-        String::from_utf8_lossy(&run.stderr)
-    );
 }

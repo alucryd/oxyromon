@@ -5,9 +5,7 @@ use super::config::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
-use super::gdidrop::*;
-use super::maxcso;
-use super::maxcso::{AsXso, ToXso, XsoType};
+use super::gdi::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
@@ -19,6 +17,7 @@ use super::transcode::*;
 use super::util::*;
 use super::wit;
 use super::wit::ToWbfs;
+use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -114,10 +113,9 @@ pub async fn main(
     let available = match format.as_str() {
         "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
         "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
-        "CSO" | "ZSO" => tool_available(maxcso::get_version, "maxcso", progress_bar).await,
         "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
         "WBFS" => tool_available(wit::get_version, "wit", progress_bar).await,
-        "GDI" | "ISO" | "NSZ" | "ORIGINAL" => true,
+        "CSO" | "GDI" | "ISO" | "NSZ" | "ORIGINAL" | "ZSO" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -1657,10 +1655,6 @@ async fn to_iso(
 
     // export CSOs
     for roms in csos.values() {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
@@ -1674,10 +1668,6 @@ async fn to_iso(
 
     // export ZSOs
     for roms in zsos.values() {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
@@ -1863,10 +1853,6 @@ async fn to_original(
 
     // export CSOs
     for roms in csos.values() {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile
@@ -1908,10 +1894,6 @@ async fn to_original(
 
     // export ZSOs
     for roms in zsos.values() {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile

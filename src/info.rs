@@ -3,12 +3,12 @@ use super::ctrtool;
 use super::database::*;
 use super::dolphin;
 use super::flips;
-use super::maxcso;
 use super::nsz;
 use super::progress::*;
 use super::sevenzip;
 use super::wit;
 use super::xdelta3;
+use super::xso;
 use anyhow::Result;
 use clap::Command;
 use indicatif::ProgressBar;
@@ -29,7 +29,7 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
         ("chdman", chdman::get_version().await),
         ("ctrtool", ctrtool::get_version().await),
         ("flips", flips::get_version().await),
-        ("maxcso", maxcso::get_version().await),
+        ("xso-rs", xso::get_version().await),
         ("nsz-rs", nsz::get_version().await),
         ("xdelta3", xdelta3::get_version().await),
     ];

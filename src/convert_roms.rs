@@ -5,8 +5,6 @@ use super::config::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
-use super::maxcso;
-use super::maxcso::{AsXso, ToXso, XsoType};
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
@@ -16,6 +14,7 @@ use super::sevenzip;
 use super::sevenzip::{ArchiveCompression, ArchiveFile, ArchiveRomfile, AsArchive, ToArchive};
 use super::transcode::*;
 use super::util::*;
+use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -124,9 +123,8 @@ pub async fn main(
     let available = match format.as_str() {
         "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
         "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
-        "CSO" | "ZSO" => tool_available(maxcso::get_version, "maxcso", progress_bar).await,
         "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
-        "NSZ" | "ORIGINAL" => true,
+        "CSO" | "NSZ" | "ORIGINAL" | "ZSO" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -2806,10 +2804,6 @@ async fn to_original(
 
     // convert CSOs/ZSOs
     for roms in csos.values().chain(zsos.values()) {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            break;
-        }
         let mut transaction = begin_transaction(connection).await;
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();

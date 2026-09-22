@@ -34,9 +34,9 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 │    prompt.rs    – interactive selection helpers       │
 ├─────────────────────────────────────────────────────┤
 │  Format-specific modules:                           │
-│    sevenzip.rs, chdman.rs, maxcso.rs, dolphin.rs,   │
+│    sevenzip.rs, chdman.rs, xso.rs, dolphin.rs,      │
 │    nsz.rs, wit.rs, ctrtool.rs, flips.rs, xdelta3.rs,│
-│    bchunk.rs, gdidrop.rs, crc32.rs                  │
+│    bchunk.rs, gdi.rs, crc32.rs                      │
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
@@ -74,7 +74,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Format-Specific Module Pattern
 
-Each external tool module (e.g., `chdman.rs`, `sevenzip.rs`, `maxcso.rs`, `dolphin.rs`) follows the same pattern:
+Each external tool module (e.g., `chdman.rs`, `sevenzip.rs`, `dolphin.rs`) follows the same pattern:
 
 1. Define a struct wrapping `CommonRomfile` (e.g., `ChdRomfile`, `ArchiveRomfile`).
 2. Implement `Size`, `HashAndSize`, and `Check` traits for integrity verification.
@@ -190,7 +190,7 @@ and keeps its upstream's license:
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
-| `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | not yet (CSO/ZSO still go through `maxcso`) |
+| `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | CSO/ZSO              |
 
 `frontend/` and `desktop/` are *not* members: they declare their own
 `[workspace]` so their WebAssembly and webview dependencies stay out of the
@@ -299,7 +299,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `dolphin-emu`, `liblz4-1`, `libuv1`, `libzopfli1`, `mame-tools` (for chdman), `wit`, `xdelta3`
+- Installs system dependencies: `dolphin-emu`, `mame-tools` (for chdman), `wit`, `xdelta3`
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`

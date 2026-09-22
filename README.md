@@ -241,9 +241,10 @@ These should be in your `${PATH}` for extra features.
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 - [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
 - [flips](https://github.com/Alcaro/Flips): BPS and IPS support
-- [maxcso](https://github.com/unknownbrackets/maxcso/releases): CSO/ZSO support
 - [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
 - [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
+
+CSO/ZSO support is built in via xso-rs, and GDI support via gdi-rs, both in `crates/`.
 
 NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 

@@ -3,7 +3,7 @@ FROM archlinux
 WORKDIR /usr/src/oxyromon
 COPY . .
 RUN sed 's/^SigLevel    =.*/SigLevel = Never/' -i /etc/pacman.conf && \
-    pacman -Syu --noconfirm base-devel curl dolphin-emu-tool mame-tools maxcso p7zip rustup wit && \
+    pacman -Syu --noconfirm base-devel curl dolphin-emu-tool mame-tools p7zip rustup wit && \
     rustup toolchain install stable && \
     rustup target add wasm32-unknown-unknown && \
     curl -fsSL https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin && \
