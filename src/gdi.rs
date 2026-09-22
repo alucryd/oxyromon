@@ -7,7 +7,6 @@ use super::progress::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use std::path::Path;
-use tokio::task::spawn_blocking;
 
 #[derive(Clone)]
 pub struct GdiRomfile {
@@ -72,17 +71,18 @@ impl ToGdi for CueBinRomfile {
 
         let cue = self.cue_romfile.path.clone();
         let destination = destination_directory.as_ref().to_path_buf();
-        let bar = progress_bar.clone();
-        let gdi = spawn_blocking(move || -> Result<gdi_rs::Gdi> {
-            // Unlike a subprocess, the library can say how far along it is
-            bar.reset();
-            bar.set_style(get_bytes_progress_style());
-            bar.set_length(gdi_rs::input_size(&cue)?);
-            gdi_rs::convert(&cue, &destination, &mut |n| bar.inc(n))
-                .with_context(|| format!("Failed to convert \"{}\" to GDI", cue.display()))
+        // The CUE's BINs, which the conversion reports reading.
+        let length = gdi_rs::input_size(&cue)?;
+        let gdi = run_blocking(progress_bar, length, move |progress| {
+            gdi_rs::convert(&cue, &destination, progress)
         })
         .await
-        .context("CUE/BIN to GDI task failed")??;
+        .with_context(|| {
+            format!(
+                "Failed to convert \"{}\" to GDI",
+                self.cue_romfile.path.display()
+            )
+        })?;
 
         stop_action(progress_bar);
 

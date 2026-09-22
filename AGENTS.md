@@ -206,7 +206,7 @@ Every crate follows these, and a new port should too:
   path, their settings, and `progress: &mut dyn FnMut(u64)`, called with the
   input bytes consumed since the last call; the calls add up to the input
   size. oxyromon runs them on the blocking pool and feeds that to its progress
-  bar (see `run_pipeline` in `src/nsz.rs`).
+  bar (see `run_blocking` in `src/progress.rs`).
 - **A failed run removes its partial output**, but only output it created:
   validate the input before opening the output.
 - **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
