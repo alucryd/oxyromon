@@ -1,0 +1,32 @@
+[package]
+name = "gdi-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Rust port of gdidrop: Dreamcast GD-ROM CUE/BIN (Redump) to GDI conversion"
+license = "BSD-2-Clause"
+repository.workspace = true
+keywords = ["dreamcast", "gdi", "gd-rom", "redump", "cue"]
+categories = ["command-line-utilities", "emulators"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "gdi_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gdirs"
+path = "src/bin/gdirs.rs"
+required-features = ["cli"]
+
+[dependencies]
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:indicatif"]

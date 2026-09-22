@@ -16,6 +16,7 @@
 - NSP/NSZ support now comes from the [nsz-rs](https://crates.io/crates/nsz-rs) crate instead of the external `nsz` tool, with a progress bar during (de)compression
 - `prod.keys` is now only needed to compress NSPs containing NCAs, and `info` says when it is missing
 - Moved the nsz-rs and xso-rs crates into this repository under `crates/`; their CLIs (`nszrs`, `xsors`) ship in the release archives
+- GDI conversion now comes from the new gdi-rs crate, a port of gdidrop, with a progress bar; its CLI (`gdirs`) ships in the release archives too
 - CUE/BIN to ISO conversion is now built in, ported from bchunk, which is no longer needed
 - Games with one bin per track now export to ISO, keeping the first track
 - CSO conversions now use 8 KiB blocks, 16 KiB past 2 GiB, for files around 4% smaller
@@ -46,6 +47,9 @@
 - Fixed the web UI's settings and action mutations panicking when a database connection could not be acquired
 - Fixed overlapping system name patterns (e.g. `PlayStation` and `PlayStation 3`) causing the same system to be sorted, checked, or converted twice
 - Fixed the web UI's statistics cards being cut off at the right edge at some window widths
+- Fixed GDI exports into the CUE/BIN's own directory overwriting its data tracks
+- Fixed GDI conversion of a CUE with several tracks in one bin, which wrote the whole bin for every track
+- Fixed GDI conversion placing a track at sector 45000 on comments that merely contain `HIGH-DENSITY AREA`, unlike gdidrop
 
 # 0.23.0
 

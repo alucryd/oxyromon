@@ -91,9 +91,20 @@ async fn test() {
     .unwrap();
 
     // then
-    assert!(
-        destination_directory
-            .join("Test Game (USA, Europe) (CUE BIN).gdi")
-            .is_file()
+    // What gdidrop writes for the same set, but for its " [gdidrop]" suffix:
+    // track 1 past its 231-sector pregap, track 2 whole.
+    assert_eq!(
+        fs::read_to_string(destination_directory.join("Test Game (USA, Europe) (CUE BIN).gdi"))
+            .await
+            .unwrap(),
+        "2\n\
+         1 231 4 2352 \"Test Game (USA, Europe) (CUE BIN) (Track 01).bin\" 0\n\
+         2 8635 0 2352 \"Test Game (USA, Europe) (CUE BIN) (Track 02).raw\" 0\n"
     );
+    let track_01 = fs::metadata(
+        destination_directory.join("Test Game (USA, Europe) (CUE BIN) (Track 01).bin"),
+    )
+    .await
+    .unwrap();
+    assert_eq!(track_01.len(), (8635 - 231) * 2352);
 }

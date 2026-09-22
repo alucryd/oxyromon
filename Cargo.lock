@@ -1533,6 +1533,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gdi-rs"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "indicatif",
+ "tempfile",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2737,6 +2747,7 @@ dependencies = [
  "env_logger",
  "flate2",
  "futures",
+ "gdi-rs",
  "http-types",
  "indexmap 2.14.2",
  "indicatif",
