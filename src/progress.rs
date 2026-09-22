@@ -1,6 +1,8 @@
+use anyhow::Context;
 use console::Style;
 use std::sync::LazyLock;
 use std::time::Duration;
+use tokio::task::spawn_blocking;
 
 // Re-export indicatif types so consumers of `progress::*` have them available
 pub use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
@@ -65,6 +67,33 @@ pub fn get_bytes_progress_style() -> ProgressStyle {
         .template(BYTES_TEMPLATE)
         .expect("Failed to create progress bar")
         .progress_chars(PROGRESS_CHARS)
+}
+
+/// Run a format crate's conversion on the blocking pool, since it is
+/// synchronous and CPU bound, as a bytes bar of `length` on `progress_bar`.
+///
+/// `work` gets the crate's progress callback, which reports the input bytes it
+/// consumes: `length` is what they add up to.
+pub async fn run_blocking<T, E>(
+    progress_bar: &ProgressBar,
+    length: u64,
+    work: impl FnOnce(&mut dyn FnMut(u64)) -> Result<T, E> + Send + 'static,
+) -> anyhow::Result<T>
+where
+    T: Send + 'static,
+    E: std::error::Error + Send + Sync + 'static,
+{
+    let bar = progress_bar.clone();
+    spawn_blocking(move || {
+        // Unlike a subprocess, a library can say how far along it is
+        bar.reset();
+        bar.set_style(get_bytes_progress_style());
+        bar.set_length(length);
+        work(&mut |n| bar.inc(n))
+    })
+    .await
+    .context("Conversion task failed")?
+    .map_err(anyhow::Error::from)
 }
 
 // ── Categorized output helpers ──────────────────────────────────────────────

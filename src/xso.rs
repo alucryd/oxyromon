@@ -13,28 +13,7 @@ use sqlx::SqliteConnection;
 use std::path::Path;
 use std::str::FromStr;
 use strum::{Display, EnumString};
-use tokio::task::spawn_blocking;
 use xso_rs::{CompressOptions, DecompressOptions, Format};
-
-/// Run an xso-rs conversion on the blocking pool, since it is synchronous and
-/// CPU bound, feeding the input bytes it reports consumed to `progress_bar`.
-async fn run_pipeline(
-    progress_bar: &ProgressBar,
-    input: &Path,
-    pipeline: impl FnOnce(&mut dyn FnMut(u64)) -> xso_rs::Result<()> + Send + 'static,
-) -> Result<()> {
-    let bar = progress_bar.clone();
-    let input = input.to_path_buf();
-    spawn_blocking(move || {
-        // Unlike a subprocess, the library can say how far along it is
-        bar.reset();
-        bar.set_style(get_bytes_progress_style());
-        bar.set_length(input.metadata()?.len());
-        Ok(pipeline(&mut |n| bar.inc(n))?)
-    })
-    .await
-    .context("xso-rs task failed")?
-}
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
@@ -131,8 +110,8 @@ impl ToIso for XsoRomfile {
             .with_extension(ISO_EXTENSION);
 
         let (input, output) = (self.romfile.path.clone(), path.clone());
-        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
-            xso_rs::decompress(&input, &output, &DecompressOptions::default(), progress).map(|_| ())
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            xso_rs::decompress(&input, &output, &DecompressOptions::default(), progress)
         })
         .await
         .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
@@ -182,8 +161,8 @@ impl ToXso for IsoRomfile {
             XsoType::Zso => Format::Zso,
         });
         let (input, output) = (self.romfile.path.clone(), path.clone());
-        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
-            xso_rs::compress(&input, &output, &options, progress).map(|_| ())
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            xso_rs::compress(&input, &output, &options, progress)
         })
         .await
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;

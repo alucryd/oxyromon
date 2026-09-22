@@ -30,7 +30,6 @@ use nsz_rs::pipeline::{Compression, compress_nsp, decompress_nsz};
 use sqlx::SqliteConnection;
 use std::io;
 use std::path::{Path, PathBuf};
-use tokio::task::spawn_blocking;
 
 /// zstd level nsz compresses at by default.
 const COMPRESSION_LEVEL: i32 = 18;
@@ -52,26 +51,6 @@ fn load_keys() -> nsz_rs::Result<Keys> {
         )
     })?;
     Keys::load(path, true)
-}
-
-/// Run an nsz-rs pipeline on the blocking pool, since it is synchronous and CPU
-/// bound, feeding the input bytes it reports consumed to `progress_bar`.
-async fn run_pipeline(
-    progress_bar: &ProgressBar,
-    input: &Path,
-    pipeline: impl FnOnce(&mut dyn FnMut(u64)) -> nsz_rs::Result<()> + Send + 'static,
-) -> Result<()> {
-    let bar = progress_bar.clone();
-    let input = input.to_path_buf();
-    spawn_blocking(move || {
-        // Unlike a subprocess, the library can say how far along it is
-        bar.reset();
-        bar.set_style(get_bytes_progress_style());
-        bar.set_length(input.metadata()?.len());
-        Ok(pipeline(&mut |n| bar.inc(n))?)
-    })
-    .await
-    .context("nsz-rs task failed")?
 }
 
 pub struct NspRomfile {
@@ -162,8 +141,8 @@ impl ToNsp for NszRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(NSP_EXTENSION);
         let (input, output) = (self.romfile.path.clone(), path.clone());
-        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
-            decompress_nsz(&input, &output, load_keys, true, false, false, progress).map(|_| ())
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
+            decompress_nsz(&input, &output, load_keys, true, false, false, progress)
         })
         .await
         .with_context(|| format!("Failed to decompress \"{}\"", self.romfile.path.display()))?;
@@ -209,7 +188,7 @@ impl ToNsz for NspRomfile {
             ldm: true,
             block_size_exponent: None,
         };
-        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
+        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
             compress_nsp(&input, &output, load_keys, &compression, false, progress)
         })
         .await
