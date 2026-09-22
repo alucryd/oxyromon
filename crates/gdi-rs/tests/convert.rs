@@ -1,8 +1,8 @@
-//! Conversion behaviour that needs no reference: gdidrop's layout of a GD-ROM,
-//! pinned from gdidrop itself (see `interop.rs`), and what happens on bad input.
+//! Conversion behaviour: gdidrop's layouts, pinned from what gdidrop itself
+//! wrote for these sets when gdi-rs was ported, and what happens on bad input.
 
 mod common;
-use common::{CD, GD_ROM, SECTOR, audio, byte, write_set, write_single};
+use common::{CD, GD_ROM, NEAR_MISS, SECTOR, audio, byte, write_set, write_single};
 use std::path::Path;
 
 /// gdidrop's descriptor for `GD_ROM`: track 3 at 45000, after the jump the
@@ -30,6 +30,29 @@ fn a_gd_rom_is_laid_out_as_gdidrop_does() {
         let data = std::fs::read(track).unwrap();
         assert_eq!(data.len() as u64, spec.sectors * SECTOR as u64);
         assert_eq!(data[0], byte(i, spec.pregap, 0), "{}", track.display());
+    }
+}
+
+#[test]
+fn other_layouts_are_laid_out_as_gdidrop_does() {
+    for (specs, expected) in [
+        // Track 1 past its pregap, track 2 whole.
+        (
+            &CD[..],
+            "2\n1 231 4 2352 \"Game (Track 1).bin\" 0\n2 631 0 2352 \"Game (Track 2).raw\" 0\n",
+        ),
+        // gdidrop compares the high-density marker whole, so a comment only
+        // containing it moves nothing: track 3 follows track 2.
+        (
+            &NEAR_MISS[..],
+            "3\n1 0 4 2352 \"Game (Track 1).bin\" 0\n2 450 0 2352 \"Game (Track 2).raw\" 0\n3 750 4 2352 \"Game (Track 3).bin\" 0\n",
+        ),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let out = tempfile::tempdir().unwrap();
+        let cue = write_set(dir.path(), "Game", specs);
+        let gdi = gdi_rs::convert(&cue, out.path(), &mut |_| {}).unwrap();
+        assert_eq!(std::fs::read_to_string(&gdi.gdi).unwrap(), expected);
     }
 }
 

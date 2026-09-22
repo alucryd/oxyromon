@@ -55,21 +55,10 @@ own names.
 
 ## Verification
 
-`tests/interop.rs` runs gdidrop itself on synthetic CUE/BIN sets — a GD-ROM as
-Redump lays it out, a plain CD, and a comment that only looks like the
-high-density marker — and requires the same descriptor and byte-identical
-tracks. gdidrop is a .NET Framework program; `tests/reference` compiles its
-parser, CueSharp, unmodified, with its conversion copied verbatim, as a .NET 8
-console app. The tests build it when `dotnet` and a gdidrop checkout are
-available, and skip otherwise:
-
-```sh
-GDIDROP_SOURCE=/path/to/gdidrop-Dreamcast-Redump-Tool cargo test -p gdi-rs
-```
-
-`tests/convert.rs` pins gdidrop's layout of the GD-ROM set, so it is checked
-without dotnet too, and requires a single BIN to give exactly what its split
-set gives.
+`tests/convert.rs` pins what gdidrop itself wrote, when gdi-rs was ported, for
+synthetic CUE/BIN sets: a GD-ROM as Redump lays it out, a plain CD, and a
+comment that only looks like the high-density marker. It also requires a
+single BIN to give exactly what its split set gives.
 
 ## License
 

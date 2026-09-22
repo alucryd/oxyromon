@@ -17,6 +17,7 @@
 - `prod.keys` is now only needed to compress NSPs containing NCAs, and `info` says when it is missing
 - Moved the nsz-rs and xso-rs crates into this repository under `crates/`; their CLIs (`nszrs`, `xsors`) ship in the release archives
 - GDI conversion now comes from the new gdi-rs crate, a port of gdidrop, with a progress bar; its CLI (`gdirs`) ships in the release archives too
+- CSO/ZSO support now comes from the xso-rs crate instead of the external `maxcso` tool, with a progress bar
 - CUE/BIN to ISO conversion is now built in, ported from bchunk, which is no longer needed
 - Games with one bin per track now export to ISO, keeping the first track
 - CSO conversions now use 8 KiB blocks, 16 KiB past 2 GiB, for files around 4% smaller

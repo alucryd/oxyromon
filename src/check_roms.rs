@@ -3,8 +3,6 @@ use super::common::*;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::AsRvz;
-use super::maxcso;
-use super::maxcso::AsXso;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
@@ -14,6 +12,7 @@ use super::sevenzip;
 use super::sevenzip::AsArchive;
 use super::transcode::romfile_as_chd;
 use super::util::*;
+use super::xso::AsXso;
 use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -172,10 +171,6 @@ async fn check_system(
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await
         } else if CSO_EXTENSION == romfile_extension {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                break;
-            }
             romfile
                 .as_common(&mut transaction)
                 .await?
@@ -202,10 +197,6 @@ async fn check_system(
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await
         } else if ZSO_EXTENSION == romfile_extension {
-            if maxcso::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: maxcso");
-                break;
-            }
             romfile
                 .as_common(&mut transaction)
                 .await?

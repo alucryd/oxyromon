@@ -1,3 +1,6 @@
+//! CSO and ZSO, the compressed ISOs PSP and PS2 loaders read, handled by the
+//! xso-rs crate, a port of maxcso.
+
 use super::common::*;
 use super::config::*;
 use super::mimetype::*;
@@ -6,17 +9,32 @@ use super::progress::*;
 use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
-use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::Path;
 use std::str::FromStr;
-use std::sync::LazyLock;
 use strum::{Display, EnumString};
-use tokio::process::Command;
+use tokio::task::spawn_blocking;
+use xso_rs::{CompressOptions, DecompressOptions, Format};
 
-const MAXCSO: &str = "maxcso";
-
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
+/// Run an xso-rs conversion on the blocking pool, since it is synchronous and
+/// CPU bound, feeding the input bytes it reports consumed to `progress_bar`.
+async fn run_pipeline(
+    progress_bar: &ProgressBar,
+    input: &Path,
+    pipeline: impl FnOnce(&mut dyn FnMut(u64)) -> xso_rs::Result<()> + Send + 'static,
+) -> Result<()> {
+    let bar = progress_bar.clone();
+    let input = input.to_path_buf();
+    spawn_blocking(move || {
+        // Unlike a subprocess, the library can say how far along it is
+        bar.reset();
+        bar.set_style(get_bytes_progress_style());
+        bar.set_length(input.metadata()?.len());
+        Ok(pipeline(&mut |n| bar.inc(n))?)
+    })
+    .await
+    .context("xso-rs task failed")?
+}
 
 #[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "lowercase")]
@@ -112,14 +130,12 @@ impl ToIso for XsoRomfile {
             .join(self.romfile.path.file_name().unwrap())
             .with_extension(ISO_EXTENSION);
 
-        run_tool(
-            Command::new(MAXCSO)
-                .arg("--decompress")
-                .arg(&self.romfile.path)
-                .arg("-o")
-                .arg(&path),
-        )
-        .await?;
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
+            xso_rs::decompress(&input, &output, &DecompressOptions::default(), progress).map(|_| ())
+        })
+        .await
+        .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
 
         stop_action(progress_bar);
 
@@ -158,30 +174,19 @@ impl ToXso for IsoRomfile {
             ),
         );
 
-        // The block sizes xso-rs defaults to (`default_block_size`): 8 KiB for
-        // CSO, which an ARK-5 PSP plays, or 16 KiB from 2 GiB, where only PS2
-        // DVDs are; 2 KiB for ZSO, the only size Open PS2 Loader reads.
-        let block_size = match xso_type {
-            XsoType::Cso if self.romfile.path.metadata()?.len() >= 0x8000_0000 => 16384,
-            XsoType::Cso => 8192,
-            XsoType::Zso => 2048,
-        };
-
-        run_tool(
-            Command::new(MAXCSO)
-                .arg(format!("--block={block_size}"))
-                .arg(format!(
-                    "--format={}",
-                    match xso_type {
-                        XsoType::Cso => "cso1",
-                        XsoType::Zso => "zso",
-                    }
-                ))
-                .arg(&self.romfile.path)
-                .arg("-o")
-                .arg(&path),
-        )
-        .await?;
+        // xso-rs picks the block size: 8 KiB for CSO, which an ARK-5 PSP plays,
+        // or 16 KiB from 2 GiB, where only PS2 DVDs are; 2 KiB for ZSO, the only
+        // size Open PS2 Loader reads.
+        let options = CompressOptions::new(match xso_type {
+            XsoType::Cso => Format::Cso,
+            XsoType::Zso => Format::Zso,
+        });
+        let (input, output) = (self.romfile.path.clone(), path.clone());
+        run_pipeline(progress_bar, &self.romfile.path, move |progress| {
+            xso_rs::compress(&input, &output, &options, progress).map(|_| ())
+        })
+        .await
+        .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
 
         stop_action(progress_bar);
 
@@ -208,6 +213,8 @@ impl AsXso for CommonRomfile {
     }
 }
 
+/// Reported by `info`. Like nod, a linked library has no version to query at
+/// runtime.
 pub async fn get_version() -> Result<String> {
-    tool_version(MAXCSO, "maxcso", &[], false, 0, Some(&VERSION_REGEX)).await
+    Ok(String::from("built-in"))
 }

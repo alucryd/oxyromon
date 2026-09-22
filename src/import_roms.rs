@@ -6,8 +6,6 @@ use super::ctrtool;
 use super::database::*;
 use super::dolphin;
 use super::dolphin::AsRvz;
-use super::maxcso;
-use super::maxcso::AsXso;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
@@ -16,6 +14,7 @@ use super::prompt::*;
 use super::sevenzip;
 use super::sevenzip::{ArchiveFile, AsArchive};
 use super::util::*;
+use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -465,10 +464,6 @@ pub async fn import_rom<P: AsRef<Path>>(
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
     } else if CSO_EXTENSION == extension && !as_is {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            return Ok((system_ids, game_ids));
-        }
         if let Some(ids) = import_cso(
             &mut transaction,
             progress_bar,
@@ -521,10 +516,6 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if ZSO_EXTENSION == extension && !as_is {
-        if maxcso::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: maxcso");
-            return Ok((system_ids, game_ids));
-        }
         if let Some(ids) = import_zso(
             &mut transaction,
             progress_bar,

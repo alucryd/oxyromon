@@ -2,7 +2,6 @@ use super::super::config::*;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use std::env;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
@@ -17,17 +16,6 @@ async fn test() {
     let _guard = MUTEX.lock().await;
 
     let test_directory = Path::new("tests");
-    // TODO: Audit that the environment access only happens in single-threaded code.
-    unsafe {
-        env::set_var(
-            "PATH",
-            format!(
-                "{}:{}",
-                test_directory.as_os_str().to_str().unwrap(),
-                env::var("PATH").unwrap()
-            ),
-        )
-    };
     let progress_bar = ProgressBar::hidden();
 
     let db_file = NamedTempFile::new().unwrap();

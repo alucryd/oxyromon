@@ -17,7 +17,7 @@ mod dolphin;
 mod download_dats;
 mod export_roms;
 mod flips;
-mod gdidrop;
+mod gdi;
 mod generate_playlists;
 mod import_dats;
 mod import_irds;
@@ -25,7 +25,6 @@ mod import_patches;
 mod import_roms;
 mod info;
 mod iso9660;
-mod maxcso;
 mod mimetype;
 mod model;
 #[cfg(feature = "server")]
@@ -53,6 +52,7 @@ mod util;
 mod validator;
 mod wit;
 mod xdelta3;
+mod xso;
 
 use anyhow::Result;
 use clap::Command;
