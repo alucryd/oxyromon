@@ -188,6 +188,7 @@ and keeps its upstream's license:
 
 | Crate    | Port of                                     | CLI     | License | Used by oxyromon for |
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
+| `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
 | `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | not yet (CSO/ZSO still go through `maxcso`) |
 
@@ -229,7 +230,7 @@ Every crate follows these, and a new port should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p nsz-rs -p xso-rs      # the CLIs
+cargo build --release -p gdi-rs -p nsz-rs -p xso-rs  # the CLIs
 cargo test -p xso-rs                           # one crate
 cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```
