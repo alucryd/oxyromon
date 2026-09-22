@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "xsors"
-path = "src/bin/xsors.rs"
+path = "src/bin/xsors/main.rs"
 required-features = ["cli"]
 
 [dependencies]
@@ -27,6 +27,7 @@ lz4-sys = "1.11"
 rayon.workspace = true
 thiserror.workspace = true
 clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -34,4 +35,4 @@ tempfile.workspace = true
 
 [features]
 default = ["cli"]
-cli = ["dep:clap", "dep:indicatif"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

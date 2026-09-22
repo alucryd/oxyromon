@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "nszrs"
-path = "src/bin/nszrs.rs"
+path = "src/bin/nszrs/main.rs"
 required-features = ["cli"]
 
 [dependencies]
@@ -29,6 +29,7 @@ thiserror.workspace = true
 # `experimental` exposes frame progression, used for accurate solid progress.
 zstd = { version = "0.14", features = ["zstdmt", "experimental"] }
 clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -36,4 +37,4 @@ tempfile.workspace = true
 
 [features]
 default = ["cli"]
-cli = ["dep:clap", "dep:indicatif"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]
