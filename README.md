@@ -153,6 +153,7 @@ Available settings:
 - `PREFER_REGIONS`: Favor ROMs targeting more or fewer regions in the 1G1R election process, defaults to `none`, valid choices: `none`, `broad`, `narrow`
 - `PREFER_VERSIONS`: Favor newer or earlier versions of ROMs in the 1G1R election process, defaults to `new`, valid choices: `none`, `new`, `old`
 - `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
+- `PREFER_FORMAT`: Format that ROMs imported into a system are automatically converted to (eg: `7Z`), unset by default, valid choices: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO` (arcade systems only support `ORIGINAL` and `ZIP`)
 - `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
 - `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
 - `LANGUAGES`: List of languages you want to keep, applies only to ROMs that do specify them (eg: `En,Ja`)
@@ -198,6 +199,7 @@ DISCARD_FLAGS = Aftermarket,Debug
 DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
 GROUP_SUBSYSTEMS = true
 PREFER_FLAGS =
+PREFER_FORMAT =
 PREFER_PARENTS = true
 PREFER_REGIONS = none
 PREFER_VERSIONS = new
@@ -455,6 +457,7 @@ ROM files that match against the database will be placed in the base directory o
 In most cases the system is auto-detected, however, you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
 Systems that use a header definition require the `-s` flag to be passed to match ROM files that contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800, and Atari Lynx.
 Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
+If the target system has the `PREFER_FORMAT` setting, imported ROMs are converted to that format right after import; pass `--as-is` to skip this.
 
 Supported console ROM formats:
 
@@ -620,7 +623,7 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
     Usage: oxyromon convert-roms [OPTIONS]
 
     Options:
-        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, ZIP, CHD, CSO, RVZ, ZSO]
+        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP, ZSO]
         -g, --game <GAME>      Select games by name
         -s, --system <SYSTEM>  Select systems by name
         -a, --all              Convert all systems/games
@@ -628,7 +631,10 @@ Warning: CHD for Dreamcast requires at least chdman 0.264
         -d, --diff             Print size differences
         -c, --check            Check ROM files after conversion
         -p, --parents          Prompt for CHD parents
+        -S, --save             Persist the format as the systems' preferred format (PREFER_FORMAT)
         -h, --help             Print help information
+
+With `--save`, the destination format is also stored as the `PREFER_FORMAT` setting of every processed system, so future imports are converted to the same format automatically.
 
 ## oxyromon-export-roms
 

@@ -10,6 +10,9 @@
 - Added patch file import to the web UI, for a single ROM
 - Added PlayStation 3 IRD import and purge to the web UI
 - Added M3U playlist generation to the web UI, for every system at once
+- Added the `PREFER_FORMAT` per-system setting: ROMs imported into a system are automatically converted to its preferred format, `import-roms --as-is` skips the conversion
+- `convert-roms` now accepts `--save` to persist the destination format as the processed systems' `PREFER_FORMAT`
+- Added a Prefer Format dropdown to the web UI's per-system settings dialog
 
 ## Changes
 

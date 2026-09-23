@@ -307,6 +307,30 @@ pub async fn set_prefer_versions(value: &str, system_id: Option<i64>) -> Result<
     .map(|_: serde::de::IgnoredAny| ())
 }
 
+pub async fn set_prefer_format(value: &str, system_id: Option<i64>) -> Result<(), String> {
+    let mutation = r#"mutation SetPreferFormat($value: String!, $systemId: Int) {
+        setPreferFormat(value: $value, systemId: $systemId)
+    }"#;
+    graphql(
+        mutation,
+        json!({ "value": value, "systemId": system_id_var(system_id) }),
+    )
+    .await
+    .map(|_: serde::de::IgnoredAny| ())
+}
+
+pub async fn unset_prefer_format(system_id: Option<i64>) -> Result<(), String> {
+    let mutation = r#"mutation UnsetPreferFormat($systemId: Int) {
+        unsetPreferFormat(systemId: $systemId)
+    }"#;
+    graphql(
+        mutation,
+        json!({ "systemId": system_id_var(system_id) }),
+    )
+    .await
+    .map(|_: serde::de::IgnoredAny| ())
+}
+
 pub async fn set_subfolder_scheme(
     key: &str,
     value: &str,

@@ -9,15 +9,17 @@ use leptos::task::spawn_local;
 
 use crate::api::{
     add_to_list, get_raw_settings, remove_from_list, report_error, set_bool, set_directory,
-    set_prefer_regions, set_prefer_versions, set_subfolder_scheme,
+    set_prefer_format, set_prefer_regions, set_prefer_versions, set_subfolder_scheme,
+    unset_prefer_format,
 };
 use crate::model::Setting;
 use crate::state::{
     ALL_REGIONS_KEY, ALL_REGIONS_SUBFOLDERS_KEY, AppState, DISCARD_FLAGS_KEY, DISCARD_RELEASES_KEY,
     GROUP_SUBSYSTEMS_KEY, LANGUAGES_KEY, ONE_REGIONS_KEY, ONE_REGIONS_SUBFOLDERS_KEY,
-    PREFER_FLAGS_KEY, PREFER_PARENTS_KEY, PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY,
-    PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY, ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY,
-    SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY, split_list,
+    PREFER_FLAGS_KEY, PREFER_FORMAT_CHOICES, PREFER_FORMAT_KEY, PREFER_PARENTS_KEY,
+    PREFER_REGIONS_CHOICES, PREFER_REGIONS_KEY, PREFER_VERSIONS_CHOICES, PREFER_VERSIONS_KEY,
+    ROM_DIRECTORY_KEY, STRICT_ONE_REGIONS_KEY, SUBFOLDER_SCHEMES_CHOICES, TMP_DIRECTORY_KEY,
+    split_list,
 };
 use crate::ui::{Modal, control_checked, control_value};
 
@@ -32,6 +34,7 @@ struct Local {
     prefer_flags: RwSignal<Vec<String>>,
     strict_one_regions: RwSignal<bool>,
     prefer_parents: RwSignal<bool>,
+    prefer_format: RwSignal<String>,
     group_subsystems: RwSignal<bool>,
     prefer_regions: RwSignal<String>,
     prefer_versions: RwSignal<String>,
@@ -52,6 +55,7 @@ impl Local {
             prefer_flags: RwSignal::new(Vec::new()),
             strict_one_regions: RwSignal::new(false),
             prefer_parents: RwSignal::new(true),
+            prefer_format: RwSignal::new(String::new()),
             group_subsystems: RwSignal::new(true),
             prefer_regions: RwSignal::new("none".to_string()),
             prefer_versions: RwSignal::new("none".to_string()),
@@ -81,6 +85,8 @@ impl Local {
         self.prefer_flags.set(split_list(&find(PREFER_FLAGS_KEY)));
         self.strict_one_regions.set(is_true(STRICT_ONE_REGIONS_KEY));
         self.prefer_parents.set(not_false(PREFER_PARENTS_KEY));
+        self.prefer_format
+            .set(find(PREFER_FORMAT_KEY).unwrap_or_default());
         self.group_subsystems.set(not_false(GROUP_SUBSYSTEMS_KEY));
         self.prefer_regions
             .set(find(PREFER_REGIONS_KEY).unwrap_or_else(|| "none".to_string()));
@@ -148,6 +154,20 @@ pub fn SettingsModal(
         let sid = system_id.get_untracked();
         spawn_local(async move {
             if let Err(e) = set_prefer_versions(&value, sid).await {
+                report_error(state.notifier, "Updating settings", &e);
+            }
+            reload.run(());
+        });
+    };
+    let choose_prefer_format = move |value: String| {
+        let sid = system_id.get_untracked();
+        spawn_local(async move {
+            let result = if value.is_empty() {
+                unset_prefer_format(sid).await
+            } else {
+                set_prefer_format(&value, sid).await
+            };
+            if let Err(e) = result {
                 report_error(state.notifier, "Updating settings", &e);
             }
             reload.run(());
@@ -275,6 +295,14 @@ pub fn SettingsModal(
                             choices=&PREFER_VERSIONS_CHOICES
                             on_select=Callback::new(choose_prefer_versions)
                         />
+                        <SelectField
+                            label="Prefer Format"
+                            hint="Convert imported ROMs to this format for this system"
+                            value=local.prefer_format
+                            choices=&PREFER_FORMAT_CHOICES
+                            unset_label="No conversion"
+                            on_select=Callback::new(choose_prefer_format)
+                        />
                         <ListField
                             label="Prefer Flags"
                             hint="Favors specific flags in the election process"
@@ -372,6 +400,7 @@ fn SelectField(
     #[prop(into)] hint: String,
     value: RwSignal<String>,
     choices: &'static [&'static str],
+    #[prop(optional, into)] unset_label: Option<String>,
     on_select: Callback<String>,
 ) -> impl IntoView {
     view! {
@@ -385,6 +414,8 @@ fn SelectField(
                 on_select.run(chosen);
             }
         >
+            {unset_label
+                .map(|l| view! { <wa-option value="">{l}</wa-option> })}
             {choices
                 .iter()
                 .map(|choice| view! { <wa-option value=*choice>{*choice}</wa-option> })
