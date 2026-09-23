@@ -166,6 +166,40 @@ impl Mutation {
         Ok(true)
     }
 
+    async fn set_prefer_format(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(validator(custom = "PreferFormatValidator::new()"))] value: String,
+        system_id: Option<i64>,
+    ) -> Result<bool> {
+        log::debug!("mutation::set_prefer_format({})", value);
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let mut connection = acquire_connection(pool).await?;
+        if let Some(system_id) = system_id
+            && let Some(system) = find_system_by_id_opt(&mut connection, system_id).await
+            && !convert_roms::format_supported_for_system(&system, &value)
+        {
+            return Err(async_graphql::Error::new(format!(
+                "Only {:?} are supported for arcade systems",
+                convert_roms::ARCADE_FORMATS
+            )));
+        }
+        set_string(&mut connection, "PREFER_FORMAT", &value, system_id).await;
+        Ok(true)
+    }
+
+    async fn unset_prefer_format(&self, ctx: &Context<'_>, system_id: Option<i64>) -> Result<bool> {
+        log::debug!("mutation::unset_prefer_format()");
+        let pool = ctx.data_unchecked::<SqlitePool>();
+        let mut connection = acquire_connection(pool).await?;
+        if let Some(setting) =
+            find_setting_by_key(&mut connection, "PREFER_FORMAT", system_id).await
+        {
+            update_setting(&mut connection, setting.id, None).await;
+        }
+        Ok(true)
+    }
+
     async fn set_subfolder_scheme(
         &self,
         ctx: &Context<'_>,

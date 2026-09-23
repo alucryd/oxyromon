@@ -30,6 +30,28 @@ pub type PreferRegionValidator = VariantValidator<PreferredRegion>;
 pub type PreferVersionValidator = VariantValidator<PreferredVersion>;
 pub type SubfolderSchemeValidator = VariantValidator<SubfolderScheme>;
 
+/// Validates a `PREFER_FORMAT` value against the convert formats.
+pub struct PreferFormatValidator;
+
+impl PreferFormatValidator {
+    pub fn new() -> Self {
+        PreferFormatValidator
+    }
+}
+
+impl CustomValidator<String> for PreferFormatValidator {
+    fn check(&self, value: &String) -> Result<(), InputValueError<String>> {
+        if crate::convert_roms::ALL_FORMATS.contains(&value.as_str()) {
+            Ok(())
+        } else {
+            Err(InputValueError::custom(format!(
+                "Valid choices: {:?}",
+                crate::convert_roms::ALL_FORMATS
+            )))
+        }
+    }
+}
+
 pub struct DirectoryValidator;
 
 impl DirectoryValidator {

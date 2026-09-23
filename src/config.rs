@@ -71,6 +71,7 @@ const BOOLEANS: &[&str] = &[
 ];
 fn choice_options(key: &str) -> Option<&[&str]> {
     match key {
+        "PREFER_FORMAT" => Some(crate::convert_roms::ALL_FORMATS),
         "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
         "PREFER_VERSIONS" => Some(PreferredVersion::VARIANTS),
         "REGIONS_ALL_SUBFOLDERS" => Some(SubfolderScheme::VARIANTS),
@@ -128,6 +129,7 @@ const NULLABLES: &[&str] = &[
     "DISCARD_RELEASES",
     "LANGUAGES",
     "PREFER_FLAGS",
+    "PREFER_FORMAT",
     "REGIONS_ALL",
     "REGIONS_ALL_ARCADE",
     "REGIONS_ONE",
@@ -371,11 +373,25 @@ pub async fn set_setting(
         let b: bool = FromStr::from_str(value).context("Failed to parse bool")?;
         set_bool(connection, key, b, system_id).await;
     } else if let Some(options) = choice_options(key) {
-        if options.contains(&value) {
-            set_string(connection, key, value, system_id).await;
-        } else {
+        if !options.contains(&value) {
             print_warning(progress_bar, &format!("Valid choices: {:?}", options));
+            return Ok(());
         }
+        if key == "PREFER_FORMAT"
+            && let Some(system_id) = system_id
+            && let Some(system) = find_system_by_id_opt(connection, system_id).await
+            && !crate::convert_roms::format_supported_for_system(&system, value)
+        {
+            print_warning(
+                progress_bar,
+                &format!(
+                    "Only {:?} are supported for arcade systems",
+                    crate::convert_roms::ARCADE_FORMATS
+                ),
+            );
+            return Ok(());
+        }
+        set_string(connection, key, value, system_id).await;
     } else if let Some(range) = integer_range(key) {
         let i: usize = FromStr::from_str(value).context("Failed to parse integer")?;
         if range[0] <= i && i <= range[1] {

@@ -28,8 +28,38 @@ use std::mem::drop;
 use std::str::FromStr;
 
 pub const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
-const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
+pub const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
+/// Whether `format` can be used for `system` at all, regardless of installed
+/// tools: arcade sets only ever ship as loose files or ZIPs.
+pub fn format_supported_for_system(system: &System, format: &str) -> bool {
+    !system.arcade || ARCADE_FORMATS.contains(&format)
+}
+
+/// Whether the external tool `format` depends on is installed, printing an
+/// error when it is missing.
+async fn format_available(format: &str, progress_bar: &ProgressBar) -> bool {
+    match format {
+        "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
+        "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
+        "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
+        "CSO" | "NSZ" | "ORIGINAL" | "ZSO" => true,
+        _ => false,
+    }
+}
+
+/// Options shared by every caller of [`convert_system`].
+#[derive(Clone, Copy)]
+pub struct ConvertOpts {
+    pub recompress: bool,
+    pub diff: bool,
+    pub check: bool,
+    pub prompt_for_parents: bool,
+}
+
+/// Convert the given games of one system to `format`, loading the per-format
+/// settings for that system. Shared by `convert-roms` and the auto-conversion
+/// pass of `import-roms`.
 pub fn subcommand() -> Command {
     Command::new("convert-roms")
         .about("Convert ROM files between common formats")
@@ -98,6 +128,237 @@ pub fn subcommand() -> Command {
                 .required(false)
                 .action(ArgAction::SetTrue),
         )
+        .arg(
+            Arg::new("SAVE")
+                .short('S')
+                .long("save")
+                .help("Persist the format as the systems' preferred format (PREFER_FORMAT)")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
+}
+
+pub async fn convert_system(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: System,
+    format: &str,
+    games: Vec<Game>,
+    opts: &ConvertOpts,
+) -> Result<()> {
+    print_header(progress_bar, &format!("Processing \"{}\"", system.name));
+
+    if !format_available(format, progress_bar).await {
+        return Ok(());
+    }
+
+    if format == "CHD"
+        && system.name.contains("Dreamcast")
+        && chdman::get_version()
+            .await?
+            .as_str()
+            .cmp(chdman::MIN_DREAMCAST_VERSION)
+            == Ordering::Less
+    {
+        print_warning(
+            progress_bar,
+            &format!(
+                "chdman {} or newer required for Dreamcast games",
+                chdman::MIN_DREAMCAST_VERSION
+            ),
+        );
+        return Ok(());
+    }
+
+    if !format_supported_for_system(&system, format) {
+        print_warning(
+            progress_bar,
+            &format!("Only {:?} are supported for arcade systems", ARCADE_FORMATS),
+        );
+        return Ok(());
+    }
+
+    let &ConvertOpts {
+        recompress,
+        diff,
+        check,
+        prompt_for_parents,
+    } = opts;
+
+    let (roms_by_game_id, games_by_id, romfiles_by_id) =
+        load_rom_data(connection, games, true).await;
+
+    match format {
+        "ORIGINAL" => {
+            to_original(
+                connection,
+                progress_bar,
+                &system,
+                roms_by_game_id,
+                romfiles_by_id,
+                check,
+            )
+            .await?
+        }
+        "7Z" => {
+            let compression = sevenzip::get_archive_compression(
+                connection,
+                &sevenzip::ArchiveType::Sevenzip,
+                Some(system.id),
+            )
+            .await;
+            let solid = get_bool(connection, "SEVENZIP_SOLID_COMPRESSION", Some(system.id)).await;
+            to_archive(
+                connection,
+                progress_bar,
+                &system,
+                games_by_id,
+                roms_by_game_id,
+                romfiles_by_id,
+                sevenzip::ArchiveType::Sevenzip,
+                recompress,
+                diff,
+                check,
+                &compression,
+                solid,
+            )
+            .await?
+        }
+        "ZIP" => {
+            let compression = sevenzip::get_archive_compression(
+                connection,
+                &sevenzip::ArchiveType::Zip,
+                Some(system.id),
+            )
+            .await;
+            to_archive(
+                connection,
+                progress_bar,
+                &system,
+                games_by_id,
+                roms_by_game_id,
+                romfiles_by_id,
+                sevenzip::ArchiveType::Zip,
+                recompress,
+                diff,
+                check,
+                &compression,
+                false,
+            )
+            .await?
+        }
+        "CHD" => {
+            let cd_compression_algorithms =
+                get_list(connection, "CHD_CD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
+            let cd_hunk_size = get_integer(connection, "CHD_CD_HUNK_SIZE", Some(system.id)).await;
+            let dvd_compression_algorithms = get_list(
+                connection,
+                "CHD_DVD_COMPRESSION_ALGORITHMS",
+                Some(system.id),
+            )
+            .await;
+            let dvd_hunk_size = get_integer(connection, "CHD_DVD_HUNK_SIZE", Some(system.id)).await;
+            let hd_compression_algorithms =
+                get_list(connection, "CHD_HD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
+            let hd_hunk_size = get_integer(connection, "CHD_HD_HUNK_SIZE", Some(system.id)).await;
+            let ld_compression_algorithms =
+                get_list(connection, "CHD_LD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
+            let ld_hunk_size = get_integer(connection, "CHD_LD_HUNK_SIZE", Some(system.id)).await;
+            let parents = get_bool(connection, "CHD_PARENTS", Some(system.id)).await;
+            to_chd(
+                connection,
+                progress_bar,
+                games_by_id,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+                &cd_compression_algorithms,
+                &cd_hunk_size,
+                &dvd_compression_algorithms,
+                &dvd_hunk_size,
+                &hd_compression_algorithms,
+                &hd_hunk_size,
+                &ld_compression_algorithms,
+                &ld_hunk_size,
+                parents,
+                prompt_for_parents,
+            )
+            .await?
+        }
+        "CSO" => {
+            to_xso(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+                XsoType::Cso,
+            )
+            .await?
+        }
+        "NSZ" => {
+            to_nsz(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+            )
+            .await?
+        }
+        "RVZ" => {
+            let compression_algorithm = RvzCompressionAlgorithm::from_str(
+                &get_string(connection, "RVZ_COMPRESSION_ALGORITHM", Some(system.id))
+                    .await
+                    .unwrap(),
+            )
+            .unwrap();
+            let compression_level =
+                get_integer(connection, "RVZ_COMPRESSION_LEVEL", Some(system.id))
+                    .await
+                    .unwrap();
+            let block_size = get_integer(connection, "RVZ_BLOCK_SIZE", Some(system.id))
+                .await
+                .unwrap();
+            to_rvz(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+                &compression_algorithm,
+                compression_level,
+                block_size,
+            )
+            .await?
+        }
+        "ZSO" => {
+            to_xso(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                recompress,
+                diff,
+                check,
+                XsoType::Zso,
+            )
+            .await?
+        }
+        _ => bail!("Not supported"),
+    }
+
+    print_separator(progress_bar);
+
+    Ok(())
 }
 
 pub async fn main(
@@ -116,50 +377,19 @@ pub async fn main(
             .map(|&s| s.to_owned())
             .unwrap(),
     };
-    let recompress = matches.get_flag("RECOMPRESS");
-    let diff = matches.get_flag("DIFF");
-    let check = matches.get_flag("CHECK");
-
-    let available = match format.as_str() {
-        "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
-        "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
-        "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
-        "CSO" | "NSZ" | "ORIGINAL" | "ZSO" => true,
-        _ => bail!("Not supported"),
+    let opts = ConvertOpts {
+        recompress: matches.get_flag("RECOMPRESS"),
+        diff: matches.get_flag("DIFF"),
+        check: matches.get_flag("CHECK"),
+        prompt_for_parents: matches.get_flag("PARENTS"),
     };
-    if !available {
+    let save = matches.get_flag("SAVE");
+
+    if !format_available(&format, progress_bar).await {
         return Ok(());
     }
 
     for system in systems {
-        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
-
-        if format == "CHD"
-            && system.name.contains("Dreamcast")
-            && chdman::get_version()
-                .await?
-                .as_str()
-                .cmp(chdman::MIN_DREAMCAST_VERSION)
-                == Ordering::Less
-        {
-            print_warning(
-                progress_bar,
-                &format!(
-                    "chdman {} or newer required for Dreamcast games",
-                    chdman::MIN_DREAMCAST_VERSION
-                ),
-            );
-            continue;
-        }
-
-        if system.arcade && !ARCADE_FORMATS.contains(&format.as_str()) {
-            print_warning(
-                progress_bar,
-                &format!("Only {:?} are supported for arcade systems", ARCADE_FORMATS),
-            );
-            continue;
-        }
-
         let games = select_games(connection, matches, system.id).await?;
 
         if games.is_empty() {
@@ -169,184 +399,12 @@ pub async fn main(
             continue;
         }
 
-        let (roms_by_game_id, games_by_id, romfiles_by_id) =
-            load_rom_data(connection, games, true).await;
+        let system_id = system.id;
+        convert_system(connection, progress_bar, system, &format, games, &opts).await?;
 
-        match format.as_str() {
-            "ORIGINAL" => {
-                to_original(
-                    connection,
-                    progress_bar,
-                    &system,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    check,
-                )
-                .await?
-            }
-            "7Z" => {
-                let compression = sevenzip::get_archive_compression(
-                    connection,
-                    &sevenzip::ArchiveType::Sevenzip,
-                    Some(system.id),
-                )
-                .await;
-                let solid =
-                    get_bool(connection, "SEVENZIP_SOLID_COMPRESSION", Some(system.id)).await;
-                to_archive(
-                    connection,
-                    progress_bar,
-                    &system,
-                    games_by_id,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    sevenzip::ArchiveType::Sevenzip,
-                    recompress,
-                    diff,
-                    check,
-                    &compression,
-                    solid,
-                )
-                .await?
-            }
-            "ZIP" => {
-                let compression = sevenzip::get_archive_compression(
-                    connection,
-                    &sevenzip::ArchiveType::Zip,
-                    Some(system.id),
-                )
-                .await;
-                to_archive(
-                    connection,
-                    progress_bar,
-                    &system,
-                    games_by_id,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    sevenzip::ArchiveType::Zip,
-                    recompress,
-                    diff,
-                    check,
-                    &compression,
-                    false,
-                )
-                .await?
-            }
-            "CHD" => {
-                let cd_compression_algorithms =
-                    get_list(connection, "CHD_CD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let cd_hunk_size =
-                    get_integer(connection, "CHD_CD_HUNK_SIZE", Some(system.id)).await;
-                let dvd_compression_algorithms = get_list(
-                    connection,
-                    "CHD_DVD_COMPRESSION_ALGORITHMS",
-                    Some(system.id),
-                )
-                .await;
-                let dvd_hunk_size =
-                    get_integer(connection, "CHD_DVD_HUNK_SIZE", Some(system.id)).await;
-                let hd_compression_algorithms =
-                    get_list(connection, "CHD_HD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let hd_hunk_size =
-                    get_integer(connection, "CHD_HD_HUNK_SIZE", Some(system.id)).await;
-                let ld_compression_algorithms =
-                    get_list(connection, "CHD_LD_COMPRESSION_ALGORITHMS", Some(system.id)).await;
-                let ld_hunk_size =
-                    get_integer(connection, "CHD_LD_HUNK_SIZE", Some(system.id)).await;
-                let parents = get_bool(connection, "CHD_PARENTS", Some(system.id)).await;
-                let prompt_for_parents = matches.get_flag("PARENTS");
-                to_chd(
-                    connection,
-                    progress_bar,
-                    games_by_id,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    recompress,
-                    diff,
-                    check,
-                    &cd_compression_algorithms,
-                    &cd_hunk_size,
-                    &dvd_compression_algorithms,
-                    &dvd_hunk_size,
-                    &hd_compression_algorithms,
-                    &hd_hunk_size,
-                    &ld_compression_algorithms,
-                    &ld_hunk_size,
-                    parents,
-                    prompt_for_parents,
-                )
-                .await?
-            }
-            "CSO" => {
-                to_xso(
-                    connection,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    recompress,
-                    diff,
-                    check,
-                    XsoType::Cso,
-                )
-                .await?
-            }
-            "NSZ" => {
-                to_nsz(
-                    connection,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    recompress,
-                    diff,
-                    check,
-                )
-                .await?
-            }
-            "RVZ" => {
-                let compression_algorithm = RvzCompressionAlgorithm::from_str(
-                    &get_string(connection, "RVZ_COMPRESSION_ALGORITHM", Some(system.id))
-                        .await
-                        .unwrap(),
-                )
-                .unwrap();
-                let compression_level =
-                    get_integer(connection, "RVZ_COMPRESSION_LEVEL", Some(system.id))
-                        .await
-                        .unwrap();
-                let block_size = get_integer(connection, "RVZ_BLOCK_SIZE", Some(system.id))
-                    .await
-                    .unwrap();
-                to_rvz(
-                    connection,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    recompress,
-                    diff,
-                    check,
-                    &compression_algorithm,
-                    compression_level,
-                    block_size,
-                )
-                .await?
-            }
-            "ZSO" => {
-                to_xso(
-                    connection,
-                    progress_bar,
-                    roms_by_game_id,
-                    romfiles_by_id,
-                    recompress,
-                    diff,
-                    check,
-                    XsoType::Zso,
-                )
-                .await?
-            }
-            _ => bail!("Not supported"),
+        if save {
+            set_string(connection, "PREFER_FORMAT", &format, Some(system_id)).await;
         }
-
-        print_separator(progress_bar);
     }
 
     Ok(())

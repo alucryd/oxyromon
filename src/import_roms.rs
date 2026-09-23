@@ -2,6 +2,7 @@ use super::chdman;
 use super::chdman::{AsChd, ChdType};
 use super::common::*;
 use super::config::*;
+use super::convert_roms::{ConvertOpts, convert_system};
 use super::ctrtool;
 use super::database::*;
 use super::dolphin;
@@ -22,7 +23,7 @@ use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
@@ -337,9 +338,60 @@ pub async fn main(
         }
     }
 
+    if !as_is {
+        auto_convert(connection, progress_bar, &system_ids, &game_ids).await?;
+    }
+
     for system_id in system_ids {
         let system = find_system_by_id(connection, system_id).await;
         compute_system_completion(connection, progress_bar, &system).await?;
+    }
+
+    Ok(())
+}
+
+/// Convert the games imported in this run to each system's `PREFER_FORMAT`, if
+/// one is set. Runs after every file has been committed, so a failed conversion
+/// never rolls back an import: the ROM simply stays in the format it was
+/// imported in, with a warning.
+async fn auto_convert(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_ids: &HashSet<i64>,
+    game_ids: &HashSet<i64>,
+) -> Result<()> {
+    let mut games_by_system: HashMap<i64, Vec<Game>> = HashMap::new();
+    for game_id in game_ids {
+        let game = find_game_by_id(connection, *game_id).await;
+        games_by_system
+            .entry(game.system_id)
+            .or_default()
+            .push(game);
+    }
+
+    for system_id in system_ids {
+        let Some(format) = get_string(connection, "PREFER_FORMAT", Some(*system_id)).await else {
+            continue;
+        };
+        let games = games_by_system.remove(system_id).unwrap_or_default();
+        if games.is_empty() {
+            continue;
+        }
+        let system = find_system_by_id(connection, *system_id).await;
+        let opts = ConvertOpts {
+            recompress: false,
+            diff: false,
+            check: true,
+            prompt_for_parents: false,
+        };
+        if let Err(error) =
+            convert_system(connection, progress_bar, system, &format, games, &opts).await
+        {
+            print_warning(
+                progress_bar,
+                &format!("Auto-conversion to {} failed: {}", format, error),
+            );
+        }
     }
 
     Ok(())
@@ -2682,6 +2734,8 @@ mod test_original_shared;
 mod test_original_trash;
 #[cfg(test)]
 mod test_per_system_rom_directory;
+#[cfg(test)]
+mod test_prefer_format;
 #[cfg(test)]
 mod test_rvz;
 #[cfg(test)]
