@@ -1,10 +1,11 @@
 # xso-rs
 
-CSO and ZSO compression and decompression in Rust — a port of
-[maxcso](https://github.com/unknownbrackets/maxcso)'s core, without the GUI and
-without the formats nobody uses. Built to replace the `maxcso` subprocess in
-[oxyromon](https://github.com/alucryd/oxyromon), whose name for the pair it
-borrows: an XSO is either a CSO or a ZSO.
+CSO and ZSO compression and decompression in Rust, for PSP and PS2 games. Part
+of [oxyROMon](https://github.com/alucryd/oxyromon), as a library and the
+`xsors` CLI, and named after oxyROMon's word for the pair: an XSO is either a
+CSO or a ZSO. Its files are interchangeable with those of
+[maxcso](https://github.com/unknownbrackets/maxcso), which it began as a port
+of (see [Credits](#credits)).
 
 ```rust
 use std::path::Path;
@@ -94,17 +95,26 @@ Two notes on the backends, both forced by what the crates actually expose:
 
 ## CLI
 
-`xsors` takes the maxcso flags oxyromon used, so it can stand in for maxcso
-there.
+`xsors` compresses ISOs and decompresses CSOs and ZSOs, telling which from
+each file's extension, and writes next to each one unless told otherwise:
 
 ```
 cargo build --release -p xso-rs
-xsors --format=cso --block=2048 game.iso -o game.cso
-xsors --format=zso game.iso -o game.zso
-xsors --decompress game.cso -o game.iso
+xsors game.iso                 # to game.cso, next to it
+xsors -f zso -o out/ *.iso     # to ZSOs, in out/
+xsors game.cso                 # back to game.iso
 ```
 
-The format is inferred from the output extension when `--format` is omitted.
+| Flag       | Meaning                                                            |
+| ---------- | ------------------------------------------------------------------ |
+| `-o DIR`   | output directory (default: next to each input)                     |
+| `-f FORMAT`| what to compress ISOs to, `cso` (default) or `zso`                 |
+| `-b N`     | block size (default: see [Block sizes](#block-sizes))              |
+| `-j N`     | worker threads (default: one per core)                             |
+
+Like every oxyROMon tool, `xsors` draws oxyROMon's progress bar, reports each
+input on a line of its own, and exits non-zero when any of them failed. It refuses to write
+one input's output over another input, or over an earlier input's output.
 
 ## Block sizes
 
@@ -139,6 +149,13 @@ They are skipped unless a maxcso binary is reachable through `$MAXCSO` or
 cargo test -p xso-rs
 cargo test --release -p xso-rs -- --ignored   # the 2 GiB image, ~35 s
 ```
+
+## Credits
+
+xso-rs began as a port of [maxcso](https://github.com/unknownbrackets/maxcso)
+by [Unknown W. Brackets](https://github.com/unknownbrackets). The container and
+its index, the per-block rules and the order of the zlib trials all come from
+its work.
 
 ## License
 

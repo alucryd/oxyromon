@@ -1,8 +1,9 @@
-//! CSO and ZSO compression and decompression.
+//! CSO and ZSO compression and decompression, part of oxyROMon.
 //!
-//! A port of [maxcso]'s core, minus the GUI and the formats nobody uses. CSO v1
-//! stores DEFLATE blocks, ZSO stores LZ4 blocks; both share one container of a
-//! 24-byte header, an index of little-endian offsets, and the block data.
+//! CSO v1 stores DEFLATE blocks, ZSO stores LZ4 blocks; both share one
+//! container of a 24-byte header, an index of little-endian offsets, and the
+//! block data. Files are interchangeable with those of [maxcso], which this
+//! began as a port of.
 //!
 //! ```no_run
 //! use std::path::Path;

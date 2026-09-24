@@ -3,7 +3,7 @@ name = "gdi-rs"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "Rust port of gdidrop: Dreamcast GD-ROM CUE/BIN (Redump) to GDI conversion"
+description = "Dreamcast GD-ROM CUE/BIN (Redump) to GDI conversion, laid out as gdidrop does"
 license = "BSD-2-Clause"
 repository.workspace = true
 keywords = ["dreamcast", "gdi", "gd-rom", "redump", "cue"]
@@ -16,12 +16,13 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "gdirs"
-path = "src/bin/gdirs.rs"
+path = "src/bin/gdirs/main.rs"
 required-features = ["cli"]
 
 [dependencies]
 thiserror.workspace = true
 clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -29,4 +30,4 @@ tempfile.workspace = true
 
 [features]
 default = ["cli"]
-cli = ["dep:clap", "dep:indicatif"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]
