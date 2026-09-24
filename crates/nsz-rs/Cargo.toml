@@ -1,8 +1,8 @@
 [package]
 name = "nsz-rs"
-version = "0.2.0"
+version = "0.3.0"
 edition.workspace = true
-description = "Rust port of nsz (NSP <-> NSZ zstd compression)"
+description = "Nintendo Switch NSP to NSZ zstd compression and back, interchangeable with nsz"
 license = "MIT"
 rust-version.workspace = true
 repository.workspace = true

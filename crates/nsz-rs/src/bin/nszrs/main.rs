@@ -5,7 +5,7 @@ mod ui;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command, value_parser};
+use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
 use nsz_rs::keys::Keys;
 use nsz_rs::pipeline::{Compression, compress_nsp, decompress_nsz};
 
@@ -31,52 +31,6 @@ fn cli() -> Command {
                 .help("Output directory [default: next to each input]")
                 .value_parser(value_parser!(PathBuf)),
         )
-        // nsz's own flags, which the extension makes optional.
-        .arg(
-            Arg::new("compress")
-                .short('C')
-                .long("compress")
-                .help("Compress every input, whatever its extension")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
-            Arg::new("decompress")
-                .short('D')
-                .long("decompress")
-                .help("Decompress every input, whatever its extension")
-                .action(ArgAction::SetTrue),
-        )
-        .group(ArgGroup::new("mode").args(["compress", "decompress"]))
-        .arg(
-            Arg::new("fix-padding")
-                .short('F')
-                .long("fix-padding")
-                .help("Re-pad the output header to 0x20 alignment")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
-            Arg::new("long-distance")
-                .short('L')
-                .long("long-distance")
-                .help("Enable zstd long-distance matching")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
-            Arg::new("solid")
-                .short('S')
-                .long("solid")
-                .help("Compress as a solid stream (default)")
-                .action(ArgAction::SetTrue)
-                .overrides_with("block"),
-        )
-        .arg(
-            Arg::new("block")
-                .short('B')
-                .long("block")
-                .help("Compress as independent blocks, in parallel")
-                .action(ArgAction::SetTrue)
-                .overrides_with("solid"),
-        )
         .arg(
             Arg::new("level")
                 .short('l')
@@ -86,13 +40,23 @@ fn cli() -> Command {
                 .default_value("18"),
         )
         .arg(
-            Arg::new("bs-exp")
-                .short('s')
-                .long("bs-exp")
-                .visible_alias("block-size-exp")
-                .help("Block size exponent for -B, 14..=32")
-                .value_parser(value_parser!(i8))
-                .default_value("20"),
+            Arg::new("block")
+                .short('b')
+                .long("block")
+                .help("Compress in independent blocks of this size, a power of two in 16384..=4294967296, instead of one solid stream")
+                .value_parser(block_exponent),
+        )
+        .arg(
+            Arg::new("long-distance")
+                .long("long-distance")
+                .help("Enable zstd long-distance matching")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("fix-padding")
+                .long("fix-padding")
+                .help("Re-pad the output header to 0x20 alignment")
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("keys")
@@ -103,27 +67,21 @@ fn cli() -> Command {
         )
         .arg(
             Arg::new("skip-key-check")
-                .short('x')
                 .long("skip-key-check")
                 .help("Skip the CRC32 check of known keys")
                 .action(ArgAction::SetTrue),
         )
-        // Accepted for nsz compatibility: keeping unknown members and parsing
-        // the CNMT are what nsz-rs always does.
-        .arg(
-            Arg::new("keep")
-                .short('K')
-                .long("keep")
-                .action(ArgAction::SetTrue)
-                .hide(true),
-        )
-        .arg(
-            Arg::new("always-parse-cnmt")
-                .short('P')
-                .long("always-parse-cnmt")
-                .action(ArgAction::SetTrue)
-                .hide(true),
-        )
+}
+
+/// A `--block` size in bytes, as the exponent the library takes.
+fn block_exponent(size: &str) -> Result<i8, String> {
+    let size: u64 = size
+        .parse()
+        .map_err(|_| format!("`{size}` is not a size in bytes"))?;
+    if !size.is_power_of_two() || !(14..=32).contains(&size.trailing_zeros()) {
+        return Err("not a power of two in 16384..=4294967296".into());
+    }
+    Ok(size.trailing_zeros() as i8)
 }
 
 fn default_keys_path() -> PathBuf {
@@ -138,14 +96,9 @@ fn main() -> ExitCode {
     })
 }
 
-/// Decompress `input` if it is an NSZ, compress it otherwise, unless `-C` or
-/// `-D` says which.
+/// Decompress `input` if it is an NSZ, compress it otherwise.
 fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
-    let decompress = if matches.get_flag("compress") {
-        false
-    } else {
-        matches.get_flag("decompress") || ui::extension(input) == "nsz"
-    };
+    let decompress = ui::extension(input) == "nsz";
     let dir = ui::output_dir(input, matches.get_one("output"))?;
     let fix_padding = matches.get_flag("fix-padding");
     // Only loaded for files that need them: containers without NCAs don't.
@@ -171,9 +124,7 @@ fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
         let compression = Compression {
             level: *matches.get_one::<i32>("level").unwrap(),
             ldm: matches.get_flag("long-distance"),
-            block_size_exponent: matches
-                .get_flag("block")
-                .then(|| *matches.get_one::<i8>("bs-exp").unwrap()),
+            block_size_exponent: matches.get_one::<i8>("block").copied(),
         };
         let bar = ui::progress_bar(size, "Compressing", input);
         let result = compress_nsp(input, &output, keys, &compression, fix_padding, &mut |n| {
@@ -196,22 +147,20 @@ mod tests {
     }
 
     #[test]
-    fn still_takes_the_nsz_flags() {
-        for argv in [
-            ["nszrs", "-D", "-F", "-o", "out", "game.nsz"].as_slice(),
-            ["nszrs", "-C", "-K", "-L", "-P", "-o", "out", "game.nsp"].as_slice(),
-        ] {
-            cli().try_get_matches_from(argv).unwrap();
-        }
+    fn takes_several_inputs() {
+        let matches = cli()
+            .try_get_matches_from(["nszrs", "a.nsp", "b.nsz"])
+            .unwrap();
+        assert_eq!(matches.get_many::<PathBuf>("INPUTS").unwrap().count(), 2);
+        assert!(matches.get_one::<i8>("block").is_none());
     }
 
     #[test]
-    fn needs_no_mode_but_takes_one_at_most() {
-        cli().try_get_matches_from(["nszrs", "game.nsp"]).unwrap();
-        assert!(
-            cli()
-                .try_get_matches_from(["nszrs", "-C", "-D", "game.nsp"])
-                .is_err()
-        );
+    fn a_block_size_is_a_power_of_two_in_range() {
+        assert_eq!(block_exponent("1048576"), Ok(20));
+        assert_eq!(block_exponent("16384"), Ok(14));
+        for bad in ["1000000", "8192", "8589934592", "1M"] {
+            assert!(block_exponent(bad).is_err(), "{bad}");
+        }
     }
 }

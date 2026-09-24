@@ -1,4 +1,5 @@
-//! Dreamcast GD-ROM CUE/BIN to GDI conversion: a port of [gdidrop].
+//! Dreamcast GD-ROM CUE/BIN to GDI conversion, part of oxyROMon, laying discs
+//! out as [gdidrop] does, which this began as a port of.
 //!
 //! Redump dumps GD-ROMs as a CUE with one BIN per track; optical drive
 //! emulators such as GDEMU load GDI instead. The track data is the same, save

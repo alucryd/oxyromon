@@ -1,9 +1,10 @@
 # gdi-rs
 
-Dreamcast GD-ROM CUE/BIN to GDI conversion in Rust — a port of
+Dreamcast GD-ROM CUE/BIN to GDI conversion in Rust, on any platform. Part of
+[oxyROMon](https://github.com/alucryd/oxyromon), as a library and the `gdirs`
+CLI. Its GDIs are laid out as those of
 [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool),
-which only runs on Windows. Built for
-[oxyromon](https://github.com/alucryd/oxyromon).
+which it began as a port of (see [Credits](#credits)).
 
 Redump dumps GD-ROMs as a CUE with one BIN per track; optical drive emulators
 such as GDEMU load GDI instead. The track data is the same, save for pregaps:
@@ -44,14 +45,23 @@ a track would overwrite a BIN it reads.
 
 ## CLI
 
+`gdirs` converts CUE/BIN sets, writing each GDI set to a folder of its own,
+named after its CUE, next to the CUE unless told otherwise:
+
 ```
 cargo build --release -p gdi-rs
-gdirs game.cue -o out/
+gdirs game.cue                 # to game/game.gdi and its tracks
+gdirs -o out/ *.cue            # to out/<game>/, one folder per CUE
 ```
 
-gdidrop writes next to the CUE and suffixes its tracks with ` [gdidrop]` so
-they do not overwrite the BINs; `gdirs` writes to `-o` instead, under the BINs'
-own names.
+| Flag     | Meaning                                        |
+| -------- | ---------------------------------------------- |
+| `-o DIR` | output directory (default: next to each input) |
+
+The folder is also what keeps a data track from landing on its own BIN, which
+is why gdidrop suffixes its tracks with ` [gdidrop]` instead. Like every
+oxyROMon tool, `gdirs` draws oxyROMon's progress bar, reports each input on a
+line of its own, and exits non-zero when any of them failed.
 
 ## Verification
 
@@ -59,6 +69,14 @@ own names.
 synthetic CUE/BIN sets: a GD-ROM as Redump lays it out, a plain CD, and a
 comment that only looks like the high-density marker. It also requires a
 single BIN to give exactly what its split set gives.
+
+## Credits
+
+gdi-rs began as a port of
+[gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) by
+Feyris-Tan, maintained by [ElektroStudios](https://github.com/ElektroStudios).
+Where each track sits on the disc, pregaps and the high-density area included,
+comes from its work.
 
 ## License
 

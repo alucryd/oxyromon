@@ -10,4 +10,4 @@
 - Added block size defaults that follow the readers: 8 KiB for CSO (16 KiB from 2 GiB), which PSP CFW, PPSSPP and PCSX2 read; 2 KiB for ZSO, the only size Open PS2 Loader reads
 - Added a progress callback to the library API, reporting input bytes consumed
 - Added the removal of partial output on failure, in both directions
-- Added the `xsors` CLI, taking the maxcso flags oxyromon used; it sits behind the default `cli` feature
+- Added the `xsors` CLI, which compresses ISOs and decompresses CSOs and ZSOs, as many as given, in oxyROMon's look; it sits behind the default `cli` feature

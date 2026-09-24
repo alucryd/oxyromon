@@ -90,7 +90,7 @@ itertools = "0.15.0"
 log = "0.4.34"
 md-5 = "0.11.0"
 nod = { version = "2.0.0-alpha.9", optional = true }
-nsz-rs = { path = "crates/nsz-rs", version = "0.2.0", default-features = false }
+nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
 num-derive = "0.5.1"
 num-traits = "0.2.19"
 percent-encoding = { version = "2.3.2", optional = true }

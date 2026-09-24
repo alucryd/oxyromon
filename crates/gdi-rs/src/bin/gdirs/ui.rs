@@ -46,10 +46,8 @@ pub fn run_all<'a>(
 pub fn output_dir(input: &Path, output: Option<&PathBuf>) -> Result<PathBuf, String> {
     let dir = match output {
         Some(output) => output.clone(),
-        None => match input.parent() {
-            Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
-            _ => PathBuf::from("."),
-        },
+        // Empty for a bare file name, which is the current directory.
+        None => input.parent().unwrap_or(Path::new("")).to_path_buf(),
     };
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir)
@@ -117,7 +115,7 @@ mod tests {
         assert_eq!(output_dir(&input, None).unwrap(), dir.path());
         assert_eq!(
             output_dir(Path::new("game.iso"), None).unwrap(),
-            Path::new(".")
+            Path::new("")
         );
     }
 }

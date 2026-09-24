@@ -1,11 +1,14 @@
-# 0.2.1
+# 0.3.0
 
 ## Changes
 
 - Update dependencies to their latest versions
 - Move into the [oxyromon](https://github.com/alucryd/oxyromon) repository, under `crates/nsz-rs`
 - Require Rust 1.94, as the crate moves to the 2024 edition along with the rest of the oxyromon workspace
-- `nszrs` parses its arguments with clap: the flags are unchanged, `-V`/`--version` is new, and `-h` lists every flag
+- `nszrs` takes the same shape as every oxyROMon tool: compression or decompression comes from each file's extension, so `-C`, `-D`, `-K` and `-P` are gone, and the output directory is `-o`, defaulting to next to each input
+- `nszrs` compresses in blocks with `-b SIZE`, in bytes as for `xsors`, in place of `-B`, `-S` and `-s`; `--long-distance`, `--fix-padding` and `--skip-key-check` lose their short forms
+- `nszrs` parses its arguments with clap, adding `-V`/`--version`
+- `nszrs` draws oxyROMon's progress bar and a result line per file, like every oxyROMon tool
 
 # 0.2.0
 
