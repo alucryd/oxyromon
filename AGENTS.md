@@ -9,7 +9,7 @@
 - **Rust Edition:** 2024
 - **MSRV:** 1.94.0
 - **Repository:** https://github.com/alucryd/oxyromon
-- **Workspace:** the `oxyromon` package at the root, plus ports of the external tools it used to shell out to under `crates/` (see [Format Crates](#format-crates))
+- **Workspace:** the `oxyromon` package at the root, plus its format crates under `crates/`, which replaced the external tools it used to shell out to (see [Format Crates](#format-crates))
 
 ## Architecture
 
@@ -182,11 +182,12 @@ Server-only code is gated with `#[cfg(feature = "server")]` throughout the codeb
 ## Format Crates
 
 The repository is a Cargo workspace. Next to the `oxyromon` package at the
-root, `crates/` holds ports of the external tools oxyromon used to shell out
-to. Each is a standalone library and CLI, published to crates.io on its own,
-and keeps its upstream's license:
+root, `crates/` holds oxyromon's format crates, which replaced the external
+tools it used to shell out to. Each began as a port of one of them, is a
+standalone library and CLI published to crates.io on its own, and keeps its
+upstream's license:
 
-| Crate    | Port of                                     | CLI     | License | Used by oxyromon for |
+| Crate    | Began as a port of                          | CLI     | License | Used by oxyromon for |
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
@@ -198,7 +199,7 @@ native build.
 
 ### Conventions
 
-Every crate follows these, and a new port should too:
+Every crate follows these, and a new one should too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
   crate by `path` and `version` with `default-features = false`.
@@ -207,16 +208,23 @@ Every crate follows these, and a new port should too:
   input bytes consumed since the last call; the calls add up to the input
   size. oxyromon runs them on the blocking pool and feeds that to its progress
   bar (see `run_blocking` in `src/progress.rs`).
-- **A failed run removes its partial output**, but only output it created:
-  validate the input before opening the output.
+- **Output is written to `<output>.part`** next to it and renamed into place
+  once complete, so an existing output is only replaced by a complete one, and
+  a failed run removes the `.part` and leaves nothing behind.
 - **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
   variants keep shared wording: `Io` ("io error: …"), `BadMagic { expected,
   found }`, `Unsupported` ("unsupported format: …"), `Corrupt` ("corrupt
   data: …").
-- **CLIs** use clap's builder API, as oxyromon does, and one indicatif bar per
-  file with the same template. They print `<cli>: wrote <path>` on success and
-  `<cli>: <input>: <error>` on failure, exiting non-zero. Where a CLI stands in
-  for its upstream tool, it keeps the upstream flag names.
+- **CLIs** share one shape and one look: `<cli> [OPTIONS] <INPUT>...`, each
+  input converted in the direction its extension implies, `-o DIR` defaulting
+  to next to each input, oxyROMon's progress bar, and a `✔`/`✖` line per input,
+  exiting non-zero when any failed. An input whose output would land on
+  another input, or on an earlier input's output, fails instead. That shell is
+  `src/bin/<cli>/ui.rs`, identical in every crate, which `tests/crates.rs`
+  checks: change them all together. They use clap's builder
+  API, as oxyromon does. A flag means the same in every tool that has it
+  (`-o DIR`, `-b SIZE` in bytes), and short forms are lowercase, for common
+  options only.
 - **Tests** check against the reference implementation, by known-answer
   vectors or by running the upstream tool, and skip rather than fail when it is
   missing. Slow ones are `#[ignore]`d.

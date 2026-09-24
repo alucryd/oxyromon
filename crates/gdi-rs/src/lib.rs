@@ -1,4 +1,5 @@
-//! Dreamcast GD-ROM CUE/BIN to GDI conversion: a port of [gdidrop].
+//! Dreamcast GD-ROM CUE/BIN to GDI conversion, part of oxyROMon, laying discs
+//! out as [gdidrop] does, which this began as a port of.
 //!
 //! Redump dumps GD-ROMs as a CUE with one BIN per track; optical drive
 //! emulators such as GDEMU load GDI instead. The track data is the same, save
@@ -56,27 +57,32 @@ struct Copy {
 /// The BINs are read from the CUE's directory, which `output_dir` may only be
 /// when no track would overwrite one of them. `progress` is called with each
 /// newly consumed chunk of the BINs, in bytes; the calls add up to
-/// [`input_size`]. On error the partial output is removed.
+/// [`input_size`]. Every file is written as `<name>.part` next to where it
+/// goes, and moved there once they all are: an existing set is only replaced
+/// by a complete one, and a failed run leaves nothing behind.
 pub fn convert(cue: &Path, output_dir: &Path, progress: &mut dyn FnMut(u64)) -> Result<Gdi> {
     let (descriptor, copies) = plan(cue, output_dir)?;
     let gdi = output_dir
         .join(cue.file_stem().unwrap_or_default())
         .with_extension("gdi");
 
-    // Everything is validated: from here on a failure removes what was written.
-    let mut written = Vec::with_capacity(copies.len() + 1);
+    // Everything is validated: from here on, only the `.part` files are
+    // written, and only once all of them are complete do they replace anything.
+    let mut outputs: Vec<&Path> = copies.iter().map(|copy| copy.output.as_path()).collect();
+    outputs.push(&gdi);
     let result = (|| {
         for copy in &copies {
-            written.push(copy.output.clone());
             copy_track(copy, progress)?;
         }
-        written.push(gdi.clone());
-        std::fs::write(&gdi, &descriptor)?;
+        std::fs::write(part(&gdi), &descriptor)?;
+        for output in &outputs {
+            std::fs::rename(part(output), output)?;
+        }
         Ok(())
     })();
     if let Err(error) = result {
-        for path in &written {
-            let _ = std::fs::remove_file(path);
+        for output in &outputs {
+            let _ = std::fs::remove_file(part(output));
         }
         return Err(error);
     }
@@ -215,13 +221,22 @@ fn plan(cue_path: &Path, output_dir: &Path) -> Result<(String, Vec<Copy>)> {
     Ok((descriptor, copies))
 }
 
-/// Copy one track, pregap dropped, reporting the pregap as consumed too.
+/// Where `output` is written until the whole set is complete: next to it, so
+/// that moving it into place is a rename.
+fn part(output: &Path) -> PathBuf {
+    let mut name = output.file_name().unwrap_or_default().to_os_string();
+    name.push(".part");
+    output.with_file_name(name)
+}
+
+/// Copy one track to its `.part` file, pregap dropped, reporting the pregap as
+/// consumed too.
 fn copy_track(copy: &Copy, progress: &mut dyn FnMut(u64)) -> Result<()> {
     let mut input = File::open(&copy.input)?;
     input.seek(SeekFrom::Start(copy.begin))?;
     progress(copy.begin - copy.start);
     let mut input = input.take(copy.end - copy.begin);
-    let mut output = File::create(&copy.output)?;
+    let mut output = File::create(part(&copy.output))?;
     let mut buffer = vec![0u8; 1 << 20];
     loop {
         let n = input.read(&mut buffer)?;

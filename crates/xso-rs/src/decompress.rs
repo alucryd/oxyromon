@@ -15,7 +15,7 @@ use rayon::{ThreadPool, ThreadPoolBuilder};
 use crate::Stats;
 use crate::error::{Error, Result};
 use crate::format::{Format, HEADER_SIZE, Header, INDEX_OFFSET_MASK, INDEX_UNCOMPRESSED};
-use crate::io::read_exact_at;
+use crate::io::{finish, part, read_exact_at};
 use crate::lz4;
 
 /// Tuning for a decompression run.
@@ -28,8 +28,9 @@ pub struct DecompressOptions {
 /// Decompress a CSO or ZSO into the original ISO.
 ///
 /// `progress` is called with each newly consumed chunk of the input, in bytes;
-/// for a well-formed file the calls add up to the input file size. On error the
-/// partial output file is removed.
+/// for a well-formed file the calls add up to the input file size. An existing
+/// `output` is only replaced once the new one is complete, and a failed run
+/// leaves nothing behind.
 pub fn decompress(
     input: &Path,
     output: &Path,
@@ -75,12 +76,14 @@ pub fn decompress(
     let pool = build_pool(options.threads)?;
     let wave = pool.current_num_threads().max(1) * 4;
 
+    let part = part(output);
     let out_file = OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
-        .open(output)?;
-    // Everything from here on writes to `output`, so a failure removes it.
+        .open(&part)?;
+    // Everything from here on writes to the `.part` file, only moved into place
+    // once complete.
     let result = (|| {
         let mut writer = BufWriter::with_capacity(256 * 1024, out_file);
         // The header and index, up to where the first block starts.
@@ -115,10 +118,7 @@ pub fn decompress(
             output_size: total,
         })
     })();
-    if result.is_err() {
-        let _ = std::fs::remove_file(output);
-    }
-    result
+    finish(&part, output, result)
 }
 
 /// Read and validate just the header.

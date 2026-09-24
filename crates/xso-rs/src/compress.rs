@@ -17,7 +17,7 @@ use crate::format::{
     Format, HEADER_SIZE, INDEX_UNCOMPRESSED, SECTOR_SIZE, align_up, block_count,
     compute_index_shift,
 };
-use crate::io::read_exact_at;
+use crate::io::{finish, part, read_exact_at};
 use crate::method::{self, Block};
 
 /// CSO block size: an ARK-5 PSP plays 8 KiB blocks, and PPSSPP and PCSX2 read
@@ -64,8 +64,9 @@ impl CompressOptions {
 /// Compress a raw ISO into a CSO or ZSO file.
 ///
 /// `progress` is called with each newly compressed chunk of the input, in
-/// bytes; the calls add up to the input file size. On error the partial output
-/// file is removed.
+/// bytes; the calls add up to the input file size. An existing `output` is
+/// only replaced once the new one is complete, and a failed run leaves nothing
+/// behind.
 pub fn compress(
     input: &Path,
     output: &Path,
@@ -94,13 +95,15 @@ pub fn compress(
     let pool = build_pool(options.threads)?;
     let wave = pool.current_num_threads().max(1) * 4;
 
+    let part = part(output);
     let out_file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .truncate(true)
-        .open(output)?;
-    // Everything from here on writes to `output`, so a failure removes it.
+        .open(&part)?;
+    // Everything from here on writes to the `.part` file, only moved into place
+    // once complete.
     let result = (|| {
         let mut writer = BufWriter::with_capacity(256 * 1024, out_file);
         writer.seek(SeekFrom::Start(data_start))?;
@@ -170,10 +173,7 @@ pub fn compress(
             output_size: dst,
         })
     })();
-    if result.is_err() {
-        let _ = std::fs::remove_file(output);
-    }
-    result
+    finish(&part, output, result)
 }
 
 /// Resolve the block size: the format's default, or a requested size that
