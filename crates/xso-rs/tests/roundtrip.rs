@@ -97,7 +97,7 @@ fn progress_adds_up_to_the_input_size() {
 }
 
 #[test]
-fn a_failed_run_removes_its_output() {
+fn a_failed_run_leaves_an_existing_output_alone() {
     let dir = tempfile::tempdir().unwrap();
     let iso = dir.path().join("in.iso");
     let packed = dir.path().join("out.cso");
@@ -122,6 +122,23 @@ fn a_failed_run_removes_its_output() {
     let options = DecompressOptions::default();
     assert!(xso_rs::decompress(&packed, &back, &options, &mut |_| {}).is_err());
     assert!(!back.exists());
+    assert!(!dir.path().join("back.iso.part").exists());
+
+    // Over an output already there, which is left as it was.
+    std::fs::write(&back, b"keep me").unwrap();
+    assert!(xso_rs::decompress(&packed, &back, &options, &mut |_| {}).is_err());
+    assert_eq!(std::fs::read(&back).unwrap(), b"keep me");
+
+    // Only a complete output replaces it.
+    xso_rs::compress(
+        &iso,
+        &packed,
+        &CompressOptions::new(Format::Cso),
+        &mut |_| {},
+    )
+    .unwrap();
+    xso_rs::decompress(&packed, &back, &options, &mut |_| {}).unwrap();
+    assert!(std::fs::read(&back).unwrap() == std::fs::read(&iso).unwrap());
 }
 
 #[test]

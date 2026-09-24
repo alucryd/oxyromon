@@ -22,7 +22,8 @@ NCZ files produced by nsz-rs use the same on-disk format as nsz and can be
 decompressed by either tool. As in nsz, only Program and PublicData NCAs whose
 sections tile the file are compressed; everything else is copied verbatim.
 Both directions stream one member at a time, so memory use doesn't grow with
-the dump size, and a failed run removes its partial output.
+the dump size. The output is written to `<output>.part` and renamed into
+place once complete, so a failed run leaves an existing output alone.
 
 Compressing a rights-managed NCA without its ticket (or a `title.keys` entry)
 is an error rather than a silent uncompressed copy.
@@ -51,7 +52,8 @@ nszrs -b 1048576 -o out/ game.nsp     # compress in 1 MiB blocks, in parallel
 
 Decompression verifies every NCA against the CNMT and fails on a mismatch. Like
 every oxyROMon tool, `nszrs` draws oxyROMon's progress bar, reports each input
-on a line of its own, and exits non-zero when any of them failed.
+on a line of its own, and exits non-zero when any of them failed. It refuses to write
+one input's output over another input, or over an earlier input's output.
 
 ## Library
 

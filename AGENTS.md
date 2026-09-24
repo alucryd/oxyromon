@@ -208,8 +208,9 @@ Every crate follows these, and a new one should too:
   input bytes consumed since the last call; the calls add up to the input
   size. oxyromon runs them on the blocking pool and feeds that to its progress
   bar (see `run_blocking` in `src/progress.rs`).
-- **A failed run removes its partial output**, but only output it created:
-  validate the input before opening the output.
+- **Output is written to `<output>.part`** next to it and renamed into place
+  once complete, so an existing output is only replaced by a complete one, and
+  a failed run removes the `.part` and leaves nothing behind.
 - **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
   variants keep shared wording: `Io` ("io error: …"), `BadMagic { expected,
   found }`, `Unsupported` ("unsupported format: …"), `Corrupt` ("corrupt
@@ -217,8 +218,10 @@ Every crate follows these, and a new one should too:
 - **CLIs** share one shape and one look: `<cli> [OPTIONS] <INPUT>...`, each
   input converted in the direction its extension implies, `-o DIR` defaulting
   to next to each input, oxyROMon's progress bar, and a `✔`/`✖` line per input,
-  exiting non-zero when any failed. That shell is `src/bin/<cli>/ui.rs`,
-  identical in every crate: change them all together. They use clap's builder
+  exiting non-zero when any failed. An input whose output would land on
+  another input, or on an earlier input's output, fails instead. That shell is
+  `src/bin/<cli>/ui.rs`, identical in every crate, which `tests/crates.rs`
+  checks: change them all together. They use clap's builder
   API, as oxyromon does. A flag means the same in every tool that has it
   (`-o DIR`, `-b SIZE` in bytes), and short forms are lowercase, for common
   options only.

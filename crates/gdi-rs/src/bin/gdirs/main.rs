@@ -32,20 +32,21 @@ fn cli() -> Command {
 }
 
 fn main() -> ExitCode {
-    let matches = cli().get_matches();
-    ui::run_all(matches.get_many::<PathBuf>("INPUTS").unwrap(), |input| {
-        convert(input, &matches)
-    })
+    ui::run(cli(), convert)
 }
 
 /// Convert one CUE/BIN set into `<output>/<CUE stem>/`.
-fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
+fn convert(
+    input: &Path,
+    matches: &ArgMatches,
+    outputs: &mut ui::Outputs,
+) -> Result<String, String> {
     if ui::extension(input) != "cue" {
         return Err("not a CUE".into());
     }
     let size = gdi_rs::input_size(input).map_err(|e| e.to_string())?;
-    let dir = ui::output_dir(input, matches.get_one("output"))?;
-    let set = dir.join(input.file_stem().unwrap_or_default());
+    let dir = ui::output_dir(input, matches)?;
+    let set = outputs.claim(dir.join(input.file_stem().unwrap_or_default()))?;
     std::fs::create_dir_all(&set).map_err(|e| format!("{}: {e}", set.display()))?;
 
     let bar = ui::progress_bar(size, "Converting", input);

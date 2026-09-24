@@ -101,19 +101,35 @@ fn a_pregap_past_the_end_of_its_bin_is_rejected() {
 }
 
 #[test]
-fn a_failed_run_removes_its_output() {
+fn a_failed_run_leaves_an_existing_set_alone() {
     let dir = tempfile::tempdir().unwrap();
     let out = tempfile::tempdir().unwrap();
     let cue = write_set(dir.path(), "Game", &[audio(0, 10), audio(0, 10)]);
-    // Track 1 is written, then track 2 cannot be: a directory is in its way.
-    std::fs::create_dir(out.path().join("Game (Track 2).raw")).unwrap();
+    // A set already there, then track 2 cannot be written: a directory is in
+    // the way of its `.part` file, after track 1's is written.
+    std::fs::write(out.path().join("Game.gdi"), b"keep me").unwrap();
+    std::fs::create_dir(out.path().join("Game (Track 2).raw.part")).unwrap();
 
     assert!(gdi_rs::convert(&cue, out.path(), &mut |_| {}).is_err());
 
+    assert_eq!(
+        std::fs::read(out.path().join("Game.gdi")).unwrap(),
+        b"keep me"
+    );
     assert!(!out.path().join("Game (Track 1).raw").exists());
-    assert!(!out.path().join("Game.gdi").exists());
+    assert!(!out.path().join("Game (Track 1).raw.part").exists());
     // Not ours to remove.
-    assert!(out.path().join("Game (Track 2).raw").is_dir());
+    assert!(out.path().join("Game (Track 2).raw.part").is_dir());
+
+    // Once nothing is in the way, a complete set replaces it.
+    std::fs::remove_dir(out.path().join("Game (Track 2).raw.part")).unwrap();
+    let gdi = gdi_rs::convert(&cue, out.path(), &mut |_| {}).unwrap();
+    assert!(
+        std::fs::read_to_string(&gdi.gdi)
+            .unwrap()
+            .starts_with("2\n")
+    );
+    assert_eq!(std::fs::read_dir(out.path()).unwrap().count(), 3);
 }
 
 #[test]

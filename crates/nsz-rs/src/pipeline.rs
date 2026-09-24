@@ -6,7 +6,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufReader, Cursor, Read, Seek, SeekFrom, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::compress::{block_compress_ncz, solid_compress_ncz};
 use crate::crypto::ctr;
@@ -139,8 +139,9 @@ pub struct FileReport {
 ///   table; a mismatch is reported, and returned as an error when `strict`.
 ///
 /// `progress` is called with each newly consumed chunk of the input, in bytes;
-/// for a well-formed container the calls add up to the input file size. On
-/// error the partial output file is removed.
+/// for a well-formed container the calls add up to the input file size. An
+/// existing `output` is only replaced once the new one is complete, and a
+/// failed run leaves nothing behind.
 pub fn decompress_nsz(
     input: &Path,
     output: &Path,
@@ -216,7 +217,8 @@ pub fn decompress_nsz(
 /// keys for rights-managed NCAs come from the NSP's tickets, then the key set's
 /// `title.keys`. `progress` is called with each newly compressed chunk of the
 /// input, in bytes; for a well-formed container the calls add up to the input
-/// file size. On error the partial output file is removed.
+/// file size. An existing `output` is only replaced once the new one is
+/// complete, and a failed run leaves nothing behind.
 pub fn compress_nsp(
     input: &Path,
     output: &Path,
@@ -481,7 +483,8 @@ fn header_geometry(entries: &[Pfs0Entry], in_header_size: u64, fix_padding: bool
 
 /// Create `output`, run `write` with the file positioned after the reserved
 /// header, then back-patch the PFS0 header from the `(name, offset, size)`
-/// layout it returns. Removes the file if anything fails.
+/// layout it returns. It is written as `<output>.part` and moved into place
+/// on success, or removed if anything fails.
 fn with_output<T>(
     output: &Path,
     header_size: u64,
@@ -491,7 +494,8 @@ fn with_output<T>(
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let mut out = File::create(output)?;
+    let part = part(output);
+    let mut out = File::create(&part)?;
     let result = (|| {
         out.seek(SeekFrom::Start(header_size))?;
         let (laid, value) = write(&mut out)?;
@@ -500,9 +504,29 @@ fn with_output<T>(
         out.flush()?;
         Ok(value)
     })();
+    // Closed before it is moved or removed, which Windows needs.
+    drop(out);
+    finish(&part, output, result)
+}
+
+/// Where `output` is written until it is complete: next to it, so that moving
+/// it into place is a rename, and an existing file is only ever replaced by a
+/// complete one.
+fn part(output: &Path) -> PathBuf {
+    let mut name = output.file_name().unwrap_or_default().to_os_string();
+    name.push(".part");
+    output.with_file_name(name)
+}
+
+/// Move `part` into place at `output` if its write succeeded, and remove it
+/// otherwise: a failed run leaves nothing behind, and `output` as it was.
+fn finish<T>(part: &Path, output: &Path, result: Result<T>) -> Result<T> {
+    let result = result.and_then(|value| {
+        std::fs::rename(part, output)?;
+        Ok(value)
+    });
     if result.is_err() {
-        drop(out);
-        let _ = std::fs::remove_file(output);
+        let _ = std::fs::remove_file(part);
     }
     result
 }

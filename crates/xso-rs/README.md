@@ -113,7 +113,8 @@ xsors game.cso                 # back to game.iso
 | `-j N`     | worker threads (default: one per core)                             |
 
 Like every oxyROMon tool, `xsors` draws oxyROMon's progress bar, reports each
-input on a line of its own, and exits non-zero when any of them failed.
+input on a line of its own, and exits non-zero when any of them failed. It refuses to write
+one input's output over another input, or over an earlier input's output.
 
 ## Block sizes
 

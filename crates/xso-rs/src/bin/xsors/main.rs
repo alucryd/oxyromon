@@ -56,20 +56,21 @@ fn cli() -> Command {
 }
 
 fn main() -> ExitCode {
-    let matches = cli().get_matches();
-    ui::run_all(matches.get_many::<PathBuf>("INPUTS").unwrap(), |input| {
-        convert(input, &matches)
-    })
+    ui::run(cli(), convert)
 }
 
 /// Decompress `input` if it is a CSO or ZSO, compress it otherwise.
-fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
-    let dir = ui::output_dir(input, matches.get_one("output"))?;
-    let threads = *matches.get_one::<usize>("threads").unwrap();
+fn convert(
+    input: &Path,
+    matches: &ArgMatches,
+    outputs: &mut ui::Outputs,
+) -> Result<String, String> {
     let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
+    let dir = ui::output_dir(input, matches)?;
+    let threads = *matches.get_one::<usize>("threads").unwrap();
 
     if matches!(ui::extension(input).as_str(), "cso" | "zso") {
-        let output = ui::output_path(&dir, input, "iso");
+        let output = outputs.claim(ui::output_path(&dir, input, "iso"))?;
         let bar = ui::progress_bar(size, "Decompressing", input);
         let result = xso_rs::decompress(input, &output, &DecompressOptions { threads }, &mut |n| {
             bar.inc(n)
@@ -83,7 +84,7 @@ fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
         "zso" => Format::Zso,
         _ => Format::Cso,
     };
-    let output = ui::output_path(&dir, input, format.extension());
+    let output = outputs.claim(ui::output_path(&dir, input, format.extension()))?;
     let options = CompressOptions {
         block_size: matches.get_one::<u32>("block").copied(),
         threads,

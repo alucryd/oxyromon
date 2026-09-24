@@ -61,7 +61,8 @@ gdirs -o out/ *.cue            # to out/<game>/, one folder per CUE
 The folder is also what keeps a data track from landing on its own BIN, which
 is why gdidrop suffixes its tracks with ` [gdidrop]` instead. Like every
 oxyROMon tool, `gdirs` draws oxyROMon's progress bar, reports each input on a
-line of its own, and exits non-zero when any of them failed.
+line of its own, and exits non-zero when any of them failed. It refuses to write
+one input's output over another input, or over an earlier input's output.
 
 ## Verification
 

@@ -84,43 +84,52 @@ fn block_exponent(size: &str) -> Result<i8, String> {
     Ok(size.trailing_zeros() as i8)
 }
 
-fn default_keys_path() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_default();
-    PathBuf::from(home).join(".switch").join("prod.keys")
+fn default_keys_path() -> Result<PathBuf, String> {
+    let home = std::env::home_dir()
+        .ok_or("no home directory to find .switch/prod.keys in; pass it with -k")?;
+    Ok(home.join(".switch").join("prod.keys"))
 }
 
 fn main() -> ExitCode {
-    let matches = cli().get_matches();
-    ui::run_all(matches.get_many::<PathBuf>("INPUTS").unwrap(), |input| {
-        convert(input, &matches)
-    })
+    ui::run(cli(), convert)
 }
 
 /// Decompress `input` if it is an NSZ, compress it otherwise.
-fn convert(input: &Path, matches: &ArgMatches) -> Result<String, String> {
+fn convert(
+    input: &Path,
+    matches: &ArgMatches,
+    outputs: &mut ui::Outputs,
+) -> Result<String, String> {
+    let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
     let decompress = ui::extension(input) == "nsz";
-    let dir = ui::output_dir(input, matches.get_one("output"))?;
+    let dir = ui::output_dir(input, matches)?;
     let fix_padding = matches.get_flag("fix-padding");
     // Only loaded for files that need them: containers without NCAs don't.
-    let keys_path = matches
-        .get_one::<PathBuf>("keys")
-        .cloned()
-        .unwrap_or_else(default_keys_path);
+    let keys_path = match matches.get_one::<PathBuf>("keys") {
+        Some(path) => path.clone(),
+        None => default_keys_path()?,
+    };
     let verify_crc = !matches.get_flag("skip-key-check");
     let keys = || Keys::load(&keys_path, verify_crc);
-    let size = std::fs::metadata(input).map_err(|e| e.to_string())?.len();
 
     let (output, bar, result) = if decompress {
-        let output = ui::output_path(&dir, input, "nsp");
+        let output = outputs.claim(ui::output_path(&dir, input, "nsp"))?;
         let bar = ui::progress_bar(size, "Decompressing", input);
-        // Strict: a hash mismatch is an error and the output is removed.
-        let result = decompress_nsz(input, &output, keys, fix_padding, true, true, &mut |n| {
-            bar.inc(n)
-        })
+        // A hash mismatch is an error, and the output is removed.
+        let (verify, strict) = (true, true);
+        let result = decompress_nsz(
+            input,
+            &output,
+            keys,
+            fix_padding,
+            verify,
+            strict,
+            &mut |n| bar.inc(n),
+        )
         .map(|_| ());
         (output, bar, result)
     } else {
-        let output = ui::output_path(&dir, input, "nsz");
+        let output = outputs.claim(ui::output_path(&dir, input, "nsz"))?;
         let compression = Compression {
             level: *matches.get_one::<i32>("level").unwrap(),
             ldm: matches.get_flag("long-distance"),

@@ -9,6 +9,12 @@
 - `nszrs` compresses in blocks with `-b SIZE`, in bytes as for `xsors`, in place of `-B`, `-S` and `-s`; `--long-distance`, `--fix-padding` and `--skip-key-check` lose their short forms
 - `nszrs` parses its arguments with clap, adding `-V`/`--version`
 - `nszrs` draws oxyROMon's progress bar and a result line per file, like every oxyROMon tool
+- `nszrs` refuses to write one input's output over another input, or over an earlier input's output
+- `nszrs` reports a missing home directory instead of looking for `prod.keys` relative to the current one
+
+## Fixes
+
+- A failed run no longer deletes an existing output: output is written to `<output>.part` and renamed into place once complete
 
 # 0.2.0
 

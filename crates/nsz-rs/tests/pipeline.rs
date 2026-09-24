@@ -303,7 +303,7 @@ fn nsp_roundtrips_byte_for_byte_with_verification() {
 }
 
 #[test]
-fn failed_decompression_removes_the_output() {
+fn a_failed_run_leaves_an_existing_output_alone() {
     let keys = build_keys();
     let dir = tempfile::tempdir().unwrap();
     let (nsp_path, nsz_path, out_path) = (
@@ -336,8 +336,10 @@ fn failed_decompression_removes_the_output() {
         .is_err()
     );
     assert!(!out_path.exists());
+    assert!(!dir.path().join("b.nsp.part").exists());
 
-    // Truncated container.
+    // Truncated container, over an output already there.
+    std::fs::write(&out_path, b"keep me").unwrap();
     std::fs::write(&nsp_path, build_nsp(&keys, None)).unwrap();
     compress_nsp(
         &nsp_path,
@@ -362,7 +364,32 @@ fn failed_decompression_removes_the_output() {
         )
         .is_err()
     );
-    assert!(!out_path.exists());
+    assert_eq!(std::fs::read(&out_path).unwrap(), b"keep me");
+    assert!(!dir.path().join("b.nsp.part").exists());
+
+    // Only a complete output replaces it.
+    let nsp = build_nsp(&keys, None);
+    std::fs::write(&nsp_path, &nsp).unwrap();
+    compress_nsp(
+        &nsp_path,
+        &nsz_path,
+        || Ok(keys.clone()),
+        &SOLID,
+        false,
+        &mut |_| {},
+    )
+    .unwrap();
+    decompress_nsz(
+        &nsz_path,
+        &out_path,
+        || Ok(keys.clone()),
+        false,
+        true,
+        true,
+        &mut |_| {},
+    )
+    .unwrap();
+    assert_eq!(std::fs::read(&out_path).unwrap(), nsp);
 }
 
 #[test]
@@ -451,7 +478,10 @@ fn keys_are_only_loaded_when_needed() {
     let keys = build_keys();
     std::fs::write(&nsp_path, build_nsp(&keys, None)).unwrap();
     let missing = || Keys::load(dir.path().join("prod.keys"), true);
+    let before = std::fs::read(&nsz_path).unwrap();
     let err = compress_nsp(&nsp_path, &nsz_path, missing, &SOLID, false, &mut |_| {}).unwrap_err();
     assert!(err.to_string().contains("prod.keys"), "{err}");
-    assert!(!nsz_path.exists());
+    // The NSZ from before is left as it was.
+    assert_eq!(std::fs::read(&nsz_path).unwrap(), before);
+    assert!(!dir.path().join("a.nsz.part").exists());
 }
