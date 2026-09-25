@@ -1,4 +1,4 @@
-//! Top navigation bar: import menu, 1G1R + completion filters, name filter,
+//! Top navigation bar: upload and download menus, 1G1R + completion filters, name filter,
 //! notifications, settings/about, dark-mode toggle. Ports the navbar portion
 //! of `+layout.svelte`.
 
@@ -90,25 +90,30 @@ pub fn Navbar() -> impl IntoView {
 
             // Only bringing data in lives here: what acts on the systems is in
             // the Systems panel's menus, all of them in its header and one in
-            // each row. ROMs come first as the frequent case, the DAT setup
-            // after a divider.
+            // each row. Split by where the data comes from: this browser, or
+            // the server fetching it.
             <wa-dropdown>
                 <wa-button slot="trigger" appearance="plain" with-caret="">
                     <wa-icon slot="start" name="upload"></wa-icon>
-                    Import
+                    Upload
                 </wa-button>
                 <wa-dropdown-item on:click=move |_| state.import_rom_modal_open.set(true)>
                     <wa-icon slot="icon" name="upload"></wa-icon>
                     "ROMs…"
                 </wa-dropdown-item>
-                <wa-divider></wa-divider>
                 <wa-dropdown-item on:click=move |_| state.import_dat_modal_open.set(true)>
                     <wa-icon slot="icon" name="database"></wa-icon>
                     "DAT files…"
                 </wa-dropdown-item>
+            </wa-dropdown>
+            <wa-dropdown>
+                <wa-button slot="trigger" appearance="plain" with-caret="">
+                    <wa-icon slot="start" name="download"></wa-icon>
+                    Download
+                </wa-button>
                 <wa-dropdown-item on:click=move |_| state.download_dat_modal_open.set(true)>
-                    <wa-icon slot="icon" name="download"></wa-icon>
-                    "Download DATs…"
+                    <wa-icon slot="icon" name="database"></wa-icon>
+                    "DAT files…"
                 </wa-dropdown-item>
             </wa-dropdown>
 
