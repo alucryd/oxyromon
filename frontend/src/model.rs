@@ -3,7 +3,7 @@
 
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct System {
     pub id: i64,
@@ -18,7 +18,7 @@ pub struct System {
     pub games_total: i64,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 pub struct Game {
     pub id: i64,
     pub name: String,
@@ -33,14 +33,14 @@ pub struct Game {
     pub name_lower: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 pub struct Romfile {
     pub id: i64,
     pub path: String,
     pub size: i64,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Hash)]
 pub struct Rom {
     pub id: i64,
     pub name: String,
