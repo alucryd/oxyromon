@@ -72,7 +72,7 @@ pub fn ImportDatModal() -> impl IntoView {
                 />
 
                 <wa-switch
-                    hint="Only import DAT files for systems already in the database."
+                    hint="Only import DATs for systems already in the database."
                     prop:checked=move || update_only.get()
                     on:change=move |ev| update_only.set(control_checked(&ev))
                 >
