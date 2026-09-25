@@ -454,7 +454,8 @@ tag; two things are worth knowing:
   true }`, so a component nested inside another of the same kind — a
   `wa-split-panel` inside a `wa-split-panel` — delivers its events to the
   outer one's handler too. Compare `target` against `currentTarget` when that
-  matters.
+  matters. It also crosses kinds: a `wa-select` fires `wa-after-hide` when its
+  listbox closes, which is why `Modal` checks before treating one as its own.
 
 Two things about the cascade, both of which cost real debugging:
 
