@@ -103,7 +103,7 @@ pub fn Navbar() -> impl IntoView {
                 </wa-dropdown-item>
                 <wa-dropdown-item on:click=move |_| state.import_dat_modal_open.set(true)>
                     <wa-icon slot="icon" name="database"></wa-icon>
-                    "DAT files…"
+                    "DATs…"
                 </wa-dropdown-item>
             </wa-dropdown>
             <wa-dropdown>
@@ -113,7 +113,7 @@ pub fn Navbar() -> impl IntoView {
                 </wa-button>
                 <wa-dropdown-item on:click=move |_| state.download_dat_modal_open.set(true)>
                     <wa-icon slot="icon" name="database"></wa-icon>
-                    "DAT files…"
+                    "DATs…"
                 </wa-dropdown-item>
             </wa-dropdown>
 

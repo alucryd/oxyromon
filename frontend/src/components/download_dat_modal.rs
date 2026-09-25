@@ -98,7 +98,7 @@ pub fn DownloadDatModal() -> impl IntoView {
         <Modal open=open title=Signal::derive(|| "Download DATs".to_string()) size="sm">
             <div class="wa-stack wa-gap-m">
                 <wa-switch
-                    hint="Refresh the DAT files of Redump systems already in the database."
+                    hint="Refresh the DATs of Redump systems already in the database."
                     prop:checked=move || update_only.get()
                     on:change=move |ev| update_only.set(control_checked(&ev))
                 >

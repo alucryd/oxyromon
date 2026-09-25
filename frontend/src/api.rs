@@ -395,14 +395,14 @@ async fn request_action(
         .inspect_err(|e| report_error(state.notifier, label, e))
 }
 
-/// Ask the server to fetch and import the named systems' DAT files.
+/// Ask the server to fetch and import the named systems' DATs.
 pub async fn download_dats(state: AppState, systems: Vec<String>) -> bool {
     let mutation = r#"mutation DownloadDats($systems: [String!]!) {
         downloadDats(systems: $systems)
     }"#;
     request_action(
         state,
-        "Downloading DAT files",
+        "Downloading DATs",
         mutation,
         json!({ "systems": systems }),
     )
