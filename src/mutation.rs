@@ -23,19 +23,26 @@ use tokio::sync::broadcast;
 ///
 /// The connection is acquired *inside* the task and a failure to acquire is
 /// reported as an SSE error rather than a panic, so the UI never hangs waiting
-/// for a completion event that will never arrive.
+/// for a completion event that will never arrive. `{prefix}_started` goes out
+/// first: with every connection taken, the action waits for one, and the UI
+/// should show it has begun rather than nothing at all.
 fn spawn_cli_action(
     pool: SqlitePool,
     sse_tx: broadcast::Sender<SseMessage>,
     prefix: &'static str,
     start_message: String,
     complete_message: String,
-    fail_prefix: String,
+    fail_prefix: &'static str,
     run: impl for<'a> FnOnce(&'a mut SqliteConnection) -> BoxFuture<'a, anyhow::Result<()>>
     + Send
     + 'static,
 ) {
     tokio::spawn(async move {
+        sse_send(
+            &sse_tx,
+            &format!("{prefix}_started"),
+            json!({ "message": start_message }),
+        );
         let mut connection = match pool.acquire().await {
             Ok(connection) => connection,
             Err(e) => {
@@ -49,11 +56,6 @@ fn spawn_cli_action(
                 return;
             }
         };
-        sse_send(
-            &sse_tx,
-            &format!("{prefix}_started"),
-            json!({ "message": start_message }),
-        );
         match run(&mut connection).await {
             Ok(()) => {
                 log::info!("{complete_message}");
@@ -423,7 +425,7 @@ impl Mutation {
             "sort_roms",
             message,
             complete_message,
-            "Failed to sort ROMs".to_string(),
+            "Failed to sort ROMs",
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
@@ -438,7 +440,7 @@ impl Mutation {
                     // The action was asked for from the UI, so answer the
                     // per-system confirmation instead of waiting on a TTY.
                     arguments.push("-y".to_string());
-                    let matches = sort_roms::subcommand().get_matches_from(arguments);
+                    let matches = sort_roms::subcommand().try_get_matches_from(arguments)?;
                     sort_roms::main(connection, &matches, &progress_bar).await
                 })
             },
@@ -481,7 +483,7 @@ impl Mutation {
             "check_roms",
             message,
             complete_message,
-            "Failed to check ROMs".to_string(),
+            "Failed to check ROMs",
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
@@ -493,7 +495,7 @@ impl Mutation {
                         }
                         None => arguments.push("-a".to_string()),
                     }
-                    let matches = check_roms::subcommand().get_matches_from(arguments);
+                    let matches = check_roms::subcommand().try_get_matches_from(arguments)?;
                     check_roms::main(connection, &matches, &progress_bar).await
                 })
             },
@@ -516,12 +518,13 @@ impl Mutation {
             "generate_playlists",
             "Generating playlists for all systems".to_string(),
             "Generated playlists for all systems".to_string(),
-            "Failed to generate playlists".to_string(),
+            "Failed to generate playlists",
             |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
                     let arguments = vec!["generate-playlists".to_string(), "-a".to_string()];
-                    let matches = generate_playlists::subcommand().get_matches_from(arguments);
+                    let matches =
+                        generate_playlists::subcommand().try_get_matches_from(arguments)?;
                     generate_playlists::main(connection, &matches, &progress_bar).await
                 })
             },
@@ -547,6 +550,9 @@ impl Mutation {
             trash,
             foreign
         );
+        if !(missing || orphan || trash || foreign) {
+            return Err(async_graphql::Error::new("No ROM files selected to purge"));
+        }
         let pool = ctx.data_unchecked::<SqlitePool>().clone();
         let sse_tx = ctx
             .data_unchecked::<broadcast::Sender<SseMessage>>()
@@ -558,7 +564,7 @@ impl Mutation {
             "purge_roms",
             "Purging ROM files".to_string(),
             "Purged ROM files".to_string(),
-            "Failed to purge ROM files".to_string(),
+            "Failed to purge ROM files",
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
@@ -576,7 +582,7 @@ impl Mutation {
                         arguments.push("-f".to_string());
                     }
                     arguments.push("-y".to_string());
-                    let matches = purge_roms::subcommand().get_matches_from(arguments);
+                    let matches = purge_roms::subcommand().try_get_matches_from(arguments)?;
                     purge_roms::main(connection, &matches, &progress_bar).await
                 })
             },
@@ -620,7 +626,7 @@ impl Mutation {
             "convert_roms",
             message,
             complete_message,
-            "Failed to convert ROMs".to_string(),
+            "Failed to convert ROMs",
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
@@ -631,7 +637,7 @@ impl Mutation {
                         "-f".to_string(),
                         format,
                     ];
-                    let matches = convert_roms::subcommand().get_matches_from(arguments);
+                    let matches = convert_roms::subcommand().try_get_matches_from(arguments)?;
                     convert_roms::main(connection, &matches, &progress_bar).await
                 })
             },
@@ -662,7 +668,7 @@ impl Mutation {
             "purge_irds",
             message,
             complete_message,
-            "Failed to purge IRDs".to_string(),
+            "Failed to purge IRDs",
             move |connection| {
                 Box::pin(async move {
                     let progress_bar = ProgressBar::hidden();
@@ -671,7 +677,7 @@ impl Mutation {
                         "--system".to_string(),
                         system_name,
                     ];
-                    let matches = purge_irds::subcommand().get_matches_from(arguments);
+                    let matches = purge_irds::subcommand().try_get_matches_from(arguments)?;
                     purge_irds::main(connection, &matches, &progress_bar).await
                 })
             },

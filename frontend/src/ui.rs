@@ -174,6 +174,77 @@ pub fn Modal(
     }
 }
 
+/// Where a dialog takes its one file: clicked to browse or dropped onto, and
+/// showing the file once there is one.
+///
+/// `input_ref` is the hidden `<input>`, which the dialog clears once the file
+/// is uploaded so that the same one can be picked again.
+#[component]
+pub fn Dropzone(
+    icon: &'static str,
+    hint: &'static str,
+    #[prop(optional)] accept: Option<&'static str>,
+    selected: RwSignal<Option<web_sys::File>>,
+    input_ref: NodeRef<leptos::html::Input>,
+) -> impl IntoView {
+    let choose = move |files: Option<web_sys::FileList>| {
+        if let Some(file) = files.and_then(|files| files.get(0)) {
+            selected.set(Some(file));
+        }
+    };
+    view! {
+        <button
+            class="plain-button dropzone"
+            on:click=move |_| {
+                if let Some(input) = input_ref.get_untracked() {
+                    input.click();
+                }
+            }
+            on:drop=move |ev: web_sys::DragEvent| {
+                ev.prevent_default();
+                choose(ev.data_transfer().and_then(|transfer| transfer.files()));
+            }
+            on:dragover=move |ev| ev.prevent_default()
+        >
+            <wa-icon
+                name=icon
+                style="font-size: var(--wa-font-size-2xl); color: var(--wa-color-text-quiet);"
+            ></wa-icon>
+            <Show
+                when=move || selected.get().is_some()
+                fallback=move || {
+                    view! {
+                        <span>Click or drop a file here</span>
+                        <small style="color: var(--wa-color-text-quiet);">{hint}</small>
+                    }
+                }
+            >
+                {move || {
+                    selected
+                        .get()
+                        .map(|file| {
+                            view! {
+                                <span style="font-weight: var(--wa-font-weight-semibold);">
+                                    {file.name()}
+                                </span>
+                                <small style="color: var(--wa-color-text-quiet);">
+                                    <wa-format-bytes value=file.size()></wa-format-bytes>
+                                </small>
+                            }
+                        })
+                }}
+            </Show>
+        </button>
+        <input
+            node_ref=input_ref
+            type="file"
+            accept=accept
+            style="display: none;"
+            on:change=move |_| choose(input_ref.get_untracked().and_then(|input| input.files()))
+        />
+    }
+}
+
 /// The card a figure and its label are drawn in.
 #[component]
 fn Tile(#[prop(into)] label: String, children: Children) -> impl IntoView {

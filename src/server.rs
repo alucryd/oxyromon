@@ -318,7 +318,6 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
     let pool = state.pool.clone();
 
     tokio::spawn(async move {
-        let mut connection = pool.acquire().await.unwrap();
         let progress_bar = ProgressBar::hidden();
         let label = source.label();
 
@@ -331,15 +330,21 @@ async fn upload_rom(State(state): State<AppState>, mut multipart: Multipart) -> 
             }),
         );
 
-        match import_rom_source(
-            &mut connection,
-            &progress_bar,
-            source,
-            system.as_deref(),
-            unattended.as_deref(),
-        )
-        .await
-        {
+        // Acquired in here, so a failure is reported like any other: the client
+        // has already been told the import is queued.
+        let outcome = async {
+            let mut connection = pool.acquire().await?;
+            import_rom_source(
+                &mut connection,
+                &progress_bar,
+                source,
+                system.as_deref(),
+                unattended.as_deref(),
+            )
+            .await
+        }
+        .await;
+        match outcome {
             Ok(()) => {
                 sse_send(
                     &sse_tx,
@@ -437,8 +442,10 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
     // Reject an unknown ROM up front so the client gets a 400 rather than a task
     // that only dies once it tries to resolve the id.
     {
-        let pool = state.pool.clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = match state.pool.acquire().await {
+            Ok(connection) => connection,
+            Err(e) => return unavailable(e),
+        };
         if find_rom_by_id_opt(&mut connection, rom_id).await.is_none() {
             drop(directory);
             return bad_request(format!("ROM {rom_id} not found"));
@@ -450,7 +457,6 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
     let patch_path = directory.path().join(&filename);
 
     tokio::spawn(async move {
-        let mut connection = pool.acquire().await.unwrap();
         let progress_bar = ProgressBar::hidden();
 
         sse_send(
@@ -460,6 +466,7 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
         );
 
         let outcome = async {
+            let mut connection = pool.acquire().await?;
             let patch_format = parse_patch(&patch_path)
                 .await?
                 .ok_or_else(|| anyhow::anyhow!("Unsupported patch format"))?;
@@ -500,6 +507,15 @@ async fn upload_patch(State(state): State<AppState>, mut multipart: Multipart) -
     Response::builder()
         .status(StatusCode::ACCEPTED)
         .body(Body::from("Import queued"))
+        .unwrap()
+}
+
+/// For a request that needs the database when every connection is taken.
+fn unavailable(error: sqlx::Error) -> Response<Body> {
+    log::error!("failed to acquire a database connection: {error}");
+    Response::builder()
+        .status(StatusCode::SERVICE_UNAVAILABLE)
+        .body(Body::from(error.to_string()))
         .unwrap()
 }
 
@@ -569,8 +585,10 @@ async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> 
     // Reject an unknown system up front so the client gets a 400, and keep the
     // name the unattended import matches against.
     let system_name = {
-        let pool = state.pool.clone();
-        let mut connection = pool.acquire().await.unwrap();
+        let mut connection = match state.pool.acquire().await {
+            Ok(connection) => connection,
+            Err(e) => return unavailable(e),
+        };
         match find_system_by_id_opt(&mut connection, system_id).await {
             Some(system) => system.name,
             None => {
@@ -584,7 +602,6 @@ async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> 
     let pool = state.pool.clone();
 
     tokio::spawn(async move {
-        let mut connection = pool.acquire().await.unwrap();
         let progress_bar = ProgressBar::hidden();
         let ird_path = directory.path().join(&filename);
 
@@ -601,9 +618,14 @@ async fn upload_ird(State(state): State<AppState>, mut multipart: Multipart) -> 
             "--system".to_string(),
             system_name,
         ];
-        let matches = import_irds::subcommand().get_matches_from(arguments);
+        let outcome = async {
+            let matches = import_irds::subcommand().try_get_matches_from(arguments)?;
+            let mut connection = pool.acquire().await?;
+            import_irds::main(&mut connection, &matches, &progress_bar).await
+        }
+        .await;
 
-        match import_irds::main(&mut connection, &matches, &progress_bar).await {
+        match outcome {
             Ok(()) => {
                 sse_send(
                     &sse_tx,
@@ -789,7 +811,10 @@ async fn import_rom_source(
 }
 
 async fn download_romfile(Path(id): Path<i64>, State(state): State<AppState>) -> Response<Body> {
-    let mut connection = state.pool.acquire().await.unwrap();
+    let mut connection = match state.pool.acquire().await {
+        Ok(connection) => connection,
+        Err(e) => return unavailable(e),
+    };
 
     let rom_directory = match find_setting_by_key(&mut connection, "ROM_DIRECTORY", None).await {
         Some(setting) => match setting.value {
@@ -908,7 +933,6 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
     let pool = state.pool.clone();
 
     tokio::spawn(async move {
-        let mut connection = pool.acquire().await.unwrap();
         let progress_bar = ProgressBar::hidden();
 
         sse_send(
@@ -930,6 +954,22 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
                         "filename": filename,
                         "error": e.to_string(),
                         "message": format!("Failed to create temp directory: {}", e),
+                    }),
+                );
+                return;
+            }
+        };
+
+        let mut connection = match pool.acquire().await {
+            Ok(connection) => connection,
+            Err(e) => {
+                sse_send(
+                    &sse_tx,
+                    "import_dat_error",
+                    json!({
+                        "filename": filename,
+                        "error": e.to_string(),
+                        "message": format!("Failed to acquire a database connection: {}", e),
                     }),
                 );
                 return;

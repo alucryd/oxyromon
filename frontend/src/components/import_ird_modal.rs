@@ -9,7 +9,7 @@ use web_sys::FormData;
 
 use crate::api::report_error;
 use crate::state::AppState;
-use crate::ui::Modal;
+use crate::ui::{Dropzone, Modal};
 
 /// Where the server accepts an IRD for import.
 const IRDS_ENDPOINT: &str = "/irds";
@@ -34,16 +34,6 @@ pub fn ImportIrdModal() -> impl IntoView {
             input.set_value("");
         }
     });
-
-    let on_change = move |_| {
-        if let Some(file) = input_ref
-            .get_untracked()
-            .and_then(|input| input.files())
-            .and_then(|files| files.get(0))
-        {
-            selected.set(Some(file));
-        }
-    };
 
     let do_import = move || {
         let Some(file) = selected.get_untracked() else {
@@ -92,47 +82,11 @@ pub fn ImportIrdModal() -> impl IntoView {
                     "A PlayStation 3 IRD describes a JB folder. The matching game is picked
                     automatically — import the system's DAT first."
                 </p>
-                <button
-                    class="plain-button dropzone"
-                    on:click=move |_| {
-                        if let Some(input) = input_ref.get_untracked() {
-                            input.click();
-                        }
-                    }
-                >
-                    <wa-icon
-                        name="database"
-                        style="font-size: var(--wa-font-size-2xl); color: var(--wa-color-text-quiet);"
-                    ></wa-icon>
-                    <Show
-                        when=move || selected.get().is_some()
-                        fallback=|| {
-                            view! {
-                                <span>"Click here to choose an IRD file"</span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    "PlayStation 3 IRD, or gzipped"
-                                </small>
-                            }
-                        }
-                    >
-                        {move || {
-                            let file = selected.get().unwrap();
-                            view! {
-                                <span style="font-weight: var(--wa-font-weight-semibold);">
-                                    {file.name()}
-                                </span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    <wa-format-bytes value=file.size()></wa-format-bytes>
-                                </small>
-                            }
-                        }}
-                    </Show>
-                </button>
-                <input
-                    node_ref=input_ref
-                    type="file"
-                    style="display: none;"
-                    on:change=on_change
+                <Dropzone
+                    icon="database"
+                    hint="PlayStation 3 IRD, or gzipped"
+                    selected=selected
+                    input_ref=input_ref
                 />
             </div>
 
