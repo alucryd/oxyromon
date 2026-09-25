@@ -34,13 +34,9 @@ fn on_event(source: &EventSource, name: &'static str, state: AppState, kind: Not
     handler.forget();
 }
 
-/// Register a "completed" listener that also refreshes what is on screen.
-fn on_complete_event(
-    source: &EventSource,
-    name: &'static str,
-    state: AppState,
-    success_kind: NotificationKind,
-) {
+/// Register a "completed" listener that notifies and refreshes what is on
+/// screen, which the action has just changed; a skipped DAT changed nothing.
+fn on_complete(source: &EventSource, name: &'static str, state: AppState) {
     let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
         let data: Value = event
             .data()
@@ -51,7 +47,7 @@ fn on_complete_event(
         let kind = if skipped {
             NotificationKind::Warning
         } else {
-            success_kind
+            NotificationKind::Success
         };
         push_notification(state.notifier, message_field(&data), kind);
         if !skipped {
@@ -62,25 +58,6 @@ fn on_complete_event(
             }
             state.refresh();
         }
-    });
-    source
-        .add_event_listener_with_callback(name, handler.as_ref().unchecked_ref())
-        .ok();
-    handler.forget();
-}
-
-/// Register a "completed" listener that notifies and refreshes what is on
-/// screen, since the action changed the selected system's files or completion
-/// underneath us.
-fn on_refresh(source: &EventSource, name: &'static str, state: AppState) {
-    let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
-        let data: Value = event
-            .data()
-            .as_string()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or(Value::Null);
-        push_notification(state.notifier, message_field(&data), NotificationKind::Success);
-        state.refresh();
     });
     source
         .add_event_listener_with_callback(name, handler.as_ref().unchecked_ref())
@@ -118,23 +95,13 @@ pub fn connect_sse(state: AppState) {
     };
 
     on_event(&source, "purge_started", state, NotificationKind::Info);
-    on_complete_event(&source, "purge_complete", state, NotificationKind::Success);
+    on_complete(&source, "purge_complete", state);
     on_event(&source, "purge_error", state, NotificationKind::Error);
     on_event(&source, "import_dat_started", state, NotificationKind::Info);
-    on_complete_event(
-        &source,
-        "import_dat_complete",
-        state,
-        NotificationKind::Success,
-    );
+    on_complete(&source, "import_dat_complete", state);
     on_event(&source, "import_dat_error", state, NotificationKind::Error);
     on_event(&source, "import_rom_started", state, NotificationKind::Info);
-    on_complete_event(
-        &source,
-        "import_rom_complete",
-        state,
-        NotificationKind::Success,
-    );
+    on_complete(&source, "import_rom_complete", state);
     on_event(&source, "import_rom_error", state, NotificationKind::Error);
     on_event(
         &source,
@@ -142,12 +109,7 @@ pub fn connect_sse(state: AppState) {
         state,
         NotificationKind::Info,
     );
-    on_complete_event(
-        &source,
-        "download_dats_complete",
-        state,
-        NotificationKind::Success,
-    );
+    on_complete(&source, "download_dats_complete", state);
     on_event(
         &source,
         "download_dats_error",
@@ -157,35 +119,50 @@ pub fn connect_sse(state: AppState) {
     on_event(&source, "sort_roms_started", state, NotificationKind::Info);
     on_event(&source, "sort_roms_error", state, NotificationKind::Error);
 
-    on_refresh(&source, "sort_roms_complete", state);
+    on_complete(&source, "sort_roms_complete", state);
 
     on_event(&source, "check_roms_started", state, NotificationKind::Info);
     on_event(&source, "check_roms_error", state, NotificationKind::Error);
-    on_refresh(&source, "check_roms_complete", state);
+    on_complete(&source, "check_roms_complete", state);
 
     on_event(&source, "purge_roms_started", state, NotificationKind::Info);
     on_event(&source, "purge_roms_error", state, NotificationKind::Error);
-    on_refresh(&source, "purge_roms_complete", state);
+    on_complete(&source, "purge_roms_complete", state);
 
     on_event(&source, "convert_roms_started", state, NotificationKind::Info);
     on_event(&source, "convert_roms_error", state, NotificationKind::Error);
-    on_refresh(&source, "convert_roms_complete", state);
+    on_complete(&source, "convert_roms_complete", state);
 
     on_event(&source, "import_patch_started", state, NotificationKind::Info);
     on_event(&source, "import_patch_error", state, NotificationKind::Error);
-    on_refresh(&source, "import_patch_complete", state);
+    on_complete(&source, "import_patch_complete", state);
 
     on_event(&source, "import_irds_started", state, NotificationKind::Info);
     on_event(&source, "import_irds_error", state, NotificationKind::Error);
-    on_refresh(&source, "import_irds_complete", state);
+    on_complete(&source, "import_irds_complete", state);
 
     on_event(&source, "purge_irds_started", state, NotificationKind::Info);
     on_event(&source, "purge_irds_error", state, NotificationKind::Error);
-    on_refresh(&source, "purge_irds_complete", state);
+    on_complete(&source, "purge_irds_complete", state);
 
     on_event(&source, "generate_playlists_started", state, NotificationKind::Info);
     on_event(&source, "generate_playlists_error", state, NotificationKind::Error);
-    on_refresh(&source, "generate_playlists_complete", state);
+    on_complete(&source, "generate_playlists_complete", state);
+
+    // An EventSource reconnects on its own but does not replay what it missed,
+    // so a finished event sent while it was down never arrives. Each opening,
+    // the first included, starts from nothing running rather than leaving a
+    // menu behind a spinner for good.
+    let reset = Closure::<dyn FnMut()>::new(move || {
+        state.purging_system_id.set(-1);
+        state.sorting_system_id.set(-1);
+        state.checking_system_id.set(-1);
+        state.purging_irds_system_id.set(-1);
+        state.generating_playlists.set(false);
+        state.purging_roms.set(false);
+    });
+    source.set_onopen(Some(reset.as_ref().unchecked_ref()));
+    reset.forget();
 
     on_finished(&source, "purge", move || state.purging_system_id.set(-1));
     on_finished(&source, "sort_roms", move || state.sorting_system_id.set(-1));
