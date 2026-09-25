@@ -49,6 +49,7 @@
 - Fixed `xdelta3` patching swapping the output and patch arguments, overwriting the patch instead of producing the patched ROM
 - Fixed the web UI's sort, check, convert, and purge-system actions panicking on an unknown `system_id`
 - Fixed the web UI's dialogs closing as soon as a value was picked from a dropdown inside them
+- Fixed the web UI not showing what an import changed: ROM and DAT imports now refresh the selected system's games and ROMs as well as the systems list, rows whose data changed are redrawn, and actions such as sort no longer lose the selected game when they refresh
 - Fixed web UI background actions hanging forever when a database connection could not be acquired; they now emit an SSE error
 - Fixed the web UI's settings and action mutations panicking when a database connection could not be acquired
 - Fixed overlapping system name patterns (e.g. `PlayStation` and `PlayStation 3`) causing the same system to be sorted, checked, or converted twice

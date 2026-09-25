@@ -230,7 +230,7 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
         <div class="panel">
             <CardHeader title="Systems" loading=state.loading_systems />
             <div class="panel-body">
-                <For each=rows key=|(_, system)| system.id let:entry>
+                <For each=rows key=|entry| entry.clone() let:entry>
                     {
                         let (position, system) = entry;
                         let id = system.id;
@@ -499,7 +499,7 @@ fn GamesCard() -> impl IntoView {
                 }
             >
                 <Spacer rows=Signal::derive(move || range.get().0) />
-                <For each=move || rows.get() key=|(_, game)| game.id let:entry>
+                <For each=move || rows.get() key=|entry| entry.clone() let:entry>
                     {
                         let (position, game) = entry;
                         let id = game.id;
@@ -548,7 +548,7 @@ fn RomsCard() -> impl IntoView {
         <div class="panel">
             <CardHeader title="ROMs" loading=state.loading_roms />
             <div class="panel-body">
-                <For each=rows key=|(_, rom)| rom.id let:entry>
+                <For each=rows key=|entry| entry.clone() let:entry>
                     {
                         let (position, rom) = entry;
                         let name = rom.name.clone();
@@ -579,7 +579,7 @@ fn RomfilesCard() -> impl IntoView {
         <div class="panel">
             <CardHeader title="ROM Files" loading=state.loading_roms />
             <div class="panel-body">
-                <For each=rows key=|(_, romfile)| romfile.path.clone() let:entry>
+                <For each=rows key=|entry| entry.clone() let:entry>
                     {
                         let (position, romfile) = entry;
                         let id = romfile.id;

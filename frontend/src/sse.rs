@@ -34,7 +34,7 @@ fn on_event(source: &EventSource, name: &'static str, state: AppState, kind: Not
     handler.forget();
 }
 
-/// Register a "completed" listener that also refreshes the systems list.
+/// Register a "completed" listener that also refreshes what is on screen.
 fn on_complete_event(
     source: &EventSource,
     name: &'static str,
@@ -55,8 +55,12 @@ fn on_complete_event(
         };
         push_notification(state.notifier, message_field(&data), kind);
         if !skipped {
-            // The set of systems changed underneath us, so pull it again.
-            state.systems_resource.refetch();
+            // A purged system cannot stay selected: there is nothing left of it
+            // to fetch.
+            if data["system_id"].as_i64() == Some(state.system_id.get_untracked()) {
+                state.system_id.set(-1);
+            }
+            state.refresh();
         }
     });
     source
@@ -65,13 +69,9 @@ fn on_complete_event(
     handler.forget();
 }
 
-/// Register a "completed" listener that notifies, refreshes the systems list,
-/// and bounces the selected system and game off their sentinel so their own
-/// fetches re-run.
-///
-/// The bounce is needed because the action changed the selected system's files
-/// or completion underneath us, and Leptos skips a `set` to the same value —
-/// hence the `-1` round-trip.
+/// Register a "completed" listener that notifies and refreshes what is on
+/// screen, since the action changed the selected system's files or completion
+/// underneath us.
 fn on_refresh(source: &EventSource, name: &'static str, state: AppState) {
     let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
         let data: Value = event
@@ -80,17 +80,7 @@ fn on_refresh(source: &EventSource, name: &'static str, state: AppState) {
             .and_then(|s| serde_json::from_str(&s).ok())
             .unwrap_or(Value::Null);
         push_notification(state.notifier, message_field(&data), NotificationKind::Success);
-        state.systems_resource.refetch();
-        let system_id = state.system_id.get();
-        if system_id > 0 {
-            state.system_id.set(-1);
-            state.system_id.set(system_id);
-        }
-        let game_id = state.game_id.get();
-        if game_id > 0 {
-            state.game_id.set(-1);
-            state.game_id.set(game_id);
-        }
+        state.refresh();
     });
     source
         .add_event_listener_with_callback(name, handler.as_ref().unchecked_ref())

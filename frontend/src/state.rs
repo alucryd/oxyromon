@@ -104,6 +104,10 @@ pub struct AppState {
     pub purging_irds_system_id: RwSignal<i64>,
     pub generating_playlists: RwSignal<bool>,
 
+    /// Fired when the server has changed the data behind the selection, to
+    /// fetch it again without changing the selection; see [`AppState::refresh`].
+    pub refresh: Trigger,
+
     // Filters.
     pub complete_filter: RwSignal<bool>,
     pub incomplete_filter: RwSignal<bool>,
@@ -183,6 +187,7 @@ impl AppState {
         let checking_system_id = RwSignal::new(-1);
         let purging_irds_system_id = RwSignal::new(-1);
         let generating_playlists = RwSignal::new(false);
+        let refresh = Trigger::new();
 
         let complete_filter = RwSignal::new(true);
         let incomplete_filter = RwSignal::new(true);
@@ -216,36 +221,60 @@ impl AppState {
         let loading_games = RwSignal::new(true);
         let games = RwSignal::new(Vec::<Game>::new());
         let games_generation = RwSignal::new(0u64);
-        Effect::new(move |_| {
+        //
+        // A refresh of the same system keeps the rows on screen and swaps the
+        // new ones in once they are all here, so the list neither blanks nor
+        // loses its scroll position.
+        Effect::new(move |previous: Option<i64>| {
+            refresh.track();
             let system_id = system_id.get();
+            let refreshing = previous == Some(system_id);
             let generation = games_generation.get_untracked().wrapping_add(1);
             games_generation.set(generation);
-            games.set(Vec::new());
-            loading_games.set(true);
+            if !refreshing {
+                games.set(Vec::new());
+                loading_games.set(true);
+            }
             spawn_local(async move {
-                stream_games(notifier, system_id, move |chunk| {
+                let mut fresh = Vec::new();
+                stream_games(notifier, system_id, |chunk| {
                     if games_generation.get_untracked() != generation {
                         return ControlFlow::Break(());
                     }
-                    games.update(|games| games.extend(chunk));
+                    if refreshing {
+                        fresh.extend(chunk);
+                    } else {
+                        games.update(|games| games.extend(chunk));
+                    }
                     ControlFlow::Continue(())
                 })
                 .await;
                 if games_generation.get_untracked() == generation {
+                    if refreshing {
+                        games.set(fresh);
+                    }
                     loading_games.set(false);
                 }
             });
+            system_id
         });
 
         let loading_roms = RwSignal::new(true);
+        let shown_game = StoredValue::new(None::<i64>);
         let roms_resource = LocalResource::new(move || {
+            refresh.track();
             // Only the game selection drives this. Changing system resets the
             // game to the sentinel, which re-runs this anyway; tracking the
             // system as well would first fire a doomed fetch pairing the new
             // system with the game selected under the old one.
             let game_id = game_id.get();
             let system_id = system_id.get_untracked();
-            loading_roms.set(true);
+            // Only a different game blanks the list; a refresh leaves the rows
+            // up until the new ones replace them.
+            if shown_game.get_value() != Some(game_id) {
+                shown_game.set_value(Some(game_id));
+                loading_roms.set(true);
+            }
             async move {
                 let roms = fetch_roms(notifier, game_id, system_id).await;
                 loading_roms.set(false);
@@ -255,6 +284,7 @@ impl AppState {
 
         let loading_sizes = RwSignal::new(true);
         let sizes_resource = LocalResource::new(move || {
+            refresh.track();
             let system_id = system_id.get();
             loading_sizes.set(true);
             async move {
@@ -332,6 +362,7 @@ impl AppState {
             checking_system_id,
             purging_irds_system_id,
             generating_playlists,
+            refresh,
 
             complete_filter,
             incomplete_filter,
@@ -373,6 +404,13 @@ impl AppState {
             loading_roms,
             loading_sizes,
         }
+    }
+
+    /// Fetch everything on screen again, keeping the selection: for when the
+    /// server has just changed it, by an import, a sort or a purge.
+    pub fn refresh(&self) {
+        self.systems_resource.refetch();
+        self.refresh.notify();
     }
 }
 
