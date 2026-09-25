@@ -163,7 +163,14 @@ pub fn Modal(
             prop:open=move || open.get()
             light-dismiss=""
             style=width
-            on:wa-after-hide=move |_: web_sys::Event| open.set(false)
+            // A `<wa-select>` or `<wa-dropdown>` inside fires its own
+            // `wa-after-hide` when it closes, which bubbles up to here: only
+            // the dialog's own means the dialog closed.
+            on:wa-after-hide=move |ev: web_sys::Event| {
+                if ev.target() == ev.current_target() {
+                    open.set(false);
+                }
+            }
         >
             // Only build the contents while the dialog is actually open. Until
             // the Web Awesome script has upgraded it, `<wa-dialog>` is just an

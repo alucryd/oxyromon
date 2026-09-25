@@ -48,6 +48,7 @@
 - Fixed `import-patches` panicking on every CLI invocation, the patch file list was read from an undeclared argument name
 - Fixed `xdelta3` patching swapping the output and patch arguments, overwriting the patch instead of producing the patched ROM
 - Fixed the web UI's sort, check, convert, and purge-system actions panicking on an unknown `system_id`
+- Fixed the web UI's dialogs closing as soon as a value was picked from a dropdown inside them
 - Fixed web UI background actions hanging forever when a database connection could not be acquired; they now emit an SSE error
 - Fixed the web UI's settings and action mutations panicking when a database connection could not be acquired
 - Fixed overlapping system name patterns (e.g. `PlayStation` and `PlayStation 3`) causing the same system to be sorted, checked, or converted twice
