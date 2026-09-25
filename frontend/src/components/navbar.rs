@@ -1,13 +1,9 @@
-//! Top navigation bar: import button, 1G1R + completion filters, name filter,
+//! Top navigation bar: import menu, 1G1R + completion filters, name filter,
 //! notifications, settings/about, dark-mode toggle. Ports the navbar portion
 //! of `+layout.svelte`.
 
 use leptos::prelude::*;
-use leptos::task::spawn_local;
 
-use crate::api::check_roms;
-use crate::api::generate_playlists;
-use crate::api::sort_roms;
 use crate::components::notifications::NotificationsButton;
 use crate::state::AppState;
 use crate::ui::control_value;
@@ -92,73 +88,27 @@ pub fn Navbar() -> impl IntoView {
                 <img src="/icon-light.svg" class="brand-logo brand-logo--light" alt="oxyROMon" style="height: 2rem;" />
             </a>
 
-            // ROMs are imported constantly and DATs set up rarely, so the
-            // frequent action keeps a button of its own and the two DAT actions
-            // share a labelled menu — which also says which is which, where
-            // three similar icons in a row did not.
-            <wa-button
-                appearance="plain"
-                title="Import ROMs"
-                on:click=move |_| state.import_rom_modal_open.set(true)
-            >
-                <wa-icon name="upload" label="Import ROMs"></wa-icon>
-            </wa-button>
-
-            <wa-button
-                appearance="plain"
-                title="Sort all systems"
-                on:click=move |_| {
-                    if state.sorting_system_id.get() == -1 {
-                        spawn_local(async move { sort_roms(state, -1).await });
-                    }
-                }
-            >
-                <wa-icon name="arrows-up-down" label="Sort all systems"></wa-icon>
-            </wa-button>
-
-            <wa-button
-                appearance="plain"
-                title="Check all systems"
-                on:click=move |_| {
-                    if state.checking_system_id.get() == -1 {
-                        spawn_local(async move { check_roms(state, -1).await });
-                    }
-                }
-            >
-                <wa-icon name="circle-check" label="Check all systems"></wa-icon>
-            </wa-button>
-
-            <wa-button
-                appearance="plain"
-                title="Purge ROM files"
-                on:click=move |_| state.purge_rom_modal_open.set(true)
-            >
-                <wa-icon name="trash" label="Purge ROM files"></wa-icon>
-            </wa-button>
-
-            <wa-button
-                appearance="plain"
-                title="Generate playlists"
-                on:click=move |_| {
-                    if !state.generating_playlists.get() {
-                        spawn_local(async move { generate_playlists(state).await });
-                    }
-                }
-            >
-                <wa-icon name="bars" label="Generate playlists"></wa-icon>
-            </wa-button>
-
+            // Only bringing data in lives here: what acts on the systems is in
+            // the Systems panel's menus, all of them in its header and one in
+            // each row. ROMs come first as the frequent case, the DAT setup
+            // after a divider.
             <wa-dropdown>
-                <wa-button slot="trigger" appearance="plain" title="DAT files" with-caret="">
-                    <wa-icon name="database" label="DAT files"></wa-icon>
+                <wa-button slot="trigger" appearance="plain" with-caret="">
+                    <wa-icon slot="start" name="upload"></wa-icon>
+                    Import
                 </wa-button>
-                <wa-dropdown-item on:click=move |_| state.import_dat_modal_open.set(true)>
+                <wa-dropdown-item on:click=move |_| state.import_rom_modal_open.set(true)>
                     <wa-icon slot="icon" name="upload"></wa-icon>
-                    Import DATs
+                    "ROMs…"
+                </wa-dropdown-item>
+                <wa-divider></wa-divider>
+                <wa-dropdown-item on:click=move |_| state.import_dat_modal_open.set(true)>
+                    <wa-icon slot="icon" name="database"></wa-icon>
+                    "DAT files…"
                 </wa-dropdown-item>
                 <wa-dropdown-item on:click=move |_| state.download_dat_modal_open.set(true)>
                     <wa-icon slot="icon" name="download"></wa-icon>
-                    Download DATs
+                    "Download DATs…"
                 </wa-dropdown-item>
             </wa-dropdown>
 

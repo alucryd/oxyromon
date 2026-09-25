@@ -103,6 +103,7 @@ pub struct AppState {
     pub checking_system_id: RwSignal<i64>,
     pub purging_irds_system_id: RwSignal<i64>,
     pub generating_playlists: RwSignal<bool>,
+    pub purging_roms: RwSignal<bool>,
 
     /// Fired when the server has changed the data behind the selection, to
     /// fetch it again without changing the selection; see [`AppState::refresh`].
@@ -187,6 +188,7 @@ impl AppState {
         let checking_system_id = RwSignal::new(-1);
         let purging_irds_system_id = RwSignal::new(-1);
         let generating_playlists = RwSignal::new(false);
+        let purging_roms = RwSignal::new(false);
         let refresh = Trigger::new();
 
         let complete_filter = RwSignal::new(true);
@@ -362,6 +364,7 @@ impl AppState {
             checking_system_id,
             purging_irds_system_id,
             generating_playlists,
+            purging_roms,
             refresh,
 
             complete_filter,

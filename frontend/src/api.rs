@@ -379,6 +379,10 @@ pub async fn fetch_downloadable_systems(notifier: Notifier, update: bool) -> Vec
 
 /// Hand an action over to the server, reporting a refusal; the work itself
 /// reports over SSE.
+///
+/// The busy flags the callers set stay up until the server reports the action
+/// finished (see `on_finished` in `sse.rs`), so that a menu stays out of reach
+/// for as long as it runs; only a refused request clears one here.
 async fn request_action(
     state: AppState,
     label: &str,
@@ -412,8 +416,9 @@ pub async fn purge_system(state: AppState, system_id: i64) {
         purgeSystem(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": system_id });
-    let _ = request_action(state, "Purging the system", mutation, variables).await;
-    state.purging_system_id.set(-1);
+    if request_action(state, "Purging the system", mutation, variables).await.is_err() {
+        state.purging_system_id.set(-1);
+    }
 }
 
 /// Ask the server to sort the ROMs of one system, or of all systems when the
@@ -426,8 +431,9 @@ pub async fn sort_roms(state: AppState, system_id: i64) {
         sortRoms(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
-    let _ = request_action(state, "Sorting ROMs", mutation, variables).await;
-    state.sorting_system_id.set(-1);
+    if request_action(state, "Sorting ROMs", mutation, variables).await.is_err() {
+        state.sorting_system_id.set(-1);
+    }
 }
 
 /// Ask the server to check the integrity of one system's ROMs, or of all
@@ -440,8 +446,9 @@ pub async fn check_roms(state: AppState, system_id: i64) {
         checkRoms(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
-    let _ = request_action(state, "Checking ROMs", mutation, variables).await;
-    state.checking_system_id.set(-1);
+    if request_action(state, "Checking ROMs", mutation, variables).await.is_err() {
+        state.checking_system_id.set(-1);
+    }
 }
 
 /// Ask the server to purge every IRD (JB folder) game of one system.
@@ -451,8 +458,9 @@ pub async fn purge_irds(state: AppState, system_id: i64) {
         purgeIrds(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": system_id });
-    let _ = request_action(state, "Purging the IRDs", mutation, variables).await;
-    state.purging_irds_system_id.set(-1);
+    if request_action(state, "Purging the IRDs", mutation, variables).await.is_err() {
+        state.purging_irds_system_id.set(-1);
+    }
 }
 
 /// Ask the server to generate M3U playlists for every system.
@@ -461,8 +469,9 @@ pub async fn generate_playlists(state: AppState) {
     let mutation = r#"mutation GeneratePlaylists {
         generatePlaylists
     }"#;
-    let _ = request_action(state, "Generating playlists", mutation, json!({})).await;
-    state.generating_playlists.set(false);
+    if request_action(state, "Generating playlists", mutation, json!({})).await.is_err() {
+        state.generating_playlists.set(false);
+    }
 }
 
 /// Ask the server to purge the selected categories of ROM files.
@@ -482,7 +491,10 @@ pub async fn purge_roms(
         "trash": trash,
         "foreign": foreign
     });
-    request_action(state, "Purging ROM files", mutation, variables).await
+    state.purging_roms.set(true);
+    request_action(state, "Purging ROM files", mutation, variables)
+        .await
+        .inspect_err(|_| state.purging_roms.set(false))
 }
 
 /// Ask the server to convert the ROM files of one system to a format.
