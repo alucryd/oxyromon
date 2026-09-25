@@ -86,10 +86,11 @@ fn CardHeader(
 #[component]
 fn AllSystemsMenu() -> impl IntoView {
     let state = expect_context::<AppState>();
-    // Sort and check mark a run over every system with -2.
+    // Any sort or check, of one system or all of them (-2): starting another
+    // would take over the flag the running one clears when it finishes.
     let busy = move || {
-        state.sorting_system_id.get() == -2
-            || state.checking_system_id.get() == -2
+        state.sorting_system_id.get() != -1
+            || state.checking_system_id.get() != -1
             || state.generating_playlists.get()
             || state.purging_roms.get()
     };
