@@ -38,7 +38,7 @@
 - Applied the orange brand colour to the web UI and set the page title to oxyROMon
 - Refined web UI copy and accessibility: a labelled games filter, clearer import and settings wording, and a page description
 - Narrowed the web UI's default pane split, giving the games list more room
-- Grouped the web UI's actions by what they act on: an Import menu in the navbar for ROMs and DATs, a menu in the Systems panel's header for what runs on every system (check, sort, playlists, purge), and each system's own menu as before; a menu gives way to a spinner until its action has finished on the server, so actions cannot be stacked
+- Grouped the web UI's actions by what they act on: Upload (ROMs, DATs) and Download (DATs) menus in the navbar, a menu in the Systems panel's header for what runs on every system (check, sort, playlists, purge), and each system's own menu as before; a menu gives way to a spinner until its action has finished on the server, so actions cannot be stacked
 - Added a light-mode variant of the logo, so it stays legible on the white navbar and About dialog
 - Added a per-system completion count to the web UI's system list (e.g. "482/500")
 - Let every file picker in the web UI take a dropped file, the IRD and patch dialogs' included
