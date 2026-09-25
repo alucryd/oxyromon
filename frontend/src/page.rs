@@ -7,6 +7,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use crate::api::check_roms;
+use crate::api::generate_playlists;
 use crate::api::purge_irds;
 use crate::api::purge_system;
 use crate::api::sort_roms;
@@ -58,15 +59,79 @@ fn row_class(position: usize, selected: bool) -> String {
     format!("list-row {stripe} {selected}")
 }
 
+/// A panel's title, with a spinner while it loads and, when given, the
+/// controls that act on the whole panel.
 #[component]
-fn CardHeader(title: &'static str, loading: RwSignal<bool>) -> impl IntoView {
+fn CardHeader(
+    title: &'static str,
+    loading: RwSignal<bool>,
+    #[prop(optional)] children: Option<Children>,
+) -> impl IntoView {
     view! {
         <div class="panel-header">
             <span>{title}</span>
-            <Show when=move || loading.get()>
-                <wa-spinner></wa-spinner>
-            </Show>
+            <div class="wa-cluster wa-gap-2xs">
+                <Show when=move || loading.get()>
+                    <wa-spinner></wa-spinner>
+                </Show>
+                {children.map(|children| children())}
+            </div>
         </div>
+    }
+}
+
+/// What acts on every system, in the Systems panel's header: the same menu as
+/// each row's, one level up. A spinner stands in for it while one of its
+/// actions runs, until the server reports it finished, as a row's does.
+#[component]
+fn AllSystemsMenu() -> impl IntoView {
+    let state = expect_context::<AppState>();
+    // Sort and check mark a run over every system with -2.
+    let busy = move || {
+        state.sorting_system_id.get() == -2
+            || state.checking_system_id.get() == -2
+            || state.generating_playlists.get()
+            || state.purging_roms.get()
+    };
+    view! {
+        <Show when=move || !busy() fallback=|| view! { <wa-spinner></wa-spinner> }>
+            <wa-dropdown>
+                <button
+                    slot="trigger"
+                    class="plain-button icon-button"
+                    aria-label="Actions on all systems"
+                    title="Actions on all systems"
+                >
+                    <wa-icon name="ellipsis-vertical"></wa-icon>
+                </button>
+                <wa-dropdown-item on:click=move |_| {
+                    spawn_local(async move { check_roms(state, -1).await });
+                }>
+                    <wa-icon slot="icon" name="circle-check"></wa-icon>
+                    Check all systems
+                </wa-dropdown-item>
+                <wa-dropdown-item on:click=move |_| {
+                    spawn_local(async move { sort_roms(state, -1).await });
+                }>
+                    <wa-icon slot="icon" name="arrows-up-down"></wa-icon>
+                    Sort all systems
+                </wa-dropdown-item>
+                <wa-dropdown-item on:click=move |_| {
+                    spawn_local(async move { generate_playlists(state).await });
+                }>
+                    <wa-icon slot="icon" name="bars"></wa-icon>
+                    Generate playlists
+                </wa-dropdown-item>
+                <wa-divider></wa-divider>
+                <wa-dropdown-item
+                    variant="danger"
+                    on:click=move |_| state.purge_rom_modal_open.set(true)
+                >
+                    <wa-icon slot="icon" name="trash"></wa-icon>
+                    "Purge ROM files…"
+                </wa-dropdown-item>
+            </wa-dropdown>
+        </Show>
     }
 }
 
@@ -228,7 +293,9 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
 
     view! {
         <div class="panel">
-            <CardHeader title="Systems" loading=state.loading_systems />
+            <CardHeader title="Systems" loading=state.loading_systems>
+                <AllSystemsMenu />
+            </CardHeader>
             <div class="panel-body">
                 <For each=rows key=|entry| entry.clone() let:entry>
                     {
@@ -261,10 +328,13 @@ fn SystemsCard(modals: SystemModals) -> impl IntoView {
                                 {count.map(|c| view! { <span class="row-count">{c}</span> })}
                                 <div style="padding-inline-end: var(--wa-space-2xs);">
                                     <Show
+                                        // A sort or check of every system (-2)
+                                        // is running on this one too.
                                         when=move || {
                                             state.purging_system_id.get() == id
-                                                || state.sorting_system_id.get() == id
-                                                || state.checking_system_id.get() == id
+                                                || state.purging_irds_system_id.get() == id
+                                                || [id, -2].contains(&state.sorting_system_id.get())
+                                                || [id, -2].contains(&state.checking_system_id.get())
                                         }
                                         fallback=move || {
                                             let name_for_settings = name_for_settings.clone();

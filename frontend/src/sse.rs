@@ -88,6 +88,22 @@ fn on_refresh(source: &EventSource, name: &'static str, state: AppState) {
     handler.forget();
 }
 
+/// Register listeners that clear an action's busy flag once the server reports
+/// it finished, whichever way.
+fn on_finished(source: &EventSource, prefix: &str, clear: impl Fn() + Clone + 'static) {
+    for outcome in ["complete", "error"] {
+        let clear = clear.clone();
+        let handler = Closure::<dyn FnMut(MessageEvent)>::new(move |_: MessageEvent| clear());
+        source
+            .add_event_listener_with_callback(
+                &format!("{prefix}_{outcome}"),
+                handler.as_ref().unchecked_ref(),
+            )
+            .ok();
+        handler.forget();
+    }
+}
+
 /// Open the SSE connection and wire up all listeners.
 ///
 /// The connection lives for the lifetime of the SPA, so closures are
@@ -170,6 +186,13 @@ pub fn connect_sse(state: AppState) {
     on_event(&source, "generate_playlists_started", state, NotificationKind::Info);
     on_event(&source, "generate_playlists_error", state, NotificationKind::Error);
     on_refresh(&source, "generate_playlists_complete", state);
+
+    on_finished(&source, "purge", move || state.purging_system_id.set(-1));
+    on_finished(&source, "sort_roms", move || state.sorting_system_id.set(-1));
+    on_finished(&source, "check_roms", move || state.checking_system_id.set(-1));
+    on_finished(&source, "purge_irds", move || state.purging_irds_system_id.set(-1));
+    on_finished(&source, "generate_playlists", move || state.generating_playlists.set(false));
+    on_finished(&source, "purge_roms", move || state.purging_roms.set(false));
 
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);
