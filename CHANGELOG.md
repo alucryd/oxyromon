@@ -21,14 +21,14 @@
 - Moved the nsz-rs and xso-rs crates into this repository under `crates/`; their CLIs (`nszrs`, `xsors`) ship in the release archives
 - GDI conversion now comes from the new gdi-rs crate, a port of gdidrop, with a progress bar; its CLI (`gdirs`) ships in the release archives too
 - CSO/ZSO support now comes from the xso-rs crate instead of the external `maxcso` tool, with a progress bar
-- CUE/BIN to ISO conversion is now built in, ported from bchunk, which is no longer needed
+- CUE/BIN to ISO conversion is now built in, ported from bchunk, which is no longer needed; a BIN too short for the track its CUE describes is an error rather than a short ISO
 - Games with one bin per track now export to ISO, keeping the first track
 - CSO conversions now use 8 KiB blocks, 16 KiB past 2 GiB, for files around 4% smaller
 - ZSO conversions stay at 2 KiB blocks, the only size Open PS2 Loader reads
 - `sort-roms` now accepts `--system` to sort named systems without an interactive prompt
 - `check-roms` now accepts `--system` to check named systems without an interactive prompt
 - `import-patches` now accepts `--rom <ID>` to select the target ROM by id, skipping the prompts
-- `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended
+- `import-irds` and `purge-irds` now accept `--system <NAME>` to run unattended; `import-irds` then matches each IRD to the one game of the same title, and refuses it when there is none or several
 
 ## Improvements
 
@@ -40,6 +40,7 @@
 - Narrowed the web UI's default pane split, giving the games list more room
 - Added a light-mode variant of the logo, so it stays legible on the white navbar and About dialog
 - Added a per-system completion count to the web UI's system list (e.g. "482/500")
+- Let every file picker in the web UI take a dropped file, the IRD and patch dialogs' included
 - Made the web UI's games list a WAI-ARIA listbox, navigable with the arrow, Home, End, Enter, and Space keys
 
 ## Fixes

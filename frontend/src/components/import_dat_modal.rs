@@ -9,7 +9,7 @@ use web_sys::FormData;
 use crate::api::report_error;
 use crate::sse::DATS_ENDPOINT;
 use crate::state::AppState;
-use crate::ui::{Modal, control_checked};
+use crate::ui::{Dropzone, Modal, control_checked};
 
 #[component]
 pub fn ImportDatModal() -> impl IntoView {
@@ -18,33 +18,6 @@ pub fn ImportDatModal() -> impl IntoView {
     let importing = RwSignal::new(false);
     let selected = RwSignal::new(Option::<web_sys::File>::None);
     let input_ref = NodeRef::<html::Input>::new();
-
-    let open_picker = move || {
-        if let Some(input) = input_ref.get() {
-            input.click();
-        }
-    };
-
-    let on_change = move |_| {
-        if let Some(file) = input_ref
-            .get()
-            .and_then(|input| input.files())
-            .and_then(|files| files.get(0))
-        {
-            selected.set(Some(file));
-        }
-    };
-
-    let on_drop = move |ev: web_sys::DragEvent| {
-        ev.prevent_default();
-        if let Some(file) = ev
-            .data_transfer()
-            .and_then(|dt| dt.files())
-            .and_then(|files| files.get(0))
-        {
-            selected.set(Some(file));
-        }
-    };
 
     let do_import = move || {
         let Some(file) = selected.get_untracked() else {
@@ -90,46 +63,12 @@ pub fn ImportDatModal() -> impl IntoView {
             size="sm"
         >
             <div class="wa-stack wa-gap-m">
-                <button
-                    class="plain-button dropzone"
-                    on:click=move |_| open_picker()
-                    on:drop=on_drop
-                    on:dragover=move |ev| ev.prevent_default()
-                >
-                    <wa-icon
-                        name="upload"
-                        style="font-size: var(--wa-font-size-2xl); color: var(--wa-color-text-quiet);"
-                    ></wa-icon>
-                    <Show
-                        when=move || selected.get().is_some()
-                        fallback=|| {
-                            view! {
-                                <span>Click or drop a file here</span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    "Supported formats: .dat, .zip"
-                                </small>
-                            }
-                        }
-                    >
-                        {move || {
-                            let file = selected.get().unwrap();
-                            view! {
-                                <span style="font-weight: var(--wa-font-weight-semibold);">
-                                    {file.name()}
-                                </span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    <wa-format-bytes value=file.size()></wa-format-bytes>
-                                </small>
-                            }
-                        }}
-                    </Show>
-                </button>
-                <input
-                    node_ref=input_ref
-                    type="file"
+                <Dropzone
+                    icon="upload"
+                    hint="Supported formats: .dat, .zip"
                     accept=".dat,.zip"
-                    style="display: none;"
-                    on:change=on_change
+                    selected=selected
+                    input_ref=input_ref
                 />
 
                 <wa-switch

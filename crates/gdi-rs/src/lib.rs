@@ -152,9 +152,9 @@ fn plan(cue_path: &Path, output_dir: &Path) -> Result<(String, Vec<Copy>)> {
         };
         // A track with a pregap starts at its INDEX 01; the pregap is dropped.
         let begin = track
-            .indices
-            .get(1)
-            .map_or(start, |index| index * SECTOR_SIZE);
+            .index_01
+            .ok_or_else(|| Error::Corrupt(format!("track {} has no INDEX 01", track.number)))?
+            * SECTOR_SIZE;
         if !(start <= begin && begin <= end && end <= size) {
             return Err(Error::Corrupt(format!(
                 "track {}'s INDEX lies outside its part of \"{}\"",

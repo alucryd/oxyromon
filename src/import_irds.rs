@@ -127,7 +127,7 @@ pub async fn main(
                     .unwrap()
             });
             let game = if headless {
-                games.first()
+                Some(unattended_game(&games, &irdfile.game_name)?)
             } else {
                 prompt_for_game(&games, None)?
             };
@@ -153,6 +153,47 @@ pub async fn main(
     compute_system_completion(connection, progress_bar, &system).await?;
 
     Ok(())
+}
+
+/// The game an IRD belongs to, when there is no one to ask: the one whose name,
+/// without its region and other tags, is the IRD's title. A fuzzy best match
+/// would always find one, and write the IRD onto the wrong game when it is not
+/// in the DAT.
+fn unattended_game<'a>(games: &'a [Game], title: &str) -> Result<&'a Game> {
+    let key = title_key(title);
+    let matching: Vec<&Game> = games
+        .iter()
+        .filter(|game| title_key(&game.name) == key)
+        .collect();
+    match matching.as_slice() {
+        [game] => Ok(game),
+        [] => bail!("No game is named \"{title}\"; import the IRD from the CLI to pick one"),
+        _ => bail!(
+            "Several games are named \"{title}\" ({}); import the IRD from the CLI to pick one",
+            matching
+                .iter()
+                .map(|game| game.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    }
+}
+
+/// A title as it compares: without `(...)` and `[...]` tags, punctuation or
+/// case, so that "Uncharted: Drake's Fortune" is "Uncharted - Drake's Fortune
+/// (USA) (En,Fr,Es)".
+fn title_key(title: &str) -> String {
+    let mut depth = 0usize;
+    let mut key = String::new();
+    for c in title.chars() {
+        match c {
+            '(' | '[' => depth += 1,
+            ')' | ']' => depth = depth.saturating_sub(1),
+            c if depth == 0 && c.is_alphanumeric() => key.extend(c.to_lowercase()),
+            _ => {}
+        }
+    }
+    key
 }
 
 pub async fn parse_ird<P: AsRef<Path>>(path: &P) -> Result<(Irdfile, Vec<u8>)> {
@@ -419,3 +460,5 @@ pub async fn import_ird(
 
 #[cfg(test)]
 mod test_ird;
+#[cfg(test)]
+mod test_title;

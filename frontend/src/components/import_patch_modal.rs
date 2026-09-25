@@ -11,7 +11,7 @@ use web_sys::FormData;
 use crate::api::{fetch_roms, report_error, stream_games};
 use crate::model::{Game, Rom};
 use crate::state::AppState;
-use crate::ui::{Modal, control_value};
+use crate::ui::{Dropzone, Modal, control_value};
 
 /// Where the server accepts a patch for import.
 const PATCHES_ENDPOINT: &str = "/patches";
@@ -50,14 +50,10 @@ pub fn ImportPatchModal() -> impl IntoView {
         let notifier = state.notifier;
         let games_signal = games;
         spawn_local(async move {
-            stream_games(
-                notifier,
-                sid,
-                move |chunk| {
-                    games_signal.update(|g| g.extend(chunk));
-                    ControlFlow::Continue(())
-                },
-            )
+            stream_games(notifier, sid, move |chunk| {
+                games_signal.update(|g| g.extend(chunk));
+                ControlFlow::Continue(())
+            })
             .await;
         });
     });
@@ -76,16 +72,6 @@ pub fn ImportPatchModal() -> impl IntoView {
             roms.set(fetch_roms(notifier, gid, sid).await);
         });
     });
-
-    let on_change = move |_| {
-        if let Some(file) = input_ref
-            .get_untracked()
-            .and_then(|input| input.files())
-            .and_then(|files| files.get(0))
-        {
-            selected.set(Some(file));
-        }
-    };
 
     let do_import = move || {
         let Some(file) = selected.get_untracked() else {
@@ -174,47 +160,11 @@ pub fn ImportPatchModal() -> impl IntoView {
                         .collect_view()}
                 </wa-select>
 
-                <button
-                    class="plain-button dropzone"
-                    on:click=move |_| {
-                        if let Some(input) = input_ref.get_untracked() {
-                            input.click();
-                        }
-                    }
-                >
-                    <wa-icon
-                        name="puzzle-piece"
-                        style="font-size: var(--wa-font-size-2xl); color: var(--wa-color-text-quiet);"
-                    ></wa-icon>
-                    <Show
-                        when=move || selected.get().is_some()
-                        fallback=|| {
-                            view! {
-                                <span>"Click here to choose a patch file"</span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    "BPS, IPS or xdelta patch"
-                                </small>
-                            }
-                        }
-                    >
-                        {move || {
-                            let file = selected.get().unwrap();
-                            view! {
-                                <span style="font-weight: var(--wa-font-weight-semibold);">
-                                    {file.name()}
-                                </span>
-                                <small style="color: var(--wa-color-text-quiet);">
-                                    <wa-format-bytes value=file.size()></wa-format-bytes>
-                                </small>
-                            }
-                        }}
-                    </Show>
-                </button>
-                <input
-                    node_ref=input_ref
-                    type="file"
-                    style="display: none;"
-                    on:change=on_change
+                <Dropzone
+                    icon="puzzle-piece"
+                    hint="BPS, IPS or xdelta patch"
+                    selected=selected
+                    input_ref=input_ref
                 />
             </div>
 

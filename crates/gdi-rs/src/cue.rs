@@ -19,6 +19,8 @@ pub struct Track {
     pub file_index: usize,
     /// Each INDEX, in frames from the start of the BIN, in CUE order.
     pub indices: Vec<u64>,
+    /// INDEX 01, where the track proper starts, past any pregap (INDEX 00).
+    pub index_01: Option<u64>,
     /// `REM` lines read while this was the current track.
     pub comments: Vec<String>,
 }
@@ -57,6 +59,7 @@ pub fn parse(text: &str) -> Result<Cue> {
                     file,
                     file_index: files - 1,
                     indices: Vec::new(),
+                    index_01: None,
                     comments: Vec::new(),
                 });
             }
@@ -64,11 +67,17 @@ pub fn parse(text: &str) -> Result<Cue> {
                 let track = tracks
                     .last_mut()
                     .ok_or_else(|| Error::Corrupt("INDEX before any TRACK".into()))?;
-                let time = line
-                    .split_whitespace()
-                    .nth(2)
-                    .ok_or_else(|| Error::Corrupt(format!("invalid INDEX line \"{line}\"")))?;
-                track.indices.push(frames(time)?);
+                let invalid = || Error::Corrupt(format!("invalid INDEX line \"{line}\""));
+                let mut words = line.split_whitespace().skip(1);
+                let number: u32 = words
+                    .next()
+                    .and_then(|number| number.parse().ok())
+                    .ok_or_else(invalid)?;
+                let frames = frames(words.next().ok_or_else(invalid)?)?;
+                if number == 1 {
+                    track.index_01 = Some(frames);
+                }
+                track.indices.push(frames);
             }
             "REM" => {
                 let comment = line[keyword.len()..].trim();
@@ -132,6 +141,7 @@ mod tests {
         assert_eq!(cue.tracks[1].file, "Game (Track 2).bin");
         assert!(cue.tracks[1].audio);
         assert_eq!(cue.tracks[1].indices, [0, 150]);
+        assert_eq!(cue.tracks[1].index_01, Some(150));
     }
 
     #[test]
@@ -143,6 +153,16 @@ mod tests {
         assert_eq!(cue.tracks[1].file, "game.bin");
         assert_eq!(cue.tracks[0].file_index, cue.tracks[1].file_index);
         assert_ne!(cue.tracks[1].file_index, cue.tracks[2].file_index);
+    }
+
+    #[test]
+    fn index_01_is_found_by_its_number() {
+        let cue = parse(
+            "FILE \"game.bin\" BINARY\n  TRACK 01 AUDIO\n    INDEX 00 00:00:00\n    INDEX 01 00:02:00\n    INDEX 02 00:04:00\n",
+        )
+        .unwrap();
+        assert_eq!(cue.tracks[0].index_01, Some(150));
+        assert!(parse("FILE \"game.bin\" BINARY\n  TRACK 01 AUDIO\n    INDEX 1\n").is_err());
     }
 
     #[test]

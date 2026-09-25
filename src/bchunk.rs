@@ -102,11 +102,17 @@ fn extract(bin: &Path, iso: &Path, track: &DataTrack, progress_bar: &ProgressBar
         File::open(bin).with_context(|| format!("Failed to open \"{}\"", bin.display()))?;
     // Only whole sectors count, as in bchunk.
     let sectors = input.metadata()?.len() / SECTOR_SIZE;
-    let end = track.end.unwrap_or(sectors).min(sectors);
+    let end = track.end.unwrap_or(sectors);
+    if end > sectors || end <= track.start {
+        bail!(
+            "\"{}\" is too short for the first track the CUE describes",
+            bin.display()
+        );
+    }
 
     progress_bar.reset();
     progress_bar.set_style(get_bytes_progress_style());
-    progress_bar.set_length(end.saturating_sub(track.start) * SECTOR_SIZE);
+    progress_bar.set_length((end - track.start) * SECTOR_SIZE);
 
     input.seek(SeekFrom::Start(track.start * SECTOR_SIZE))?;
     let mut reader = BufReader::with_capacity(1 << 20, input);
@@ -147,18 +153,20 @@ impl ToIso for CueBinRomfile {
 
         let track = first_track(&tokio::fs::read_to_string(&self.cue_romfile.path).await?)?;
         // With a BIN per track, only the one holding the first track is read.
-        let bin: PathBuf = track
-            .bin
-            .as_deref()
-            .and_then(|name| {
-                self.bin_romfiles
-                    .iter()
-                    .find(|romfile| romfile.path.file_name().and_then(|f| f.to_str()) == Some(name))
-            })
-            .or_else(|| self.bin_romfiles.first())
-            .context("The CUE/BIN has no bin")?
-            .path
-            .clone();
+        // A lone BIN is that one whatever the CUE calls it; among several, the
+        // CUE has to name it.
+        let bin: PathBuf = match (track.bin.as_deref(), self.bin_romfiles.as_slice()) {
+            (_, [bin]) => bin,
+            (Some(name), bins) => bins
+                .iter()
+                .find(|romfile| romfile.path.file_name().and_then(|f| f.to_str()) == Some(name))
+                .with_context(|| {
+                    format!("The CUE names \"{name}\", which is not one of its BINs")
+                })?,
+            (None, _) => bail!("The CUE names no BIN for its first track"),
+        }
+        .path
+        .clone();
         let iso = path.clone();
         let bar = progress_bar.clone();
         spawn_blocking(move || extract(&bin, &iso, &track, &bar))
@@ -210,6 +218,29 @@ mod tests {
         assert_eq!(track.end, None);
         // The first track is in the first BIN, not whichever arrives first.
         assert_eq!(track.bin.as_deref(), Some("1.bin"));
+    }
+
+    #[test]
+    fn a_bin_too_short_for_its_track_is_an_error() {
+        let directory = tempfile::tempdir().unwrap();
+        let (bin, iso) = (
+            directory.path().join("game.bin"),
+            directory.path().join("game.iso"),
+        );
+        std::fs::write(&bin, vec![0; 10 * SECTOR_SIZE as usize]).unwrap();
+        let progress_bar = ProgressBar::hidden();
+        for (start, end) in [(231, None), (0, Some(11)), (5, Some(5))] {
+            let track = DataTrack {
+                bin: None,
+                start,
+                end,
+                offset: 16,
+            };
+            assert!(
+                extract(&bin, &iso, &track, &progress_bar).is_err(),
+                "{start}..{end:?}"
+            );
+        }
     }
 
     #[test]

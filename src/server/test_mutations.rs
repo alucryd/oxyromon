@@ -151,6 +151,23 @@ async fn test() -> Result<()> {
             v
         );
         assert!(v["data"].is_null() || v["data"]["setPreferRegions"].is_null());
+
+        // actions refuse what they cannot run before queuing anything
+        for (query, error) in [
+            (r#"sortRoms(systemId: 999)"#, "System 999 not found"),
+            (r#"purgeIrds(systemId: 999)"#, "System 999 not found"),
+            (
+                r#"convertRoms(systemId: 999, format: \"CHD\")"#,
+                "System 999 not found",
+            ),
+            (
+                r#"purgeRoms(missing: false, orphan: false, trash: false, foreign: false)"#,
+                "No ROM files selected to purge",
+            ),
+        ] {
+            let v = gql(&client, &format!(r#"{{"query":"mutation {{ {query} }}"}}"#)).await;
+            assert_eq!(v["errors"][0]["message"], json!(error), "{query}: {v}");
+        }
     };
 
     select! {
