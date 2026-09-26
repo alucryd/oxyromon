@@ -13,8 +13,8 @@ for target in aarch64-unknown-linux-gnu aarch64-unknown-linux-musl x86_64-unknow
         --target $target \
         --features server
     tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
-    cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xso-rs
-    for bin in gdirs nszrs xdeltars xsors; do
+    cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs
+    for bin in gdirs nszrs xdeltars xpsrs xsors; do
         tar -cJf dist/$bin.${target/-unknown/}.tar.xz target/$target/release/$bin
     done
     cargo clean
@@ -27,8 +27,8 @@ for target in x86_64-pc-windows-gnullvm; do
         --target $target \
         --features server
     7z a dist/oxyromon.${target/-pc/}.7z target/$target/release/oxyromon.exe
-    PATH=/opt/llvm-mingw/llvm-mingw-ucrt/bin/:/usr/bin cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xso-rs
-    for bin in gdirs nszrs xdeltars xsors; do
+    PATH=/opt/llvm-mingw/llvm-mingw-ucrt/bin/:/usr/bin cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs
+    for bin in gdirs nszrs xdeltars xpsrs xsors; do
         7z a dist/$bin.${target/-pc/}.7z target/$target/release/$bin.exe
     done
     cargo clean
@@ -42,8 +42,8 @@ for target in aarch64-apple-darwin x86_64-apple-darwin; do
         --features server
     rcodesign sign target/$target/release/oxyromon
     tar -cJf dist/oxyromon.${target/-unknown/}.tar.xz target/$target/release/oxyromon
-    cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xso-rs
-    for bin in gdirs nszrs xdeltars xsors; do
+    cross build --release --target $target -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs
+    for bin in gdirs nszrs xdeltars xpsrs xsors; do
         rcodesign sign target/$target/release/$bin
         tar -cJf dist/$bin.${target/-unknown/}.tar.xz target/$target/release/$bin
     done

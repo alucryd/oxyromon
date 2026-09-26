@@ -3,11 +3,11 @@ use super::chdman;
 use super::ctrtool;
 use super::database::*;
 use super::download_dats::find_redump_systems;
-use super::flips;
 use super::model::*;
 use super::nsz;
 use super::rvz;
 use super::xdelta;
+use super::xps;
 use super::xso;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
@@ -243,7 +243,7 @@ impl QueryRoot {
             ("sevenz-rust2", archive::get_version().await),
             ("chdman", chdman::get_version().await),
             ("ctrtool", ctrtool::get_version().await),
-            ("flips", flips::get_version().await),
+            ("xps-rs", xps::get_version().await),
             ("xso-rs", xso::get_version().await),
             ("nsz-rs", nsz::get_version().await),
             ("xdelta-rs", xdelta::get_version().await),

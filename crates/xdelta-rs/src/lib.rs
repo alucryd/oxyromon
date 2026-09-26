@@ -89,8 +89,8 @@ pub fn decode(
                 .adler32
                 .is_some_and(|expected| expected != vcdiff::adler32(&target))
             {
-                return Err(Error::Corrupt(format!(
-                    "window {number} does not match its checksum; is the source the right file?"
+                return Err(Error::WrongSource(format!(
+                    "window {number} does not match its checksum"
                 )));
             }
             out.write_all(&target)?;

@@ -15,7 +15,6 @@ mod ctrtool;
 mod database;
 mod download_dats;
 mod export_roms;
-mod flips;
 mod gdi;
 mod generate_playlists;
 mod import_dats;
@@ -47,6 +46,7 @@ mod util;
 mod validator;
 mod wbfs;
 mod xdelta;
+mod xps;
 mod xso;
 
 use anyhow::Result;

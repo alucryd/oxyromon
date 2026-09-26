@@ -82,7 +82,7 @@ fn the_wrong_source_fails_its_checksum_and_leaves_nothing() {
 
     let result = decode(Some(&wrong), &data("plain.xdelta"), &output, &mut |_| {});
 
-    assert!(matches!(result, Err(Error::Corrupt(message)) if message.contains("checksum")));
+    assert!(matches!(result, Err(Error::WrongSource(message)) if message.contains("checksum")));
     assert_eq!(std::fs::read(&output).unwrap(), b"keep me");
     assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 2);
 }

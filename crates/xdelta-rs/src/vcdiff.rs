@@ -373,8 +373,8 @@ fn read_source(source: Option<&File>, buf: &mut [u8], offset: u64) -> Result<()>
     while done < buf.len() {
         match read_at(source, &mut buf[done..], offset + done as u64)? {
             0 => {
-                return Err(Error::InvalidOption(
-                    "the source is shorter than the patch expects; is it the right file?".into(),
+                return Err(Error::WrongSource(
+                    "it is shorter than the patch expects".into(),
                 ));
             }
             n => done += n,

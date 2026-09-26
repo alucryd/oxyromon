@@ -13,9 +13,6 @@ pub enum Error {
     #[error("unsupported format: {0}")]
     Unsupported(String),
 
-    #[error("invalid option: {0}")]
-    InvalidOption(String),
-
     #[error("corrupt data: {0}")]
     Corrupt(String),
 

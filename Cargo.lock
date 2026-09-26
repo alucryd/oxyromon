@@ -2799,6 +2799,7 @@ dependencies = [
  "walkdir",
  "wiremock",
  "xdelta-rs",
+ "xps-rs",
  "xso-rs",
  "zip",
 ]
@@ -5103,6 +5104,18 @@ dependencies = [
  "console",
  "indicatif",
  "lzma-rust2",
+ "tempfile",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "xps-rs"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "console",
+ "crc32fast",
+ "indicatif",
  "tempfile",
  "thiserror 2.0.20",
 ]

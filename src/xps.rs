@@ -1,14 +1,10 @@
 use super::common::*;
 use super::progress::*;
-use super::util::*;
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use indicatif::ProgressBar;
 use std::path::Path;
 use std::str::FromStr;
 use strum::{Display, EnumString};
-use tokio::process::Command;
-
-const FLIPS: &str = "flips";
 
 // patch application is not wired up yet, kept for the planned feature
 #[allow(dead_code)]
@@ -32,14 +28,6 @@ impl Patch for XpsRomfile {
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> Result<CommonRomfile> {
-        start_action(
-            progress_bar,
-            Some(&format!(
-                "Applying \"{}\"",
-                self.romfile.path.file_name().unwrap().to_str().unwrap()
-            )),
-        );
-
         print_action(
             progress_bar,
             &format!(
@@ -52,25 +40,18 @@ impl Patch for XpsRomfile {
             .as_ref()
             .join(romfile.path.file_name().unwrap());
 
-        let output = Command::new(FLIPS)
-            .arg("--apply")
-            .arg(&self.romfile.path)
-            .arg(&romfile.path)
-            .arg(&path)
-            .output()
-            .await
-            .unwrap_or_else(|_| {
-                panic!(
-                    "Failed to patch \"{}\"",
-                    romfile.path.file_name().unwrap().to_str().unwrap()
-                )
-            });
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
+        let (source, patch, output) = (
+            romfile.path.clone(),
+            self.romfile.path.clone(),
+            path.clone(),
+        );
+        let warning = run_blocking(progress_bar, patch.metadata()?.len(), move |progress| {
+            xps_rs::apply(&source, &patch, &output, progress)
+        })
+        .await?;
+        if let Some(warning) = warning {
+            print_warning(progress_bar, &format!("Patched, but {warning}"));
         }
-
-        stop_action(progress_bar);
 
         CommonRomfile::from_path(&path)
     }
@@ -100,8 +81,9 @@ impl AsXps for CommonRomfile {
     }
 }
 
+/// Reported by `info`.
 pub async fn get_version() -> Result<String> {
-    tool_version(FLIPS, "flips", &["-v"], false, 0, None).await
+    Ok(String::from("built-in"))
 }
 
 #[cfg(test)]
