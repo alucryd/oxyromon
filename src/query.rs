@@ -7,7 +7,7 @@ use super::flips;
 use super::model::*;
 use super::nsz;
 use super::rvz;
-use super::xdelta3;
+use super::xdelta;
 use super::xso;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
@@ -246,7 +246,7 @@ impl QueryRoot {
             ("flips", flips::get_version().await),
             ("xso-rs", xso::get_version().await),
             ("nsz-rs", nsz::get_version().await),
-            ("xdelta3", xdelta3::get_version().await),
+            ("xdelta-rs", xdelta::get_version().await),
         ];
         // RVZ and WBFS both come from nod
         deps.push(("nod", rvz::get_version().await));

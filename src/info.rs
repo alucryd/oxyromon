@@ -6,7 +6,7 @@ use super::flips;
 use super::nsz;
 use super::progress::*;
 use super::rvz;
-use super::xdelta3;
+use super::xdelta;
 use super::xso;
 use anyhow::Result;
 use clap::Command;
@@ -30,7 +30,7 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
         ("flips", flips::get_version().await),
         ("xso-rs", xso::get_version().await),
         ("nsz-rs", nsz::get_version().await),
-        ("xdelta3", xdelta3::get_version().await),
+        ("xdelta-rs", xdelta::get_version().await),
     ];
     // RVZ and WBFS both come from nod
     deps.push(("nod", rvz::get_version().await));

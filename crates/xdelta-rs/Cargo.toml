@@ -1,0 +1,35 @@
+[package]
+name = "xdelta-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "xdelta3 (VCDIFF) patch decoding, LZMA secondary compression included"
+license = "Apache-2.0"
+repository.workspace = true
+keywords = ["xdelta", "xdelta3", "vcdiff", "patch", "delta"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "xdelta_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xdeltars"
+path = "src/bin/xdeltars/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+# xdelta3's LZMA secondary sections are one xz stream per section kind, continued across windows.
+lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

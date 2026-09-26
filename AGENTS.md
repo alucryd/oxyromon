@@ -36,7 +36,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 │  Format-specific modules:                           │
 │    archive.rs, rvz.rs, wbfs.rs, iso.rs, xso.rs,     │
 │    nsz.rs, gdi.rs, chdman.rs, ctrtool.rs, flips.rs, │
-│    xdelta3.rs, crc32.rs                             │
+│    xdelta.rs, crc32.rs                              │
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
@@ -74,7 +74,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Format-Specific Module Pattern
 
-Each external tool module (e.g., `chdman.rs`, `ctrtool.rs`, `xdelta3.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
+Each external tool module (e.g., `chdman.rs`, `ctrtool.rs`, `flips.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
 
 1. Define a struct wrapping `CommonRomfile` (e.g., `ChdRomfile`, `ArchiveRomfile`).
 2. Implement `Size`, `HashAndSize`, and `Check` traits for integrity verification.
@@ -191,6 +191,7 @@ upstream's license:
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
+| `xdelta-rs` | [xdelta3](https://github.com/jmacd/xdelta) | `xdeltars` | Apache-2.0 | XDELTA patches |
 | `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | CSO/ZSO              |
 
 `frontend/` and `desktop/` are *not* members: they declare their own
@@ -238,7 +239,7 @@ Every crate follows these, and a new one should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p gdi-rs -p nsz-rs -p xso-rs  # the CLIs
+cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xso-rs  # the CLIs
 cargo test -p xso-rs                           # one crate
 cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```
@@ -307,7 +308,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `mame-tools` (for chdman), `xdelta3`
+- Installs system dependencies: `mame-tools` (for chdman)
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`

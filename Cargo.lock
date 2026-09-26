@@ -2449,6 +2449,9 @@ name = "lzma-rust2"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fde178a3caf126c440fa15628147772d8ee590a39477d711353fbe2e58a73a5b"
+dependencies = [
+ "sha2 0.11.0",
+]
 
 [[package]]
 name = "macro_rules_attribute"
@@ -2795,6 +2798,7 @@ dependencies = [
  "vec-drain-where",
  "walkdir",
  "wiremock",
+ "xdelta-rs",
  "xso-rs",
  "zip",
 ]
@@ -5090,6 +5094,18 @@ name = "writeable"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
+
+[[package]]
+name = "xdelta-rs"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "console",
+ "indicatif",
+ "lzma-rust2",
+ "tempfile",
+ "thiserror 2.0.20",
+]
 
 [[package]]
 name = "xso-rs"

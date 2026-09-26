@@ -46,7 +46,7 @@ mod util;
 #[cfg(feature = "server")]
 mod validator;
 mod wbfs;
-mod xdelta3;
+mod xdelta;
 mod xso;
 
 use anyhow::Result;
