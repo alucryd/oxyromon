@@ -35,8 +35,8 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 ├─────────────────────────────────────────────────────┤
 │  Format-specific modules:                           │
 │    archive.rs, rvz.rs, wbfs.rs, iso.rs, xso.rs,     │
-│    nsz.rs, gdi.rs, chdman.rs, ctrtool.rs, flips.rs, │
-│    xdelta.rs, crc32.rs                              │
+│    nsz.rs, gdi.rs, xdelta.rs, xps.rs, chdman.rs,    │
+│    ctrtool.rs, crc32.rs                             │
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
@@ -74,7 +74,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Format-Specific Module Pattern
 
-Each external tool module (e.g., `chdman.rs`, `ctrtool.rs`, `flips.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
+Each external tool module (`chdman.rs`, `ctrtool.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`, `xps.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
 
 1. Define a struct wrapping `CommonRomfile` (e.g., `ChdRomfile`, `ArchiveRomfile`).
 2. Implement `Size`, `HashAndSize`, and `Check` traits for integrity verification.
@@ -192,6 +192,7 @@ upstream's license:
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
 | `xdelta-rs` | [xdelta3](https://github.com/jmacd/xdelta) | `xdeltars` | Apache-2.0 | XDELTA patches |
+| `xps-rs` | [Flips](https://github.com/Alcaro/Flips) | `xpsrs` | GPL-3.0-or-later | IPS and BPS patches |
 | `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | CSO/ZSO              |
 
 `frontend/` and `desktop/` are *not* members: they declare their own
@@ -215,7 +216,7 @@ Every crate follows these, and a new one should too:
 - **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
   variants keep shared wording: `Io` ("io error: …"), `BadMagic { expected,
   found }`, `Unsupported` ("unsupported format: …"), `Corrupt` ("corrupt
-  data: …").
+  data: …"), and for the patch crates `WrongSource` ("wrong source: …").
 - **CLIs** share one shape and one look: `<cli> [OPTIONS] <INPUT>...`, each
   input converted in the direction its extension implies, `-o DIR` defaulting
   to next to each input, oxyROMon's progress bar, and a `✔`/`✖` line per input,
@@ -224,7 +225,7 @@ Every crate follows these, and a new one should too:
   `src/bin/<cli>/ui.rs`, identical in every crate, which `tests/crates.rs`
   checks: change them all together. They use clap's builder
   API, as oxyromon does. A flag means the same in every tool that has it
-  (`-o DIR`, `-b SIZE` in bytes), and short forms are lowercase, for common
+  (`-o DIR`, `-b SIZE` in bytes, and for the patch tools `-s FILE`, the source), and short forms are lowercase, for common
   options only.
 - **Tests** check against the reference implementation, by known-answer
   vectors or by running the upstream tool, and skip rather than fail when it is
@@ -239,7 +240,7 @@ Every crate follows these, and a new one should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xso-rs  # the CLIs
+cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the CLIs
 cargo test -p xso-rs                           # one crate
 cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```

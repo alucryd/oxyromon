@@ -5,11 +5,6 @@ use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    // flips is not installed in CI; skip rather than fail.
-    if get_version().await.is_err() {
-        return;
-    }
-
     let test_directory = Path::new("tests").canonicalize().unwrap();
     let progress_bar = ProgressBar::hidden();
     let dir = TempDir::new_in(&test_directory).unwrap();

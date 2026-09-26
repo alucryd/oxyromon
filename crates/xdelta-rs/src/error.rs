@@ -18,6 +18,9 @@ pub enum Error {
 
     #[error("corrupt data: {0}")]
     Corrupt(String),
+
+    #[error("wrong source: {0}")]
+    WrongSource(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
