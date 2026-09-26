@@ -1,16 +1,16 @@
+use super::archive::{
+    SEVENZIP_COMPRESSION_LEVEL_RANGE, SevenzipCompressionAlgorithm, ZIP_COMPRESSION_LEVEL_RANGE,
+    ZSTD_COMPRESSION_LEVEL_RANGE, ZipCompressionAlgorithm,
+};
 use super::chdman::{
     CHD_HUNK_SIZE_RANGE, ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm,
     ChdHdCompressionAlgorithm, ChdLdCompressionAlgorithm,
 };
 use super::database::*;
-use super::dolphin::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
 use super::model::Setting;
 use super::progress::*;
 use super::prompt::{prompt_for_system_like, prompt_for_systems_like};
-use super::sevenzip::{
-    SEVENZIP_COMPRESSION_LEVEL_RANGE, SevenzipCompressionAlgorithm, ZIP_COMPRESSION_LEVEL_RANGE,
-    ZSTD_COMPRESSION_LEVEL_RANGE, ZipCompressionAlgorithm,
-};
+use super::rvz::{RVZ_BLOCK_SIZE_RANGE, RVZ_COMPRESSION_LEVEL_RANGE, RvzCompressionAlgorithm};
 use super::util::*;
 use anyhow::{Context, Result};
 use cfg_if::cfg_if;

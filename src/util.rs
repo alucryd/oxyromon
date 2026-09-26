@@ -5,7 +5,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use num_traits::FromPrimitive;
 use rayon::prelude::*;
@@ -20,7 +20,6 @@ use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::process::Command;
-use which::which;
 
 static SYSTEM_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap());
@@ -338,17 +337,6 @@ pub async fn tool_version(
         .and_then(|regex| text.lines().nth(line).and_then(|l| regex.find(l)))
         .map(|version| version.as_str().to_string())
         .unwrap_or(String::from("unknown")))
-}
-
-pub fn get_executable_path(executables: &[&str]) -> Result<PathBuf> {
-    let path = executables
-        .iter()
-        .find_map(|executable| which(executable).ok());
-    if let Some(path) = path {
-        Ok(path)
-    } else {
-        Err(anyhow!("No executable in path"))
-    }
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {

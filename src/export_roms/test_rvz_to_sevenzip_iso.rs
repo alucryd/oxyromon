@@ -1,17 +1,13 @@
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
-use crate::sevenzip::ArchiveCompression;
+use crate::archive::ArchiveCompression;
 use std::path::{Path, PathBuf};
 use tempfile::{NamedTempFile, TempDir};
 use tokio::fs;
 
 #[tokio::test]
 async fn test() {
-    if dolphin::get_version().await.is_err() {
-        return;
-    }
-
     // given
     let _guard = MUTEX.lock().await;
 
@@ -70,7 +66,7 @@ async fn test() {
         games_by_id,
         roms_by_game_id,
         romfiles_by_id,
-        sevenzip::ArchiveType::Sevenzip,
+        archive::ArchiveType::Sevenzip,
         &ArchiveCompression::Default,
         false,
     )

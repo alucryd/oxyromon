@@ -63,7 +63,7 @@ async fn test() -> Result<()> {
         let v = gql(&client, r#"{"query":"{ dependencies { name version } }"}"#).await;
         let deps = v["data"]["dependencies"].as_array().unwrap();
         assert!(deps.iter().any(|d| d["name"] == json!("chdman")));
-        assert!(deps.iter().any(|d| d["name"] == json!("7-zip")));
+        assert!(deps.iter().any(|d| d["name"] == json!("sevenz-rust2")));
         // sorted by name
         let names: Vec<&str> = deps.iter().map(|d| d["name"].as_str().unwrap()).collect();
         let mut sorted = names.clone();

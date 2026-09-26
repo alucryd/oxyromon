@@ -10,7 +10,7 @@ license = "GPL-3.0+"
 name = "oxyromon"
 readme = "README.md"
 repository = "https://github.com/alucryd/oxyromon"
-version = "0.24.0"
+version = "0.25.0"
 rust-version = "1.94.0"
 
 # The format crates: standalone libraries and CLIs ported from the external
@@ -34,17 +34,10 @@ tempfile = "3.27.0"
 thiserror = "2"
 
 [features]
-default = ["sevenz", "use-rustls"]
+default = ["use-rustls"]
 use-native-tls = ["reqwest/native-tls"]
 use-rustls = ["reqwest/rustls"]
 server = ["async-graphql", "async-graphql-axum", "axum", "http-types", "percent-encoding", "tower-http"]
-# Handle GameCube/Wii disc images with the `nod` crate instead of shelling out
-# to dolphin-tool and wit
-nod = ["dep:nod"]
-# Handle 7z and ZIP with the `sevenz-rust2` and `zip` crates instead of shelling
-# out to 7-Zip. On by default: 7-Zip carries no Zstandard codec, so zstd archives
-# can only be read or written here.
-sevenz = ["dep:sevenz-rust2"]
 
 [dependencies]
 anyhow = "1.0.104"
@@ -89,7 +82,9 @@ infer = "0.22.0"
 itertools = "0.15.0"
 log = "0.4.34"
 md-5 = "0.11.0"
-nod = { version = "2.0.0-alpha.9", optional = true }
+# ponytail: git tag until nod publishes past 2.0.0-alpha.9 to crates.io, which
+# blocks publishing oxyromon; back to a version requirement before a release.
+nod = { git = "https://github.com/encounter/nod", tag = "v2.0.0-alpha.12" }
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
 num-derive = "0.5.1"
 num-traits = "0.2.19"
@@ -104,7 +99,9 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha1 = "0.11.0"
 shiratsu-naming = "1.1.0"
-sevenz-rust2 = { version = "0.22.2", features = ["zstd"], optional = true }
+# ponytail: the fork's branch until upstream releases `push_raw_block`, which
+# blocks publishing oxyromon; back to a version requirement before a release.
+sevenz-rust2 = { git = "https://github.com/alucryd/sevenz-rust2", branch = "feat/raw-copy", features = ["zstd"] }
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",
@@ -128,7 +125,6 @@ tokio = { version = "1.53.1", features = [
 tower-http = { version = "0.7.1", features = ["cors"], optional = true, default-features = false }
 vec-drain-where = "1.0.1"
 walkdir = "2.5.0"
-which = { version = "8.0.6" }
 xso-rs = { path = "crates/xso-rs", version = "0.1.0", default-features = false }
 zip = { version = "8.6.0", features = [
     "deflate",

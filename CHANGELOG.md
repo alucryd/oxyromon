@@ -1,3 +1,15 @@
+# 0.25.0
+
+## Changes
+
+- RVZ and WBFS support now always comes from the nod crate: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature is gone. `RVZ_SCRUB` is ignored, with a warning, as nod cannot scrub RVZ
+- 7z and ZIP support now always comes from the sevenz-rust2 and zip crates: 7-Zip is no longer needed, and the `sevenz` feature is gone
+- Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
+
+## Fixes
+
+- Fixed 7z extraction and rewrites holding entire entries in memory, which could run to gigabytes for a disc image
+
 # 0.24.0
 
 ## Features
