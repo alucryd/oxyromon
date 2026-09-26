@@ -1,22 +1,20 @@
+use super::archive;
+use super::archive::{ArchiveCompression, AsArchive, ToArchive};
 use super::chdman;
 use super::chdman::{ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
-use super::dolphin;
-use super::dolphin::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::gdi::*;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::{AsNsp, AsNsz, ToNsp, ToNsz};
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip;
-use super::sevenzip::{ArchiveCompression, AsArchive, ToArchive};
+use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
-use super::wit;
-use super::wit::ToWbfs;
+use super::wbfs::ToWbfs;
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -111,11 +109,8 @@ pub async fn main(
     create_directory(progress_bar, &destination_directory, true).await?;
 
     let available = match format.as_str() {
-        "7Z" | "ZIP" => tool_available(sevenzip::get_version, "sevenzip", progress_bar).await,
         "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
-        "RVZ" => tool_available(dolphin::get_version, "dolphin-tool", progress_bar).await,
-        "WBFS" => tool_available(wit::get_version, "wit", progress_bar).await,
-        "CSO" | "GDI" | "ISO" | "NSZ" | "ORIGINAL" | "ZSO" => true,
+        "7Z" | "CSO" | "GDI" | "ISO" | "NSZ" | "ORIGINAL" | "RVZ" | "WBFS" | "ZIP" | "ZSO" => true,
         _ => bail!("Not supported"),
     };
     if !available {
@@ -189,9 +184,9 @@ pub async fn main(
                 .await?
             }
             "7Z" => {
-                let compression = sevenzip::get_archive_compression(
+                let compression = archive::get_archive_compression(
                     connection,
-                    &sevenzip::ArchiveType::Sevenzip,
+                    &archive::ArchiveType::Sevenzip,
                     Some(system.id),
                 )
                 .await;
@@ -205,16 +200,16 @@ pub async fn main(
                     games_by_id,
                     roms_by_game_id,
                     romfiles_by_id,
-                    sevenzip::ArchiveType::Sevenzip,
+                    archive::ArchiveType::Sevenzip,
                     &compression,
                     solid,
                 )
                 .await?
             }
             "ZIP" => {
-                let compression = sevenzip::get_archive_compression(
+                let compression = archive::get_archive_compression(
                     connection,
-                    &sevenzip::ArchiveType::Zip,
+                    &archive::ArchiveType::Zip,
                     Some(system.id),
                 )
                 .await;
@@ -226,7 +221,7 @@ pub async fn main(
                     games_by_id,
                     roms_by_game_id,
                     romfiles_by_id,
-                    sevenzip::ArchiveType::Zip,
+                    archive::ArchiveType::Zip,
                     &compression,
                     false,
                 )
@@ -367,7 +362,7 @@ async fn to_archive(
     games_by_id: HashMap<i64, Game>,
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
-    archive_type: sevenzip::ArchiveType,
+    archive_type: archive::ArchiveType,
     compression: &ArchiveCompression,
     solid: bool,
 ) -> Result<()> {
@@ -683,8 +678,8 @@ async fn to_archive(
             roms.retain(|rom| {
                 let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
                 !(romfile.path.ends_with(match archive_type {
-                    sevenzip::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
-                    sevenzip::ArchiveType::Zip => ZIP_EXTENSION,
+                    archive::ArchiveType::Sevenzip => SEVENZIP_EXTENSION,
+                    archive::ArchiveType::Zip => ZIP_EXTENSION,
                 }))
             });
             let romfiles = roms
@@ -1734,10 +1729,6 @@ async fn to_original(
 
     // export archives
     for roms in archives.values() {
-        if sevenzip::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: sevenzip");
-            break;
-        }
         let mut romfiles: Vec<&Romfile> = roms
             .iter()
             .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
@@ -1878,10 +1869,6 @@ async fn to_original(
 
     // export RVZs
     for roms in rvzs.values() {
-        if dolphin::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: dolphin-tool");
-            break;
-        }
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
         romfile

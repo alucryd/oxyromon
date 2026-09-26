@@ -1,12 +1,11 @@
+use super::archive;
 use super::chdman;
 use super::ctrtool;
 use super::database::*;
-use super::dolphin;
 use super::flips;
 use super::nsz;
 use super::progress::*;
-use super::sevenzip;
-use super::wit;
+use super::rvz;
 use super::xdelta3;
 use super::xso;
 use anyhow::Result;
@@ -25,7 +24,7 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
     print_header(progress_bar, "Dependencies");
 
     let mut deps: Vec<(&str, Result<String, _>)> = vec![
-        ("7-zip", sevenzip::get_version().await),
+        ("sevenz-rust2", archive::get_version().await),
         ("chdman", chdman::get_version().await),
         ("ctrtool", ctrtool::get_version().await),
         ("flips", flips::get_version().await),
@@ -33,11 +32,8 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
         ("nsz-rs", nsz::get_version().await),
         ("xdelta3", xdelta3::get_version().await),
     ];
-    // RVZ and WBFS share a backend when it is the native one, so list it once
-    deps.push((dolphin::BACKEND_NAME, dolphin::get_version().await));
-    if wit::BACKEND_NAME != dolphin::BACKEND_NAME {
-        deps.push((wit::BACKEND_NAME, wit::get_version().await));
-    }
+    // RVZ and WBFS both come from nod
+    deps.push(("nod", rvz::get_version().await));
     deps.sort_by_key(|(name, _)| *name);
 
     for (name, result) in &deps {

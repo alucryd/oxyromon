@@ -1,23 +1,211 @@
-//! GameCube and Wii disc image conversion backed by the [`nod`] crate.
-//!
-//! Compiled in by the `nod` feature, where it stands in for the `dolphin-tool`
-//! and `wit` subprocesses. Everything nod does is synchronous and CPU bound, so
-//! each entry point hands its work to the blocking pool rather than occupying a
-//! runtime worker for the length of a conversion.
+//! RVZ, and the GameCube/Wii disc handling it shares with WBFS, by way of nod.
 
-use super::common::hash_reader;
-use super::config::HashAlgorithm;
-use super::dolphin::RvzCompressionAlgorithm;
-use super::progress::get_bytes_progress_style;
-use anyhow::{Context, Result};
+use super::common::*;
+use super::config::*;
+use super::mimetype::*;
+use super::model::*;
+use super::progress::*;
+use super::util::*;
+use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use nod::common::{Compression, Format};
 use nod::read::{DiscOptions, DiscReader, PartitionEncryption};
 use nod::write::{DiscWriter, DiscWriterWeight, FormatOptions, ProcessOptions, ScrubLevel};
+use sqlx::SqliteConnection;
 use std::fs::File;
 use std::io::{Seek, Write};
 use std::path::Path;
+use strum::{Display, EnumString, VariantNames};
 use tokio::task::spawn_blocking;
+
+pub const RVZ_BLOCK_SIZE_RANGE: [usize; 2] = [32, 2048];
+pub const RVZ_COMPRESSION_LEVEL_RANGE: [usize; 2] = [1, 22];
+
+#[derive(Display, PartialEq, EnumString, VariantNames)]
+#[strum(serialize_all = "lowercase")]
+pub enum RvzCompressionAlgorithm {
+    None,
+    Zstd,
+    Bzip2,
+    Lzma,
+    Lzma2,
+}
+
+pub struct RvzRomfile {
+    pub romfile: CommonRomfile,
+}
+
+impl GetRomfile for RvzRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
+impl HashAndSize for RvzRomfile {
+    async fn get_hash_and_size(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        position: usize,
+        total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> Result<(String, u64)> {
+        progress_bar.reset();
+        progress_bar.set_message(format!(
+            "Computing {} ({}/{})",
+            hash_algorithm, position, total
+        ));
+
+        // Hashed as it decodes, with no ISO written out
+        let _ = connection;
+        let (hash, size) = hash_disc(&self.romfile.path, progress_bar, hash_algorithm).await?;
+
+        progress_bar.set_message("");
+
+        Ok((hash, size))
+    }
+}
+
+impl Check for RvzRomfile {
+    async fn check(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Option<Header>,
+        roms: &[&Rom],
+    ) -> Result<()> {
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
+
+        // Headers are a cartridge era concern and no GameCube or Wii DAT
+        // declares one, but honour it the long way round if one ever shows up
+        if header.is_none() {
+            let rom = roms[0];
+            let hash_algorithm = get_hash_algorithm(rom)?;
+            let (hash, size) = self
+                .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
+                .await?;
+            return compare_hash_and_size(rom, &hash, size, &hash_algorithm);
+        }
+
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let iso_romfile = self.to_iso(progress_bar, &tmp_directory.path()).await?;
+        iso_romfile
+            .romfile
+            .check(connection, progress_bar, header, roms)
+            .await?;
+        Ok(())
+    }
+}
+
+impl ToIso for RvzRomfile {
+    async fn to_iso<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> Result<IsoRomfile> {
+        progress_bar.set_message("Extracting rvz");
+
+        print_action(
+            progress_bar,
+            &format!(
+                "Extracting \"{}\"",
+                self.romfile.path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+
+        let path = destination_directory
+            .as_ref()
+            .join(self.romfile.path.file_name().unwrap())
+            .with_extension(ISO_EXTENSION);
+
+        extract_iso(&self.romfile.path, &path, progress_bar).await?;
+
+        stop_action(progress_bar);
+
+        CommonRomfile::from_path(&path)?.as_iso()
+    }
+}
+
+pub trait ToRvz {
+    async fn to_rvz<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        compression_algorithm: &RvzCompressionAlgorithm,
+        compression_level: usize,
+        block_size: usize,
+        scrub: bool,
+    ) -> Result<RvzRomfile>;
+}
+
+impl ToRvz for IsoRomfile {
+    async fn to_rvz<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+        compression_algorithm: &RvzCompressionAlgorithm,
+        compression_level: usize,
+        block_size: usize,
+        scrub: bool,
+    ) -> Result<RvzRomfile> {
+        progress_bar.set_message("Creating rvz");
+
+        let path = destination_directory
+            .as_ref()
+            .join(self.romfile.path.file_name().unwrap())
+            .with_extension(RVZ_EXTENSION);
+
+        print_action(
+            progress_bar,
+            &format!(
+                "Creating \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+
+        if scrub {
+            print_warning(
+                progress_bar,
+                "RVZ_SCRUB is unsupported by nod, writing unscrubbed",
+            );
+        }
+
+        write_rvz(
+            &self.romfile.path,
+            &path,
+            progress_bar,
+            compression_algorithm,
+            compression_level,
+            block_size,
+        )
+        .await?;
+
+        stop_action(progress_bar);
+
+        CommonRomfile::from_path(&path)?.as_rvz()
+    }
+}
+
+pub trait AsRvz {
+    fn as_rvz(self) -> Result<RvzRomfile>;
+}
+
+impl AsRvz for CommonRomfile {
+    fn as_rvz(self) -> Result<RvzRomfile> {
+        if self
+            .path
+            .extension()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_lowercase()
+            != RVZ_EXTENSION
+        {
+            bail!("Not a valid rvz");
+        }
+        Ok(RvzRomfile { romfile: self })
+    }
+}
 
 /// Threads nod uses to read ahead while decoding a compressed image.
 const PRELOADER_THREADS: usize = 4;
@@ -65,7 +253,7 @@ fn compression(algorithm: &RvzCompressionAlgorithm, level: usize) -> Compression
 }
 
 /// Extract any nod-supported disc image to a raw ISO.
-pub async fn to_iso<P: AsRef<Path>, Q: AsRef<Path>>(
+pub(super) async fn extract_iso<P: AsRef<Path>, Q: AsRef<Path>>(
     source: P,
     destination: Q,
     progress_bar: &ProgressBar,
@@ -95,7 +283,7 @@ pub async fn to_iso<P: AsRef<Path>, Q: AsRef<Path>>(
 /// This is what the extract-then-hash path costs on a dual layer Wii disc:
 /// several gigabytes written to the temp directory and read straight back. The
 /// decoder is just a reader, so the digest can consume it directly.
-pub async fn hash<P: AsRef<Path>>(
+async fn hash_disc<P: AsRef<Path>>(
     source: P,
     progress_bar: &ProgressBar,
     hash_algorithm: &HashAlgorithm,
@@ -113,20 +301,16 @@ pub async fn hash<P: AsRef<Path>>(
     .context("Disc reader task failed")?
 }
 
-/// Convert an ISO to RVZ.
-///
-/// `scrub` is accepted to match the dolphin-tool backend's signature but is
-/// ignored: see [`SUPPORTS_SCRUB`].
-pub async fn to_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
+/// Convert an ISO to RVZ. nod cannot scrub RVZ.
+async fn write_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     source: P,
     destination: Q,
     progress_bar: &ProgressBar,
     compression_algorithm: &RvzCompressionAlgorithm,
     compression_level: usize,
     block_size: usize,
-    _scrub: bool,
 ) -> Result<()> {
-    write(
+    write_disc(
         source,
         destination,
         progress_bar,
@@ -140,23 +324,8 @@ pub async fn to_rvz<P: AsRef<Path>, Q: AsRef<Path>>(
     .await
 }
 
-/// Convert an ISO to WBFS.
-pub async fn to_wbfs<P: AsRef<Path>, Q: AsRef<Path>>(
-    source: P,
-    destination: Q,
-    progress_bar: &ProgressBar,
-) -> Result<()> {
-    write(
-        source,
-        destination,
-        progress_bar,
-        FormatOptions::new(Format::Wbfs),
-    )
-    .await
-}
-
 /// Run a disc writer to completion, streaming its output to `destination`.
-async fn write<P: AsRef<Path>, Q: AsRef<Path>>(
+pub(super) async fn write_disc<P: AsRef<Path>, Q: AsRef<Path>>(
     source: P,
     destination: Q,
     progress_bar: &ProgressBar,
@@ -206,15 +375,7 @@ async fn write<P: AsRef<Path>, Q: AsRef<Path>>(
     .context("Disc writer task failed")?
 }
 
-/// What `info` calls this backend.
-pub const BACKEND_NAME: &str = "nod";
-
-/// nod's `ScrubLevel` only reaches its WBFS and CISO writers, so there is
-/// nothing for `RVZ_SCRUB` to map onto.
-pub const SUPPORTS_SCRUB: bool = false;
-
-/// Reported by `info`. nod exposes no version constant, and a linked library
-/// has no version to query at runtime the way a subprocess does.
+/// Reported by `info`.
 pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }

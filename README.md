@@ -106,33 +106,21 @@ replaced the external tools it once needed. Each builds a standalone CLI too:
 
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
-| nod            | handle RVZ and WBFS natively                   |         |
-| sevenz         | handle 7z and ZIP natively, and enable zstd    | x       |
 | server         | build the server subcommand                    |         |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
 
-The `sevenz` feature handles archives with the
-[sevenz-rust2](https://crates.io/crates/sevenz-rust2) and
-[zip](https://crates.io/crates/zip) crates rather than spawning 7-Zip. Listing in
-particular becomes a metadata read instead of a process launch, which is what
-`check-roms` and `import-roms` do most. It is on by default because Zstandard
-archives can be read and written nowhere else: 7-Zip has no such codec.
+7z and ZIP are handled by the [sevenz-rust2](https://crates.io/crates/sevenz-rust2)
+and [zip](https://crates.io/crates/zip) crates, so listing an archive is a metadata
+read rather than a process launch, and Zstandard archives can be read and written,
+which 7-Zip has no codec for. Renaming, deleting or adding an entry copies the rest
+of the archive as it is encoded; only deleting from a solid 7z block re-encodes the
+entries left in it, as 7-Zip does.
 
-ZIP is native throughout. For 7z, renaming or deleting an entry, or adding one to
-an archive that already exists, goes to 7-Zip when it can read the archive —
-those change metadata without touching the compressed data, and sevenz-rust2
-offers no way to do the same, so doing it natively means a full rebuild.
-Zstandard archives are rebuilt natively instead, since 7-Zip cannot open them at
-all. `7z` therefore remains useful for LZMA2 collections, and is unnecessary for
-Zstandard or ZIP-only ones.
-
-The `nod` feature links the [nod](https://crates.io/crates/nod) crate in place of
-shelling out to `dolphin-tool` and `wit`, so RVZ and WBFS work with neither
-program installed. Conversions are faster, and RVZ files are interchangeable with
-Dolphin's own in both directions. Two caveats: `RVZ_SCRUB` has no equivalent in
-nod and is ignored (with a warning), and nod needs a C toolchain to build its
-compression libraries.
+RVZ and WBFS are handled by the [nod](https://crates.io/crates/nod) crate. RVZ
+files are interchangeable with Dolphin's own in both directions. `RVZ_SCRUB` has
+no equivalent in nod and is ignored, with a warning. nod builds its compression
+libraries from source, so building oxyROMon needs a C toolchain.
 
 ### Configuration
 
@@ -173,7 +161,7 @@ Available settings:
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
-- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
+- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`; currently ignored, as nod cannot scrub RVZ
 - `SEVENZIP_COMPRESSION_ALGORITHM`: The 7Z compression algorithm, defaults to `lzma2`, valid choices: `lzma2`, `zstd`
 - `SEVENZIP_COMPRESSION_LEVEL`: The 7Z LZMA2 compression level, defaults to `9`, valid range: `1-9`
 - `SEVENZIP_ZSTD_COMPRESSION_LEVEL`: The 7Z Zstandard compression level, defaults to `19`, valid range: `1-22`
@@ -186,7 +174,6 @@ Zstandard is opt-in. It compresses a good deal faster than LZMA2 at a comparable
 size, but nothing else reads it: 7-Zip ships no Zstandard codec, and neither do
 emulators or Windows Explorer, so a zstd `.zip` or `.7z` opens in oxyromon and
 nowhere else. Worth it for archival, a poor idea for a library you play from.
-It also needs the `sevenz` feature, which is on by default.
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -238,15 +225,12 @@ ZIP_ZSTD_COMPRESSION_LEVEL = 19
 
 These should be in your `${PATH}` for extra features.
 
-- [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
-- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
 - [flips](https://github.com/Alcaro/Flips): BPS and IPS support
-- [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
 - [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
 
-CSO/ZSO support is built in via xso-rs, and GDI support via gdi-rs, both in `crates/`.
+CSO/ZSO support is built in via xso-rs, and GDI support via gdi-rs, both in `crates/`. 7Z and ZIP support is built in via sevenz-rust2 and zip, and RVZ and WBFS support via nod.
 
 NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 
