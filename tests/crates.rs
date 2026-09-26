@@ -8,6 +8,7 @@ fn every_cli_shares_one_ui() {
     for copy in [
         "crates/gdi-rs/src/bin/gdirs/ui.rs",
         "crates/nsz-rs/src/bin/nszrs/ui.rs",
+        "crates/xdelta-rs/src/bin/xdeltars/ui.rs",
     ] {
         assert!(read(copy) == ui, "{copy} differs from xsors's ui.rs");
     }
