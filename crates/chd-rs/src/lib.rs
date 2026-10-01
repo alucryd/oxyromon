@@ -11,6 +11,8 @@
 //! `chdrs` CLI, whose shell is the one of every oxyROMon tool, comes with
 //! them; see the crate README.
 
+mod avhuff;
+mod avi;
 mod bitstream;
 mod cdrom;
 mod codec;
@@ -21,11 +23,14 @@ mod error;
 mod extract;
 mod flac;
 mod huffman;
+mod ld;
 mod lzma;
+mod vbi;
 mod writer;
 
 pub use cdrom::{FRAME_SIZE as CD_FRAME_SIZE, input_size as cd_input_size};
 pub use container::{Chd, ChdInfo, ChdType, MetadataEntry, VerifyOutcome, fourcc, sha1_hex};
 pub use error::{Error, Result};
 pub use extract::extract_cd;
+pub use ld::{create_ld, extract_ld};
 pub use writer::{create, create_cd, create_dvd, create_hd};

@@ -22,6 +22,11 @@
 - Added CD CHD extraction with `extract_cd`, to a CUE, a GDI or a cdrdao TOC
   and their BINs, split by track on demand, following `chdman extractcd`
 - Added DVD CHD writing with `create_dvd`
+- Added LaserDisc CHDs with `create_ld` and `extract_ld`, from and to AVIs,
+  following `chdman createld` and `extractld`: YUY2, UYVY, VYUY and
+  left-predicted HuffYUV video with 8- or 16-bit PCM audio in, OpenDML AVIs
+  past 2 GiB both ways, the `AVLD` VBI codes of NTSC and PAL captures, and
+  the `avhu` codec in both directions
 - Added `cd_input_size`, the total size of the files a CUE, GDI or ISO
   names, which `create_cd` reports progress against
 - Added the `chdrs` CLI, behind the default `cli` feature, in oxyROMon's

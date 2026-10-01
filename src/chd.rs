@@ -10,11 +10,6 @@ use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
 use strum::{Display, EnumString, VariantNames};
-use tokio::process::Command;
-
-/// LaserDiscs are the one CHD type chd-rs does not handle yet, so they
-/// still go through chdman.
-const CHDMAN: &str = "chdman";
 
 pub const CHD_HUNK_SIZE_RANGE: [usize; 2] = [16, 1048576];
 
@@ -715,32 +710,13 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         );
     }
 
-    if *chd_type == ChdType::Ld {
-        let mut command = Command::new(CHDMAN);
-        command
-            .arg("createld")
-            .arg("-i")
-            .arg(romfile_path.as_ref())
-            .arg("-o")
-            .arg(&chd_path);
-        if let Some(hunk_size) = hunk_size {
-            command.arg("--hunksize").arg(hunk_size.to_string());
-        }
-        if !compression_algorithms.is_empty() {
-            command
-                .arg("--compression")
-                .arg(compression_algorithms.join(","));
-        }
-        if let Some(parent_romfile) = parent_romfile {
-            command.arg("-op").arg(&parent_romfile.path);
-        }
-        log::debug!("{:?}", command);
-        run_tool(&mut command).await?;
-    } else {
-        // chdman's defaults: its CD codecs, or those it uses for hard disks
+    {
+        // chdman's defaults: its CD codecs, its LaserDisc one, or those it
+        // uses for hard disks
         let names: Vec<&str> = if compression_algorithms.is_empty() {
             match chd_type {
                 ChdType::Cd => vec!["cdlz", "cdzl", "cdfl"],
+                ChdType::Ld => vec!["avhu"],
                 _ => vec!["lzma", "zlib", "huff", "flac"],
             }
         } else {
@@ -758,6 +734,17 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         };
         run_blocking(progress_bar, length, move |progress| {
             let mut parent = parent_path.map(Chd::open).transpose()?;
+            if chd_type == ChdType::Ld {
+                // one field a hunk unless told otherwise
+                return chd_rs::create_ld(
+                    &input,
+                    &output,
+                    hunk_size,
+                    compression,
+                    parent.as_mut(),
+                    progress,
+                );
+            }
             // without a hunk size, chdman takes the parent's or its default
             let hunk_size = hunk_size
                 .or(parent.as_ref().map(|parent| parent.info().hunk_size))
@@ -851,20 +838,7 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
             .with_extension(CUE_EXTENSION)
     });
 
-    if *chd_type == ChdType::Ld {
-        let mut command = Command::new(CHDMAN);
-        command
-            .arg("extractld")
-            .arg("-i")
-            .arg(path.as_ref())
-            .arg("-o")
-            .arg(&bin_path);
-        if let Some(parent_romfile) = parent_romfile {
-            command.arg("-ip").arg(&parent_romfile.path);
-        }
-        log::debug!("{:?}", command);
-        run_tool(&mut command).await?;
-    } else {
+    {
         let input = path.as_ref().to_path_buf();
         let parent_path = parent_romfile.as_ref().map(|parent| parent.path.clone());
         let chd = tokio::task::spawn_blocking(move || match parent_path {
@@ -876,12 +850,14 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         .with_context(|| format!("Failed to open \"{}\"", path.as_ref().display()))?;
         let length = chd.info().logical_size;
         let (bin, cue) = (bin_path.clone(), cue_path.clone());
+        let chd_type = *chd_type;
         run_blocking(progress_bar, length, move |progress| {
             let mut chd = chd;
             match cue {
                 Some(cue) => {
                     chd_rs::extract_cd(&mut chd, &cue, Some(&bin), split, progress).map(|_| ())
                 }
+                None if chd_type == ChdType::Ld => chd_rs::extract_ld(&mut chd, &bin, progress),
                 None => chd.extract(&bin, progress),
             }
         })
@@ -917,3 +893,6 @@ fn codecs(names: &[&str]) -> Result<[u32; 4]> {
 pub async fn get_version() -> Result<String> {
     Ok(String::from("built-in"))
 }
+
+#[cfg(test)]
+mod test_ld;

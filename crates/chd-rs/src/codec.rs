@@ -119,6 +119,8 @@ pub(crate) enum Decompressor {
     /// `CHD_CODEC_CD_FLAC`: FLAC for the sector data plane and raw deflate
     /// for the subcode plane, with no sync or ECC bits.
     CdFlac,
+    /// `CHD_CODEC_AVHUFF`: a LaserDisc frame of audio and video.
+    AvHuff,
     /// The `cd??` codecs: two independently compressed planes, sector data
     /// and subcode, plus one bit per frame recording whether its sync
     /// header and ECC were stored or can be regenerated.
@@ -157,7 +159,7 @@ impl Decompressor {
                 sub: Box::new(Self::Zlib),
             },
             CODEC_CD_FLAC => Self::CdFlac,
-            CODEC_AV_HUFF => Self::unsupported(tag)?,
+            CODEC_AV_HUFF => Self::AvHuff,
             _ => {
                 return Err(Error::Unsupported(format!(
                     "unknown compression `{}`",
@@ -165,13 +167,6 @@ impl Decompressor {
                 )));
             }
         })
-    }
-
-    fn unsupported(tag: u32) -> Result<Self> {
-        Err(Error::Unsupported(format!(
-            "{} compression is not supported",
-            name(tag).unwrap_or("unknown")
-        )))
     }
 
     /// Decompresses `source` into `dest`.
@@ -202,6 +197,7 @@ impl Decompressor {
             Self::Flac => Self::decompress_flac(source, dest),
             Self::CdFlac => Self::decompress_cd_flac(source, dest),
             Self::Cd { base, sub } => Self::decompress_cd(source, dest, base, sub),
+            Self::AvHuff => crate::avhuff::decompress(source, dest),
         }
     }
 
@@ -398,6 +394,7 @@ fn compress_chunk(tag: u32, source: &[u8]) -> Result<Vec<u8>> {
         CODEC_CD_ZSTD => compress_cd(source, CODEC_ZSTD, CODEC_ZSTD),
         CODEC_CD_LZMA => compress_cd(source, CODEC_LZMA, CODEC_ZLIB),
         CODEC_CD_FLAC => compress_cd_flac(source),
+        CODEC_AV_HUFF => crate::avhuff::compress(source),
         _ => Err(Error::Unsupported(format!(
             "compression `{}` cannot be written yet",
             fourcc(tag)

@@ -55,6 +55,7 @@ fn cli() -> Command {
                 .value_delimiter(',')
                 .value_parser([
                     "none", "flac", "huff", "lzma", "zlib", "zstd", "cdfl", "cdlz", "cdzl", "cdzs",
+                    "avhu",
                 ]),
         )
         .arg(parent_arg())
@@ -109,6 +110,14 @@ fn convert(
     let dir = ui::output_dir(input, matches)?;
     if ui::extension(input) == "chd" {
         let mut chd = open(input, matches).map_err(|error| error.to_string())?;
+        if chd.info().chd_type == chd_rs::ChdType::Ld {
+            let avi = outputs.claim(ui::output_path(&dir, input, "avi"))?;
+            let bar = ui::progress_bar(chd.info().logical_size, "Extracting", input);
+            let result = chd_rs::extract_ld(&mut chd, &avi, &mut |bytes| bar.inc(bytes));
+            bar.finish_and_clear();
+            result.map_err(|error| error.to_string())?;
+            return Ok(ui::wrote(&avi));
+        }
         if chd.info().chd_type == chd_rs::ChdType::Cd {
             // a CUE and its BIN, a BIN per track for a GD-ROM
             let cue = outputs.claim(ui::output_path(&dir, input, "cue"))?;
@@ -127,6 +136,33 @@ fn convert(
         return Ok(ui::wrote(&output));
     }
     let cd = matches!(ui::extension(input).as_str(), "cue" | "gdi");
+    if ui::extension(input) == "avi" {
+        // like chdman createld: one field a hunk, unless told otherwise
+        let compression = match matches.get_many::<String>("compression") {
+            Some(_) => codecs(matches, false)?,
+            None => [u32::from_be_bytes(*b"avhu"), 0, 0, 0],
+        };
+        let mut parent = match matches.get_one::<PathBuf>("parent") {
+            Some(parent) => Some(Chd::open(parent).map_err(|error| error.to_string())?),
+            None => None,
+        };
+        let output = outputs.claim(ui::output_path(&dir, input, "chd"))?;
+        let size = std::fs::metadata(input)
+            .map_err(|error| error.to_string())?
+            .len();
+        let bar = ui::progress_bar(size, "Compressing", input);
+        let result = chd_rs::create_ld(
+            input,
+            &output,
+            matches.get_one::<u32>("hunk").copied(),
+            compression,
+            parent.as_mut(),
+            &mut |bytes| bar.inc(bytes),
+        );
+        bar.finish_and_clear();
+        result.map_err(|error| error.to_string())?;
+        return wrote_chd(&output, size);
+    }
     let compression = codecs(matches, cd)?;
     let geometry = geometry(matches)?;
     let mut parent = match matches.get_one::<PathBuf>("parent") {

@@ -31,8 +31,8 @@ pub(crate) const MTAG_TRACK2: u32 = u32::from_be_bytes(*b"CHT2");
 pub(crate) const MTAG_GDROM_OLD: u32 = u32::from_be_bytes(*b"CHGT");
 pub(crate) const MTAG_GDROM_TRACK: u32 = u32::from_be_bytes(*b"CHGD");
 pub(crate) const MTAG_DVD: u32 = u32::from_be_bytes(*b"DVD ");
-const MTAG_LD_VIDEO: u32 = u32::from_be_bytes(*b"AVAV");
-const MTAG_LD_DISC: u32 = u32::from_be_bytes(*b"AVLD");
+pub(crate) const MTAG_LD_VIDEO: u32 = u32::from_be_bytes(*b"AVAV");
+pub(crate) const MTAG_LD_DISC: u32 = u32::from_be_bytes(*b"AVLD");
 
 pub(crate) const MDFLAGS_CHECKSUM: u8 = 0x01;
 

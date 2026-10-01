@@ -66,7 +66,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `rebuild_roms.rs` | Rebuilds arcade ROM sets between merging strategies (split, non-merged, full non-merged).                                                                                                                                                                                                                  |
 | `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
 | `archive.rs`      | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits, backed by the sevenz-rust2 and zip crates. Renames, deletes and appends copy what the archive holds raw rather than re-encoding it.                                                                                                    |
-| `chd.rs`          | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits, backed by the chd-rs crate. LaserDiscs, which chd-rs cannot write or extract yet, still shell out to `chdman`.                                                                                                                  |
+| `chd.rs`          | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits, backed by the chd-rs crate, for CDs, DVDs, hard disks and LaserDiscs.                                                                                                                                                         |
 | `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
 | `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
@@ -189,7 +189,7 @@ upstream's license:
 
 | Crate    | Began as a port of                          | CLI     | License | Used by oxyromon for |
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
-| `chd-rs` | [chdman](https://github.com/mamedev/mame/blob/master/src/tools/chdman.cpp) | `chdrs` | BSD-3-Clause | CHD (but LaserDiscs) |
+| `chd-rs` | [chdman](https://github.com/mamedev/mame/blob/master/src/tools/chdman.cpp) | `chdrs` | BSD-3-Clause | CHD                  |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
 | `xdelta-rs` | [xdelta3](https://github.com/jmacd/xdelta) | `xdeltars` | Apache-2.0 | XDELTA patches |
@@ -310,7 +310,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `mame-tools`, whose `chdman` the chd-rs tests compare against (and oxyromon's LaserDisc CHDs need), and `xdelta3`, only for the xdelta-rs tests that compare against it
+- Installs system dependencies, all only for the format crates' tests: `mame-tools`, whose `chdman` the chd-rs tests compare against, `ffmpeg`, which makes the AVIs of its LaserDisc tests, and `xdelta3`, which the xdelta-rs tests compare against
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`

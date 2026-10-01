@@ -29,13 +29,19 @@ impl<'a> BitstreamIn<'a> {
     /// Fetches the requested number of bits without advancing the input
     /// pointer. Bits past the end of the buffer read as zero.
     pub fn peek(&self, numbits: u32) -> u32 {
-        let mut result: u32 = 0;
-        for index in 0..numbits {
-            let bit = self.pos + u64::from(index);
-            let byte = self.data.get((bit / 8) as usize).copied().unwrap_or(0);
-            result = result << 1 | u32::from(byte >> (7 - bit % 8) as u32 & 1);
+        if numbits == 0 {
+            return 0;
         }
-        result
+        // the eight bytes from the current one, zeros past the end, hold
+        // any 32 bits from any bit offset
+        let start = (self.pos / 8) as usize;
+        let mut window = [0u8; 8];
+        if let Some(available) = self.data.get(start..) {
+            let count = available.len().min(8);
+            window[..count].copy_from_slice(&available[..count]);
+        }
+        let bits = u64::from_be_bytes(window) << (self.pos % 8);
+        (bits >> (64 - numbits)) as u32
     }
 
     fn advance(&mut self, numbits: u32) {
@@ -55,6 +61,13 @@ impl<'a> BitstreamIn<'a> {
         let result = self.peek(numbits);
         self.advance(numbits);
         result
+    }
+
+    /// Skips to the next byte boundary, returning the number of bytes
+    /// consumed so far.
+    pub fn flush(&mut self) -> usize {
+        self.pos = self.pos.div_ceil(8) * 8;
+        (self.pos / 8) as usize
     }
 }
 

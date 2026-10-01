@@ -29,23 +29,25 @@ chd.extract(Path::new("game.iso"), &mut |_| {}).unwrap();
 The port lands in steps, and this section says how far it has come:
 
 - **Reading** covers CHD v3, v4 and v5, the versions `chdman` still writes;
-  v1 and v2 are not planned. Every codec below decodes, except `avhu`, for
-  LaserDiscs. Hard disks and DVDs extract to raw images with
-  `Chd::extract`, CDs to a CUE, a GDI or a cdrdao TOC and their BINs with
-  `extract_cd`, the way `chdman extractcd` names and lays them out.
-  LaserDiscs open, list their metadata and verify, but do not extract.
+  v1 and v2 are not planned. Every codec below decodes. Hard disks and DVDs
+  extract to raw images with `Chd::extract`, CDs to a CUE, a GDI or a
+  cdrdao TOC and their BINs with `extract_cd`, the way `chdman extractcd`
+  names and lays them out, and LaserDiscs to an AVI with `extract_ld`, as
+  `chdman extractld` writes it.
 - **Writing** emits CHD v5, like `chdman`: hard disks (`create_hd`) and DVDs
   (`create_dvd`) from a raw image, CDs (`create_cd`) from a CUE sheet, a GDI
-  or an ISO, all with clone CHDs that store only what changed against a
-  parent. LaserDisc writing is not implemented yet.
+  or an ISO, LaserDiscs (`create_ld`) from an AVI of YUY2, UYVY, VYUY or
+  left-predicted HuffYUV video and PCM audio, all with clone CHDs that store
+  only what changed against a parent.
 - **Compatibility** is with `chdman` 0.289: CUE and GDI parsing, the CD
   frame layout and metadata, and extraction follow it rather than later
   MAME, which has since changed GDI pregaps and session metadata and added
   CD+G tracks.
 - **Codecs** are tried per hunk, the shortest result winning: `none`, `flac`,
-  `huff`, `lzma`, `zlib` and `zstd` for DVDs and hard disks, and their
+  `huff`, `lzma`, `zlib` and `zstd` for DVDs and hard disks, their
   sector-interleaved siblings `none`, `cdfl`, `cdlz`, `cdzl` and `cdzs` for
-  CDs. `avhu`, for LaserDiscs, is not ported yet.
+  CDs, and `avhu`, audio as FLAC and video as Huffman-coded deltas, for
+  LaserDiscs.
 - Parent/clone CHDs are read and written through the `--parent` option and
   the `parentsha1` header field.
 - `chdman`'s `copy`, `addmeta`, `delmeta`, `dumpmeta`, `listtemplates` and
@@ -65,7 +67,7 @@ shortest output kept, storing the hunk raw when none of them saves space, as
 | `lzma` / `cdlz`              | `lzma-rs`           | `lzma-sdk-rs`        |
 | `huff`                       | built-in            | built-in             |
 | `flac` / `cdfl`              | `libflac-sys`       | `libflac-sys`        |
-| `avhu`                       | not ported          | not ported           |
+| `avhu`                       | built-in, `libflac-sys` | built-in, `libflac-sys` |
 
 The encoders are those `chdman` uses, or byte-exact ports of them, so the
 bitstreams match `chdman`'s by construction: LZMA goes through
@@ -83,9 +85,9 @@ needed to build chd-rs.
 
 `chdrs` compresses images to CHDs and extracts CHDs back, telling which from
 each file's extension, and writes next to each one unless told otherwise. A
-`.cue` or `.gdi` becomes a CD, an `.iso` a DVD, anything else a hard disk;
-a CD CHD extracts to a CUE and its BIN, a BIN per track for a GD-ROM, and
-any other CHD to a raw image:
+`.cue` or `.gdi` becomes a CD, an `.iso` a DVD, an `.avi` a LaserDisc,
+anything else a hard disk; a CD CHD extracts to a CUE and its BIN, a BIN per
+track for a GD-ROM, a LaserDisc to an AVI, and any other CHD to a raw image:
 
 ```
 cargo build --release -p chd-rs
@@ -115,14 +117,15 @@ input's output.
 
 ## Verification
 
-`tests/cli.rs`, `tests/write.rs` and `tests/cd.rs` check the crate against
+`tests/cli.rs`, `tests/write.rs`, `tests/cd.rs` and `tests/ld.rs` check the crate against
 `chdman` itself, which is what matters: a CHD is only worth producing if MAME
 and `chdman` can read it, and oxyROMon has to keep reading the CHDs `chdman`
 wrote. Each tool verifies and extracts the other's files back to the
 original image, for plain CHDs and for clones against a parent, and the CHDs
-chd-rs writes — hard disks, DVDs and CDs from CUE, GDI and ISO inputs — are
-compared with `chdman`'s byte for byte, as are the CUEs, GDIs, TOCs and BINs
-it extracts, down to the bytes `chdman` leaves past the end of a partly
+chd-rs writes — hard disks, DVDs, CDs from CUE, GDI and ISO inputs, and
+LaserDiscs from AVIs of every layout `chdman` reads, made with `ffmpeg` — are
+compared with `chdman`'s byte for byte, as are the CUEs, GDIs, TOCs, BINs and
+AVIs it extracts, down to the bytes `chdman` leaves past the end of a partly
 filled last hunk, which come from its never-cleared work buffer. Deflate,
 whose bytes depend on the zlib `chdman` links (see [Encoders](#encoders)),
 is compared by the header's hashes instead, and byte for byte too with

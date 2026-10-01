@@ -24,12 +24,13 @@ use crate::error::Result;
 /// decode position to learn where the FLAC stream in a chunk ends.
 const HEADER_SIZE: usize = 42;
 
-/// The FLAC stream sample rate both CHD compressors encode at.
-const SAMPLE_RATE: u64 = 44_100;
+/// The stream format of the `flac` and `cdfl` codecs: CD audio.
+const CD_CHANNELS: u32 = 2;
+const CD_SAMPLE_RATE: u32 = 44_100;
 
 /// Builds the 42-byte header (magic and STREAMINFO block) MAME's FLAC
 /// decoder synthesizes for a headerless CHD chunk.
-fn custom_header(block_size: u16) -> [u8; HEADER_SIZE] {
+fn custom_header(block_size: u16, channels: u32, sample_rate: u32) -> [u8; HEADER_SIZE] {
     let mut header = [0u8; HEADER_SIZE];
     header[..4].copy_from_slice(b"fLaC");
     // The one and only metadata block: the last one, of type STREAMINFO, 34
@@ -42,7 +43,7 @@ fn custom_header(block_size: u16) -> [u8; HEADER_SIZE] {
     // The minimum and maximum frame sizes, at 12 and 15, are left at 0.
     // The sample rate, the channel count minus one, the sample width minus
     // one and the total sample count, packed big-endian over 8 bytes.
-    let info = (SAMPLE_RATE << 44) | ((2 - 1) << 41) | ((16 - 1) << 36);
+    let info = (u64::from(sample_rate) << 44) | (u64::from(channels - 1) << 41) | ((16 - 1) << 36);
     header[18..26].copy_from_slice(&info.to_be_bytes());
     // The md5 sum of the decoded stream, at 26, is left at 0.
     header
@@ -57,7 +58,9 @@ struct Client<'a> {
     /// Bytes of header and payload fed to the decoder so far.
     position: usize,
     out: *mut u8,
-    /// Samples per channel expected, `out.len()` over 4.
+    /// The channel count of the stream.
+    channels: usize,
+    /// Samples per channel expected.
     target: usize,
     /// Samples per channel written so far.
     written: usize,
@@ -119,28 +122,33 @@ unsafe extern "C" fn write_callback(
     client_data: *mut c_void,
 ) -> libflac_sys::FLAC__StreamDecoderWriteStatus {
     let client = unsafe { &mut *client_data.cast::<Client>() };
-    // CHD FLAC streams are 44.1 kHz stereo and the header we feed the
-    // decoder declares 16-bit samples, so frames arrive at the target width
-    // and, like MAME's SCALE_SAME path, samples are merely interleaved.
+    // The header we feed the decoder declares 16-bit samples, so frames
+    // arrive at the target width and, like MAME's SCALE_SAME path, samples
+    // are merely interleaved.
     let header = unsafe { (*frame).header };
-    if header.channels != 2 || header.bits_per_sample != 16 || client.written >= client.target {
+    if header.channels as usize != client.channels
+        || header.bits_per_sample != 16
+        || client.written >= client.target
+    {
         client.failed = true;
         return libflac_sys::FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
     let block_size = usize::try_from(header.blocksize).unwrap_or(usize::MAX);
     let samples = block_size.min(client.target - client.written);
-    let channels = [unsafe { *buffer }, unsafe { *buffer.add(1) }];
-    let out =
-        unsafe { std::slice::from_raw_parts_mut(client.out.add(client.written * 4), samples * 4) };
-    for sample in 0..samples {
-        for (channel, samples) in channels.iter().enumerate() {
-            let value = unsafe { *samples.add(sample) } as u16;
+    let width = client.channels * 2;
+    let out = unsafe {
+        std::slice::from_raw_parts_mut(client.out.add(client.written * width), samples * width)
+    };
+    for channel in 0..client.channels {
+        let source = unsafe { *buffer.add(channel) };
+        for sample in 0..samples {
+            let value = unsafe { *source.add(sample) } as u16;
             let value = if client.big_endian {
                 value.to_be_bytes()
             } else {
                 value.to_le_bytes()
             };
-            out[sample * 4 + channel * 2..][..2].copy_from_slice(&value);
+            out[sample * width + channel * 2..][..2].copy_from_slice(&value);
         }
     }
     client.written += samples;
@@ -163,28 +171,55 @@ unsafe extern "C" fn error_callback(
     client.failed = true;
 }
 
-/// Decodes a headerless FLAC `payload` into `out`, where `block_size` is the
-/// block size the encoder used and the samples are written big-endian when
-/// `big_endian` says so. Returns the number of payload bytes the FLAC stream
-/// consumed; the rest of the payload, if any, is another codec's.
+/// Decodes a headerless FLAC `payload` of 44.1 kHz stereo into `out`, where
+/// `block_size` is the block size the encoder used and the samples are
+/// written big-endian when `big_endian` says so. Returns the number of
+/// payload bytes the FLAC stream consumed; the rest of the payload, if any,
+/// is another codec's.
 pub(crate) fn flac_decode(
     payload: &[u8],
     out: &mut [u8],
     block_size: u32,
     big_endian: bool,
 ) -> Result<usize> {
-    if !out.len().is_multiple_of(4) {
+    flac_decode_with(
+        payload,
+        out,
+        CD_CHANNELS,
+        CD_SAMPLE_RATE,
+        block_size,
+        big_endian,
+    )
+}
+
+/// [`flac_decode`] for a stream of any channel count and sample rate, the
+/// samples of `out` interleaved.
+pub(crate) fn flac_decode_with(
+    payload: &[u8],
+    out: &mut [u8],
+    channels: u32,
+    sample_rate: u32,
+    block_size: u32,
+    big_endian: bool,
+) -> Result<usize> {
+    let width = channels as usize * 2;
+    if channels == 0 || !out.len().is_multiple_of(width) {
         return Err(Error::Corrupt(
-            "FLAC chunk output is not a whole number of stereo samples".to_string(),
+            "FLAC chunk output is not a whole number of samples".to_string(),
         ));
     }
-    let header = custom_header(block_size.try_into().unwrap_or_default());
+    let header = custom_header(
+        block_size.try_into().unwrap_or_default(),
+        channels,
+        sample_rate,
+    );
     let mut client = Client {
         header: &header,
         payload,
         position: 0,
         out: out.as_mut_ptr(),
-        target: out.len() / 4,
+        channels: channels as usize,
+        target: out.len() / width,
         written: 0,
         big_endian,
         failed: false,
@@ -289,15 +324,28 @@ unsafe extern "C" fn encode_write_callback(
     libflac_sys::FLAC__STREAM_ENCODER_WRITE_STATUS_OK
 }
 
-/// Encodes `plane` as 16-bit stereo samples in a headerless FLAC stream at
-/// `block_size`, the mirror of MAME's FLAC compressor: the frames the
-/// encoder produces, with the magic and every metadata block stripped.
+/// Encodes `plane` as 16-bit 44.1 kHz stereo samples in a headerless FLAC
+/// stream at `block_size`, the mirror of MAME's FLAC compressor: the frames
+/// the encoder produces, with the magic and every metadata block stripped.
 /// `big_endian` says how the sample pairs in the plane are byte ordered,
 /// which is how the plain FLAC codec tries both readings of a hunk.
 pub(crate) fn flac_encode(plane: &[u8], block_size: u32, big_endian: bool) -> Result<Vec<u8>> {
-    if !plane.len().is_multiple_of(4) {
+    flac_encode_with(plane, CD_CHANNELS, CD_SAMPLE_RATE, block_size, big_endian)
+}
+
+/// [`flac_encode`] for interleaved samples of any channel count and sample
+/// rate.
+pub(crate) fn flac_encode_with(
+    plane: &[u8],
+    channels: u32,
+    sample_rate: u32,
+    block_size: u32,
+    big_endian: bool,
+) -> Result<Vec<u8>> {
+    let width = channels as usize * 2;
+    if channels == 0 || !plane.len().is_multiple_of(width) {
         return Err(Error::Compression(
-            "FLAC chunk input is not a whole number of stereo samples".to_string(),
+            "FLAC chunk input is not a whole number of samples".to_string(),
         ));
     }
     let mut client = EncodeClient {
@@ -314,9 +362,9 @@ pub(crate) fn flac_encode(plane: &[u8], block_size: u32, big_endian: bool) -> Re
         }
         libflac_sys::FLAC__stream_encoder_set_verify(encoder, 0);
         libflac_sys::FLAC__stream_encoder_set_streamable_subset(encoder, 0);
-        libflac_sys::FLAC__stream_encoder_set_channels(encoder, 2);
+        libflac_sys::FLAC__stream_encoder_set_channels(encoder, channels);
         libflac_sys::FLAC__stream_encoder_set_bits_per_sample(encoder, 16);
-        libflac_sys::FLAC__stream_encoder_set_sample_rate(encoder, 44_100);
+        libflac_sys::FLAC__stream_encoder_set_sample_rate(encoder, sample_rate);
         libflac_sys::FLAC__stream_encoder_set_compression_level(encoder, 8);
         libflac_sys::FLAC__stream_encoder_set_blocksize(encoder, block_size);
         libflac_sys::FLAC__stream_encoder_set_total_samples_estimate(encoder, 0);
@@ -336,33 +384,30 @@ pub(crate) fn flac_encode(plane: &[u8], block_size: u32, big_endian: bool) -> Re
         }
         let mut encoded = true;
         let mut offset = 0;
-        let mut remaining = plane.len() / 4;
+        let mut remaining = plane.len() / width;
         let mut samples = [0 as FLAC__int32; 2048];
         while remaining > 0 && encoded {
-            // MAME converts and submits at most 1024 samples per channel.
-            let batch = remaining.min(1024);
-            for sample in 0..batch {
-                let frame = &plane[offset + sample * 4..][..4];
-                let (left, right) = if big_endian {
-                    (
-                        i16::from_be_bytes([frame[0], frame[1]]),
-                        i16::from_be_bytes([frame[2], frame[3]]),
-                    )
+            // MAME converts and submits 2048 values at most, a batch of
+            // 2048 / channels samples per channel.
+            let batch = remaining.min(2048 / channels as usize);
+            for (index, value) in plane[offset..offset + batch * width]
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .enumerate()
+            {
+                samples[index] = if big_endian {
+                    i16::from_be_bytes(*value)
                 } else {
-                    (
-                        i16::from_le_bytes([frame[0], frame[1]]),
-                        i16::from_le_bytes([frame[2], frame[3]]),
-                    )
-                };
-                samples[sample * 2] = left as FLAC__int32;
-                samples[sample * 2 + 1] = right as FLAC__int32;
+                    i16::from_le_bytes(*value)
+                } as FLAC__int32;
             }
             encoded = libflac_sys::FLAC__stream_encoder_process_interleaved(
                 encoder,
                 samples.as_ptr(),
                 batch as u32,
             ) != 0;
-            offset += batch * 4;
+            offset += batch * width;
             remaining -= batch;
         }
         let finished = libflac_sys::FLAC__stream_encoder_finish(encoder) != 0;

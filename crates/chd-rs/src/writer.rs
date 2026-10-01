@@ -118,6 +118,12 @@ pub(crate) trait Source {
     /// input bytes that consumed, which is what progress reports. What it
     /// has no data for it may leave as it was, as chdman's readers do.
     fn read(&mut self, offset: u64, buf: &mut [u8]) -> Result<u64>;
+
+    /// Metadata only known once every byte was read, which chdman writes
+    /// after the map.
+    fn late_metadata(&self) -> Vec<(u32, u8, Vec<u8>)> {
+        Vec::new()
+    }
 }
 
 /// A single input file, read in order. A hard disk geometry may describe
@@ -436,7 +442,7 @@ fn create_inner(
         table_pos = out.append_zeros(u64::from(hunk_count) * 4)?;
     }
     // like chdman, the metadata goes in before any hunk
-    write_metadata(&mut out, metadata)?;
+    let last_metadata = write_metadata(&mut out, metadata, None)?;
 
     let mut ring = WorkRing::new(hunk_bytes, logical_size);
     let parent_map = match parent {
@@ -503,6 +509,7 @@ fn create_inner(
         let map_offset = out.append(&map)?;
         out.write_at(MAPOFFSET_OFFSET as u64, &map_offset.to_be_bytes())?;
         out.write_at(RAWSHA1_OFFSET as u64, &raw)?;
+        write_metadata(&mut out, &source.late_metadata(), last_metadata)?;
         let overall = overall_sha1(&raw, metadata);
         out.write_at(SHA1_OFFSET as u64, &overall)?;
     } else {
@@ -984,10 +991,13 @@ fn compress_map(
 }
 
 /// Appends the metadata list — each entry a 16-byte header followed by its
-/// data, chained to the next by offset — and patches the list's start into
-/// the header.
-fn write_metadata(out: &mut FileWriter<'_>, entries: &[(u32, u8, Vec<u8>)]) -> Result<()> {
-    let mut previous: Option<u64> = None;
+/// data, chained to the next by offset — after the entry at `previous`, or
+/// as the list's start in the header. Returns the last entry's offset.
+fn write_metadata(
+    out: &mut FileWriter<'_>,
+    entries: &[(u32, u8, Vec<u8>)],
+    mut previous: Option<u64>,
+) -> Result<Option<u64>> {
     for (tag, flags, data) in entries {
         let mut header = [0u8; 16];
         header[..4].copy_from_slice(&tag.to_be_bytes());
@@ -1003,7 +1013,7 @@ fn write_metadata(out: &mut FileWriter<'_>, entries: &[(u32, u8, Vec<u8>)]) -> R
         }
         previous = Some(start);
     }
-    Ok(())
+    Ok(previous)
 }
 
 /// The header's overall hash: the raw hash, then the hashes of the
