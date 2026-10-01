@@ -675,10 +675,12 @@ Purge systems
 
 This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterward.
 
-    Usage: oxyromon purge-systems
+    Usage: oxyromon purge-systems [OPTIONS]
 
     Options:
-        -h, --help  Print help information
+        -e, --empty            Only list empty systems for selection
+        -s, --system <SYSTEM>  Select systems by name
+        -h, --help             Print help
 
 ## oxyromon-generate-playlists
 
