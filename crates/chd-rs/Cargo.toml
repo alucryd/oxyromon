@@ -1,0 +1,40 @@
+[package]
+name = "chd-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "CHD (MAME Compressed Hunks of Data) inspection, compression and decompression, interchangeable with chdman"
+license = "BSD-3-Clause"
+repository.workspace = true
+keywords = ["chd", "mame", "compression", "rom", "cue"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "chd_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "chdrs"
+path = "src/bin/chdrs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+sha1 = "0.11.0"
+flate2 = "1.1.10"
+zstd = "0.14.0"
+lzma-rs = { version = "0.3.0", features = ["raw_decoder"] }
+crc32fast.workspace = true
+libflac-sys = { version = "0.3.4", default-features = false, features = ["build-flac"] }
+liblzma-sys = { version = "0.4", features = ["static"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

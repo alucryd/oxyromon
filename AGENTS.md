@@ -240,7 +240,7 @@ Every crate follows these, and a new one should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the CLIs
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the CLIs
 cargo test -p xso-rs                           # one crate
 cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```

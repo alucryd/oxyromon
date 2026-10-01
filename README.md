@@ -100,7 +100,7 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 The repository also holds oxyROMon's own format crates, under `crates/`, which
 replaced the external tools it once needed. Each builds a standalone CLI too:
 
-    cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs    # gdirs, nszrs, xdeltars, xpsrs and xsors
+    cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs    # chdrs, gdirs, nszrs, xdeltars, xpsrs and xsors
 
 ### Features
 
