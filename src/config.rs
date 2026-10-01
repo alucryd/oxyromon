@@ -2,7 +2,7 @@ use super::archive::{
     SEVENZIP_COMPRESSION_LEVEL_RANGE, SevenzipCompressionAlgorithm, ZIP_COMPRESSION_LEVEL_RANGE,
     ZSTD_COMPRESSION_LEVEL_RANGE, ZipCompressionAlgorithm,
 };
-use super::chdman::{
+use super::chd::{
     CHD_HUNK_SIZE_RANGE, ChdCdCompressionAlgorithm, ChdDvdCompressionAlgorithm,
     ChdHdCompressionAlgorithm, ChdLdCompressionAlgorithm,
 };

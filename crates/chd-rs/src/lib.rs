@@ -18,11 +18,14 @@ mod container;
 mod crc16;
 mod ecc;
 mod error;
+mod extract;
 mod flac;
 mod huffman;
 mod lzma;
 mod writer;
 
+pub use cdrom::{FRAME_SIZE as CD_FRAME_SIZE, input_size as cd_input_size};
 pub use container::{Chd, ChdInfo, ChdType, MetadataEntry, VerifyOutcome, fourcc, sha1_hex};
 pub use error::{Error, Result};
-pub use writer::{create, create_hd};
+pub use extract::extract_cd;
+pub use writer::{create, create_cd, create_dvd, create_hd};

@@ -458,8 +458,10 @@ fn compress_zlib(source: &[u8]) -> Result<Vec<u8>> {
 /// A zstd frame at the maximum compression level, the `zstd_compressor`:
 /// an output as big as the input is a failure.
 fn compress_zstd(source: &[u8]) -> Result<Vec<u8>> {
+    // one shot, as chdman's single ZSTD_e_end call: zstd then knows the
+    // source size, records it and tunes its parameters to it
     let level = zstd::zstd_safe::max_c_level();
-    let out = zstd::stream::encode_all(source, level).map_err(|error| {
+    let out = zstd::bulk::compress(source, level).map_err(|error| {
         Error::Compression(format!("zstd failed to compress the chunk: {error}"))
     })?;
     if out.len() >= source.len() {

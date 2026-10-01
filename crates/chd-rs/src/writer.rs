@@ -18,8 +18,9 @@ use std::path::{Path, PathBuf};
 use sha1::{Digest, Sha1};
 
 use crate::bitstream::BitstreamOut;
+use crate::cdrom;
 use crate::codec::{self, CODEC_NONE};
-use crate::container::{Chd, ChdInfo, MTAG_HARD_DISK};
+use crate::container::{Chd, ChdInfo, MTAG_DVD, MTAG_HARD_DISK};
 use crate::crc16::crc16;
 use crate::error::{Error, Result};
 use crate::huffman::HuffmanEncoder;
@@ -37,10 +38,6 @@ const RAWSHA1_OFFSET: usize = 64;
 const SHA1_OFFSET: usize = 84;
 const PARENT_SHA1_OFFSET: usize = 104;
 
-/// The most hunks read, hashed or walked at a time, and the byte budget
-/// which caps it so huge hunks do not balloon the buffers.
-const CHUNK_HUNKS: u64 = 128;
-const MAX_CHUNK_BYTES: u64 = 8 << 20;
 /// How much the buffered writer accumulates before flushing to disk.
 const PENDING_LIMIT: usize = 1 << 20;
 
@@ -93,9 +90,73 @@ pub fn create(
     metadata: &[(u32, u8, Vec<u8>)],
     progress: &mut dyn FnMut(u64),
 ) -> Result<()> {
+    let size = std::fs::metadata(input)?.len();
+    if size == 0 {
+        return Err(Error::InvalidOption("input file is empty".to_string()));
+    }
+    let logical_size = logical_size(metadata, size)?;
+    let mut source = FileSource {
+        file: File::open(input)?,
+        size,
+    };
+    write_part(
+        &mut source,
+        logical_size,
+        output,
+        unit_bytes,
+        hunk_bytes,
+        compression,
+        parent,
+        metadata,
+        progress,
+    )
+}
+
+/// Where a new CHD's logical bytes come from.
+pub(crate) trait Source {
+    /// Fills `buf` with the logical bytes at `offset`, returning how many
+    /// input bytes that consumed, which is what progress reports. What it
+    /// has no data for it may leave as it was, as chdman's readers do.
+    fn read(&mut self, offset: u64, buf: &mut [u8]) -> Result<u64>;
+}
+
+/// A single input file, read in order. A hard disk geometry may describe
+/// more than the file holds; what lies past its end is not read at all.
+struct FileSource {
+    file: File,
+    size: u64,
+}
+
+impl Source for FileSource {
+    fn read(&mut self, offset: u64, buf: &mut [u8]) -> Result<u64> {
+        let take = buf
+            .len()
+            .min(usize::try_from(self.size.saturating_sub(offset)).unwrap_or(buf.len()));
+        // past the end of the file, chdman reads nothing and leaves its
+        // buffer as it was
+        self.file.read_exact(&mut buf[..take])?;
+        Ok(take as u64)
+    }
+}
+
+/// Writes a CHD to `<output>.part`, renaming it into place once complete
+/// and removing it when anything failed.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_part(
+    source: &mut dyn Source,
+    logical_size: u64,
+    output: &Path,
+    unit_bytes: u32,
+    hunk_bytes: u32,
+    compression: [u32; 4],
+    parent: Option<&mut Chd>,
+    metadata: &[(u32, u8, Vec<u8>)],
+    progress: &mut dyn FnMut(u64),
+) -> Result<()> {
     let part = part_path(output);
     let result = create_inner(
-        input,
+        source,
+        logical_size,
         &part,
         unit_bytes,
         hunk_bytes,
@@ -171,11 +232,87 @@ pub fn create_hd(
         geometry.0, geometry.1, geometry.2
     )
     .into_bytes();
-    let metadata = [(MTAG_HARD_DISK, 0u8, data)];
+    let metadata = [(MTAG_HARD_DISK, METADATA_CHECKSUM, data)];
     create(
         input,
         output,
         unit_bytes,
+        hunk_bytes,
+        compression,
+        parent,
+        &metadata,
+        progress,
+    )
+}
+
+/// Creates a version 5 DVD CHD the way `chdman createdvd` does: 2048-byte
+/// sectors, chdman's default hunk being two of them, and an empty `DVD `
+/// metadata entry marking the CHD as a DVD.
+pub fn create_dvd(
+    input: &Path,
+    output: &Path,
+    hunk_bytes: u32,
+    compression: [u32; 4],
+    parent: Option<&mut Chd>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<()> {
+    let size = std::fs::metadata(input)?.len();
+    if !size.is_multiple_of(2048) {
+        return Err(Error::InvalidOption(format!(
+            "data size {size} is not divisible by sector size 2048"
+        )));
+    }
+    // chdman writes the empty string, terminator included
+    let metadata = [(MTAG_DVD, METADATA_CHECKSUM, vec![0u8])];
+    create(
+        input,
+        output,
+        2048,
+        hunk_bytes,
+        compression,
+        parent,
+        &metadata,
+        progress,
+    )
+}
+
+/// Creates a version 5 CD CHD the way `chdman createcd` does, from a CUE
+/// sheet, a GDI or an ISO.
+///
+/// Units are 2448-byte frames, each track padded to a multiple of four;
+/// `hunk_bytes` must be a multiple of 2448, chdman's default being eight
+/// frames. Every track gets its `CHT2` entry, `CHGD` for a GD-ROM, and
+/// sessions their `CHSE` entries. Progress adds up to
+/// [`cdrom::input_size`](crate::cd_input_size).
+pub fn create_cd(
+    input: &Path,
+    output: &Path,
+    hunk_bytes: u32,
+    compression: [u32; 4],
+    parent: Option<&mut Chd>,
+    progress: &mut dyn FnMut(u64),
+) -> Result<()> {
+    let (mut toc, info) = cdrom::parse_toc(input)?;
+    // each track padded to a 4-frame boundary, which the reader undoes
+    let mut totalsectors = 0u32;
+    for track in &mut toc.tracks {
+        let frames = track.frames as u32;
+        let padded = frames.wrapping_add(cdrom::TRACK_PADDING - 1) / cdrom::TRACK_PADDING;
+        let extraframes = padded
+            .wrapping_mul(cdrom::TRACK_PADDING)
+            .wrapping_sub(frames);
+        track.extraframes = extraframes as i32;
+        totalsectors = totalsectors.wrapping_add(frames.wrapping_add(extraframes));
+    }
+    let logical_size = u64::from(totalsectors) * u64::from(cdrom::FRAME_SIZE);
+    let metadata = cdrom::metadata_entries(&toc);
+    let input_size = cdrom::input_size(input)?;
+    let mut source = cdrom::CdSource::new(&toc, &info, input_size, logical_size);
+    write_part(
+        &mut source,
+        logical_size,
+        output,
+        cdrom::FRAME_SIZE,
         hunk_bytes,
         compression,
         parent,
@@ -240,18 +377,19 @@ fn scan_geometry(text: &str, prefixes: [&str; 4]) -> Option<[u32; 4]> {
 
 #[allow(clippy::too_many_arguments)]
 fn create_inner(
-    input: &Path,
+    source: &mut dyn Source,
+    logical_size: u64,
     part: &Path,
     unit_bytes: u32,
     hunk_bytes: u32,
     compression: [u32; 4],
-    mut parent: Option<&mut Chd>,
+    parent: Option<&mut Chd>,
     metadata: &[(u32, u8, Vec<u8>)],
     progress: &mut dyn FnMut(u64),
 ) -> Result<()> {
     let parent_info = parent.as_ref().map(|parent| parent.info());
-    let (logical_size, hunk_count) = validate(
-        input,
+    let hunk_count = validate(
+        logical_size,
         unit_bytes,
         hunk_bytes,
         &compression,
@@ -292,46 +430,31 @@ fn create_inner(
     let mut rawmap = Vec::new();
     let mut table = Vec::new();
     let mut table_pos = 0;
-    let mut parent_map = None;
     if compressed {
         rawmap = vec![0u8; hunk_count as usize * ENTRY_SIZE];
-        if let Some(parent) = &mut parent {
-            parent_map = Some(walk_parent(parent, unit_bytes, hunk_bytes, hunk_count)?);
-        }
     } else {
         table_pos = out.append_zeros(u64::from(hunk_count) * 4)?;
     }
+    // like chdman, the metadata goes in before any hunk
+    write_metadata(&mut out, metadata)?;
 
-    let mut source = File::open(input)?;
-    let input_size = source.metadata()?.len();
+    let mut ring = WorkRing::new(hunk_bytes, logical_size);
+    let parent_map = match parent {
+        Some(parent) => Some(ring.walk_parent(parent, unit_bytes, hunk_count, compressed)?),
+        None => None,
+    };
+
     let mut current_map: HashMap<(u16, [u8; 20]), u32> = HashMap::new();
     let mut rawsha1 = Sha1::new();
-    let hunks_per_chunk = (MAX_CHUNK_BYTES / u64::from(hunk_bytes)).clamp(1, CHUNK_HUNKS);
-    let mut buffer =
-        vec![0u8; hunks_per_chunk as usize * hunk_bytes as usize + hunk_bytes as usize];
-    let mut done: u64 = 0;
     let mut table_written: u64 = 0;
-
-    while done < logical_size {
-        let want = usize::try_from((hunks_per_chunk * hunk_bytes64).min(logical_size - done))
-            .map_err(|_| Error::InvalidOption("input file is too large for one CHD".to_string()))?;
-        let (head, tail) = buffer.split_at_mut(want);
-        tail[..hunk_bytes as usize].fill(0);
-        // a hard disk geometry may describe more than the file holds; what
-        // lies past its end reads as zeros, the zero hunks chdman leaves
-        let take = want.min(usize::try_from(input_size.saturating_sub(done)).unwrap_or(want));
-        source.read_exact(&mut head[..take])?;
-        head[take..].fill(0);
-        progress(take as u64);
+    for (done, numbytes) in ring.chunks() {
+        let (data, hunks) = ring.fill(done, numbytes, |buf| source.read(done, buf), progress)?;
         if compressed {
-            rawsha1.update(&buffer[..want]);
+            rawsha1.update(&data[..numbytes]);
         }
-        let hunks = (want as u64).div_ceil(hunk_bytes64);
-        let mut index = 0u64;
-        while index < hunks {
-            let hunknum = done / hunk_bytes64 + index;
-            let start = index as usize * hunk_bytes as usize;
-            let data = &buffer[start..start + hunk_bytes as usize];
+        for index in 0..hunks {
+            let hunknum = done / hunk_bytes64 + index as u64;
+            let data = &data[index * hunk_bytes as usize..][..hunk_bytes as usize];
             if compressed {
                 let hash = crc_and_sha1(data);
                 if let Some(reference) = current_map.get(&hash) {
@@ -371,9 +494,7 @@ fn create_inner(
                     table.clear();
                 }
             }
-            index += 1;
         }
-        done += want as u64;
     }
 
     if compressed {
@@ -382,29 +503,27 @@ fn create_inner(
         let map_offset = out.append(&map)?;
         out.write_at(MAPOFFSET_OFFSET as u64, &map_offset.to_be_bytes())?;
         out.write_at(RAWSHA1_OFFSET as u64, &raw)?;
-        write_metadata(&mut out, metadata)?;
         let overall = overall_sha1(&raw, metadata);
         out.write_at(SHA1_OFFSET as u64, &overall)?;
     } else {
         if !table.is_empty() {
             out.write_at(table_pos + table_written, &table)?;
         }
-        write_metadata(&mut out, metadata)?;
     }
     out.flush()?;
     Ok(())
 }
 
-/// Checks the settings against the input and the parent, returning the
-/// CHD's logical size and hunk count.
+/// Checks the settings against the logical size and the parent, returning
+/// the CHD's hunk count.
 fn validate(
-    input: &Path,
+    logical_size: u64,
     unit_bytes: u32,
     hunk_bytes: u32,
     compression: &[u32; 4],
     parent: Option<&ChdInfo>,
     metadata: &[(u32, u8, Vec<u8>)],
-) -> Result<(u64, u32)> {
+) -> Result<u32> {
     if unit_bytes == 0 {
         return Err(Error::InvalidOption("unit size cannot be 0".to_string()));
     }
@@ -461,26 +580,16 @@ fn validate(
                 parent.unit_size
             )));
         }
-        if compression[0] != CODEC_NONE && !compression.contains(&CODEC_NONE) {
-            return Err(Error::InvalidOption(
-                "a cloned CHD must accept uncompressed hunks".to_string(),
-            ));
-        }
     }
-    let size = std::fs::metadata(input)?.len();
-    if size == 0 {
-        return Err(Error::InvalidOption("input file is empty".to_string()));
+    if logical_size == 0 {
+        return Err(Error::InvalidOption("input is empty".to_string()));
     }
-    let logical_size = logical_size(metadata, size)?;
     if logical_size > u64::from(u32::MAX) * u64::from(hunk_bytes) {
         return Err(Error::InvalidOption(
             "input file is too large for one CHD".to_string(),
         ));
     }
-    Ok((
-        logical_size,
-        logical_size.div_ceil(u64::from(hunk_bytes)) as u32,
-    ))
+    Ok(logical_size.div_ceil(u64::from(hunk_bytes)) as u32)
 }
 
 /// The size the CHD covers: a hard disk geometry sets it, and without a
@@ -514,57 +623,121 @@ fn logical_size(metadata: &[(u32, u8, Vec<u8>)], size: u64) -> Result<u64> {
     Ok(product)
 }
 
-/// Maps every hunk-sized window of the parent's data, taken at each of the
-/// child's unit alignments, to the first parent unit index covering it — the
-/// value a parent reference carries. The walk reads the parent in chunks, one
-/// hunk ahead so the last window of a chunk is never cut short.
-fn walk_parent(
-    parent: &mut Chd,
-    unit_bytes: u32,
-    hunk_bytes: u32,
-    hunk_count: u32,
-) -> Result<HashMap<(u16, [u8; 20]), u64>> {
-    let uph = u64::from(hunk_bytes / unit_bytes);
-    let logical = parent.info().logical_size;
-    let hunk_bytes = u64::from(hunk_bytes);
-    let hunks_per_chunk = (MAX_CHUNK_BYTES / hunk_bytes).clamp(1, CHUNK_HUNKS);
-    let hunk_count = u64::from(hunk_count);
-    let mut map: HashMap<(u16, [u8; 20]), u64> = HashMap::new();
-    let mut first = 0u64;
-    while first < hunk_count {
-        let last = (first + hunks_per_chunk - 1).min(hunk_count - 1);
-        let mut window = vec![0u8; (last - first + 2) as usize * hunk_bytes as usize];
-        let base = first * hunk_bytes;
-        let mut hunknum = first;
-        while hunknum <= last + 1 {
-            let start = hunknum * hunk_bytes;
-            if start >= logical {
-                break;
-            }
-            let length = (logical - start).min(hunk_bytes) as usize;
-            let dest = (hunknum - first) as usize * hunk_bytes as usize;
-            parent.read_bytes(start, &mut window[dest..dest + length])?;
-            hunknum += 1;
+/// The hunks chdman's compressor keeps in flight: its work buffer holds
+/// 256 hunks, plus one, and is filled half at a time.
+const WORK_BUFFER_HUNKS: u64 = 256;
+
+/// chdman's work buffer, which is never cleared. The bytes of the last hunk
+/// past the logical end, and past the end of a raw input, are whatever the
+/// buffer last held there: zeros, the data of 256 hunks before, or the
+/// parent's when cloning. They are hashed and compressed along with the
+/// rest, so a byte-identical CHD has to reproduce them.
+struct WorkRing {
+    buffer: Vec<u8>,
+    hunk_bytes: u64,
+    logical_size: u64,
+}
+
+impl WorkRing {
+    fn new(hunk_bytes: u32, logical_size: u64) -> Self {
+        let hunk_bytes = u64::from(hunk_bytes);
+        Self {
+            buffer: vec![0u8; ((WORK_BUFFER_HUNKS + 1) * hunk_bytes) as usize],
+            hunk_bytes,
+            logical_size,
         }
-        let mut hunknum = first;
-        while hunknum <= last {
-            let units = if hunknum == hunk_count - 1 { 1 } else { uph };
-            let mut unit = 0u64;
-            while unit < units {
-                let start = hunknum * hunk_bytes + unit * u64::from(unit_bytes);
-                if start + hunk_bytes > logical {
-                    break;
-                }
-                let offs = (start - base) as usize;
-                map.entry(crc_and_sha1(&window[offs..offs + hunk_bytes as usize]))
-                    .or_insert(hunknum * uph + unit);
-                unit += 1;
-            }
-            hunknum += 1;
-        }
-        first = last + 1;
     }
-    Ok(map)
+
+    /// The reads chdman makes: half a buffer at a time, the last one short.
+    fn chunks(&self) -> Vec<(u64, usize)> {
+        let half = WORK_BUFFER_HUNKS / 2 * self.hunk_bytes;
+        let mut chunks = Vec::new();
+        let mut done = 0;
+        while done < self.logical_size {
+            let numbytes = half.min(self.logical_size - done);
+            chunks.push((done, numbytes as usize));
+            done += numbytes;
+        }
+        chunks
+    }
+
+    /// Where in the buffer the chunk at `done` lands.
+    fn position(&self, done: u64) -> usize {
+        (done % (WORK_BUFFER_HUNKS * self.hunk_bytes)) as usize
+    }
+
+    /// Reads a chunk into place with `read`, which may leave part of what it
+    /// is given untouched, and returns the chunk's whole hunks.
+    fn fill(
+        &mut self,
+        done: u64,
+        numbytes: usize,
+        read: impl FnOnce(&mut [u8]) -> Result<u64>,
+        progress: &mut dyn FnMut(u64),
+    ) -> Result<(&[u8], usize)> {
+        let position = self.position(done);
+        progress(read(&mut self.buffer[position..position + numbytes])?);
+        let hunks = (numbytes as u64).div_ceil(self.hunk_bytes) as usize;
+        let length = hunks * self.hunk_bytes as usize;
+        Ok((&self.buffer[position..position + length], hunks))
+    }
+
+    /// Walks the parent the way chdman does before compressing: its hunks
+    /// read into the buffer, one more than each chunk holds so the last
+    /// windows are whole, a hunk the parent does not have leaving the buffer
+    /// as it was. Every hunk-sized window, at each of the child's unit
+    /// offsets, maps to the first parent unit it was seen at, the value a
+    /// parent reference carries; the last hunk, and every hunk of an
+    /// uncompressed CHD, only at its first unit.
+    fn walk_parent(
+        &mut self,
+        parent: &mut Chd,
+        unit_bytes: u32,
+        hunk_count: u32,
+        compressed: bool,
+    ) -> Result<HashMap<(u16, [u8; 20]), u64>> {
+        let hunk_bytes = self.hunk_bytes as usize;
+        let parent_hunks = parent.info().hunk_count;
+        let uph = self.hunk_bytes / u64::from(unit_bytes);
+        let mut map: HashMap<(u16, [u8; 20]), u64> = HashMap::new();
+        for (done, numbytes) in self.chunks() {
+            let position = self.position(done);
+            let end = done + numbytes as u64;
+            let mut curoffs = done;
+            let mut slot = position;
+            let mut curhunk = done / self.hunk_bytes;
+            while curoffs < end + 1 {
+                if curhunk < parent_hunks {
+                    parent.read_hunk(curhunk as u32, &mut self.buffer[slot..slot + hunk_bytes])?;
+                }
+                curoffs += self.hunk_bytes;
+                slot += hunk_bytes;
+                curhunk += 1;
+            }
+            if !compressed {
+                // the map is only for parent references, which an
+                // uncompressed CHD does not make
+                continue;
+            }
+            let mut curoffs = done;
+            while curoffs < end {
+                let hunknum = curoffs / self.hunk_bytes;
+                let units = if hunknum == u64::from(hunk_count) - 1 {
+                    1
+                } else {
+                    uph
+                };
+                let base = position + (curoffs - done) as usize;
+                for unit in 0..units {
+                    let start = base + (unit * u64::from(unit_bytes)) as usize;
+                    map.entry(crc_and_sha1(&self.buffer[start..start + hunk_bytes]))
+                        .or_insert(hunknum * uph + unit);
+                }
+                curoffs += self.hunk_bytes;
+            }
+        }
+        Ok(map)
+    }
 }
 
 /// The identity a hunk is recognised by: its CRC-32-IEEE stored as the
@@ -891,6 +1064,8 @@ impl<'a> FileWriter<'a> {
     fn append_zeros(&mut self, count: u64) -> Result<u64> {
         self.flush()?;
         let start = self.end;
+        // a write_at may have left the file anywhere before its end
+        self.file.seek(SeekFrom::Start(start))?;
         let mut left = count;
         while left > 0 {
             let chunk = usize::try_from(left.min(1 << 16)).unwrap_or(1 << 16);

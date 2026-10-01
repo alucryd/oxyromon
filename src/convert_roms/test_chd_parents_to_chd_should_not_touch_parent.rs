@@ -2,6 +2,7 @@ use super::super::generate_playlists;
 use super::super::import_dats;
 use super::super::import_roms;
 use super::*;
+use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use tempfile::{NamedTempFile, TempDir};

@@ -32,7 +32,7 @@ fn cli() -> Command {
             Arg::new("hunk")
                 .short('b')
                 .long("hunk")
-                .help("Hunk size in bytes, 16..=1048576 [default: 2048 for CDs, 4096 otherwise]")
+                .help("Hunk size in bytes, 16..=1048576 [default: 19584 for CDs, 4096 otherwise]")
                 .value_parser(value_parser!(u32)),
         )
         .arg(
@@ -51,9 +51,8 @@ fn cli() -> Command {
             Arg::new("compression")
                 .short('c')
                 .long("compression")
-                .help("Codecs to try per hunk, best wins")
+                .help("Codecs to try per hunk, best wins [default: cdlz,cdzl,cdfl for CDs, zlib otherwise]")
                 .value_delimiter(',')
-                .default_value("zlib")
                 .value_parser([
                     "none", "flac", "huff", "lzma", "zlib", "zstd", "cdfl", "cdlz", "cdzl", "cdzs",
                 ]),
@@ -109,23 +108,71 @@ fn convert(
 ) -> Result<String, String> {
     let dir = ui::output_dir(input, matches)?;
     if ui::extension(input) == "chd" {
-        let output = outputs.claim(ui::output_path(&dir, input, "iso"))?;
         let mut chd = open(input, matches).map_err(|error| error.to_string())?;
+        if chd.info().chd_type == chd_rs::ChdType::Cd {
+            // a CUE and its BIN, a BIN per track for a GD-ROM
+            let cue = outputs.claim(ui::output_path(&dir, input, "cue"))?;
+            let bar = ui::progress_bar(chd.info().logical_size, "Extracting", input);
+            let result =
+                chd_rs::extract_cd(&mut chd, &cue, None, false, &mut |bytes| bar.inc(bytes));
+            bar.finish_and_clear();
+            let files = result.map_err(|error| error.to_string())?;
+            return Ok(format!("{} ({} BINs)", ui::wrote(&cue), files.len() - 1));
+        }
+        let output = outputs.claim(ui::output_path(&dir, input, "iso"))?;
         let bar = ui::progress_bar(chd.info().logical_size, "Extracting", input);
         let result = chd.extract(&output, &mut |bytes| bar.inc(bytes));
         bar.finish_and_clear();
         result.map_err(|error| error.to_string())?;
         return Ok(ui::wrote(&output));
     }
-    if matches!(ui::extension(input).as_str(), "cue" | "gdi") {
-        return Err("CD creation is not implemented yet".to_string());
-    }
-    let compression = codecs(matches)?;
+    let cd = matches!(ui::extension(input).as_str(), "cue" | "gdi");
+    let compression = codecs(matches, cd)?;
     let geometry = geometry(matches)?;
     let mut parent = match matches.get_one::<PathBuf>("parent") {
         Some(parent) => Some(Chd::open(parent).map_err(|error| error.to_string())?),
         None => None,
     };
+    let hunk_bytes = hunk_size(
+        matches,
+        parent.as_ref(),
+        if cd { 8 * chd_rs::CD_FRAME_SIZE } else { 4096 },
+    )?;
+    if cd {
+        let output = outputs.claim(ui::output_path(&dir, input, "chd"))?;
+        let size = chd_rs::cd_input_size(input).map_err(|error| error.to_string())?;
+        let bar = ui::progress_bar(size, "Compressing", input);
+        let result = chd_rs::create_cd(
+            input,
+            &output,
+            hunk_bytes,
+            compression,
+            parent.as_mut(),
+            &mut |bytes| bar.inc(bytes),
+        );
+        bar.finish_and_clear();
+        result.map_err(|error| error.to_string())?;
+        return wrote_chd(&output, size);
+    }
+    if ui::extension(input) == "iso" {
+        // like chdman createdvd
+        let output = outputs.claim(ui::output_path(&dir, input, "chd"))?;
+        let size = std::fs::metadata(input)
+            .map_err(|error| error.to_string())?
+            .len();
+        let bar = ui::progress_bar(size, "Compressing", input);
+        let result = chd_rs::create_dvd(
+            input,
+            &output,
+            hunk_bytes,
+            compression,
+            parent.as_mut(),
+            &mut |bytes| bar.inc(bytes),
+        );
+        bar.finish_and_clear();
+        result.map_err(|error| error.to_string())?;
+        return wrote_chd(&output, size);
+    }
     // like chdman createhd: the sector size comes from the option, then from
     // the parent, and 512 divides every image size 2048 does.
     let unit_bytes = matches
@@ -136,25 +183,6 @@ fn convert(
                 .as_ref()
                 .map_or(512, |parent| parent.info().unit_size)
         });
-    let hunk_bytes = match matches.get_one::<u32>("hunk") {
-        Some(&hunk) => {
-            if !(16..=1024 * 1024).contains(&hunk) {
-                return Err(format!("hunk size {hunk} is not in 16..=1048576"));
-            }
-            if let Some(parent) = &parent {
-                let parent_hunk = parent.info().hunk_size;
-                if hunk != parent_hunk {
-                    return Err(format!(
-                        "hunk size {hunk} does not match the parent CHD's {parent_hunk}"
-                    ));
-                }
-            }
-            hunk
-        }
-        None => parent
-            .as_ref()
-            .map_or(4096, |parent| parent.info().hunk_size),
-    };
     let output = outputs.claim(ui::output_path(&dir, input, "chd"))?;
     let size = std::fs::metadata(input)
         .map_err(|error| error.to_string())?
@@ -172,21 +200,49 @@ fn convert(
     );
     bar.finish_and_clear();
     result.map_err(|error| error.to_string())?;
-    let chd_size = std::fs::metadata(&output)
+    wrote_chd(&output, size)
+}
+
+/// The written CHD and how small it is next to its input.
+fn wrote_chd(output: &Path, size: u64) -> Result<String, String> {
+    let chd_size = std::fs::metadata(output)
         .map_err(|error| error.to_string())?
         .len();
     let ratio = 100.0 * chd_size as f64 / size.max(1) as f64;
-    Ok(format!("{} ({ratio:.1}%)", ui::wrote(&output)))
+    Ok(format!("{} ({ratio:.1}%)", ui::wrote(output)))
+}
+
+/// The `-b` hunk size, which a clone must share with its parent, else the
+/// parent's, else `default`.
+fn hunk_size(matches: &ArgMatches, parent: Option<&Chd>, default: u32) -> Result<u32, String> {
+    Ok(match matches.get_one::<u32>("hunk") {
+        Some(&hunk) => {
+            if !(16..=1024 * 1024).contains(&hunk) {
+                return Err(format!("hunk size {hunk} is not in 16..=1048576"));
+            }
+            if let Some(parent) = &parent {
+                let parent_hunk = parent.info().hunk_size;
+                if hunk != parent_hunk {
+                    return Err(format!(
+                        "hunk size {hunk} does not match the parent CHD's {parent_hunk}"
+                    ));
+                }
+            }
+            hunk
+        }
+        None => parent.map_or(default, |parent| parent.info().hunk_size),
+    })
 }
 
 /// The `-c` codec names, laid out in the four compression slots of a header.
-/// A short list leaves the trailing slots unused.
-fn codecs(matches: &ArgMatches) -> Result<[u32; 4], String> {
-    let names: Vec<&str> = matches
-        .get_many::<String>("compression")
-        .unwrap()
-        .map(String::as_str)
-        .collect();
+/// A short list leaves the trailing slots unused. Without one a CD gets
+/// chdman's CD codecs, anything else zlib.
+fn codecs(matches: &ArgMatches, cd: bool) -> Result<[u32; 4], String> {
+    let names: Vec<&str> = match matches.get_many::<String>("compression") {
+        Some(names) => names.map(String::as_str).collect(),
+        None if cd => vec!["cdlz", "cdzl", "cdfl"],
+        None => vec!["zlib"],
+    };
     if names.len() > 4 {
         return Err("at most four codecs can be tried per hunk".to_string());
     }
@@ -195,10 +251,8 @@ fn codecs(matches: &ArgMatches) -> Result<[u32; 4], String> {
         *slot = match *name {
             // The uncompressed slot is tagged 0, not by a fourcc.
             "none" => 0,
-            name if name.starts_with("cd") => {
-                return Err(format!(
-                    "codec {name} is for CDs, and CD creation is not implemented yet"
-                ));
+            name if !cd && name.starts_with("cd") => {
+                return Err(format!("codec {name} is for CDs"));
             }
             name => u32::from_be_bytes(
                 name.as_bytes()
@@ -401,7 +455,19 @@ mod tests {
             .try_get_matches_from(["chdrs", "a.iso", "b.chd"])
             .unwrap();
         assert_eq!(matches.get_many::<PathBuf>("INPUTS").unwrap().count(), 2);
-        assert_eq!(matches.get_one::<String>("compression").unwrap(), "zlib");
+        assert_eq!(
+            codecs(&matches, false).unwrap(),
+            [u32::from_be_bytes(*b"zlib"), 0, 0, 0]
+        );
+        assert_eq!(
+            codecs(&matches, true).unwrap(),
+            [
+                u32::from_be_bytes(*b"cdlz"),
+                u32::from_be_bytes(*b"cdzl"),
+                u32::from_be_bytes(*b"cdfl"),
+                0
+            ]
+        );
         assert!(matches.get_one::<PathBuf>("output").is_none());
         assert!(matches.get_one::<PathBuf>("parent").is_none());
     }

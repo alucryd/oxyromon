@@ -25,12 +25,12 @@ clap = { workspace = true, optional = true }
 console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 sha1 = "0.11.0"
-flate2 = "1.1.10"
+flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs"] }
 zstd = "0.14.0"
 lzma-rs = { version = "0.3.0", features = ["raw_decoder"] }
 crc32fast.workspace = true
 libflac-sys = { version = "0.3.4", default-features = false, features = ["build-flac"] }
-liblzma-sys = { version = "0.4", features = ["static"] }
+lzma-sdk-rs = "0.2301.1"
 
 [dev-dependencies]
 tempfile.workspace = true

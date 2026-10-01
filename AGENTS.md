@@ -35,7 +35,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 ├─────────────────────────────────────────────────────┤
 │  Format-specific modules:                           │
 │    archive.rs, rvz.rs, wbfs.rs, iso.rs, xso.rs,     │
-│    nsz.rs, gdi.rs, xdelta.rs, xps.rs, chdman.rs,    │
+│    nsz.rs, gdi.rs, xdelta.rs, xps.rs, chd.rs,       │
 │    ctrtool.rs, crc32.rs                             │
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
@@ -66,7 +66,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `rebuild_roms.rs` | Rebuilds arcade ROM sets between merging strategies (split, non-merged, full non-merged).                                                                                                                                                                                                                  |
 | `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
 | `archive.rs`      | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits, backed by the sevenz-rust2 and zip crates. Renames, deletes and appends copy what the archive holds raw rather than re-encoding it.                                                                                                    |
-| `chdman.rs`       | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`.                                                                                                                                                                                                          |
+| `chd.rs`          | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits, backed by the chd-rs crate. LaserDiscs, which chd-rs cannot write or extract yet, still shell out to `chdman`.                                                                                                                  |
 | `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
 | `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
@@ -74,7 +74,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Format-Specific Module Pattern
 
-Each external tool module (`chdman.rs`, `ctrtool.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`, `xps.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
+Each external tool module (`ctrtool.rs`) follows the same pattern; the built-in formats (`archive.rs`, `chd.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`, `xps.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
 
 1. Define a struct wrapping `CommonRomfile` (e.g., `ChdRomfile`, `ArchiveRomfile`).
 2. Implement `Size`, `HashAndSize`, and `Check` traits for integrity verification.
@@ -189,6 +189,7 @@ upstream's license:
 
 | Crate    | Began as a port of                          | CLI     | License | Used by oxyromon for |
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
+| `chd-rs` | [chdman](https://github.com/mamedev/mame/blob/master/src/tools/chdman.cpp) | `chdrs` | BSD-3-Clause | CHD (but LaserDiscs) |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
 | `xdelta-rs` | [xdelta3](https://github.com/jmacd/xdelta) | `xdeltars` | Apache-2.0 | XDELTA patches |
@@ -309,7 +310,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `mame-tools` (for chdman), and `xdelta3`, only for the xdelta-rs tests that compare against it
+- Installs system dependencies: `mame-tools`, whose `chdman` the chd-rs tests compare against (and oxyromon's LaserDisc CHDs need), and `xdelta3`, only for the xdelta-rs tests that compare against it
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`
@@ -620,7 +621,7 @@ All user-facing output should go through the categorized helpers in `progress.rs
 | `print_info`      | `ℹ` (dim)       | Informational messages          | `System: Test System`, speed results             |
 | `print_success`   | `✔` (green)     | Completion, match found         | `Imported Test Game (USA)`, `Matches "rom.bin"`  |
 | `print_warning`   | `⚠` (yellow)    | Non-fatal issues                | `No match`, `Multiple matches, skipping`         |
-| `print_error`     | `✖` (red bold)  | Errors, failures                | `CRC mismatch`, `Please install chdman`          |
+| `print_error`     | `✖` (red bold)  | Errors, failures                | `CRC mismatch`, `Please install ctrtool`         |
 | `print_skip`      | `↪` (dim)       | Skipped/duplicate items         | `Already imported`, `Duplicate of "file.zip"`    |
 | `print_action`    | `→` (dim)       | File operations in progress     | `Extracting "game.chd"`, `Compressing "rom.bin"` |
 | `print_separator` | (blank line)    | Visual spacing between sections |                                                  |
@@ -630,7 +631,7 @@ All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in 
 ### File Organization
 
 - Subcommand modules: `src/<command_name>.rs` with tests in `src/<command_name>/test_*.rs`
-- Format modules: named after the tool while oxyromon still runs one (`chdman.rs`), after the format once it is built in (`rvz.rs`, `archive.rs`)
+- Format modules: named after the tool while oxyromon still runs one (`ctrtool.rs`), after the format once it is built in (`chd.rs`, `rvz.rs`, `archive.rs`)
 - Shared infrastructure: `src/database.rs`, `src/model.rs`, `src/common.rs`, `src/config.rs`, `src/util.rs`
 
 ### Frontend (Leptos)

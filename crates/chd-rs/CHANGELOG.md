@@ -13,8 +13,18 @@
   with the shortest of the codecs offered
 - Added the `none`, `flac`, `huff`, `lzma`, `zlib` and `zstd` codecs, read
   through `flate2`, `zstd`, `lzma-rs`, `libflac-sys` and a built-in Huffman
-  decoder and written back through `flate2`, `zstd`, `liblzma-sys`,
-  `libflac-sys` and a built-in Huffman encoder, so the files are
-  interchangeable with `chdman`'s, which the interop tests check
+  decoder and written back through `flate2` (`zlib-rs`), `zstd`,
+  `lzma-sdk-rs`, `libflac-sys` and a built-in Huffman encoder, so the files
+  are byte-identical to `chdman`'s, which the interop tests check
+- Added CD CHD writing with `create_cd`, from a CUE sheet, a GDI or an ISO,
+  following `chdman` 0.289's `createcd`: its CUE and GDI parsing, WAV tracks,
+  multisession and GD-ROM layouts, frame padding and track metadata
+- Added CD CHD extraction with `extract_cd`, to a CUE, a GDI or a cdrdao TOC
+  and their BINs, split by track on demand, following `chdman extractcd`
+- Added DVD CHD writing with `create_dvd`
+- Added `cd_input_size`, the total size of the files a CUE, GDI or ISO
+  names, which `create_cd` reports progress against
 - Added the `chdrs` CLI, behind the default `cli` feature, in oxyROMon's
-  look: images to CHDs and CHDs back by extension, plus `info` and `verify`
+  look: images to CHDs and CHDs back by extension, plus `info` and `verify`.
+  CUEs and GDIs become CDs, ISOs DVDs, and CD CHDs extract to a CUE and its
+  BINs

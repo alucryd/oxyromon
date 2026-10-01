@@ -25,13 +25,12 @@ const V5_HEADER_SIZE: u32 = 124;
 
 // metadata tags, as big-endian fourcc
 pub(crate) const MTAG_HARD_DISK: u32 = u32::from_be_bytes(*b"GDDD");
-const MTAG_CDROM_OLD: u32 = u32::from_be_bytes(*b"CHCD");
-const MTAG_TRACK: u32 = u32::from_be_bytes(*b"CHTR");
+pub(crate) const MTAG_CDROM_OLD: u32 = u32::from_be_bytes(*b"CHCD");
+pub(crate) const MTAG_TRACK: u32 = u32::from_be_bytes(*b"CHTR");
 pub(crate) const MTAG_TRACK2: u32 = u32::from_be_bytes(*b"CHT2");
-const MTAG_GDROM_OLD: u32 = u32::from_be_bytes(*b"CHGT");
+pub(crate) const MTAG_GDROM_OLD: u32 = u32::from_be_bytes(*b"CHGT");
 pub(crate) const MTAG_GDROM_TRACK: u32 = u32::from_be_bytes(*b"CHGD");
-pub(crate) const MTAG_SESSION: u32 = u32::from_be_bytes(*b"CHSE");
-const MTAG_DVD: u32 = u32::from_be_bytes(*b"DVD ");
+pub(crate) const MTAG_DVD: u32 = u32::from_be_bytes(*b"DVD ");
 const MTAG_LD_VIDEO: u32 = u32::from_be_bytes(*b"AVAV");
 const MTAG_LD_DISC: u32 = u32::from_be_bytes(*b"AVLD");
 
@@ -539,7 +538,8 @@ impl Chd {
         Ok(entries)
     }
 
-    fn read_hunk(&mut self, hunknum: u32, dest: &mut [u8]) -> Result<()> {
+    /// Reads one whole hunk, past the logical end included.
+    pub(crate) fn read_hunk(&mut self, hunknum: u32, dest: &mut [u8]) -> Result<()> {
         if hunknum >= self.hunk_count || dest.len() != self.hunk_bytes as usize {
             return Err(Error::Corrupt(format!("invalid hunk {hunknum}")));
         }
@@ -843,19 +843,13 @@ impl Chd {
         }
     }
 
+    /// The tracks a CD's table of contents holds, whichever of its metadata
+    /// forms describes it; 0 for anything but a CD.
     fn track_count(&self) -> usize {
-        self.metadata
-            .iter()
-            .map(|entry| match entry.tag {
-                MTAG_TRACK => 1,
-                MTAG_TRACK2 => entry
-                    .data
-                    .split(|byte| *byte == b'\n')
-                    .filter(|line| line.starts_with(b"TRACK:"))
-                    .count(),
-                _ => 0,
-            })
-            .sum()
+        if self.detect_type() != ChdType::Cd {
+            return 0;
+        }
+        crate::cdrom::toc_from_chd(self).map_or(0, |toc| toc.numtrks)
     }
 }
 

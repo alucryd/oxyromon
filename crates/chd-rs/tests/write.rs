@@ -68,6 +68,136 @@ fn write_image(path: &Path, kind: &str) -> Vec<u8> {
     image
 }
 
+/// Hard disk CHDs are byte-identical to `chdman createhd`'s, for the codecs
+/// whose output does not hang on the compression library chdman links (see
+/// `tests/cd.rs`).
+#[test]
+fn hard_disks_match_chdman_byte_for_byte() {
+    let Some(chdman) = chdman_binary() else {
+        eprintln!("skipping: no chdman binary found (set $CHDMAN)");
+        return;
+    };
+    for kind in ["zeros", "pattern", "random"] {
+        for codecs in ["none", "zstd", "huff", "lzma", "lzma,huff,flac"] {
+            let dir = tempfile::tempdir().unwrap();
+            let image = dir.path().join("image.bin");
+            write_image(&image, kind);
+            let theirs = dir.path().join("theirs.chd");
+            expect_ok(
+                chdman.as_path(),
+                &[
+                    "createhd",
+                    "-i",
+                    &image.to_string_lossy(),
+                    "-o",
+                    &theirs.to_string_lossy(),
+                    "-c",
+                    codecs,
+                ],
+            );
+            expect_ok(
+                Path::new(env!("CARGO_BIN_EXE_chdrs")),
+                &["-c", codecs, &image.to_string_lossy()],
+            );
+            assert!(
+                std::fs::read(dir.path().join("image.chd")).unwrap()
+                    == std::fs::read(&theirs).unwrap(),
+                "the {kind} image with {codecs} differs from chdman's"
+            );
+        }
+    }
+}
+
+/// chdman never clears its work buffer, a ring of 256 hunks, so the end of
+/// a last hunk the image only partly fills holds the data of 256 hunks
+/// before, or the parent's when cloning; it is hashed and compressed with
+/// the rest, and our CHDs carry the same bytes.
+#[test]
+fn partial_last_hunks_match_chdman_byte_for_byte() {
+    let Some(chdman) = chdman_binary() else {
+        eprintln!("skipping: no chdman binary found (set $CHDMAN)");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let path = |name: &str| dir.path().join(name).to_string_lossy().into_owned();
+    let mut parent = vec![0u8; 280 * 4096 + 1024];
+    fill(&mut parent, 7);
+    for (i, byte) in parent.iter_mut().enumerate() {
+        // compressible, so codecs have a choice to make
+        if (i / 8192) % 2 == 0 {
+            *byte = (i % 97) as u8;
+        }
+    }
+    let mut child = parent.clone();
+    child.resize(300 * 4096 + 2048, 0x5a);
+    child[5000..5100].fill(0xff);
+    std::fs::write(path("parent.bin"), &parent).unwrap();
+    std::fs::write(path("child.bin"), &child).unwrap();
+    for codecs in ["none", "zstd", "lzma"] {
+        for name in ["parent", "child"] {
+            let (input, ours, theirs) = (
+                path(&format!("{name}.bin")),
+                path(&format!("{name}.chd")),
+                path(&format!("theirs-{name}.chd")),
+            );
+            let parent_chd = path("theirs-parent.chd");
+            let _ = std::fs::remove_file(&ours);
+            let _ = std::fs::remove_file(&theirs);
+            let mut chdman_args = vec!["createhd", "-i", &input, "-o", &theirs, "-c", codecs];
+            let mut chdrs_args = vec!["-c", codecs];
+            if name == "child" {
+                chdman_args.extend(["-op", &parent_chd]);
+                chdrs_args.extend(["-p", &parent_chd]);
+            }
+            chdrs_args.push(&input);
+            expect_ok(chdman.as_path(), &chdman_args);
+            expect_ok(Path::new(env!("CARGO_BIN_EXE_chdrs")), &chdrs_args);
+            assert!(
+                std::fs::read(&ours).unwrap() == std::fs::read(&theirs).unwrap(),
+                "the {name} with {codecs} differs from chdman's"
+            );
+        }
+    }
+}
+
+/// DVD CHDs, from an ISO, are byte-identical to `chdman createdvd`'s.
+#[test]
+fn dvds_match_chdman_byte_for_byte() {
+    let Some(chdman) = chdman_binary() else {
+        eprintln!("skipping: no chdman binary found (set $CHDMAN)");
+        return;
+    };
+    for kind in ["zeros", "pattern", "random"] {
+        for codecs in ["none", "zstd,huff", "lzma"] {
+            let dir = tempfile::tempdir().unwrap();
+            let image = dir.path().join("image.iso");
+            write_image(&image, kind);
+            let theirs = dir.path().join("theirs.chd");
+            expect_ok(
+                chdman.as_path(),
+                &[
+                    "createdvd",
+                    "-i",
+                    &image.to_string_lossy(),
+                    "-o",
+                    &theirs.to_string_lossy(),
+                    "-c",
+                    codecs,
+                ],
+            );
+            expect_ok(
+                Path::new(env!("CARGO_BIN_EXE_chdrs")),
+                &["-c", codecs, &image.to_string_lossy()],
+            );
+            assert!(
+                std::fs::read(dir.path().join("image.chd")).unwrap()
+                    == std::fs::read(&theirs).unwrap(),
+                "the {kind} DVD with {codecs} differs from chdman's"
+            );
+        }
+    }
+}
+
 #[test]
 fn chdman_reads_what_we_write() {
     let Some(chdman) = chdman_binary() else {

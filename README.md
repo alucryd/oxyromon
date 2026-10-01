@@ -225,10 +225,10 @@ ZIP_ZSTD_COMPRESSION_LEVEL = 19
 
 These should be in your `${PATH}` for extra features.
 
-- [chdman](https://www.mamedev.org/release.html): CHD support
+- [chdman](https://www.mamedev.org/release.html): LaserDisc CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
 
-CSO/ZSO support is built in via xso-rs, GDI support via gdi-rs, XDELTA support via xdelta-rs, and BPS and IPS support via xps-rs, all in `crates/`. 7Z and ZIP support is built in via sevenz-rust2 and zip, and RVZ and WBFS support via nod.
+CHD support is built in via chd-rs, except for LaserDiscs, CSO/ZSO support via xso-rs, GDI support via gdi-rs, XDELTA support via xdelta-rs, and BPS and IPS support via xps-rs, all in `crates/`. 7Z and ZIP support is built in via sevenz-rust2 and zip, and RVZ and WBFS support via nod.
 
 NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 
@@ -599,8 +599,6 @@ Supported ROM formats:
 - ISO <-> RVZ (Modern Dolphin format)
 
 Note: CHD will be extracted to their original split CUE/BIN where applicable.
-
-Warning: CHD for Dreamcast requires at least chdman 0.264
 
     Usage: oxyromon convert-roms [OPTIONS]
 

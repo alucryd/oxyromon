@@ -1,7 +1,6 @@
 use super::archive;
 use super::archive::{ArchiveCompression, AsArchive, ToArchive};
-use super::chdman;
-use super::chdman::{ChdType, ToChd, ToRdsk, ToRiff};
+use super::chd::{ChdType, ToChd, ToRdsk, ToRiff};
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -23,7 +22,6 @@ use indexmap::map::IndexMap;
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::mem::drop;
 use std::path::PathBuf;
@@ -108,35 +106,15 @@ pub async fn main(
         get_canonicalized_path(matches.get_one::<String>("DIRECTORY").unwrap()).await?;
     create_directory(progress_bar, &destination_directory, true).await?;
 
-    let available = match format.as_str() {
-        "CHD" => tool_available(chdman::get_version, "chdman", progress_bar).await,
-        "7Z" | "CSO" | "GDI" | "ISO" | "NSZ" | "ORIGINAL" | "RVZ" | "WBFS" | "ZIP" | "ZSO" => true,
-        _ => bail!("Not supported"),
-    };
-    if !available {
-        return Ok(());
+    if !matches!(
+        format.as_str(),
+        "7Z" | "CHD" | "CSO" | "GDI" | "ISO" | "NSZ" | "ORIGINAL" | "RVZ" | "WBFS" | "ZIP" | "ZSO"
+    ) {
+        bail!("Not supported");
     }
 
     for system in systems {
         print_header(progress_bar, &format!("Processing \"{}\"", system.name));
-
-        if format == "CHD"
-            && system.name.contains("Dreamcast")
-            && chdman::get_version()
-                .await?
-                .as_str()
-                .cmp(chdman::MIN_DREAMCAST_VERSION)
-                == Ordering::Less
-        {
-            print_warning(
-                progress_bar,
-                &format!(
-                    "chdman {} or newer required for Dreamcast games",
-                    chdman::MIN_DREAMCAST_VERSION
-                ),
-            );
-            continue;
-        }
 
         if format == "GDI" && !system.name.contains("Dreamcast") {
             print_warning(
@@ -406,22 +384,6 @@ async fn to_archive(
         let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
-                if chd_romfile.track_count > 1
-                    && chdman::get_version()
-                        .await?
-                        .as_str()
-                        .cmp(chdman::MIN_SPLITBIN_VERSION)
-                        == Ordering::Less
-                {
-                    print_warning(
-                        progress_bar,
-                        &format!(
-                            "chdman {} or newer required for splitbin support",
-                            chdman::MIN_SPLITBIN_VERSION
-                        ),
-                    );
-                    continue;
-                }
                 let cue_rom = cue_roms.first().unwrap();
                 let cue_romfile = romfiles_by_id
                     .get(&cue_rom.romfile_id.unwrap())
@@ -1145,10 +1107,6 @@ async fn to_gdi(
 
     // export CHDs
     for roms in chds.values() {
-        if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: chdman");
-            break;
-        }
         let tmp_directory = create_tmp_directory(connection).await?;
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
@@ -1166,22 +1124,6 @@ async fn to_gdi(
 
         // Only convert CD-type CHDs (Dreamcast games)
         if chd_romfile.chd_type == ChdType::Cd {
-            if chd_romfile.track_count > 1
-                && chdman::get_version()
-                    .await?
-                    .as_str()
-                    .cmp(chdman::MIN_SPLITBIN_VERSION)
-                    == Ordering::Less
-            {
-                print_warning(
-                    progress_bar,
-                    &format!(
-                        "chdman {} or newer required for splitbin support",
-                        chdman::MIN_SPLITBIN_VERSION
-                    ),
-                );
-                continue;
-            }
             let cue_romfile = match cue_roms.first() {
                 Some(cue_rom) => Some(
                     romfiles_by_id
@@ -1599,10 +1541,6 @@ async fn to_iso(
 
     // export CHDs
     for roms in chds.values() {
-        if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: chdman");
-            break;
-        }
         if roms.len() > 2 {
             continue;
         }
@@ -1765,10 +1703,6 @@ async fn to_original(
 
     // export CHDs
     for roms in chds.values() {
-        if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: chdman");
-            break;
-        }
         let (cue_roms, bin_roms): (Vec<&Rom>, Vec<&Rom>) = roms
             .iter()
             .partition(|rom| rom.name.ends_with(CUE_EXTENSION));
@@ -1784,22 +1718,6 @@ async fn to_original(
         let chd_romfile = romfile_as_chd(connection, romfile).await?;
         match chd_romfile.chd_type {
             ChdType::Cd => {
-                if chd_romfile.track_count > 1
-                    && chdman::get_version()
-                        .await?
-                        .as_str()
-                        .cmp(chdman::MIN_SPLITBIN_VERSION)
-                        == Ordering::Less
-                {
-                    print_warning(
-                        progress_bar,
-                        &format!(
-                            "chdman {} or newer required for splitbin support",
-                            chdman::MIN_SPLITBIN_VERSION
-                        ),
-                    );
-                    continue;
-                }
                 let cue_romfile = match cue_roms.first() {
                     Some(cue_rom) => Some(
                         romfiles_by_id

@@ -4,7 +4,7 @@
 
 mod archive;
 mod benchmark;
-mod chdman;
+mod chd;
 mod check_roms;
 mod common;
 mod config;

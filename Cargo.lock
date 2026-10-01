@@ -720,8 +720,8 @@ dependencies = [
  "flate2",
  "indicatif",
  "libflac-sys",
- "liblzma-sys",
  "lzma-rs",
+ "lzma-sdk-rs",
  "sha1 0.11.0",
  "tempfile",
  "thiserror 2.0.20",
@@ -2492,6 +2492,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lzma-sdk-rs"
+version = "0.2301.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bcd2b73b761b866258ca43401fa0d3119f54fbff51132539e8d1d2b05a73a53"
+
+[[package]]
 name = "macro_rules_attribute"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2789,6 +2795,7 @@ dependencies = [
  "async-stream",
  "axum",
  "cfg-if",
+ "chd-rs",
  "chrono",
  "clap",
  "console",

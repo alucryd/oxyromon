@@ -1,5 +1,5 @@
 use super::archive;
-use super::chdman;
+use super::chd;
 use super::ctrtool;
 use super::database::*;
 use super::download_dats::find_redump_systems;
@@ -241,7 +241,7 @@ impl QueryRoot {
     async fn dependencies(&self) -> Result<Vec<Dependency>> {
         let mut deps = vec![
             ("sevenz-rust2", archive::get_version().await),
-            ("chdman", chdman::get_version().await),
+            ("chd-rs", chd::get_version().await),
             ("ctrtool", ctrtool::get_version().await),
             ("xps-rs", xps::get_version().await),
             ("xso-rs", xso::get_version().await),

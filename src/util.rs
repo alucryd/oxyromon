@@ -13,7 +13,6 @@ use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::ffi::OsStr;
-use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use tempfile::TempDir;
@@ -299,20 +298,6 @@ pub async fn run_tool(command: &mut tokio::process::Command) -> Result<std::proc
         bail!("{}", String::from_utf8_lossy(&output.stderr));
     }
     Ok(output)
-}
-
-pub async fn tool_available<F, Fut>(check: F, name: &str, progress_bar: &ProgressBar) -> bool
-where
-    F: FnOnce() -> Fut,
-    Fut: Future<Output = Result<String>>,
-{
-    match check().await {
-        Ok(_) => true,
-        Err(_) => {
-            print_error(progress_bar, &format!("Required tool not found: {}", name));
-            false
-        }
-    }
 }
 
 pub async fn tool_version(

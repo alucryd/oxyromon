@@ -5,19 +5,18 @@ use super::model::*;
 use super::progress::*;
 use super::util::*;
 use anyhow::{Context, Result, bail};
+use chd_rs::Chd;
 use indicatif::ProgressBar;
-use regex::Regex;
 use sqlx::SqliteConnection;
 use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
 use strum::{Display, EnumString, VariantNames};
 use tokio::process::Command;
 
+/// LaserDiscs are the one CHD type chd-rs does not handle yet, so they
+/// still go through chdman.
 const CHDMAN: &str = "chdman";
 
 pub const CHD_HUNK_SIZE_RANGE: [usize; 2] = [16, 1048576];
-pub const MIN_DREAMCAST_VERSION: &str = "0.264";
-pub const MIN_SPLITBIN_VERSION: &str = "0.265";
 
 #[derive(Display, PartialEq, EnumString, VariantNames)]
 #[strum(serialize_all = "lowercase")]
@@ -57,8 +56,6 @@ pub enum ChdLdCompressionAlgorithm {
     None,
     Avhu,
 }
-
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+").unwrap());
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ChdType {
@@ -554,84 +551,37 @@ pub trait AsChd {
 
 impl AsChd for CommonRomfile {
     async fn parse_chd(&self) -> Result<(ChdType, u64, String, String, Option<String>, usize)> {
-        let output = run_tool(Command::new(CHDMAN).arg("info").arg("-i").arg(&self.path)).await?;
-
-        let stdout = String::from_utf8(output.stdout).unwrap();
-
-        let metadata: &str = stdout
-            .lines()
-            .find(|&line| line.starts_with("Metadata:"))
-            .unwrap();
-
-        let sha1 = stdout
-            .lines()
-            .find(|&line| line.starts_with("SHA1:"))
-            .unwrap()
-            .split(":")
-            .last()
-            .unwrap()
-            .trim()
-            .to_string();
-
-        let parent_sha1 = stdout
-            .lines()
-            .find(|&line| line.starts_with("Parent SHA1:"))
-            .map(|line| line.split(":").last().unwrap().trim().to_string());
-
-        if metadata.contains("CHCD")
-            || metadata.contains("CHGD")
-            || metadata.contains("CHGT")
-            || metadata.contains("CHT2")
-            || metadata.contains("CHTR")
-        {
-            let track_count = stdout
-                .lines()
-                .filter(|&line| line.trim().starts_with("TRACK:"))
-                .count();
-            return Ok((
+        let path = self.path.clone();
+        let info = tokio::task::spawn_blocking(move || Chd::open(&path).map(|chd| chd.info()))
+            .await
+            .context("Failed to read CHD")?
+            .with_context(|| format!("Failed to open \"{}\"", self.path.display()))?;
+        let hex = |sha1: Option<[u8; 20]>| sha1.map(|sha1| chd_rs::sha1_hex(&sha1));
+        let sha1 = hex(info.sha1).unwrap_or_default();
+        let parent_sha1 = hex(info.parent_sha1);
+        Ok(match info.chd_type {
+            // a CD has no single size or hash, only its tracks do
+            chd_rs::ChdType::Cd => (
                 ChdType::Cd,
                 0,
                 String::new(),
                 sha1,
                 parent_sha1,
-                track_count,
-            ));
-        }
-
-        let size: u64 = stdout
-            .lines()
-            .find(|&line| line.starts_with("Logical size:"))
-            .unwrap()
-            .split(":")
-            .last()
-            .unwrap()
-            .trim()
-            .split(" ")
-            .next()
-            .unwrap()
-            .replace(",", "")
-            .parse()
-            .context("Failed to parse size")?;
-        let data_sha1 = stdout
-            .lines()
-            .find(|&line| line.starts_with("Data SHA1:"))
-            .unwrap()
-            .split(":")
-            .last()
-            .unwrap()
-            .trim()
-            .to_string();
-
-        if metadata.contains("DVD") {
-            return Ok((ChdType::Dvd, size, data_sha1, sha1, parent_sha1, 1));
-        }
-        if metadata.contains("GDDD") || metadata.contains("GDDI") {
-            return Ok((ChdType::Hd, size, data_sha1, sha1, parent_sha1, 1));
-        }
-        if metadata.contains("AVAV") || metadata.contains("AVLD") {
-            return Ok((ChdType::Ld, size, data_sha1, sha1, parent_sha1, 1));
-        }
-        bail!("Unknown CHD type");
+                info.track_count,
+            ),
+            chd_type => (
+                match chd_type {
+                    chd_rs::ChdType::Dvd => ChdType::Dvd,
+                    chd_rs::ChdType::Ld => ChdType::Ld,
+                    _ => ChdType::Hd,
+                },
+                info.logical_size,
+                hex(info.data_sha1).unwrap_or_default(),
+                sha1,
+                parent_sha1,
+                1,
+            ),
+        })
     }
     async fn as_chd(self) -> Result<ChdRomfile> {
         let mimetype = get_mimetype(&self.path).await?;
@@ -765,33 +715,88 @@ async fn create_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         );
     }
 
-    let mut command = Command::new(CHDMAN);
-    command
-        .arg(match chd_type {
-            ChdType::Cd => "createcd",
-            ChdType::Dvd => "createdvd",
-            ChdType::Hd => "createhd",
-            ChdType::Ld => "createld",
-        })
-        .arg("-i")
-        .arg(romfile_path.as_ref())
-        .arg("-o")
-        .arg(&chd_path);
-    if let Some(hunk_size) = hunk_size {
-        command.arg("--hunksize").arg(hunk_size.to_string());
-    }
-    if !compression_algorithms.is_empty() {
+    if *chd_type == ChdType::Ld {
+        let mut command = Command::new(CHDMAN);
         command
-            .arg("--compression")
-            .arg(compression_algorithms.join(","));
+            .arg("createld")
+            .arg("-i")
+            .arg(romfile_path.as_ref())
+            .arg("-o")
+            .arg(&chd_path);
+        if let Some(hunk_size) = hunk_size {
+            command.arg("--hunksize").arg(hunk_size.to_string());
+        }
+        if !compression_algorithms.is_empty() {
+            command
+                .arg("--compression")
+                .arg(compression_algorithms.join(","));
+        }
+        if let Some(parent_romfile) = parent_romfile {
+            command.arg("-op").arg(&parent_romfile.path);
+        }
+        log::debug!("{:?}", command);
+        run_tool(&mut command).await?;
+    } else {
+        // chdman's defaults: its CD codecs, or those it uses for hard disks
+        let names: Vec<&str> = if compression_algorithms.is_empty() {
+            match chd_type {
+                ChdType::Cd => vec!["cdlz", "cdzl", "cdfl"],
+                _ => vec!["lzma", "zlib", "huff", "flac"],
+            }
+        } else {
+            compression_algorithms.iter().map(String::as_str).collect()
+        };
+        let compression = codecs(&names)?;
+        let input = romfile_path.as_ref().to_path_buf();
+        let output = chd_path.clone();
+        let parent_path = parent_romfile.as_ref().map(|parent| parent.path.clone());
+        let chd_type = *chd_type;
+        let hunk_size = hunk_size.map(|hunk_size| hunk_size as u32);
+        let length = match chd_type {
+            ChdType::Cd => chd_rs::cd_input_size(&input)?,
+            _ => input.metadata()?.len(),
+        };
+        run_blocking(progress_bar, length, move |progress| {
+            let mut parent = parent_path.map(Chd::open).transpose()?;
+            // without a hunk size, chdman takes the parent's or its default
+            let hunk_size = hunk_size
+                .or(parent.as_ref().map(|parent| parent.info().hunk_size))
+                .unwrap_or(match chd_type {
+                    ChdType::Cd => 8 * chd_rs::CD_FRAME_SIZE,
+                    _ => 4096,
+                });
+            match chd_type {
+                ChdType::Cd => chd_rs::create_cd(
+                    &input,
+                    &output,
+                    hunk_size,
+                    compression,
+                    parent.as_mut(),
+                    progress,
+                ),
+                ChdType::Dvd => chd_rs::create_dvd(
+                    &input,
+                    &output,
+                    hunk_size,
+                    compression,
+                    parent.as_mut(),
+                    progress,
+                ),
+                _ => chd_rs::create_hd(
+                    &input,
+                    &output,
+                    512,
+                    hunk_size,
+                    compression,
+                    parent.as_mut(),
+                    None,
+                    progress,
+                ),
+            }
+        })
+        .await
+        .with_context(|| format!("Failed to create \"{}\"", chd_path.display()))?;
     }
-    if let Some(parent_romfile) = parent_romfile {
-        command.arg("-op").arg(&parent_romfile.path);
-    }
-
-    log::debug!("{:?}", command);
-
-    run_tool(&mut command).await?;
 
     stop_action(progress_bar);
 
@@ -817,7 +822,6 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         } else {
             extension.to_owned()
         });
-    let cue_path: Option<PathBuf>;
 
     print_action(
         progress_bar,
@@ -836,54 +840,80 @@ async fn extract_chd<P: AsRef<Path>, Q: AsRef<Path>>(
         );
     }
 
-    let mut command = Command::new(CHDMAN);
-    command
-        .arg(match chd_type {
-            ChdType::Cd => "extractcd",
-            ChdType::Dvd => "extractdvd",
-            ChdType::Hd => "extracthd",
-            ChdType::Ld => "extractld",
+    // the CUE is hidden: a caller keeping the original sheet deletes it
+    let cue_path = (*chd_type == ChdType::Cd).then(|| {
+        destination_directory
+            .as_ref()
+            .join(format!(
+                ".{}",
+                path.as_ref().file_name().unwrap().to_str().unwrap()
+            ))
+            .with_extension(CUE_EXTENSION)
+    });
+
+    if *chd_type == ChdType::Ld {
+        let mut command = Command::new(CHDMAN);
+        command
+            .arg("extractld")
+            .arg("-i")
+            .arg(path.as_ref())
+            .arg("-o")
+            .arg(&bin_path);
+        if let Some(parent_romfile) = parent_romfile {
+            command.arg("-ip").arg(&parent_romfile.path);
+        }
+        log::debug!("{:?}", command);
+        run_tool(&mut command).await?;
+    } else {
+        let input = path.as_ref().to_path_buf();
+        let parent_path = parent_romfile.as_ref().map(|parent| parent.path.clone());
+        let chd = tokio::task::spawn_blocking(move || match parent_path {
+            Some(parent) => Chd::open_with_parent(&input, &parent),
+            None => Chd::open(&input),
         })
-        .arg("-i")
-        .arg(path.as_ref());
-    match chd_type {
-        ChdType::Cd => {
-            cue_path = Some(
-                destination_directory
-                    .as_ref()
-                    .join(format!(
-                        ".{}",
-                        path.as_ref().file_name().unwrap().to_str().unwrap()
-                    ))
-                    .with_extension(CUE_EXTENSION),
-            );
-            command
-                .arg("-o")
-                .arg(cue_path.as_ref().unwrap())
-                .arg("-ob")
-                .arg(&bin_path);
-        }
-        ChdType::Dvd | ChdType::Hd | ChdType::Ld => {
-            cue_path = None;
-            command.arg("-o").arg(&bin_path);
-        }
-    };
-    if let Some(parent_romfile) = parent_romfile {
-        command.arg("-ip").arg(&parent_romfile.path);
+        .await
+        .context("Failed to read CHD")?
+        .with_context(|| format!("Failed to open \"{}\"", path.as_ref().display()))?;
+        let length = chd.info().logical_size;
+        let (bin, cue) = (bin_path.clone(), cue_path.clone());
+        run_blocking(progress_bar, length, move |progress| {
+            let mut chd = chd;
+            match cue {
+                Some(cue) => {
+                    chd_rs::extract_cd(&mut chd, &cue, Some(&bin), split, progress).map(|_| ())
+                }
+                None => chd.extract(&bin, progress),
+            }
+        })
+        .await
+        .with_context(|| format!("Failed to extract \"{}\"", path.as_ref().display()))?;
     }
-    if split {
-        command.arg("-sb");
-    }
-
-    log::debug!("{:?}", command);
-
-    run_tool(&mut command).await?;
 
     stop_action(progress_bar);
 
     Ok((bin_path, cue_path))
 }
 
+/// The codec names, laid out in the four compression slots of a header:
+/// `none` alone leaves them all empty, like chdman.
+fn codecs(names: &[&str]) -> Result<[u32; 4]> {
+    let mut slots = [0u32; 4];
+    if names == ["none"] {
+        return Ok(slots);
+    }
+    if names.len() > 4 {
+        bail!("At most four CHD compression algorithms can be used");
+    }
+    for (slot, name) in slots.iter_mut().zip(names) {
+        let tag: [u8; 4] = name
+            .as_bytes()
+            .try_into()
+            .with_context(|| format!("Invalid CHD compression algorithm \"{name}\""))?;
+        *slot = u32::from_be_bytes(tag);
+    }
+    Ok(slots)
+}
+
 pub async fn get_version() -> Result<String> {
-    tool_version(CHDMAN, "chdman", &[], true, 0, Some(&VERSION_REGEX)).await
+    Ok(String::from("built-in"))
 }
