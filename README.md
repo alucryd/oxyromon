@@ -657,7 +657,8 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
 Purge trashed, missing, and orphan ROM files
 
 This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
-with a ROM, as well as physically deleting all files in the `Trash` subdirectories.
+with a ROM, as well as physically deleting all files in the `Trash` subdirectories. Directories left empty by a purge
+are deleted as well, except for the ROM, system and `Trash` directories.
 
     Usage: oxyromon purge-roms [OPTIONS]
 
