@@ -121,7 +121,8 @@ pub async fn prompt_for_systems_like(
 }
 
 pub fn prompt_for_games(games: Vec<Game>, all: bool) -> Result<Vec<Game>> {
-    if all || games.is_empty() {
+    // a single match leaves nothing to choose, as in prompt_for_game
+    if all || games.len() <= 1 {
         return Ok(games);
     }
 
@@ -288,3 +289,6 @@ pub fn multiselect<T: ToString + std::fmt::Display>(
     }
     multiselect.interact().context("Failed to get user input")
 }
+
+#[cfg(test)]
+mod test_prompt_for_games_single_match;
