@@ -1,14 +1,13 @@
+use super::archive;
 use super::chdman;
 use super::ctrtool;
 use super::database::*;
-use super::dolphin;
 use super::download_dats::find_redump_systems;
-use super::flips;
 use super::model::*;
 use super::nsz;
-use super::sevenzip;
-use super::wit;
-use super::xdelta3;
+use super::rvz;
+use super::xdelta;
+use super::xps;
 use super::xso;
 use async_graphql::dataloader::{DataLoader, Loader};
 use async_graphql::{ComplexObject, Context, Error, Object, Result};
@@ -241,19 +240,16 @@ impl QueryRoot {
 
     async fn dependencies(&self) -> Result<Vec<Dependency>> {
         let mut deps = vec![
-            ("7-zip", sevenzip::get_version().await),
+            ("sevenz-rust2", archive::get_version().await),
             ("chdman", chdman::get_version().await),
             ("ctrtool", ctrtool::get_version().await),
-            ("flips", flips::get_version().await),
+            ("xps-rs", xps::get_version().await),
             ("xso-rs", xso::get_version().await),
             ("nsz-rs", nsz::get_version().await),
-            ("xdelta3", xdelta3::get_version().await),
+            ("xdelta-rs", xdelta::get_version().await),
         ];
-        // RVZ and WBFS share a backend when it is the native one, so list it once
-        deps.push((dolphin::BACKEND_NAME, dolphin::get_version().await));
-        if wit::BACKEND_NAME != dolphin::BACKEND_NAME {
-            deps.push((wit::BACKEND_NAME, wit::get_version().await));
-        }
+        // RVZ and WBFS both come from nod
+        deps.push(("nod", rvz::get_version().await));
         deps.sort_by_key(|(name, _)| *name);
         Ok(deps
             .into_iter()

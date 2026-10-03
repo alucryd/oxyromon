@@ -1,15 +1,9 @@
 use super::common::*;
 use super::mimetype::*;
 use super::progress::*;
-use super::util::*;
 use anyhow::{Result, bail};
-use regex::Regex;
-use std::sync::LazyLock;
-use tokio::process::Command;
-
-const XDELTA3: &str = "xdelta3";
-
-static VERSION_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\d+\.\d+\.\d+").unwrap());
+use indicatif::ProgressBar;
+use std::path::Path;
 
 // patch application is not wired up yet, kept for the planned feature
 #[allow(dead_code)]
@@ -18,20 +12,12 @@ pub struct XdeltaRomfile {
 }
 
 impl Patch for XdeltaRomfile {
-    async fn patch<P: AsRef<std::path::Path>>(
+    async fn patch<P: AsRef<Path>>(
         &self,
-        progress_bar: &indicatif::ProgressBar,
+        progress_bar: &ProgressBar,
         romfile: &CommonRomfile,
         destination_directory: &P,
     ) -> Result<CommonRomfile> {
-        start_action(
-            progress_bar,
-            Some(&format!(
-                "Applying \"{}\"",
-                self.romfile.path.file_name().unwrap().to_str().unwrap()
-            )),
-        );
-
         print_action(
             progress_bar,
             &format!(
@@ -44,26 +30,15 @@ impl Patch for XdeltaRomfile {
             .as_ref()
             .join(romfile.path.file_name().unwrap());
 
-        let output = Command::new(XDELTA3)
-            .arg("-d")
-            .arg("-s")
-            .arg(&romfile.path)
-            .arg(&self.romfile.path)
-            .arg(&path)
-            .output()
-            .await
-            .unwrap_or_else(|_| {
-                panic!(
-                    "Failed to patch \"{}\"",
-                    romfile.path.file_name().unwrap().to_str().unwrap()
-                )
-            });
-
-        if !output.status.success() {
-            bail!("{}", String::from_utf8_lossy(&output.stderr))
-        }
-
-        stop_action(progress_bar);
+        let (source, patch, output) = (
+            romfile.path.clone(),
+            self.romfile.path.clone(),
+            path.clone(),
+        );
+        run_blocking(progress_bar, patch.metadata()?.len(), move |progress| {
+            xdelta_rs::decode(Some(&source), &patch, &output, progress)
+        })
+        .await?;
 
         CommonRomfile::from_path(&path)
     }
@@ -91,8 +66,9 @@ impl AsXdelta for CommonRomfile {
     }
 }
 
+/// Reported by `info`.
 pub async fn get_version() -> Result<String> {
-    tool_version(XDELTA3, "xdelta3", &["-V"], false, 0, Some(&VERSION_REGEX)).await
+    Ok(String::from("built-in"))
 }
 
 #[cfg(test)]

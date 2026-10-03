@@ -1,6 +1,6 @@
 use super::database::*;
 use super::import_dats::reimport_orphan_romfiles;
-use super::iso9660::{FileEntry, Iso9660Filesystem, SECTOR_SIZE, SectorReader};
+use super::iso::iso9660::{FileEntry, Iso9660Filesystem, SECTOR_SIZE, SectorReader};
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;

@@ -1,3 +1,5 @@
+use super::archive;
+use super::archive::{ArchiveFile, AsArchive};
 use super::chdman;
 use super::chdman::{AsChd, ChdType};
 use super::common::*;
@@ -5,15 +7,12 @@ use super::config::*;
 use super::convert_roms::{ConvertOpts, convert_system};
 use super::ctrtool;
 use super::database::*;
-use super::dolphin;
-use super::dolphin::AsRvz;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip;
-use super::sevenzip::{ArchiveFile, AsArchive};
+use super::rvz::AsRvz;
 use super::util::*;
 use super::xso::AsXso;
 use anyhow::{Result, bail};
@@ -458,10 +457,6 @@ pub async fn import_rom<P: AsRef<Path>>(
     };
 
     if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) && !as_is {
-        if sevenzip::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: sevenzip");
-            return Ok((system_ids, game_ids));
-        }
         let (new_system_ids, new_game_ids) = import_archive(
             &mut transaction,
             progress_bar,
@@ -548,10 +543,6 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if RVZ_EXTENSION == extension && !as_is {
-        if dolphin::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: dolphin-tool");
-            return Ok((system_ids, game_ids));
-        }
         if let Some(ids) = import_rvz(
             &mut transaction,
             progress_bar,
@@ -816,12 +807,8 @@ async fn import_archive(
     let archive_romfiles = romfile.as_archive(progress_bar, None).await?;
     let romfiles_count = archive_romfiles.len();
 
-    let mut roms_games_systems_archive_romfiles: Vec<(
-        Rom,
-        Game,
-        System,
-        sevenzip::ArchiveRomfile,
-    )> = vec![];
+    let mut roms_games_systems_archive_romfiles: Vec<(Rom, Game, System, archive::ArchiveRomfile)> =
+        vec![];
     let mut new_system_ids: HashSet<i64> = HashSet::new();
     let mut new_game_ids: HashSet<i64> = HashSet::new();
 

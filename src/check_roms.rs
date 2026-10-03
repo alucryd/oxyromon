@@ -1,15 +1,13 @@
+use super::archive::AsArchive;
 use super::chdman;
 use super::common::*;
 use super::database::*;
-use super::dolphin;
-use super::dolphin::AsRvz;
 use super::mimetype::*;
 use super::model::*;
 use super::nsz::AsNsz;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip;
-use super::sevenzip::AsArchive;
+use super::rvz::AsRvz;
 use super::transcode::romfile_as_chd;
 use super::util::*;
 use super::xso::AsXso;
@@ -149,10 +147,6 @@ async fn check_system(
         );
 
         let result = if ARCHIVE_EXTENSIONS.contains(&romfile_extension) {
-            if sevenzip::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: sevenzip");
-                break;
-            }
             check_archive(
                 &mut transaction,
                 progress_bar,
@@ -186,10 +180,6 @@ async fn check_system(
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await
         } else if RVZ_EXTENSION == romfile_extension {
-            if dolphin::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: dolphin-tool");
-                break;
-            }
             romfile
                 .as_common(&mut transaction)
                 .await?

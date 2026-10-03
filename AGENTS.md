@@ -34,9 +34,9 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 │    prompt.rs    – interactive selection helpers       │
 ├─────────────────────────────────────────────────────┤
 │  Format-specific modules:                           │
-│    sevenzip.rs, chdman.rs, xso.rs, dolphin.rs,      │
-│    nsz.rs, wit.rs, ctrtool.rs, flips.rs, xdelta3.rs,│
-│    bchunk.rs, gdi.rs, crc32.rs                      │
+│    archive.rs, rvz.rs, wbfs.rs, iso.rs, xso.rs,     │
+│    nsz.rs, gdi.rs, xdelta.rs, xps.rs, chdman.rs,    │
+│    ctrtool.rs, crc32.rs                             │
 ├─────────────────────────────────────────────────────┤
 │  Server modules (behind "server" feature):          │
 │    server.rs, query.rs, mutation.rs, validator.rs   │
@@ -65,7 +65,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `check_roms.rs`   | Verifies ROM integrity by re-hashing and comparing against database records.                                                                                                                                                                                                                               |
 | `rebuild_roms.rs` | Rebuilds arcade ROM sets between merging strategies (split, non-merged, full non-merged).                                                                                                                                                                                                                  |
 | `export_roms.rs`  | Exports ROMs to various formats without modifying the originals.                                                                                                                                                                                                                                           |
-| `sevenzip.rs`     | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits. Shells out to the `7zz`/`7z` executable.                                                                                                                                                                         |
+| `archive.rs`      | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits, backed by the sevenz-rust2 and zip crates. Renames, deletes and appends copy what the archive holds raw rather than re-encoding it.                                                                                                    |
 | `chdman.rs`       | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits. Shells out to `chdman`.                                                                                                                                                                                                          |
 | `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
@@ -74,7 +74,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 
 ### Format-Specific Module Pattern
 
-Each external tool module (e.g., `chdman.rs`, `sevenzip.rs`, `dolphin.rs`) follows the same pattern:
+Each external tool module (`chdman.rs`, `ctrtool.rs`) follows the same pattern; the built-in formats (`archive.rs`, `rvz.rs`, `wbfs.rs`, `iso.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`, `xps.rs`) keep steps 1–3, call their crate instead of step 4, and return `"built-in"` from `get_version()`:
 
 1. Define a struct wrapping `CommonRomfile` (e.g., `ChdRomfile`, `ArchiveRomfile`).
 2. Implement `Size`, `HashAndSize`, and `Check` traits for integrity verification.
@@ -191,6 +191,8 @@ upstream's license:
 | -------- | ------------------------------------------- | ------- | ------- | -------------------- |
 | `gdi-rs` | [gdidrop](https://github.com/ElektroStudios/gdidrop-Dreamcast-Redump-Tool) | `gdirs` | BSD-2-Clause | GDI            |
 | `nsz-rs` | [nsz](https://github.com/nicoboss/nsz)       | `nszrs` | MIT     | NSZ                  |
+| `xdelta-rs` | [xdelta3](https://github.com/jmacd/xdelta) | `xdeltars` | Apache-2.0 | XDELTA patches |
+| `xps-rs` | [Flips](https://github.com/Alcaro/Flips) | `xpsrs` | GPL-3.0-or-later | IPS and BPS patches |
 | `xso-rs` | [maxcso](https://github.com/unknownbrackets/maxcso) | `xsors` | ISC     | CSO/ZSO              |
 
 `frontend/` and `desktop/` are *not* members: they declare their own
@@ -214,7 +216,7 @@ Every crate follows these, and a new one should too:
 - **Errors** are a `thiserror` enum `Error` with a `Result<T>` alias. Shared
   variants keep shared wording: `Io` ("io error: …"), `BadMagic { expected,
   found }`, `Unsupported` ("unsupported format: …"), `Corrupt` ("corrupt
-  data: …").
+  data: …"), and for the patch crates `WrongSource` ("wrong source: …").
 - **CLIs** share one shape and one look: `<cli> [OPTIONS] <INPUT>...`, each
   input converted in the direction its extension implies, `-o DIR` defaulting
   to next to each input, oxyROMon's progress bar, and a `✔`/`✖` line per input,
@@ -223,7 +225,7 @@ Every crate follows these, and a new one should too:
   `src/bin/<cli>/ui.rs`, identical in every crate, which `tests/crates.rs`
   checks: change them all together. They use clap's builder
   API, as oxyromon does. A flag means the same in every tool that has it
-  (`-o DIR`, `-b SIZE` in bytes), and short forms are lowercase, for common
+  (`-o DIR`, `-b SIZE` in bytes, and for the patch tools `-s FILE`, the source), and short forms are lowercase, for common
   options only.
 - **Tests** check against the reference implementation, by known-answer
   vectors or by running the upstream tool, and skip rather than fail when it is
@@ -238,7 +240,7 @@ Every crate follows these, and a new one should too:
   alongside oxyromon.
 
 ```sh
-cargo build --release -p gdi-rs -p nsz-rs -p xso-rs  # the CLIs
+cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the CLIs
 cargo test -p xso-rs                           # one crate
 cargo test --release -p xso-rs -- --ignored    # its slow tests
 ```
@@ -307,7 +309,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `dolphin-emu`, `mame-tools` (for chdman), `wit`, `xdelta3`
+- Installs system dependencies: `mame-tools` (for chdman), and `xdelta3`, only for the xdelta-rs tests that compare against it
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`
@@ -628,7 +630,7 @@ All helpers require `use super::progress::*;` (or `use crate::progress::*;`) in 
 ### File Organization
 
 - Subcommand modules: `src/<command_name>.rs` with tests in `src/<command_name>/test_*.rs`
-- Format modules: `src/<tool_name>.rs` (e.g., `chdman.rs`, `sevenzip.rs`)
+- Format modules: named after the tool while oxyromon still runs one (`chdman.rs`), after the format once it is built in (`rvz.rs`, `archive.rs`)
 - Shared infrastructure: `src/database.rs`, `src/model.rs`, `src/common.rs`, `src/config.rs`, `src/util.rs`
 
 ### Frontend (Leptos)

@@ -9,6 +9,10 @@ use anyhow::{Context, Result};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::collections::HashSet;
+use std::io::ErrorKind;
+use std::path::{Path, PathBuf};
+use tokio::fs;
 use walkdir::WalkDir;
 
 pub fn subcommand() -> Command {
@@ -82,6 +86,55 @@ pub async fn main(
     Ok(())
 }
 
+/// The directories a purge never removes, even when it empties them: the ROM
+/// directory, every system directory and every trash directory.
+async fn get_kept_directories(connection: &mut SqliteConnection) -> Result<HashSet<PathBuf>> {
+    let mut kept_directories = HashSet::from([
+        get_rom_directory(connection).await,
+        get_trash_directory(connection, None).await?,
+    ]);
+    for system in find_systems(connection).await {
+        kept_directories.insert(get_system_directory(connection, &system).await?);
+        kept_directories.insert(get_trash_directory(connection, Some(&system)).await?);
+    }
+    Ok(kept_directories)
+}
+
+/// Deletes the directories a purge left empty, walking up from `directory` like
+/// sort-roms does after a move, until a kept or non-empty directory. Directories
+/// that no longer exist are walked past.
+async fn remove_empty_directories(
+    directory: &Path,
+    kept_directories: &HashSet<PathBuf>,
+) -> Result<()> {
+    let mut directory = Some(directory);
+    while let Some(dir) = directory {
+        // never delete a kept directory, even an empty one
+        if kept_directories.contains(dir) {
+            break;
+        }
+        // never leave the kept directories: a stale path can point outside of them,
+        // and starts_with is also true for a kept directory itself, hence both checks
+        if !kept_directories.iter().any(|kept| dir.starts_with(kept)) {
+            break;
+        }
+        match fs::remove_dir(dir).await {
+            Ok(()) => {}
+            // already gone, e.g. a game directory deleted by hand before --missing
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            // not empty: stop climbing. remove_dir cannot recurse, so a file written
+            // concurrently ends the walk instead of being deleted with the directory
+            Err(error) if error.kind() == ErrorKind::DirectoryNotEmpty => break,
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("Failed to delete \"{}\"", dir.display()));
+            }
+        }
+        directory = dir.parent();
+    }
+    Ok(())
+}
+
 async fn purge_missing_romfiles(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -89,11 +142,16 @@ async fn purge_missing_romfiles(
     print_subheader(progress_bar, "Processing missing ROM files");
 
     let romfiles = find_romfiles(connection).await;
+    let kept_directories = get_kept_directories(connection).await?;
     let mut count = 0;
 
     for romfile in romfiles {
-        if !romfile.as_common(connection).await?.path.is_file() {
+        let path = romfile.as_common(connection).await?.path;
+        if !path.is_file() {
             delete_romfile_by_id(connection, romfile.id).await;
+            if let Some(directory) = path.parent() {
+                remove_empty_directories(directory, &kept_directories).await?;
+            }
             count += 1;
         }
     }
@@ -126,16 +184,18 @@ async fn purge_romfiles(
         }
 
         if answer_yes || confirm(true)? {
+            let kept_directories = get_kept_directories(connection).await?;
             let mut transaction = begin_transaction(connection).await;
 
             for romfile in &romfiles {
-                if romfile.as_common(&mut transaction).await?.path.is_file() {
-                    romfile
-                        .as_common(&mut transaction)
-                        .await?
-                        .delete(progress_bar, false)
-                        .await?;
+                let common_romfile = romfile.as_common(&mut transaction).await?;
+                if common_romfile.path.is_file() {
+                    let path = common_romfile.path.clone();
+                    common_romfile.delete(progress_bar, false).await?;
                     delete_romfile_by_id(&mut transaction, romfile.id).await;
+                    if let Some(directory) = path.parent() {
+                        remove_empty_directories(directory, &kept_directories).await?;
+                    }
                     count += 1;
                 }
             }
@@ -162,6 +222,7 @@ async fn purge_foreign_romfiles(
     print_subheader(progress_bar, "Processing foreign ROM files");
     let rom_directory = get_rom_directory(connection).await;
     let walker = WalkDir::new(&rom_directory).into_iter();
+    let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
     let mut count = 0;
     for entry in walker.filter_map(|e| e.ok()) {
         if entry.path().is_file() {
@@ -182,10 +243,18 @@ async fn purge_foreign_romfiles(
                 );
                 if answer_yes || confirm(true)? {
                     remove_file(progress_bar, &entry.path(), false).await?;
+                    if let Some(directory) = entry.path().parent() {
+                        emptied_directories.insert(directory.to_path_buf());
+                    }
                     count += 1;
                 }
             }
         }
+    }
+    // once the walk is over, so that no directory is deleted while being read
+    let kept_directories = get_kept_directories(connection).await?;
+    for directory in &emptied_directories {
+        remove_empty_directories(directory, &kept_directories).await?;
     }
     if count > 0 {
         print_success(
@@ -202,8 +271,14 @@ async fn purge_foreign_romfiles(
 #[cfg(test)]
 mod test_foreign;
 #[cfg(test)]
+mod test_foreign_subfolder;
+#[cfg(test)]
 mod test_missing;
 #[cfg(test)]
+mod test_missing_subfolder;
+#[cfg(test)]
 mod test_orphans;
+#[cfg(test)]
+mod test_orphans_subfolder;
 #[cfg(test)]
 mod test_trashed;
