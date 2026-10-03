@@ -290,7 +290,20 @@ impl ToArchive for CommonRomfile {
                 ArchiveType::Zip => ZIP_EXTENSION,
             }
         ));
-        let path = self.path.strip_prefix(working_directory).unwrap();
+        let path = self
+            .path
+            .strip_prefix(working_directory.as_ref())
+            .with_context(|| {
+                format!(
+                    "\"{}\" is not in \"{}\"",
+                    self.path.display(),
+                    working_directory.as_ref().display()
+                )
+            })?;
+        let entry_name = path
+            .to_str()
+            .with_context(|| format!("\"{}\" is not valid UTF-8", path.display()))?
+            .to_string();
 
         create(
             &archive_path,
@@ -306,7 +319,7 @@ impl ToArchive for CommonRomfile {
 
         Ok(ArchiveRomfile {
             romfile: CommonRomfile::from_path(&archive_path)?,
-            path: path.as_os_str().to_str().unwrap().to_string(),
+            path: entry_name,
             archive_type: *archive_type,
             size: 0,
             crc: String::new(),
@@ -412,45 +425,51 @@ pub async fn copy_files_between_archives<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> Result<()> {
     start_action(progress_bar, Some("Copying files between archives"));
 
-    let source_archive_file =
-        File::open(source_archive_path.as_ref()).expect("Failed to read archive");
-    let mut source_archive = ZipArchive::new(source_archive_file).expect("Failed to open archive");
-
-    let destination_archive_file: File;
-    let mut destination_archive: ZipWriter<File>;
-    if destination_archive_path.as_ref().is_file() {
-        destination_archive_file = OpenOptions::new()
+    let source_path = source_archive_path.as_ref();
+    let destination_path = destination_archive_path.as_ref();
+    let mut source_archive = open_zip(source_path)?;
+    let mut destination_archive = if destination_path.is_file() {
+        let file = OpenOptions::new()
             .read(true)
             .write(true)
-            .open(destination_archive_path.as_ref())
-            .expect("Failed to open archive");
-        destination_archive =
-            ZipWriter::new_append(destination_archive_file).expect("Failed to open archive");
+            .open(destination_path)
+            .with_context(|| format!("Failed to open \"{}\"", destination_path.display()))?;
+        ZipWriter::new_append(file)
+            .with_context(|| format!("Failed to open \"{}\"", destination_path.display()))?
     } else {
-        destination_archive_file =
-            File::create(destination_archive_path.as_ref()).expect("Failed to create archive");
-        destination_archive = ZipWriter::new(destination_archive_file);
+        let file = File::create(destination_path)
+            .with_context(|| format!("Failed to create \"{}\"", destination_path.display()))?;
+        ZipWriter::new(file)
     };
 
     for (&source_name, &destination_name) in zip(source_names, destination_names) {
-        if source_name == destination_name {
+        let entry = source_archive.by_name(source_name).with_context(|| {
+            format!(
+                "Failed to find \"{}\" in \"{}\"",
+                source_name,
+                source_path.display()
+            )
+        })?;
+        let copied = if source_name == destination_name {
             print_action(progress_bar, &format!("Copying \"{}\"", source_name));
-            destination_archive
-                .raw_copy_file(source_archive.by_name(source_name).unwrap())
-                .expect("Failed to copy file")
+            destination_archive.raw_copy_file(entry)
         } else {
             print_action(
                 progress_bar,
                 &format!("Copying \"{}\" to \"{}\"", source_name, destination_name),
             );
-            destination_archive
-                .raw_copy_file_rename(
-                    source_archive.by_name(source_name).unwrap(),
-                    destination_name,
-                )
-                .expect("Failed to copy file")
-        }
+            destination_archive.raw_copy_file_rename(entry, destination_name)
+        };
+        copied.with_context(|| format!("Failed to copy \"{}\"", source_name))?;
     }
+
+    // the central directory is only written here; dropping the writer would
+    // swallow a failure to write it and leave a corrupt archive behind
+    destination_archive
+        .finish()
+        .with_context(|| format!("Failed to write \"{}\"", destination_path.display()))?;
+
+    stop_action(progress_bar);
 
     Ok(())
 }
@@ -796,8 +815,12 @@ fn replace(path: &Path, temporary: &Path, kept: usize) -> Result<()> {
     Ok(())
 }
 
+/// Next to `path`, its whole name kept: `game.7z` and `game.zip` in one
+/// directory, rewritten at once, must not share a scratch file.
 fn temporary_path(path: &Path) -> PathBuf {
-    path.with_extension("oxyromon-tmp")
+    let mut name = path.as_os_str().to_os_string();
+    name.push(".oxyromon-tmp");
+    PathBuf::from(name)
 }
 
 fn open_sevenzip(path: &Path) -> Result<Archive> {
@@ -828,13 +851,15 @@ fn is_zstd(archive: &Archive) -> bool {
 
 /// A chunk size of 1 asks LZMA2 for the finest split its dictionary allows.
 fn content_methods(compression: ArchiveCompression) -> Vec<EncoderConfiguration> {
-    vec![match compression {
-        ArchiveCompression::Zstd(level) => ZstandardOptions::from_level(level as u32).into(),
-        ArchiveCompression::Lzma2(level) => {
-            Lzma2Options::from_level_mt(level as u32, threads(), 1).into()
+    let level = match compression {
+        ArchiveCompression::Zstd(level) => {
+            return vec![ZstandardOptions::from_level(level as u32).into()];
         }
-        _ => Lzma2Options::from_level_mt(DEFAULT_COMPRESSION_LEVEL as u32, threads(), 1).into(),
-    }]
+        ArchiveCompression::Lzma2(level) => level,
+        // 7z has no Deflate here, and LZMA2 is what it picks for itself
+        _ => DEFAULT_COMPRESSION_LEVEL,
+    };
+    vec![Lzma2Options::from_level_mt(level as u32, threads(), 1).into()]
 }
 
 #[cfg(test)]

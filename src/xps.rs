@@ -1,24 +1,13 @@
 use super::common::*;
 use super::progress::*;
-use anyhow::{Context, Result};
+use anyhow::{Result, bail};
 use indicatif::ProgressBar;
 use std::path::Path;
-use std::str::FromStr;
-use strum::{Display, EnumString};
 
-// patch application is not wired up yet, kept for the planned feature
-#[allow(dead_code)]
-#[derive(Clone, Copy, Display, EnumString, PartialEq, Eq)]
-#[strum(serialize_all = "lowercase")]
-pub enum XpsType {
-    Bps,
-    Ips,
-}
-
-#[allow(dead_code)]
+/// An IPS or BPS patch; which one is told by xps-rs from its magic, when it
+/// applies it.
 pub struct XpsRomfile {
     pub romfile: CommonRomfile,
-    pub xps_type: XpsType,
 }
 
 impl Patch for XpsRomfile {
@@ -64,20 +53,16 @@ pub trait AsXps {
 
 impl AsXps for CommonRomfile {
     fn as_xps(self) -> Result<XpsRomfile> {
-        let xps_type = XpsType::from_str(
-            &self
-                .path
-                .extension()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_lowercase(),
-        )
-        .context("Not a valid xps")?;
-        Ok(XpsRomfile {
-            romfile: self,
-            xps_type,
-        })
+        let extension = self
+            .path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .unwrap_or_default()
+            .to_lowercase();
+        if !matches!(extension.as_str(), "bps" | "ips") {
+            bail!("Not a valid xps");
+        }
+        Ok(XpsRomfile { romfile: self })
     }
 }
 

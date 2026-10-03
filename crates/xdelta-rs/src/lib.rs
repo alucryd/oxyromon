@@ -1,7 +1,7 @@
 //! xdelta3 patch decoding, part of oxyROMon.
 //!
 //! Applies VCDIFF (RFC 3284) patches as [xdelta3] writes them, which this began
-//! as a port of: its per-window Adler-32 checks, and its LZMA secondary
+//! as a port of, and whose Apache-2.0 license it keeps: its per-window Adler-32 checks, and its LZMA secondary
 //! compression, the default since 3.0. DJW and FGK, which xdelta3 only writes
 //! when asked, are refused, as are code tables of the patch's own and windows
 //! that copy from the target, which xdelta3 does not decode either.

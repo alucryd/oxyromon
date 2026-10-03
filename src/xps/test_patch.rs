@@ -30,7 +30,10 @@ async fn test() {
         .unwrap()
         .as_xps()
         .unwrap();
-    assert!(patch.xps_type == XpsType::Bps);
+    assert_eq!(
+        xps_rs::identify(&patch.romfile.path).unwrap(),
+        xps_rs::Format::Bps
+    );
 
     let dest = dir.path().join("out");
     fs::create_dir(&dest).await.unwrap();
@@ -42,7 +45,7 @@ async fn test() {
     assert_eq!(fs::read(&result.path).await.unwrap(), expected);
     assert!(result.path.starts_with(&dest));
 
-    // an IPS patch is recognised as the Ips variant
+    // an IPS patch is recognised as one
     let ips_path = dir.path().join("patch.ips");
     fs::copy(
         test_directory.join("Test Game (USA, Europe).ips"),
@@ -54,7 +57,10 @@ async fn test() {
         .unwrap()
         .as_xps()
         .unwrap();
-    assert!(ips.xps_type == XpsType::Ips);
+    assert_eq!(
+        xps_rs::identify(&ips.romfile.path).unwrap(),
+        xps_rs::Format::Ips
+    );
 
     // a non-patch extension is rejected
     assert!(

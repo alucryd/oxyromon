@@ -9,18 +9,12 @@ use super::rvz::write_disc;
 use nod::common::Format;
 use nod::write::FormatOptions;
 
-pub struct WbfsRomfile {
-    // kept for consistency with the other format wrappers, not read back after conversion
-    #[allow(dead_code)]
-    romfile: CommonRomfile,
-}
-
 pub trait ToWbfs {
     async fn to_wbfs<P: AsRef<Path>>(
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> Result<WbfsRomfile>;
+    ) -> Result<()>;
 }
 
 impl ToWbfs for IsoRomfile {
@@ -28,7 +22,7 @@ impl ToWbfs for IsoRomfile {
         &self,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> Result<WbfsRomfile> {
+    ) -> Result<()> {
         progress_bar.set_message("Creating wbfs");
 
         let path = destination_directory
@@ -46,8 +40,6 @@ impl ToWbfs for IsoRomfile {
 
         stop_action(progress_bar);
 
-        Ok(WbfsRomfile {
-            romfile: CommonRomfile::from_path(&path)?,
-        })
+        Ok(())
     }
 }
