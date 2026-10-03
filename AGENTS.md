@@ -309,7 +309,7 @@ async fn test() {
 GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 
 - Runs on Ubuntu 26.04
-- Installs system dependencies: `mame-tools` (for chdman)
+- Installs system dependencies: `mame-tools` (for chdman), and `xdelta3`, only for the xdelta-rs tests that compare against it
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
 - Builds with `--release --features server`

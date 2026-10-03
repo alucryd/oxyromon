@@ -3703,7 +3703,7 @@ dependencies = [
 [[package]]
 name = "sevenz-rust2"
 version = "0.23.0"
-source = "git+https://github.com/alucryd/sevenz-rust2?branch=feat%2Fraw-copy#da129b478519f2feb54e40b6556ab360e9c40508"
+source = "git+https://github.com/alucryd/sevenz-rust2?rev=d574d725e717d647c5ae67d3760e8af320920974#d574d725e717d647c5ae67d3760e8af320920974"
 dependencies = [
  "aes 0.9.2",
  "bzip2",
@@ -4258,7 +4258,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand 2.5.0",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",

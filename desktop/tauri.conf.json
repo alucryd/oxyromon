@@ -27,11 +27,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/oxyromon"],
-    "linux": {
-      "deb": {
-        "depends": ["p7zip"]
-      }
-    }
+    "externalBin": ["binaries/oxyromon"]
   }
 }
