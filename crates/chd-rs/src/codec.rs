@@ -192,41 +192,13 @@ impl Decompressor {
                     .read_exact(dest)
                     .map_err(|_| Error::Corrupt("zstd chunk is corrupt".to_string()))
             }
-            Self::Lzma { dict_size } => Self::decompress_lzma(source, dest, *dict_size),
+            Self::Lzma { dict_size } => crate::lzma::decompress(source, dest, *dict_size),
             Self::Huff => Self::decompress_huff(source, dest),
             Self::Flac => Self::decompress_flac(source, dest),
             Self::CdFlac => Self::decompress_cd_flac(source, dest),
             Self::Cd { base, sub } => Self::decompress_cd(source, dest, base, sub),
             Self::AvHuff => crate::avhuff::decompress(source, dest),
         }
-    }
-
-    pub(crate) fn decompress_lzma(source: &[u8], dest: &mut [u8], dict_size: u32) -> Result<()> {
-        // CHD files store a raw LZMA1 stream with no properties byte: MAME
-        // reconstructs the encoder properties from the chunk size, fixing
-        // lc/lp/pb at 3/0/2 and clamping the dictionary.
-        let properties = lzma_rs::decompress::raw::LzmaProperties {
-            lc: 3,
-            lp: 0,
-            pb: 2,
-        };
-        let params = lzma_rs::decompress::raw::LzmaParams::new(
-            properties,
-            dict_size,
-            Some(dest.len() as u64),
-        );
-        let mut decoder = lzma_rs::decompress::raw::LzmaDecoder::new(params, None)
-            .map_err(|_| Error::Corrupt("lzma chunk is corrupt".to_string()))?;
-        let mut reader = BufReader::new(source);
-        let mut out: Vec<u8> = Vec::with_capacity(dest.len());
-        decoder
-            .decompress(&mut reader, &mut out)
-            .map_err(|_| Error::Corrupt("lzma chunk is corrupt".to_string()))?;
-        if out.len() < dest.len() {
-            return Err(Error::Corrupt("lzma chunk is truncated".to_string()));
-        }
-        dest.copy_from_slice(&out[..dest.len()]);
-        Ok(())
     }
 
     fn decompress_huff(source: &[u8], dest: &mut [u8]) -> Result<()> {

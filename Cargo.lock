@@ -720,8 +720,8 @@ dependencies = [
  "flate2",
  "indicatif",
  "libflac-sys",
- "lzma-rs",
- "lzma-sdk-rs",
+ "lzma-rust2",
+ "rayon",
  "sha1 0.11.0",
  "tempfile",
  "thiserror 2.0.20",
@@ -2473,16 +2473,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lzma-rs"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "297e814c836ae64db86b36cf2a557ba54368d03f6afcd7d947c266692f71115e"
-dependencies = [
- "byteorder",
- "crc",
-]
-
-[[package]]
 name = "lzma-rust2"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2490,12 +2480,6 @@ checksum = "fde178a3caf126c440fa15628147772d8ee590a39477d711353fbe2e58a73a5b"
 dependencies = [
  "sha2 0.11.0",
 ]
-
-[[package]]
-name = "lzma-sdk-rs"
-version = "0.2301.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bcd2b73b761b866258ca43401fa0d3119f54fbff51132539e8d1d2b05a73a53"
 
 [[package]]
 name = "macro_rules_attribute"

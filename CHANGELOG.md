@@ -6,7 +6,7 @@
 - 7z and ZIP support now always comes from the sevenz-rust2 and zip crates: 7-Zip is no longer needed, and the `sevenz` feature is gone
 - BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
 - XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of the external `xdelta3` tool; its CLI (`xdeltars`) ships in the release archives too
-- CHD support now comes from the new chd-rs crate, a port of chdman, instead of the external `chdman` tool, for CDs, DVDs, hard disks and LaserDiscs. Its CLI (`chdrs`) ships in the release archives too. CHDs it creates are byte-identical to chdman 0.289's (deflate-compressed hunks to a chdman linking zlib-ng), and the minimum chdman versions for Dreamcast and split-bin support are gone
+- CHD support now comes from the new chd-rs crate, a port of chdman, instead of the external `chdman` tool, for CDs, DVDs, hard disks and LaserDiscs. Its CLI (`chdrs`) ships in the release archives too. CHDs it creates are interchangeable with chdman 0.289's, and byte-identical except for LZMA- and deflate-compressed hunks; it compresses on every core, as chdman does, and decodes faster. The minimum chdman versions for Dreamcast and split-bin support are gone
 - Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
 
 ## Fixes

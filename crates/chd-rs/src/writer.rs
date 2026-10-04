@@ -15,6 +15,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
+use rayon::prelude::*;
 use sha1::{Digest, Sha1};
 
 use crate::bitstream::BitstreamOut;
@@ -455,14 +456,40 @@ fn create_inner(
     let mut table_written: u64 = 0;
     for (done, numbytes) in ring.chunks() {
         let (data, hunks) = ring.fill(done, numbytes, |buf| source.read(done, buf), progress)?;
-        if compressed {
-            rawsha1.update(&data[..numbytes]);
-        }
+        // Each hunk's hash and best encoding are worked out on every core, the
+        // running hash of the data alongside; which hunks refer to earlier
+        // ones, and where the rest land, is then settled in order below, so
+        // the CHD is the same as one written a hunk at a time. A hunk only a
+        // later one in the same chunk repeats is compressed for nothing, as
+        // in chdman.
+        let precomputed: Vec<Precomputed> = if compressed {
+            let (_, precomputed) = rayon::join(
+                || rawsha1.update(&data[..numbytes]),
+                || {
+                    data.par_chunks_exact(hunk_bytes as usize)
+                        .map(|hunk| {
+                            let hash = crc_and_sha1(hunk);
+                            let known = current_map.contains_key(&hash)
+                                || parent_map
+                                    .as_ref()
+                                    .is_some_and(|map| map.contains_key(&hash));
+                            let packed =
+                                (!known).then(|| codec::find_best_compressor(&compression, hunk));
+                            (hash, packed)
+                        })
+                        .collect()
+                },
+            );
+            precomputed
+        } else {
+            Vec::new()
+        };
+        let mut precomputed = precomputed.into_iter();
         for index in 0..hunks {
             let hunknum = done / hunk_bytes64 + index as u64;
             let data = &data[index * hunk_bytes as usize..][..hunk_bytes as usize];
             if compressed {
-                let hash = crc_and_sha1(data);
+                let (hash, packed) = precomputed.next().expect("a hunk's precomputed hash");
                 if let Some(reference) = current_map.get(&hash) {
                     set_entry(&mut rawmap, hunknum, TYPE_SELF, 0, u64::from(*reference), 0);
                 } else if let Some(unit) =
@@ -470,7 +497,8 @@ fn create_inner(
                 {
                     set_entry(&mut rawmap, hunknum, TYPE_PARENT, 0, unit, 0);
                 } else {
-                    let (slot, packed) = codec::find_best_compressor(&compression, data);
+                    let (slot, packed) =
+                        packed.unwrap_or_else(|| codec::find_best_compressor(&compression, data));
                     let (kind, stored) = if slot < 0 {
                         (TYPE_NONE, data)
                     } else {
@@ -746,6 +774,10 @@ impl WorkRing {
         Ok(map)
     }
 }
+
+/// A hunk's identity, and its best encoding unless an earlier hunk had the
+/// same identity: the slot that won, or -1 for none, and its bytes.
+type Precomputed = ((u16, [u8; 20]), Option<(i8, Vec<u8>)>);
 
 /// The identity a hunk is recognised by: its CRC-32-IEEE stored as the
 /// map's 16-bit checksum, next to its SHA-1.

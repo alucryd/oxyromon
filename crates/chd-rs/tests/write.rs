@@ -68,9 +68,43 @@ fn write_image(path: &Path, kind: &str) -> Vec<u8> {
     image
 }
 
+/// Whether our CHD agrees with chdman's: byte for byte, except with LZMA,
+/// whose encoder is lzma-rust2's rather than MAME's LZMA SDK one, where the
+/// header's hashes must agree and chdman must verify ours.
+/// A clone is verified against its `parent`.
+fn assert_matches_chdman(
+    chdman: &Path,
+    ours: &Path,
+    theirs: &Path,
+    parent: Option<&Path>,
+    codecs: &str,
+    what: &str,
+) {
+    let (ours_bytes, theirs_bytes) = (std::fs::read(ours).unwrap(), std::fs::read(theirs).unwrap());
+    if codecs.contains("lzma") {
+        let ours = ours.to_string_lossy();
+        let mut verify = vec!["verify", "-i", &ours];
+        let parent = parent.map(Path::to_string_lossy);
+        if let Some(parent) = &parent {
+            verify.extend(["-ip", parent]);
+        }
+        expect_ok(chdman, &verify);
+        assert_eq!(
+            ours_bytes[64..104],
+            theirs_bytes[64..104],
+            "{what} with {codecs}: the hashes differ from chdman's"
+        );
+    } else {
+        assert!(
+            ours_bytes == theirs_bytes,
+            "{what} with {codecs} differs from chdman's"
+        );
+    }
+}
+
 /// Hard disk CHDs are byte-identical to `chdman createhd`'s, for the codecs
-/// whose output does not hang on the compression library chdman links (see
-/// `tests/cd.rs`).
+/// whose output does not hang on the compression library (see
+/// [`assert_matches_chdman`] and `tests/cd.rs`).
 #[test]
 fn hard_disks_match_chdman_byte_for_byte() {
     let Some(chdman) = chdman_binary() else {
@@ -99,10 +133,13 @@ fn hard_disks_match_chdman_byte_for_byte() {
                 Path::new(env!("CARGO_BIN_EXE_chdrs")),
                 &["-c", codecs, &image.to_string_lossy()],
             );
-            assert!(
-                std::fs::read(dir.path().join("image.chd")).unwrap()
-                    == std::fs::read(&theirs).unwrap(),
-                "the {kind} image with {codecs} differs from chdman's"
+            assert_matches_chdman(
+                &chdman,
+                &dir.path().join("image.chd"),
+                &theirs,
+                None,
+                codecs,
+                &format!("the {kind} image"),
             );
         }
     }
@@ -152,9 +189,15 @@ fn partial_last_hunks_match_chdman_byte_for_byte() {
             chdrs_args.push(&input);
             expect_ok(chdman.as_path(), &chdman_args);
             expect_ok(Path::new(env!("CARGO_BIN_EXE_chdrs")), &chdrs_args);
-            assert!(
-                std::fs::read(&ours).unwrap() == std::fs::read(&theirs).unwrap(),
-                "the {name} with {codecs} differs from chdman's"
+            // both children are clones of chdman's parent
+            let parent = (name == "child").then(|| Path::new(&parent_chd));
+            assert_matches_chdman(
+                &chdman,
+                Path::new(&ours),
+                Path::new(&theirs),
+                parent,
+                codecs,
+                &format!("the {name}"),
             );
         }
     }
@@ -189,10 +232,13 @@ fn dvds_match_chdman_byte_for_byte() {
                 Path::new(env!("CARGO_BIN_EXE_chdrs")),
                 &["-c", codecs, &image.to_string_lossy()],
             );
-            assert!(
-                std::fs::read(dir.path().join("image.chd")).unwrap()
-                    == std::fs::read(&theirs).unwrap(),
-                "the {kind} DVD with {codecs} differs from chdman's"
+            assert_matches_chdman(
+                &chdman,
+                &dir.path().join("image.chd"),
+                &theirs,
+                None,
+                codecs,
+                &format!("the {kind} DVD"),
             );
         }
     }

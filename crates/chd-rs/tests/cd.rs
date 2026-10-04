@@ -255,11 +255,15 @@ fn fixtures() -> Vec<Fixture> {
     ]
 }
 
-/// Codecs compared byte for byte, and those built on deflate, compared byte
-/// for byte only with `CHDRS_STRICT_PARITY` set (where chdman links zlib-ng,
-/// whose output zlib-rs reproduces) and by the header's hashes otherwise.
-const IDENTICAL: &[&str] = &["none", "cdzs", "cdlz", "zstd", "lzma"];
-const DEFLATE: &[&str] = &["cdlz,cdzl,cdfl", "cdzl", "cdfl", "zlib"];
+/// Codecs compared byte for byte; those built on deflate, compared byte for
+/// byte only with `CHDRS_STRICT_PARITY` set (where chdman links zlib-ng,
+/// whose output zlib-rs reproduces); and those built on LZMA, whose encoder
+/// is lzma-rust2's rather than MAME's LZMA SDK one. The last two are checked
+/// by the header's hashes, which cover the data and the metadata, and by
+/// chdman verifying them.
+const IDENTICAL: &[&str] = &["none", "cdzs", "zstd"];
+const DEFLATE: &[&str] = &["cdzl", "cdfl", "zlib"];
+const LZMA: &[&str] = &["cdlz,cdzl,cdfl", "cdlz", "lzma"];
 
 /// `chd_rs::create_cd` with chdman's default hunk and the `-c` codecs.
 fn create_cd(toc: &Path, output: &Path, codecs: &str) {
@@ -293,7 +297,7 @@ fn cd_chds_match_chdman() {
         let ours = dir.path().join(Path::new(toc).with_extension("chd"));
         let theirs = dir.path().join("theirs.chd");
         let strict = std::env::var_os("CHDRS_STRICT_PARITY").is_some();
-        for codecs in IDENTICAL.iter().chain(DEFLATE) {
+        for codecs in IDENTICAL.iter().chain(DEFLATE).chain(LZMA) {
             let _ = std::fs::remove_file(&ours);
             let _ = std::fs::remove_file(&theirs);
             run(
@@ -306,6 +310,13 @@ fn cd_chds_match_chdman() {
                 create_cd(&dir.path().join(toc), &ours, codecs);
             } else {
                 run(&chdrs, dir.path(), &["-c", codecs, toc]);
+            }
+            if !IDENTICAL.contains(codecs) {
+                run(
+                    &chdman,
+                    dir.path(),
+                    &["verify", "-i", &ours.to_string_lossy()],
+                );
             }
             let ours = std::fs::read(&ours).unwrap();
             let theirs = std::fs::read(&theirs).unwrap();

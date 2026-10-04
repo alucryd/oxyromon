@@ -64,19 +64,26 @@ shortest output kept, storing the hunk raw when none of them saves space, as
 | `none`                       | built-in            | built-in             |
 | `zlib` / `cdzl`              | `flate2`            | `flate2` (`zlib-rs`), level 9 |
 | `zstd` / `cdzs`              | `zstd`              | `zstd`, level 22     |
-| `lzma` / `cdlz`              | `lzma-rs`           | `lzma-sdk-rs`        |
+| `lzma` / `cdlz`              | `lzma-rust2`        | `lzma-rust2`         |
 | `huff`                       | built-in            | built-in             |
 | `flac` / `cdfl`              | `libflac-sys`       | `libflac-sys`        |
 | `avhu`                       | built-in, `libflac-sys` | built-in, `libflac-sys` |
 
-The encoders are those `chdman` uses, or byte-exact ports of them, so the
-bitstreams match `chdman`'s by construction: LZMA goes through
-`lzma-sdk-rs`, a port of the LZMA SDK 23.01 encoder MAME bundles (liblzma,
-given the same parameters, makes slightly different choices). The one
-caveat is deflate: `flate2`'s `zlib-rs` backend is a port of zlib-ng, so its
-output is that of a `chdman` linking zlib-ng, not of one linking classic
-zlib. Either way the data, and the hashes in the header that cover it, are
-the same.
+Hunks are compressed on every core, then laid out in order, so the CHD is
+the same whatever the thread count. Most encoders are those `chdman` uses,
+so most bitstreams match `chdman`'s by construction. Two don't:
+
+- **LZMA** goes through `lzma-rust2`, set the way MAME sets its LZMA SDK
+  encoder (level 8: normal mode, BT4 matches, nice length 64), which is also
+  what oxyROMon's 7z support and xdelta-rs decode with. Its streams decode in
+  MAME and `chdman`, and come out within a few hundredths of a percent of the
+  same size, but they are not the same bytes.
+- **Deflate** goes through `flate2`'s `zlib-rs` backend, a port of zlib-ng, so
+  its output is that of a `chdman` linking zlib-ng, not of one linking
+  classic zlib.
+
+Either way the data, and the hashes in the header that cover it, are the
+same.
 
 `libflac-sys` builds its vendored libFLAC with CMake, so a CMake toolchain is
 needed to build chd-rs.
@@ -126,10 +133,10 @@ chd-rs writes — hard disks, DVDs, CDs from CUE, GDI and ISO inputs, and
 LaserDiscs from AVIs of every layout `chdman` reads, made with `ffmpeg` — are
 compared with `chdman`'s byte for byte, as are the CUEs, GDIs, TOCs, BINs and
 AVIs it extracts, down to the bytes `chdman` leaves past the end of a partly
-filled last hunk, which come from its never-cleared work buffer. Deflate,
-whose bytes depend on the zlib `chdman` links (see [Encoders](#encoders)),
-is compared by the header's hashes instead, and byte for byte too with
-`CHDRS_STRICT_PARITY=1`, against a `chdman` linking zlib-ng. The tests skip rather than fail when no `chdman` binary is
+filled last hunk, which come from its never-cleared work buffer. LZMA and
+deflate, whose bytes differ (see [Encoders](#encoders)), are compared by the
+header's hashes instead, `chdman` verifying our CHDs, and deflate byte for
+byte too with `CHDRS_STRICT_PARITY=1`, against a `chdman` linking zlib-ng. The tests skip rather than fail when no `chdman` binary is
 around (`$CHDMAN`, then `$PATH`).
 
 ## Credits

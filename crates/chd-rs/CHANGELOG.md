@@ -11,11 +11,11 @@
 - Added CHD v5 writing for DVDs and hard disks with `create`, from a raw
   image or against a parent to store only what changed, each hunk encoded
   with the shortest of the codecs offered
-- Added the `none`, `flac`, `huff`, `lzma`, `zlib` and `zstd` codecs, read
-  through `flate2`, `zstd`, `lzma-rs`, `libflac-sys` and a built-in Huffman
-  decoder and written back through `flate2` (`zlib-rs`), `zstd`,
-  `lzma-sdk-rs`, `libflac-sys` and a built-in Huffman encoder, so the files
-  are byte-identical to `chdman`'s, which the interop tests check
+- Added the `none`, `flac`, `huff`, `lzma`, `zlib` and `zstd` codecs, through
+  `flate2` (`zlib-rs`), `zstd`, `lzma-rust2`, `libflac-sys` and a built-in
+  Huffman coder, so the files are interchangeable with `chdman`'s, which the
+  interop tests check; most are byte-identical too
+- Hunks are compressed on every core, as `chdman` does
 - Added CD CHD writing with `create_cd`, from a CUE sheet, a GDI or an ISO,
   following `chdman` 0.289's `createcd`: its CUE and GDI parsing, WAV tracks,
   multisession and GD-ROM layouts, frame padding and track metadata
