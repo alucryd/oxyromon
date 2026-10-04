@@ -12,8 +12,10 @@ use rayon::prelude::*;
 use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::future::Future;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use tempfile::TempDir;
@@ -284,6 +286,55 @@ pub async fn get_trash_directory(
         None => get_rom_directory(connection).await.join("Trash"),
     };
     Ok(trash_directory)
+}
+
+/// The directories never removed when a purge or an import empties them: the ROM
+/// directory, every system directory and every trash directory.
+pub async fn get_kept_directories(connection: &mut SqliteConnection) -> Result<HashSet<PathBuf>> {
+    let mut kept_directories = HashSet::from([
+        get_rom_directory(connection).await,
+        get_trash_directory(connection, None).await?,
+    ]);
+    for system in find_systems(connection).await {
+        kept_directories.insert(get_system_directory(connection, &system).await?);
+        kept_directories.insert(get_trash_directory(connection, Some(&system)).await?);
+    }
+    Ok(kept_directories)
+}
+
+/// Deletes the directories a purge or an import left empty, walking up from
+/// `directory` like sort-roms does after a move, until a kept or non-empty
+/// directory. Directories that no longer exist are walked past.
+pub async fn remove_empty_directories(
+    directory: &Path,
+    kept_directories: &HashSet<PathBuf>,
+) -> Result<()> {
+    let mut directory = Some(directory);
+    while let Some(dir) = directory {
+        // never delete a kept directory, even an empty one
+        if kept_directories.contains(dir) {
+            break;
+        }
+        // never leave the kept directories: a stale path can point outside of them,
+        // and starts_with is also true for a kept directory itself, hence both checks
+        if !kept_directories.iter().any(|kept| dir.starts_with(kept)) {
+            break;
+        }
+        match fs::remove_dir(dir).await {
+            Ok(()) => {}
+            // already gone, e.g. a game directory deleted by hand before --missing
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            // not empty: stop climbing. remove_dir cannot recurse, so a file written
+            // concurrently ends the walk instead of being deleted with the directory
+            Err(error) if error.kind() == ErrorKind::DirectoryNotEmpty => break,
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("Failed to delete \"{}\"", dir.display()));
+            }
+        }
+        directory = dir.parent();
+    }
+    Ok(())
 }
 
 /// Runs an external tool command, logging it and bailing with the tool's

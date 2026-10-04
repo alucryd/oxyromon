@@ -19,6 +19,7 @@ use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
+use std::collections::HashSet;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -884,6 +885,8 @@ pub async fn reimport_orphan_romfiles(
 ) -> Result<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
+    // every reimported file leaves its directory, for its game's new place or the trash
+    let mut left_directories: HashSet<PathBuf> = HashSet::new();
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id)
             .await
@@ -891,6 +894,9 @@ pub async fn reimport_orphan_romfiles(
             .await?;
         delete_romfile_by_id(connection, romfile_id).await;
         if romfile.path.is_file() {
+            if let Some(directory) = romfile.path.parent() {
+                left_directories.insert(directory.to_path_buf());
+            }
             let (_, game_ids) = import_rom(
                 connection,
                 progress_bar,
@@ -914,6 +920,12 @@ pub async fn reimport_orphan_romfiles(
                     .create(connection, progress_bar, RomfileType::Romfile)
                     .await?;
             }
+        }
+    }
+    if !left_directories.is_empty() {
+        let kept_directories = get_kept_directories(connection).await?;
+        for directory in &left_directories {
+            remove_empty_directories(directory, &kept_directories).await?;
         }
     }
     Ok(())
@@ -1058,6 +1070,8 @@ mod test_dat_updated_orphan_archive_mismatch;
 mod test_dat_updated_orphan_chd;
 #[cfg(test)]
 mod test_dat_updated_orphan_chd_mismatch;
+#[cfg(test)]
+mod test_dat_updated_renamed_subfolder;
 #[cfg(test)]
 mod test_regions_france_germany;
 #[cfg(test)]
