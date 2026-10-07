@@ -1074,7 +1074,11 @@ mod test_dat_updated_orphan_chd;
 #[cfg(test)]
 mod test_dat_updated_orphan_chd_mismatch;
 #[cfg(test)]
+mod test_dat_updated_renamed_arcade;
+#[cfg(test)]
 mod test_dat_updated_renamed_subfolder;
+#[cfg(test)]
+mod test_dat_updated_trashed_subfolder;
 #[cfg(test)]
 mod test_dat_updated_undeletable_subfolder;
 #[cfg(test)]
