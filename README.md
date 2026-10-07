@@ -402,6 +402,8 @@ Parse and import PlayStation 3 IRD files into oxyromon
 
 IRD files allow validation of extracted PS3 ISOs, a.k.a. JB folders.
 Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA`, and `PS3_UPDATE` directories.
+When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
+directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
 
 Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
 
@@ -705,6 +707,8 @@ Note: `sort-roms` will move them accordingly but if you use `convert-roms` you w
 Parse and import PlayStation 3 IRD files into oxyromon
 
 One of the most common ways PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
+When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
+directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
 
 Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehand. Please make sure it has `PlayStation 3` in the name if you don't go with Redump.
 
