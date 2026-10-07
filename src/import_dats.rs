@@ -924,8 +924,11 @@ pub async fn reimport_orphan_romfiles(
     }
     if !left_directories.is_empty() {
         let kept_directories = get_kept_directories(connection).await?;
+        // Only cosmetic: a directory that cannot be deleted must not undo the moves above
         for directory in &left_directories {
-            remove_empty_directories(directory, &kept_directories).await?;
+            if let Err(err) = remove_empty_directories(directory, &kept_directories).await {
+                print_warning(progress_bar, &format!("{:#}", err));
+            }
         }
     }
     Ok(())
@@ -1072,6 +1075,8 @@ mod test_dat_updated_orphan_chd;
 mod test_dat_updated_orphan_chd_mismatch;
 #[cfg(test)]
 mod test_dat_updated_renamed_subfolder;
+#[cfg(test)]
+mod test_dat_updated_undeletable_subfolder;
 #[cfg(test)]
 mod test_regions_france_germany;
 #[cfg(test)]
