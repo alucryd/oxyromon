@@ -1,0 +1,105 @@
+use super::super::config::*;
+use super::super::import_roms::UnattendedMode;
+use super::*;
+use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
+use tempfile::{NamedTempFile, TempDir};
+use tokio::fs;
+
+#[tokio::test]
+async fn test() {
+    // given
+    let _guard = MUTEX.lock().await;
+
+    let test_directory = Path::new("tests");
+    let progress_bar = ProgressBar::hidden();
+
+    let db_file = NamedTempFile::new().unwrap();
+    let pool = establish_connection(db_file.path().to_str().unwrap()).await;
+    let mut connection = pool.acquire().await.unwrap();
+
+    let rom_directory = TempDir::new_in(test_directory).unwrap();
+    set_rom_directory(&mut connection, PathBuf::from(rom_directory.path())).await;
+    let tmp_directory = TempDir::new_in(test_directory).unwrap();
+    let tmp_directory =
+        set_tmp_directory(&mut connection, PathBuf::from(tmp_directory.path())).await;
+    set_string(&mut connection, "REGIONS_ALL_SUBFOLDERS", "alpha", None).await;
+
+    let dat_path = test_directory.join("Test System (20200721).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+    import_dat(
+        &mut connection,
+        &progress_bar,
+        &datfile_xml,
+        &detector_xml,
+        None,
+        None,
+        false,
+    )
+    .await
+    .unwrap();
+
+    let system = find_systems(&mut connection).await.remove(0);
+    let system_directory = get_system_directory(&mut connection, &system)
+        .await
+        .unwrap();
+    let romfile_path = tmp_directory.join("Test Game (USA, Europe).rom");
+    fs::copy(
+        test_directory.join("Test Game (USA, Europe).rom"),
+        &romfile_path,
+    )
+    .await
+    .unwrap();
+    import_rom(
+        &mut connection,
+        &progress_bar,
+        &Some(&system),
+        &None,
+        &romfile_path,
+        false,
+        false,
+        false,
+        UnattendedMode::Skip,
+        false,
+    )
+    .await
+    .unwrap();
+
+    // the file can still move into an existing Trash, but the emptied
+    // subfolder cannot be deleted from a read-only system directory
+    // (root ignores the permission, and then simply deletes it)
+    fs::create_dir_all(system_directory.join("Trash"))
+        .await
+        .unwrap();
+    std::fs::set_permissions(&system_directory, std::fs::Permissions::from_mode(0o555)).unwrap();
+
+    let dat_path = test_directory.join("Test System (20200723) (Changed Hashes).dat");
+    let (datfile_xml, detector_xml) = parse_dat(&progress_bar, &dat_path, false).await.unwrap();
+
+    // when
+    let result = import_dat(
+        &mut connection,
+        &progress_bar,
+        &datfile_xml,
+        &detector_xml,
+        None,
+        None,
+        false,
+    )
+    .await;
+    std::fs::set_permissions(&system_directory, std::fs::Permissions::from_mode(0o755)).unwrap();
+
+    // then
+    // the update still completes, and the database follows the file
+    result.unwrap();
+    let romfiles = find_romfiles(&mut connection).await;
+    assert_eq!(romfiles.len(), 1);
+    let romfile_path = romfiles[0].as_common(&mut connection).await.unwrap().path;
+    assert_eq!(
+        romfile_path,
+        system_directory
+            .join("Trash")
+            .join("Test Game (USA, Europe).rom")
+    );
+    assert!(romfile_path.is_file());
+}
