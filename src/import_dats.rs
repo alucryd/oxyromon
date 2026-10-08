@@ -462,6 +462,17 @@ async fn create_or_update_system(
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
+                // An update keeps the system's customizations unless new ones are
+                // given; a forced import applies them as given, which reverts them
+                // when none are.
+                let (custom_name, custom_extension) = if force {
+                    (custom_name, custom_extension)
+                } else {
+                    (
+                        custom_name.or(system.custom_name.as_ref()),
+                        custom_extension.or(system.custom_extension.as_ref()),
+                    )
+                };
                 update_system_from_xml(
                     connection,
                     system.id,
@@ -1043,6 +1054,8 @@ mod test_dat_as_is;
 mod test_dat_custom_name;
 #[cfg(test)]
 mod test_dat_custom_name_revert;
+#[cfg(test)]
+mod test_dat_custom_name_updated;
 #[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
