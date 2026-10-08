@@ -10,6 +10,7 @@
 
 ## Fixes
 
+- Fixed `import-dats` and `download-dats` dropping a system's custom name and extension when updating it
 - Fixed 7z extraction and rewrites holding entire entries in memory, which could run to gigabytes for a disc image
 - Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
 - Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
