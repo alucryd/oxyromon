@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "path": "src/*.rs",
+      "merge_system_rule": true,
+      "rule": "OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under Unreleased for anything user-visible; do not report internal refactors with no user-visible effect."
+    },
+    {
+      "path": "README.md",
+      "merge_system_rule": true,
+      "rule": "OxyRomon README reviewed as prose against the code it documents. Check: every flag, default, path, command example and supported-format claim still matches the clap definition and the module that implements it, including code added in this diff; counts and lists it states (supported systems, formats, flags) match what the code accepts; two sections of the document do not contradict each other; the diff does not leave a section describing behaviour the diff removed."
+    }
+  ]
+}
