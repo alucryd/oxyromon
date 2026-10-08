@@ -313,8 +313,8 @@ ZIP files such as the No-Intro daily dat-o-matic packs can be imported directly 
 All `.dat` files inside the archive will be found, including those nested in subdirectories.
 When used with the `-u` flag, only systems that were previously imported will be updated, making it
 ideal for keeping your collection in sync with daily releases.
-An update keeps a system's custom name and extension unless new ones are given; importing the DAT again
-with `-f` and without them reverts them.
+An update keeps a system's custom name and extension unless new ones are given. Importing the DAT again
+with `-f` sets each to what is given, so one left out is reverted.
 When an update moves ROM files, to a renamed game or to the `Trash` directory, the directories they leave
 empty are deleted, except for the ROM, system and `Trash` directories.
 
@@ -356,6 +356,7 @@ Redump offers direct downloads, but no summary, whereas No-Intro offers a summar
 but no direct downloads. For now, the No-intro counterpart will only tell you if
 an update is available, but the Redump one is able to download brand new dats
 and update those you've already imported.
+As with `import-dats`, an update keeps a system's custom name and extension, and `-f` reverts them.
 
 Supported DAT providers:
 

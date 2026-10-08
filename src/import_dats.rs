@@ -1053,6 +1053,10 @@ mod test_dat_as_is;
 #[cfg(test)]
 mod test_dat_custom_name;
 #[cfg(test)]
+mod test_dat_custom_name_forced;
+#[cfg(test)]
+mod test_dat_custom_name_replaced;
+#[cfg(test)]
 mod test_dat_custom_name_revert;
 #[cfg(test)]
 mod test_dat_custom_name_updated;
