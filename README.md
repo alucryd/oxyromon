@@ -100,39 +100,27 @@ The build uses rustls by default, but you can also opt for OpenSSL:
 The repository also holds oxyROMon's own format crates, under `crates/`, which
 replaced the external tools it once needed. Each builds a standalone CLI too:
 
-    cargo build --release -p gdi-rs -p nsz-rs -p xso-rs    # gdirs, nszrs and xsors
+    cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs    # gdirs, nszrs, xdeltars, xpsrs and xsors
 
 ### Features
 
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
-| nod            | handle RVZ and WBFS natively                   |         |
-| sevenz         | handle 7z and ZIP natively, and enable zstd    | x       |
 | server         | build the server subcommand                    |         |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
 
-The `sevenz` feature handles archives with the
-[sevenz-rust2](https://crates.io/crates/sevenz-rust2) and
-[zip](https://crates.io/crates/zip) crates rather than spawning 7-Zip. Listing in
-particular becomes a metadata read instead of a process launch, which is what
-`check-roms` and `import-roms` do most. It is on by default because Zstandard
-archives can be read and written nowhere else: 7-Zip has no such codec.
+7z and ZIP are handled by the [sevenz-rust2](https://crates.io/crates/sevenz-rust2)
+and [zip](https://crates.io/crates/zip) crates, so listing an archive is a metadata
+read rather than a process launch, and Zstandard archives can be read and written,
+which 7-Zip has no codec for. Renaming, deleting or adding an entry copies the rest
+of the archive as it is encoded; only deleting from a solid 7z block re-encodes the
+entries left in it, as 7-Zip does.
 
-ZIP is native throughout. For 7z, renaming or deleting an entry, or adding one to
-an archive that already exists, goes to 7-Zip when it can read the archive —
-those change metadata without touching the compressed data, and sevenz-rust2
-offers no way to do the same, so doing it natively means a full rebuild.
-Zstandard archives are rebuilt natively instead, since 7-Zip cannot open them at
-all. `7z` therefore remains useful for LZMA2 collections, and is unnecessary for
-Zstandard or ZIP-only ones.
-
-The `nod` feature links the [nod](https://crates.io/crates/nod) crate in place of
-shelling out to `dolphin-tool` and `wit`, so RVZ and WBFS work with neither
-program installed. Conversions are faster, and RVZ files are interchangeable with
-Dolphin's own in both directions. Two caveats: `RVZ_SCRUB` has no equivalent in
-nod and is ignored (with a warning), and nod needs a C toolchain to build its
-compression libraries.
+RVZ and WBFS are handled by the [nod](https://crates.io/crates/nod) crate. RVZ
+files are interchangeable with Dolphin's own in both directions. `RVZ_SCRUB` has
+no equivalent in nod and is ignored, with a warning. nod builds its compression
+libraries from source, so building oxyROMon needs a C toolchain.
 
 ### Configuration
 
@@ -173,7 +161,7 @@ Available settings:
 - `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
 - `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`
 - `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
-- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`
+- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`; currently ignored, as nod cannot scrub RVZ
 - `SEVENZIP_COMPRESSION_ALGORITHM`: The 7Z compression algorithm, defaults to `lzma2`, valid choices: `lzma2`, `zstd`
 - `SEVENZIP_COMPRESSION_LEVEL`: The 7Z LZMA2 compression level, defaults to `9`, valid range: `1-9`
 - `SEVENZIP_ZSTD_COMPRESSION_LEVEL`: The 7Z Zstandard compression level, defaults to `19`, valid range: `1-22`
@@ -186,7 +174,6 @@ Zstandard is opt-in. It compresses a good deal faster than LZMA2 at a comparable
 size, but nothing else reads it: 7-Zip ships no Zstandard codec, and neither do
 emulators or Windows Explorer, so a zstd `.zip` or `.7z` opens in oxyromon and
 nowhere else. Worth it for archival, a poor idea for a library you play from.
-It also needs the `sevenz` feature, which is on by default.
 
 Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
 
@@ -238,15 +225,10 @@ ZIP_ZSTD_COMPRESSION_LEVEL = 19
 
 These should be in your `${PATH}` for extra features.
 
-- [7z](https://www.7-zip.org/download.html): 7Z and ZIP support
 - [chdman](https://www.mamedev.org/release.html): CHD support
 - [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
-- [dolphin-tool](https://dolphin-emu.org/download/): RVZ support, unless built with the `nod` feature
-- [flips](https://github.com/Alcaro/Flips): BPS and IPS support
-- [wit](https://wit.wiimm.de/): WBFS support, unless built with the `nod` feature
-- [xdelta3](https://github.com/jmacd/xdelta): XDELTA support
 
-CSO/ZSO support is built in via xso-rs, and GDI support via gdi-rs, both in `crates/`.
+CSO/ZSO support is built in via xso-rs, GDI support via gdi-rs, XDELTA support via xdelta-rs, and BPS and IPS support via xps-rs, all in `crates/`. 7Z and ZIP support is built in via sevenz-rust2 and zip, and RVZ and WBFS support via nod.
 
 NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
 
@@ -331,6 +313,10 @@ ZIP files such as the No-Intro daily dat-o-matic packs can be imported directly 
 All `.dat` files inside the archive will be found, including those nested in subdirectories.
 When used with the `-u` flag, only systems that were previously imported will be updated, making it
 ideal for keeping your collection in sync with daily releases.
+An update keeps a system's custom name and extension unless new ones are given. Importing the DAT again
+with `-f` sets each to what is given, so one left out is reverted.
+When an update moves ROM files, to a renamed game or to the `Trash` directory, the directories they leave
+empty are deleted, except for the ROM, system and `Trash` directories.
 
 Supported console DAT providers:
 
@@ -370,6 +356,7 @@ Redump offers direct downloads, but no summary, whereas No-Intro offers a summar
 but no direct downloads. For now, the No-intro counterpart will only tell you if
 an update is available, but the Redump one is able to download brand new dats
 and update those you've already imported.
+As with `import-dats`, an update keeps a system's custom name and extension, and `-f` reverts them.
 
 Supported DAT providers:
 
@@ -418,6 +405,8 @@ Parse and import PlayStation 3 IRD files into oxyromon
 
 IRD files allow validation of extracted PS3 ISOs, a.k.a. JB folders.
 Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA`, and `PS3_UPDATE` directories.
+When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
+directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
 
 Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
 
@@ -675,7 +664,8 @@ File sizes can also be computed again, useful for ROM files imported in v0.8.1 o
 Purge trashed, missing, and orphan ROM files
 
 This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
-with a ROM, as well as physically deleting all files in the `Trash` subdirectories.
+with a ROM, as well as physically deleting all files in the `Trash` subdirectories. Directories left empty by a purge
+are deleted as well, except for the ROM, system and `Trash` directories.
 
     Usage: oxyromon purge-roms [OPTIONS]
 
@@ -693,10 +683,12 @@ Purge systems
 
 This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterward.
 
-    Usage: oxyromon purge-systems
+    Usage: oxyromon purge-systems [OPTIONS]
 
     Options:
-        -h, --help  Print help information
+        -e, --empty            Only list empty systems for selection
+        -s, --system <SYSTEM>  Select systems by name
+        -h, --help             Print help
 
 ## oxyromon-generate-playlists
 
@@ -718,6 +710,8 @@ Note: `sort-roms` will move them accordingly but if you use `convert-roms` you w
 Parse and import PlayStation 3 IRD files into oxyromon
 
 One of the most common ways PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
+When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
+directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
 
 Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehand. Please make sure it has `PlayStation 3` in the name if you don't go with Redump.
 

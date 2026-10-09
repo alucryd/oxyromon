@@ -8,6 +8,10 @@
 //! first, and ends with it.
 //!
 //! [bchunk]: https://github.com/extramaster/bchunk
+//!
+//! The ISO 9660 reader `import-irds` walks is vendored in [`iso9660`].
+
+pub mod iso9660;
 
 use super::common::*;
 use super::mimetype::*;

@@ -26,7 +26,9 @@ jobs:
         # point version lands, so installing against the cached lists 404s.
         run: |
           sudo apt-get -o Acquire::Retries=3 update
-          sudo apt-get -o Acquire::Retries=3 install dolphin-emu mame-tools wit xdelta3
+          # xdelta3 is only for the xdelta-rs tests, which compare against it
+          # and skip without it
+          sudo apt-get -o Acquire::Retries=3 install mame-tools xdelta3
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:

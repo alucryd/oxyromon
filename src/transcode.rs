@@ -1,10 +1,10 @@
+use super::archive::AsArchive;
 use super::chdman::{AsChd, ChdRomfile, ChdType};
 use super::common::*;
 use super::database::find_romfile_by_id;
-use super::dolphin::AsRvz;
 use super::model::{Rom, Romfile};
 use super::nsz::{AsNsz, NspRomfile, ToNsp};
-use super::sevenzip::AsArchive;
+use super::rvz::AsRvz;
 use super::xso::AsXso;
 use anyhow::Result;
 use indicatif::ProgressBar;

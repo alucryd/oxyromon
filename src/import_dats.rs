@@ -19,6 +19,7 @@ use shiratsu_naming::naming::nointro::{NoIntroName, NoIntroToken};
 use shiratsu_naming::naming::tosec::{TOSECName, TOSECToken};
 use shiratsu_naming::region::Region;
 use sqlx::sqlite::SqliteConnection;
+use std::collections::HashSet;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -461,6 +462,17 @@ async fn create_or_update_system(
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
+                // An update keeps the system's customizations unless new ones are
+                // given; a forced import applies them as given, which reverts them
+                // when none are.
+                let (custom_name, custom_extension) = if force {
+                    (custom_name, custom_extension)
+                } else {
+                    (
+                        custom_name.or(system.custom_name.as_ref()),
+                        custom_extension.or(system.custom_extension.as_ref()),
+                    )
+                };
                 update_system_from_xml(
                     connection,
                     system.id,
@@ -884,6 +896,8 @@ pub async fn reimport_orphan_romfiles(
 ) -> Result<()> {
     let system = find_system_by_id(connection, system_id).await;
     let header = find_header_by_system_id(connection, system_id).await;
+    // every reimported file leaves its directory, for its game's new place or the trash
+    let mut left_directories: HashSet<PathBuf> = HashSet::new();
     for romfile_id in orphan_romfile_ids {
         let romfile = find_romfile_by_id(connection, romfile_id)
             .await
@@ -891,6 +905,9 @@ pub async fn reimport_orphan_romfiles(
             .await?;
         delete_romfile_by_id(connection, romfile_id).await;
         if romfile.path.is_file() {
+            if let Some(directory) = romfile.path.parent() {
+                left_directories.insert(directory.to_path_buf());
+            }
             let (_, game_ids) = import_rom(
                 connection,
                 progress_bar,
@@ -913,6 +930,15 @@ pub async fn reimport_orphan_romfiles(
                     .await?
                     .create(connection, progress_bar, RomfileType::Romfile)
                     .await?;
+            }
+        }
+    }
+    if !left_directories.is_empty() {
+        let kept_directories = get_kept_directories(connection).await?;
+        // Only cosmetic: a directory that cannot be deleted must not undo the moves above
+        for directory in &left_directories {
+            if let Err(err) = remove_empty_directories(directory, &kept_directories).await {
+                print_warning(progress_bar, &format!("{:#}", err));
             }
         }
     }
@@ -1027,7 +1053,13 @@ mod test_dat_as_is;
 #[cfg(test)]
 mod test_dat_custom_name;
 #[cfg(test)]
+mod test_dat_custom_name_forced;
+#[cfg(test)]
+mod test_dat_custom_name_replaced;
+#[cfg(test)]
 mod test_dat_custom_name_revert;
+#[cfg(test)]
+mod test_dat_custom_name_updated;
 #[cfg(test)]
 mod test_dat_headered;
 #[cfg(test)]
@@ -1058,6 +1090,14 @@ mod test_dat_updated_orphan_archive_mismatch;
 mod test_dat_updated_orphan_chd;
 #[cfg(test)]
 mod test_dat_updated_orphan_chd_mismatch;
+#[cfg(test)]
+mod test_dat_updated_renamed_arcade;
+#[cfg(test)]
+mod test_dat_updated_renamed_subfolder;
+#[cfg(test)]
+mod test_dat_updated_trashed_subfolder;
+#[cfg(test)]
+mod test_dat_updated_undeletable_subfolder;
 #[cfg(test)]
 mod test_regions_france_germany;
 #[cfg(test)]

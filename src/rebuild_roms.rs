@@ -1,3 +1,4 @@
+use super::archive::*;
 use super::common::*;
 use super::config::*;
 use super::database::*;
@@ -6,7 +7,6 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
-use super::sevenzip::*;
 use super::util::*;
 use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;

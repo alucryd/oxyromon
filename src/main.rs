@@ -2,7 +2,7 @@
 // wrap it, mirroring the documented As*(parse)/To*(convert) naming convention
 #![allow(clippy::wrong_self_convention)]
 
-mod bchunk;
+mod archive;
 mod benchmark;
 mod chdman;
 mod check_roms;
@@ -13,10 +13,8 @@ mod crc32;
 mod create_dats;
 mod ctrtool;
 mod database;
-mod dolphin;
 mod download_dats;
 mod export_roms;
-mod flips;
 mod gdi;
 mod generate_playlists;
 mod import_dats;
@@ -24,13 +22,11 @@ mod import_irds;
 mod import_patches;
 mod import_roms;
 mod info;
-mod iso9660;
+mod iso;
 mod mimetype;
 mod model;
 #[cfg(feature = "server")]
 mod mutation;
-#[cfg(feature = "nod")]
-mod nod;
 mod nsz;
 mod progress;
 mod prompt;
@@ -40,18 +36,17 @@ mod purge_systems;
 #[cfg(feature = "server")]
 mod query;
 mod rebuild_roms;
+mod rvz;
 #[cfg(feature = "server")]
 mod server;
-#[cfg(feature = "sevenz")]
-mod sevenz;
-mod sevenzip;
 mod sort_roms;
 mod transcode;
 mod util;
 #[cfg(feature = "server")]
 mod validator;
-mod wit;
-mod xdelta3;
+mod wbfs;
+mod xdelta;
+mod xps;
 mod xso;
 
 use anyhow::Result;
