@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path LIKE '%/Trash/%'\n        ORDER BY path\n        ",
+  "query": "\n        SELECT *\n        FROM romfiles\n        WHERE path LIKE '%/Trash/%'\n        OR path LIKE 'Trash/%'\n        ORDER BY path\n        ",
   "describe": {
     "columns": [
       {
@@ -70,5 +70,5 @@
       false
     ]
   },
-  "hash": "45102b42bb20c899c6d24b05f28a1085fdf81c749b90ccd7b0b9a7e74e5e7a6a"
+  "hash": "399b6068b3a981e83560eadce38b0818f50d2e5ebccc0c998a4f6d1bf806bc50"
 }
