@@ -2871,6 +2871,7 @@ pub async fn find_romfiles_in_trash(connection: &mut SqliteConnection) -> Vec<Ro
         SELECT *
         FROM romfiles
         WHERE path LIKE '%/Trash/%'
+        OR path LIKE 'Trash/%'
         ORDER BY path
         "
     )
