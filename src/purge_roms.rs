@@ -231,3 +231,5 @@ mod test_orphans;
 mod test_orphans_subfolder;
 #[cfg(test)]
 mod test_trashed;
+#[cfg(test)]
+mod test_trashed_rom_directory;
