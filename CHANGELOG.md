@@ -1,5 +1,9 @@
 # 0.25.0
 
+## Features
+
+- Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
+
 ## Changes
 
 - RVZ and WBFS support now always comes from the nod crate: `dolphin-tool` and `wit` are no longer needed, and the `nod` feature is gone. `RVZ_SCRUB` is ignored, with a warning, as nod cannot scrub RVZ
@@ -7,6 +11,7 @@
 - BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
 - XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of the external `xdelta3` tool; its CLI (`xdeltars`) ships in the release archives too
 - Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
+- `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty, except for the ROM, system and `Trash` directories
 
 ## Fixes
 
