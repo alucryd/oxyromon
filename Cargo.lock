@@ -711,6 +711,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "chd-rs"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "console",
+ "crc32fast",
+ "flate2",
+ "indicatif",
+ "libflac-sys",
+ "lzma-rust2",
+ "rayon",
+ "sha1 0.11.0",
+ "tempfile",
+ "thiserror 2.0.20",
+ "zstd 0.14.0",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2314,6 +2332,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
+name = "libflac-sys"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fc5cbb957a914952ee9b8667e82b984c6dc280087df01497fc5b4776d303582"
+dependencies = [
+ "cmake",
+ "libc",
+]
+
+[[package]]
 name = "libflate"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2751,6 +2779,7 @@ dependencies = [
  "async-stream",
  "axum",
  "cfg-if",
+ "chd-rs",
  "chrono",
  "clap",
  "console",

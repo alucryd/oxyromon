@@ -5,7 +5,7 @@
 !.env.example
 .idea
 .vscode
-graphify-out
+port/
 
 # rust
 *.rs.bk

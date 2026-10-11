@@ -1,7 +1,6 @@
 use super::archive;
 use super::archive::{ArchiveFile, AsArchive};
-use super::chdman;
-use super::chdman::{AsChd, ChdType};
+use super::chd::{AsChd, ChdType};
 use super::common::*;
 use super::config::*;
 use super::convert_roms::{ConvertOpts, convert_system};
@@ -21,7 +20,6 @@ use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use sqlx::sqlite::SqliteConnection;
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::Path;
@@ -473,10 +471,6 @@ pub async fn import_rom<P: AsRef<Path>>(
         system_ids.extend(new_system_ids);
         game_ids.extend(new_game_ids);
     } else if CHD_EXTENSION == extension && !as_is {
-        if chdman::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: chdman");
-            return Ok((system_ids, game_ids));
-        }
         if let Some(ids) = import_chd(
             &mut transaction,
             progress_bar,
@@ -1048,22 +1042,6 @@ async fn import_chd(
     let chd_romfile = romfile.as_chd().await?;
     match chd_romfile.chd_type {
         ChdType::Cd => {
-            if chd_romfile.track_count > 1
-                && chdman::get_version()
-                    .await?
-                    .as_str()
-                    .cmp(chdman::MIN_SPLITBIN_VERSION)
-                    == Ordering::Less
-            {
-                print_warning(
-                    progress_bar,
-                    &format!(
-                        "chdman {} or newer required for splitbin support",
-                        chdman::MIN_SPLITBIN_VERSION
-                    ),
-                );
-                return Ok(None);
-            }
             let cue_bin_romfile = chd_romfile
                 .to_cue_bin(progress_bar, &tmp_directory.path(), None, &[], true)
                 .await?;
