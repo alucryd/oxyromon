@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 1,
+  "runId": "cbf4dc16-6b72-4f98-9438-92accdacf10d",
+  "mode": "update",
+  "phase": "generating",
+  "startedAt": "2026-10-10T22:10:44.671Z",
+  "language": "en",
+  "languageChanged": false,
+  "requiredRewritePages": [],
+  "initialPages": [
+    "/openwiki/architecture/cli-entrypoint-and-subcommands.md",
+    "/openwiki/architecture/data-model-and-migrations.md",
+    "/openwiki/architecture/feature-flags-and-build-topology.md",
+    "/openwiki/architecture/overview.md",
+    "/openwiki/architecture/settings-and-configuration.md",
+    "/openwiki/concepts/cli-output-progress-and-prompts.md",
+    "/openwiki/concepts/file-type-detection-and-extensions.md",
+    "/openwiki/concepts/format-modules-and-format-crates.md",
+    "/openwiki/concepts/romfile-trait-system.md",
+    "/openwiki/integrations/dat-providers-no-intro-redump.md",
+    "/openwiki/integrations/external-tools.md",
+    "/openwiki/integrations/format-crates.md",
+    "/openwiki/operations/build-and-release.md",
+    "/openwiki/operations/ci-and-environment.md",
+    "/openwiki/quickstart.md",
+    "/openwiki/server/desktop-tauri-shell.md",
+    "/openwiki/server/http-server-and-graphql-api.md",
+    "/openwiki/server/mcp-server.md",
+    "/openwiki/server/sse-and-progress-bridge.md",
+    "/openwiki/server/web-ui-frontend.md",
+    "/openwiki/testing/format-crate-tests.md",
+    "/openwiki/testing/test-fixtures.md",
+    "/openwiki/testing/testing-conventions.md",
+    "/openwiki/workflows/arcade-rebuild-and-playlists.md",
+    "/openwiki/workflows/dat-ingestion.md",
+    "/openwiki/workflows/format-conversion-and-export.md",
+    "/openwiki/workflows/integrity-check-and-purge.md",
+    "/openwiki/workflows/ird-ps3-jbfolders.md",
+    "/openwiki/workflows/rom-import-pipeline.md"
+  ],
+  "sourceFingerprint": "sha256:43fe14de738bb53f65dcc29c4f6b34afa7a51e7401852dc137a814b973b15ee7",
+  "targetGitHead": "3e65df8c435a8cf5e7fee1f0d735501f15d0559f",
+  "actor": {
+    "producerActor": "openwiki/0.7.1",
+    "metadataModel": "qwen3.8-flash-next"
+  },
+  "previousLastUpdate": {
+    "updatedAt": "2026-10-10T19:59:32.570Z",
+    "command": "init",
+    "model": "qwen3.8-flash-next",
+    "status": "interrupted",
+    "language": "en"
+  },
+  "wikiGoal": "A code wiki for this repository.",
+  "beforeContentSnapshot": "908db5d982455545fc0f0020ddac4522a8c5f6980df8fc12ea19990f52533235",
+  "preparedWiki": {
+    "generatedProvenance": [
+      {
+        "page": "/openwiki/architecture/cli-entrypoint-and-subcommands.md",
+        "bodyHash": "98c0d12af21889e6173d05339d5cd5c8a90ef9ab8f7106d2842986441bc96d24",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/data-model-and-migrations.md",
+        "bodyHash": "8e1e65fe83cf6ac4ce007e90d63a828887a0f418c86a56fe1f7c1b7ba620a1ce",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/feature-flags-and-build-topology.md",
+        "bodyHash": "d56fba8bcd408228e463f540589d0e57aeaeb0670aaeda61f0a47454c2e9be6c",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/overview.md",
+        "bodyHash": "36f09d1784a4aa3beb2cb9e7e607dfdf6fbdbf713deecb6bea6199598467f569",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/architecture/settings-and-configuration.md",
+        "bodyHash": "9c8fad1dde38bb7d0edc89530d936a95dc776d7215c38dc2914ec1cd8e69d710",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/concepts/cli-output-progress-and-prompts.md",
+        "bodyHash": "e6ccbbd6665a3d98a6ca7a8068f00631b8d169f403f0d829fd3842b618b835c7",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/concepts/file-type-detection-and-extensions.md",
+        "bodyHash": "7cd55b74392eee45ae75b6f53075cd6158222e6e095ecdca53c45d00c9296706",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/concepts/format-modules-and-format-crates.md",
+        "bodyHash": "39f7dec67d9c1cd7d6b2f4a3177cbd5076880161361c8272c7857600d6177821",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/concepts/romfile-trait-system.md",
+        "bodyHash": "dd42f807f3f7ebb399b1f8b87241c86df3c8f8830c38026ac029d7ed2df97b5f",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/integrations/dat-providers-no-intro-redump.md",
+        "bodyHash": "dd1ebcb05506cdf1948d010e430e2758d94950b27ec6c6aad05a1bc4e105e756",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/integrations/external-tools.md",
+        "bodyHash": "95cf4c5e6cb67f129826f6e58ea5290df3735a08a1cf2ff5b8be4ee46e6b7e7a",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/integrations/format-crates.md",
+        "bodyHash": "df845986c7682591943b7bd55392cb9e2f27fc3e8dbe72ec08797bcef0720957",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/operations/build-and-release.md",
+        "bodyHash": "f3756558660b2cd821d4d9177f0b00e0a93cceeb253b63512dd7747c15c3c11a",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/operations/ci-and-environment.md",
+        "bodyHash": "08c22fb358e39c0c01f889a4329d549788dd87c5b8021629ec072f9299e9b273",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/quickstart.md",
+        "bodyHash": "b3b6282d1e370f0a7a36cb09502ef6f095c0960776dc355379549f35396b78d3",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/server/desktop-tauri-shell.md",
+        "bodyHash": "7e15f22d797be63a57a4e642f908ea96547475f2beabad83d7dbe25d75a59e8a",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/server/http-server-and-graphql-api.md",
+        "bodyHash": "c7eded1dfac8064d2b77c5925f6ceba90eb6808f033089268ddcec2954a48ac4",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/server/mcp-server.md",
+        "bodyHash": "e62f7fe0a6d19241fc772e6294f1faa63d620992a362817d19e56e83081c1f27",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/server/sse-and-progress-bridge.md",
+        "bodyHash": "55040e2e7c35bb56124844d4369def0c8c3f2b34ac6f5c727ddba576ab2919c7",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/server/web-ui-frontend.md",
+        "bodyHash": "674360caea0f084cdd1e425db1a76f3c0a3ee62467563cb8cb2b31797c387332",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/testing/format-crate-tests.md",
+        "bodyHash": "aedc0fa81a009e5f2174a927d05105c9461cd5a63544db89ecc660b72d4127c4",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/testing/test-fixtures.md",
+        "bodyHash": "a66c547d86f0c8d861d097a6dbbef7baa34523d3f2596873b2e1c1d27f219425",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/testing/testing-conventions.md",
+        "bodyHash": "95b832ea200845cddf344b1056b2eff6d056916d032ebdaad7dbb14f6203ec3e",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/arcade-rebuild-and-playlists.md",
+        "bodyHash": "3be393669246e2a4f570ff2cd4b1ac90f7ef44eda19f3ca707fc7b47f6c61d2a",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/dat-ingestion.md",
+        "bodyHash": "32896abcdf7b7817f01cb586ac0bc983423ba9a8c3f8ef6d796401909d6b2998",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/format-conversion-and-export.md",
+        "bodyHash": "2c90249074e2b70f7e58e89d40ef2f303a54edc0d085aed0bee012debfa256a9",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/integrity-check-and-purge.md",
+        "bodyHash": "a2382c489881488fb94627f786ad5748c14337abdcb39685241419f9168875a3",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/ird-ps3-jbfolders.md",
+        "bodyHash": "ff1dada7aa3ccc79015abd51468f60d7f698df58dbca42ef4d2d5a8581be7091",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      },
+      {
+        "page": "/openwiki/workflows/rom-import-pipeline.md",
+        "bodyHash": "0111ecda1e22ce20213bf5b6c9f9ab61b33a68197884f1d8175c47b2361ef923",
+        "generated": {
+          "by": "openwiki/0.7.1",
+          "at": "2026-10-09T16:11:37.544Z"
+        }
+      }
+    ]
+  },
+  "plan": {
+    "pages": [
+      {
+        "id": "78d5cb04-9e38-432b-a0f7-5f95f439efe1",
+        "path": "/openwiki/architecture/cli-entrypoint-and-subcommands.md",
+        "title": "CLI Entrypoint and the Subcommand Contract",
+        "purpose": "Repair navigation and re-sync the entrypoint page with the current src/main.rs module list, dispatch arms and test module references changed after the baseline.",
+        "seedPaths": [
+          "src/config.rs",
+          "src/database.rs",
+          "src/main.rs",
+          "src/mcp.rs",
+          "src/server.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/overview.md",
+          "/openwiki/concepts/cli-output-progress-and-prompts.md",
+          "/openwiki/server/mcp-server.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Re-check the startup sequence, the scoped single-connection block, the long-lived mcp/server dispatch, and optimize_database against current src/main.rs and src/database.rs::establish_connection; correct only drift introduced after the baseline commit.",
+          "Remove the broken link to ../workflows/adding-capabilities.md: either point the sentence at an existing page or reword it, and delete the marker comment. Do not create a new page for it.",
+          "Verify the per-module test-file references added to this module after the baseline exist and are linked with correctly encoded relative paths."
+        ],
+        "status": "complete",
+        "completedBy": "openwiki/0.7.1"
+      },
+      {
+        "id": "966ef495-480a-44d6-9f87-9402d892e80d",
+        "path": "/openwiki/architecture/settings-and-configuration.md",
+        "title": "Settings and Configuration Model",
+        "purpose": "Update for post-baseline changes in src/config.rs and repair navigation: the page links to a sorting page that does not exist, contains a mermaid fence a previous run degraded to text, and its 'two coverage gaps' claim about the CHD HD/LD keys no longer matches the constant lists.",
+        "seedPaths": [
+          "src/chdman.rs",
+          "src/config.rs",
+          "src/config/test_cli.rs",
+          "src/config/test_system_bool_fallback.rs",
+          "src/mcp/write.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/data-model-and-migrations.md",
+          "/openwiki/server/mcp-server.md",
+          "/openwiki/workflows/format-conversion-and-export.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Check the 'config subcommand' section against the current clap declarations (the system flag is -n/--system) and against src/mcp/write.rs set_setting, which mirrors the same validation; correct any drift only.",
+          "Re-verify the category tables against current src/config.rs: BOOLEANS, LISTS, PATHS, NULLABLES, SORTED_LISTS, choice_options/choice_list_options and integer_range now include CHD_HD_* and CHD_LD_* variants and PREFER_FORMAT; correct the paragraph asserting CHD_HD_COMPRESSION_ALGORITHMS/CHD_LD_HUNK_SIZE are coverage gaps if the code no longer supports it.",
+          "Replace the broken link to ../workflows/sorting-and-1g1r-election.md with a working link to the new page.",
+          "Restore the degraded diagram: the page has a text fence preceded by an 'openwiki: mermaid parse failed' comment (a semicolon inside a label). Rewrite the label and restore the ```mermaid fence, then delete the comment."
+        ],
+        "status": "complete",
+        "completedBy": "openwiki/0.7.1"
+      },
+      {
+        "id": "46f94bf9-16ef-4535-9378-316b433e00c0",
+        "path": "/openwiki/integrations/dat-providers-no-intro-redump.md",
+        "title": "DAT Providers and Naming Conventions",
+        "purpose": "Navigation repair: the page links to a sorting page that did not exist when it was generated, and that target now exists.",
+        "seedPaths": [
+          "README.md",
+          "src/download_dats.rs",
+          "src/import_dats.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/integrations/external-tools.md",
+          "/openwiki/workflows/dat-ingestion.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Minimal edit: delete the broken-internal-link marker comment and make the link to ../workflows/sorting-and-1g1r-election.md resolve. Touch nothing else unless the same paragraph is stale."
+        ],
+        "status": "complete",
+        "completedBy": "openwiki/0.7.1"
+      },
+      {
+        "id": "8941e1f0-6386-44fa-a4fa-60ade334ec05",
+        "path": "/openwiki/operations/ci-and-environment.md",
+        "title": "CI Pipelines and Runtime Environment",
+        "purpose": "Re-sync the CI description with the current .github/workflows/continuous_integration.yml (dependency install, toolchain, trunk, clippy passes, coverage) and the runtime environment variables the changed sources read.",
+        "seedPaths": [
+          ".github/workflows/continuous_integration.yml",
+          "Cargo.toml",
+          "src/database.rs",
+          "src/main.rs",
+          "test.sh"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/feature-flags-and-build-topology.md",
+          "/openwiki/operations/build-and-release.md",
+          "/openwiki/server/mcp-server.md",
+          "/openwiki/testing/testing-conventions.md"
+        ],
+        "instructions": [
+          "Do not duplicate the release/distribution matrix; link to /openwiki/operations/build-and-release.md for dist.sh, docker and publishing pins.",
+          "Keep the two-clippy-passes analysis (workspace with oxyromon/server, and --no-default-features --features use-rustls,mcp) accurate: it is the guard that keeps mcp-without-server builds compiling, and is the command set a contributor should run locally.",
+          "Re-read the workflow file end to end and correct any step, version pin, apt dependency or environment variable that drifted after the baseline; keep the explanation of why apt lists are refreshed and why xdelta3 is installed only for interop tests."
+        ],
+        "status": "complete",
+        "completedBy": "openwiki/0.7.1"
+      },
+      {
+        "id": "23f83b56-8d6e-4596-b0e7-88417a93dbae",
+        "path": "/openwiki/server/mcp-server.md",
+        "title": "MCP Server: Tools, Resources and Prompts",
+        "purpose": "Re-verify the MCP surface against the post-baseline edits to src/mcp.rs, src/mcp/*.rs and tests/mcp_stdio.rs: the tool inventory, run_action execution path, read-only/confirm gating and error taxonomy must match the shipped code.",
+        "seedPaths": [
+          "src/mcp.rs",
+          "src/mcp/actions.rs",
+          "src/mcp/output.rs",
+          "src/mcp/params.rs",
+          "src/mcp/prompts.rs",
+          "src/mcp/read.rs",
+          "src/mcp/resources.rs",
+          "src/mcp/write.rs",
+          "tests/mcp_stdio.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/settings-and-configuration.md",
+          "/openwiki/server/http-server-and-graphql-api.md",
+          "/openwiki/server/sse-and-progress-bridge.md",
+          "/openwiki/testing/test-fixtures.md",
+          "/openwiki/workflows/rom-import-pipeline.md"
+        ],
+        "instructions": [
+          "Keep the stdout-is-the-JSON-RPC-channel constraint prominent, citing src/mcp.rs and the guard comment in src/import_roms.rs.",
+          "Re-check run_action semantics in src/mcp/actions.rs: write lock acquisition order, the none-style progress bar, the 400ms poller and its progressToken condition, the cancellation select, and which tools pass sse_prefix: None. Note explicitly that the write lock is per-handler, so stdio is globally serialized while concurrent /mcp requests are not.",
+          "Recount the tool surface from the current #[tool_router] blocks: read tools in src/mcp/read.rs and write tools in src/mcp/write.rs, their annotations (read_only_hint / idempotent_hint / open_world_hint / destructive_hint), and which write tools reach the subcommand through a synthesized ArgMatches versus a direct library entry point. Correct the counts and names if the changed files moved them.",
+          "Update the build/pool paragraph only if Cargo.toml features or establish_connection changed; retain the existing sequenceDiagram if it still matches, and follow mermaid syntax rules if edited.",
+          "Verify the resources and prompts section and the error taxonomy (ok_json / ok_text / tool_error / need_confirm / read_only_denial versus Err(McpError)) against current code and tests/mcp_stdio.rs assertions."
+        ],
+        "status": "complete",
+        "completedBy": "openwiki/0.7.1"
+      },
+      {
+        "id": "8aaf9441-c45e-4ac1-ad1f-f107ce671d84",
+        "path": "/openwiki/testing/test-fixtures.md",
+        "title": "Test Fixtures and End-to-End Suites",
+        "purpose": "Re-sync the tests/mcp_stdio.rs description with the suite as it stands after the baseline commit, and confirm the fixture inventory still matches tests/.",
+        "seedPaths": [
+          "Cargo.toml",
+          "tests/Test System (20200721).dat",
+          "tests/crates.rs",
+          "tests/mcp_stdio.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/operations/ci-and-environment.md",
+          "/openwiki/server/mcp-server.md",
+          "/openwiki/testing/format-crate-tests.md",
+          "/openwiki/testing/testing-conventions.md"
+        ],
+        "instructions": [
+          "Do not restate the MCP tool semantics; link to /openwiki/server/mcp-server.md instead.",
+          "Keep the guidance that fixture filenames contain spaces, parentheses and at-signs: any markdown link to them must be percent-encoded or the run will emit broken-link markers.",
+          "Restrict the edit to the tests/mcp_stdio.rs section plus the fixture table: re-read the current test names and assertions and correct the coverage table and the sequence description where they drifted."
+        ],
+        "status": "pending"
+      },
+      {
+        "id": "7e3b479a-d514-4761-9036-3955a624f573",
+        "path": "/openwiki/workflows/arcade-rebuild-and-playlists.md",
+        "title": "Arcade Rebuilds and M3U Playlists",
+        "purpose": "Repair two broken internal links (the MAME rebuild fixture and the now-existing sorting page) and confirm the merging-strategy and playlist claims against the current rebuild/playlists sources.",
+        "seedPaths": [
+          "src/config.rs",
+          "src/generate_playlists.rs",
+          "src/rebuild_roms.rs",
+          "src/sort_roms.rs",
+          "tests/Test System (20200721) (MAME Rebuild).dat"
+        ],
+        "relatedPages": [
+          "/openwiki/workflows/dat-ingestion.md",
+          "/openwiki/workflows/format-conversion-and-export.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Change only what the broken links and any post-baseline drift require; do not re-derive unchanged merging tables.",
+          "Fix the fixture link (percent-encode spaces and parentheses) and the link to sorting-and-1g1r-election.md, then delete both marker comments.",
+          "State the boundary explicitly: arcade systems skip the console 1G1R election and are placed by REGIONS_ALL_ARCADE / REGIONS_ONE_ARCADE rom types; keep the merged-set mechanics here and delegate console election to the sorting page."
+        ],
+        "status": "pending"
+      },
+      {
+        "id": "0990d384-f0dc-47c4-8f2d-a2603a5ff8d8",
+        "path": "/openwiki/workflows/dat-ingestion.md",
+        "title": "Catalog Ingestion: DATs, Headers and Downloads",
+        "purpose": "Repair nine broken internal links to test and fixture files, and re-verify the DAT ingestion claims against the touched import_dats/create_dats/import_patches sources and their test modules.",
+        "seedPaths": [
+          "src/create_dats/test_dat.rs",
+          "src/import_dats.rs",
+          "src/import_dats/test_dat_custom_name.rs",
+          "src/import_dats/test_zip_update_unknown_system.rs",
+          "src/import_patches/test_bps_ips.rs",
+          "tests/Test System (20200721).dat"
+        ],
+        "relatedPages": [
+          "/openwiki/integrations/dat-providers-no-intro-redump.md",
+          "/openwiki/testing/test-fixtures.md",
+          "/openwiki/workflows/rom-import-pipeline.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Every broken target in this page is a real file whose path is mislinked: src/import_dats/test_*.rs, src/create_dats/test_dat.rs, src/import_patches/test_bps_ips.rs, and tests/Test System (20200721)*. Fix each href with the correct relative path and percent-encode spaces/parentheses; do not use angle-bracketed links with unescaped parentheses, and delete the marker comments.",
+          "Verify the surrounding claims (update mode, custom name/extension, header parsing, parent/clone, orphan handling) still hold in the changed import_dats sources; correct only stale sentences."
+        ],
+        "status": "pending"
+      },
+      {
+        "id": "1586b187-ca39-4fb4-baac-d00a0aac07be",
+        "path": "/openwiki/workflows/ird-ps3-jbfolders.md",
+        "title": "PS3 IRD Files and JB Folders",
+        "purpose": "Repair eight broken internal links to IRD test modules and fixtures, and re-check the IRD import/purge flow against the current import_irds and convert_roms sources.",
+        "seedPaths": [
+          "src/import_irds.rs",
+          "src/import_irds/test_ird.rs",
+          "src/import_irds/test_title.rs",
+          "src/mimetype.rs",
+          "src/purge_irds.rs",
+          "tests/Test Game (USA).ird"
+        ],
+        "relatedPages": [
+          "/openwiki/testing/test-fixtures.md",
+          "/openwiki/workflows/arcade-rebuild-and-playlists.md",
+          "/openwiki/workflows/format-conversion-and-export.md",
+          "/openwiki/workflows/integrity-check-and-purge.md"
+        ],
+        "instructions": [
+          "Fix the broken hrefs to src/import_irds/test_*.rs, src/purge_irds/test_ird.rs, src/mimetype/test_ird_matcher.rs, src/convert_roms/test_original_to_zip_multiple_roms.rs and the tests/ fixtures; percent-encode spaces and parentheses rather than wrapping them in angle brackets, then delete the marker comments.",
+          "Only re-verify IRD-specific behaviour (IRD v9 parsing, JB folder completeness, orphan subfolder cleanup, --system unattended matching) where the cited sources changed after the baseline."
+        ],
+        "status": "pending"
+      },
+      {
+        "id": "43d87a86-1f5d-400a-93cd-4b6eca5213f8",
+        "path": "/openwiki/workflows/sorting-and-1g1r-election.md",
+        "title": "Sorting and the 1G1R Election",
+        "purpose": "Document the sort-roms workflow: region/language/discard filtering, the parent-clone grouping and weighted election that picks one game per title, subfolder schemes, and how ROMfiles end up in the system directory, 1G1R and Trash — the workflow page several existing pages already link to but which does not exist.",
+        "seedPaths": [
+          "README.md",
+          "src/config.rs",
+          "src/model.rs",
+          "src/sort_roms.rs",
+          "src/sort_roms/test_order_prefer_parents_parent_vs_clone.rs",
+          "src/sort_roms/test_sort_1g1r.rs",
+          "src/sort_roms/test_sort_1g1r_strict.rs",
+          "src/sort_roms/test_trim_ignored.rs",
+          "src/util.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/cli-entrypoint-and-subcommands.md",
+          "/openwiki/architecture/settings-and-configuration.md",
+          "/openwiki/concepts/cli-output-progress-and-prompts.md",
+          "/openwiki/workflows/arcade-rebuild-and-playlists.md",
+          "/openwiki/workflows/integrity-check-and-purge.md",
+          "/openwiki/workflows/rom-import-pipeline.md"
+        ],
+        "instructions": [
+          "Cover the real call chain in src/sort_roms.rs: main -> resolve_systems_by_name_like / prompt_for_systems -> per-system settings read -> sort_system -> sort_game -> the moves, plus sort_games_by_weight, compare_versions and trim_ignored_games as the election primitives.",
+          "Document the CLI-only knobs that override the database (--regions/--1g1r/--subfolders/--wanted/--all/--yes/--system) since MCP and GraphQL synthesize exactly these argv values — verify against src/mcp/write.rs sort_roms and src/mutation.rs.",
+          "Explain the settings each read consumes with system_id scoping (REGIONS_ALL, REGIONS_ONE, REGIONS_*_ARCADE, LANGUAGES, DISCARD_*, PREFER_PARENTS/REGIONS/VERSIONS/FLAGS, REGIONS_ONE_STRICT, REGIONS_*_SUBFOLDERS) and cross-link rather than duplicate the storage/scoping mechanics owned by /openwiki/architecture/settings-and-configuration.md.",
+          "Ground claims in the neighbouring tests under src/sort_roms/ (test_order_* and test_sort_1g1r_*) to pin ordering semantics; reference test files with correctly encoded relative links (spaces/parentheses as %20) so no broken-link marker is emitted.",
+          "State the on-disk outcome: system base directory, 1G1R subdirectory, Trash subdirectory, alpha subfolder scheme, and that Game.sorting/completion are the recorded result; note arcade systems bypass 1G1R and use REGIONS_*_ARCADE rom types instead, deferring merged-set detail to the arcade page.",
+          "Use a flowchart TD mermaid diagram for the per-parent-group election (group -> trim ignored -> region priority pick -> strict/completion gate -> destination), following the mermaid skill syntax rules: no semicolons, pipes, or bare unquoted parentheses in labels."
+        ],
+        "status": "pending"
+      },
+      {
+        "id": "d5443ee2-57c3-4e68-8de0-b6a7a75c21d0",
+        "path": "/openwiki/quickstart.md",
+        "title": "Quickstart & Task Routing",
+        "purpose": "Refresh the wiki entry point: the task-routing table currently points at a sorting page that does not exist (marked as a broken internal link), and the new workflow page must be reachable from the routing map.",
+        "seedPaths": [
+          "AGENTS.md",
+          "Cargo.toml",
+          "README.md",
+          "src/main.rs",
+          "src/sort_roms.rs"
+        ],
+        "relatedPages": [
+          "/openwiki/architecture/cli-entrypoint-and-subcommands.md",
+          "/openwiki/architecture/settings-and-configuration.md",
+          "/openwiki/server/mcp-server.md",
+          "/openwiki/workflows/sorting-and-1g1r-election.md"
+        ],
+        "instructions": [
+          "Do not re-derive unrelated sections (build loop, data directory, repository split, invariants) unless they contradict the current tree; regenerating them is diff noise.",
+          "Keep the invariant list intact, including the stdout-is-a-protocol-channel rule and the sqlx offline-data regeneration rule.",
+          "Restructuring only: replace the broken-link HTML comment and its routing row with a working link to /openwiki/workflows/sorting-and-1g1r-election.md, and keep the row wording consistent with the new page's scope (regions, 1G1R election, subfolders, Trash)."
+        ],
+        "status": "pending"
+      }
+    ],
+    "deletePages": []
+  }
+}

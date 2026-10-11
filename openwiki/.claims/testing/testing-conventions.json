@@ -1,0 +1,358 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bdeea7d94a25a84f0f6d8d0af1167d5d5f9469fcfdaaed1d72e8364ad1781f8e",
+  "claims": [
+    {
+      "id": "claim_d5d061cf788d45739c14a039d86425f2",
+      "statement": "Nearly all oxyromon tests are unit tests of the binary crate: they live in src/<module>/test_*.rs, are pulled in by `#[cfg(test)] mod test_name;` at the bottom of the parent module, and reach the code under test via `use super::*`, so they can call a subcommand's `main()` directly with a synthesized clap ArgMatches without spawning a process. tests/ holds only two test targets (crates.rs, mcp_stdio.rs); mcp_stdio.rs is the sole suite that spawns the real binary via CARGO_BIN_EXE_oxyromon.",
+      "evidence": [
+        {
+          "resource": "repo://src/config/test_cli.rs#L5-L35",
+          "version": "repo-lines-v1:sha256:fc3ae68684d675390f1b22eaae658b11c8c073d1d9a0b6d289ef0a29759107c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMDYzYjkwZWMxZDQ4YTNhNTI4ZWQyMGZlMzk2ZjFmZTNmYWFkYWNlNjFjZGJjNmQwZWE2NjIzZjEzYWRmZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwODI5ODU1Y2FhYWY4M2Y2OTVjZGI0ZTEyYmJlZDcwMDAxYzhmZWEzY2QxMjEwNTk2YTE3YzU0OTM5NGViM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYjcxNzBmZDYxOTk1M2MzNDdjNmM1ODU1NTJlOWUyZTk2MDkzZTA3NDU4MzNiN2YxODFlYjg2ZTU5MmM0ZDIifQ"
+        },
+        {
+          "resource": "repo://src/import_roms.rs#L2701-L2730",
+          "version": "repo-lines-v1:sha256:10864202f7c199ad79c9399138e4fbe6fa2a8f78c77c3700ce8708c1605d7ee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYTQ3YTI1OWY5NGNlZDk3M2I3ZWMyNjQ3NmY5NTgzMTM5YWFjZGE4ZTIzZGUwM2FkMTg3ZTI5YWIxNzRhM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlM2Q2ZWU4ODAwMTFiODFhZDI1MmEyN2EzNGMyZTc1ZmFlNmM2MzQyZDU0YjM0N2MzN2YzZmUxM2RhZmRhZWYifQ"
+        },
+        {
+          "resource": "repo://src/sort_roms.rs#L975-L1015",
+          "version": "repo-lines-v1:sha256:a964afb3e598d892f3ed2efc6e8c48d312be5c59b54b9eca07cfa44a6064ba06:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MjVmMzNlNzQ1ZWU1Mzk4ZTFlYzZlZjQ3ODA3Yjk5ZTYzOTZiOWQwMTAwNmQ5NmRkMjBlYjVmOGE2ODIzYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MzJhYThiODY1ODc3NTUzODg3NzcxNzRkZGQ0YjgyOTljNjdlZTZjMDYyNWU5N2JiNjM1NjBlYTQxMTBlZTkifQ"
+        },
+        {
+          "resource": "repo://tests/mcp_stdio.rs#L1-L43",
+          "version": "repo-lines-v1:sha256:4a15aa8c9601f444db3dbed342b4063aa6dd3ab99fa3c001da67784df4cd1f47:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNDFjZDA4ZWU2NDNjODRhOGZlYWMzYzhiZWVjZGRkYTQ4NjMyNDg3YmI1YzM4ZjJkMWI1MzI0YmMwNWQxMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwN2MwNTU3NGRlMjUxY2RlNjNkNjY4YWM4YTEyNmU2NDQ4YzQwZThkZTM0YmFmMjY0MjE5M2NkYzAyNDIxMjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3df9d3989aed4ea4b1030c23d4a6d1ae",
+      "statement": "The canonical test skeleton is: acquire the global MUTEX, build a DB from a NamedTempFile via establish_connection, create ROM and TMP directories with TempDir::new_in(\"tests\") and point the settings at them, import a DAT through import_dats::subcommand()/main(), then act and assert; a ProgressBar::hidden() stands in for the real bar so the production print_* helpers still run.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L274-L307",
+          "version": "repo-lines-v1:sha256:a6894b75516bddf6e99663a6010db1ffa2cb0d987078e667b477fe29e903da46:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Y2RkYzdiNDlkMGMxNjFkODZjYmQ4ZTQwZWUxMTNmNDg4MjA5ZGYwMzVhMzA0ZmE0ZmU2ODM1M2E1NzFiMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YzcxYWYwOTU2NGRmNjYxNDY1MTdjOTE4NTI5YmEzMjFiYzRmMGEzNmJkNDY3NzZjMDg5YmFlMzdiZTI1NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NzkyYWQ5NTU3YjJlY2QzMzM5NTAyYjk5MmM0YWVkNjRmNzY4NmUzMzExY2FlNTU3YTg3ZmFmNDRkYjlhMjgifQ"
+        },
+        {
+          "resource": "repo://src/import_dats/test_dat.rs#L1-L48",
+          "version": "repo-lines-v1:sha256:90ec879c016b590c56d0261ffb34bc07eb4340e98c29105f10346e91de021f3b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMzczMTQxZTVjOGJmOWI4NzYxMzFjN2NhYzA5MzBmMTJlYmUxMDg3MDg1M2MxMjE3ZThjZjNkNjM2ZDIxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/import_roms/test_original.rs#L1-L57",
+          "version": "repo-lines-v1:sha256:a0df1898b1cd247af802a3d532635c22162cbc3c59728a0da98c7244c04279f9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3OTlmZDU5YjdkYzM0MzdmZjE5ZWExODI0OGM2YzAyZDU5ODM0OWZhYmE5NTJmNDcyNWNkZmRhM2IzZmRmNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MjQxYzRmYmQyMWQ3MGM2YjQyZDRiNjU2NDVmYzU4Y2Y5YjUxYTZhYzRhNGM4NzNhMThhZGNiYjVhMmUwYTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1YmZkM2MxYzJiM2U5OWRhYzRjNzdjYWJhMTM3NTE4YWZkYTRjYTUzNzZmYTViZmJhNGI3OGMzZTFjNzg5ZDUifQ"
+        },
+        {
+          "resource": "repo://src/progress.rs#L26-L41",
+          "version": "repo-lines-v1:sha256:7f741859f51d5f314b8f5b50f2a1033e295238003ee80c3e2a302ca594d49ce0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OGEwMWJlYWNkMjcwMTM3MWFmMzMyNzVmYThmOGI1NjE1MWZhYzNlYmYxMzVkMzIxZDMzOWU2MDllZTNmZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNzUwYTkzNGZmMzE1NDUxZmIwMzMwODRiZDdmNjE4N2I5Y2YzM2UzN2IxMjA0Njc4MzE1NzhmYzY0NjNlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMjVmZTljNmFkMTZiY2M3NTEyY2NmYmE5M2ZjYTY0NWQ5MmEwYTMxY2M0NTY1MmFiNTVlMTJjN2ZlMTI4ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_65adefa12f82427f83041fba67720672",
+      "statement": "establish_connection() is the single DB entry point used by both main.rs and the tests: it runs the embedded MIGRATOR and the full PRAGMA block, and its pool geometry is compile-time feature dependent — 5 connections with NORMAL locking under `server` or `mcp`, 1 connection with EXCLUSIVE otherwise — so the same test source exercises two different database configurations depending on the feature flags.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L11-L72",
+          "version": "repo-lines-v1:sha256:26eb8aba28178a4ef5cb8b2a1ec1948831926737e3ea372131cc4c06599a7d44:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljYzkwZDUyOWU2MjlmOTBjNDkyODJkOGU3MjQ0MGM4MTAzYWZjNjZlOTg3MTgzODc5Njc2OWRkNWJiYWE2YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNzEzNGFlMDIyZjBjZTViOWI3ZWQxMGRhOGI1MDc4NTU1ZjJiNjFjMjMzNjQ5MjM4M2ZiODBlMmUyNzUyOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYTE0Mjc4ZmFlZjY2YTViZmExZDgzNDkyNTg0OGFmNzcyNDgyODI0ZmQ0MGQ1YzQ0YzhiZTNiNzZmNzA1MGQifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L118-L136",
+          "version": "repo-lines-v1:sha256:8e32de91a8e88225575ba3c3149e6e17f53e0a3dff3eaa29503ae46b1470af8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZDkzM2RiNDUwMTM1ZTZmODYzMGExZTk3NTU3NzcwMTZjZmRiZDY2YmEwOWFkN2M1YWY3NmQ3ZTQxYTE2ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5M2ZjOTc4OTQxNDA2MjMwOTZjYTlkYjcxNTQ0MjJkNDA0NGNkZGJmYzk1YWQ0MGRhYTc4NWY5YjkzNDJjZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MTYxOGQxYTBiNzBkZjAwZDcwM2E3MzkzYmI4OWU4ZjdlNTQ2MTIwYzkzYmYzMDZkNGRlZjE4YWJiZjI4NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1ODFhMmY2NGMzYTdhMDFjZjQxNWM3OTYxYzlhZDQ4ZjUwZTY0MDVlZDA0NDg3MmFmZDliZWE1MzFiOTQwYjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8426793069184151b4369c422fd9f8d9",
+      "statement": "Scratch directories are created with TempDir::new_in(\"tests\") rather than in /tmp so fixtures and their imported results stay on one filesystem — exercising rename_file's rename path instead of its cross-device copy+delete fallback — and their leftovers are covered by the `tests/.tmp*` gitignore entry.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L10-L21",
+          "version": "repo-lines-v1:sha256:adf17fcbf2cb2d13ffb95663d7c45e0334b95be21c3a7e591a1f92cc0eb2f80e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwZGE1NTA2NmZiOTg0YWViMDVkY2RlY2NhZWZiYzExZTRkY2VmNmMwNjE1ZjU5MmQ2NzlkZDRkYzZjNTU2M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlYjEzZmJmNzIxZDk5OGFjNWEwMWRiYTkyYzNlNjk3MjQ1N2E3ODdjMTJlOTQ5OTJkZTY1MzY4YWY5YWNhOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhMjNjNzY2YmZjOTQzZmQyOGFjNmViZjZhZjIxOWFlOGUyNDQ0NmI0M2QzM2FjOGFmOWI5NDExMWJmMTgyYzkifQ"
+        },
+        {
+          "resource": "repo://src/util.rs#L123-L151",
+          "version": "repo-lines-v1:sha256:edbbd5a7d3bbaf2a2dc30913b19aa5a002b8d2b45f62937e7df6443739b6cbc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZjAyMzA5ODU2ZTZkOTgzNjE3ZWE4ODEyYTM0Yzg5NDA5MjA4ZWZjZGE1YmNhOTA5OTBmODM3NjRjYTkxNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NWQ2Y2FjNzE4NGUxZDUyMjQ5NzE3NzgwZjI3ODc4MGVlM2IyYjYxZGZmZjRiNTFmMDNjNzY0MGE2NzdiMmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_51ca10bf77124b1994f07c5e57674a69",
+      "statement": "set_rom_directory and set_tmp_directory exist only under cfg(test), in the same cfg_if! block in config.rs as MUTEX; production code has no equivalent and instead goes through get_rom_directory/get_tmp_directory, which fall back to OXYROMON_ROM_DIRECTORY, $HOME/Emulation and env::temp_dir() and persist the value. Because the settings live in the per-test DB, no test sets or unsets environment variables.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L603-L648",
+          "version": "repo-lines-v1:sha256:e39125645d8d9bf73c356d417c86623e957e104acc04b8ca0a1e40eedffd76e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_afd8bebe75704ded8e30064c7687410f",
+      "statement": "The global `MUTEX` is a cfg(test)-only `LazyLock<tokio::sync::Mutex<i32>>` in config.rs taken as the first statement of a test; because all ~300 in-crate test modules compile into one binary, holding it makes that suite effectively sequential, which is the price for the process-wide state they share (the global MULTI_PROGRESS, the tests/ directory hosting every scratch dir, and fixed loopback ports).",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L631-L648",
+          "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
+        },
+        {
+          "resource": "repo://src/import_roms/test_original.rs#L8-L14",
+          "version": "repo-lines-v1:sha256:0290581c5cd5fc868d619d2ab76a77155c898237ece10e42eb066e2d4ca6c0d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIzNTYxMzdmN2I5YzRiNmExZTU5YWMzNTFlMDg5MDdhZDliYWEwNzhkYTgxMzBjZmU5NDdhNTkyMTJjMzcxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFjNWQ4MGJlMzAzOTU2MTQ5N2EzMWIwOTY2NmNkYWM3MmM5MGFhNzNlOTY5MjNhY2YxNWQ4OTgzY2RjNmUxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTc1OWI5YTBiMjc2MzEzYjRmNjcwNzc2MDViZmE5NTVlNWU4OGQzYTJiOWY1MTJkZjBlODFmNjc1N2MxZDEzNyJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L17-L34",
+          "version": "repo-lines-v1:sha256:653d4a1c96faea445472cea2863afc98bf6ddf31f319c251e67de08222c32772:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YjMyZWU0ZWQ0MjBhYTE2ZTBiYWEzMTEyNmJjOTZiOTViZmQ3MjI0OTIyYjQxYTgzZTBlMzBlMTg0Y2EzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MDZkZjkwZTMyN2JjMTJlODA4ZWVlNGRiMTIxMTlhYjMzY2U1NjhjNmI4ZjAwY2NhZDY0ZjAyYzg0MzE3NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_371477fb01f649e68750639462565514",
+      "statement": "The MUTEX is deliberately not universal: pure #[test] units (mimetype matchers, crc32, GraphQL validators, compute_alpha_subfolder, prompt_for_games) and database-only tests that touch no shared directory, such as sort_roms/test_all_regions_from_matches.rs, acquire no guard.",
+      "evidence": [
+        {
+          "resource": "repo://src/sort_roms/test_all_regions_from_matches.rs#L1-L23",
+          "version": "repo-lines-v1:sha256:3a8209c77d889a7d7d11f6249412ce0124e0b18ed5f06dcfded106bb6b4f7f50:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/util/test_compute_alpha_subfolder.rs#L1-L21",
+          "version": "repo-lines-v1:sha256:73be4a1b53a092303f4a2053de9f8afcb99b13a3e8c9eb500c7e695f451a4630:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1daac32701ca49d0a332f4b183a1a370",
+      "statement": "AGENTS.md lists a forgotten test MUTEX under Common Pitfalls: the failure mode is flakiness in a full run rather than a deterministic error.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L667-L676",
+          "version": "repo-lines-v1:sha256:9e264572cff50ff7212a9c4e91195e957781631e6643ae1369262856309f76b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZjgxMzc0NWM0MmI2YjNiNzQ2YjhlYmEyZjczYmRhZTk0NDJkZGZiYTliYjI0OTk5MWZkMjAzYjI2ZTYwOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZmE3YjhlZTdjMjUxOGEwMWE4ZWJhYWI1OTkzODA3MjJkOTI0MmI3OGMzMGFkNTlmNmIwYTNlZGYxZjM1YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzY2I1MjY2YzM0ZmMyOGUxNDUxZjQ1M2MxMjU2YTQ4NDMwNzE2ZDg3YTAzNzg1ZDY0NzE0ODllYTRkYjE5YTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMzM4NjUxMTgzZGM2YmEwNGZjMTIyY2M1NGY0YTcyN2JmM2E5MWE1Nzc0MzYxZTM5OWQ0NDlhNmQ1MjNkOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6eef8bf9812f47e78e26653156714af9",
+      "statement": "Where a suite factors the preamble into a setup() helper it must return the NamedTempFile and both TempDirs so the caller keeps them alive for the whole test; a dropped guard deletes the directory or database the pool and the assertions still point at.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_roms/test_prefer_format.rs#L9-L42",
+          "version": "repo-lines-v1:sha256:5e9fb730a2a27fd44ccfc3184615a0af5ba5cdaded5a86903b2269afa0d80c39:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMTBmNmY5ZDRmNTBhNTZiNTQwMTIwY2ZhZGFiZjc3MzI4YzY5YmM4NjhjMjhhNGY5OTYzYjVlYjQ5ZWNhNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwN2JlZmYwNmI1NGEwY2E3Zjc1OTQ0MGY2ODc2Yzc3OGE0NjgwOWM3OTIyOGNmOGYxYzExYTgzMDgwYzZmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxNjk3OWUxNGM4YmU1ZmZjYWY5ODZkMzY0NDRlZTU2ODIwMjgzYmNkZWNlNTJmZWMxYTE5NmQ4NmY4MzZkNmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6337c140d5847dba72802b9f6bb0f23",
+      "statement": "Prompts must never block tests: prompt_for_games(games, all) returns the list untouched when `all` is true, and the two call sites pass cfg!(test) for exactly that reason, so the dialoguer multiselect is never constructed under test. A new interactive call site needs its own bypass or the suite hangs.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms.rs#L61-L82",
+          "version": "repo-lines-v1:sha256:5dbb75ee330a87630b31b9dc03082102d058b8fc15c60ed81114bee42a8e5533:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwNzcyNjE5MzlhMzlmMDMyMmY4YzY0Y2Y3NDY5YWIzODllMjc3ZDdhMzVhNTZkMDMxZDYyOTkwYjlkMmQwMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Y2RlZjgwODVhZTc0YWI2MzZkNjQ1OWY1YzZkNWZiZmIwZGIyNjRmMWIwZDc1YmFjNTE5YzliM2Y2NzE3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTAzOTBhNGQ2ZWYxZTAyMDQ5N2ExMTk0ZTJhNjQxNDU0Mzg2ZDVhOWRhYjZjZDRmZWQ2MDIyMzM3N2RiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYzY5ZGUyOGMzYTQ3Yjg5YjQwMjNjYmU1NjJiNTRkNmNiMmVmNmRiNGM0Mzg2NTRhMTkyY2M1NWNkZmVkYTEifQ"
+        },
+        {
+          "resource": "repo://src/common.rs#L36-L55",
+          "version": "repo-lines-v1:sha256:16bf255191c6a376fd3e7d323e9d36a5642d92bc674cb58db7fcce2a089ddbf0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZDU0MWZlOTdmMWY1Yzk1NjBjOGM3M2Q1ZDliZmUxZTFiZWQyMGYzYzY2MDhhMGMzYzRkNzU1Mjg3ZTY3NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNTY4MDU1YjM0Yjk2Yjk1YjBhNGI3OTQ0MjMxMDkwM2U2ODFhZTczODcyNjRjY2RlMWRhZWRlMTVlNjEzZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0Y2Y0OWYzYTg3MTcyMmEyMzBkYzIyODU0OTQ4NjYwYzFiMmE1NTVkMmUwNWI5ZGY1ZjYyNmQ2ZDliMDQ4MGMifQ"
+        },
+        {
+          "resource": "repo://src/prompt.rs#L123-L144",
+          "version": "repo-lines-v1:sha256:080cebbf86409ab2d7b1d6b9f66caa262fff4bde13ea815ea43484a8a4e04fa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZTM3ZGNmMzVmMWY0YTM1ZGQ4MzNlNjU1MmQyOWVkODlmNDgxNzc4NWQzMGY2NmFkYmRiNGJkMmM4MzIxZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5N2E2ZmEwYjg2ZWY2ZDcxYmMzOTMzYmYwOTA3NGZiNDlmMTc3MTYxY2Y1YjIzODNiOGNlMzY1NjQwZDY4NGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8eb28a22c5f3470fbc24e7751375310f",
+      "statement": "Import helpers take an explicit UnattendedMode { None, Skip, First } instead of relying on cfg!(test); tests pass UnattendedMode::Skip to avoid interactive selection.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_dats/test_dat_updated_orphan_chd.rs#L1-L16",
+          "version": "repo-lines-v1:sha256:988aa1398664fc67e9b2f6dbc5f53143267fa6055cbeb149ade92502edfaee5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NjJkNGQ3N2Y5MGE5N2MyOGI0M2Y3MTdmZmE5ZWMxNjU3NmFhZTI1Yzg1MzU4MDAxNmRlMjVkMmYzY2E3YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZjIzYmQ2ODIwMDJiNTM4ZjVlN2NmZDhhZTY4NjcyMzljYzg4ZDNmZmI3N2ZhYTUwMWIxZGUyODExOWRjNTUifQ"
+        },
+        {
+          "resource": "repo://src/import_roms.rs#L41-L56",
+          "version": "repo-lines-v1:sha256:1bf5a40a451c7c12942d66b1ec3f64a077d76533b130f5625a58616ac80d649a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYTEyMmNjMzMwZWQxYzY5N2Q3YTQ5N2M1NmIyZjk5Y2RlZjYwMzg2OTY5MjE1ZTcxMzNkMmU4YjM4MTY2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyM2E0YmFjMWFmNWQ3NDE4NmNlMWMyYWFiNmQwZDM4NWZhM2I0NjI2MTJjZjkyY2U0MWE2YTQyYThjZGNhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMmUyOTdjMjNkODMzMDRhZTk2N2NjNjkwZGZhMTViMGI3NTI4YmZlOTg2YjhhYTgzNDUxZTExZTAzZjUxODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7aae7bc46d0457e88fdaf871affc35e",
+      "statement": "Tool-dependent tests skip rather than fail: an availability probe using get_version() is the first statement of the test, before the mutex, and version floors such as chdman::MIN_SPLITBIN_VERSION (\"0.265\") return early when the installed version sorts lower. A skipped test is reported as passing, so a tool-gated path can be silently unexercised.",
+      "evidence": [
+        {
+          "resource": "repo://src/chdman.rs#L20-L20",
+          "version": "repo-lines-v1:sha256:f0969a51517d371dff0521d55e72868607046dfe8e763d1f2ec8b70ad062fa9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA5NjlhNTE1MTdkMzcxZGZmMDUyMWQ1NWU3Mjg2ODYwNzA0NmRmZThlNzYzZDFmMmVjOGI3MGFkMDYyZmE5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA5NjlhNTE1MTdkMzcxZGZmMDUyMWQ1NWU3Mjg2ODYwNzA0NmRmZThlNzYzZDFmMmVjOGI3MGFkMDYyZmE5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDE2ZjRhNDM4NjUzNmQzY2QzODllNGViMGRhODdlMDAxY2ZjMGZjNDhiZDJhMDQ2Y2E4YjU2MjgxOTFhZDc1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMyMDM3ZjI0ZGI2NDkyM2JlYmRhMTBkMzUwZTI3MGRkMzI1OGVmZDk2MTllMGUyYTM4MGMxOWNjNDMyOTk5NCJ9"
+        },
+        {
+          "resource": "repo://src/import_dats/test_dat_updated_orphan_chd.rs#L10-L16",
+          "version": "repo-lines-v1:sha256:305dbf06e026cdfe49c061e38db2aea17db5e849995067bbd25a23c3e32503c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE5NDg0ZWVkZjM2NGZiOGMxMmYxZWI5OGZiZjZhOWI0ZjY1MGY0Mjc4NzRhOGQ3MzU5MDEwYWFkZTQzMWJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA3YmVmZjA2YjU0YTBjYTdmNzU5NDQwZjY4NzZjNzc4YTQ2ODA5Yzc5MjI4Y2Y4ZjFjMTFhODMwODBjNmY4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFmMjNiZDY4MjAwMmI1MzhmNWU3Y2ZkOGFlNjg2NzIzOWNjODhkM2ZmYjc3ZmFhNTAxYjFkZTI4MTE5ZGM1NSJ9"
+        },
+        {
+          "resource": "repo://src/import_roms/test_cia.rs#L7-L14",
+          "version": "repo-lines-v1:sha256:929873ee858779555b46d924fdf1835df18be449ec33851b01ef452e8f4a6b29:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE5NDg0ZWVkZjM2NGZiOGMxMmYxZWI5OGZiZjZhOWI0ZjY1MGY0Mjc4NzRhOGQ3MzU5MDEwYWFkZTQzMWJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjBmMjhjMjVjNWU5OTg0NDQ0YjQzOTQ5NmY5OGQ0OTljYjBmZTFhY2VmYzY3ODc4YmU5MGJhZjA1MTRlMDRkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA3YmVmZjA2YjU0YTBjYTdmNzU5NDQwZjY4NzZjNzc4YTQ2ODA5Yzc5MjI4Y2Y4ZjFjMTFhODMwODBjNmY4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTcwZjNkNDk1MDMwYTBhMGI3NjJkYzgxYjJlMzVlZTdmOWEwMTc0YTdmNTJkMDhmNGRmZTIzYTYxYzE0N2QxOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d457a65b4fb492485f4ac3ff17f3469",
+      "statement": "get_version() is the single definition of tool availability shared by product and test: the same functions feed the `info` dependency report and the GraphQL `dependencies` field, and CI installs only mame-tools (chdman) and xdelta3, so the other interop suites skip there by design.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L31",
+          "version": "repo-lines-v1:sha256:60cb8ae47ff1fadf08230410d7d8246f4a078a1f7410aa61962ce39226f075bb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ3M2IwZDEyMzIyNjQ0ODA0MDZhMDc1YzgzZDc4ZjBmYTM5NWEzZWUxZDFjNjE4OGRkOWE0MmM0M2YxNWU5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
+        },
+        {
+          "resource": "repo://src/info.rs#L25-L37",
+          "version": "repo-lines-v1:sha256:4658a8f3a21f4c674aa600b55a24a133188158a3b5a2f3cc4f61e7c3d222ce0a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiODY0ZTMzYzA5M2Y1YmQzZDEyNzZkZTU5ODlkYjZlODRiZTUzZDMyMDVkZDY0ZDViNTE2OWNlMjYyNGFlODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4Y2Y5NTcwN2QyYjA0ZDY1MmY2NGJkYWY1YjgzYWI1OGNlMDlkYTVhMjgxOTRmY2FiY2JhNDQzYTY2MGM5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNjllMDhiYTdlNzcyYzUzOTlmYmY0NDUwNGFiZTlkM2M4ZDE3ZWZiZmNlZDk1ZjkzMTU1NzQyYjRkOGJhNmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_695ffedf8dc044f3905ce1de5693d454",
+      "statement": "Tests assert database rows and on-disk layout together: sort_roms/test_sort.rs checks each romfile.path equals the expected path relative to ROM_DIRECTORY and that rom_directory.join(path) is a file; purge_roms/test_orphans.rs asserts find_romfiles() is empty and the system directory has zero entries; check_roms/test_check_by_name.rs corrupts the imported file after import and asserts the row's path contains /Trash/ with the file present there.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms/test_check_by_name.rs#L50-L73",
+          "version": "repo-lines-v1:sha256:66d577f96ae14662fbd9779cc4cf61c6f466b3e50ed9ddecd6408c4584c54b3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZTg0ZGRjMTJjMjllYWUyZDY3YzEzNDcxOGI2YzQ3ZTM0OGI4ODQyYjJlZmJkZWJmZTQ4MzFlYzY3YjE0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/purge_roms/test_orphans.rs#L54-L72",
+          "version": "repo-lines-v1:sha256:42039a84c4cb131128b102083fbbf44f213138c2d7d4204b8fff700e1f6cc265:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0OGM5YTcxMDVkZDMwMDNlOWRjZmFhMmRlMmQyNTQwYjUxOGNlNWM5MzZjYjJhZTZmZDMyM2NkZmE3YzljNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/sort_roms/test_sort.rs#L82-L102",
+          "version": "repo-lines-v1:sha256:185bcd670bea38620aae576fe324b4c9713ed52d68e2273abc923b427a52ca1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2N2I0YzMwZTgxYzdkZTcwYzlhNjI2MjkwYTVlMjdiNmExNWYzY2JlMTc0MDdhM2NjOTcyODNhMmZhY2E1ZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMTY4OTIzY2MyOGI5M2RmM2RiZDY1MDM3MmQzMjBhOWY2MGQxNGU5MWFkNmY4YWM3M2Y1OTgyMDc4ZDFhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e17609daf3874707910c1bae25cd9435",
+      "statement": "DAT-download functions take the provider base URL as a parameter, so HTTP tests mount a wiremock MockServer and pass mock_server.uri() into the function under test — dependency injection, not an environment override. wiremock is the root package's only dev-dependency.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L155-L156",
+          "version": "repo-lines-v1:sha256:5073c9b8b8a6a972d5a9cb6d2893fd24b329a91285d1b2831288a3c8f3772b4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMyYTQwYjE2ZTczZDlhNjcwYjYxYTNhYzA4Mjg1MmJmM2Y3M2QwNmVmYjlmZGEwYzYyOTVmYzNjZGYxOWEwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNiOGNjYjk5ODJjYmQyNTZmYmI0NjAyZjcwMDA0MTBmMzMwMmI0ZDU2OTg4ZjE3ZDA5M2FmZjE3MDI1OWI4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGExNWNkNjIxNDY0ZWRkMmQyYWFmMzVlZWQ4NGRkMzQyYTU3Yjk3Y2RkZDcxOTlhZTEyOWEyZmQ0YTI1MDA4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFkYTljNjA5NzljZDY4NTA2ZjJhMTcwYTJkY2M0ZTg2YTc3N2Y4MTFiZWVlMTIxNjgyMjc5MWU3ZGU5OTY4MyJ9"
+        },
+        {
+          "resource": "repo://src/download_dats/test_nointro.rs#L35-L51",
+          "version": "repo-lines-v1:sha256:b4de8b5a933e90e8c95ad9467361f0939fcd75d5eb234b82c1ca656836ba0f1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3OWVlMGNjYmI3NWI3OGUyODFjM2I1ZjVjZTEzY2MyNWJiYzdlNjczYjViZGU3Nzc4MDdiNTg4Njc0ZWM4YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNDZjODllZjk3M2IzNjgxYTU0MWYyNWIzY2Q5MDE2YjU5OTVmMjIyMWZjNGUzZDY4NDZjOGVkZTg2ZThhMDgifQ"
+        },
+        {
+          "resource": "repo://src/download_dats/test_redump_failures.rs#L39-L58",
+          "version": "repo-lines-v1:sha256:0eead96315eae79aee8382efc95ac5aaba7980c1a0d1162765ac7b6305b7b4fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNWY4ZWJlZDc1YTA3OTBmOTkwZjc3ODQ3MGNmOTQ4NWI5NjhmZjMwNGY5YjQ4ODc1Yjk3NGUxMDljNDFkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNDdkYWZjMmU5YmQwZDE4YzNkNmQ3ZmU5ODNmMTU0Njc0ZTA5ZDNkNzBiZWQxYTM5YjcxYjNmMWRjN2I4OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3ZjI5MTFiYjg2OGFhNGZiNTI4MzI1ZGQwYjM1NThjMTc4MzcyOWRkMWIzNWZhMzNkYThjMjFmNzZhNTMxYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d911e04210c4754b89dc7e60a81b4e2",
+      "statement": "Server tests boot the real Axum main(pool, &matches) in one future and the reqwest client in another, racing them with tokio::select! after a fixed warm-up sleep (1000 ms in the first case, 100 ms elsewhere); multipart bodies are hand-assembled, background imports are awaited by sleeping then re-querying, and each test pins its own loopback port (default 8000, or 8001-8003 and 8010-8012) while holding the MUTEX.",
+      "evidence": [
+        {
+          "resource": "repo://src/server/test_queries.rs#L48-L117",
+          "version": "repo-lines-v1:sha256:2a20a495c87735d80f92551d08c40c7ea8c0c24ecf26610f886724efb14f9321:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/server/test_server.rs#L249-L292",
+          "version": "repo-lines-v1:sha256:75363ba5e117743e0715825020c03cb185eee465a66a74bff1e6e96b1951bb72:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiYjRjNWRmYmRhOWRiNWNhY2ZhMmRjYjdjMDFiODg0MjMwMDJlMzJjYTU5ZDljZTdkYmMwNjU0Y2M4ODU4NjAifQ"
+        },
+        {
+          "resource": "repo://src/server/test_server.rs#L85-L98",
+          "version": "repo-lines-v1:sha256:b16cd044aa1cdfdc4d728da58e60132796fae1d887b38f45093114d37486ec8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NWQ1M2I4NDk1NDhlNzhlNDM4MzkxMTdiN2EyZmYwNDdiNzc1MjJmNDBjODNhMDY4ZmYxNTBkYjJhODM2MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmZDE2NGRmMzA2MzEzYzk2ZjRmMGJkMTM5MTg1MjQ0ZTUzZmJmMGViNThiNWZmYTNmM2ZlZTY2NWVkZTg4NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2MTUyMGMwMDRmMGJjZGI2YTM2YmJjYmE5YmJkZGJlOTJjN2JhOWYxZjA3ZTk5MGRhMjVkYTgyMTYxYzk0NWUifQ"
+        },
+        {
+          "resource": "repo://src/server/test_uploads.rs#L12-L46",
+          "version": "repo-lines-v1:sha256:f14b402eedf0e4092315e5c55e8907166d773c4b71e7a97534e8435146c9ad47:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZTgwNjAxZmZhNDBmMzYwYWI2ZjFhYjViOWExMTJjN2QwYWZlMjY0MzMwOTc2NmY0YzY4ZTYxMzZmNjEzYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1OTFkNGRlODM2MDAzNzgwNzhkMjAwOGI1YzBkZDVjYTljODdlY2FmMWFmNDA2M2VhM2Q5ODRlN2NlM2NlZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OWY3ZTA2YWY1ODI4MzQ3YmZhOTVmMWRkODZhZDRiMDI2ZTE4MzM5NDkwYjM0MTU0OWQxMTU1ZTRkNTJlZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_920a40adfd7941ecb1f6505cb362999b",
+      "statement": "server and mcp modules are feature-gated in main.rs, so `cargo test` without `--features oxyromon/server` compiles none of src/server/ or tests/mcp_stdio.rs and is vacuously green for that code; `server` implies `mcp`, so the single workspace command runs both.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L36-L51",
+          "version": "repo-lines-v1:sha256:683da612e77cc27df1aee31f53faea00d75aad1e042fc788054399d195ab69f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZjZjMWM3M2U0Njg1YjZmNTU3OTJhZTUzOTI1NTNmZjc5ZDNjYzA2N2IwYjc0ZTA2ODY5OGY2YjJjNzZiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZDg5NzIxNGEwMGUzZmY1M2VjM2ViODc3MTViOWIxNGU5MTM1MGFjZTAyNzIxZGExN2M2ZDgxNzZiMDlkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZjEyMzRiNjg3ZmJhZWJjY2MxNzg2YzlhNWIyYTc4Y2I1YmYzZTIyODk3NTIzOWExMGFkZTI2YTA4MzcxZjIifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L26-L52",
+          "version": "repo-lines-v1:sha256:25160a043832139ff9226118f13bf4f3c573ac1399a8d4fb5b7bab2eb1719d50:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNzEzOGJkODNhNWY4NGZmMTRjNDM4MzVkY2ZjMGU4Mzg5MmU0NjBhMWM4YWUxY2ZjZWEzZTcwZjhhZTI4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MzIwODJmNDBjNmZiMjIyZmFlYjY1OTI4MWFhMjc5MTMyZmRkODBiZGVlODQzNDQ3ZDdkNmEzNGNjNTRlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyY2IyMDI4YWE4NGIzMzdhYTkyYTUwYmI1OTAzYWNmMGFkYzM0MDFiOTMzYTEwMzFiNWQwNjE2NDEwNTRkM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZWVmMTdkMmJjODJjZDEyNzllNGViNjA3N2UxMDMwMTM1MDYyYjIyOTJmMjkyOWFkNmY4N2FmZGM3ZTI2OWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_41e88628d582429c876aef9e3ae6cf9f",
+      "statement": "The suite is run with `cargo test --workspace --features oxyromon/server` (the package-qualified feature is required because --workspace selects several packages), coverage with `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` as CI does, per-crate with `cargo test -p <crate>`, and slow tests with `-- --ignored`; only one workspace test is #[ignore]d, the 2 GiB index_shift_round_trips in crates/xso-rs.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L60-L64",
+          "version": "repo-lines-v1:sha256:86eaf4b3cf54d4f15113224372c479e38236438fcb87e1eca150f6635cd51020:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzMmI5ODcyNjNkZjIxNjNlNzI2ZDQ4YjkyZjZmOTY1MTQ4Y2I2YjZkMjgzMTc5MTUxNGM5MzlmODM3YTE0MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjYjMyYzRiOWIyOWRjOWQ4N2JkYmQ5OTk4ZGFmNTQzYjMwYTdhZTAyMWQ5NGU5N2MxODU3ZWFmOGFiNmQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTM5NjMzYzM3NjE5NjJlYTJiOWExYzNlZGRjMDFjZjY2YzMxMTY4NzFhOTgzZDg3MGRhNDQ3ZTk3NGE0YTBlOCJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L244-L248",
+          "version": "repo-lines-v1:sha256:3af843368b256186bc8257b34bc20795b597c57ad435a41c49acdeb7ba56246d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0M2ZiODlkZDcxMzkxNzA2YmI2NTUzMzcxMzlhZTY2YWMxMGZhY2M0MjYyYmNkMjQ4YzIyOWNmMGUyNWQwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2ZjNjMyYTI5ZDgxYWQ2YThmZmFhMDFiMzIxOWE1ZGVkMzI5MTcxN2MzOWMxYjNhM2M3OTU3Nzk1MmM3MmZmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWVkYWI3ZjkzNjgyMTg1MmQyMjA2NjNmMTU3MDEyMmNiOGI0NDcxMjg5MzY5ZjY5YjcwNjI0NWIxNDg5MzIzMSJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L252-L263",
+          "version": "repo-lines-v1:sha256:8015c8cf80aa2bd859be92bdcbb75c50e886ce82aa2326e4ca371af1685c9d4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkZTVkZmU1MzFkYmViYzdiMWI1YzRlOTY3YWFhMjQ2MzljOTEzMWFlNWQxNGZjYjc4ZTUzNGQ1MGFhZjE3MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZGFiN2Y5MzY4MjE4NTJkMjIwNjYzZjE1NzAxMjJjYjhiNDQ3MTI4OTM2OWY2OWI3MDYyNDViMTQ4OTMyMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYjU3YzM1MWYwZDZhNmM5NWIxNDcxMzQxNmM1ZGY3OTRkM2EzYzNkZjFkMDhmYWVhZDcyZjZjNzA4NTY4ZTUifQ"
+        },
+        {
+          "resource": "repo://crates/xso-rs/tests/interop.rs#L183-L207",
+          "version": "repo-lines-v1:sha256:62f3a54e250247a8dd22dbba63475c1243c3c86ee8826cbec27cd6a144ec9b16:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGVhYWVhZTcyZWFkODg0OGEzNzgxNzkyMjkxZmE1MGUyYjNiZmIwYzg2MDE2OTY0NjMxN2FiMDQ3NWNjMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NmViNjQ4NzM3ZDcxZTY1Njc2NmNiMjJmYmNmOTVhYTQ2NDVhYjBlYTQ5OGRhNmFlYjcyMTRjMmNhN2MxMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOWI3NGViMjcwYTU4MDFlNDEzNjc4MDY3ZTY0YzA4YTU1ZGU4NDYzMzkxYTlmYWVhNzQ2Y2YxNGY0YTAzYjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4911ff53b96d4116b4f96760e8775c21",
+      "statement": "test.sh runs the llvm-cov pass twice, and its second line selects oxyromon/nod and oxyromon/sevenz, which the root [features] table no longer declares (nod and sevenz-rust2 are plain dependencies); the pass adds no coverage and, writing to the same lcov.info, only overwrites the first run's report.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L36-L51",
+          "version": "repo-lines-v1:sha256:683da612e77cc27df1aee31f53faea00d75aad1e042fc788054399d195ab69f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZjZjMWM3M2U0Njg1YjZmNTU3OTJhZTUzOTI1NTNmZjc5ZDNjYzA2N2IwYjc0ZTA2ODY5OGY2YjJjNzZiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZDg5NzIxNGEwMGUzZmY1M2VjM2ViODc3MTViOWIxNGU5MTM1MGFjZTAyNzIxZGExN2M2ZDgxNzZiMDlkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZjEyMzRiNjg3ZmJhZWJjY2MxNzg2YzlhNWIyYTc4Y2I1YmYzZTIyODk3NTIzOWExMGFkZTI2YTA4MzcxZjIifQ"
+        },
+        {
+          "resource": "repo://Cargo.toml#L96-L125",
+          "version": "repo-lines-v1:sha256:5b242cf460191811375719844d8ccf74d0f85d419c9a8fc59c2237f9b16cceeb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxODM4MmMzZWE1MmYwZmY2YmUzOTdmMTQ2MzI4MjY5MTEyMGQ5MTQ0MjA4NDBjMzc5M2U5NGM2MWNhOTFjMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZmZhOTI3YWE2ODliYTYzYjRjZDMwY2I5ZTNhOGYxYWNmZGYxYjJhNjU4ODYxNWMzY2I2MDY3M2FmZWY5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MGQzOGJmMTA0Y2NkNGM4MmJiNjhjNjEyMTk0YmQ2ZmNlNWRkNDkyMjc3MzE1MGI5MmM3NTVkYzU2Nzk4ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViN2U1NWM1NTU2OWQxOTg0YWViMDJmZTQyM2RhYzg3ZTk5ZDgzZWUyNjM5NDQ3NDhiZjViMmFjYWQ5N2I4MWYifQ"
+        },
+        {
+          "resource": "repo://test.sh#L1-L4",
+          "version": "repo-lines-v1:sha256:53424aa33e46c68efdd0ce61315b12242077c9690d8a3919bfe06e03be54eee8:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODg4NmFkYjhiYmMxMTMzNTdjNGZjNDZmNjkyODU4NmRlODMzZWJlODgwYjliMTg4ZDI5MDFjNmU1MGRjMjU1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4119556509a74887a822d1a0befc80e9",
+      "statement": "Debug-build test speed is dominated by dependencies: [profile.dev.package.\"*\"] sets opt-level = 3 because hashing and the pure-Rust codecs run roughly an order of magnitude slower at opt-level 0, and wall-clock time for the in-crate suite scales with the number of serialized #[tokio::test] modules rather than CPU count.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L162-L166",
+          "version": "repo-lines-v1:sha256:7edb4c494679308e76e58c3528a0e9a8ccbd761e90ef1b25fc996ddc45b052ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg1NjNlNmRiYmVhNmVmZDMyOTJjOGUzYTg4MDVhODQyNjQxYjVkYmM0YWRjNjhiMTQxZjg5MzJhNThlYTc3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUwYjE1NmZkZWIyZjc3NjRmZTI4M2YwZDQ0YzJmZjgzNTBiM2EyYzA2Mzc2ZDkwNGQ0Y2Q4YWQxM2FiYzMyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JlZmE3MjZlNGQxYjFhMGU0MGQzYTVjZmY3OGFlMzI2YjNhZGVkN2Y1Y2ZmOWQ1ZWE1ZDQzZGJhZDcyNTdhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM2NDg4NDIxYzE5OWExM2Y1NmZlZmU0NzIyMWM4YjI4MmNjYWQyNjk3MTViNjU0OGYwMWFhNTk5NmUyYTc2NSJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L631-L648",
+          "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48f39550dfb94108895f724dd35578bd",
+      "statement": "tests/crates.rs is a workspace parity guard, not a behaviour test: it requires the five format-crate CLI ui.rs copies to be byte-identical, so editing one without the others turns any `cargo test --workspace` red.",
+      "evidence": [
+        {
+          "resource": "repo://tests/crates.rs#L1-L16",
+          "version": "repo-lines-v1:sha256:41b1a0819530ca9825c03c2d6d688afb184164e916a9d0994a181af90c946185:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f2de92f048b4ad288b92c035bb6fda9",
+      "statement": "A new subcommand is expected to ship tests in src/<command>/test_*.rs, one scenario per file named for the behaviour, each registered with #[cfg(test)] mod test_*; catalogue state is built by importing a DAT through import_dats::main rather than inserting rows, except for pure path-building helpers such as common/test_path_*.rs which construct System/Game/Rom structs in place.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L322-L351",
+          "version": "repo-lines-v1:sha256:3bef97e579fd7839438c3d9d38c6416de8ef9c81e7f1e48cd5fb287182116357:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNWEwYmRlYWUyNjgyMWU4MzRmN2Q5OWI2ZDE3YTE2M2JkYzlhZTE2OWY5ZDhkYTc1ODZiNGNlYzE5MDY4YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NGJjOTU4YmViMmE2MmIyOTk5NWYzNzI3NTA3OTUyYzI1ZWIyNjYxYTU2Mzc4ODZmN2RlODVhZjViNDVjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NDk4YWY2OWUyYTI1ODkyN2Q0NWUyMmVlMzc1MWE5YWJhMmQzN2Y0ODdkZGE2OTQxMGE1YWJlNzk5OTE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1OGM5OGFkZWY3YjRhNDAyMDhmMjdiOGQ1MDhkMGY4Y2M1YWFkZjZkNjlhMmZjYWJhZTJhMjhhZTc2ZDdhOTQifQ"
+        },
+        {
+          "resource": "repo://src/common/test_path_original.rs#L5-L18",
+          "version": "repo-lines-v1:sha256:7292fe34f8b8296b98bec4ba6a37505bcfe80dade48bf6a389b0168fe7e9657c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNDcxZDRiMWI5NzU1YTUzMmY1NDBiODM4OTVhYTFiMmZhZWRiNzY3ZjUxMWVlMzhiMjMzMWViZGM1ZDJkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMzNjNmFhNjMzNmZkNGU2NjQ1NjQwYTViNGY3NjEwN2I4MThhYmI0ZTYzMmViNDVjMzhjYmVmZDUzNzljOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwZGQ5ODdjMjVlYTFlN2RlNWE0ZDEyZGJiNjhjNTViNTA1MGJhYjQ0NTQ2OWFkMzE4MDM2MDFhMWVlZTQ1MWMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-09T16:11:37.544Z"
+  }
+}

@@ -106,9 +106,13 @@ replaced the external tools it once needed. Each builds a standalone CLI too:
 
 | feature        | description                                    | default |
 | -------------- | ---------------------------------------------- | ------- |
+| mcp            | build the MCP server subcommand                |         |
 | server         | build the server subcommand                    |         |
 | use-native-tls | use the system OpenSSL library                 |         |
 | use-rustls     | use rustls                                     | x       |
+
+The `server` feature implies `mcp`: an `oxyromon server` also serves MCP over
+HTTP at `/mcp`. `mcp` on its own builds the stdio server without the web UI.
 
 7z and ZIP are handled by the [sevenz-rust2](https://crates.io/crates/sevenz-rust2)
 and [zip](https://crates.io/crates/zip) crates, so listing an archive is a metadata
@@ -265,6 +269,7 @@ NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Swit
         purge-systems       Purge systems
         generate-playlists  Generate M3U playlists for multi-disc games
         benchmark           Benchmark oxyromon
+        mcp                 Serve the Model Context Protocol on stdin/stdout
         server              Launch the backend server
         help                Print this message or the help of the given subcommand(s)
 
@@ -728,7 +733,7 @@ Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehan
 
 Launch the backend server
 
-The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`.
+The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`. It also serves the Model Context Protocol at `/mcp` (see [oxyromon-mcp](#oxyromon-mcp)).
 
 From the web UI you can browse systems, games and ROM files, see how many games in each system are complete, navigate the games list with the keyboard, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
 
@@ -740,6 +745,45 @@ ROM files are imported either by uploading them, or by giving a URL which the **
         -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
         -p, --port <PORT>        Specify the server port [default: 8000]
         -h, --help               Print help information
+
+## oxyromon-mcp
+
+Serve the Model Context Protocol on stdin/stdout
+
+The MCP server lets an AI assistant explore and maintain the library with the same actions as the CLI: nine read-only tools (`status`, `list_systems`, `get_system`, `list_games`, `get_game`, `search_games`, `get_settings`, `downloadable_systems`, `parse_game_name`), seven mutating ones (`import_dats`, `download_dats`, `import_roms`, `sort_roms`, `check_roms`, `convert_roms`, `set_setting`), and three destructive ones (`purge_roms`, `purge_systems`, `purge_irds`) that refuse to run without an explicit `confirm: true`.
+
+Mutating tools run synchronously and stream progress notifications as they work; the client can cancel mid-action. The server also exposes resources (`oxyromon://status`, `oxyromon://systems`, `oxyromon://systems/{id}`, `oxyromon://settings`) and two guided prompts (`onboard_system`, `audit_system`).
+
+Use `--read-only` to expose only the read tools: the mutating ones are not registered at all, so they do not even show up in the tool list.
+
+    Usage: oxyromon mcp [OPTIONS]
+
+    Options:
+          --read-only  Expose only non-mutating tools
+      -h, --help       Print help
+
+Configure a client with the stdio transport:
+
+    {
+      "mcpServers": {
+        "oxyromon": {
+          "command": "oxyromon",
+          "args": ["mcp"]
+        }
+      }
+    }
+
+…or, when running `oxyromon server`, point the client at its Streamable HTTP endpoint:
+
+    {
+      "mcpServers": {
+        "oxyromon": {
+          "url": "http://127.0.0.1:8000/mcp"
+        }
+      }
+    }
+
+MCP support is the Cargo feature `mcp`, implied by `server`. Because the stdio transport speaks over standard output, nothing else may be written there — a good rule to keep in mind when adding output to any code path the MCP server can reach.
 
 ## oxyromon-benchmark
 

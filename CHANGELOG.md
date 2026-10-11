@@ -3,6 +3,8 @@
 ## Features
 
 - Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
+- Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
+- The web server serves the same MCP server over Streamable HTTP at `/mcp`, sharing its pool and events, so MCP-triggered actions show up in the web UI just like UI-triggered ones
 
 ## Changes
 

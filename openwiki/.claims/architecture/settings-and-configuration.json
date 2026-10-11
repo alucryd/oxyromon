@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3016c73ade74ab74a10f6666c57f8937075df7bd7533acc0581bca50cb5b27f2",
+  "claims": [
+    {
+      "id": "claim_d42146da208949d8b60001552f88ad59",
+      "statement": "The settings store is one SQLite table (id, key, value: Option<String>, system_id: Option<i64>) whose scope column was added by rebuilding the table through settings_new and installing two partial unique indexes — one on key WHERE system_id IS NULL and one on (key, system_id) WHERE system_id IS NOT NULL — so at most one global row and one row per (key, system) can exist, and settings.system_id REFERENCES systems(id) ON DELETE CASCADE so purging a system removes its overrides.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20260317000001_add_system_id_to_settings.sql#L1-L16",
+          "version": "repo-lines-v1:sha256:767b83e6584e9a49532db710c6fb8249438a9090770298726869382be9a030b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNTFlZTEzOTg3MGNkNmIyYmVjNWM1NjQxZjkzY2Q1ZDkxZDc1Y2U4MjMxMTFiM2M2NzU1ZGI5ZWQ4OGVkOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NGI5N2Y1NTM0OTJkMDg0NmMzN2U0ZWE5MWU0ZWZlNTRiNDc4YTkyZmZkYTMxZDkxMWE1MWNmZGNhNzEyMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/model.rs#L172-L180",
+          "version": "repo-lines-v1:sha256:476fc0f55f9afd44cb1536240eb33b47daff4348abafe8288f28f82f263eaf8b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlkNzBmYmIxMGM4ODZkNDEzNGIwMGM5YzU3NDdjNDY3YzVlOGRjZDU1Zjc5NWQ5M2U2ODRlMWI3YTFiYTg4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI5YmVhYjNiZjgyYjg4NTA2OWU0N2JiNGU1MGNiNzhhZWMwYjc0ZDcwM2U0YWFjZGZhYjAwMWM0NWY5YjVkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTczNDg0ZTBiM2FlMjE4MDBhMzJlZjRiZmRjMDgxNjNmZmExMTUzNDRlMzAxZjRjYWI0OTlhNGZkYjg4NWRlZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e084db5ce96e407dbaf42fb657d635e9",
+      "statement": "config::get_setting resolves a setting by trying find_setting_by_key with Some(system_id) first and falling back to the global row, and both find_setting_by_key and find_settings bind the scope with SQL 'IS ?' so a bound NULL selects the global rows instead of never matching; every typed read therefore inherits from the global value until a per-system row exists.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L306-L317",
+          "version": "repo-lines-v1:sha256:713ccb8e20bbda52418825e8be1efced0b9098bb97fa779078a7c7d8337c94f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOWZmZDExOTA5YjFjMDNlOGY5ZTVmMGY5ZWIzOTgyMmM2YWZhODJkY2E2MTM3ZTRjMDFhMWE0NzVkZWE4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ODY5OGQwZmExODk1YTM2NWQxMmUzN2JmMTEwNjEzYzk1YTJmMTA4Y2Y2NjVkMDZmMTM4N2MwOGNhODZhYmYifQ"
+        },
+        {
+          "resource": "repo://src/config/test_system_bool_fallback.rs#L22-L27",
+          "version": "repo-lines-v1:sha256:780b17a0e84e53e5e97bcd2c66e5454c98a6294249c191a3af9a27c1d9c054e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMDllYzE5YmNmOGVmNGRhZGZkNzE3ZjIzNTVmODg2MTExODI2MGE2YTQyYTRkMDA1Y2UxYWYxZDFjNzZiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmZkMTY0ZGYzMDYzMTNjOTZmNGYwYmQxMzkxODUyNDRlNTNmYmYwZWI1OGI1ZmZhM2YzZmVlNjY1ZWRlODg1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/database.rs#L3136-L3174",
+          "version": "repo-lines-v1:sha256:840815d5490c7d2c52f9fae5639922f31d6730822f70adfefae5143413efa857:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZjdiOWQ4NzkxMGM5NmEzNjljNTIwODA1NmYyNGI2ZWM2N2YxMjVjZTlkNDkwODI4MzcxMjgzODE0MDgzOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMTAzODViY2RlNDRmYzRjNTRlYWJlM2E0YTNiMzJiN2E0MTljOTJkYzExZDg0NDFmNTdiZWNhZTJjODZlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d46fca0cc7e4f10bd561e0142c061de",
+      "statement": "Per-system unset is not per-system delete: unset_setting only NULLs the row for the requested scope, so an override row with a NULL value is what get_setting returns for that system and the global value is never consulted again — a get_string caller sees None where a global default exists, and a get_bool caller on that shadowed key panics.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L306-L317",
+          "version": "repo-lines-v1:sha256:713ccb8e20bbda52418825e8be1efced0b9098bb97fa779078a7c7d8337c94f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOWZmZDExOTA5YjFjMDNlOGY5ZTVmMGY5ZWIzOTgyMmM2YWZhODJkY2E2MTM3ZTRjMDFhMWE0NzVkZWE4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ODY5OGQwZmExODk1YTM2NWQxMmUzN2JmMTEwNjEzYzk1YTJmMTA4Y2Y2NjVkMDZmMTM4N2MwOGNhODZhYmYifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L413-L430",
+          "version": "repo-lines-v1:sha256:64d6f687f20075dd0caffd6fc5949271ce33f17ce235bb36548a447d8b579239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk4OWE4NGE3NDk2YjJlMTYwOTYxNjhiZmZkZWRjZmNkMWMwOGRjYzY3ODkxNzhmODM4ZGNmYmYwYjcyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NjIxN2Y2NTIxNjVjMGVjYzhmZDU3YTg1MzM3NjBiZmU4YzQ1ODFjNTI3NjBkZjllODhhODI5NzE2M2Q1NjYifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L432-L444",
+          "version": "repo-lines-v1:sha256:0b3d8a8d823eb676af564261b12e6b8ea4f8fe71fea995883878197b0f679082:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTEyY2QyY2RjNjQ2YTM1N2QxMzNkMWE1NjgyYjZhNzAxNzA5ODY2YzFlMzkwMjcwN2ZjYzE3ZGJmODdlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmZjcxMmU1ZjJkN2NmM2JkZjJmZDAxNGNiMTgyYzMxZTM5NDFjOGRhMGZlZTlhZWUwMzRhM2IxOGY0ZDkzMzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9f5d81cf0e145b285f5cd76109465e0",
+      "statement": "All setting writes funnel through one private helper, upsert_setting, which looks up the exact scope and calls update_setting by id when a scoped row exists or create_setting otherwise; no public setter (set_bool, set_integer, set_string, set_directory, set_list) inserts directly.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L446-L465",
+          "version": "repo-lines-v1:sha256:5cc629304df9206afcdb4cad9b003932983fe9a9940a17ac2f813afefce8514a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzZiMGMzZjA0NWEwNTZiNGUxY2U1NTJiM2RmODNkYWZiMWIyMzcwNzAwOGNjMGU3OTk5Y2NkMWI0NWQ4OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMmFlODhlNGJmM2QzMDIzMDBkYzdjYmNjODQwYTlkMDM4MTk2MDc3MjBkNjM0ODg4NDhmNDYyZTE1NzIxNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMGQwNzRkYzg0ZGVkZjM4ZTAwMjEwZjNhYTI1YTQ0MTIzYjQzZDk3ZjAzODM3NDAyNWMyYjY3Y2JhMWM5MzgifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L551-L601",
+          "version": "repo-lines-v1:sha256:5bc5ba0a1a65c2b162434a1a40f3ac1712d886a3c03f7f2b1873a2b2873e3072:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
+        },
+        {
+          "resource": "repo://src/database.rs#L3101-L3134",
+          "version": "repo-lines-v1:sha256:3c021d6abb09d2e11f1971e9e476332379d0ce114253a51f6f7fad6df0d00302:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYWI3ZWQ0MGUwOWMxMjY4YjNiNDJhMWU5MWVlNjllZmYyNWNmNjlkZTJlYmQ3ZDAyOWQ0MzY3OTZkYTM4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwN2ZmODVkNDIxYWY0NzkwMGZlNmYwNjdmMWJiZWQyNTFlZTE1NTNiZGQ5MzQ0Yzk4NmI0ZjExYzJlODY5ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliY2RhNjVmMThkMjhmZWNlMWVjOGQ3MGQ3NGVjZmQzMTFiNDQ3NzdiZmU2YmUxYzliNDkwMWUxYTlmODZiZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8f4799785384e9a8779f599c1e27574",
+      "statement": "The typed accessors have deliberately different failure semantics: get_bool, get_integer and get_string unwrap the Setting so a key with no seeded row panics, get_list returns an empty Vec for both a missing row and a NULL value, and get_directory returns None for a missing row but panics on a NULL value while canonicalizing on read so a vanished path also yields None.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L432-L500",
+          "version": "repo-lines-v1:sha256:f662ef48ab25afd54d323b029f5cbeaa62424e53b9d7e48f0e20f528aa8b6737:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTEyY2QyY2RjNjQ2YTM1N2QxMzNkMWE1NjgyYjZhNzAxNzA5ODY2YzFlMzkwMjcwN2ZjYzE3ZGJmODdlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkZDI0MzNmY2I1ODRmOTFkYjEwYzM1NGM1NzM1OTcwZmY5MTU2ZjUwNmVjZjI4OTRhMmU4MWUzNThkMzUyMjEifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L565-L601",
+          "version": "repo-lines-v1:sha256:11c3f4782f81f0d765b0b865f04f0998a835bacc2b31b6b83389384cbd9ca186:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDMzMGEyZDNjY2JlMTU5NGE3NzBiOWQyN2RlMjQ5MDk2MWJhODY2YTFjNzNhZTEzMTFiOWU3OTRlOTNlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDE5YjJiZTE1Yjk2NWVjZDRiMDZjODI1NGYzYWViOTU4ODcxZjA5ODI1OGJlNWY5ODdhZDY2MTM0YTVhNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
+        },
+        {
+          "resource": "repo://src/util.rs#L29-L37",
+          "version": "repo-lines-v1:sha256:931b24619b0ad8eb3d812799d0fc2ebb74a7898a03d69dc859d4efcb5d13413e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZmMzYxOGY4NmJkNjkzZDQ3ODA0OTkwNzg2MGI5ZjQ1NmIwYmI5NTI5MzVlZmMyYzhhNDk0NDYzNjBiNTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzliOWI4YTc3YWU0OGEyMGNhZTBiMGVlOGI0ZDU2ODA0YjUzODg3YzA0Mjc4NDExM2UzYjFmYmE4ZmNjMDM5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIzOGU3MmFiN2RhNGE0MjU1ZTEwZTdmMWRmMjQ2ZDYyZmJlN2ZlMzkxN2U2YTc5NjUzMmE2NmQ4NzQ4M2JlMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5535c5d373a74f8d95c52540f2c4522c",
+      "statement": "config.rs classifies keys by membership test rather than per-key metadata: const slices BOOLEANS, LISTS, PATHS, NULLABLES and SORTED_LISTS plus three functions returning Option (choice_options, the private choice_list_options, integer_range); the function form exists because the legal values are owned by other modules, e.g. PREFER_FORMAT borrows convert_roms::ALL_FORMATS and the RVZ/SEVENZIP/ZIP algorithm choices borrow strum VariantNames from rvz.rs, archive.rs and chdman.rs.",
+      "evidence": [
+        {
+          "resource": "repo://src/archive.rs#L33-L45",
+          "version": "repo-lines-v1:sha256:a75bb5aa4875c79b40e3a9d7850de02861b12583bf0f701e9800a729c8c532cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZTFiNmEyOTc2YjZkMmI5MDA0MjdkN2U0NmY3NDc1MmUwN2UwNGI3NDhkOWZiNjg0NjJkODY5MzlmM2NiN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiODQ3MGZkOTI5ZTZiMWNjYmUxZGUyMjFjMjcwYzY0OWEwZTdkNDk3MjU3MDViZWNiYmJiZDg1OTBlNzM0NzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZTQxNTA3NWM3N2ZjM2RjZDBmMTJhNGZlMWFiMDdlN2RlOTUxOGE2ZmNiZGJkM2RiN2IxNmExMzAyMmYxMjEifQ"
+        },
+        {
+          "resource": "repo://src/chdman.rs#L22-L59",
+          "version": "repo-lines-v1:sha256:aa3ce0227e026b86af12f0b8f9e8af83a9cbc04702be8f83c4c17675beff1ba0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZDQ3MmY1Yzc0ZjJhMTFlZGU3YzgzODZjNTU2YzNhMDVjNWNlMzlmZDNlYmJiMDM3ZmRhZGM4NjY4MDU2MTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1YWMzNmIyZTgyYmU2Y2I4NGM2M2FmMmUyYjBhMDA0OWRjYzc0OTkzYzdlZDMzZTRkZGRiMzMzMzJlNmZkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOTJjMWRkNzBhMDQxNTMwOWE3NGE5MjQyNzdjMjYzN2MwYWNlN2RjNzkwOGIzMWQ1NzUwNjI1YzYxZWRlMWQifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L64-L148",
+          "version": "repo-lines-v1:sha256:6a9ae2d6cece03c9a6efd1891be9ef54a15835553a276c0e46bf0e62ef7e23be:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNjEyNTI3NTJiNDlhZjQ2ZjA4N2JmMTMwODMxMzU3ZjA5ZDdjMWUzOWY5MTIzYzc4Njk3NzQ5NjlkYjc1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNjdmYWZiOTU3NjBhMWZhNWI1ZGRmMDk0NDFjNjAyYTZiZTljMDE0NjgzZTgyOGIwYjFiNTBhMzc1OWYzYzkifQ"
+        },
+        {
+          "resource": "repo://src/convert_roms.rs#L29-L30",
+          "version": "repo-lines-v1:sha256:076f9617ddd5f4f69f089562f3787656d6fb6f285b41950da269ef41f6ceef2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkyYzY4OWFlNWNmM2NkYjM5MjRhOTk3NDQ5NmVhODAzN2NhNWQ0YmM5OTBkNWE0YWE0YTNhMTQ3NjU2YzRmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVkMDRiODE5MzBjYTQxNWNmZmRjZDZiODc2NGYyM2I4MWEyMTBmMjFkMmFhMmI3ZjUwYzE2NWRiMjcxZDJkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjc2ZDgxZWZhZDVkNzlkNzk1M2E5NTNlYWMyNWZmYzU2YTY5MWIwODYzYTQwMWMxMGNhOTlkZDFkNjlkMzM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEwNzNiZDNhNWFhMmIyYWQzOTM1ZjE5NWRlMTcyYjc1ODE0NjI1MGE3ZmY1MzZlZWJiM2JmZDBkM2E4NGExNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9584dfc7ac514f6ab67d1607d3195161",
+      "statement": "set_setting dispatches in a fixed order — PATHS, then BOOLEANS, then choice_options, then integer_range, then LISTS, then an unknown-key error — so a choice-list key such as CHD_CD_COMPRESSION_ALGORITHMS or REGIONS_ONE_ARCADE is reported as 'Unknown setting' by --set and is editable only through --add, while every LISTS key is refused with 'Lists can't be set directly'.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L361-L411",
+          "version": "repo-lines-v1:sha256:46478e9e10ef887e55961b3032bf1711898094d99e6edeb16ed317dde1081d25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjFkOWQyODZmNzU4NWZhNTRmMDNhYzUwNDNkNWE4NTQ3NTVlN2U5MGU1NTFkYzczZTg4MmQwYTliMjE0ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NzE5ZDIyYjBiNDBmOThmZWFkMDVmZjljMzg1NTdjZGNjMjA5NTA1ZDIxMWMxOTNhOTcyZTNhMWMxMjQzMDgifQ"
+        },
+        {
+          "resource": "repo://src/config/test_cli.rs#L43-L68",
+          "version": "repo-lines-v1:sha256:b4e2be3103185bafdd96861e30af47a244c284e090b6be81713a71b4fffcf813:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNzRhMDExZWFlYjVhMDJjZDIwZDkxODlkZGE4NjhjZTAxYjYxMDYwNjg2NTIyYjllMjI2ZTQ0MGIxNDdjMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYzU4Njk4NjYxZDJjMzRhMzM4YjZmMTc3NWFhNjFjMjhlNzY1ZmMzNWQ0YmRmM2M5ZmM4NjRjNzcyZjMyMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0MmI1NTIzNDI5YmNjZjZkNjQwMGVkNTgwZjRkNzY2YjJhZjljOTM5YmJhZmQ2Njc4YTIzMTk5ZGY5NDFmODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_77512a8031874355b62983ade33865e0",
+      "statement": "SORTED_LISTS membership means a list's order is semantic and must be preserved: add_to_list sorts the list after inserting unless the key is listed, so REGIONS_ONE (region priority) and the CHD CD/DVD algorithm lists (the trial order chdman receives) keep insertion order, while CHD_HD/CHD_LD_COMPRESSION_ALGORITHMS are not listed and get re-sorted.",
+      "evidence": [
+        {
+          "resource": "repo://src/chdman.rs#L783-L787",
+          "version": "repo-lines-v1:sha256:d53719c278bae16998435acad9dab9026bdb5fbdf5d97ba873b97b6afa0b6e5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2RlMzg2NzdmYmVjZjIwOGJiMzFiMTg4MjhlYzJlZTNlNzBkODIyMDM3ODlmM2U1NTk4MjYwNzM4M2MyNGQxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2MwMGM1ZjljMzM4MWQ0ZGU3NTE3ODc2OWE3ZDk4YzFmZTg0NzZlODNlZDMwNTRkN2MxNDc5MTYxNTFiM2QwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFhMjNkMGMwMjA3NDMzNjM2NGE5NTRhZDkzMjhhZjljNzk3MWM4NTg4NWI4OWIyNmU0MzRlMTAyMDA2MmJmNiJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L143-L147",
+          "version": "repo-lines-v1:sha256:3841275f8d3db5974ffc092756929fea0eedb48355b719fea6d1c2f0d71f36e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkYTQ1YzdjZWM3YjZjNzRiMzIxZmQ1ZmM3MjYzYmJhYjY4OWIyOWY2YzIyMTM5MTMxMTgyZDFhNGZmZTA5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QzMmE0MzI2NDJjZGFhZTNlYTJlNzIyODJhYmQ0NTc4MzU0NTE3M2U4ZmVkZGIxNDQwYWY1ZGIyMTE0NDM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWViYjA3MjIyNTIzOTE2YjAwMTFhNDA1YTBmZjZhZjFjMjg2ZDAzOGUxMGY3ZGJlOTg5MmU0NmIzNjUwOTdkNiJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L502-L529",
+          "version": "repo-lines-v1:sha256:af91b01fa87db9ff4f2db3e6dc0d5b6ce6e8a64e74f7c251e93e1ca4a4336ef8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNGE1NmUzNTA3OTY3NzFmYzI4MWJiOWU4NWQ0NTMzNGYzMGZlM2FiNWUwZjg0ZDgxNGJiZTVhMzI0MjE1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MWNjN2NiMzkyZDI1NzFhODIwOWNkMGI1Yzc0NjdiN2I5M2VjMjg5NzgxNDllNzg3NzgyMDEyOGZjNmY4MGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a36ee9b1c02485ea2f2ee470204a4e6",
+      "statement": "NULLABLES coverage is inconsistent for the CHD keys: CHD_HD_HUNK_SIZE, CHD_HD_COMPRESSION_ALGORITHMS, CHD_LD_HUNK_SIZE and CHD_LD_COMPRESSION_ALGORITHMS were seeded with NULL defaults by 20241008133304 but are absent from NULLABLES, so unset_setting refuses them in the CLI and the MCP set_setting tool rejects an unset with the NULLABLES list, while their CHD_CD/CHD_DVD counterparts can be unset. An HD/LD algorithm list can still reach NULL by removing entries one at a time (set_list stores an empty list as NULL), but an HD/LD hunk size has no in-app path back to chdman's auto choice.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20241008133304_add_more_chd_settings.sql#L1-L11",
+          "version": "repo-lines-v1:sha256:86a5543c68721dabbd25ca8110a952ed85c10f5d67fc367d3c3682f404a20fcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzJiMTllMmQwMGJkNmNjMjY1YzMwYTkzN2E0NjhlODMyZDdiZTI1ZmM2YmRkNzljNzNkMzU4MzY4MWY2ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWI1YTM2MmZhYjdiYThjMGVmMDJiM2JmYzljMDg0ZDZhNWJjMzQwYjdiYTc5MGNkZjMyOGFlMmZlM2Q5ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L123-L141",
+          "version": "repo-lines-v1:sha256:05f640d709c6b6a221436622b427b9eccd58e9a029b0d827122204593c792271:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4OWM4NTA1NjNkMzg4NmU5Yjc5MjEyN2YwZDIwOTEyNTI5NTg4MWM4MjMwNWJjMmY3MTU0ODA0NzRjZDgyMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzZGQ5YzkwNWNhMDc5OTYxZDVhMmJhODUzZjU0ODUwYWU4YTU2NzJkNjdlNTRjODVhNjg4MWM2ODAyMTNjNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYTkzYTg5OTYxZWY0ZTM1YWU1ZWVjOTRhNWVjMzFkODFiODkxZTIwM2FkMzBmMmQ5MGE4YmM1MTJiYjljOGIifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L413-L430",
+          "version": "repo-lines-v1:sha256:64d6f687f20075dd0caffd6fc5949271ce33f17ce235bb36548a447d8b579239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk4OWE4NGE3NDk2YjJlMTYwOTYxNjhiZmZkZWRjZmNkMWMwOGRjYzY3ODkxNzhmODM4ZGNmYmYwYjcyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NjIxN2Y2NTIxNjVjMGVjYzhmZDU3YTg1MzM3NjBiZmU4YzQ1ODFjNTI3NjBkZjllODhhODI5NzE2M2Q1NjYifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L551-L563",
+          "version": "repo-lines-v1:sha256:50992753140ec29e568df02005afdd7367daa7129965ac624f00a7b4b5f2df41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZTczNTI0NDVjYWFiZjk2MzFmNGEzZmFlZTM5YmJiODg4NmM3YTRkZmIyMmIxNWU2MTBiMThkOTYyOGM5NTgifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L487-L494",
+          "version": "repo-lines-v1:sha256:24df31708c22885a84fcf76a4a86543a872b5544b3c8aaec850c03075f7190ab:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI4OTVkYmRhZDFjNzk0MDJhYmU0YzM1ODE2YTAwMzdmNWJiYTBlNjJmMGE1MGZiZGI4MTk0MGQ3MWQ4MWU1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzMwYzJmY2FkZjk3MjJjZTAzZjc3NzgxYTdhNjVjNzgxM2U5Y2Q1OWE0ZWFmYTVlNTlkYzIzMmY3NjM3ZjQ1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNmNWNiOTBmMDQyYmU1MDk5ZDkxZjVmYzljNjYzMzA3ODNiNDU1OWZlYzI3ODg4OTJiYjg3OTE4NzYyMDUwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2cef0d4d48db4bd3829ad93f570dbf7e",
+      "statement": "The config subcommand exposes one -n/--system flag (percent globs resolved via find_systems_by_name_like) plus six operations (--list, --get, --set, --unset, --add, --remove) each declared conflicts_with_all of the others, and main fans an edit out over every system matching the glob through prompt_for_systems_like while a read collapses to a single system through prompt_for_system_like; an edit glob with no match warns and returns Ok.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L289-L299",
+          "version": "repo-lines-v1:sha256:d75f316737553b955337b96b9bb3e7394ff8ec2e297d16447551f68fc7a2d438:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOWYyYjIzM2U3MTljYjI5MjA2OTQyNzM1NGRlNmFlYjI0OTM3NWNhZDMzMzFlMWU2ODkzMDI5OTFhMzQwZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMjMwMmJmYjliYjcyY2Y1OTQwYTMxMmQ2MzQxYWNhNjYzZDhhYmQxNjFjYjc0MjlmNjEwODYxNTE2ODE3MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MzA4YjAxMjIzN2JiZjhlZGEyMDgxNDIxZjdhN2VjZDBhN2ZkZGJjYjIyODE1Y2E4NDJhN2VhMmUxYjE2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5YzRjZTk3ODNjNzhkOWE1MDUwZjhmZGM1M2FmYTNmMWJkNzdlMGM4YTAxYWM0ZjBlZjRhYmVjYTE3MWZiMGUifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L152-L253",
+          "version": "repo-lines-v1:sha256:b84b349475595f4cf3c2f3ba9aec86ade19503d2df5e56055c222bbb8306b75b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkZTQ0NTdjMDE5ZmZiYTk1ZGI1NWQwMzk0ODExNmE0ZTdiZWJmOTVmZGZjOTdlMjlkOWZjMDFmYzc0NmVkMjdlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZDllMTI1NDY0MjU1NzZkM2RlYWU4YzliOWRiZjEyOGQ1ZDZkZGFmNWQ3ZmU4NTc5MzQ5MjdkZWZmYTNiOWRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMzY3ZmFmYjk1NzYwYTFmYTViNWRkZjA5NDQxYzYwMmE2YmU5YzAxNDY4M2U4MjhiMGIxYjUwYTM3NTlmM2M5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NmQ4NDg5ZmQxZmFkYjQzOTc5MmRiYzBjMGI2NTQ4MjYxMjcwYTcyZGIyZWZlMTQ5ODZhYWJjMzQ1YWRlYmY2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7b3f8912c6648c6ba1832f7731c2ce7",
+      "statement": "CLI validation failures are reported, not returned: an illegal choice prints the valid choices, an out-of-range integer prints the range, and an unknown key prints an error, yet config::main still returns Ok(()) and the previously stored value is left untouched; the only path that propagates an Err is a PATHS key, whose canonicalization fails before the directory is created.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L361-L411",
+          "version": "repo-lines-v1:sha256:46478e9e10ef887e55961b3032bf1711898094d99e6edeb16ed317dde1081d25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjFkOWQyODZmNzU4NWZhNTRmMDNhYzUwNDNkNWE4NTQ3NTVlN2U5MGU1NTFkYzczZTg4MmQwYTliMjE0ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NzE5ZDIyYjBiNDBmOThmZWFkMDVmZjljMzg1NTdjZGNjMjA5NTA1ZDIxMWMxOTNhOTcyZTNhMWMxMjQzMDgifQ"
+        },
+        {
+          "resource": "repo://src/config/test_cli.rs#L101-L103",
+          "version": "repo-lines-v1:sha256:9b4152e7287093def92b3fae4ac54d161ec093dc84f600d55f21e1a0c763f837:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE1ODNjNzk4ZjMzYzhlMGQ2Yzk5YTc2OWZmMzIxZjViMmMwOWQ0MDY3ZTllNjU3YjZiZWVlNjQwZTNiYzM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIwNjNiOTBlYzFkNDhhM2E1MjhlZDIwZmUzOTZmMWZlM2ZhYWRhY2U2MWNkYmM2ZDBlYTY2MjNmMTNhZGZkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhkYmVjMTVjZDg3Njc3MzJjZDZjZDE5YTMwYzMwMjQyZDk0NWVhMmRkY2Y2M2I0MTgzYTJkYzQ0ODA5NjVlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://src/config/test_cli.rs#L33-L41",
+          "version": "repo-lines-v1:sha256:aebea6e21b9a69175cce04c965295dc73cbee7369eb83d9a07a4b593f59f2cd9:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNhNGVmMmY0MmE4OTNmMjM3N2NiMzE5Nzc2MTYwMGU5NGI4N2FlNDA0MDFhZmUyODJkYjQ2OTYxZjU2N2U4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNDIwOGNkNmZmYjhjNGEzNTQ3YjJmNTRhZGExOTk3OGMzZjM2NWU3OGY5NTAyZWY1MTQ1Y2RkMmFhODU0MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNjNTg2OTg2NjFkMmMzNGEzMzhiNmYxNzc1YWE2MWMyOGU3NjVmYzM1ZDRiZGYzYzlmYzg2NGM3NzJmMzIyZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjI0YzhlMDVjMGI2ODM3YmRmODU1ZTkxYjA4NzJhY2QzYWFiYjljNDFkNzYwMDdlYzY1YzkzNmEyY2E1YzJjYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_45e7ea959cf140eda92733e41e33edb5",
+      "statement": "Effective settings for a system are computed as a merge rather than a per-key lookup — global rows are collected into a map keyed by key, per-system rows overwrite them, and the result is sorted by key — which is why config --list -n <system> prints the whole configuration as that system sees it, and the same merge is duplicated in the GraphQL systemSettings resolver and the MCP get_settings tool.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L319-L346",
+          "version": "repo-lines-v1:sha256:c59a6ed3b19138b0ab7eb3ab0d14432dfa56cbf436724b6aa31687ed251156c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MDU4YTU0ZmZmMDNhNzc3NmFhODNlZmExODFhZjU4MjA0N2RjNjI1ZjRiYzM4ZjYzYjE0MDI1ZWY2M2E0NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NTIwNWY4NWZjZTcyNjVmNTE1MTk0OGY1Yjg3YzA5YWZkNzNhNWVhNGFjNGRmMDEyZWQyNzA0NTVmMTM3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTI5ZTcwNThmZjNmOTM5NDRjODVmZjlhZGU0ZmYyYjg1NTg2MjA3M2VhMmMzMDI5N2FkNzg1ZjE0OThjMTUifQ"
+        },
+        {
+          "resource": "repo://src/mcp/read.rs#L319-L359",
+          "version": "repo-lines-v1:sha256:d6d574808ca6a992621964f959ce074f37853c988a0b32e5dd7b20ab6dddfbf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0M2Y1NTU5NjA4YTVlMzJlOTQwODVjN2M2OTY2YWZkMmExNGE1ZjNiYWZhMjA2ZjEyZWNkNGJkYzQ3MTY4MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
+        },
+        {
+          "resource": "repo://src/query.rs#L295-L309",
+          "version": "repo-lines-v1:sha256:7d73b505742665722c507bde17dd961ddcbb74f6660898d1fffb17f28255ec24:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMDhmZDBiZGJkYzNhMTdmOTM0YjAzMDdiNjhiMDAwZGQ2MGIxYWJjMmM2MDA4NjNhYTY4ZWVlZTkzOWFkMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmZjc4YWI2MWQ3MzllOTdiNzJlZDIwMGJlOGQ4ZjZjZDUzZDkwZGJjNTdkNTQyNjM1NjhlY2I4MTg1Y2I2OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZTMwYmUyMTk5ZDMyNzllNDkxMDc5MWY2ZDIzZWE1NWU3YmI5MDVhMTJjMzQwNDllMDg4ODFiZDZmM2ZlZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d5dd2b32be146898f2724ffa30fcba3",
+      "statement": "There is no defaults table in Rust: each setting's default is seeded by a migration using INSERT OR REPLACE INTO settings, some deliberately with NULL to mean 'auto', and the same mechanism rewrites stale stored values (the RVZ algorithm value bzip was rewritten to bzip2 because dolphin-tool only accepts bzip2), so a README-quoted default can be stale in a database that has already passed that migration.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20210323000007_create_settings.sql#L1-L8",
+          "version": "repo-lines-v1:sha256:8a638156c3c9556f4000c7267025d9eb272caa832a67244122e6093d8bc72e7d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzZjODk2N2Q3MjY4ODc4ZjY3ZDYwYzFlMjBkYjFhY2IyNDk4ZmI3Yjc1NzMwMjA5ZmY3OTg2ZDdhZDcwNWE3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ3OWE5ZTY5ZTliZjU4MzNkOWQ4M2M0MmEyNzAwZTE2MjVhYjMzZWZhZGY5MTEyMjk3ZWQ1NTcyOWNlZjk3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQwNWQ0MDkwMTA2OGExZjgzOTMzY2ZiOWE3M2E1NDVjY2E5N2MxNjNmMGY4NjM5YTVlYTUyNzM4N2JmNzdjMiJ9"
+        },
+        {
+          "resource": "repo://migrations/20260808000001_rename_rvz_bzip_compression.sql#L1-L7",
+          "version": "repo-lines-v1:sha256:81911d1827088a0cbc1415590b700f4b1e7a8d7f4a568836917197718bf58451:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTMyY2E0YzNjMGQ4MzIwZTUxNmFjNWQ5NGI0YmRkNGI5YzlkMTdhYmY3MDQ0YzU4Yjc1MmI2YzJkM2VhNWYxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYyMDA3MTlkZDZlNzIyNGRkYjA2YjQ4MTIxM2MwZmRjZDJmOWJmMzQxZDRhMzc4ZjZlMjZiNTQ3OGJhOTE1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://migrations/20260810000001_add_archive_compression_algorithms.sql#L1-L11",
+          "version": "repo-lines-v1:sha256:edc751264eebd077e5cc8413b9fb112c3a32f744c9619db9cc8203c22253fff7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzJiMTllMmQwMGJkNmNjMjY1YzMwYTkzN2E0NjhlODMyZDdiZTI1ZmM2YmRkNzljNzNkMzU4MzY4MWY2ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMmI3ZjFhNjM1ZDcxN2Y3NmZjOTI0NDQyNGFmMzY0ZGVmYWM2ZmRhMGYyMmIzMDYxZTRjZDNkNzgyZjg1NWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e3eb65293bf4be2b08eb92682d0e2f4",
+      "statement": "ROM_DIRECTORY and TMP_DIRECTORY are not migration-seeded: main.rs calls get_rom_directory and get_tmp_directory at startup purely for the side effect of persisting the first-run value (OXYROMON_ROM_DIRECTORY else ~/Emulation; OXYROMON_TMP_DIRECTORY else the system temp dir), and consumers such as util::get_system_directory and common::get_relative_path read them with the system's scope falling back to the global helper, so one system's library can live on a different root.",
+      "evidence": [
+        {
+          "resource": "repo://src/common.rs#L354-L367",
+          "version": "repo-lines-v1:sha256:79cfff8a5150abb1af52b25575e3e4c003481ffd30584e154645b9c420b97851:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMTAxYWExMGNlMDUyN2JkMmIwMjUwYzE1OTczMTMwM2Q4NDFhOTBlMjc4ODRjZGNjMDI3MTZiYmZiYmRkZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NTk4ZWEyZGZjYjBkMjViZjFhZTZmNGEzYzQwYWJiNmUzNmYzNjE3MzYxY2ZjZjM1NzU5OWViY2VmYzkwNjMifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L603-L629",
+          "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
+        },
+        {
+          "resource": "repo://src/import_roms/test_per_system_rom_directory.rs#L49-L72",
+          "version": "repo-lines-v1:sha256:4f087bfd8aad28e1770b6813547b0eceff2256213a315fdfa7b8e715ea516b6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NDZlYWFjOWQxNDU5NzRmNjMzYmRkOWRhYjA2OGJlMjAyNTQ5ZjM4ODY4NWRjMzEzZjk2Zjk3OGUzOTRmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNmZmZWY4YjFkNGI2NDYwMzU1OWRlYmRiNDA2MTNmNzUzOThiZGRmOGEwYjRlMmUwMDRkMTU3MjI0MmY2ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMTM4MzEzNWRhY2NjNjNkZjA5ZTI3NGM4Njk1YTE0ZjNmMjliYWQ1OTJjOGQ4ZTE3ZTU2OWM4NjEwMjAwZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmMmY3MTEwNTJmNmU1MTU5YWE5MjExMzc3ODRhOGUzOTg2YjM1NWE1ZjYwZTgxZjFlZTE5NjY0Yzg5NDk1ZDcifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L130-L132",
+          "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
+        },
+        {
+          "resource": "repo://src/util.rs#L262-L268",
+          "version": "repo-lines-v1:sha256:356d0cfdbefbd15e3b69fa1c6c1b3be831095c553679d5de770834e0ff830d19:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI2ZGZlZGQyN2NkODExNjk2MDUyM2EzYzQ4ZDY0Y2Q1MWIyZWM3OWJkYTIxYmFkYjIxNmMzN2VkYTU5NTkzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDcxYTdlYjE2MTY3OWEzNzRmMGEyZGYwMjJjNzgwZDBkZmQ4ZDM4N2E0OWEyZWYxZGFjNDgxYTJhYjEzNjFjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcyYWRmNTIwNDMzYjQ4MTBjMTZlM2VmZmYxNzNkMWZkZWE4ZWRiMDc5NWMwZjg3MzM0NGMxZTg4ZmFhY2M3ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe217a23f78f4e7098444def824b744f",
+      "statement": "Not every consumer honors the scope: the server's download_romfile handler reads the global ROM_DIRECTORY directly with find_setting_by_key and returns HTTP 500 when that row is missing, and benchmark likewise unwraps the raw text of both directory settings instead of using get_directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/benchmark.rs#L34-L43",
+          "version": "repo-lines-v1:sha256:abc78e5ef61e6149c6ab1094bc21785e80287b0617024cebf60064abe8e825d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNjI1NmE4YmNkMDZjMmVhMTlkOWM4NDRhZTIwNjk4NTZmMTk5NWRjMmNiMmRlMTExZGVkNmExMzUwNTc4MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDg0Y2FlMjZlMGZjMjEyOTMxY2Q0NzQxZDI2OTM0MDBkMWE0YmI1MzZjNTdmNjM3MDFkNTQ0MDM4YTE4NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMjRmNWFiOTRjNjMxYWU3MzY3MjdmNGZmM2UxY2I3YzU5YzAwYjcxMzllNTE0ZDQwZjVmMzlkOGIxNDYxNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyNjAwNjdmZjg3YTYwMzkwMmNkMTg0ZTk1NTU5MGEzODhiYTdlODlkNmYyYmZlNzk4ZDIxNDljOTgxNDJmMTAifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L825-L844",
+          "version": "repo-lines-v1:sha256:4f7beecb21bfba4d149b076a7c400880d4ada5f0359ce5c8c94a38069c5685e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMDZlYzcyYjZiZDM3OTA4YjFhZGMzMjAzMmZiNDNmM2NkMmVmNGFhN2IxYTUwYjVhM2E0Mjg2NGU3NTc3YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMzI0ZGZjYjJiM2RiZGM0MmFiNThiMThjZDljNjg4YWUwNjdkZDEzYWU2M2FhZjk1NjY0ZDM3YzE5MTBmZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjZDU2OWJhNzYzY2E4Zjc1ZGNmMjE3Njg0N2M3MGRhN2ZmYTc1ZDg5ZTg3YjgyYzFkNzZiYTJiN2Q3ZGI3YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhODNlZmU4MDIwNzY5MzI5YjcyNzVlZTY5N2JmN2U2M2M3NTllN2ViMWViYzA2ZjAxYzAxYjY0ZTBlNjVkYmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_449d655574b74091ae3d7b18c4059040",
+      "statement": "Every CHD_*, RVZ_*, SEVENZIP_* and ZIP_* key is declared in config.rs but no range constant lives there: the integer_range arms point at CHD_HUNK_SIZE_RANGE (chdman.rs), RVZ_BLOCK_SIZE_RANGE and RVZ_COMPRESSION_LEVEL_RANGE (rvz.rs), and the SEVENZIP/ZIP/ZSTD level ranges (archive.rs), so a format module changing its accepted range changes what config --set will accept.",
+      "evidence": [
+        {
+          "resource": "repo://src/archive.rs#L25-L27",
+          "version": "repo-lines-v1:sha256:2729a97344141f0fbf886b1680d73051a85df394eb7d91da96fdec46b2958c98:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWE2MDM1ZWI0ZDBjNjljM2VkODU5MmRlNjdkNjhkMGY1NWJmNDFmZGIwMDk5YWRlYjg3NWJmMzg3NDBkYjU4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZlZDhiNjU1NmY1ZTRiZDc2M2ZlY2MyZjRiMmVmNmMyYjRhZGE5MDgzMmFlYzEwM2MyOWY0OTI5Zjg2YzBiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg2YTVmMGYxYWZmMTdkYTU2NjUwYWM0MWVhN2FkNzM4NGQzODg3ZGI4NWMzNTRhNjhlNGE2ZjIwZWQ5ZTczMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZhN2FmYzZkZTM0YTk1ODdiNzI2MWYzYzBiOTkzN2M1OTVjOTVkNTc1YmM2Mjk3MGRjYzZiYmE3NDJmY2FjYyJ9"
+        },
+        {
+          "resource": "repo://src/chdman.rs#L18-L18",
+          "version": "repo-lines-v1:sha256:7fa723ea800353af63d9e19c100f524762f4f12446b1ee5edc467109613c2ee9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZhNzIzZWE4MDAzNTNhZjYzZDllMTljMTAwZjUyNDc2MmY0ZjEyNDQ2YjFlZTVlZGM0NjcxMDk2MTNjMmVlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZhNzIzZWE4MDAzNTNhZjYzZDllMTljMTAwZjUyNDc2MmY0ZjEyNDQ2YjFlZTVlZGM0NjcxMDk2MTNjMmVlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY5NDJmZjc1MzczNTFmNGU2NTRjNGM2ZDA5ZGYyOTFjZDMyMjM1ODQ0NWNjZTRlZTI4NDNjNDBkY2VlNzQwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVhYzM2YjJlODJiZTZjYjg0YzYzYWYyZTJiMGEwMDQ5ZGNjNzQ5OTNjN2VkMzNlNGRkZGIzMzMzMmU2ZmRiYiJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L1-L13",
+          "version": "repo-lines-v1:sha256:c430a50d9292cfec31da94ff280eec99b0c7e2d44ef95064c16e7ec466690546:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmZGIwZThlMTNhMjc2MmU0YzFjYzE2ODZlOGVmNmFhOTk2NjBkM2JlYjRkOTc2OWIxYmYxYTM0OTU2YmI4NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxM2FhZTljYjBiMDMxZDcxZTFkMTZjNGE4OGNmZjEzODAzN2ZlYzAzZjc2NmJjODNjY2RhYjRlODk1MjM4MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ODJkOTFmZmE5NGQ1ZmRjOWEwMzAxODJlZGI3YmI5MzRhYTFiODhkODI5YWQzNGI4NWMzMzk2MDcwYmQ2YjkifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L98-L112",
+          "version": "repo-lines-v1:sha256:ca8b2710f348dedb6a147a21d184c9f41d75d582feeadf3db38032d060beec97:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMTcwNGMxZjE0YWI3M2Y5MWY3ZTMwMGRiNTcwNjFjZGUyOGI4NzA2MzUwZjJjMzYzODhiNzZiYmE5N2FkNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2OGExNmQzOTY5MDA4Yjk2Y2QzMGEzMWU0NjkzY2U3OWUzZWZjN2Q5M2E0OGIxNDQ4OTBmZTJiNzdlMjg1Y2MifQ"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L21-L22",
+          "version": "repo-lines-v1:sha256:386d74df10262f9bba5305f91a3e24a2a7b5e395d7104d522b90f234526641fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY0MThhMTVlZWJlYTU5YWIyNmJkY2NlOWZhMjExMmU2NDUyYjQ5MGMyMmY2N2U2MTE4NDZjMGVhMWE1OTJmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYxZjVhM2Q4MmRmZTA0ODk1ZjViZWNhNmEzODRjZmI2MTMyNWU1ZGNlY2MzN2E4NTgyYjAwNWVhNTA3YmUxNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDAyODA4ZDIwZTAxYTE4OThkNTdkZWVjMGM3NDJjNzJmNGUyNmM1YmUzYTMyZjBjNWFiMmFiMDg4NDAxZmY0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMyMDM3ZjI0ZGI2NDkyM2JlYmRhMTBkMzUwZTI3MGRkMzI1OGVmZDk2MTllMGUyYTM4MGMxOWNjNDMyOTk5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_52d86eeceac84aadae7552ce8ef92cd7",
+      "statement": "Format consumers apply the units and per-algorithm limits the settings layer deliberately omits: convert_roms and export_roms read the tuning keys with Some(system.id), rvz.rs multiplies RVZ_BLOCK_SIZE by 1024 because nod wants bytes and clamps the level to 1..9 for bzip2/lzma/lzma2 versus 1..22 for zstd against a single union range in integer_range, and chdman omits --hunksize for None and skips --compression for an empty list, making a NULL tuning key a meaningful 'auto' rather than a missing value.",
+      "evidence": [
+        {
+          "resource": "repo://src/chdman.rs#L780-L787",
+          "version": "repo-lines-v1:sha256:2c6f5830f46b7bdac4836a15b52e06f3cd98b01c0d24db776815d287af61dbe8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE3NTFiYjQ4OTJlMjQ5ODM2MmMxYWZmZTYxYjgyMmNhODBhYTY2NWE1ODYyZGU1NGU2ZjFhNTkwYTA3MDcwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDkzNDE0YjQ4ZjE0Njk2YTdjNTQzYmI2MjViMmY2ZTIwNWU4MjcxZDYyNDU5ZTJhY2IyNGQ3M2ViMTM4OTk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFhMjNkMGMwMjA3NDMzNjM2NGE5NTRhZDkzMjhhZjljNzk3MWM4NTg4NWI4OWIyNmU0MzRlMTAyMDA2MmJmNiJ9"
+        },
+        {
+          "resource": "repo://src/convert_roms.rs#L247-L286",
+          "version": "repo-lines-v1:sha256:d261b410259391a5d0b79212c7b6af7f97f2d51b6182d13629771e5386b2be38:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NTQwYzQ1NmFkOTEyNzU3NmZhYzU0YWJiMjAyYTQ2NTc3ZTQyMGJlNTYwMDQzNWY2ZGVlZGNhZmYxMTc4OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyZDI1YWFmZWNhMDQ2NjhmZjVmOGYxMWZkN2I4YmViZDJhNzMzYTQzMjVhYzY3MDI0ZWJlZmI1ODQ3Njk2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhMDEwNTc2MzJlYzA5ZDMyMWM5YzM4ZDg4MTgyMzBiZTRiZjA2ZWQ1ODUxZDlhZmU5MzdiZjY3NWI3YjcwZTkifQ"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L245-L251",
+          "version": "repo-lines-v1:sha256:e0ccbbe4cf6b29c3c62cdbd10cba766e09b65f5587cc281000bb4368f6afce66:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJhZGJmZjE1ODRjZWViZGI5NWFmMDE1OTUyZGE0MjEzOTk5MWE0OTAwYzM0MTAzMjk1MGI0M2NkMzAxNmIyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU0ZTgwZGRlNDlhNTJiMTYxZTRhOGQ0MWQxYjc1YjAzZTYzZGZlYTQ5NDY2ODM4ZmYxNWM0NzUwZjMxNTNlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWU1ZmZiOGYxMmU2MTVjYWZmZmFlMDAxYTFhMmQ3MWNlYWVlNmM1MmU0OTg1MGYzMjE3ZmFjODZiMjA4YWUxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSJ9"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L312-L322",
+          "version": "repo-lines-v1:sha256:0a462f689884744fe194ae79401f695ef276380c1f3af66f82db20b28c9a1c60:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGQ3YjA5NDU1MzhmNGMxNjQ4N2ViNmFjNDZkMmVjNzg1ZmQxOTJlMzhhODNlZDUxZjM0ZGMzMmQ1NTY4ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjczYWJkNDU3YTk3ZWVhMTdhNjAwNjJlYjBmYWVhNmJkZjA5NDg2OGNjNmI4ZjhjMGViZGEyZjYxZWQ0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxMmVkY2U3ZTA0YjdjZTUzMDg4MTBkZWYxZGM3YWM0ZDg0NDNiNmM5NDM2ZTQ5MzJiMWEwODUyOTRmZTYxZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNGU0NmM2NDNlZmFjMGZjMjQ3OGEwZWU4ZDAzODk0Mzg2ZjNiZDhhYzE2OTZlMmMwN2I2ZmZkNDBmNWI2YjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5462f338f35e4968ade8d8f0de7fafd4",
+      "statement": "RVZ_SCRUB is a real boolean setting that has no effect: rvz.rs prints 'RVZ_SCRUB is unsupported by nod, writing unscrubbed' and writes with ScrubLevel::None instead of failing.",
+      "evidence": [
+        {
+          "resource": "repo://src/export_roms.rs#L309-L322",
+          "version": "repo-lines-v1:sha256:0d2e2802a6c4b513da5b08d26319b639f55576a75514c7d772ea4a107695c75c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4Zjc4ZjQ4Mjk4Zjg2MjRhNDE4ZTk2NmIzY2FhZmY1M2YzYTlmMTgwZDc1ZGVmNzk4OGJhNmJhODkzYjVjM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYTZkZTE2MjM5ZjAzNWU5Y2I2Y2U4MzUwOThlZWVjNTA0OGFkMzAxZWJjY2NiYzk2ZjhkODZmYWEyMDAzMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlYWE3ZmJiZTc4YzVmZjdhNmE5NGQ2ZjVkNjc3MjQ3N2EwOGM3OTBlMGM2Yzk3ODk4OTc1Yzk4ODY4OWNiYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMzliNGZkMzc4MjllZWUwZWQzODJjNzJlNTc4MjNiZDYyN2Q5MzRjZTM4MTY3NjFiZDhkMWUxNGQ4ZGJiNGIifQ"
+        },
+        {
+          "resource": "repo://src/rvz.rs#L166-L171",
+          "version": "repo-lines-v1:sha256:74414e58e3f8f1a613c01c4a4ea135ef7340511edb46e1603e718b8aadfd71dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODdkMDBlMTcxN2MxOTI0ZDliOWVjYjAwODEyNzZlNGNlYmE3NjFjYTE1MDJiYjgyNGFhNDJiOGUyYTdjZmYzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBhMDg2MmRmMzQ5ZDQxMWMyMDU3MDM3NWQ0MGU0YmZlNjU0MjQzMzQxNTQzYzJlODNkODE3Mzk2Mjc5OTk5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjVjNTQ2ZDY3NDkwNWM3YzdiOWIzYWUxMTdiY2EwMTBlMTY2N2M5NzY0MmZmNGQ2NzI5OTk5ZWQ0ZjI5MzhkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bab177b8fb54976a2fbfb2e7ea05edc",
+      "statement": "archive::get_archive_compression maps an archive type onto its (algorithm key, zstd-level key, level key) triple and yields an ArchiveCompression carrying the level on the chosen algorithm's own scale, falling back to DEFAULT_COMPRESSION_LEVEL (9) or DEFAULT_ZSTD_COMPRESSION_LEVEL (19) when the corresponding level row is NULL.",
+      "evidence": [
+        {
+          "resource": "repo://src/archive.rs#L29-L94",
+          "version": "repo-lines-v1:sha256:941bc29d89c4e324f5f95638085f63d6d1878a1152e2b2832fe91f7df5033a99:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYzM1YWM3OTgxMjZlOTUwZTM5NmUyNjA5ZjYyOGE1YWJmMGQ0ZDQ2OTkzMmNjNmIxOTljM2RhOTgxODhlNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5ZTJjM2FlZjM4ZGE3ODQ0MTI5OGFjYWYzZTRiMTM4MzU4ODBlYjhmNGU0NTA4NjcxM2E5YjBhNzhhY2ZiYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1OTc2MGJlNzI5MDRlNWI3MTg5YzUxYTU0NTJjNjYwMzA3NzVkNGQ0MzQ2YTExZmNhNzI2NDQ5MDY1YjdiNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_712f194aff594595a57f354fc391cfd8",
+      "statement": "PREFER_FORMAT is written from outside config as well as by config --set: import-roms auto-converts each system's newly imported games when get_string finds a value, and convert-roms --save persists the format through set_string after converting; the arcade restriction to ORIGINAL/ZIP is enforced by config::set_setting, mutation::set_prefer_format and the MCP tool but not by --save, so a per-system value no validated surface would accept is reachable and honored by the next import.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L375-L394",
+          "version": "repo-lines-v1:sha256:ddd2a1fd3bca8117538e7745dbe2839af3c486b5acf97b021e475d2a5883b380:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZDU2NTc5ZGJjMTE1NmY0ZmRlMTcwZTZkMzJjNThhM2Y3NzNhN2JiOGY3NDQyYzUwNmZhMGM2YmUyNzU1ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODAzZDM2ZjEwZDg3ZTFkN2U5ZTFjMmE1YWZiY2EzYjE3MGM1ZTQ5OTVlN2Y5NmNiNDI2ZDI4MmFlNGNmMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNWRhMDgxZGI3NjRkZjJmNzk2OTY4NjZhMmIyZjUzNjhiMmYwZjEzNGIxNzljMTc2ZWVmZTE2ZjdjZTI0NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwOTczZmRjNzBkN2E5ZDM5MjgxMzUyNTBmNTBlY2FhY2EzN2UwNmYzYzE4NjJjOTc5ZDQzZThmYzc1MDVlYzcifQ"
+        },
+        {
+          "resource": "repo://src/convert_roms.rs#L399-L405",
+          "version": "repo-lines-v1:sha256:e11644be515662031581e1e76fe0ac002f67c837bd63814a0ff84b6b53506984:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI0ZGQzNjI3M2JjNmYxNTJlMWM3MzI1ZjAwZGUxMWJhNWVhNzI2OTUwM2I5MzkzNDA4ZDI1NDdlNTVjZGZmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWQwYmE1YWVlYzJiOTk3ZTFkNzk3YzY2MDE1MzIxZDZjMjMwZTZjNjFhNjcxZTg4OWUwOTFkYjlhN2MzOWUxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmYjM2ZjA0NmQ0MWViYTFmMzIzNGM5ODQyYWI0YjJkMzQ3NTI2ZDE2NDc5NjhiNTg1ZTkwYzExOGVhZTVkYSJ9"
+        },
+        {
+          "resource": "repo://src/import_roms.rs#L355-L392",
+          "version": "repo-lines-v1:sha256:ba7035da21987ed9c973c57f08c071ba7ceeb9dcf65cbcec465184e467390200:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmY2FhNDc1OGZmZWNlM2Y0NzdjNjEwNzg5YWUwMGQyYTRiZjgwODRlMjFlNmYzYzkwOWJmNmI0MjhiYjA4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ZmRhZWIyZWM4OTJkY2IwMGJjM2U4NDM3ZTdjNGE0YWViMWEyOTNhMWU3ODUyYWQwOWNkYmZhZDkzNDE0YjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhMzgyMjBiODFmZTQ2MTlkMjVmNTNmODM1M2FlMjczYjkxMjc0MmRmN2NmODU0ZTc0MmVmZWYwMDVkN2QyNzYifQ"
+        },
+        {
+          "resource": "repo://src/import_roms/test_prefer_format.rs#L153-L187",
+          "version": "repo-lines-v1:sha256:a6e4ff73fce480a11207b59eed3b34c2bb6ca373a4077ead0c79881a62ba4a93:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyN2VmZDA2MjFkMjBmY2M1N2NmNWU0MDc1ZWRlYjYzNDk4MjYxMjNmMjU5NGIyMmE5NWUzZDNlYjY3OTBlMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e6991c457144b9b9f3d8ff08abdfafa",
+      "statement": "The server feature exposes settings through query::settings (global rows only) and query::systemSettings(systemId) (the merged effective view), with mutations that are thin wrappers over the same config functions — addToList, removeFromList, setBool, setDirectory, setSubfolderScheme, setPreferRegions, setPreferVersions, setPreferFormat, unsetPreferFormat.",
+      "evidence": [
+        {
+          "resource": "repo://src/mutation.rs#L101-L231",
+          "version": "repo-lines-v1:sha256:c0290170354e7e3d025592f8fb8a2208c8345430bc6a6185692ebc68a3bb67f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNzEwNjQzNDNjODgyN2NlNWRhZGJiMGRjYjU0YmM0NDI5YzlhODljODQyMjM1NDdlOWE5OGQzNDQ4ZGJhYzMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYzhlY2Y5ZTgzMzE0N2IzMWMxYTkwODE1NmFmMjgzMTdiMzRjZTYzODIyZGNiYjA1NzU1NzQzNjE2MmU3MzhlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjODZjNjkxMmM5ZDMzZWI3YjZiZDUwNGU5Y2M3YWM4NjJjNDNjYjdmNDZlY2JiNTQ2OWEyN2VhMTI2NWEzYThlIn0"
+        },
+        {
+          "resource": "repo://src/query.rs#L289-L309",
+          "version": "repo-lines-v1:sha256:01c9ca148d8ac90a8475c69d1775f03d75d42705cf4b8e25e024f935f2ed956a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMzNiYTBhMWNjMWZmYTE0OTQ3ZDNiNGFiNzliNDk2NjVhZGNjNTZlZGNjMDI0MWEzODg5MzUwY2M4NzdmN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZWRmZmRiYjhmYjlhZGUzODM0MDBhOGRkMjc4OGQ1YmI1NThlYTExZGE4ODg5Y2NiYzczYWU2N2MwZmRkNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxZTMwYmUyMTk5ZDMyNzllNDkxMDc5MWY2ZDIzZWE1NWU3YmI5MDVhMTJjMzQwNDllMDg4ODFiZDZmM2ZlZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e2a622c6064471582db4432afffaa21",
+      "statement": "GraphQL input validation is a separate layer that shares config's option sets: src/validator.rs builds VariantValidator<E> over strum VariantNames — the same slices choice_options exposes — plus PreferFormatValidator over convert_roms::ALL_FORMATS and DirectoryValidator requiring an existing directory, so a rejected value becomes a GraphQL error instead of the CLI's printed warning; the generic-key mutations setDirectory, setSubfolderScheme and setBool accept any key string and never consult PATHS or BOOLEANS.",
+      "evidence": [
+        {
+          "resource": "repo://src/mutation.rs#L193-L231",
+          "version": "repo-lines-v1:sha256:ff89b2d2d2294cc0837b74029575b598a38c7f2d4c3721e301c81e80ce10a9ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMTNhZTFhZDYyZDlkMDY1ZGE5NWRlMGZkOGMxZWMyOTVmMzFjNDNmMzk2ZTBlNTk0NGE3NDYwZDFjMjA2MGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ODU4MjU5NDc5YmI1ZmYzY2Y0YjE2MDhjNTA0MzYzNzM5NThhMWQ3NWY2NDZlMDZiNGUyOWQ5MzVkNGMzN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4NmM2OTEyYzlkMzNlYjdiNmJkNTA0ZTljYzdhYzg2MmM0M2NiN2Y0NmVjYmI1NDY5YTI3ZWExMjY1YTNhOGUifQ"
+        },
+        {
+          "resource": "repo://src/server/test_mutations.rs#L127-L153",
+          "version": "repo-lines-v1:sha256:7e4ec7218392af019e9371ac605cb1c69e3a06063ab0f6dae082965d87eb441a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNjcxNzUxNjk4NmQwZmM5ZWFmNWM5MTkyNTQ1NDBmZjQ0Nzc4OGM4NjNjNWI2MzU3ODc3NWJjN2Y2MGZlOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjYTMyNjk4MTUxMDMzMmI0ZGEwY2I2ZTU3MTYzYmFkYjJkZGM4ZjZiYzJhNjNjYjk1YjEwZWYzZWY4NzFiZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhZDZmNjA4ZjkzMGMwOThkMzFhNDYzMzAwZWFlYTdlNDIxYTU1YTBjYjljYTBhZWEzNWU3YmFmMjViMjU1MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiNTZlNTk4NmZlOWI5MGExNWJkYTczNjAyMzczMjU5Y2M3YmEyY2NhODVjNGUwY2M5Y2Q4MTQwYzRmMTU5ZDcifQ"
+        },
+        {
+          "resource": "repo://src/validator.rs#L8-L71",
+          "version": "repo-lines-v1:sha256:d5d6f019a79980c9b116c79f94d777580a889386f63bc3b19c2ce6fee0f6fe9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4YmYwYmExZjczMTkyMTM0NjVmOThiNzdkMjNkMTY3YWM3YzMxZmE5OGIzOWUzYWRmYjZhZTc0YWM1NmNiNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMTgyZDA1NzViMTE2ZTU2YTc0MGI4ZTliNjYwMWYyMWY4ZjQyNGJiOTVmMGY2YWE3MzA1ZjZkZmMzYTY1MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkYTliY2RiMWU2ZDUyOWM2MzMxZTA4Zjc0NjJhZGNiYjE3MjQ5OThhOTkzYTk0OGI1OGM4NTA5ODQxN2RmMTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b245d7244ce43e6a4562570688bd2c1",
+      "statement": "The MCP surface reuses config's classification directly: src/mcp/write.rs imports BOOLEANS, LISTS, NULLABLES, PATHS, choice_options and integer_range and re-runs the CLI validation as actionable tool errors (key uppercased, nullable/system existence checked), while get_settings merges globals with a system's overrides and tags each entry with the system_id it came from.",
+      "evidence": [
+        {
+          "resource": "repo://src/mcp/output.rs#L145-L156",
+          "version": "repo-lines-v1:sha256:cc42988a40d7ed2ed6e81e9dcac36553af8e7d8a446113d4be8bd017c5229d01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZDIwMTdiMjk2ZmJmZDMwOWRmZmQxMTkxOGI0ODQ4ZmJmNjI5NjNhZTljMTUxNTE2NzVjMGM3N2E4NWNmYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZmFkNjA3NDM0YjdmMTY3NGIyZTk5YmRkMzhmNzc5ZDlkMWQ3YTVlNTljNjUzMTQ0ZjQzYzFlNzAzMGMwMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4N2IwZDIyMzcwYmM3NDkzZDg4YzFjZTEwZDE5OGFiYzE4MjdiMzBlOTliNmQyOTkyMTc0NDEyOGQyOTk4ZmYifQ"
+        },
+        {
+          "resource": "repo://src/mcp/read.rs#L319-L359",
+          "version": "repo-lines-v1:sha256:d6d574808ca6a992621964f959ce074f37853c988a0b32e5dd7b20ab6dddfbf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0M2Y1NTU5NjA4YTVlMzJlOTQwODVjN2M2OTY2YWZkMmExNGE1ZjNiYWZhMjA2ZjEyZWNkNGJkYzQ3MTY4MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L16-L20",
+          "version": "repo-lines-v1:sha256:41d73679fd7566011b5a8ac62f0ea44d865360c6b394aa5e923089774d493679:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRmMGU2MzAyOWYyZjQxY2VlMDE2MDUzZTNiYWZiMTRiYjk0OTcyYjRjZmYxYTA4MThiMTcxZDE4Nzk3MjkwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFjNGFmNmVkZmIyZDRmZTRkYjc2M2U4MDVmMDgyNDMxMWU3NTYzYjc0MGM4NDg0ZWQzZTFjNzEwYzE3MTgxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY1OWIzNjE5OTI1NmZlYzJmYzk4ZDJjYzkyYzIyOTFkYWRmMTNkY2I0ODJjOTM1MzFhMTQxMWU0NGMyZjU0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY2ZTZiZDVkOTEzMGZhMDZjNjMwNTg4ZjVjMDM1Y2I1ZWY5NGU2OWNmODY0MWQ0MjYxOTg3ODU4YWQ1ZWZlOCJ9"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L460-L547",
+          "version": "repo-lines-v1:sha256:3552711ad5fa1cb52101eb6d6e42a722a7bfb7fa8c25e86a5dba4d42dde1978f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmZGY1MjFmMjgzNWFiZTdiZjk1NmE1YmQ4MDhiYTRmN2M5YzA4ZmVkNzBlOGQwNDcxODY2NmYxZGNmZjAwMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZTY3ZGI2NzMxMjAxYmM5YTc0NmNmMDBlYWIyMGRlMzA4YjMwMGI5NWZjZGU4NTA2YjRjODIwMzhkNjZlZjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5cc06c42bf16404593cf58368af0029e",
+      "statement": "MCP set_setting diverges deliberately for list settings: the value is the complete desired comma-separated set, and the tool diffs it against config::get_list issuing remove_from_list and add_to_list per entry rather than writing the list wholesale, so list validation and SORTED_LISTS ordering still apply.",
+      "evidence": [
+        {
+          "resource": "repo://src/mcp/write.rs#L460-L463",
+          "version": "repo-lines-v1:sha256:26f021b4d25c57f3ab5b442e0f5ef1a348fee1f98d3e32bc189aa993337e8ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIyYjBiMDlhOTYzNWRlM2U3Y2VkOTJiZjE3N2U1YmUzMzczNGIxODI0ZmYwOTE3ZjQxNzRiNjhjZTFjODVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5Mzk1MzA0MWE1OTAwNzcwY2Q3NzcyOTg1OGZmZGZhNWFhNjViZmUzY2NmMzMwMzBmYWE5MGNlZTQ2YTI3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZkZjUyMWYyODM1YWJlN2JmOTU2YTViZDgwOGJhNGY3YzljMDhmZWQ3MGU4ZDA0NzE4NjY2ZjFkY2ZmMDAxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2E1YTk3NGIxZTdiZTA3Nzk4MzUzYzY3NzQzM2FmYzI0NjAyZjIzMmE1M2UyOWY0NzkwNDNiNmIxMzNhMzM3ZiJ9"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L560-L595",
+          "version": "repo-lines-v1:sha256:0a4f623bcfb69c2ceb60792eb0e0d73862430e10d4c08439a98d2366be3b94a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYTA2NDI4MTk5Y2UyYjcwYmJjYjFlMDBlZjAwNDQ2MWU1MzIzMTk1N2IwMTRmNWZjYWZlYjQ4MGI4MzQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYjIwMjFlYmNlYWViY2JjMGM0N2FjYzUwNjhjMjYzNmY3YmYyZGZiZjA1YTNmNWQ0N2FjNzE0Y2Q1YzRkMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViOTM5NWJkMGE2ZDhhZTAxNWUxZjZkZDY1MDZjZWMyOTQ5NTgxMzQwOTM5N2Y0YzhhZGRlNTJiOTA3MGMwOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNWJhYzQ1NTk5MjlmMDQ4ZmVlNDg3ZDZkMjZjYzA0NTg5ZTgzNzI5ZTkzYTUxYmE2NjJiY2Y1MjVmODkxZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_83754db9791d4492bd7e9abb7dbbca32",
+      "statement": "The Leptos frontend re-implements the list encoding: get_raw_settings picks { settings } or { systemSettings(systemId) } depending on scope and split_list splits the stored value on '|', so a change to config.rs LIST_SEPARATOR must be mirrored in frontend/src/state.rs.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L95-L108",
+          "version": "repo-lines-v1:sha256:0db90aa1cb2027213a671d20fe31a16ab8afa5d9e3dbf781384602293244cbd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMWQxMjNjNzkxZWYzNzVhZDI3NmUzYWNhNmFmMGI4NWQ5ZDcwZGZhMjk1ZWM5ZDk2ZTdlZTQ3MWQzZjM0YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0NDkyMGJmN2ZkMThmNjg1ZTdkYjI1ZjIzNTNkNDEwMjI3NDc5NjY1NWY0YTkxYTVmZDk4OTYyNGQ0MzYyMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMDczNDY4ZGI1MTRjZTM4M2RmNWU0OGE0YWIxNjc4YzQ0NmUzMmJmMWMzZTI5YzhjMjk3Y2MwNTg0MGU2ZTkifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L426-L432",
+          "version": "repo-lines-v1:sha256:a5daf5bc0ace1a4a4e4ee04411998feec39fe473bde7c69542153d01c0f3ed06:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiMDA1MDk2NzMxMjg3MTliN2ZjODgyYTk1ZGRlMjNmY2E1OTM0MzU5NThhMTYxZmE2ZDk5MTgzNTAyMTJlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L148-L148",
+          "version": "repo-lines-v1:sha256:ff61252752b49af46f087bf130831357f09d7c1e39f9123c7869774969db7547:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY2MTI1Mjc1MmI0OWFmNDZmMDg3YmYxMzA4MzEzNTdmMDlkN2MxZTM5ZjkxMjNjNzg2OTc3NDk2OWRiNzU0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY2MTI1Mjc1MmI0OWFmNDZmMDg3YmYxMzA4MzEzNTdmMDlkN2MxZTM5ZjkxMjNjNzg2OTc3NDk2OWRiNzU0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRhN2JkYTE1YzFkNzAyMGMwN2RlNjk5MzJlNzBiZWM4ZGI5MTY1Mzg4ZjMzNGRkNjZlYTc4MjJjZDIwZjA4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM2N2ZhZmI5NTc2MGExZmE1YjVkZGYwOTQ0MWM2MDJhNmJlOWMwMTQ2ODNlODI4YjBiMWI1MGEzNzU5ZjNjOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6a4e4381f1c4454b7d2c79bc80a13b9",
+      "statement": "Lists are stored as one row joined with '|' and an empty list is stored as NULL, with migration 20230528135145 rewriting pre-existing values from the earlier comma separator.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20230528135145_use_pipe_as_separator_in_settings.sql#L1-L13",
+          "version": "repo-lines-v1:sha256:700ab8bd6b71c223d27574e4a4fc73b0cfa71bdb7cf77a898ebe9d10acfda811:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzhjNGViMmZhMmM5MWJmMDQxYWE4OGE3ZTNkOTRkOWI3ZTk3ZDM0ZTcyNzZmYWY2ZjBmMmU3OTQ5OTFlMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNWU4Y2EwMzYxNjlkM2ZlOWYyODg2NjRmOTU0OGQ4NjkwNGFmOTY1ZmI3YjcwYWY3M2Y1Y2IwZmU2NjhkM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZjIzYjY3ZGM0ZmIzZWFkYTI2ZGM5OWM4ZjE5ZDhhNjJhYmYwMDMxZjdkYWFhOWExMWI4MzViZDg4NjkxZDYifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L551-L563",
+          "version": "repo-lines-v1:sha256:50992753140ec29e568df02005afdd7367daa7129965ac624f00a7b4b5f2df41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZTczNTI0NDVjYWFiZjk2MzFmNGEzZmFlZTM5YmJiODg4NmM3YTRkZmIyMmIxNWU2MTBiMThkOTYyOGM5NTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e9b0e858d914919b0e221073dbc1919",
+      "statement": "HashAlgorithm still lives in config.rs but is no longer a setting — its HASH_ALGORITHM row was deleted by migration 20241227212749 — and now serves only as the hash-selection enum passed to get_hash_and_size, so a config key catalogue must not list it.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20241227212749_drop_hash_algorithm_setting.sql#L1-L2",
+          "version": "repo-lines-v1:sha256:6af8473f5f76f63dc1c048106938185384a3f26b3696b2525f1541589a8c26b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM4Njg5MGQ3ZThlYTE2NzlmNzViZDNlMWUzMDg3NWI2ODc0M2RkZTA1NTVmMzgzODA0NDE0NDZjNTBlNGZjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI3MWMwYjdmMTE3ZWE0NWJjMWRmMWY5YzA2OTI0Njg4ZWMyMGVmMTg0NDQwNTJlMTgwNTAyNjA5ZGQ5YjA3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L25-L31",
+          "version": "repo-lines-v1:sha256:c67b71145f92db6733a553730c5a1af61dc2b644666f0046a96781b787d53ebe:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjAxZmI1NjIwODFkNjA3YWM4Mjc1ZDBjOWY0ZTk5Mjk2Nzc0ODY5N2U2YTVjNjk0MjVlNzA3MzRjZDRkNDVkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA0MTRhMDljMzU1NDIxMzkzYWI0NzQ3MWY0ZjY0YzM0NzllZjQ2MDc4MjExODY2YjI0ZGNlMmFkMTNkMTQ3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjIwOTZjMjAwMjhiZGQxYTZkN2M2NzE5OThiMDljNGE5MjNmNDAwZTg2MzJlOTE4OTI1YTI2M2UzNDViZDVjOCJ9"
+        },
+        {
+          "resource": "repo://src/import_roms.rs#L808-L808",
+          "version": "repo-lines-v1:sha256:55d95600684186387137f8b3bb92ad619c24373ca2056b23d5498028ab3c78fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVkOTU2MDA2ODQxODYzODcxMzdmOGIzYmI5MmFkNjE5YzI0MzczY2EyMDU2YjIzZDU0OTgwMjhhYjNjNzhmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVkOTU2MDA2ODQxODYzODcxMzdmOGIzYmI5MmFkNjE5YzI0MzczY2EyMDU2YjIzZDU0OTgwMjhhYjNjNzhmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmIzYTVhMTIzZWRjNzljNTBmNTUyN2FlZmU2NGE0ZTgyN2E4NTJhYmI0MTVjZjA5NTliMDE3ZDY3ZjhmOWYyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzA5MTEyMzcxZTdlZTc2MzVmNGQ2Y2I3NjQ4YTA0ZjY2YzVjZmU5MDdmYzIzN2JiZWYzOGJhY2M3YjVkNDMzNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e320f7c10a1415f8d3613e96c9f0f45",
+      "statement": "Adding a setting means four coordinated edits: classify the key in config.rs (slice membership or a match arm, with a lowercase-serialized strum enum for choices), add a migration seeding the default, read it through the typed accessor with the system scope, and expose it in query.rs/mutation.rs only when the web UI needs it; AGENTS.md's checklist names CHOICES, CHOICE_LISTS and INTEGERS as constants but those three are in fact functions.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L375-L388",
+          "version": "repo-lines-v1:sha256:c9647bd344e603258f9305e930c0ea74a4b48605693cb1e4800e6cf522a568e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MTdiZDBhZjFlMTYzNmI3OGI5NzliNWM2NmNmOWQ2YzZlNDM1ZDQ0MmE3OWRkNzY3YWFkYjg2NTgyZTdiZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDhkZWRkMTliNzc3ZDQxNzk2NGMxNzMwYzk3NTg5YTgxODY2ZDlkZjM2OWIyNTlkYjg2ZmYyNzllNWMzMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ZDA4YjhiZWVmMGM0MTRiNGMyZDlmN2I1NTcxYjk2YTljOWMyNTFjNzViYzkwMGEyYmNlMDMyMDYzNWIwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWFjODQ5N2JjY2Y5MWYxZTUyYjcwNzEzNTA3MzE1MGFmNzMwMmQ2NjkzMTI4NmY2ZDk4N2M3MDE4ODMyZTAifQ"
+        },
+        {
+          "resource": "repo://migrations/20260811000001_add_prefer_format_setting.sql#L1-L2",
+          "version": "repo-lines-v1:sha256:c541ba9f1d1ec4da22cc512e0002227d6bbe40c20362536334481b931fc3238b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjMmIxOWUyZDAwYmQ2Y2MyNjVjMzBhOTM3YTQ2OGU4MzJkN2JlMjVmYzZiZGQ3OWM3M2QzNTgzNjgxZjZmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5MWFmMTRiZjkyYmY1ZTlkNDNjYTMwZTg5NDk3MmJkOGMwZDFmZDY0YTU1Y2NlM2IxNzcwZTkwMGY1NzQ1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/config.rs#L64-L148",
+          "version": "repo-lines-v1:sha256:6a9ae2d6cece03c9a6efd1891be9ef54a15835553a276c0e46bf0e62ef7e23be:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNjEyNTI3NTJiNDlhZjQ2ZjA4N2JmMTMwODMxMzU3ZjA5ZDdjMWUzOWY5MTIzYzc4Njk3NzQ5NjlkYjc1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNjdmYWZiOTU3NjBhMWZhNWI1ZGRmMDk0NDFjNjAyYTZiZTljMDE0NjgzZTgyOGIwYjFiNTBhMzc1OWYzYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e5957710f8345c8bfb3475fcbc78b89",
+      "statement": "src/config keeps one narrow test per behaviour over a throwaway migrated database: test_system_bool_fallback pins global inheritance, test_system_bool_override pins that the scoped read sees the override while the global read still sees the global, and test_cli drives the whole subcommand surface asserting that every rejection leaves the prior value intact; tests touching the global directory settings take the test-only config::MUTEX.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L631-L671",
+          "version": "repo-lines-v1:sha256:618c42225a49f53231be1c18e675bbfc0e247cbc1e6780e844887ac2417f9fb7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYTFjNThkZTRkMTk4ZDY5MjFhMzExMGRlZjQzZDNlMTJmYWVmY2I5Y2QyN2RiMTVkZThhOWU0MGFhOGQ3NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/config/test_cli.rs#L1-L104",
+          "version": "repo-lines-v1:sha256:0238670c50502ddc01748bc52433554ee20b5d1935fd77ccc2dc9440a65f141d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NDc5NGZmYzQyYzgxMzVjMWVjNmVmYjZjNzA4MjVlNDI1MTA2ZjYyMjZjYTUzMDQwOGU3YWYyYmI1YzQxMWNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/config/test_set_new_directory_when_old_is_missing.rs#L26-L38",
+          "version": "repo-lines-v1:sha256:1690a855d08ab0e4491980e70829df06898ebfe2b756ec7502c095fde7e6b151:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzNjRlOWFkZTM1OTUyOWUxODQwZWJmNWQ3YzFiNWUxOWI5NDFhYzY2ZmM3NzhkZDg3ZGE4ZmZlY2UwNzg1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/config/test_system_bool_override.rs#L22-L29",
+          "version": "repo-lines-v1:sha256:29754eba07332cee55857ac1e157dc1ccaa1ab6b178d2dec0f4d78983cf309d6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMDllYzE5YmNmOGVmNGRhZGZkNzE3ZjIzNTVmODg2MTExODI2MGE2YTQyYTRkMDA1Y2UxYWYxZDFjNzZiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmZkMTY0ZGYzMDYzMTNjOTZmNGYwYmQxMzkxODUyNDRlNTNmYmYwZWI1OGI1ZmZhM2YzZmVlNjY1ZWRlODg1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dabc27cbda75488398a24bce43ef9297",
+      "statement": "The four CHD tuning-key pairs are not read symmetrically: convert_roms reads CHD_CD/DVD/HD/LD hunk sizes and algorithm lists with Some(system.id) and threads all eight into to_chd, whereas export_roms reads only the CD and DVD pairs, so CHD_HD_* and CHD_LD_* tuning affects convert-roms alone.",
+      "evidence": [
+        {
+          "resource": "repo://src/convert_roms.rs#L247-L286",
+          "version": "repo-lines-v1:sha256:d261b410259391a5d0b79212c7b6af7f97f2d51b6182d13629771e5386b2be38:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NTQwYzQ1NmFkOTEyNzU3NmZhYzU0YWJiMjAyYTQ2NTc3ZTQyMGJlNTYwMDQzNWY2ZGVlZGNhZmYxMTc4OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyZDI1YWFmZWNhMDQ2NjhmZjVmOGYxMWZkN2I4YmViZDJhNzMzYTQzMjVhYzY3MDI0ZWJlZmI1ODQ3Njk2YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhMDEwNTc2MzJlYzA5ZDMyMWM5YzM4ZDg4MTgyMzBiZTRiZjA2ZWQ1ODUxZDlhZmU5MzdiZjY3NWI3YjcwZTkifQ"
+        },
+        {
+          "resource": "repo://src/export_roms.rs#L240-L265",
+          "version": "repo-lines-v1:sha256:2cca244201d9cbac780a092bf0be2f813640174490635c67521719076eb3682f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOTI4YTQwNWRiN2NiNThkM2ZhZGM3MzE3ZGU3MTIyMTlkZDBlOWE0ZmQ3OTVjMTZkYjRjNmI3YmFhMmI2NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMmI1MGZiNzM0ZTdmZDBlNzc1OGNhYjAyMjVjYmFjOWNhNjc0OTI5NzMxNDRmMGFlNGRmOTc4ODEyODkwMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzMzliNGZkMzc4MjllZWUwZWQzODJjNzJlNTc4MjNiZDYyN2Q5MzRjZTM4MTY3NjFiZDhkMWUxNGQ4ZGJiNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5N2VlOWEwNGQ4YTcwNWYxOTdmZWVhOGMzYzVlYmU2NjQ2MmNkNTcyNWRmYjk2M2UwNTIxOWIzZmE5ODYyMmUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T22:10:44.671Z"
+  }
+}

@@ -68,6 +68,7 @@ oxyromon is a CLI application built with `clap` for argument parsing, `sqlx` wit
 | `archive.rs`      | 7z/ZIP archive abstraction. `ArchiveRomfile` struct with `AsArchive`, `ToArchive` traits, backed by the sevenz-rust2 and zip crates. Renames, deletes and appends copy what the archive holds raw rather than re-encoding it.                                                                                                    |
 | `chd.rs`          | CHD format abstraction. `ChdRomfile` struct with `AsChd`, `ToChd` traits, backed by the chd-rs crate, for CDs, DVDs, hard disks and LaserDiscs.                                                                                                                                                         |
 | `server.rs`       | Axum-based web server with GraphQL (async-graphql), SSE for real-time updates, and embedded static assets from the Trunk/Leptos build (`target/assets`).                                                                                                                                                                           |
+| `mcp.rs`          | Model Context Protocol server (`src/mcp/`: `read`/`write` tools, `actions` execution path, `resources`, `prompts`, `params`/`output`). Reuses the CLI subcommands via synthesized `ArgMatches`, like `mutation.rs` does. Runs on stdio, or mounted at `/mcp` by `server.rs`.                                                      |
 | `query.rs`        | GraphQL query resolvers. Uses DataLoader pattern for N+1 prevention.                                                                                                                                                                                                                                       |
 | `mutation.rs`     | GraphQL mutation resolvers for settings and system management.                                                                                                                                                                                                                                             |
 | `validator.rs`    | GraphQL input validators.                                                                                                                                                                                                                                                                                  |
@@ -173,11 +174,12 @@ Run from the repository root:
 
 | Feature          | Description                                             | Default |
 | ---------------- | ------------------------------------------------------- | ------- |
+| `mcp`            | Builds the MCP server subcommand (stdio)                 | Off     |
 | `server`         | Builds the web server subcommand (GraphQL + Leptos SPA) | Off     |
 | `use-rustls`     | Use rustls for TLS                                      | On      |
 | `use-native-tls` | Use system OpenSSL for TLS                              | Off     |
 
-Server-only code is gated with `#[cfg(feature = "server")]` throughout the codebase.
+Server-only code is gated with `#[cfg(feature = "server")]` throughout the codebase. `server` implies `mcp` (the web server mounts the MCP server at `/mcp`); `mcp` alone builds only the stdio server.
 
 ## Format Crates
 
@@ -313,6 +315,7 @@ GitHub Actions workflow in `.github/workflows/continuous_integration.yml`:
 - Installs system dependencies, all only for the format crates' tests: `mame-tools`, whose `chdman` the chd-rs tests compare against, `ffmpeg`, which makes the AVIs of its LaserDisc tests, and `xdelta3`, which the xdelta-rs tests compare against
 - Runs `apt-get update` before installing: the runner image bakes its package lists at build time and they go stale within days, so installing without a refresh 404s on `.deb`s that Ubuntu has since rolled out of the pool
 - Runs `clippy` on the whole workspace, with `--all-targets --features oxyromon/server`
+- Runs `clippy` again with `--no-default-features --features use-rustls,mcp`, covering the MCP stdio server without the web server
 - Builds with `--release --features server`
 - Runs the workspace's tests with `cargo llvm-cov` for coverage
 - Uploads coverage to Codecov
@@ -669,7 +672,8 @@ This applies to all contributions — CLI changes, server changes, bug fixes, an
 - **External tools may not be installed.** Always check `get_version()` before using a tool and provide a helpful message.
 - **Cross-filesystem moves fail.** The `rename_file` helper in `util.rs` falls back to copy+delete, but be aware of this.
 - **SQLite compile-time checking** requires updating `.sqlx/` data when queries change. Run `cargo sqlx prepare -- --features server`.
-- **The `server` feature** changes database connection pool behavior (max connections, locking mode). Always test with `--features server` in CI.
+- **The `server` feature** changes database connection pool behavior (max connections, locking mode). Always test with `--features server` in CI. The `mcp` feature uses the same multi-connection pool.
+- **stdout can be a protocol channel.** With `oxyromon mcp` (or `/mcp`), stdout carries MCP JSON-RPC: never `println!`/`print!` from any code path the MCP server can reach — log (`log::*`) or use the `progress.rs` helpers, which write to stderr.
 - **Temp directories** should be created via `create_tmp_directory()` which respects the user's `TMP_DIRECTORY` setting.
 
 ## TODO / Known Areas for Improvement
@@ -724,3 +728,20 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+This repository has a generated `openwiki/` evidence index. It is optional just-in-time context, not required startup reading.
+
+- Do not enumerate, preload, or search wikis at task start. Use retrieval when the user asks for it, when unfamiliar architecture or dependency behavior materially affects the task, or when source inspection leaves an important uncertainty. Stop once the question is grounded.
+- When those conditions apply and OpenWiki retrieval tools are available, use `openwiki_search` for just-in-time context and `openwiki_read` for the relevant complete sections. If search returns `workspace_required`, ask which listed workspace to use and retry with its ID.
+- Use `openwiki_list_workspaces` or `openwiki_list_wikis` when workspace membership itself needs to be discovered.
+- If the retrieval tools are unavailable, read `openwiki/quickstart.md` and follow its links to the relevant pages.
+- Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
+- Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
+
+The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+
+<!-- OPENWIKI:END -->

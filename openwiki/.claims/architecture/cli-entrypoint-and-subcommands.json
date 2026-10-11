@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:220cd7080bef2cacc946f310f588d8ef9efd85ae6b4e0677918a8be3c47ee265",
+  "claims": [
+    {
+      "id": "claim_f854afcce118483faaa96aefa8a19eea",
+      "statement": "src/main.rs is the crate's single binary target (oxyromon); it assembles the clap Command from every feature module's subcommand(), appends mcp::subcommand() and server::subcommand() only under their Cargo features, and takes name/version/description/author from CARGO_* compile-time variables so Cargo.toml is the source of truth for --help and --version.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L158-L160",
+          "version": "repo-lines-v1:sha256:4d181706563c5d2f0ce7c8d133ca2461e979ade333f2de8ad41627de525e6fda:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzcyMTFiNzhlMWFkOWJlNzE0MzEyYmQ4OTJlMGJiOWNjYjJkMTI1MzE2NTgxMmZlOTZkMzMwZTk1YWI1MmJmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRhYmIyYmE1ZTZmYjkxNDAwZDA1N2U5MzFjZTkxOTk4YjZmNzBmYzU4YjczMzA1MjEzMjZhNGVjNWU1YjZjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTg3NmUzOTQ4YmRkYjg4NzllMDRkMjU0MmE4ZWUyMDZhMzM0ODhlM2RhNDJkMDU4NzFiMzljMTVmZDY3NTg5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjlkMWNmNTk3Mzg5MGI2YzYzZmJjMDc4NjkzODdjNjc5OTZlYjQzMWM0MzZkNWUyMWZmZjI5ODZlMmNmYjM3ZCJ9"
+        },
+        {
+          "resource": "repo://Cargo.toml#L36-L51",
+          "version": "repo-lines-v1:sha256:683da612e77cc27df1aee31f53faea00d75aad1e042fc788054399d195ab69f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZjZjMWM3M2U0Njg1YjZmNTU3OTJhZTUzOTI1NTNmZjc5ZDNjYzA2N2IwYjc0ZTA2ODY5OGY2YjJjNzZiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZDg5NzIxNGEwMGUzZmY1M2VjM2ViODc3MTViOWIxNGU5MTM1MGFjZTAyNzIxZGExN2M2ZDgxNzZiMDlkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZjEyMzRiNjg3ZmJhZWJjY2MxNzg2YzlhNWIyYTc4Y2I1YmYzZTIyODk3NTIzOWExMGFkZTI2YTA4MzcxZjIifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L66-L98",
+          "version": "repo-lines-v1:sha256:2107cf7d1092e3c8c7694fc8859a5d8a5d3cb0943316a1957743579f83c26831:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZDA2ZTA0OGNkMjcyNzM4ZDgzN2IwYzBlYzZhYWIwYjAzMTQ1N2U0NzVmZDQ5YWJiY2JhZmM1ZjczYzAyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Mjg5MWZkY2I4NzNjMjhiNTk4OGNjMDU0N2NhNjZiY2YzNjVkMGIwNTkxZmNkMzQ3M2E3MzE0NWY2NjViNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NWUzZjRkNDdlM2Q1MTk2MzFlMzA0ZTU0YjZjYmU1OGUxNDdmODdjYWI3NjcyZGUxNTNkOTE5OGM1NDU3NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNmM4NGY0MDJlMDYwMGUxNzM2ZDM5MGE4MWFmODJmMWFmNDc1NzA2ZDFhYWVkNmE3MDM5MWNjODUzZDg2MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c7efc8e818d4d0ab47cbec8fb81d359",
+      "statement": "All global startup is gated behind a matched subcommand: with no subcommand on the argv, main() returns Ok without loading .env, installing the logger, creating the data directory, or opening the database pool.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L100-L185",
+          "version": "repo-lines-v1:sha256:1f14006d0c567e7da3d588ff02521125f3033934e6e15863f3c45716aaafbfd0:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cf87d6e149b4e06bd0c057578d14e3d",
+      "statement": "dotenvy's dotenv().ok() runs after argv parsing but before the logger and data-directory lookup, so a .env file in the working directory can supply OXYROMON_LOG_LEVEL, OXYROMON_DATA_DIRECTORY, OXYROMON_ROM_DIRECTORY and OXYROMON_TMP_DIRECTORY to the run.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L100-L132",
+          "version": "repo-lines-v1:sha256:03c6f1b7c6626e59260daf95f816c93039d5bd4bbb88cb93763459670b6f42ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZjE5ZjEyNjBiZDhhZjkzNjUwMDJkZmIyYzFmMDhiZTgzMzM0Yjc1NzAwNGNlYzI2YTM0Y2U4YTBmZDg4ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzZDJkODA4MzIyYjIxMGIzZmQ3ZDM3ODE4MjJlMjkwZDY3OTc3ZWUxOGZlMTU5OWZlNmYzMmU5MjgxNzc5ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5d65f49324c49008bf57286d26e7ce1",
+      "statement": "The logger is built from OXYROMON_LOG_LEVEL with its filter level captured before env_logger is wrapped by indicatif_log_bridge's LogWrapper over the global MultiProgress, then re-applied with log::set_max_level so log records route through the progress UI without losing the configured verbosity.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L103-L107",
+          "version": "repo-lines-v1:sha256:53a7278e976528dfd5dc89bcda4f2e7cf4b9121fd645b2e3a6144d3c7acf74ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAwN2ZjNDYwMzg0NjY5MDc5MzgzNWEwY2RiNjI5ZmEyNjEyMDRmYzM5YzhmYzUyMWNmMDRkOTQwMWJjNTFjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFmOTc2Y2M1MTMwNjU4NWQ5NjhmNzY2NDIzNTY3NDFiZTRiYjZkN2ZhNjdjZDc5OGNkMTM4ZTQyYzA2ZGMxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTU4NGMyZGNkOWIzMzNkMmIxZTUwN2E3NzRkMGViNzExZDU1YzAyY2Y1ZTg0ODQ4Y2EyZTViY2E1MjdkYjhlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkNjFlMWViOGEwZTM4N2E2ZDNlNDlkNjg1MjNlMjhlYjRhN2JkZmEwZGIzOGZlZTRiMmY2YWUwMDk4N2Q5MSJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L17-L34",
+          "version": "repo-lines-v1:sha256:653d4a1c96faea445472cea2863afc98bf6ddf31f319c251e67de08222c32772:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YjMyZWU0ZWQ0MjBhYTE2ZTBiYWEzMTEyNmJjOTZiOTViZmQ3MjI0OTIyYjQxYTgzZTBlMzBlMTg0Y2EzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MDZkZjkwZTMyN2JjMTJlODA4ZWVlNGRiMTIxMTlhYjMzY2U1NjhjNmI4ZjAwY2NhZDY0ZjAyYzg0MzE3NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkYTVlMWEzZTI2YmJkMWUyMWRkNTA5YTIzOWJmYjA2NjE0MTM0NDgwMjlhMWQxMTNiMjc3ZWMyYTI5MTg0MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd3e70acfe4840a08a5d23d17dc1836a",
+      "statement": "Startup resolves the data directory from OXYROMON_DATA_DIRECTORY (else platform data dir + /oxyromon), creates it and oxyromon.db if absent, and establishes the pool on that file; establish_connection applies the SQLite pragmas and runs the embedded migrations and panics if either fails.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L13-L72",
+          "version": "repo-lines-v1:sha256:f9232e4ea385bca92c8f0cc0330237e1a8c7f33e6b91b1a8c25e5bef98133836:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmE2Yzk5MTE4ZDk0ZWE0N2JkNDYzMzNhMWM4NTc4ZGIwZGI3YjcyYTFmNTMyZTVkZGJiMDk2YWJlN2UwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4OGZlMjMyMTA1YjMxNjgwMjc0MGQzZDc4ZjUwNDJhODQ5MjNhOTE0ZTBmOTMyZmUxNGExOTJmNzZlNzAxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYTE0Mjc4ZmFlZjY2YTViZmExZDgzNDkyNTg0OGFmNzcyNDgyODI0ZmQ0MGQ1YzQ0YzhiZTNiNzZmNzA1MGQifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L118-L128",
+          "version": "repo-lines-v1:sha256:d923ef86470508e496cc8833b68300d8d448dab36b49f9942770a6c3935b382a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZDkzM2RiNDUwMTM1ZTZmODYzMGExZTk3NTU3NzcwMTZjZmRiZDY2YmEwOWFkN2M1YWY3NmQ3ZTQxYTE2ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExOTlkODVlODUwOTdkYzU4ZDMwNmFhYzFhMDQ3OTc0Y2E2YTMxNmNlMzJkODk2OThiYTY5NDA3YTY0ODE3MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MTYxOGQxYTBiNzBkZjAwZDcwM2E3MzkzYmI4OWU4ZjdlNTQ2MTIwYzkzYmYzMDZkNGRlZjE4YWJiZjI4NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1Yjg3N2Y2NzM4N2ZjYzEzNjAxMzRkMjM4OTYyYzlmNWNjNDAzMmFjNTVjNzA1OWQ3ZWE3NTY5MWMyNzllNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc0e70d9b55645a8a3da0cf477881d18",
+      "statement": "get_rom_directory and get_tmp_directory are called at startup with their return values discarded, purely so their first-run defaults (OXYROMON_ROM_DIRECTORY or ~/Emulation; OXYROMON_TMP_DIRECTORY or the system temp dir) are written into the settings table for every later lookup.",
+      "evidence": [
+        {
+          "resource": "repo://src/config.rs#L603-L629",
+          "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L130-L132",
+          "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_22f8f2aa28ee4a0db9a3922057df5665",
+      "statement": "Pool sizing is feature-conditional: a plain CLI build gets max_connections = 1 with PRAGMA locking_mode = EXCLUSIVE, while any build with the server or mcp feature gets 5 connections with NORMAL locking; both use a 5-second acquire_timeout, so on the CLI pool a second acquire while the running subcommand holds the only connection times out rather than succeeding.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L13-L36",
+          "version": "repo-lines-v1:sha256:9d9da54ec61f22c11b8ac3bc3999f2a1fa071d5364627d876db861e4c8e8bb3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmE2Yzk5MTE4ZDk0ZWE0N2JkNDYzMzNhMWM4NTc4ZGIwZGI3YjcyYTFmNTMyZTVkZGJiMDk2YWJlN2UwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYzMyZjg3OGFkZjI2NzkwMzE3Y2Y0YWUwYjIyYjlmYzdmM2ZiODNkOTQ2MDZkNmNhMzA3Y2NhMWZkMjkzNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4OGZlMjMyMTA1YjMxNjgwMjc0MGQzZDc4ZjUwNDJhODQ5MjNhOTE0ZTBmOTMyZmUxNGExOTJmNzZlNzAxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3OGZlYmQwNWI1OWMyNjhlNmQ4MTc2YWMwODYzMjcxY2IwNDVhNDZhNWJjOTFkNDdlYTFkYjJjYzk0MjVhNmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bda465fd4d8848a691af238b61ec642b",
+      "statement": "CLI dispatch happens inside a bare block holding the single acquired pooled connection so it is returned to the pool before optimize_database acquires one; optimize_database runs incremental_vacuum, optimize and wal_checkpoint(truncate) on the pool.",
+      "evidence": [
+        {
+          "resource": "repo://src/database.rs#L94-L104",
+          "version": "repo-lines-v1:sha256:1ba062161a891a95a4eb68d3c4002de1788df00015067f07016373a81eecdbc8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZWZiZmIwMTNiNjJjYjlkYjA3YmY4ZjBhNTM2ODFlNGY0MzgwYzBhMzdhYzljMmU5N2I0MzcxYTYwMDU0NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0NmZmOTZmMjE1MTk5MWRhYmIzZTMzNmU5ZjRkN2ZiN2ViY2U1M2MxMTkwMTdhNjgyNzQwZjY2YWY4MWJlMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZmQwNTdmNDcwOWZiYzZjZTZjZjQ4OTY3MzhhZGUyOWI5YzdjZjNmNzNhZWE0YzUyNGU2NWViNjM1NmRlYjYifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L134-L138",
+          "version": "repo-lines-v1:sha256:1653fc24c08ba02e0c455f915e091b87398b3478991c14cb0780382db7f53021:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk2YjQwZTlmZGM0ZDBhNDNkNTI0NzkxMGM3NTFmYjI0NWM3YWQ2ZDE3MTBkYjQ1NmIzMGM1ZTUzNDlkMDkzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFkZGEzNjBhM2RkYWRhM2E4MDhmYjliODYxZjIyNzRiZmY2MWFhNGNiYjUwZjYyZTkzMTgxNjIwMmFhYmQ1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFlOWI4YjIwZTc5MjNmY2RlOTY0YWM3ZjJmYTk0NDRmNWY4OTdkY2VmYjlhNmM3NDBlY2MwZTE1MzcyYWQyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdjZjFhOTk0NmEyMjMzODZkODRlNWE5ZDZmZGQxMDI3NWYyZTI2Mzk1ZDIyOGQ5MTdjNGE5OGViNzAzM2FhMSJ9"
+        },
+        {
+          "resource": "repo://src/main.rs#L171-L183",
+          "version": "repo-lines-v1:sha256:833847be839faa3a87357a09beb72c47c705e669b57633eb7ea65801ba0ab83c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0MTg3Mzk1NTFjYTQ3ZjllZGY4NTNhZmU3YmIxZWI4ZWRmY2VhOWI2NTQxOGIzMjgwMGI4MWZiMDQwMjM4YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_80632d1b0cb14b9b83a960c08120b8b6",
+      "statement": "The long-lived servers are dispatched after the scoped CLI block and receive pool.clone() instead of a connection, so the server's 5-connection pool starts uncontended; their main() returns only when the transport ends (stdin close for mcp, Ctrl+C/SIGTERM for server), making the entrypoint's optimize_database a shutdown checkpoint. server::shutdown_signal also optimizes the database itself before cancelling in-flight work.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L172-L182",
+          "version": "repo-lines-v1:sha256:8e3603c5f67de7c39964516a1cd57fca37626548faf5d3661e550cc9f0e05fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTM0OGUzZmIzOWE5MGJmYzI3NmUxZGMyNDA0YmE2OWM0OGM4Y2FlZjE2MGRiZGQzNTE2ZGMxOTRlNDQzY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZjU4N2Q2ZGJiOWY4MGEwYTk1NDMxZWQxZmFjNDMyYWQ1OTI2NDUzNDU2YTlmMTQ5M2MyOGExN2FlMzY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
+        },
+        {
+          "resource": "repo://src/mcp.rs#L116-L134",
+          "version": "repo-lines-v1:sha256:531053abcff892a7192c7bb949bd46781e77e3a4827a832c8ef88ea88b2bcd8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZDM2ZDQzMzNiMTRjYjA3NDlhMDExMGY3YTZhYzNiMDA2ZDBmYzNhZTAxZDk2OTcxOWIwMDA5ZmQ4YTM4ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5Y2Q3MDc4NTE3NjZhMDdjMTNhNzkwYzBkODA3ZDYzYzdjYzI5ZTc2ZGNhOGNhYjM0MzNjY2M3MDNjMjA5MjkifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L146-L171",
+          "version": "repo-lines-v1:sha256:7f37e2e9b2a9846a74a1ab2e05ad6b2197e01ed096deda46f11f000eb94ceb5b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4NWQ2N2FhNjM3YTFkYjEwMTNiYTI5MGM4NTdmMmQ0OWNjNWU2ZmQxOGUwMWQ2OGQ2YzI2YzI3Y2VjZmRjOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5Y2MzYjMwNjFiOWFiNTRhMjg4MGI0NDI1NjUzYWM0YTM2ZjQ0NzM0ZDE4NThkNzVjOTRkM2ZhY2QxZjQ4MTgifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L231-L242",
+          "version": "repo-lines-v1:sha256:add994a76a1d837c1feee205384a5cec5951b015eb772cb9ac473a059b9ceb72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNzgwN2QzMzk1MmNkYjM0Y2U4M2FjYzIxOGQ3ZTZmODUwMmU3N2VlZGU4ZGM3OTA2ZGVjZTUxNjBlNGY1ZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDg0Y2FlMjZlMGZjMjEyOTMxY2Q0NzQxZDI2OTM0MDBkMWE0YmI1MzZjNTdmNjM3MDFkNTQ0MDM4YTE4NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlZWNiYzI0YTZmOWQ4ZjBiYzIwNTgzM2M4YTI2NzYwZjY1YmIyNmIwNGNhZjRlMDUzODhkNmVlYTRkMWVhY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZmIzNmYwNDZkNDFlYmExZjMyMzRjOTg0MmFiNGIyZDM0NzUyNmQxNjQ3OTY4YjU4NWU5MGMxMThlYWU1ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f08ec1b0ffd485ba749ef2a79484b74",
+      "statement": "The dispatch match in main.rs terminates in `_ => ()`, so a subcommand registered in the subcommands vec but missing from the match exits silently with success instead of erroring.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L138-L171",
+          "version": "repo-lines-v1:sha256:c6481a4f9456a1946e14e580c664237b349251b151c868cfb42bbc1c9806620d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZGRhMzYwYTNkZGFkYTNhODA4ZmI5Yjg2MWYyMjc0YmZmNjFhYTRjYmI1MGY2MmU5MzE4MTYyMDJhYWJkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MjJjM2ZhZTNjZGI1ZjIwMTQ3OGJhZGFlOWQ0NWNlOTNkZDE2ODI0ZmUzYTcxMWMyNGVkNzBkMDdjMDRiNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYTAxNTM3YmU3ZDdlMTg5NGE3N2NiZGUzNjA4NGQ5NGYzMjNhMTQ2YjkxMGU2NWNkYjk0ODBlMWRkOWU0ODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_40abbff2268f42148e97330eeb5a7361",
+      "statement": "Every feature module exports the same contract: pub fn subcommand() -> Command declaring only the argv shape, and pub async fn main(&mut SqliteConnection, &ArgMatches, &ProgressBar) -> anyhow::Result<()>; info omits the matches parameter because its Command declares no arguments, and mcp/server deliberately take a SqlitePool instead of a connection.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms.rs#L20-L60",
+          "version": "repo-lines-v1:sha256:5b1180a70273012789231702732d59237cdb130a5b46888f4ca8d1113e40b567:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGQ3YjA5NDU1MzhmNGMxNjQ4N2ViNmFjNDZkMmVjNzg1ZmQxOTJlMzhhODNlZDUxZjM0ZGMzMmQ1NTY4ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMWYwZjA1NGMzZjY4YTYxZTlkMDA4NmQ4ZjBhM2NiOGMyMGIwMGQ3M2Q1YzI5ZWM2MmJjNmMzN2Q3ZTcwYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwMTA1YWRjOWE1OGEwYWYxNjc4NWI5ZTEwZTNlZmExYzMwZDkwYzA4ZGQyZDg5MjFmN2MzNWQ3MmQwOGRjOTIifQ"
+        },
+        {
+          "resource": "repo://src/info.rs#L16-L20",
+          "version": "repo-lines-v1:sha256:11408d15400eae72fb547dcd7c318d14c02ac5962e6620e4d0b12cad8115130e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NDU3YzAxOWZmYmE5NWRiNTVkMDM5NDgxMTZhNGU3YmViZjk1ZmRmYzk3ZTI5ZDlmYzAxZmM3NDZlZDI3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRhMGU2NjdmNTRkNjcxNjkzN2VmZTY0ZmUwMjZiZDQ2NDFkZjI0MjQ5NGFiOTkwNzNmNzFjY2M0ZjRiY2NjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIzYWNjODViZjNkMDgwNTg0MWE4M2Q4YWJkYjExMGNiNTQ5NzJkZDBhZmYwOTBmNGM3ZGY4YmMzMWRhYjVjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQyZDE4MTU3N2E5Y2U0MjQzOGIzNGE5NzVlMmM5OWJmNzhhMTI2MmI3NDBmZDczM2I0N2ZlZWI2MWFkNDUwNCJ9"
+        },
+        {
+          "resource": "repo://src/mcp.rs#L104-L118",
+          "version": "repo-lines-v1:sha256:63404287edc3db04faf13fc1bbb121242610b35bd8af9ad545ae04f4215efa35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZGVmYmYxODIwNWNmMTU1M2JmNGI2NTJlODI5MDIyYjM2MTY5NDg1YWEyOGM2NzY3NTY3MjZhYWYzNDE2MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZDJjNjJlOTEyMTc1NDcxNDJjMGUwZDcwMjhiZDgxMWE4N2QyMmQxMTk3OWIyODkyMTgzYjI0YjVhMDcwYzAifQ"
+        },
+        {
+          "resource": "repo://src/purge_roms.rs#L16-L65",
+          "version": "repo-lines-v1:sha256:7883eb45db388d3b13f7e1591d1280cac6f820296194877d8da1d6546b9ede7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGQ3YjA5NDU1MzhmNGMxNjQ4N2ViNmFjNDZkMmVjNzg1ZmQxOTJlMzhhODNlZDUxZjM0ZGMzMmQ1NTY4ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2MWEyMjZjNjU4OWIxYjBiY2I3MTZiZDU2ZmQwMGE4ZjU2ZmFmYmY3MTFjYjUzZTI4ZDAyNTcyY2VlOWZkNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMTBmNzM0Y2JjZTNjY2VhYTQxZWFhZWI2ZTBkZmZkNDAyOWM2ZGQ0MTkwYjAyNGMxYjg4NjNkYmQ4MGNlMzIifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L173-L175",
+          "version": "repo-lines-v1:sha256:1d4d1aa8ff2a46dd5a32cb47788fa09b48658b945125619264d46b564c5f90fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZkZWZiZjE4MjA1Y2YxNTUzYmY0YjY1MmU4MjkwMjJiMzYxNjk0ODVhYTI4YzY3Njc1NjcyNmFhZjM0MTYzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY2MGJkNGI4MTJlMzFiZWYyN2I0ZTkzMTE5ZTZiZTU1ODkwOWMwNjJiOGNmMWFkODk2YjI2NmM1NjBiNTMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY2MDhiY2NlMGZmZTAwOGQ2ODQyZjAxNDU1OGQ5YzY5ODM2N2ViYjEzYWEwMDUyY2E3NjJhNTYxNTY3NmI0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjgzODkwMWEyNTgzM2VhNWZlMGZhZWIyNzRlMzgwYjgyYjkzMDk5NTZmNmU0OWM0OTAwNDFkMzNmMTllNThkNCJ9"
+        },
+        {
+          "resource": "repo://src/server.rs#L89-L110",
+          "version": "repo-lines-v1:sha256:78bada9b947cdb59e5696c089f5c529de717839a5b6f2bbdc7d641471ad836be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NDJiMTQzNzdkMjM2OGY5OWJkYTcwNDc0Y2ZkNGMxMzgxZGI0ZjY5Y2I4OTdjZWZlNDg3NDViYTU1YjU4ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNWI4ZGQ2ZWIxN2NmNjc5ODYxMjE1ZDRkYTQwYmMxZDQxMGU4YTY2MjIxOThhMzliZWI5OWM1ZmZkZmI2ZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f41b1bb36c89478fa70d07b7079e0587",
+      "statement": "Batch subcommands share one selection rule: if --system is given, systems are resolved by name-glob through resolve_systems_by_name_like (sorted and deduped by id so overlapping patterns cannot process a system twice); otherwise prompt_for_systems runs an interactive fuzzy multiselect, bypassed when --all is set or no systems were found.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms.rs#L61-L64",
+          "version": "repo-lines-v1:sha256:af05b5468abea6dbf41b73150b707e161aafee449ee6eb3c778570a6903bd32c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODA3NzI2MTkzOWEzOWYwMzIyZjhjNjRjZjc0NjlhYjM4OWUyNzdkN2EzNWE1NmQwMzFkNjI5OTBiOWQyZDAyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM5MDM5MGE0ZDZlZjFlMDIwNDk3YTExOTRlMmE2NDE0NTQzODZkNWE5ZGFiNmNkNGZlZDYwMjIzMzc3ZGI5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTAzN2RiNWNlYzMzMjgxMDY1MDRkYzUzMjM2NTkyMDdjNjViODA1YzQ1ZmVjMGM0OGNmYzQwNzczNzhkMmI4OCJ9"
+        },
+        {
+          "resource": "repo://src/database.rs#L316-L331",
+          "version": "repo-lines-v1:sha256:df18d88bce397a8f06ccd287358ad7b41a53b66a60f42ac48d9aa2dee918327b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxMWU4YjYyZTMzYmM0ODQxYzg2YTUyYmJmZDQyNGFlNDFlMGJiZWE4MjQyMmQxMGUwZDIwYjlmMzA1ZmI0MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmYzVmYzZiNWIyNTU1YmZlM2E4MWVlOGRmMjAwMzgxYjM0YTY1NGVkZmQzMGZmODJiZTFlOTU3NzdlMjI5YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YjZmZjg4ZGM1NDBiNWQ4M2U4MzVmMmE3MDA3NGJkMTU2ZWNkMWI4MGIzOTg1ZTg3YmQwYWQwZDZjMWM2NjkifQ"
+        },
+        {
+          "resource": "repo://src/prompt.rs#L9-L46",
+          "version": "repo-lines-v1:sha256:fa7d94bf59a0ed9bf003ad0a9d4b2be48a780b9d69681192725c6ff5ad17769c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNTdiYTNjM2JkYmM2OWMwOGFiNjNmZTg2NTY2NjJjMGJjNDhmZWY4ODUzYmNhMWI0YmZjZDU3ZWJhMmU1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZDcwZWRlYWI0ZjYxOTVlZWQwMWY3MDE5MjgzYzNlY2EyYjdhZjhiYTIzNGIxYmY3NGQ5YTQ5ODFlMGZkNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NThhODY2ZjcxZjNkZjFhNTBkNzBkYWUyMzNjZDg1ODNjYTFiOGQ5ZTc0NzMzOWE4MjRhZDkwMmQwODU4MDEifQ"
+        },
+        {
+          "resource": "repo://src/sort_roms.rs#L104-L107",
+          "version": "repo-lines-v1:sha256:af05b5468abea6dbf41b73150b707e161aafee449ee6eb3c778570a6903bd32c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODA3NzI2MTkzOWEzOWYwMzIyZjhjNjRjZjc0NjlhYjM4OWUyNzdkN2EzNWE1NmQwMzFkNjI5OTBiOWQyZDAyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM5MDM5MGE0ZDZlZjFlMDIwNDk3YTExOTRlMmE2NDE0NTQzODZkNWE5ZGFiNmNkNGZlZDYwMjIzMzc3ZGI5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTI5ZDBlMWQ5YzNhMzFlOGNiNTdiZmFhYjllMzZhMzMzZWI2M2Q4YjM3MWZhNzBlYTNhZjcwODI4YTZlNGRiMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fbe36d7ad2044b8ca98d1a2fafeb35ef",
+      "statement": "Interactive prompts are the contract's only TTY dependency: destructive modules expose -y/--yes to short-circuit confirm(), and cfg!(test) is passed as the select-all flag to prompt_for_games so headless runs never block on a multiselect.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms.rs#L67-L80",
+          "version": "repo-lines-v1:sha256:11778ccda00eb02c8ecee7047880bbf5fdc2c4b05d2ebdf0ca3527be8a66fe68:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMTJkMzZjN2RiMTQxNGM0MTc4YjI4YmRiOGJkNzY5ZThlZGZjYTY4ZjJlZmNmYzAwYzUwMGJjNWVkYTVmZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2MWYwZTJjZDExZmVhNjE5ZmMxM2Q1ODMxZDBmMjY4OWNmNDQ5YmFhZDFlMjg2NzRkMGRkZWMyZTZlYjU5NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMDRmNjVmZTg2OWQyODY4ZTQ1YWZkMzdjNWE1Njg5MWZmYmI3NjMxNjhiODU3ZTgxYTRkZTdiZWViZWI4NmMifQ"
+        },
+        {
+          "resource": "repo://src/common.rs#L33-L55",
+          "version": "repo-lines-v1:sha256:f00aaa82402cf6694eba7f3af3ce3d9cb44d927e27eb79ff517cc0e45a19a4a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMTgzYzVkYjJiMDBkZGQ1ZDA4YWUzMDM4MGI4NDI3OGI5ZTU2ODAzN2JmMjZhZWUyODFjMWZjY2FkOGQ5ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxYzY1NTVjMDE2YzM1NThlOTMzZDQwODAxZjQwNGNhYTg4YmY2ZjM0MzAwNzdlMjQxNzUxNzg2ZjRmYmYxZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0Y2Y0OWYzYTg3MTcyMmEyMzBkYzIyODU0OTQ4NjYwYzFiMmE1NTVkMmUwNWI5ZGY1ZjYyNmQ2ZDliMDQ4MGMifQ"
+        },
+        {
+          "resource": "repo://src/purge_roms.rs#L129-L137",
+          "version": "repo-lines-v1:sha256:348d230194b716fb32db403dd0f04679f2a351bcc6347c6391f5976817d63a97:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM2MDI4MTRjZGE3MWE4NGVmZjljNGVlZTU1MDgyYmQzYjdmNjRhMTM5N2QwODQ5ODlmYWEwYjBmYjljMWFkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEwMGQ4ZDUyNzJiY2Y5NjMxNmQyZGUyNDUyY2NmMTkyNTQ1Y2FiNGQ3MGIyZDA2YjhlYzAwZTc0NDU3ODdmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMxNzE0OTQ1ZDBlMGJiNDllNDA3Yzc1NjcyZDM0ZDVkMmI5M2JkYjQ1NDEyMGRjM2UxZDhjMTUxMzI5MDcxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjY5YjQ0YTBjMjU4ZTBmODY0YzgwNDU1ZWM2MTUzNTM3NzFhZWRjM2RiOGMxMjhjYjBmOGI4ZDc4N2M2Y2RlYSJ9"
+        },
+        {
+          "resource": "repo://src/purge_roms.rs#L52-L58",
+          "version": "repo-lines-v1:sha256:170679049cbdd1376504ed6951e483caa6f57760ba11f41ab692ffcb12bffbd1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI4OWMwODYwODc2MGFmNDc4M2FhMDVmYzFlZTFhZTQxYmVlMDcwZWMyZDVmZDJhYzdlYTQ1Mjg3MmUxZTJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWE2Y2I5YmU4YjVkMmVkMjE1ZGM4YjlmZjYzZGVhZDA1ODBlMzUzZjlmY2I3NzI5N2M5N2EwNTVkZDhkZDBhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc4NmNmNzNiMzA2ZDI5ZGUyMDc3ODE0MTIwNTU4YTc2MDFjYzljMTc5MWRmYmNiNDkyYmMyN2I5YmY2ZWM2ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_28e1e535991240d590cd1d12324aaf5a",
+      "statement": "The shared progress bar is created once at startup with the none style and passed into every subcommand, which owns it thereafter: it may restyle it, set length and message, tick it, and finish it, while all user-facing output goes through the categorized print_* helpers on that bar.",
+      "evidence": [
+        {
+          "resource": "repo://src/info.rs#L20-L66",
+          "version": "repo-lines-v1:sha256:91b1e8f6150104c8dde9ef4e145cc93e400d7543f7e5fc9470711c242aa31a23:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YTBlNjY3ZjU0ZDY3MTY5MzdlZmU2NGZlMDI2YmQ0NjQxZGYyNDI0OTRhYjk5MDczZjcxY2NjNGY0YmNjY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MTE0MGRmZmZlMTg5MzczNjY3M2M3ZDM0MGVhZDlkMTI2YzEzZmM0ODZmMzgxNTVjMGU1OGYxNTc0MTM1ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MjE2MDRiMzVmYzQwYWYwMGNiYTRlZWEyZmQ1ZTJjM2FmMTg2M2IzOTExODVkN2JmNGJiMDllNzJkMGM4YjMifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L109-L116",
+          "version": "repo-lines-v1:sha256:61a369b5fac984503f89f009bb0173bc9fc31e92cce3e6583fc3a6711d0e8aab:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZjMTgzOTJhODI1M2RlNTgzMWU5ZTgwYzdhOTM1NmQ3NWQ1YzVmNmMyMGEwYWU0YjFhZjkzODgzOWNlY2VhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTlkOWU5OGI1ZWM1Njc5YzU5NDVmZTAzZjEwOWZiODE4MzFkN2FkZjVlYWE1YzQ1YjZlNGQ2YzJhYmVhZmI4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNkYzVlMGMxNmIxM2M3MDAzZjc1NzE1YTg5MThmMGY3ZjNkZDllYzYxMGE5ZjhhMGIyNjk1YjI3ZWZkMTk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGUyMWNhMWE0ZmRjOTlkM2NlYmVkZWY5YzRmMjQ4YzIyMzA0MWU4MjM0YzhiNzJmYTRlMGI3NWIyMTJmZjU2ZiJ9"
+        },
+        {
+          "resource": "repo://src/progress.rs#L103-L172",
+          "version": "repo-lines-v1:sha256:6776758402bf78bba00fb070d7874a6250dce3e8217757e27b5bec878e374dfd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzBmZTcwNDM1ZDI0ZjQ1MWY4ZDQ2YzBlYzdkNWYxMTQwYzQ1MjdjZmNkYzA3MWZlMTE3MjcxZWUyMTY4YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTcwMWI3MzIyMWZjM2E0ZGZjYWJmMzAwYzI2ZWYxMzYwOTg4MDBjNDcwNDgwNDQ2ZmEyNzc4OTE4M2Y0N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/progress.rs#L32-L54",
+          "version": "repo-lines-v1:sha256:6776cbe5078bb8216e496f5f62f02d9bf12dccfe918c7c49eda237dea68a901e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkOTZhYTk2YjA5OWQwMjg3M2FhYTY2OWMwZGQ5NzU1NTNhY2VlMjBmYzQyZDA2ZDkzZjY2NjMxNDdjODJjYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYTIxOTgxNTY0MGExNWMyYTI2ZDg4Y2I2ZjlkMjMyNDA0MjZlNjE0MGNlZTFkNDMzOGMwNzg5NDFiZjUyNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZDQ4NThiNWVlMTJhOGEwMWE2ZmE0OGU0Yjk2NzdmNTY2ZDgyMTk1ZTcxYjdkMjBhNTMxZmQyMWVhZmQyNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b8b9689789143c59dd9d585376d6d6d",
+      "statement": "The subcommand contract lets non-CLI hosts reuse the same code paths: GraphQL mutations build argv strings, parse them with <module>::subcommand().try_get_matches_from, and run <module>::main inside spawn_cli_action, which acquires its own pooled connection in a spawned task and emits {prefix}_started/_complete/_error over SSE — reporting an acquire failure as an SSE error rather than a panic.",
+      "evidence": [
+        {
+          "resource": "repo://src/mutation.rs#L21-L79",
+          "version": "repo-lines-v1:sha256:ab7ee87c606dc34614d447b3dca7e51fd961560fac84d13805d720a8c2adec8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MTAyZTFhODIwNDU1NTVhMzc0OGJmODZlNjliMjUwMTNkM2RjZWU2Zjg3NzNkYjQ5ODI5ZWQwYTgwMTY4NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZDNhN2NmN2ZlNzdiMzZiM2MzZGM3NThhMDVjZjdlMGRhNjEwZTgxZTkwMzU4ZTE5NWIwMzZmNjE2ODRjZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMjI2ZTk4YWQ2ZTQ2YTliODEyZWQzMjBjY2YzZjBiZWExMmIzN2Q4MDM2ZjVkNTZjZjM3ZGZhYmYxNTQ3NjgifQ"
+        },
+        {
+          "resource": "repo://src/mutation.rs#L422-L447",
+          "version": "repo-lines-v1:sha256:31c70da3776bc99e80de8a1412bea881a90e7e0e60e5d6404941e34dee6ee638:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3ZTM5OTFkYjVhOTMzYzg4ZmVlNDUwZDIyOGVkZDIyNWIzYWRhMDBkZjE2NGNhY2ZiNjBhMTQyYmU0ZjIxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMzg5Y2ZiMGVmZWZkOTNiODE2MjBhMGY4MmU0YTVjODQ5YTc1M2VhNmVkMDRmMDBiNmM5NmYzYzY4NWJjYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNTE3YjY5ZGIzMjc0M2M5MWQ3Y2Q4NzNjMjcwODA0NTcxZmM3OTJjMzJjMzIwYWEwNmJmODVmYjFhYmQwZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab4851bf53ac4b5c96d77c1990fea086",
+      "statement": "MCP write tools invoke the same subcommand mains through run_action, which takes the process-wide write lock, acquires a pooled connection, and hands the work a hidden progress bar that a ~400ms poller samples into MCP notifications/progress; because no TTY can answer confirm(), the host-synthesized argv carries the confirmation flag — --yes for the MCP tools, -y for the GraphQL mutations.",
+      "evidence": [
+        {
+          "resource": "repo://src/mcp/actions.rs#L52-L139",
+          "version": "repo-lines-v1:sha256:56a0a541c013bff6669b215be57f7a0f64b501ad64bab7cb4d6d80f7943d6bb3:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjM2NGE5YWVlOWQxMGQ0MzM3MWU0MzJjYTNmYWE3NDc3MjQwMThkMWI4YWU4YzM0MWFmNTljMjMzZWYxYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZGY4ZDVkOTQyZmIwMTcwZTQ5Y2VmOTI5NTE4OTIwYTRiOTY0ZWU4NmMyY2Q5MWY0YzVhMWJlOTAyZTdhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzZTlkYWU1NDA4YzZhYWZjM2IzMGFjNzUwMGFjY2QzOTIxYTVhZmM4MjMyZWI3OWI2ZDY0MWNjOTBlODRmOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4YjE5MmExNzMwNDhjYTAyYTA0MTg3YThiYjllMWQ4NzRmMTgzNGI0ZmI4NGYwNGEyM2EwNTc2ZDk5MThmMTUifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L251-L302",
+          "version": "repo-lines-v1:sha256:5505d821aebba19530f779b968230564cbd0ca9447b94e6b9df5fbea7a597295:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmNjZjVhZWI5ZDlmM2Q1NTNlMWRhZTE0ZGI4NmY2Njg2MTE4ZWM4NDc0ZjU5MWI1ZWFkYTYzZmMzMjRjNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwM2Y3MDlkNjU1ZTEzNTc0YTg1MTYxZjY4ODYyMzBjOGUyNDU2OTcyMmIyMzE2YzA2YzZlZWVhZDZmZGViNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyY2NjYzZjOTc2ZTg1OTExODVlMzZhMGRiNTRhZjVlNTMyZGFlYzMxZjk5MjIzODlhODYzYjlhYjg5NDViODEifQ"
+        },
+        {
+          "resource": "repo://src/mutation.rs#L430-L445",
+          "version": "repo-lines-v1:sha256:a3c7c5dd209c7456cf6f76065d87c66d284810f948d4dd8705661a2efc2f0a75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MTM5OTc2MzBiZDgwNGE0MTJiMmM2Mzk4NGY4MDJkMjAyM2U4OGE1YmYzNGFkODgyNTJlMTQzNzA4Njc0MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMGQ2YjQwZGZlYTQyNmVhNWZiZDE3OWRhNmZlMDBkYjQ3ZjcyYzcxMDczZDU3YzMzYjhlNDA5ODBhOGJhZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YzA3OWVlMzllOTY0ZDIzZTdkZTU1NmUyMjJiNzI4ZmNlMzBmYmU2Y2E3ZDk0MWNjNTQ4NWUxMDcwYmEyZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMjYwYzI2N2ZjYmYzNTNmMDcxMTkwZDJkYjBiOTU5OTQ0ZjdjYmQ4YWY5ZWVhNjJlNDFmMzljN2ZmOGUwNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fdddd5e6a9f4417e807cd946711f5371",
+      "statement": "Because subcommand() is a standalone argv parser and main() needs only a connection, matches and a bar, tests drive the real pipeline without a CLI harness: temp database via establish_connection, TempDir-backed ROM/tmp settings via the test-only setters, argv through subcommand().get_matches_from, then assertions on database and filesystem state, serialized by the global MUTEX.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms/test_check_by_name.rs#L10-L72",
+          "version": "repo-lines-v1:sha256:215959c8176ec373ed001ae820ddd740e8d40d23f4146fe3e7d29c505e27fa45:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjFkMGM5YzFmMTA1YTAzZTljOWU3ZWU1NTFmNTU3N2VlYmVlYWM2MDZmNDc2MjAxOWM3NTEwN2Q4NDVjOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3N2E4NTYyMzY5ODk5MmY3MzQ0YTVmMzcxMzEzMDc3NTc5MjBjZWYwMWEzZjRhYjQ4ZmQ4YzdiYmQ4NTIzODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L631-L648",
+          "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
+        },
+        {
+          "resource": "repo://src/config/test_cli.rs#L5-L21",
+          "version": "repo-lines-v1:sha256:b154b06c238f5aa7c982bd58b2022c0d39a518005b84bee45955dba0d028d22f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliMzg2YjZiMDVlMTYzYWM0NGFiM2NhNzk1M2M5ODdlZDQyN2E0NjcyNDVmNzU2YjMwZTRhMGMxZDliNmQ1NjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwODI5ODU1Y2FhYWY4M2Y2OTVjZGI0ZTEyYmJlZDcwMDAxYzhmZWEzY2QxMjEwNTk2YTE3YzU0OTM5NGViM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmZjAzYWE5NTYxODZiZDk0OGI3OGU3ZDA5NTE3N2EzNjc2NTk4OWIxZTE3ODNiNmEzMmY0NmQ0NjZlOTZhMGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5fe2e22883b94b6b9863327f95700db5",
+      "statement": "Adding a subcommand is a fixed seven-step contract: create src/<name>.rs, implement subcommand() and async main(connection, matches, progress_bar), declare the module in src/main.rs, append it to the subcommands vec, add its match arm, and put tests in src/<name>/test_*.rs wired with #[cfg(test)] mod test_*; at the module bottom.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L322-L351",
+          "version": "repo-lines-v1:sha256:3bef97e579fd7839438c3d9d38c6416de8ef9c81e7f1e48cd5fb287182116357:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNWEwYmRlYWUyNjgyMWU4MzRmN2Q5OWI2ZDE3YTE2M2JkYzlhZTE2OWY5ZDhkYTc1ODZiNGNlYzE5MDY4YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NGJjOTU4YmViMmE2MmIyOTk5NWYzNzI3NTA3OTUyYzI1ZWIyNjYxYTU2Mzc4ODZmN2RlODVhZjViNDVjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NDk4YWY2OWUyYTI1ODkyN2Q0NWUyMmVlMzc1MWE5YWJhMmQzN2Y0ODdkZGE2OTQxMGE1YWJlNzk5OTE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1OGM5OGFkZWY3YjRhNDAyMDhmMjdiOGQ1MDhkMGY4Y2M1YWFkZjZkNjlhMmZjYWJhZTJhMjhhZTc2ZDdhOTQifQ"
+        },
+        {
+          "resource": "repo://src/check_roms.rs#L307-L332",
+          "version": "repo-lines-v1:sha256:0ef55632c8e41018f39226a25f6808961d91f4671136e9151595039c2e510156:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWM3OTg3ZDNjMjNkMGFhYzFiZjJjZjc3ZDI3NzA3OWQ1ZGI4OTljYTdjZTU1OGE0ODIzMzUyYTY5ZmI5YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L69-L98",
+          "version": "repo-lines-v1:sha256:7a6d7dcf36182318ea5c87c5fe47d8236ad998fb29e2691c2c6903e36c281ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzQ0ZjUxNGJiMDE5NGUwYWQ0OGM1N2ZiZjZmMmUwOGVkZGJkYzBhYTliNmEyZGYxMDcwZTFkNDgzZjA1MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Mjg5MWZkY2I4NzNjMjhiNTk4OGNjMDU0N2NhNjZiY2YzNjVkMGIwNTkxZmNkMzQ3M2E3MzE0NWY2NjViNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ODA3YTYxMjg5YjE5MDBhNGJmY2MwMWRlZWNiMzQ4ZTVhNmJlNDZjNjZiOWE5NGNhMWJjMGY2Njc3NzgyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNmM4NGY0MDJlMDYwMGUxNzM2ZDM5MGE4MWFmODJmMWFmNDc1NzA2ZDFhYWVkNmE3MDM5MWNjODUzZDg2MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f1c229890524b129026d284c8c97aaa",
+      "statement": "Registering a subcommand touches three separate places in src/main.rs and each omission fails differently: a missing `mod` declaration is a compile error, a missing entry in the `subcommands` vec makes the name unknown to clap (--help/--version), and a missing dispatch arm exits silently with success because the match ends in `_ => ()`.",
+      "evidence": [
+        {
+          "resource": "repo://src/main.rs#L138-L170",
+          "version": "repo-lines-v1:sha256:444178a4e705543570be61ef30ffe89063d345bb8d1e56d443dc03a4fb6701a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZGRhMzYwYTNkZGFkYTNhODA4ZmI5Yjg2MWYyMjc0YmZmNjFhYTRjYmI1MGY2MmU5MzE4MTYyMDJhYWJkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MjJjM2ZhZTNjZGI1ZjIwMTQ3OGJhZGFlOWQ0NWNlOTNkZDE2ODI0ZmUzYTcxMWMyNGVkNzBkMDdjMDRiNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0ODNjM2NjNTIwZGUwYzM2NWExNTY3NGIxOGNlN2RkOTBkNjBiOGRkNjU0NzMzZTkzY2Q4OWUxNGFlMmQ2ZGYifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L5-L52",
+          "version": "repo-lines-v1:sha256:dacbfcfde538f90cd423085f88806c5bed459f1ea7815f3edd990444cfc457d2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNjQ3YTM0YWVmOTg0ZjQ1ZTI4NzA2YmM1YmZlNjg5MjU4NzU5ZDFjYmQwNDliMjUxOGJlMmNmNjc4ZWExOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MzIwODJmNDBjNmZiMjIyZmFlYjY1OTI4MWFhMjc5MTMyZmRkODBiZGVlODQzNDQ3ZDdkNmEzNGNjNTRlMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZjg5ODIxZDk0Y2FiYjFjZDY4ZDE1MDNmODk2ZWM4ZjlmYzViZDc0OGRjOTAyZmM5NGUyOTJlMjhiNGVhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZWVmMTdkMmJjODJjZDEyNzllNGViNjA3N2UxMDMwMTM1MDYyYjIyOTJmMjkyOWFkNmY4N2FmZGM3ZTI2OWYifQ"
+        },
+        {
+          "resource": "repo://src/main.rs#L69-L98",
+          "version": "repo-lines-v1:sha256:7a6d7dcf36182318ea5c87c5fe47d8236ad998fb29e2691c2c6903e36c281ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzQ0ZjUxNGJiMDE5NGUwYWQ0OGM1N2ZiZjZmMmUwOGVkZGJkYzBhYTliNmEyZGYxMDcwZTFkNDgzZjA1MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Mjg5MWZkY2I4NzNjMjhiNTk4OGNjMDU0N2NhNjZiY2YzNjVkMGIwNTkxZmNkMzQ3M2E3MzE0NWY2NjViNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ODA3YTYxMjg5YjE5MDBhNGJmY2MwMWRlZWNiMzQ4ZTVhNmJlNDZjNjZiOWE5NGNhMWJjMGY2Njc3NzgyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNmM4NGY0MDJlMDYwMGUxNzM2ZDM5MGE4MWFmODJmMWFmNDc1NzA2ZDFhYWVkNmE3MDM5MWNjODUzZDg2MGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e1ea676e06345c4aab08070c1f6fa85",
+      "statement": "Non-CLI hosts reuse the subcommand mains by building argv that also suppresses interactive selection, not only confirmation: `--all`/`--system <name>` replaces the system multiselect, `-u/--unattended` narrows import-roms matching, and the axum upload handlers build argv and call import_roms::main / import_irds::main directly instead of routing through the GraphQL mutation layer.",
+      "evidence": [
+        {
+          "resource": "repo://src/mcp/write.rs#L251-L302",
+          "version": "repo-lines-v1:sha256:5505d821aebba19530f779b968230564cbd0ca9447b94e6b9df5fbea7a597295:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmNjZjVhZWI5ZDlmM2Q1NTNlMWRhZTE0ZGI4NmY2Njg2MTE4ZWM4NDc0ZjU5MWI1ZWFkYTYzZmMzMjRjNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwM2Y3MDlkNjU1ZTEzNTc0YTg1MTYxZjY4ODYyMzBjOGUyNDU2OTcyMmIyMzE2YzA2YzZlZWVhZDZmZGViNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyY2NjYzZjOTc2ZTg1OTExODVlMzZhMGRiNTRhZjVlNTMyZGFlYzMxZjk5MjIzODlhODYzYjlhYjg5NDViODEifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L647-L683",
+          "version": "repo-lines-v1:sha256:742e1e5597f287d0753672a5711f2730ec241c9ae7b3d0ae63adf94f8c2285dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MjdlODc0YzliZWI1YmFhOTlhMDJlYjExN2JmMWU3YWU0N2M3YzUzZWJhNzE0MDQ4YmRiZDVlZTE3NjYwNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NmM3NjNlMmYzZmVjMDkzMTc1NmE5ZWE0ZjNiNGY4MDMwZWM0NjY5MjM3OGNkZmJiYmU1MDY3NTBmYzgwNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzOTlkYTcwYjA0YjEzMTgzZTk0YWZmNzgwMzRkMWEzODU2YmUwYWY3ZDNjOTFmY2U3MWExY2JiNThjYmQzZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NDhmODI4NGY4NTEwNGU2ZWZlYzBmZDQzOWVlZDViY2NiNGYzNGZiNDNkOGMyOTU3ZjBiNDFkZjJmOWQ0MmYifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L607-L632",
+          "version": "repo-lines-v1:sha256:e39054f803ad510f7735edea77e04ccc08acd36b0a196854a67c376f9aa2894b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmOWU0MTc2NzYwMDIyMmQzYTM3NDJjMWNjMDFiNGQzZTc2YmJmMjRjOGJkNWU0ZmZlMDg4ZjVhYjc0YWRmODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkM2Q3MDdmODlhZGNhYjA0NDQ5YWMwYTZlNTZjZGQ4NGRlMjM2ZjIwOGUzNWE3YWRmZGZmMmI1MzgwODM1NTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyODUxYjQ3ZGY1YWQ1NzFmOGQ1OTJkMzM1NWY1MzgxZjI1ODc3ZDQyMzM3ZGMwYjAzYzM0OGUzYmIyYjhkMGQifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L803-L817",
+          "version": "repo-lines-v1:sha256:ac8bebece4cc2efb406e1eef312c48906c4b670e66722d870c5561675e70d77d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMGI5ODRmMTBlMWEzMGU4NTBlMTliOTdiZTRjMmJiNDNmODZiY2ZiZjVhMWQ3NGNjMzliM2RhNGNkN2RjYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhMzI2YmYzZThmNGQ2ODE0ZDdlNDg3NTA1ZGY4NmYyNjhhMTM5ZTY3MWRmMWMwMTljMWVmOWYwOTUzMzc3ZDUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-10T22:10:44.671Z"
+  }
+}

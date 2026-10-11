@@ -1,0 +1,752 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:27a51cd70ae93a392c6423f908af43c95084eab68341c1fb78adaec5fdb42d6d",
+  "claims": [
+    {
+      "id": "claim_2916724381064a98beaccce1a88c3633",
+      "statement": "frontend/ is a standalone cargo package (oxyromon-frontend, publish = false, Leptos 0.8 csr) that declares an empty [workspace] in its Cargo.toml so cargo does not treat the root oxyromon package as its workspace root; the wasm dependency tree therefore stays out of the native build and root-level --workspace cargo commands never lint, test or build the frontend.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L400-L403",
+          "version": "repo-lines-v1:sha256:e132ee474da53dda4ac76ea62dce930e6ae236cee93eb78c36ec03742920e392:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2NzUyOTI5MTc2ZDIxNjMwYmZjMmRiOGJiYmVmY2JjMGE2MzVlMDVhMDI0OTFmMDY1ZjM0NmQ1ZGRhZWI3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiOTcyOTEwZjhiMTUxNGE5NDAxZGEwZWJkMmM1YzRlYmExMmIyYmUxMjNlY2ZlNzQ3N2RkNTA0NzAzMmQ0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDczZTJjYjIzNTY4ZDRlZGRmNjcyNWJmMWRhNWIzNWJjZTcyZDMxY2UzYjk3ZmY2ZDAzMTkxMzQxMDM5ZTc0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMxYmYzZDcxZDlmNDI4MmJhYjU2MzNjZDk2NDBmMDg2NGRkY2NlNDA4NTJlMzhhODY3MzM5ZDg3OWExNDM4YSJ9"
+        },
+        {
+          "resource": "repo://Cargo.toml#L19-L20",
+          "version": "repo-lines-v1:sha256:c63381e8eaa4d9394d149f1a99184fb0563eb940c2fcf6c8d715e18f9217c9ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0ZTEwMmM4NjFmOTk0ZDJhYWNlOTExNGQzOTJkYmMxNjIxOTBlMDBiZThmZTM1N2Q0NzIxNTBjYTQzOTYxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0YTAxMzI4NzI1NTFjZTViMTE2ZjQyMzYxOWNmZjQyMGMzNTU1MDJmYjg4NTBjYmJhMGM1MDE1NGZmNjFmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODRkZmY1NjIxZjRlYjRkMDNmMmYxZDZhM2Q0NTgzYzBmNDRiZmZiMDBhYjJmNzEwMWJlOTEzNDYyYTQyZmNiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA2NTI5MWMxMDc5ZDEwNDhjNGFjNjMxMWM5ZWI4MzMwZmMxZDMzZGY1OTdlMGRkMjUwNTk2MGQ3YjA3MjgzYSJ9"
+        },
+        {
+          "resource": "repo://frontend/Cargo.toml#L1-L13",
+          "version": "repo-lines-v1:sha256:cffde02959b32511d3b2ed3d28c293e97e3e0a5bbc38da2f68dfc2f474aa69d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMTk0Njc1ZDg3ODhjNWJlZGQ5M2VlOTk5MDA5MzhlMDAzMzUxYzkxZGE1Njg3MzUwMGVlM2JkZmY3YjRlZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ZTk1ZmFkMTc0Zjc0NWU5M2Q5ZmIxZDBlNWYzNGFlODA1NGE5OTk1YTc0NWQ5NjZiODcwNTM3MjNlN2U4ZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6eddf4182b934d5e8b3d1bde57190a60",
+      "statement": "The root build.rs drives the frontend: when the server feature is enabled and SKIP_TRUNK is not \"true\" it runs `trunk build --release` with current_dir(\"frontend\"), asserting frontend/ exists first (cargo omits nested packages from the published tarball, and Command reports a missing working directory like a missing binary). It then unconditionally creates target/assets so rust-embed still compiles for the published crate, which yields a linkable binary whose embedded asset set is empty.",
+      "evidence": [
+        {
+          "resource": "repo://build.rs#L5-L45",
+          "version": "repo-lines-v1:sha256:e63d628a5cc5c2d5c9e1488ee6a675dc6201a2a46304a1317a745979fe1c3c59:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjllZWU5MWJjMGIxYTc3YjVmMjI0ZmQ2OTQ1ZjNkZWMyMzRlNTU5NmI5NDc1YzkwYzVhZWM5ZTZhZTIwYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjcyYTZlNDI5ZjZjY2I1MWQ4ZDc5MjQxY2E5NTU5YjU2ZGYwOTMzOTUxYTE0YWY3OWZhM2QzMjUwNTI2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L112-L117",
+          "version": "repo-lines-v1:sha256:46fff520d9c2974c12c78b47738c26cd17214b1a361cbda65e21a14efa301b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEzNTc0MDkyZGI3OGRmOGNjODdhMDQ2ZjYzYTVlZDVhNmMzNmU5YjBiOWQ2ZmQ0MTI3NmIwODJiZmZmYzkwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdhOTdhMWRkY2RjNTdhMzBiNmQ0NmM3MGM2YWNjMDQzNTNhYzA3YmFiNGU5MDkwZTgyZjc1MDU0NTAxNjhjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZhMGY1YjM1MDg3ZTU5ZDQ4MDc1Y2RkOGFmZTEyYTRmYTZjMDc1ZDNmYTcwZGE5MGNhMTU4ZjdhN2IwNjlmMyJ9"
+        },
+        {
+          "resource": "repo://src/server.rs#L41-L43",
+          "version": "repo-lines-v1:sha256:94246a350865eb146ddce9e593dfe12a0ae4d2e88ff417049e64ac9c9e1bfde9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEyZGNhZTE1MzBlZWFkMWY5ZDg1MmM5YWRhNjg0MTMxNjRiODUzMjAxY2RiYzkxZjM2ZWIyYzE3MzNmOTZlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRkMzk5Y2Y5ODNkZTFkNTYxN2Y1YmQ3ZWQzNjg2MGFiMTQ1ZGYzOGM5MTk2YzA3NDkwYjZjMjMyZDBlYzM4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTA4ZDY3MzIxOWQ5YWE3NTUwOGM4NTBlZTMzODc4ZmY5OTYwOGVlMzA1YTdkNTEyMzA1ZDMyNGZjNjJmOTNmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTdiY2JjODYzNjA3MmY5NmM3NmE3YzIxNTRjYzkzMTM4ZjU2OTdiYzQyNzNmOTk0MDYwOTQ0MTJiY2I1YjViZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_59390ebd0d564e7f86f9f6d8605d4a16",
+      "statement": "Trunk.toml emits the SPA to ../target/assets with target = \"index.html\" and public_url = \"/\", which is exactly the folder rust-embed reads, so no copy step exists; serve_index answers `/` with the embedded index.html and the /{*path} route (serve_asset) resolves each hashed JS/WASM/vendored asset by exact path, returning 404 for anything absent from the bundle.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/Trunk.toml#L1-L8",
+          "version": "repo-lines-v1:sha256:9f87096581aafb06f1edfd51937e40f7c5960496fd315e361b43a7d4e43f8a07:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA1ZDUyNDAzNjhkODRiZDBkOWMwMjIxYWYwZmM4NmJhMjA5M2RiZmUxMmE3NDdhNmFmMzZmZDhkMGRkNjI2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk5ZGM3ZDIyZmRjMWJkZTY0ZGY1MzBmNmE3MGEyMjdjYTliZDJlZWM1NjFmZTE3ZGNhYjEyMWZhZjg0MjFkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE3YjJjZjY3ZGEzMzM3OTdlYTYwYTNiN2I2ZTZiYjA2NWRmN2JkOGUwMTM4NThkNDk1ZWI0MmUzYThkZjNkNCJ9"
+        },
+        {
+          "resource": "repo://src/server.rs#L112-L144",
+          "version": "repo-lines-v1:sha256:4abe58d025d75b35696bbb0447a29dc1affd79f63b5bcda02a8d3d4c5b5311d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMzU3NDA5MmRiNzhkZjhjYzg3YTA0NmY2M2E1ZWQ1YTZjMzZlOWIwYjlkNmZkNDEyNzZiMDgyYmZmZmM5MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0OThkMGNmMTlmZTdiNmNiNzFiNThjZTg4NWVkZGNiZDI0NGQ2NmQ2NTFhYWY1NDc0MjU5NzMyMzgzMGYwMjIifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L201-L220",
+          "version": "repo-lines-v1:sha256:bba5235252fabad82a741242bbb66f0e03d91eca87dea9f25e8dec7640926967:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiODlhYTUwM2IyMDU5MmM3NjdlYzM4YTJmZTYzZWY1MzRhNjIyNzMwM2E5NjVmOWY3NGE3Yzg2OTgzNmYwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYTgzNmViMDYzZmI1ODhmZTE4YmE5ZDdiMjJkZGQ5ZDNjNDQzN2NjNWZjZTE2MTZlY2E0NDU5NDMxNWIzOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjI1MDhhMTFhYzkyZDg1ODRhZmVhZjFjNDI4NDgwMzM5ZTFjMzNiZGQ2MzY5MDhlN2M1NmJmNWEyNDU1NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwZmY0YjIwZDIwNWYzZDI3ODNkODA5ZmE2NzA0ODIyMjZkZDNkM2NjYmM2ZmE0NjVhZThiZTA2NDVmZjAyZmUifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L41-L43",
+          "version": "repo-lines-v1:sha256:94246a350865eb146ddce9e593dfe12a0ae4d2e88ff417049e64ac9c9e1bfde9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEyZGNhZTE1MzBlZWFkMWY5ZDg1MmM5YWRhNjg0MTMxNjRiODUzMjAxY2RiYzkxZjM2ZWIyYzE3MzNmOTZlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRkMzk5Y2Y5ODNkZTFkNTYxN2Y1YmQ3ZWQzNjg2MGFiMTQ1ZGYzOGM5MTk2YzA3NDkwYjZjMjMyZDBlYzM4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTA4ZDY3MzIxOWQ5YWE3NTUwOGM4NTBlZTMzODc4ZmY5OTYwOGVlMzA1YTdkNTEyMzA1ZDMyNGZjNjJmOTNmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTdiY2JjODYzNjA3MmY5NmM3NmE3YzIxNTRjYzkzMTM4ZjU2OTdiYzQyNzNmOTk0MDYwOTQ0MTJiY2I1YjViZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_477de01fb7de45a58c96ad8246644b0f",
+      "statement": "dist.sh exports SKIP_TRUNK=true and runs `trunk build --release` on the host inside each target loop before `cross build --features server`, because the wasm output is target-independent and trunk does not run inside the cross images.",
+      "evidence": [
+        {
+          "resource": "repo://dist.sh#L37-L45",
+          "version": "repo-lines-v1:sha256:0103aa420fcc555cc15e5213b52888e867bebf26749a5558e760274f4d66cce7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5N2I3MmYxYTEyMTVlMWY0MWIwZTlmY2ZhZDEzYzZiZjExMzU2ZTRiYzNjYzJiMGViZWZkYjJkZmYyMTM5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjViMjliYmNmM2I3YjY1NWVkNGUxOWJmNGRmZGRhZWY2NDFmZDM1OTFmMTY4MjM5Yzg5ZTYxMTM2NmVjNDhkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTYzNDliZDBmNjgyMzFkNWIyNDFlNzM0ZjIxOGFjY2I0NGY2Mzg5MDk4YmZlMjNjMzA4NGZmZjNiM2E3ZTA3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM0Y2RjNGViNzVmZWFlYjdhMzdjNTgzYmUyZDFmNzE0OGZmNDcxYTUzODljNzcyMzVlZjRmNWY5NTQxNGUzOSJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L5-L21",
+          "version": "repo-lines-v1:sha256:8c24f060eaf23a1a8b949a6bf64d30109e01fc6279fa5459adc3a35d4081be29:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDQ1NGNkMDQxMWEyZWY5OTIxMDRlOWQwNWE1ZThiYzY0YTI0NjliOWFkZmJhODNiNTQ2MjU2ZGI0Yjk4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkNmViODJjZjI2YzFiYjMyZmI3MmNkNmFiOGY0NWU3NjQ0MGNiNGM2ODA4YTU5NjJiYmRhNWFjMjM3NmY1NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNmYwZjE2ZWQ5MGU5NmQ4YTEwNDA2Y2YwMTkyOTkwNjNiODQwYzhhZWQ5MWFhZmE2ZDZlOTkyZDY1YTk5MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39368e5f5c3a421fbdebbc325baadcdc",
+      "statement": "trunk serve's four [[proxy]] entries forward only /graphql, /events, /dats and /romfiles/ to a local oxyromon server on 127.0.0.1:8000 and are ignored by trunk build; the /roms, /patches and /irds upload POSTs the SPA issues have no proxy entry, so those three imports cannot be exercised against the dev server.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/Trunk.toml#L16-L32",
+          "version": "repo-lines-v1:sha256:edd898f398921c5df47d39b1d42313636d691558a2dd6b1665f4db2ce8923dfa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZmRiMDI5Y2FiNDNiYjNhNTE5MDAwMGFhMTM4ZTI0MGRhZGNmZWRjOGFlZGI4YWFhNmE2MGQ0YzdhMDI0ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNTFhMTNlOTBhNGE2MzhlMzQ2OTcyMjAwM2Q2NmU5ZGQ1NjA4NDUxMzFlY2Y4YTYwNmY5MGZkNzJkOGMzZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YjFmYzBlOTNkZThlY2RmMzRmOTA2ZWQ2MDNkZDU3MjIzMmYwNWI4YTMwZjJhN2RjNWVhNjNlM2M0YzhkNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_ird_modal.rs#L14-L15",
+          "version": "repo-lines-v1:sha256:6d36c0c81ba229b8e545a2e93de486daed39397b5efa96ba0c4ee049c49a80e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjOTMwNzliMTZhNjE0ZjJhNmEzNzkzZjU5MTkwMGYxZWE2NmQ4MzBkZDU5NzE0MTNjZTYxYzFjNjkzN2M5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA1NGI2YTAyZGUzNjExNjFmYzM4MDQxZWVjYmFhYWZjOGU2ZDBlYjI5OGU1MDI0ZmU4ZTcwMTY2YTdlNmU1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFkNDJjNTBmZTE1ZThmNmZhZWE0ZjgyMGFkYTllZDVjNjBkNzBkYzQ3YmI2MTZjOGVhY2I3MDk2ODNmMDQ0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEyNDUyMGMxZjYyMzdmYTFmNjI1ZTg4ZTkxOTc5MTg4YzY5ODEzYzc3MDIwZmM4YzA0Yjg4YjdlOTI3MTFkYyJ9"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_patch_modal.rs#L16-L17",
+          "version": "repo-lines-v1:sha256:5ab143f5fc430f759847ab2e683fcc86518ac4c740b3beb131eb084426d3ddd7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc4MzE4OTg3ZjEzOWUzNmE5NDg1YmVlNTYwMDU2MGIxZjFiNTZiMDAxOWI4ZWEwY2U0YzRkYTEwNDM4ZTFlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwYTViZTM5YjNkNTYxMDUyM2FhOTRkZTA3N2NmNTBkMzBmNmQ0MDZlODczZjA5MGZiNzkzNTllNDRmYTJlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZlNjFkMTg4MDZkZGM5ZTZjMGNlNDhlMjc3ZjBkM2E5MjU1NzFmM2M0NDQ2NTI1NDRjMThmMzg3NGVhN2VkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGE0YzZjYWEzYzUyNjkzYWY5MjhkMGJhZjI5MWY2OTM1OTUzZjFmOWY3ZmMwYzYxODI4Y2M1NzEyNjBkYzlhYyJ9"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_rom_modal.rs#L13-L14",
+          "version": "repo-lines-v1:sha256:34b72c941b32520553ae675329c80b16601025596a82dceeff4e4b927addc20b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmRhOTBlODhhMzFjMjRiNDkyZGMzMDgxN2Q5ODk3OTljMjUwN2VjMmNkYmFlOGZmM2U5ZGE5MTc2MGM0MmJmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQxNDk0Mzg4Y2IyOGYxMDIyNzQyYThlNTg1MWE5ODE2OTYyODBhMDViNjI0ODMzOWJhYjc0MDVmZTY4YzRiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZlNjFkMTg4MDZkZGM5ZTZjMGNlNDhlMjc3ZjBkM2E5MjU1NzFmM2M0NDQ2NTI1NDRjMThmMzg3NGVhN2VkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWNlNDE4MTU4ODY3Nzc4N2Q0ZmRiYTkxOTQ5NTc4ZmNkMWFhYWVlZTQ0NGI3NzY0MmIyZDk1ZDY3ZTk3Y2IxNSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L14-L15",
+          "version": "repo-lines-v1:sha256:f68f24e5273c053c6d03044b7ae4823edd7d20b86a329cd78e187a9c1fa2b822:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY0MjIwMTI0YjI1YWNjZGIxNDM4ODVmNWFkZmM5NTcxODQ0NGU2MDIyMjYyNDQxNmY4MTJmZDgwYzc1OTg4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmUyNzY2Nzc5ZTFhYjI1YThiMWE5Y2RiYWRkMWRiYTYzOTM1Y2E0YmM0OTk1NTQ1MmJhZWVlNmY4Y2I5NDdiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmFkODM2ODE3NzE3NTJlNmZiOGU3OTYxNWI5MzE4MmM3ODA2ZTdjZmNlZGQ5YTNhZmY5ZGZjMjVkODE0MGYyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI1NTFkODU4MmRmYWZmYzk0OTljOTc2MzBlNmU2YzFmYmUwNDc0MGIyYWM0NTNhZmI2YjgwNTczYzlhYWE3OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_66542b55dd9b47e4a02cff54b06d339f",
+      "statement": "graphql<T>() is the frontend's single GraphQL primitive: it POSTs {query, variables} to /graphql, deserializes GraphQlResponse<T> { data, errors } directly into the caller's typed struct (not serde_json::Value, which cost several megabytes of throwaway allocation per large system), returns the first error message as a String, and otherwise requires data to be present.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L20-L56",
+          "version": "repo-lines-v1:sha256:e8956156282b4afb1529c174291aa6e9c9e0c5c7ffa72bc86f9cd9c4290b8d5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMGRmYjYxZWY2ZjU1ZGMxNzZhN2UxNTM2OTU0MWMzYzhlMzY5NTRiZDc2MmM2ZDg3ZjYwZjhhY2MxZDgxMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDhlYTI4NGE0NzMwM2I4NmRiYjZlNTEyMGI2ZTI0NTU4OGI3MzVjMWNkNzdlMDJlNDFjODM1YzYyMzFjMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0Y2E2OWYwMzM1YzI0M2ZmNWJhN2U2NzU5NWQ5ZDZkMjA2MjA3ZjhiMDJjMTI3NWYzY2ZjN2NiNTgyZmQ2YTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc9c37028b9042cda365cf86dbebb9e1",
+      "statement": "Every data-loading helper swallows failure into an empty value (Vec::new() / Sizes::default()) after calling report_error, which logs and pushes an Error notification through the Notifier; without it an unreachable backend would render silently empty tables.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L115-L127",
+          "version": "repo-lines-v1:sha256:8f774fd5747e1859374593f2efe7c85bee2be9c467ade94a57972bec03fb17e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTRmZDg1Y2IwNzIwMGU0YjgzMTgwYTk0OTkzMmU4ZDI3NTc3M2RlNWY1YTNkZWZiNWZmOGY5YzlmMGE4YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0NzRjODIwNzU1N2I0NDhlMGFkYTk1N2Y2ODA2NjFhMTgzZWZmNTNlOWU5MWFlOGY2NjA2NjI1NWFhMDUzMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZDM3ZjFlOWIxNTc3YTc4OGExZjFhMDQ4YzE2MDY3NDk2OWIzNGUxOWUwNTUzMWQ2NzVhNjA1YzJlZjU0Y2EifQ"
+        },
+        {
+          "resource": "repo://frontend/src/api.rs#L219-L235",
+          "version": "repo-lines-v1:sha256:f60232dc72afafd5fb765adb3c541450a2ca6d2a8ae6aaeb950ba05a30f77091:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwYzE1OGUzZTE5NjdkNGUxZDE1MTRhNTBkZjBjZDhlMmY2YTM1OWZhOWJlMGMxOGI2NmNkODg1ZDM4ZTAzZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3YmQzOTVmNWJhNzA3NTQ3Y2Q4MjQwOTBhMDA1NGViYjE0ZTY0YzI2M2ZhZjU0MTEwODlhN2MxNGVmZWM5NGIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/api.rs#L58-L69",
+          "version": "repo-lines-v1:sha256:78f04e3c18573b3e5f49c347f3fca0c8929112fbaac0f3c7ae291b8511226353:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmZWM3YjdlYTQxY2QzOTFhZDk0OWRlZmU1YTRmNzU3NWQyMWMyMjQ1ZTMyZjI3MDc0MzBhMGUzOTZkNjg3MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1NTY5N2MyZDQ4Y2YzYzQzNjA0YzAxYWMwMmMwZWU5ZDc4OTNjMmI1N2MwMTM4OGY4OWFkOWM5NmZkNzdhNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNTYyNmZmOTM1ODNiYWQwNzJlYzBmZTk5ZGZlZWQ4NzJhNjdkZGZkOGM4ZTc2ZDFmZmNlYWFmZTczOTI0MWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e6674a9dfd84effa9c8daba11c63c16",
+      "statement": "frontend/src/model.rs mirrors only the fields the SPA actually requests, applies #[serde(rename_all = \"camelCase\")] per struct to match async-graphql naming, and adds one non-API field: Game::name_lower is #[serde(skip)] and filled once when a games chunk arrives so the name filter never reallocates a lowercase copy of every name per keystroke.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L142-L165",
+          "version": "repo-lines-v1:sha256:26cd3c1e5d8c187289f0c76b1ddd2d26ad346d8144c429c38291ef56b63d9197:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzODQzNWU4NjMwMjgxYTg1MmZlZGY0ZTdkNWI0YTJkODcxYmE2NzgxOWJjYjRlMWJmZTJlM2MzOWMzYTcwMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2M2M1Y2Y1ZGY3MWU4ZmYzNmQ4YzVmMTczODE4YzJlOTczZmI3NDYzNWRhZTgwZmY5NjlhYmYzZDc3NDgxYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMjg4M2Y2YjY5NTE5YjEyMjBmYWNkMWYwMmJhOTI3NGU0NjU0ZGE2Nzc3MjAxMTk3NGZmZDc1MWJlMTIzZWMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/model.rs#L1-L34",
+          "version": "repo-lines-v1:sha256:617c9eb9356575a1098b3b4334633dd838db7c2f2e65d5444c68a0cf90239e93:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMzgxNWY0ODNhNjAyMmVmMjdmNjBkMjIyYzNjMjJlOTUxZTNmMTE4MTkwNzUyYzJkZjdiZGVkYzZkNmNlOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwZWFlYThiNzg2YzczOTM0NDA4NTMxNTAxM2E5ZjljNDU0ZWExODQzMWI3ZjI1OGM2ZjI3MTc3MTJjODVlMTMifQ"
+        },
+        {
+          "resource": "repo://src/model.rs#L21-L22",
+          "version": "repo-lines-v1:sha256:319073090a5ff914772251fc1775fab9bc8cb1de4ec955afbe1de959087a7a30:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA4MzI2ZDVkZDc1ZTI4MmI2NjIyNGQ0ZjNiOGE5ZmU5ODMwN2Y3NGQ2NmY2YmRlZTc5ZWQ5OGJkMTUzMTkwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAwZmJjMTBkNmJkMjM5OGQ5YzA5NjdlZTZhZGUzYTA5MDE5NzFhMTA1OWVlYjZjYjgyYjdiNGNmZGEzY2YyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM0YmY3OWNhOGFhOTAxODk2MDBkMDQ4MTI4YTM5OTEyYWViY2JhNWQ3NTZhZGEzZTIyMDBlMGQxZTI5YTk2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM0YzcwMGZhZDQzZTk3MWZkZTEyOGVlYjI4OTU5MDM4MmUxM2RhMTc2MjdjNjcxMmFkNmRiOTU0YTU0NTI0ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0605b59a0ab450084e14d6e250e7c25",
+      "statement": "AppState is Copy, built once in App behind provide_context and pulled with expect_context anywhere; its fields are split into written sources (RwSignal) and derived Memos that nothing writes, so adding a view of the data means adding a memo rather than another effect. AppState::new() must run inside a reactive owner because it creates the resources and memos.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/app.rs#L22-L27",
+          "version": "repo-lines-v1:sha256:e257382248a69edb164f28f77d423dffa64c81cd6aee2fac7e739b930d8237fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODViOTFmNWY1ZWQ2M2U5YzUyYTE0YTJlNjAxNjk0NTgwMjU0MjY1MjczMjFmM2JmNDcxYzkwOWE0MWMxYjkxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2E4OTAyMGU5OWRhNGRhOTFhMThkNTI3ZWJjNzhkNjBlNTA1MTFmODY3MTVlNTIyMTU4NDhjOWEyNWQ0MGNmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODI0NzhmYjcyNzM3ZDhmOTk0OWNkNzQxOGYyNDIyNGM1ZWVlOTI4MjY4NWJlMWE1Njg2Y2I2N2M3NTVkMjkzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVjZTZhMjM0NTQ0ZTE0OTNhMzE5MTVlM2RkNjFiOGZlNWNiYTIwOWEyNWVlNjdhMDFjMDcyZWY3NDNlMGNmOCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L1-L11",
+          "version": "repo-lines-v1:sha256:e1d69601055f12f32a4e8bf071fc2eacf8d0395c9fc48c161be17faf193efc73:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YTAwNDJlZmUzNmI2OGJkMDY0YzhkNmU0MWY2MDQ3YzExNjZlOTk3ZThiYTgxYzQ1YmY1MThkYzg5NWYyZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYmU5ODY0NGFhZGE2MDRhOWQzZmVhYjhlNTE4MjgyMDUxYmM0NDJjNjc4ODliYjAwNDM0OGE2MzU5YTBmYjEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L87-L182",
+          "version": "repo-lines-v1:sha256:5363f270f5393cf61bfc4df9be30df5f4ad9bed7b3e2ea69010bd82f72d60b06:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4Y2M0ZTQ0ZGUyYjA0NWQ2MWZjZGIzMjkzNjRkMTczNjUzMmQzM2NiYTcwMzI5M2ViNDM4ZTQxOWI2ODQ1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMzdkODYyODc1OWMzODdhNjI5Y2VkOWQ3MTU4M2VhOWM2NjlkNzE4OWE0MDA3MTNlODExMTQ3Mzc4ZGEyZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNTMzZTg5Yzg2ZGY1YTMxMDVmYzNlMDUwMWI5ZmMxNWZiNGUzMTVkYzVjNzcyZjdkYzQyYzZlYmQ1Y2I2YWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f63bc244c5a34097b243288c1867d9f7",
+      "statement": "Notifier (notifications: RwSignal<Vec<Notification>>) is deliberately a separate Copy struct held by AppState, because the resource fetchers must be able to report failures while AppState is still being constructed around them; transient toasts are deliberately not mirrored in it since <wa-toast> owns that stack.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/notify.rs#L20-L45",
+          "version": "repo-lines-v1:sha256:285ca0f653542f68d111cfbe8c8eddf76a0731a711d133128d949d89d3c944c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYjYxYWI2NzcyZTk3NjczZTZmMTU0MWRhNGYwZGFjM2VkYzJmMWUxMzA1NDExNThjMjBkYTY5OTIyMzcyYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NzkwMmI4NzM3YjQyNzZiMWYwODMzNjQ4MTg0OGQ4ZjZkMDBhYmQ0MDk4OTllZDVkYTdlNjE3YTE2MjFhMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjYTkwNWRhZGJjZmU4Y2E4OGVhMzk2MTYwYmE4Zjk1Nzc3NDA3NWZmNzBjMWY3MjkxNzhlZmU5NWRjODEzOGEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L201-L202",
+          "version": "repo-lines-v1:sha256:c8c3e70045831ed9d52b6c5a575c7c4b546817a51e05f1a968aa816e93e3709b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZjMGJhZTkwNjhhNGIxNzlkY2ViZDM4ZjY0Zjc1YjJjNGIwYjIzYzRkMjZjYWZkNzg1ZjYzMDQxMzQxYTU1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTgxMWI5NGU5MGRjNmU3OTUwYmZmYTM0MDcxZWVhNjRiMWQxMDQzZjYzMmM2M2QwODE1ZjcyOWY5OWQzNTRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjEzMmZmYzI2MzdhNTBmYTUyYjFlZDViMzNkN2VkMTc5NWNmZTM3ZDY3MDI0NTgxNjg5Mzg2MzNhOGE0N2Q5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmY0YmFhYWEwMTMzYmQ1ZjQ1MzIwZTI1OWU0NDlhNmQwYzU1MzU4NGE1ODViNDU3OGUxYjhhN2QxMmJkNTA0NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aab9143415634d2998959eaef6ab59ef",
+      "statement": "Games are not a LocalResource but a growing RwSignal: stream_games pulls GAMES_CHUNK (10 000) rows at a time and appends each as it lands; each effect run captures a generation counter and aborts the stream with ControlFlow::Break when it no longer matches, so a stream for a deselected system cannot append foreign rows.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L134-L194",
+          "version": "repo-lines-v1:sha256:a25614452a02e0d998df7ddc2a375f369235ffac048c583ff33fd5dc4baabd0e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NDJhYjlhOTJhNTBiYjU0OTcwNTBjYjNmNWNkOTdjNWJhY2M2MGViNjczM2QwNzE5NTBjMDhlZjI1NzRlOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxNGZkNzQ1OTFjYzI3ZmM1NDIyNDk3NmJjYjUyOGMzOGFjZTU1ZmE2NzU4MzE2NWY1ODljZjI0Nzk5NmM0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZjEzNjJiMTNmNGI0MWQ0NjZhYWY0YmVhY2VhZDU2MzBhMGUyMDRlZjE0YjA0ODliOTRkN2FhYzU1OGVjMjYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L144-L150",
+          "version": "repo-lines-v1:sha256:796c1dd1ee540d33209fe946b858f9d84419eade1e3f16d887bc8a6aa5cab0d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWYyMTQxY2QwMjk4NDQyZDJiYzE0YjI2M2E1MDA4ZWJmMjk0OTBjZGZlYWM2MzM1NGM5ZDA3YmRmYzBlNmMwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBmODI4ODZkODc2Y2Y5NzZmNjU2YmZmMzA5YmJkNjNmN2E2YTljZmFkMjhmYjJkZjU2MzU2MzVhMjczZWRkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODY2M2ZlYjNiZGFhY2M3OGMwMzY5M2FmM2ZhNjk5MjdjMTMxN2M5ZDJmZDA2MzBjNjVmYTRlZjU5NTM2ZmQwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2IzN2U0MjY4ZWY0ZDZlMzk4N2RjOTc0MWI4ZmY0NDEzZDQ5Mjc5OGNhZTFhNmZhYTQzMzUzYzExMWY1N2MxNSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L220-L262",
+          "version": "repo-lines-v1:sha256:da4a085f5266591ae4878324daf0ef53b1c8e529ec41d124a2c65ea46fd20a73:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlYzQzZmU5MTViZTQyZjc0N2I0OTVkY2JjZGYzZmJkMGI3MjIyMmU5ODUwY2M1NDVlZDgwYTU5YTg3NjNhNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjY2M2YzU1MTc0OTA4MmNiM2VkNDFhODY4MDk0MDAzMGVhMDM3YTRjY2MxOGQ1NjVjZWZmOTIyOTA5NDMwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMmRiMzdlZjA2OGJmZmY0OGZkYTIwZDdjMDYyMTE2NTY1YWQ1OWMwZmE1NzhhN2U3NTM1NzBkMWM0MGI2NTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_223fc37d43b44a32b7073fe175ce993f",
+      "statement": "The games effect distinguishes a refresh (previous tracked system_id equals the current one) from a reload: a refresh accumulates chunks privately and swaps them in only once the stream ends, leaving rows and scroll position intact and never touching loading_games, while a reload clears the list, sets loading_games and appends incrementally.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/state.rs#L226-L262",
+          "version": "repo-lines-v1:sha256:f1ec172134afa7ad33b181c66d2501899bad97c07c2c663990ce66bdf3fa5da7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNGE0ZWQ1ODJlNmRkYTEzODEyNGEzNDBmMWY5OTlkOTA3YzIxMTAwMDMyZmEzM2E0MzQwMGM2NDA4NWQyMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlZDI0YzM5MTJiMGNjNjU3Y2ZlYjdhNjYxZWRkMDUzYmEyYTk5MzNiMDE1YTE3MTY5Mzk5ZjkzNjM1ZTI0OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMmRiMzdlZjA2OGJmZmY0OGZkYTIwZDdjMDYyMTE2NTY1YWQ1OWMwZmE1NzhhN2U3NTM1NzBkMWM0MGI2NTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_601e20c15226434891aa3536c0f656b3",
+      "statement": "roms_resource tracks game_id but reads system_id untracked, because tracking both would fire a doomed fetch pairing the new system with the game still selected under the old one; it blanks loading_roms only when the game actually changed (StoredValue of the last shown game), so a refresh leaves rows up until replaced.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/state.rs#L264-L285",
+          "version": "repo-lines-v1:sha256:7d3a1773a5f85e72258b068813d5cd5907c65b4d791c9b109add42a9b686a512:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MWE1NjkxYjNhYTA1NzY4NzIxMjM5MGRlNjk5M2ZmMWI5ZjgxZmVhNDczYzY3ODRmNTI3YzQ5MWQ1M2IwMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NTE0OGM3ZGMwYzkzOTMxOGJhNTQyNjg1ZmQwM2UxMDA3NjI4MWRkZDQ0Y2ZjNzdhNThhZWJkYjk2MDJjNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNDRhOWFkNjA5MmM2ZWVkYjA3ZTM4N2ZiNmRhNTUzYWE1MDRjOTFkMGI5NTkwZDU2ZWY4YjM4OWZmODYxYzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a9e448d1eaf42b98851bb42b941121d",
+      "statement": "AppState::refresh() is the single re-read path: systems_resource.refetch() plus refresh.notify() on a Trigger tracked by the games effect and the roms and sizes resources. It deliberately keeps the selection, and is invoked from the SSE completion handler when the server has changed what is on screen.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/sse.rs#L52-L60",
+          "version": "repo-lines-v1:sha256:3e0e5606106f75dce05061eab2f6b6607b4050ecaaecd468b353e1f4f45142ca:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBlNmU2NzBiODNjNDk0MjY0ODUzNDVhNzY1MmYwZTYzZmQzYWYyZDY5ODQ3ZDg0YTk2ODNmMDA5ZjEyYzJhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdkZDZiYmZiNzc2YjI1MWIzNGIwOThhODQ4OGY5NDZkY2E2YmExYTBmMTNjZDU5Y2VjMzQ0MzZhZDcxMzc3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTk1MDE0NzdjNTc2NzFhNGVjNWIwMzhkZWQ4Y2Y1Yjg3YjcxNTgxMDZiYjVmZjE0MWQ5Y2ExNjk4YjM1ZTAyZCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L108-L110",
+          "version": "repo-lines-v1:sha256:782a1a76e1c8dca15860033bb2e321d2bcf9e6685f1b83dc4f87fdae4274d324:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTVjMjA4MWExODE3ZmQ1OWY1N2I4YjJmOGYyNDQxOWFhNTM0YmEzNzVhZGE2ZGYzZGVjZTcwNjNlNzAyOTcyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVjYWM5Y2UxMmVkNTg3NzkyZmU0OWU4OTY3OGFjMjg4ZTEzZjgyNGRiYTM3ZjA5OWFjODU0OWIyNTY1NTg0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzE4YzIyYzRlODZmNDY0NGNmYTBkMjNhMmRiYmI5NDcwZGM4NDI2MDc3YTM1Y2E4NWViZjEwYmMyODAxNDE3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWNlNTgwODM3ZWJiMjAwMmZhOTI0MGQ5ZGRkNWRlNTJjMzM3YWQzNTExMTk3ODE3YzgzZDk1OTQ3YzgxZWM3OCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L412-L417",
+          "version": "repo-lines-v1:sha256:78fa51b4b14199721b54815a884c576408e05b2d77294e2d40b0703cd88e18e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzljNzM4NGEyNTBlNmE0ZmE0ZTQyNDI0OWM1ODAyYTZiZTY4ZTI5NGQ0M2FjMjMyNjJiODg0OWQ3YmVhNTAyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTk5YmRlZmVlYWNhNjM0MGUwMjkwZGM4NmU4ODljODlkNWUxODlhYTViYTQ0YjU4NWIzYjcwNzM0ZjRhNjJkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmViNDU4ZDU3Yzg4NGNmMTVlMTVkMjY5NDA5NDkwNDFmMmJmNzhkZDk4NTc2MTIwYzg4ZmUyMzk4MjkzY2QzZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_49799848cd6d46fa9ade2418802e236b",
+      "statement": "Leptos 0.8 exposes no public loading() and keeps the previous value in flight, so each fetch drives its own loading_* signal: the roms and romfiles memos return an empty list while loading_roms is set so a stale game's rows never linger, while filtered_games deliberately never blanks because streaming requires rows already in hand to stay visible.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/state.rs#L204-L218",
+          "version": "repo-lines-v1:sha256:2b2d6b9cc5033f249817e3c6e0a791c46eb2c4260442db4b7ab84cd6aea9dde9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwOWVhZmZiMjAyMDNlMDE5ZWIwY2ZiZDAyMDQ2ZTE0MWRlNTlhZjE0NmRjYjczOGNlNmUwNGUxOGQ3NmUzZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMjFhYzE1M2UxYWJmZmQwZWUzZjZkZGRjM2ViMzE2NzIzNzc0ODkyOWVlZTgyNGQxNDIxYmNmOTYxYWMyZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxMDk2YTJjMGQ3NWU1Y2ZlYjg1NDhjNDNiMDg1NTlkMjk3N2E0YjczNDVjMjVmODY1YmYyN2IzNzhhYjE3YzEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L320-L357",
+          "version": "repo-lines-v1:sha256:fff20c5b64092f8b534c10617e077f9e3aa1cb277cfc16e98f865ea63a779174:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxZWU4NmZkNWNhM2ViNjUwYzY4ODk4ODY4NmJhMjdhZjI0YTMyZDJiMGUyMzRiZTBjMTg5ODk2ODM0MTQ0MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNDg1YTVhMmU5ZjhiNmE5NGMzODE4ZTkyMGI2ZDcxMjhmODJlNGViZmY0NjI2ZmMyZDQ5YWJiY2I5YWE3NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMDkxMTA1NzE4OGEwMDQwMjFjZWRkYThiYmI2ODQxYjVjZjJjYWI1ZGI3YjU1NDgyMTZjZWFiZGM0MDBmOTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b23d324e69134ee186e03dca507a5b88",
+      "statement": "filtered_games is a Memo<Vec<usize>> of indices into the games signal rather than cloned games, because a system can hold tens of thousands of games and the memo recomputes on every keystroke in the name filter; GamesCard slices only the visible window out of games at draw time.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/page.rs#L472-L488",
+          "version": "repo-lines-v1:sha256:34d4f9c004aea2d572734dd7cadc1425c4aa42443f5b3f2993abbcdd94adc005:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGYzMzkwNTJiMmVmODU2Mzg2ZWI3M2NjODU1NDBiZjg2ZjVkMTM4NTRjNTY2YTczYzU3ZGQxOGMzZDY1YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyOWQxOGM4NWU5ZTE2NzQ5MDg0ZDY5YjU2ZTU5OThhZTIwYzJhOTZiOTI5YzRlM2ExNjExNzg1MzhjZjQxMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4MzQ0ZGJkODAxNWRmNzc0ZDk4ZDI4ZDg3NWMyMzhjY2Y4OTRlYTA4M2U3MGU5MDRmNmE5ZWQ3ZTliZDFmMGMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L160-L163",
+          "version": "repo-lines-v1:sha256:515e1b82bd9eb62a0dd144913148cfd1d41f2b7840f2e8766405c0ee3dacba7d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg1MjAxZDI1Y2I2ZjI0MmVmNGIxNTNhNGRjMDQ5YmQwYjQ5NDBlOTc0ZDBjNTRjOTZiMTk0OGU5NzlmMDEzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VkMTA4MTU3MmM0OGY2YzYwMTJkNjk2MDg5MzMxZTk4NTAzODRlNTY1OTE3YzgxYzk3NTU1NDcyMDczMjA0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmYxMjZlZmQ5YmNmOWJhNzcwNzgwNzZkYWJhZmU0NDI1N2JiZDQ4NGUyMzhmOWQxOGQwZjdiYzE2YTAxMzE0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjFjODZjNDRmZjMwOGU3ZjM4MTJjOGZjNWE0ZGNmNDdhMmU1ODE5YTBhZDkyZjY1ZjFhZmVjYWQ5NjBjZWJiMiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L320-L335",
+          "version": "repo-lines-v1:sha256:e9bc2e7ce62c9e928474dcfb25d6395c75cf875252ada7e670d37b5b2e4f7ea4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxZWU4NmZkNWNhM2ViNjUwYzY4ODk4ODY4NmJhMjdhZjI0YTMyZDJiMGUyMzRiZTBjMTg5ODk2ODM0MTQ0MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNDg1YTVhMmU5ZjhiNmE5NGMzODE4ZTkyMGI2ZDcxMjhmODJlNGViZmY0NjI2ZmMyZDQ5YWJiY2I5YWE3NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzZjM5NjY0MDNjMzI1NjlkZWU2YzFmNGZhODM1YzJhY2FkNDI3ZmFkMWNiYmEwMGU3NjVlZTQxZDAzMjdkOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6f500cada27c41dfb952a794a9444b57",
+      "statement": "The only effect left in app.rs encodes one invariant: a game belongs to a system, so any change to system_id resets game_id to the -1 sentinel; negative ids mean 'nothing selected' and the fetch helpers early-return (stream_games/fetch_roms an empty Vec, fetch_sizes Sizes::default()) rather than issuing a doomed query.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L177-L179",
+          "version": "repo-lines-v1:sha256:31d55d77ee3afa71fa020796f6a2282542e92df002284129cdf11bcfb6a89c7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQwMTdiNGE5Yzk2MjZlMThjYTNhMGZmNjc4ZWJhN2U0ZWExZGJiMmVjY2FiZTMzNDQ3MTRmYWY0OWMwZjQ3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRhOTc0MmFmZDAxZGYxNTVmMWExYTI2Zjg0MmU5NWMxM2Y3ZTAyMTJiYWNlNDZjOWJjMzk1ZjkzYWMyNTEwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTQ5MjFiNmVmZmZhYWJiY2Q2YWFmZWY4MGU4YmY0YWJlZWY3ZjJhZTI5ZGU2ZjRmMGFkOTQwNmRkZWIxMTFjNiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/api.rs#L202-L223",
+          "version": "repo-lines-v1:sha256:6e3d2ea938927ccf60836295a7cef47b0a08bffee59ffadbf71b5a81d05ea58b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5Y2FiOThhNGZmMTM2YTUzOGI0ZDI3YTljZGI5MWIyMzJkMzUyYmFiNWE3ZjAyZDNlMDMxOTJmNjZiMDdiYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDQ4YTIxZTg2MmNjNDRmNjMyNzk0Mzc3ZWFiMzk0MTk3MjAzMzlhNmI4MzAxNGZlYjUwZDQ3MWRkNGFiODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjNjYzNzU1OWMxODIxMDMyMTM3MTk4NzNhZTFkNGQzYTAxMzRlZWQ3MDI2ZDNkOTI1NmRkYWZkNTc5ZTA3MGYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/app.rs#L62-L74",
+          "version": "repo-lines-v1:sha256:172bd178b7f301815107cacb1b75fdb5a232d02ac56135e4133bd96a7bb19c8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNWIzM2M1MTE4MjIxY2Y0ZjEyNWRlMDI1ZTlmMDkwNDg4NGRmODA2ZDUzNDViM2ExNTk4NDA4NmM3MzhmMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec0230d2267d466ca1d32a33bfd2b02a",
+      "statement": "request_action() hands long-running work to the server and returns; the busy flag is set by the caller in api.rs before the mutation and is cleared by the SSE terminal event, not by the client's await, so a menu stays out of reach for the action's real duration. Only a refused request clears it locally. -1 means idle and -2 means 'all systems', which per-row spinners treat as busy.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/api.rs#L380-L475",
+          "version": "repo-lines-v1:sha256:9ff181cff2fcce8fc0b08744b1b0b07d5d8d0b0a21ba3bca88e6024fd8d77bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGZjZjU3YTEyOTFkOWY3OWZlYjU1N2Q2MmM3ZDY1MmZiNWM3ZGRlYzJmNGMyNzJkNDRlNWY5YTZkNTdlNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3N2ZlZTBhMTg2Y2Q3NTk2ODczNWI3OWRmYjcxMzgzNzBlZDgzOTI2ODIyZTY5ZWIwYTJhOTBmYmQ3MTZmYzMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L331-L340",
+          "version": "repo-lines-v1:sha256:3d5b92f9c65e08e7afb8535a077cca76ea3cc0f717959fde007b284811c8facf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MjA5MzYxOWI4Mzk4YWIxM2RhYjA1MTE4YjdlMDVkNjIyODA0NjAwMmNkZDVkZjY3YmE5Mzg5ZDBkNzE5MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGYwZWMwNmY0MjM1OTk4MjI2MDQ3YmM5MTA4YmEwOTAxM2M0ZDc0YzVmZWZiNGIzMmRhZWYzODAwNThhMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMWM2MDE0YmI1ZDg2YmQwMjVlZDY4ZTEyZjU3NmUzZTI5OGI0ZmQzNWFjY2IxYmJjOTg1M2FjZDM2OWU4MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNTY0ODU3MjMzYjkwOTNkMDFmNzE3MmVjY2U5NGYwODY1ZjZjYTZiMGFmYThkOWNhM2ZiZDkwMjQ5ZjA0ZmUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L86-L98",
+          "version": "repo-lines-v1:sha256:a523cb3b34ed9519698b518e037adec1a9d9b3682bae1efa25e49cf85330005f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5Njg2ZTQ1YjE2NDU4ZjFjZmI3YmIyNDFhY2YwYjZlNWE3NjY4ZjU5Zjc2OWZlZGUyZGM4ZWM4NTAyNTdmMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1ZGJhZDEzNGJkMTc5ZWEwYjQwNWExMGVmMjIwNmI4NzVlZmZlNjQ0NWJlZWJmOTg1YTU5M2Y3NTZlNjQ5Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0N2Q2NTNiMjc0MWQyNTJlZWZkMTI1MmNkYTM0NjU2NzNiMWIyYThiODNhZDJhZTAyYjI2NzkyMWZkY2MwN2YifQ"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L68-L82",
+          "version": "repo-lines-v1:sha256:21ba7d23a75455ab3288750d0699cb1d3caba5cca46506b27dfcf9dec4f7b462:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NzQ0Y2M5ZWM2MTY4MjhmOGFmMWFlZmMxZmFiYTEyYjhkYzI2NDc4YTBmMjkzZjkxNTY2YTI4NjM2ZTc4NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMGNiZDRhOTQ0YWU4MzZiNWFiMmE5MDY4ZTY5MGJlNzE4OTcwY2Q4YWNmYzY2YTQwNzAzZjgxMGU3OWE0ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZmQ3MGEzNGFkOWRhNDgyYmIzNzE1OTViNjA0ZWQwNDA4YjBlZWFmMTBkNzk1NjU1NDMwMDdjZjJkODUzNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ebf5179927a14d5294297aba36417655",
+      "statement": "connect_sse opens one EventSource(\"/events\") for the SPA's lifetime and registers per prefix: _started pushes an info notification, _error an error notification, and _complete notifies (warning when the payload has skipped: true, else success), refreshes only when not skipped, and drops the selection to -1 when the payload's system_id matches the current selection.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/sse.rs#L21-L66",
+          "version": "repo-lines-v1:sha256:fa0675a1734c02c431ee18761cb838b932bc0d4e24a396a4bcf99461b068aa34:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZTcxYmVhN2I4NTczOGJiODE5Nzg1NjIwYjVjMzEyNGIxNWJhNGZiNDNkZWUxNWI0NDFiZTM2MzY5MDY3ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYzFlMjk4MmIxYzRiNDRkOWExOTZiOTMxYjUxODE2ODZlMzg1YTQ0OTFkMjhjMTk5NmY1OTIxNzhmMDZlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlM2EwOWFiN2MzNjIzODExNDA5OGQyMWVhZjY3ZDQyZWM2OTZhYmQwMWYxOGUyN2M4MmNkM2NhYTg3ODJjZGMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L84-L150",
+          "version": "repo-lines-v1:sha256:1db7e70c6a2e07eafba15bb620994a3ba9acd56bf6b0514fe9d7614dfb087436:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMjA5ODMyZWNkZWJhMjBlZjNhNmY3OTMyYWVmZmE4ODY0MzFmNmY4OGQ5ZmE2MjBiYjM1NGRhNmFmMTllZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzY2MyZGE3YjMyNWVlNmExNGY3ZjA2M2JiNTBjOTAwMGEzNTBmODgwOWYxMThiODUzOWMxY2FmM2MwMmE3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0M2QxNzdkY2I4ZDgyNDBkNjU3ZDgyM2IzYTFmNTY1NDhkMGE2MzZmOGJiNzA0ZjNjMDU2Y2MzNmI3YjRkZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53b8af3f07eb45598e42834f919e1ddc",
+      "statement": "Because EventSource reconnects on its own but never replays missed events, set_onopen resets all six in-flight busy flags on every opening including the first, so a reconnect starts from 'nothing is running' rather than leaving a menu behind a spinner forever; on_finished additionally clears each flag on either complete or error. Closures are leaked with forget() and the EventSource with std::mem::forget since the connection lives as long as the page.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/sse.rs#L152-L175",
+          "version": "repo-lines-v1:sha256:5954dbf7c7235d7b8b0cf012d1349396b37c9976d121dfd2d71324ce89468661:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTBkYWYwZGExZmU3MjAzNWZjMDUxMDkyNWYwZDc2YjE4YWZkMjQzNzIxMjA0NTM4NDlkNTBkYTY1NWMzZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMmQ2Nzc3ZDYzYzEzNTc4Zjk4ODU4ZGE4ZWEwMDcwNjE1MWM4YjVhMjZiMGEwZWJhYzlhMzhiMjBkMTA2NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MzNkNjBmM2RmNjEzNDQ2YzFjYWVhZWI2MDUwMWRhNGJlZjRlOGQxZGRjMTA4NDcyZmQ0NWJhMTY0YmE0N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L68-L82",
+          "version": "repo-lines-v1:sha256:21ba7d23a75455ab3288750d0699cb1d3caba5cca46506b27dfcf9dec4f7b462:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NzQ0Y2M5ZWM2MTY4MjhmOGFmMWFlZmMxZmFiYTEyYjhkYzI2NDc4YTBmMjkzZjkxNTY2YTI4NjM2ZTc4NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMGNiZDRhOTQ0YWU4MzZiNWFiMmE5MDY4ZTY5MGJlNzE4OTcwY2Q4YWNmYzY2YTQwNzAzZjgxMGU3OWE0ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZmQ3MGEzNGFkOWRhNDgyYmIzNzE1OTViNjA0ZWQwNDA4YjBlZWFmMTBkNzk1NjU1NDMwMDdjZjJkODUzNTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d24a72a48e147f39dd0342542087f94",
+      "statement": "The SSE prefixes the SPA listens for are a hardcoded list in connect_sse, and it covers import_dat_* (the /dats upload) but not import_dats_* (the MCP action), so an MCP-triggered DAT import produces no browser notification; renaming a backend prefix compiles cleanly, breaks that action's UI and fails no test.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/sse.rs#L14-L15",
+          "version": "repo-lines-v1:sha256:f68f24e5273c053c6d03044b7ae4823edd7d20b86a329cd78e187a9c1fa2b822:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY0MjIwMTI0YjI1YWNjZGIxNDM4ODVmNWFkZmM5NTcxODQ0NGU2MDIyMjYyNDQxNmY4MTJmZDgwYzc1OTg4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmUyNzY2Nzc5ZTFhYjI1YThiMWE5Y2RiYWRkMWRiYTYzOTM1Y2E0YmM0OTk1NTQ1MmJhZWVlNmY4Y2I5NDdiZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmFkODM2ODE3NzE3NTJlNmZiOGU3OTYxNWI5MzE4MmM3ODA2ZTdjZmNlZGQ5YTNhZmY5ZGZjMjVkODE0MGYyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWI1NTFkODU4MmRmYWZmYzk0OTljOTc2MzBlNmU2YzFmYmUwNDc0MGIyYWM0NTNhZmI2YjgwNTczYzlhYWE3OSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L97-L150",
+          "version": "repo-lines-v1:sha256:dae0b2cb415c23706025c53982cb563d25a1edff6ec6a77a33c09788748f30a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjljZDc5YmU3ZmQ4OTMzY2Q1ZmVlZjVmZTE5YTdkNjRjNWUwYjZkOWVlOTBkNTBiYTJhODNhYzZlYTg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzY2MyZGE3YjMyNWVlNmExNGY3ZjA2M2JiNTBjOTAwMGEzNTBmODgwOWYxMThiODUzOWMxY2FmM2MwMmE3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0M2QxNzdkY2I4ZDgyNDBkNjU3ZDgyM2IzYTFmNTY1NDhkMGE2MzZmOGJiNzA0ZjNjMDU2Y2MzNmI3YjRkZDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa10c750644841f19b76819b7355c048",
+      "statement": "Multipart uploads bypass graphql() entirely, POSTing web_sys::FormData to /dats, /roms, /patches and /irds; the response only reports whether the handover succeeded because progress arrives over SSE. On a non-2xx response every dialog keeps itself open with the file still selected for retry, and only a success clears the input and closes. ImportRomModal accepts a server-fetched URL instead of a file and treats the two as mutually exclusive.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/import_dat_modal.rs#L22-L57",
+          "version": "repo-lines-v1:sha256:9744ef36ca586f2788db16943b10c5309bcbf8711cceb1518f11a6e066b63185:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGRlZmFlOTIyMzJiMDQxYzJmMmQ1NjcxY2Y4M2U3NWQ3NmM2ODAzYWVhODEwYTE0YTExMmRiNjRjZjFiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNGMzODY1ZTQ2ZDI1NmRhNjQ5ZGE0ZDFhYWJiNDRhNWI5ZWFiNmY5OTM3MDZiMDVlN2VlOThiYzJhNTQwNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNDRjMDg3MTI1YTVlMDNhMmE3NGRkN2JkYjRmZDg5OWY5ZTRkOGYxZDRhZDc4YTZiN2VmYTk4NDExZmEyOTMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_ird_modal.rs#L38-L60",
+          "version": "repo-lines-v1:sha256:ea0ae6741865c89863bd894b7488236788def4a32f8fcd6f7e8d6addd014ea7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGRlZmFlOTIyMzJiMDQxYzJmMmQ1NjcxY2Y4M2U3NWQ3NmM2ODAzYWVhODEwYTE0YTExMmRiNjRjZjFiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYzJiYzc1YjdhMWI4N2QwZjFlMjJjMGMyNDVmYmM5MzZiNmVkYzAyYzI2NjQ4OWMxMzliYWMxNjJhMjIwNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NmQzYTI2ZDhmYzVjNThlNGUzYTdlMzVjYWRhN2JmODcyZmY0MGU0MDM3ZWFhNjFiNDU4YmU1MGRlNWIxMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5OWJkZTJjODMwNmFiMmM1OTYwMDQ5N2NlZGRmZjIwNTRiZGMxYTU3ODBlOGVjZjUxYmRjYzU1MmE5NjZkODQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_rom_modal.rs#L45-L84",
+          "version": "repo-lines-v1:sha256:85b88f4b02ba49404ab2d3748e28f5dc59b79ed0de490108b02e85da7a84ec59:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGRlZmFlOTIyMzJiMDQxYzJmMmQ1NjcxY2Y4M2U3NWQ3NmM2ODAzYWVhODEwYTE0YTExMmRiNjRjZjFiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YWQ1MTg3NWFmNmQyZjQ1NjQ0YjdhYzk3NTI0OTI0Yzg0NjA0MzNiYmVmZmJhMmUwMDk4ZTAwZDc1N2VmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMjAxODNkNTcxODMwOWY0MWRlN2JjYzdmMmE0YTVkNzc0ZGY0ZDk5ZWMwMzQ4YjBmYTliZjk0NTlmMDlhMzIifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L201-L220",
+          "version": "repo-lines-v1:sha256:bba5235252fabad82a741242bbb66f0e03d91eca87dea9f25e8dec7640926967:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiODlhYTUwM2IyMDU5MmM3NjdlYzM4YTJmZTYzZWY1MzRhNjIyNzMwM2E5NjVmOWY3NGE3Yzg2OTgzNmYwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYTgzNmViMDYzZmI1ODhmZTE4YmE5ZDdiMjJkZGQ5ZDNjNDQzN2NjNWZjZTE2MTZlY2E0NDU5NDMxNWIzOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjI1MDhhMTFhYzkyZDg1ODRhZmVhZjFjNDI4NDgwMzM5ZTFjMzNiZGQ2MzY5MDhlN2M1NmJmNWEyNDU1NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwZmY0YjIwZDIwNWYzZDI3ODNkODA5ZmE2NzA0ODIyMjZkZDNkM2NjYmM2ZmE0NjVhZThiZTA2NDVmZjAyZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e29a164ede1f4a77bac91f6c396509fe",
+      "statement": "Virtualization depends on a fixed row height shared as two constants in two languages: ROW_HEIGHT = 40.0 in state.rs and --row-height: 40px in styles.css, linked only by comments. ScrollWindow turns scrollTop/clientHeight into a half-open range with OVERSCAN = 8 and Spacer divs keep the scrollbar proportional; zebra striping is keyed off the row's absolute position rather than :nth-child so stripes do not shift as rows are recycled.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/page.rs#L49-L60",
+          "version": "repo-lines-v1:sha256:fbf7391f106e91556c02a56b152b7bcc7e81633d9c67891a78ce45514ece1143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MTQ2YzBkZWJhNzYwMDcwMTFiYjdlNWZhOTg4OTE5YTg3MjViYzRhZDVhYmVkNjVlMTQ2NDE0NjIwNGUxOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NDk4NjA4M2ExMDZjNjU5MGI5MzNiNjZkNWIyNWM1ZDQ3YTFhNDUzM2ZkNTQxOTY2NmNmZWMzODNmYTFlMjEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L572-L605",
+          "version": "repo-lines-v1:sha256:a231dbc00c472185e8a80bf2ac4994d8f177411b2fbe1046541fa7ca1761728f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYTQ0NGZiYWRjMWU5MjBlMjVkMDdmZDliNWM0ZTYxMjAyOTk4YTg1NGI5MWY4OTE1OGU3ZmY2ODk1NjMwZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjQ5NGE3MTFjYTM5MDc0ZTk0ODg2MzQ4N2JkZWQzNTgyYjEwMWZkMjI4NGRhZDM0ZDE2MGY2MDMyYTcyZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjcwYjljMDFjZGUwZDkwZDgzMTVhYWE1NzQ5ODRmNWMyNGJjMjNjZWQ1MzcyYTkyNDRhNTZhMjJhZmEwOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWYwNWZmODkzYTg3ZDg3YTgxYjViZmViODU0YmZmMWM0MjM1OGMyMTllNjJiMWFmZmJjZDc4YWU0ZjZkM2MifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L46-L48",
+          "version": "repo-lines-v1:sha256:0dbd7a30fbcbc32b5e3923a6e46b38cff4c1a18f3e031dfb3af8c22f4b6a13df:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI3MTFiNmZiNjRkYmY5YjdlODlmYzEzNTc1OGJlMjQ0NzFkNGU2ZWE5MDEwMDJlZmY5ODUyMmRiMWNlYzY0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUwZTYyZWRlNDRiMjQ3NGYxODIzOGRmMzJhYjc0NTdjNGU5MDQ2ZmMwNDE3OGNhY2E5ZGZjMzMyZTc4NmRhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmM1Njg1YTBlZDk1OGE2ZGVmNzA4NGM2Njc4YTUzYTFhZTc1ZTFiMGExOWU3MTZhZDFmYzNhMGEyODZiOTk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM0ZWJmNDZmZjFhZGY4NGQzNzFhMDg5M2JlZmMxYzIxMTU5OWFiYWY0YzU2ZmEwY2IzNTk5ZDVmZGE3M2Y1NyJ9"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L65-L130",
+          "version": "repo-lines-v1:sha256:97afe6e6865142a9982e8aef0acce2f53a751f237896c17d3528a0f10d992452:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ODczNWRhMjM5Zjg3ZmYzNDZiYzBkMTc1YmU0YTQzZTNmYWYzZTg3YjQ1M2ZmOWFmYTdmNDc2NTQ1OTc5NDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3Njc2ZGZjNjdiOWEwYzc1MjlmNTBlOTc2ZDk1OWFmM2VjYWUxNWNiNmY1NzFlOTdhOTNhNjQ3NjZiMDdmNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkOGEzMjNiOGE3MjE3YzhiYjVlMzc5OTAyOTk4ZjBkY2U4MDVhZjExMjNjOTU5YTYzZmJmNmJhOTdkNWY3N2YifQ"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L13-L18",
+          "version": "repo-lines-v1:sha256:757a1be72c2af367352f88e7bb39fdbbf034c527d83355a3f728324cc116cfe1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQzZTJkM2UzYzIwMGI5OTg0YjQ3YzgzMTI4NGJiY2VkODkwZGEwM2YyNGRkNDBkNDVkZTQ2YWFhM2I2ZGMwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQwOTAzNjkwZGY3YTA5NjY5ZWY2ZmI5MTYwNmU4ZDk0NDc0MGY4YTYzYjQ3MGFiNTZhYWY0Y2ZhMjA1NWVlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzkyMGUyMmE4NzE5YjgxNDBkZDU0N2QxY2FjY2UwZmQzNTcxNTUzZDVmNTJhODEzNDJiMGJjYjYzNmFkY2E2OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_986772a2d29b479186f89b40fb170ea1",
+      "statement": "The games panel is a real role=listbox with role=option rows and exactly one tabindex=\"0\" (the active row, falling back to the first game); arrow/Home/End keys select and scroll, focus_row looks the row's DOM id up live so a row past the overscan simply does not take focus, and changing system or any filter resets scrollTop and the window rather than stranding the view mid-list.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/page.rs#L451-L530",
+          "version": "repo-lines-v1:sha256:e592fa41eff7fa9af0661a94e4b3d9fbf46cfec1c567cd5a37d08677a963fa72:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MmEzMzM3YzEzOTZiZDJhNmYzY2Q4NDM2MDc5MmMzZWRlM2NiOTk0NmU5NWQ3ZWVjNjhiNDkyZmVhZDRiMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1NjZiYjU0YmFkNWRlNTVmODQ4YWYyZTFlMmYxZjhiNGEyZDRmZGNhNTU0ZmEyYjgxZTNkMjJjZDk4ZTlmYzQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L532-L605",
+          "version": "repo-lines-v1:sha256:1ccf84d5880a200927d8ce27b5578470d597e9ba77b94fd193b40d6916275f5c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzZWE1MjFkYWNlMGFlZjQ5MTU1MWE0MDc5YjE4MThiOWNkYjgwOGExNDQwMDlkYWI3YTk5NWNiMDUzZDI4MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjQ5NGE3MTFjYTM5MDc0ZTk0ODg2MzQ4N2JkZWQzNTgyYjEwMWZkMjI4NGRhZDM0ZDE2MGY2MDMyYTcyZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZjBiMjY1NzVmNTQ1ZjJlNzljYjI5ZTczOTZiNGE0MzU3ZTI5OTZiZjM4NjA1ZDI4MDljYThjYmJmODViMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWYwNWZmODkzYTg3ZDg3YTgxYjViZmViODU0YmZmMWM0MjM1OGMyMTllNjJiMWFmZmJjZDc4YWU0ZjZkM2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0801a064e57b41ef8b90313fea69c664",
+      "statement": "Four constraints govern talking to the Lit-based Web Awesome elements from view!: state must be set with prop: bindings (not attributes); unknown on: events need an explicit web_sys::Event payload annotation while known events must not be annotated; custom events bubble and are composed so handlers must compare event.target() with current_target() (Modal's wa-after-hide and remember_position's wa-reposition both do); and form controls re-dispatch input/change from the custom element, which is why ui.rs reads value/checked/position off event.target() with js_sys::Reflect instead of event_target_value.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L446-L464",
+          "version": "repo-lines-v1:sha256:9d7169ec099f8c2b591d55ba775dfc17c3532fa31527732c2b7e1c8e85de193b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZTNhOGNkYzQyOWY0M2RhNDVlNzRkYTBjNjRhN2QzOGVkYTM4NWFlMDBkNjczYjY2Y2VjZjU3MzkxYzBiMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NjNjNzQ1YTk5YjQ2ZmViMjUzNGY0Y2IzOTBjNzNiOGI2ZmMwZTc0NWQwNDYzNjFjMDRmNTlhZGIwNzk0NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZTM4NGE2OTAyZmRmZGU3MjFmNzMyYmQ1YmRiMjY1OTA4ZDYxNjgyYzk1ZjVmYTQ0MTk0ODdhODJhM2Y1NjEifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L165-L182",
+          "version": "repo-lines-v1:sha256:374bc45054080db2f46a5865ec2a4a35fd1ba0545fc2837e40a993b4086fc9c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYjlmN2E3M2ZmMzJiMDZjM2ZjMjE5MWU4ZTQzZGQ3ODQ5NWI2NWVhNmUzOTQ3MGVjN2M4ZjlkY2YwYWYyNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMTM1MTI5OGY1OGU4NjJlOGZiNmMzNGFiMmQ5Y2Q0MzY0MjFhYTE3MTVhNzQ4MjI3ZDlmZjhhNDRjZDdhYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNWJhMDI5YzRlNmUyOGJiNDJkMjk1ODNlYmY3NzRjYjA4ZTNiY2Y5MGNhYWQ0MzZiMDIxZWFiNWZkYjU4ODQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L152-L182",
+          "version": "repo-lines-v1:sha256:ead95bae95747071ebd1b25e3c249e439b48f5b0d4e216cfe8b2eb139d53a13a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMWUzYjUyZDY1MmRhNWY4ZGYzMzNjY2IwM2Y1ZjU4YjM3MmNlZTM3MGQ5ZTFmMmRhZDQ2ZmY1YWNhNzg0ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ZDIzM2UzYTFhNzU5Y2Y5MjQzYTRiNzVkNDFmMDhkZjljYjk1NzhhNDgzZWU4ZGIwYmM2MTM3ODk5YWYwODQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L7-L37",
+          "version": "repo-lines-v1:sha256:00e845ed1395c788ad44b13b179b52d0fc33aeca0dab3922fb9da8f75b062d10:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MmQ1YjYwOTRiNGQ3ZDQ0ZWIwNzExNGEwMWMzYWEwZjhlZTAzNDcyZmZlMmFiZGM2YjRlMDUwZDgyY2VjNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1NTgyNzM1OTk1YTk5MjlhYmMwMjIwNjZlMTcxYzM0OTZiOGM3MGY5YzA3ODQ0ZDFiNWIxNmE1YTM5NjQ1NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiMTI1MTQ3MzkzMGU3MzgzOWZjYzRkY2IwMzRkOWQyMDc2NGI5NGVlYzMyMTNkMzhjZmJiMTg5NzAyMjMwMzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f7a028c0b9948659ba600a2ef96dbd3",
+      "statement": "The app root carries the wa-cloak class so nothing paints until every custom element inside has been upgraded (otherwise each <wa-*> is an unknown inline element and the navbar renders as unstyled run-on text), and Modal builds its children only while open for the same reason: a closed, not-yet-upgraded <wa-dialog> would spill its contents onto the page.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L483-L486",
+          "version": "repo-lines-v1:sha256:0aaa4c9d81201b6a552ce7c3180a5fd36f34d6b5149c70f978e5b61a75be3717:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5ZDQ2MDNiNzU5NDA1ZDMyZTU2YTY5NDI3ZWIyM2YyMDVkYWE5YjMxNWQ4NTdhNzgyYThmZDQ1OWUzZWE5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY4OTJiYjAwZGRlNzg4MGQ2ZmI4MTY2NjY4YjE2YjdkNDg1MTAyNWNjNjliYzBhMGQxODE5ZjVkMzUyM2ExZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI3ODYzODQ1Y2QxODYzNDUxNWEwZGM1ZTBiNzg3ODViOWVhODQ4Yjg5N2JlMGQ1N2Q5OWNkMGI1ZjhlYzcxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE2NDU1MTAwMTk1NmQxYjI1NGIxYzdjZGUxYTViZjdiNGYwYTdkMjQ3ZjQ1ZmE5OWVlM2UzNjk1ZmQ3YTAzMSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/app.rs#L36-L41",
+          "version": "repo-lines-v1:sha256:5070f88d5c9eec5d373c8bc5a95b891d9969316741adb5a4f2013556117e3967:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNlYTUyMWRhY2UwYWVmNDkxNTUxYTQwNzliMTgxOGI5Y2RiODA4YTE0NDAwOWRhYjdhOTk1Y2IwNTNkMjgyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI1ZTU3OTVhYThiNDQwZWUxN2UxY2UyNmFkOTQ4MGFmZGU2MjdmZjRjNmJhYTkwZTRhNjBkN2NlNWEzZjBlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWE5OTk2ZTQxZDE4ZWIzMDE5MjNkN2MwNWQyY2E2NWUwYzhlMjU5ZmMzYTY0NmQ4MzhiYjVkYzdiNDQ4ZTM1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjU3OTlmNThiYmEzMWQ4NDQyNGQyZWIxMjZiMzVmYmJiZGQ0ODViN2RjNzhlMDA0YTUzZTNhM2QxMzgxZGIxYiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L174-L180",
+          "version": "repo-lines-v1:sha256:19e269c0e41d2297967819ad4b238c0ef4833c697d3750ddfa1d2fed7ac5be2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODFjYWUyMzI1YTVlODE0MmI0MDZiZDcyMjA0NmU0ZGJlMDM4NWYzYzE2Mjg0MGU0N2VkNjYxNjllMWVjNmYxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRmMmUyOGVmYWM4NGY2YjQ4ZDg3OGIwN2I4MTdmYWE2ODA1ZTkxNDIyYzU2NWNkMDI2YmI3MzczYzMyMzNhZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMzMjhkODY4ZjA4ZjFiMmExNDc3YWUzNDU2NzEwNjY2YjllOWUxN2ZkZmUzOTVjOTg0OGNjYjlkMzE5MWUxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc771b1412864db9967fedc1ce896912",
+      "statement": "show_toast awaits customElements.whenDefined(\"wa-toast\") before calling create(), because Web Awesome's autoloader fetches each component on first use and the earliest notifications are load failures raised while that fetch is in flight, when <wa-toast> exists in the DOM but has no create method. It sets allowHtml:false since messages carry tool output, uses 3000ms for info and 5000ms otherwise, and pushes the same message into the separate bell history with an ISO-8601 timestamp for <wa-relative-time>.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/notify.rs#L12-L18",
+          "version": "repo-lines-v1:sha256:c3936f2b7a2a041174385d99c62a8e6006c1c41d3575b5c65ab2fd9d364ff7c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmEzMWYxNDE0YTlhNzY1ZWYyNmUwZTZjYTAxODYwMmUyN2Y1NDhlNTY5ZmU0NWJhMzk5ZjY1Mzg5NDljYjRlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWU0OTg2N2I3NTUyMDFmNTQ0MDMxMDI2OTQ2MTVlYWRkMTM4YzBmMGI4MDY0Y2U1YTFmZWIzMDAzZmU5YTI4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA4MDdhZGQwY2JiNjU3NzljNDY2ZWRlNjQ5NDRiOWFhMjBiYmQzNGY3Y2ViNDQ0MGIxM2UwZmIzNzVhYzVhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDcwYzQyMDU5YTY5YzE0MDZmZWI1Yjg4MzQyYjg1MThhZDI4OGE3NmQxNWRmZmQ2YjZhNDQwYjY4YzUzNjUwYyJ9"
+        },
+        {
+          "resource": "repo://frontend/src/notify.rs#L46-L118",
+          "version": "repo-lines-v1:sha256:ce4cd1f6f40940a6ef5bbcd0fd5ea6e2daa44fd0c41814152a6ac2def5724f22:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MmVhY2IwMjIzYWMwMDMwMjA3YTM1ZWJhNzIxZjExMzFhODRjZmU3YzZhNDM4YzczNmZjNjBlYWYyM2NlYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L784-L797",
+          "version": "repo-lines-v1:sha256:41a783d0da2311bc274a074b5cf11e872b3b3106adaf5a63876b42fd0b34e01a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZjMzYjJiMzA3NTIzNDEzZmYxMjViMTdjYjNhYmZjNDVkM2JiMDY3ZDc4YzNmM2M1ZjZiNjI1YmNhZTdkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a02bb472d0584006a3dd0c004f5d77f4",
+      "statement": "SettingsModal is instantiated twice with separate local signal state — once in App with system_id pinned to None for global settings, once in Page carrying the id of the system whose row opened it. Each control is write-through: its own GraphQL mutation followed by a reload of the settings for the current system_id, so the server stays the source of truth; an empty directory value is ignored and 'No conversion' routes to unset_prefer_format.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/app.rs#L32-L57",
+          "version": "repo-lines-v1:sha256:403302893b59bc04b5470e744a0ae97e7af0c3628ef234e2915c53fe1735c77d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxOTJmODRkYTI2N2Y0OGZlZGE1NTI5YWM1N2E2YmI4ZTFmNmE5ZjMzY2IyNGI3ZTJjNzFhMTM5N2NlNmZhNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNDE0MzY3NjZiMmY4YzRmZDcwNzZlOWE3YmUyZmIzYzI0NTcyODIyOGJjYjlkYzNhNzZmNTFhNWE0MGMxZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxM2JjMzFiYzRkNTE0NDk0ZWVlYjI5ZGYxNzdjYzAxMTZjMzQ1ODAzOWViZTZjMDc4ZDI3MTMzZmFlZTU4MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMmRjMzQwYjE0ZWYyZDIzZTgyMGM4YmFjYzNjNTZlNWVkODFmNjUzYWMzNTgxZGI4M2M5NjEzZDc2YTA4NTYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/settings_modal.rs#L106-L196",
+          "version": "repo-lines-v1:sha256:09e8917a2d8c1ae16e5d7fa62a8336ef6fc5787a94769a202ef51913c3fbef2a:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZDQ5MjM0MTkwNTRlNWMxOWUwZmJmZGI2ZDhlMjE4OGZiOGM5ZTNjNTI2ZWVkOGI4MzQ1M2JhZTE2YzJlZmYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/settings_modal.rs#L298-L305",
+          "version": "repo-lines-v1:sha256:349905cf0638fd2ac53de5d95595944d1ffd459a5024943327a50b0436729367:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE2MWM3YzhlZTAzZTUzYjFiMmNjZGNmZDk2MTY2YmE0NmNkYzhlNjIwOGMxNWRlMmNlOWQ4OWRkMGJlMjVlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUwZWJiZDU1ZDA1ZTAxYWY5OGEzZTU1YWNiOGQzYTgwOWY3YzI1N2JkYTM1Yjc1MGM5ZTdmNmU0MWJhZGEzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE1OGIxZmM4N2RmZDE2ODhkMDM1MzNmNGM2ZWUyNjIxYjE2ODYxZjE0OTdiMDVmNzQwNDk0ZjczN2MxODQ1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JhZjIzNzljZDE2Yjg2NzA3YWVkN2RhNmQ2NGU4MTEwMThhMTRlYjViY2JlYzRiZTM3ZjllODQ0ZmQxOTc5MSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L206-L210",
+          "version": "repo-lines-v1:sha256:831a40bbd1720a621b06a27fe2535c37eaae2c58849cff151d997535c836eeb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODYxYmQxM2ZiMTU0MmQxMjQyMzZjMDgwNmM1ODhjZDNhNzM1NDg1YmM0MmNkOTdiNDE0MTY0N2YwNjdlMjNlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmRhNTkzZWI4M2M3OWZlOWM2ZDI2OGQxYzFiODc4N2EwOTI4MTA4NjJiMjFmZThhMWQxNjJmNGYxZDFmMzExYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M2ZTM1ZWYxN2VkYmE4YTM3NjNmNzdmMDBiYzRjYjY1MzgxNTRjMWVmYjU5NTBhZjFkOTBiMTViMGE5MDA5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzFjZDdmMDFiMDI4N2ZjZDVlMTNlZmVkMTlmZjBlMjQyM2IxYTAxZWU5OGIwODc4MzA0NjYwZTNlMGYzOTI4ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ffcb8320aeaa4beabc0accd3e8b17b33",
+      "statement": "The per-system SettingsModal and DeleteModal are rendered outside the .page flex column on purpose: a wa-dialog host is display:none while closed and display:block once open, so inside that column it becomes a flex item the moment it opens and its gap displaces the page. Dialogs, dropdowns and the notifications popover all paint in the top layer, which is why menus are wa-dropdown/wa-popover (the popover anchored by for=<trigger id>) rather than hand-placed panels that the panes' overflow would clip.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/notifications.rs#L30-L38",
+          "version": "repo-lines-v1:sha256:8757fcf60c407a2a8b8914808e413425a314fa069720413c93746d16d2539549:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM5OWU5NDEzZDMxNjJiODQwMWQ5NjIzMWQ0MzJlOWZjM2Y2ZTVlNjkwNzgzM2VhNjhmNDY0OGM1ZjAyNjE3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFjYWUyMzI1YTVlODE0MmI0MDZiZDcyMjA0NmU0ZGJlMDM4NWYzYzE2Mjg0MGU0N2VkNjYxNjllMWVjNmYxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWZkNDk1MjU2MDAzN2YxZjk4NTRjM2YzOGJhYzU2MTRhNWNkZDc2ODA0ZGFjOTdiOWI2YmEwNWUzMjBjOTE3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU0ZjQ3YzI3MjM3YjAxY2FjNGNkZWY2MTQ2YTFiNWJkMDcxMjNmNGUyMWRmZTdhZThlNDNiYzk2MWM3ODA1MiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L202-L215",
+          "version": "repo-lines-v1:sha256:5e4283d909631b9ff977f31bf183760971e8a021930ba5897c1817d72737fba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZGFhZDUxMmNhOWNmZGQ1ZDZiNjk1MTkwZmJiOWFkNDBjZmIzNDYzNWNlOTFjNTZlMjA4M2I2Y2Q5MDc1ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyZjFiYjA3NDMxNjVmM2Q1ZWZiZTlhNTk0ZTY2ZGNjYTc3YzZlNTdmOWIzZDBkOTk2NGQ1NmUzZWUxYzdjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwMzkzMDlmMzBkMGI0N2YwNjc5NWU3YzljNjFjZTFlZTQ5ZjI5ODgxZTNjMDY0NTg0YTYxYzI3Mzc1OGQ3ZmQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L347-L351",
+          "version": "repo-lines-v1:sha256:d24460b78ab537541e3df8317fc91dea260a448ada328eeb4bbcf05dc0acac5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTVmOGVmMzA2Yzk3MzZmYWExOWZiN2I5NzNmNzRlYTQ1NGI1NjhjMzgxNjQ4NDZjNmUyYjdlN2E1OTFkNzJhZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlkMWY5OWRmMzRlNzM2NWUyZmQyN2UwMjZlNGUyYmI1MWQwNDJkYzYzZjI1NmE5YzgxMjI1OGY1ZDI2MTJiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhjYTUxY2M5NmU3MDIwYmIxN2VjYmY2ZmVkNGVlM2YxMDgwZTM0MDA0NmUzYmQ5YWU4Njk0N2Y0OWY1YzlhNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg3MzEyMjhhZDQ1MmQzYzIyMWVlZDUxNDA1OGUwMzE3ZTZhNTI0MDE3ZmVmZTNlYzcxMzM2OGEwNDNiNjFhZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d142d2f413b4460ab98caa99073f909",
+      "statement": "Dialogs fetch their own data on open rather than through AppState: DownloadDatModal re-reads downloadableSystems whenever it opens or its update-only mode flips (the two modes are complementary halves of the catalogue), ImportPatchModal streams the system's games and then fetches the chosen game's ROMs, and AboutModal fetches get_info exactly once, the first time it opens.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/about_modal.rs#L14-L26",
+          "version": "repo-lines-v1:sha256:056d4b86b5432c5a655fa7bd537b5eb8749af32d55253a053bbd758838751e68:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTQ1ZWFiNTc0NGJlZGJhNmYzNWU1YWQyZTVkNjBiYjQ1NTcxNzM1NzRkNDlkNjE1ZmZmNDg5NWQ2OGViM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZTU0NDA4NjEwZmJlMTIyMjA2YWEwMGJlZDEyOTZmOTgzYTA2OTUyYzI5ZTc4ZmI3ZThiN2QxMDc5YmRiZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNDRjMDg3MTI1YTVlMDNhMmE3NGRkN2JkYjRmZDg5OWY5ZTRkOGYxZDRhZDc4YTZiN2VmYTk4NDExZmEyOTMifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/download_dat_modal.rs#L24-L39",
+          "version": "repo-lines-v1:sha256:edde9febad71dd499384af0e936b2fa9fa1b1a438131cad281314229c93f5035:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZDA2MmJjN2QwYWQ3NGIxNmYzYjc3M2MxODI2MjVkMGM2MGZmYTA0YzMwNTI2NWY1YzIwMDA4Mzk3NTkyMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlOTU0MzRmNDYyNDlhZDYxNzU1ZTRmMWUxYWYzYmI3ZTU3MzM5MTAzYWZkZmY5Y2YyNWI0YmEyZmQ3NDc0NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMGQ4OWQyNTE3MWU2ZTcxMmFjMmY0MzEzNGQzZmNkZGI0ZmNlOTVkYWM0NWNhMDg1MDNjODMxM2E4MzNlY2QifQ"
+        },
+        {
+          "resource": "repo://frontend/src/components/import_patch_modal.rs#L33-L74",
+          "version": "repo-lines-v1:sha256:25d8c0238ae336cb4f13d363d15655c0d1ea3d78d2a950ae522c137ed4de3252:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NGZiYzA0NGFkMjI1MTI4YWQ4Y2YzZDlmZDdiMTNjMjRiNGI1ZDlmYTQwODE2ZGE3MmVhNmFlNWVmY2QwMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxOTVlZmIxNDgwMDBjOTcyNzJiODQ0YjIwNTU0NjI1Y2Y3ZjZjYWM5ODg2OGE3MDEzOTE0MTlkZmM0OTQzMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmODcxZjYwODYyOGE5MDljZmI0ZTNlYmY5MzhkMDE3ODg0N2JkZWRhMjY1YjYyYTYzNmY1NjBhN2ZmYjk2ODYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19da50ef7c934ec5941f58e719b90db7",
+      "statement": "styles.css is wrapped in @layer app, declared after webawesome.css so its rules beat the component library without specificity (and order within the layer still matters, since the bare-target reset must precede the classes built on it). index.html must also load styles/color/variants.css, because the theme alone defines --wa-color-brand-* only inside component shadow styles and any app rule using those tokens is otherwise silently dropped as invalid.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L465-L476",
+          "version": "repo-lines-v1:sha256:d5172a02ff60c4d89fa054cfe8135680cf257f7d70a9d8c712d0ab0cb5b9a644:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2RkYzgyMTgyMmRkN2ZiNTljODAyOTliMjUxNTMyOTA1ODgxZThiOTllNmIyYzA3ZjVmZmRmNDYyMWNkMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNmZiMWFkYWIwMzlkZjU1NmEzOWRmNjNhZTdlMGEzMDE5ZDhlZTMwMTg0NzUzZmRlZmNiOGM3NmIxYzg4NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMDc3MGU1YmUzMWQ2NWQxYzJkNDViZTJkY2Y1N2ZlNTg0ZGUwNjNjNzU0OTE2NGFlNDBjOWMxYjkxMDI0OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYzAxMmVhNzcwNmIyOWI4NjMyOTMxMDIzNGVkNjQwNDZiOWJjY2JmZGNmMDczMmYyYzc2NzI5NGM3MjdhZjkifQ"
+        },
+        {
+          "resource": "repo://frontend/index.html#L11-L15",
+          "version": "repo-lines-v1:sha256:82a73fac78037612a6f323ec87b8d6d9df137abfb487a6fd4841754d4cf1123a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWVhNGYxODExMDhlZmVhM2FlNTVlNjBmNTI2NjRhNDYwNmFjYWExMjRlNDQ0YWZhOGNmNDQxMDg3MmRiODQwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJhZTNhMDVhYmJmNTg3NTdmODM1Y2RjOGFlMjNhNzU4YjRlNzZkOWQzNjgyM2U1MzZjNzA4YThlNDJhYjY4ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWVkZWExMzUwMzAyOTZkNzliODc0YmZkY2E4ZmYwMTEyMGVmMjc3MDVkNWRhY2ZjMzRkNjllNjlmMDM1ZmY0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmU3MWE4ZjhmYTg1NjlmZDVjNmMzZmMyYzYzMzMxZmU3NGNhZWM4YzEzODk4OTAwMTU3NzRhYmQzYjJlZWY3YyJ9"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L1-L18",
+          "version": "repo-lines-v1:sha256:6a072fed03a54014ac5051cabcaebb07f854bcb5e5ee94a65ca818f219c49ec9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZGZkZGUzYmM0OTQwOWE1NzMxZjBmYjQ5YjI4ZmFmNGY2MDdjYjNlMjBiZDI3NThlMjRmMzY1Y2I5YzhiMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5MjBlMjJhODcxOWI4MTQwZGQ1NDdkMWNhY2NlMGZkMzU3MTU1M2Q1ZjUyYTgxMzQyYjBiY2I2MzZhZGNhNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d54c8c6efe6f493e9bda188473093d8d",
+      "statement": "Anything that is a <button> only for semantics — a whole list row, an icon target, a dropzone — needs the .plain-button class, because Web Awesome's native.css gives native buttons chrome, a fixed height, centred flex layout and nowrap text; the reset also sets justify-content: flex-start explicitly since any .plain-button that later becomes a flex container would otherwise inherit the centring.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L478-L481",
+          "version": "repo-lines-v1:sha256:eb56434e482a5afdde7117d3d9d873310a00dc1c1d1ce47bedf5013e69076a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNkZTUzYjExZDg4MDlhY2QxZjk1YzRiOTRjZDk3MzFkMTliODFlOGU3ZjQ5NDZhNDZjMDc2NzY2Y2Y4ZTk3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzI2NzNiMjc3ZGIxYmEzNDY4ZjlhOTBiNTAwMTIzNTVjMzU2NDQwMTY2OTFlNzY5NzEwMDkyMWM4NDE1YzFhNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMyZjc5MGViYzZjYjdjZWUyNGZjZDVmZjY3ZjM0MzI0MjRhZTcyYjAxZDMwMGMyNjMzNmQ0MmZmOGM5NjQzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc3MjYyY2M1MjcxOGIwNjNkYmJjZGExYTQ4OTgyZTUxZTY3NWE4Y2UwM2YwMmMxYWNmZDUyOGNiNGZkMzE5YSJ9"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L212-L243",
+          "version": "repo-lines-v1:sha256:fa7108f3af48efc9c6d968dc93ee5821b13d79ab4a6378fb28e595170ad2ef33:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNmY0ZTFkYzBkMDI0NDQwYzFkZjc3ODZhMTY0MDAxMzEwNmE0NzgwY2Y0YjE3OTcwNzcyY2Q3NjI4N2QyYzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOWNlNDUzYTY2NWY1NTQ1ZjhlOGIwMTkyYjIyNWZmMWRmODI4ZTU2OGNhMTBkN2RhMDRiNjRjNTA5Y2I4M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMDlkZmI3YzkwMTgxNDEzZTE5ZWRjMjNhOGEzYmZhNDdkMDdkNzRjODY0MDJjODAyNWZmZWQ2MWQ4N2MyNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a1eb837d47541b0b4ea019d7c88c032",
+      "statement": "The app re-points the whole --wa-color-brand scale at the orange palette from :root inside @layer app, which wins over the library's wa-color-variant layer with no specificity, so every brand surface (buttons, links, focus rings, the selected row's background and inset marker) matches the logo; the same later-layer position is what makes ::part() overrides such as .panes-split::part(divider) and .notifications-popover::part(body) work.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/styles.css#L144-L151",
+          "version": "repo-lines-v1:sha256:2510b573664b12adaeef9d19c993cac9ebbb546d7834e24af0419333572a013c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJhOTM5OWU0NmQ2OWJhMDVlZWFjNmU2N2RjMDk0YTUzYThmY2NjM2U3N2MzZDRlOGRjYzQ1YmEyZGQ3OTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTk2MjVmOTcyMDY2YTFjZDExMTQzMWMzMjE0ZjM5ZGQ5NTQ2OTJhMjA3OGZkZjEzODU4MDVjOGIwYTA3NmVmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY1Mjg0MjNkNmJjZWI4OWMzOWRmNWQxN2JjOTE1MzZhODRmZTZhYTdjYTMyMWJlY2JlMTM0MDJiMGM4ZDgzZSJ9"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L20-L38",
+          "version": "repo-lines-v1:sha256:1679baa3e49c72dadc5a087640fd19e3d66270ccaffed1d186f8f9d7851e4903:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkM2UyZDNlM2MyMDBiOTk4NGI0N2M4MzEyODRiYmNlZDg5MGRhMDNmMjRkZDQwZDQ1ZGU0NmFhYTNiNmRjMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZTliMjMyYWJmYWQxNDllYjhhZmQ0YjY1MGM1YTY0ZDk2ZDQ4ZWE5ODk0YTg0NTBhNGZiZTViMzE0NGM0ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNjY0MzFiOTcyMzdjYWE2NDZmOWFkZjAwMDE5MzQyOTY5ZWE1MzQ0MDE2NTliYzFhZTgxNmFhMTBhNWMxZDAifQ"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L273-L284",
+          "version": "repo-lines-v1:sha256:4ea10a6020b70cccb53f744c43628e0f9f39a7b7531f45122f3ab51e9c77be54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YTM2ZWM0ZjcxOGJlNTgzOTJiYTYxZTM5NDE2ODE0NmI4OThiNTI5ZjExZTkzYzYxYWFjNTMxNDcxNjk4NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMzdjODUyMTQ4YzMyMzZjYjBhZmY2YmY4NTEwYzM2OTE4MDEwN2MwYTE5YjZlN2M2MDMwNTRiMThiMTdkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMzU3ZjFiMWEyZWY0YTczMzYzNTg0M2MzZGIzNzM1Y2RlYzQwOWI5ZmRlNThjZTYyZDAyMDllNWU3NjYxZTEifQ"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L403-L412",
+          "version": "repo-lines-v1:sha256:adedd07eacfcdac4617a96177c53a0ae729399b2e73d0d24baf1ec3b0e5046f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyOTZmMDBiMDdhYWU3ODgzYzhjYTU4MTI3OTJmZGY2OGY4ZGQ1YWE1MzUwMzU1Y2YzMTM0ZTRiOGUwYmI3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkZGQ0YjYyZDNhY2FlYWYxYzFlMzI5MTY5NDQwMmVjMmNmMDQ5MDBiZGU2OWNiMzM0MmYwMTY0NmI0MWVmNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkODRlZGEwNjE3NDI2ZmM2MGEwZDIyZmNmOGRkNTEzNjI4YmVlNmE0OWY0YTk1ZGIwNTEyMWZkZjBkMDg2MzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38f1d6c4778943cda279c3817faace33",
+      "statement": "Nothing may load from a CDN at runtime — the UI is served by oxyromon server and bundled into the desktop app, both required to work offline. index.html calls setBasePath(\"/webawesome\") and setIconPath(\"/icons\") to override the Font Awesome CDN defaults, and the Trunk pre_build hook fetch-webawesome.sh vendors the pinned dist-cdn build plus an explicit icon allow-list into gitignored frontend/vendor/; its stamp hashes the icon list as well as both versions so adding an icon forces a re-fetch instead of silently rendering nothing.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L493-L497",
+          "version": "repo-lines-v1:sha256:f97a872d07d5bd1f9c50029aff641cad5022b843a0b1e723cb5408e9a2a095a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg5NWZkYzkyMWMwYjhmNjg4ODk3YzAxZmQ4MWMyNzQ5NTY0OGUxMzI4MzVlNWVhNzI0NmRjYjEzNWJmN2VlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThiYmQ5N2I3YjdlOGZkN2VmMzk2YWJmOWY3ZWE3Njk4MWZkMzUzYjc1MDlmMTRjNmJlYzMyOTA1Y2FkMTE2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmUzMzMzNjI1MDE0OTNmZDE2ZWVkYmEzMjUzMTViZmU5MzYxMTEyMzU5NTM4MWQ1MzliOTcxNjgwMWQ1NzJiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmMGQ3NWY1MGQ2NmQ1NjQwN2FlMDAxMzAyNWM3MWEwM2E1NzJmZGNlZTM0NTg4YjgyODVmODM2MWRkMWM0ZiJ9"
+        },
+        {
+          "resource": "repo://frontend/.gitignore#L1-L3",
+          "version": "repo-lines-v1:sha256:4eab948b01fc44a55e82cc53d95ffaf59452b3775fbd8319a4b24f4d71b869d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDRjOTJlM2E3MGFkMzMwN2I3MDU2ODcxYzJiZGIwOTZkOGJmYTkzNzNmNWJmMDZhNzliYjYzMjRhMjBmZjJmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTYyNGQ1MTUyMjZhNjMzYWRhN2MxMjQxNDgwODRkMzc2ODA0YTA0OGRhN2FmNTAzYTk2NmNmMjUzZjU1YmIxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2M4ZTM4YzRkMGI4ZWQzZjAxOTIwODIzOWUyMjU0N2MwYjQyMTc1YmU0MzFhNzdiN2U2NmFjMTgzMWE5YTJmMyJ9"
+        },
+        {
+          "resource": "repo://frontend/index.html#L9-L23",
+          "version": "repo-lines-v1:sha256:5d4c70c0bec2dd505b5d559bf433fb6bd18f9c0977126c6a3bffd1bdeed17d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDVjODI4YTIzY2YzMTg4ZDA3MTQ4NzU0Nzc0YmQwMGJiMzgzOWQ2MmUzMWUxNjBhZWEwYjgyODNkNWI4MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZWEzMmRkMWY0OTA5M2QzM2NhNGZjNzA5ZjQ0MjA2MTQ1NDczZGU1MGQ4NWEwMTcxNTNkZGVlNGJlZWQyNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNzk0MGNhMTVhZWIzYmM2NDI0ZmQ5YzVmNjg1Nzk4Y2NhNGE3ZTE1NGQ5M2E4NTk1ZmU1ODYzZjQ0MjQ2MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MGI3MmI3MTBhNGI3MTA5YjZkNDZhNzQwY2IzNWZlZDlkMjZmNWI2MzQ4ZjUyN2IzYjQwMTE4YmYxOGMwODYifQ"
+        },
+        {
+          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L1-L33",
+          "version": "repo-lines-v1:sha256:fd6e8aa25c7c94cbe662ba7ca1b4127e5e0391ad84c81b1731757d85515c9d5c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYjIwODg2Mjk5YzNjOWQ2MTIxZjllZWMwNGQ2YWQ4ZWFmMWM5MjBiMjZlZWQyODk2MWVkYWI0ODBkZDU2OWIifQ"
+        },
+        {
+          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L64-L90",
+          "version": "repo-lines-v1:sha256:a2369882d575de73e269e3b9ba64fffbd285d7971a2fc27aa101efb4e8f845cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzOTIyNDI0NDNjYWI1ZTJhZTI1ODYzNWU3MWNkZGUzMmQxNThkNjM1Zjk5MjE5YjJhMmQ3MDMyYWQyODNmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNmU2NzgwNzY5MWJhZjQ0ZmYxNWIzNWE1ZjVhNWI2OGEyODMyZjYyNmFhM2UzZmRiNjE3OGNhYjFmY2Y0M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmYTc1ZTA4ZWNiNWRhNzgyODY2OWQ5MzFiZjNiODZiMTQ2ZTc0YzA3NWJmMWVmNzEzNmU3YTdmNTM3NjEwMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cdb17ec876014a019e0ad7b9c6116562",
+      "statement": "Dark mode is a single wa-dark class toggled on <html> by set_dark and persisted to localStorage under color-theme, applied by init_theme before mount and defaulting to dark; the --wa-* tokens carry both values so styles.css never mentions a colour scheme, with the logo's two variants the only exception. init_language overwrites document.documentElement.lang from navigator.language because index.html hardcodes lang=\"en\", which Web Awesome's localization would otherwise fall back to for <wa-format-bytes> and <wa-relative-time>.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L499-L501",
+          "version": "repo-lines-v1:sha256:c4865c457416a55f773d11dfd5ec5e9c35c567eee3f7cc219cec77620157f755:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE3NGEwYTBlMjAyMzQzMzM0OTNmY2ZmOTFiNGEwYjNmNGQxNmU1ZWQzNmFmZjk4ZTUwNDFkMmRiOTcwYWNhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODNjYThkOWE1NjhmZDhiOGY4YmRjZmEwYzhmNWIwOGJlMjg1YzVjNWMwYTM4YjVjMWE5MjdkOGFkYWQwODA3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFlMjBhYmY1ZjUxMTNlNDY5MTFiNDVjMTI2N2I3ODExOWFkOTVjYTMzY2QzODU5NDA0NGE0ZmZhMjc1OWExYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1ZmZlMjkyMDA0MzZkMDlhOWYyMDg2ZWNiZmI2ZGM4NDRlNzQ1MWM3YzUyNTcwYjg4NzlkMWNmYzRjNDIxZCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/components/navbar.rs#L17-L71",
+          "version": "repo-lines-v1:sha256:ca4c62792096934ca8531695880b4821ee9e7a70d111b76fac1e95b8ed744047:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZDg0Yjk5NzQ0M2JiYzg5OWMyOGE4YjYwOWJlN2IxNjUyYzAwMzAzODY0NWRmMzljYjJiZjhjYTM4ZmY0MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhOTZiMzU4NDhlMjU3MTY5MDk4Y2M1ZGZhYzcxMjE2MzFhOTU2NTBhYWM4MTkzYjkyN2E2OTdjZjkxOGRkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzOGYwNDk2YTJkNWQ1ZTYxZWQ4NjdlNTk4Yjk1NmQ3N2M4ZmY4OWYyMzViMmE3ZDI3Mzc0NDljY2Q5OTg4MzQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/main.rs#L16-L21",
+          "version": "repo-lines-v1:sha256:755145a3ecb340c62240e643fb7e02cd8f33cf6e20fabbf705423d35fcf3f23f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiOWVlZTkxYmMwYjFhNzdiNWYyMjRmZDY5NDVmM2RlYzIzNGU1NTk2Yjk0NzVjOTBjNWFlYzllNmFlMjBiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDViYmYwMWY3OTMzNjk2ZTAzMmVmMTZmMTZmMjZhYTkzOTU2ZDQ5OWQyNGIyYzUxYTgyYWY2Yzg2YjY2YTFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L45-L62",
+          "version": "repo-lines-v1:sha256:ecdde5466c9b7b19868ed36f3f4ce8a400c91a04c5949116e6e3a3aece0dbc9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwOGYzMmYxMGUyMGIzMTJhZGFhYjkxMGU4MmEyZGM2ZGViMzg5NjlkY2UxYTNjODM2MmIwMTY2N2RlMDUwOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5ODRkNjk3MDMxMjcwN2JkNWQ1NTM1MTk4OWFkYjAzNzkzNTBhM2Q0YjkzMjZiMjZlNmQwOTFlZGY3NmFiOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4NTk1ZGE4MmYxNzkyYWU3NjU3NzdlZmRhMjU3MTUwMzYzYjZmOWY1MTcwYzFmOTYzODM1MTU0OWQwMGIwZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1562c71b05943a287ff0fd55709544d",
+      "statement": "The three panes are nested wa-split-panels at >=1100px and a stacked grid below, chosen by a Show driven by use_media_query rather than CSS because a draggable divider is a different tree; the matching @media (min-width: 1100px) block in styles.css (which pins the page to the viewport and lets each pane scroll) must stay in step with that query, and divider positions persist per-key in localStorage.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/page.rs#L151-L182",
+          "version": "repo-lines-v1:sha256:fc7832905999323f4ee32ded1127af3ac048ba9cbb864f3ed8deadb355103ff8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMjU5YTI0OTE3MDA0MzJiNWNjZGVhZjA3MmJlZDJiYTA3NDg4OGY5ZjY3YTU1NjdjNjUwZDFkMGY4MzFjMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YzAzMjgxNTYyMzFjYzgwNDJhNjU1ZjBkYjYwYWNmMzA4NDg2YTNlMzYzZTNkYWFmZWM0MmVhOTRhMWY4MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNWJhMDI5YzRlNmUyOGJiNDJkMjk1ODNlYmY3NzRjYjA4ZTNiY2Y5MGNhYWQ0MzZiMDIxZWFiNWZkYjU4ODQifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L224-L278",
+          "version": "repo-lines-v1:sha256:1bbf315e57a1f95a59606ddcda3deeffe24f9193af0fcf2668e724df72c4c23e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNjliMjdhMjA1OTMzNTFjN2YxMGM4YzE3YmI0MjliOTA0YzY1NmY5N2I2OWM3OGZkODkzZWUwYWFkZWQ3MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwOGUxZTYzMzI4MjFmYzRhYjI0YmJkMTNiMjk3YWNkZDQzMmNjMTZlY2FmOTY0MDE4NGZjZGM0YjExMjFhM2UifQ"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L39-L63",
+          "version": "repo-lines-v1:sha256:f47486449f8c640c512c2f5137089438c0092fba8524977fb6a36a832aa3514f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYzQxYjVlODhiYzcwYjU1YWM0MzRhZDYxMzk0Njc5ZGE3MDA4NzkzYmQxMjI1ZWVlYWVlMTNhNzhmN2UyYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ODVkM2IzNjQ3ZjIwMmExZGRhNzYwZDJkYTMzYTcyZDZlZjYzYjEzOWI2NjljMzMwOGQzMDk5MWYyNjI0MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZTRlNTM1ZmI3ODUxNWI4NzkxMDZhMjgxMmQwOTI4Mjc2OGZkZDM5Y2RjMmU3MWRkYzFkNmMxZDE5NjY1OTMifQ"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L160-L180",
+          "version": "repo-lines-v1:sha256:6e0ba78146768a971be5edfc9fa42de9e82c04150ccb77f181d5a429f82727cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNTQyM2QxZThkNzIzZDVmY2E5YzViYjA5NjQ4MDgyMzY5NzI1MWQxZjYwMDAwNzg3NWYyNTlhMGNiNzlmYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5NjI1Zjk3MjA2NmExY2QxMTE0MzFjMzIxNGYzOWRkOTU0NjkyYTIwNzhmZGYxMzg1ODA1YzhiMGEwNzZlZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMTg2OWU2MTU1MDY2ZWY2MzAxMjkxNTQwMzllN2VjZjgxMjAxMjFkYzlhNWMzY2VhMWZjZmIzMTYwNmM2YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd8cc81543444f43a1fa9b4b8d41b246",
+      "statement": "Row colours come from a small numeric vocabulary shared with the database: system_color/game_color/rom_color map completion 2/1/0 to complete/incomplete/wanted, sorting == 2 to ignored (overriding completion) and sorting == 1 to the bold row-elected 1G1R pick, while a ROM is judged by romfile presence and its ignored flag. The same four meanings are what the navbar filter toggles and GameFilter::keep implement, with nothing enforcing that they move together.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/navbar.rs#L122-L159",
+          "version": "repo-lines-v1:sha256:c9070ba3cd150b582676d33c3d6f0708ab8cdfda97dea87844c38542cd806f68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOWIyYzIyOTI2NjYwZWVkYmRjNDFlNzdjNmI2ZTdiM2NmM2U2YmM2NTViYThlYTgzMmYxMWIyNTAzNWU4ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2UwYTEwODc0MjUxY2ExNzk0MDA5M2M2ZDFjNTk4N2NlMzQwZTY0NGM5MTExNzdhYjliMzg1OGNkY2Q0MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTE0MDc5OTQwNTUxZjFmMzkwNzEzMThhZGFiZmI3OTE1OWE0ZjU3ZmE2YTdmYmExMmEzZDQ0MTRiZTAyZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMjRmZmFiNDk5ZGEyYjk5MTllODUzNGU4ZTU2MGIxY2NjMDQwNWEwZjg4ZjBmNzA1YWY3MTZhNmJjZTAwMDkifQ"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L20-L47",
+          "version": "repo-lines-v1:sha256:17d1dbc9edcadc4bb8806c008c78fa848b4f3006b013f78a848bc5d8b2ea7cc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYzU5NmNiZmVhZmQ5YmIzZDdlMWIzNTA0ZTEyNzFiMzhhMjY0YmZmYjliZTRhMTJlMDE1ZDY0MTQyODQ3YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzNzAyYmQ0ZmRlOTFkYjRkYTM5NjFiNTBiZjg5ZDllOGZiNDI3MDIxOGQzODI2ODE5MjVlMzhmNWNlYmU0YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NWYyMDgzNWY1NjI5OTY1MmJkYTFkYmY3OWFkNDFhODk5NzM0MmVhYjhiNjY4YjdlYTc2NmM5YzZlMzFmNmUifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L53-L85",
+          "version": "repo-lines-v1:sha256:0a0829001aa62df5989ceb271ecb8af1aff29c60ebafcbf75e74940a9aedf92c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MDAxY2UyYWEwYWVkZDZlNTcxN2EzMDM0MjE4NjkzMDdjNWVjNGUzNjY4OTEwNDE5ZjBmY2QzMjc4ZTI1NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjZDA2ZDc3MTUxYzA4OTk3YmI4YjQ5ZjFmMjIxNmI0NzFhZDhkYjc3OTE1NjY1OGZiNDZhNjA5OTFmZjZhMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMzU4YzdmOWE1MTViMmIyN2ZkMzk1MGI0MTI1MjkxZThkMzZmMDViMTJmOWFjNzFmMGE1OTY3OWY2N2NjMWIifQ"
+        },
+        {
+          "resource": "repo://frontend/styles.css#L294-L333",
+          "version": "repo-lines-v1:sha256:a689b1a06d310380c06e47cefeb19be86d66048a895032e521518ce07f1c6a0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMzE0MGM1MDVhMjRlZjBhNjExOTRhNjlkNjYxMDAwYWVlMWJiZDdiYWQ2Mzc0MDNiOGYwN2ZmMjhjZTM2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkZjgwYWRiMDc5OWIwMzAzMDBjMDc3ZTE2ZWQzNjllMDIxMWI2NzA5Y2JhNjY1MTlhY2Q1YzJjNGM3N2FiNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMTYyMGRkODAwM2E2YTVmNzU0YWM4NDU3MmJhMDY2OTY4MjUyMjkwYmQwODAxMmI1YjNjMGMzYTM3ZjcyYTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b26ac9ff31340e1a2731f585d9ae064",
+      "statement": "The ROM Files pane is derived, not fetched: the romfiles memo projects the selected game's ROMs to their romfiles, sorts by path and deduplicates so each shared archive appears once; the pane renders a plain <a href=\"/romfiles/{id}\" download> rather than a fetch, and strips the leading system directory segment for display since stored paths are relative to ROM_DIRECTORY.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/page.rs#L641-L682",
+          "version": "repo-lines-v1:sha256:2bd5cb69b03d0d8b669f83f93380de34e39b612ae8674e7b464a6f15c9f433df:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNDU3MWY0ZTViYzgzODUxYjE0ZmMxYjc3MTRiNTk5MGM2MTAxYTQxMzk4Y2QyMDYzMjgyMDhmNTY2OWJkNjYifQ"
+        },
+        {
+          "resource": "repo://frontend/src/state.rs#L344-L357",
+          "version": "repo-lines-v1:sha256:c550e3bae8c30fec83d50e34e776c919b3f4f873e401cc11ea86615ff1564a8d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MmU5ZjAwNmEzZTkxYjJiOTAwYjU1YzMzMzFkNzAyZTNjNWNlZTQ1ZWRlOWVhYWMxMWJmNGI4NTg5MmRlMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZmZjOWIzM2FiZDg0OTkyMTAxMTU2OTExYjRjZmNmZDE3MWZlZWVhMzU0N2EyZjFmMjMzNzRmMjc4MTNlMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkMDkxMTA1NzE4OGEwMDQwMjFjZWRkYThiYmI2ODQxYjVjZjJjYWI1ZGI3YjU1NDgyMTZjZWFiZGM0MDBmOTQifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L201-L211",
+          "version": "repo-lines-v1:sha256:a045c93a865beec73a2c77551bcc768e71afaac488713d7605833b5f15972c1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiODlhYTUwM2IyMDU5MmM3NjdlYzM4YTJmZTYzZWY1MzRhNjIyNzMwM2E5NjVmOWY3NGE3Yzg2OTgzNmYwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YjllZGJmOTdiYWJlNzVhNDFjZGI3N2ZlNjU0NDQzMjFkYTg5MTc4MTUwN2U5ZTE2ODI0ZTIzOWY1MzY4YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZjI1MDhhMTFhYzkyZDg1ODRhZmVhZjFjNDI4NDgwMzM5ZTFjMzNiZGQ2MzY5MDhlN2M1NmJmNWEyNDU1NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlMGExODk4MzYwMmU2YmQzMjE1MDdhOWViN2M4OWNjYWMxYjAyMGYwOGI0NGRhMDYxZTEzNmZkNDlhMjYxOTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8da4f818a0647198807b9f833a39273",
+      "statement": "Adding a query or mutation end to end means: a resolver in the #[Object] impl in src/query.rs or src/mutation.rs, a backend type in src/model.rs with #[cfg_attr(feature = \"server\", derive(Clone, SimpleObject))], a document string in frontend/src/api.rs deserializing into a frontend/src/model.rs type with camelCase naming, and a component call via spawn_local that updates AppState signals and reports failure through report_error. A long-running action must additionally emit {prefix}_started/_complete/_error and register the listeners in sse.rs.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L503-L509",
+          "version": "repo-lines-v1:sha256:932b696c3431edb6d38ffc8437aed9d91f940700d1252750af4edaae2d1e2b02:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk2Yjg3MDNkOWM2NDllMWY2ZGRlZjU0NTJmZjUxMDEyOGVhMjQ2ZjhlYzBhZmRjNzlkOGY3ODY3MjY2YTk4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE5MDQ3MTkwNzIzYWVkMDY3ZjA3NDhmZDg3NTk3YTI4ZTM1MmFmNDUzZWM5MWVkNWM2ZWNlZTRjMTc3YTA4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWNiMmRkYzhlZjBkYWVkMmMyN2YxYzliODdhNGNkM2JmYTc1OTBhMDI5NWM1OWZjMDQ2ZTI1YTVhNDI5YzI4NCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/api.rs#L110-L133",
+          "version": "repo-lines-v1:sha256:9bb3ec92fef66316ceb652247fa06ab72841c07011424b2d2eb033cc99a422ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NjAyMWJjNDgwOTk3YjUxZmViODlkYjA4YThiMzc2YWE4NjBlMWU2OWFjNGM5Y2Q1OTZkMDc3Yjg5MzM0ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZWZlZmUwNmZjOTgzNWVmMjdkYmI4ZjU5ZjBjY2ZmOTc5MjUyMjlhZDJkZDJmMDNhYWQ0NzQ0MWEzNGIzMzIifQ"
+        },
+        {
+          "resource": "repo://src/model.rs#L21-L22",
+          "version": "repo-lines-v1:sha256:319073090a5ff914772251fc1775fab9bc8cb1de4ec955afbe1de959087a7a30:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA4MzI2ZDVkZDc1ZTI4MmI2NjIyNGQ0ZjNiOGE5ZmU5ODMwN2Y3NGQ2NmY2YmRlZTc5ZWQ5OGJkMTUzMTkwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAwZmJjMTBkNmJkMjM5OGQ5YzA5NjdlZTZhZGUzYTA5MDE5NzFhMTA1OWVlYjZjYjgyYjdiNGNmZGEzY2YyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGM0YmY3OWNhOGFhOTAxODk2MDBkMDQ4MTI4YTM5OTEyYWViY2JhNWQ3NTZhZGEzZTIyMDBlMGQxZTI5YTk2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM0YzcwMGZhZDQzZTk3MWZkZTEyOGVlYjI4OTU5MDM4MmUxM2RhMTc2MjdjNjcxMmFkNmRiOTU0YTU0NTI0ZiJ9"
+        },
+        {
+          "resource": "repo://src/query.rs#L311-L337",
+          "version": "repo-lines-v1:sha256:93be3780efde734d0bfb256296ea22478e9f503a1f9312f88d0cdd213a220379:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YjMxODYyYjg5ODlmZGEyNTUxYjYyYjA5M2EzMTg5OWYxZjk5MDMyZGZlMTFiMmRhMDFiMjljZjMxYmQzZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkMjJkZWRhYmZjNDRjYThiYTU1YmU4MjU4Y2ZmNmExODY3OTBmZjFlYTI2YjBjYzI3NTRiOWM3MGUwMTgxMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OTVjYzFiZjNkOWRjOTY1MzIyM2FiNWNhOGRlNThiOTEwYTFhZDk1YWNhNjBmNTRkOTI5N2ExYjE5ODAyYTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bacbae62801a4ef680b68b7f393a71ae",
+      "statement": "The frontend has no tests of its own and CI does not lint it: continuous_integration.yml pins TRUNK_VERSION, exports SKIP_TRUNK=true, builds the UI once with `cd frontend && trunk build --release`, then runs clippy and cargo llvm-cov only over --workspace, which excludes frontend/ because that crate declares its own workspace.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L42-L61",
+          "version": "repo-lines-v1:sha256:b1264f4ade706ab68f90a3cb5f61718b85640563582c65fe180497af304ec694:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
+          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQwZTE1NWNhZjJhODE2OWU1NWNjNjNlNDVhNDI1ODg1ODUxYTJhY2I4NmE5M2VhYmZlM2MyNDRjOTc4ODU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+        },
+        {
+          "resource": "repo://frontend/Cargo.toml#L7-L9",
+          "version": "repo-lines-v1:sha256:05bf0c2fe1ff66878c1193760a74ba1977bf3883a3cb16545ebc535cc367d75e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE2YmRmNzk0YTIzZmVlMjFjNGJkMTZkNzEzNGM3ODM0Y2QzN2UxYzI0YWJhNzJmMWRkZTA2NWFjMzFkM2YzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0ZTEwMmM4NjFmOTk0ZDJhYWNlOTExNGQzOTJkYmMxNjIxOTBlMDBiZThmZTM1N2Q0NzIxNTBjYTQzOTYxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjI1ZmY2NjQyZjc5M2EwYTUyNDJlZGE5MDRhYmNiNDE3ODc1ODliZTFjYzZlYzZhNGRiNjI4NmExZjdmMTdiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI3Y2RhZjRlMTI4MjgzZDljZmEzZjQ4NGMyZDk2MTYwYTNlMzc2NzFlMzdkNDYzMzIwMzc2YWMzZDJiNzJkYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_af50399fc08b4623a955f2d28cfb9514",
+      "statement": "main.rs runs console_error_panic_hook::set_once(), init_language() and init_theme() before mount_to_body(|| view! { <App/> }), so neither the locale nor the colour theme can flash on first paint; App then provides AppState, installs the selection effect and calls connect_sse once at the root.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/app.rs#L22-L31",
+          "version": "repo-lines-v1:sha256:bf5ff3efdefd5c0f2dd8c71a665d7dd7c3fc5b24ef586031778e6edcecf3e432:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNDc4ZmI3MjczN2Q4Zjk5NDljZDc0MThmMjQyMjRjNWVlZTkyODI2ODViZTFhNTY4NmNiNjdjNzU1ZDI5M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YzU1ZDI0YTg2MGE4M2E5YjlhOTliZjM5NTdiOGI3OWQ3YWMzYTJkNThiMDM3MWE0Mzk2MzNjYTMxMWUzYzkifQ"
+        },
+        {
+          "resource": "repo://frontend/src/main.rs#L16-L21",
+          "version": "repo-lines-v1:sha256:755145a3ecb340c62240e643fb7e02cd8f33cf6e20fabbf705423d35fcf3f23f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiOWVlZTkxYmMwYjFhNzdiNWYyMjRmZDY5NDVmM2RlYzIzNGU1NTk2Yjk0NzVjOTBjNWFlYzllNmFlMjBiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDViYmYwMWY3OTMzNjk2ZTAzMmVmMTZmMTZmMjZhYTkzOTU2ZDQ5OWQyNGIyYzUxYTgyYWY2Yzg2YjY2YTFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.1",
+    "at": "2026-10-09T16:11:37.544Z"
+  }
+}

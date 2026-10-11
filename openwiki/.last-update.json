@@ -1,0 +1,7 @@
+{
+  "updatedAt": "2026-10-10T22:10:44.674Z",
+  "command": "update",
+  "model": "qwen3.8-flash-next",
+  "status": "interrupted",
+  "language": "en"
+}
