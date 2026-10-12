@@ -27,7 +27,7 @@ hex = "0.4"
 rayon.workspace = true
 thiserror.workspace = true
 # `experimental` exposes frame progression, used for accurate solid progress.
-zstd = { version = "0.14", features = ["zstdmt", "experimental"] }
+zstd = { workspace = true, features = ["zstdmt", "experimental"] }
 clap = { workspace = true, optional = true }
 console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }

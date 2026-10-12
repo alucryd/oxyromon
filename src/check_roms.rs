@@ -1,5 +1,4 @@
 use super::archive::AsArchive;
-use super::chdman;
 use super::common::*;
 use super::database::*;
 use super::mimetype::*;
@@ -156,10 +155,6 @@ async fn check_system(
             )
             .await
         } else if CHD_EXTENSION == romfile_extension {
-            if chdman::get_version().await.is_err() {
-                print_error(progress_bar, "Required tool not found: chdman");
-                break;
-            }
             let chd_romfile = romfile_as_chd(&mut transaction, romfile).await?;
             chd_romfile
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)

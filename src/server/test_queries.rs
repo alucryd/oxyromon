@@ -62,7 +62,7 @@ async fn test() -> Result<()> {
         // dependencies: every listed tool, version null when absent
         let v = gql(&client, r#"{"query":"{ dependencies { name version } }"}"#).await;
         let deps = v["data"]["dependencies"].as_array().unwrap();
-        assert!(deps.iter().any(|d| d["name"] == json!("chdman")));
+        assert!(deps.iter().any(|d| d["name"] == json!("chd-rs")));
         assert!(deps.iter().any(|d| d["name"] == json!("sevenz-rust2")));
         // sorted by name
         let names: Vec<&str> = deps.iter().map(|d| d["name"].as_str().unwrap()).collect();
