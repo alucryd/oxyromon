@@ -1,5 +1,5 @@
 use super::archive::AsArchive;
-use super::chdman::{AsChd, ChdRomfile, ChdType};
+use super::chd::{AsChd, ChdRomfile, ChdType};
 use super::common::*;
 use super::database::find_romfile_by_id;
 use super::model::{Rom, Romfile};
