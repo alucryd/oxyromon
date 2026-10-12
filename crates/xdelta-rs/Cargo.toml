@@ -21,7 +21,7 @@ required-features = ["cli"]
 
 [dependencies]
 # xdelta3's LZMA secondary sections are one xz stream per section kind, continued across windows.
-lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
+lzma-rust2 = { workspace = true, features = ["xz"] }
 thiserror.workspace = true
 clap = { workspace = true, optional = true }
 console = { workspace = true, optional = true }
