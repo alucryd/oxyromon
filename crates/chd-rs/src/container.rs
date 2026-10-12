@@ -110,8 +110,6 @@ pub struct ChdInfo {
     pub data_sha1: Option<[u8; 20]>,
     /// The SHA-1 of the parent CHD, if the file is a clone.
     pub parent_sha1: Option<[u8; 20]>,
-    /// The number of tracks, for optical-disc images.
-    pub track_count: usize,
 }
 
 /// The outcome of [`Chd::verify`].
@@ -815,7 +813,6 @@ impl Chd {
             sha1: self.sha1,
             data_sha1: self.raw_sha1,
             parent_sha1: self.parent_sha1,
-            track_count: self.track_count(),
         }
     }
 
@@ -844,12 +841,13 @@ impl Chd {
     }
 
     /// The tracks a CD's table of contents holds, whichever of its metadata
-    /// forms describes it; 0 for anything but a CD.
-    fn track_count(&self) -> usize {
+    /// forms describes it; 0 for anything but a CD. Fails on a CD whose table
+    /// of contents does not parse, rather than reading as a single track.
+    pub fn track_count(&self) -> Result<usize> {
         if self.detect_type() != ChdType::Cd {
-            return 0;
+            return Ok(0);
         }
-        crate::cdrom::toc_from_chd(self).map_or(0, |toc| toc.numtrks)
+        Ok(crate::cdrom::toc_from_chd(self)?.numtrks)
     }
 }
 

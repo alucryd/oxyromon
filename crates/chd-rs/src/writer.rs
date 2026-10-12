@@ -498,7 +498,7 @@ fn create_inner(
                     set_entry(&mut rawmap, hunknum, TYPE_PARENT, 0, unit, 0);
                 } else {
                     let (slot, packed) =
-                        packed.unwrap_or_else(|| codec::find_best_compressor(&compression, data));
+                        packed.expect("a hunk no map knew of when precomputed is compressed");
                     let (kind, stored) = if slot < 0 {
                         (TYPE_NONE, data)
                     } else {

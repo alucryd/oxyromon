@@ -28,11 +28,14 @@ repository = "https://github.com/alucryd/oxyromon"
 clap = "4.6.6"
 console = "0.16.6"
 crc32fast = "1.5.2"
+flate2 = "1.1.10"
 indicatif = "0.18.6"
-lzma-rust2 = { version = "0.21", default-features = false, features = ["std"] }
+lzma-rust2 = { version = "0.22", default-features = false, features = ["std"] }
 rayon = "1.12.0"
+sha1 = "0.11.0"
 tempfile = "3.27.0"
 thiserror = "2"
+zstd = "0.14.0"
 
 [features]
 default = ["use-rustls"]
@@ -70,7 +73,7 @@ digest-io = "0.1.0"
 dirs = "7.0.0"
 dotenvy = "0.15.7"
 env_logger = "0.11.11"
-flate2 = "1.1.10"
+flate2.workspace = true
 futures = "0.3.34"
 gdi-rs = { path = "crates/gdi-rs", version = "0.1.0", default-features = false }
 http-types = { version = "2.12.0", optional = true }
@@ -101,12 +104,9 @@ reqwest = { version = "0.13.5", default-features = false }
 rust-embed = { version = "8.12.0", features = ["compression"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-sha1 = "0.11.0"
+sha1.workspace = true
 shiratsu-naming = "1.1.0"
-# ponytail: the fork's `feat/raw-copy` branch, pinned, until upstream releases
-# `push_raw_block`, which blocks publishing oxyromon; back to a version
-# requirement before a release.
-sevenz-rust2 = { git = "https://github.com/alucryd/sevenz-rust2", rev = "d574d725e717d647c5ae67d3760e8af320920974", features = ["zstd"] }
+sevenz-rust2 = { version = "0.24.0", features = ["zstd"] }
 sqlx = { version = "0.9.0", default-features = false, features = [
     "macros",
     "migrate",

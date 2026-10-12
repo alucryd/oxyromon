@@ -547,8 +547,11 @@ pub trait AsChd {
 impl AsChd for CommonRomfile {
     async fn parse_chd(&self) -> Result<(ChdType, u64, String, String, Option<String>, usize)> {
         let path = self.path.clone();
-        let info = tokio::task::spawn_blocking(move || Chd::open(&path).map(|chd| chd.info()))
-            .await
+        let (info, track_count) = tokio::task::spawn_blocking(move || {
+            let chd = Chd::open(&path)?;
+            Ok::<_, chd_rs::Error>((chd.info(), chd.track_count()?))
+        })
+        .await
             .context("Failed to read CHD")?
             .with_context(|| format!("Failed to open \"{}\"", self.path.display()))?;
         let hex = |sha1: Option<[u8; 20]>| sha1.map(|sha1| chd_rs::sha1_hex(&sha1));
@@ -562,7 +565,7 @@ impl AsChd for CommonRomfile {
                 String::new(),
                 sha1,
                 parent_sha1,
-                info.track_count,
+                track_count,
             ),
             chd_type => (
                 match chd_type {
