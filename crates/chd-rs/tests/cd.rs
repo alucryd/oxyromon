@@ -255,14 +255,16 @@ fn fixtures() -> Vec<Fixture> {
     ]
 }
 
-/// Codecs compared byte for byte; those built on deflate, compared byte for
-/// byte only with `CHDRS_STRICT_PARITY` set (where chdman links zlib-ng,
-/// whose output zlib-rs reproduces); and those built on LZMA, whose encoder
-/// is lzma-rust2's rather than MAME's LZMA SDK one. The last two are checked
-/// by the header's hashes, which cover the data and the metadata, and by
-/// chdman verifying them.
-const IDENTICAL: &[&str] = &["none", "cdzs", "zstd"];
-const DEFLATE: &[&str] = &["cdzl", "cdfl", "zlib"];
+/// Codecs compared byte for byte; those whose bytes hang on the library
+/// chdman links, compared byte for byte only with `CHDRS_STRICT_PARITY` set
+/// (deflate where chdman links zlib-ng, whose output zlib-rs reproduces;
+/// zstd where it links the zstd zstd-sys bundles, 1.5.7, as Arch's does,
+/// not MAME's bundled 1.5.5, as Debian's and Ubuntu's do); and those built
+/// on LZMA, whose encoder is lzma-rust2's rather than MAME's LZMA SDK one.
+/// The last two are checked by the header's hashes, which cover the data
+/// and the metadata, and by chdman verifying them.
+const IDENTICAL: &[&str] = &["none"];
+const LIBRARY: &[&str] = &["cdzs", "zstd", "cdzl", "cdfl", "zlib"];
 const LZMA: &[&str] = &["cdlz,cdzl,cdfl", "cdlz", "lzma"];
 
 /// `chd_rs::create_cd` with chdman's default hunk and the `-c` codecs.
@@ -297,7 +299,7 @@ fn cd_chds_match_chdman() {
         let ours = dir.path().join(Path::new(toc).with_extension("chd"));
         let theirs = dir.path().join("theirs.chd");
         let strict = std::env::var_os("CHDRS_STRICT_PARITY").is_some();
-        for codecs in IDENTICAL.iter().chain(DEFLATE).chain(LZMA) {
+        for codecs in IDENTICAL.iter().chain(LIBRARY).chain(LZMA) {
             let _ = std::fs::remove_file(&ours);
             let _ = std::fs::remove_file(&theirs);
             run(
@@ -320,7 +322,7 @@ fn cd_chds_match_chdman() {
             }
             let ours = std::fs::read(&ours).unwrap();
             let theirs = std::fs::read(&theirs).unwrap();
-            if IDENTICAL.contains(codecs) || (strict && DEFLATE.contains(codecs)) {
+            if IDENTICAL.contains(codecs) || (strict && LIBRARY.contains(codecs)) {
                 assert!(ours == theirs, "{name} with {codecs} differs from chdman");
             } else {
                 // the raw and overall SHA-1s of the header

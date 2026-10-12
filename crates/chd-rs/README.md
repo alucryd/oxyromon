@@ -71,7 +71,7 @@ shortest output kept, storing the hunk raw when none of them saves space, as
 
 Hunks are compressed on every core, then laid out in order, so the CHD is
 the same whatever the thread count. Most encoders are those `chdman` uses,
-so most bitstreams match `chdman`'s by construction. Two don't:
+so most bitstreams match `chdman`'s by construction. Three may not:
 
 - **LZMA** goes through `lzma-rust2`, set the way MAME sets its LZMA SDK
   encoder (level 8: normal mode, BT4 matches, nice length 64), which is also
@@ -81,6 +81,10 @@ so most bitstreams match `chdman`'s by construction. Two don't:
 - **Deflate** goes through `flate2`'s `zlib-rs` backend, a port of zlib-ng, so
   its output is that of a `chdman` linking zlib-ng, not of one linking
   classic zlib.
+- **Zstandard** goes through the `zstd` crate, which bundles zstd 1.5.7, so
+  its output is that of a `chdman` linking zstd 1.5.7, as Arch Linux's does,
+  not of one built on the zstd 1.5.5 MAME bundles, as Debian's and Ubuntu's
+  are: theirs come out a byte shorter per CD hunk.
 
 Either way the data, and the hashes in the header that cover it, are the
 same.
@@ -133,10 +137,11 @@ chd-rs writes — hard disks, DVDs, CDs from CUE, GDI and ISO inputs, and
 LaserDiscs from AVIs of every layout `chdman` reads, made with `ffmpeg` — are
 compared with `chdman`'s byte for byte, as are the CUEs, GDIs, TOCs, BINs and
 AVIs it extracts, down to the bytes `chdman` leaves past the end of a partly
-filled last hunk, which come from its never-cleared work buffer. LZMA and
-deflate, whose bytes differ (see [Encoders](#encoders)), are compared by the
-header's hashes instead, `chdman` verifying our CHDs, and deflate byte for
-byte too with `CHDRS_STRICT_PARITY=1`, against a `chdman` linking zlib-ng. The tests skip rather than fail when no `chdman` binary is
+filled last hunk, which come from its never-cleared work buffer. LZMA,
+deflate and Zstandard, whose bytes differ (see [Encoders](#encoders)), are
+compared by the header's hashes instead, `chdman` verifying our CHDs, and
+deflate and Zstandard byte for byte too with `CHDRS_STRICT_PARITY=1`, against
+a `chdman` linking zlib-ng and zstd 1.5.7. The tests skip rather than fail when no `chdman` binary is
 around (`$CHDMAN`, then `$PATH`).
 
 ## Credits

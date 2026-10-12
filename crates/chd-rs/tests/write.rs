@@ -69,9 +69,10 @@ fn write_image(path: &Path, kind: &str) -> Vec<u8> {
 }
 
 /// Whether our CHD agrees with chdman's: byte for byte, except with LZMA,
-/// whose encoder is lzma-rust2's rather than MAME's LZMA SDK one, where the
-/// header's hashes must agree and chdman must verify ours.
-/// A clone is verified against its `parent`.
+/// whose encoder is lzma-rust2's rather than MAME's LZMA SDK one, and with
+/// zstd, whose bytes hang on the zstd chdman links (see `tests/cd.rs`)
+/// unless `CHDRS_STRICT_PARITY` is set, where the header's hashes must agree
+/// and chdman must verify ours. A clone is verified against its `parent`.
 fn assert_matches_chdman(
     chdman: &Path,
     ours: &Path,
@@ -81,7 +82,8 @@ fn assert_matches_chdman(
     what: &str,
 ) {
     let (ours_bytes, theirs_bytes) = (std::fs::read(ours).unwrap(), std::fs::read(theirs).unwrap());
-    if codecs.contains("lzma") {
+    let strict = std::env::var_os("CHDRS_STRICT_PARITY").is_some();
+    if codecs.contains("lzma") || (codecs.contains("zstd") && !strict) {
         let ours = ours.to_string_lossy();
         let mut verify = vec!["verify", "-i", &ours];
         let parent = parent.map(Path::to_string_lossy);
