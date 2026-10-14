@@ -1,9 +1,9 @@
 // Prompts: two guided workflows. They return a real snapshot of the library
 // (not a generic template), so the model can start acting immediately.
 
-use super::OxyromonMcp;
 use super::output::SystemOut;
 use super::params::{AuditSystemArgs, OnboardSystemArgs};
+use super::{OxyromonMcp, internal};
 use rmcp::ErrorData as McpError;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{ContentBlock, GetPromptResult, PromptMessage, Role};
@@ -113,8 +113,4 @@ impl OxyromonMcp {
             ContentBlock::text(message),
         )]))
     }
-}
-
-fn internal(message: impl std::fmt::Display) -> McpError {
-    McpError::internal_error(std::borrow::Cow::Owned(message.to_string()), None)
 }

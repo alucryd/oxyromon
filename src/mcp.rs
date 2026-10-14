@@ -74,11 +74,16 @@ pub struct OxyromonMcp {
 }
 
 impl OxyromonMcp {
-    fn new(pool: SqlitePool, cancel: CancellationToken, read_only: bool) -> Self {
+    fn new(
+        pool: SqlitePool,
+        cancel: CancellationToken,
+        write_lock: Arc<Mutex<()>>,
+        read_only: bool,
+    ) -> Self {
         OxyromonMcp {
             pool,
             cancel,
-            write_lock: Arc::new(Mutex::new(())),
+            write_lock,
             read_only,
             #[cfg(feature = "server")]
             sse_tx: None,
@@ -101,6 +106,11 @@ impl OxyromonMcp {
     }
 }
 
+/// Any failure the client cannot act on, as a JSON-RPC internal error.
+pub(crate) fn internal(message: impl std::fmt::Display) -> McpError {
+    McpError::internal_error(message.to_string(), None)
+}
+
 pub fn subcommand() -> Command {
     Command::new("mcp")
         .about("Serve the Model Context Protocol on stdin/stdout")
@@ -119,15 +129,33 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
     let read_only = matches.get_flag("READ_ONLY");
     let cancel = CancellationToken::new();
 
-    let service = OxyromonMcp::new(pool.clone(), cancel.clone(), read_only);
+    let service = OxyromonMcp::new(
+        pool.clone(),
+        cancel.clone(),
+        Arc::new(Mutex::new(())),
+        read_only,
+    );
     // stdout becomes the protocol channel here; keep every log line on stderr.
     let server = service.serve(rmcp::transport::stdio()).await?;
+
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut signal) => {
+                signal.recv().await;
+            }
+            Err(_) => std::future::pending().await,
+        }
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
 
     tokio::select! {
         _ = server.waiting() => (),
         // the token unwinds any in-flight mutating action; dropping the
         // running service stops the transport
         _ = tokio::signal::ctrl_c() => cancel.cancel(),
+        _ = terminate => cancel.cancel(),
     }
 
     Ok(())
@@ -151,9 +179,12 @@ pub fn mcp_http_service(
     use rmcp::transport::streamable_http_server::tower::StreamableHttpService;
 
     let manager = Arc::new(LocalSessionManager::default());
+    // the factory runs per request: share one lock so concurrent requests
+    // still serialize their writes
+    let write_lock = Arc::new(Mutex::new(()));
     StreamableHttpService::new(
         move || {
-            let service = OxyromonMcp::new(pool.clone(), cancel.clone(), false);
+            let service = OxyromonMcp::new(pool.clone(), cancel.clone(), write_lock.clone(), false);
             Ok(service.with_sse(sse_tx.clone()))
         },
         manager,

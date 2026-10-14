@@ -5,9 +5,9 @@
 //   oxyromon://systems/{id}        one system: stats, settings, game counts
 //   oxyromon://settings            the global settings
 
-use super::OxyromonMcp;
 use super::output::{SettingOut, SystemOut};
 use super::read::build_status;
+use super::{OxyromonMcp, internal};
 use rmcp::ErrorData as McpError;
 use rmcp::model::{
     ListResourceTemplatesResult, ListResourcesResult, PaginatedRequestParams,
@@ -138,8 +138,4 @@ pub(crate) async fn read_resource(
     Ok(ReadResourceResponse::from(ReadResourceResult::new(vec![
         ResourceContents::text(contents.1, contents.0).with_mime_type("application/json"),
     ])))
-}
-
-fn internal(message: impl std::fmt::Display) -> McpError {
-    McpError::internal_error(std::borrow::Cow::Owned(message.to_string()), None)
 }

@@ -225,7 +225,8 @@ fn destructive_tools_need_confirmation() {
     let mut client = Client::spawn(&[]);
     for tool in ["purge_roms", "purge_systems", "purge_irds"] {
         let arguments = match tool {
-            "purge_roms" => json!({"trash": true, "confirm": false}),
+            // confirm omitted: it is optional, so absence must refuse too
+            "purge_roms" => json!({"trash": true}),
             _ => json!({"system_id": 1, "confirm": false}),
         };
         let result = client.call(tool, arguments);
@@ -239,6 +240,23 @@ fn destructive_tools_need_confirmation() {
             "{tool} should explain the confirm parameter"
         );
     }
+    client.close();
+}
+
+#[test]
+fn convert_roms_accepts_any_case() {
+    let mut client = Client::spawn(&[]);
+    let dat =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/Test System (20200721).dat");
+    let result = client.call("import_dats", json!({"paths": [dat.to_str().unwrap()]}));
+    assert_ne!(result["isError"].as_bool(), Some(true), "{}", text(&result));
+
+    let result = client.call("convert_roms", json!({"system_id": 1, "format": "zip"}));
+    assert_ne!(result["isError"].as_bool(), Some(true), "{}", text(&result));
+
+    let result = client.call("convert_roms", json!({"system_id": 1, "format": "nkit"}));
+    assert_eq!(result["isError"].as_bool(), Some(true));
+    assert!(text(&result).contains("unknown format"));
     client.close();
 }
 

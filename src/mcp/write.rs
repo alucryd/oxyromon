@@ -6,7 +6,6 @@
 // share one implementation. Destructive tools are annotated and gated behind
 // an explicit `confirm: true`.
 
-use super::OxyromonMcp;
 use super::actions::{need_confirm, ok_json, ok_text, read_only_denial, tool_error};
 use super::output::ActionOut;
 use super::params::{
@@ -14,6 +13,7 @@ use super::params::{
     PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams, SetSettingParams, SortRomsParams,
 };
 use super::resources::system_uri;
+use super::{OxyromonMcp, internal};
 use crate::check_roms;
 use crate::config::{self, BOOLEANS, LISTS, NULLABLES, PATHS, choice_options, integer_range};
 use crate::convert_roms;
@@ -35,17 +35,21 @@ use rmcp::service::{RequestContext, RoleServer};
 use rmcp::{tool, tool_router};
 
 /// Resolve a tool's `system_id` to the system its CLI takes by name.
-async fn require_system(
-    connection: &mut sqlx::SqliteConnection,
-    system_id: i64,
-) -> Result<System, CallToolResult> {
-    find_system_by_id_opt(connection, system_id)
-        .await
-        .ok_or_else(|| {
-            tool_error(format!(
-                "system {system_id} not found; list_systems has the ids"
-            ))
-        })
+impl OxyromonMcp {
+    /// The system, or a tool error naming the unknown id.
+    async fn require_system(
+        &self,
+        system_id: i64,
+    ) -> Result<Result<System, CallToolResult>, McpError> {
+        let connection = &mut self.pool.acquire().await.map_err(internal)?;
+        Ok(find_system_by_id_opt(connection, system_id)
+            .await
+            .ok_or_else(|| {
+                tool_error(format!(
+                    "system {system_id} not found; list_systems has the ids"
+                ))
+            }))
+    }
 }
 
 #[tool_router(router = write_router, vis = "pub(crate)")]
@@ -81,10 +85,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = import_dats::subcommand().try_get_matches_from(argv)?;
-                            import_dats::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = import_dats::subcommand().try_get_matches_from(argv)?;
+                        import_dats::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -124,19 +126,12 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            start_action(progress_bar, Some("Downloading DAT files"));
-                            for system_name in &params.systems {
-                                download_redump_system(
-                                    connection,
-                                    progress_bar,
-                                    system_name,
-                                    false,
-                                )
+                        start_action(progress_bar, Some("Downloading DAT files"));
+                        for system_name in &params.systems {
+                            download_redump_system(connection, progress_bar, system_name, false)
                                 .await?;
-                            }
-                            Ok(params.systems.len())
                         }
+                        Ok(params.systems.len())
                     })
                 },
             )
@@ -168,17 +163,10 @@ impl OxyromonMcp {
             return Ok(tool_error("no ROM paths given"));
         }
         let system = match params.system_id {
-            Some(system_id) => {
-                let connection = &mut self
-                    .pool
-                    .acquire()
-                    .await
-                    .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-                match require_system(connection, system_id).await {
-                    Ok(system) => Some(system),
-                    Err(result) => return Ok(result),
-                }
-            }
+            Some(system_id) => match self.require_system(system_id).await? {
+                Ok(system) => Some(system),
+                Err(result) => return Ok(result),
+            },
             None => None,
         };
         let unattended = match params.unattended {
@@ -212,10 +200,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = import_roms::subcommand().try_get_matches_from(argv)?;
-                            import_roms::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = import_roms::subcommand().try_get_matches_from(argv)?;
+                        import_roms::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -249,26 +235,19 @@ impl OxyromonMcp {
         }
 
         let (argv, label, system_id) = match (params.system_id, params.all.unwrap_or(false)) {
-            (Some(system_id), false) => {
-                let connection = &mut self
-                    .pool
-                    .acquire()
-                    .await
-                    .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-                match require_system(connection, system_id).await {
-                    Ok(system) => (
-                        vec![
-                            "sort-roms".to_string(),
-                            "--system".to_string(),
-                            system.name.clone(),
-                            "--yes".to_string(),
-                        ],
-                        format!("Sorting the ROMs of \"{}\"", system.name),
-                        Some(system_id),
-                    ),
-                    Err(result) => return Ok(result),
-                }
-            }
+            (Some(system_id), false) => match self.require_system(system_id).await? {
+                Ok(system) => (
+                    vec![
+                        "sort-roms".to_string(),
+                        "--system".to_string(),
+                        system.name.clone(),
+                        "--yes".to_string(),
+                    ],
+                    format!("Sorting the ROMs of \"{}\"", system.name),
+                    Some(system_id),
+                ),
+                Err(result) => return Ok(result),
+            },
             (None, true) => (
                 vec![
                     "sort-roms".to_string(),
@@ -293,10 +272,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = sort_roms::subcommand().try_get_matches_from(argv)?;
-                            sort_roms::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = sort_roms::subcommand().try_get_matches_from(argv)?;
+                        sort_roms::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -327,25 +304,18 @@ impl OxyromonMcp {
             return Ok(read_only_denial("check_roms"));
         }
         let (argv, label, system_id) = match (params.system_id, params.all.unwrap_or(false)) {
-            (Some(system_id), false) => {
-                let connection = &mut self
-                    .pool
-                    .acquire()
-                    .await
-                    .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-                match require_system(connection, system_id).await {
-                    Ok(system) => (
-                        vec![
-                            "check-roms".to_string(),
-                            "--system".to_string(),
-                            system.name.clone(),
-                        ],
-                        format!("Checking the ROMs of \"{}\"", system.name),
-                        Some(system_id),
-                    ),
-                    Err(result) => return Ok(result),
-                }
-            }
+            (Some(system_id), false) => match self.require_system(system_id).await? {
+                Ok(system) => (
+                    vec![
+                        "check-roms".to_string(),
+                        "--system".to_string(),
+                        system.name.clone(),
+                    ],
+                    format!("Checking the ROMs of \"{}\"", system.name),
+                    Some(system_id),
+                ),
+                Err(result) => return Ok(result),
+            },
             (None, true) => (
                 vec!["check-roms".to_string(), "--all".to_string()],
                 "Checking the ROMs of all systems".to_string(),
@@ -366,10 +336,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = check_roms::subcommand().try_get_matches_from(argv)?;
-                            check_roms::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = check_roms::subcommand().try_get_matches_from(argv)?;
+                        check_roms::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -387,7 +355,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Convert one system's ROM files to a target format: chd, rvz, iso, cso, zso, nsz, wbfs, gdi, 7z, zip, raw… (the PREFER_FORMAT values). Long jobs.",
+        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP). Long jobs.",
         annotations(read_only_hint = false)
     )]
     async fn convert_roms(
@@ -398,18 +366,11 @@ impl OxyromonMcp {
         if self.read_only {
             return Ok(read_only_denial("convert_roms"));
         }
-        let system = {
-            let connection = &mut self
-                .pool
-                .acquire()
-                .await
-                .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-            match require_system(connection, params.system_id).await {
-                Ok(system) => system,
-                Err(result) => return Ok(result),
-            }
+        let system = match self.require_system(params.system_id).await? {
+            Ok(system) => system,
+            Err(result) => return Ok(result),
         };
-        let format = params.format.to_lowercase();
+        let format = params.format.to_uppercase();
         if !convert_roms::ALL_FORMATS.contains(&format.as_str()) {
             return Ok(tool_error(format!(
                 "unknown format \"{format}\"; valid formats: {:?}",
@@ -438,10 +399,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = convert_roms::subcommand().try_get_matches_from(argv)?;
-                            convert_roms::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = convert_roms::subcommand().try_get_matches_from(argv)?;
+                        convert_roms::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -471,15 +430,10 @@ impl OxyromonMcp {
         }
         let key = params.key.to_uppercase();
         let system_id = params.system_id;
-        if let Some(system_id) = system_id {
-            let connection = &mut self
-                .pool
-                .acquire()
-                .await
-                .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-            if let Err(result) = require_system(connection, system_id).await {
-                return Ok(result);
-            }
+        if let Some(system_id) = system_id
+            && let Err(result) = self.require_system(system_id).await?
+        {
+            return Ok(result);
         }
 
         // Mirror the config subcommand's validation, but as tool errors the
@@ -508,11 +462,7 @@ impl OxyromonMcp {
                     if key == "PREFER_FORMAT"
                         && let Some(system_id) = system_id
                     {
-                        let connection = &mut self
-                            .pool
-                            .acquire()
-                            .await
-                            .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
+                        let connection = &mut self.pool.acquire().await.map_err(internal)?;
                         if let Some(system) = find_system_by_id_opt(connection, system_id).await
                             && !convert_roms::format_supported_for_system(&system, value)
                         {
@@ -556,65 +506,63 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            match &closure_value {
-                                Some(value) if LISTS.contains(&closure_key.as_str()) => {
-                                    // Replace the list wholesale: what the caller asked
-                                    // for minus what is there, and the other way.
-                                    let desired: Vec<String> = value
-                                        .split(',')
-                                        .map(|item| item.trim().to_string())
-                                        .filter(|item| !item.is_empty())
-                                        .collect();
-                                    let current =
-                                        config::get_list(connection, &closure_key, system_id).await;
-                                    for item in &current {
-                                        if !desired.contains(item) {
-                                            config::remove_from_list(
-                                                connection,
-                                                progress_bar,
-                                                &closure_key,
-                                                item,
-                                                system_id,
-                                            )
-                                            .await;
-                                        }
-                                    }
-                                    for item in &desired {
-                                        if !current.contains(item) {
-                                            config::add_to_list(
-                                                connection,
-                                                progress_bar,
-                                                &closure_key,
-                                                item,
-                                                system_id,
-                                            )
-                                            .await;
-                                        }
+                        match &closure_value {
+                            Some(value) if LISTS.contains(&closure_key.as_str()) => {
+                                // Replace the list wholesale: what the caller asked
+                                // for minus what is there, and the other way.
+                                let desired: Vec<String> = value
+                                    .split(',')
+                                    .map(|item| item.trim().to_string())
+                                    .filter(|item| !item.is_empty())
+                                    .collect();
+                                let current =
+                                    config::get_list(connection, &closure_key, system_id).await;
+                                for item in &current {
+                                    if !desired.contains(item) {
+                                        config::remove_from_list(
+                                            connection,
+                                            progress_bar,
+                                            &closure_key,
+                                            item,
+                                            system_id,
+                                        )
+                                        .await;
                                     }
                                 }
-                                Some(value) => {
-                                    config::set_setting(
-                                        connection,
-                                        progress_bar,
-                                        &closure_key,
-                                        value,
-                                        system_id,
-                                    )
-                                    .await?
-                                }
-                                None => {
-                                    config::unset_setting(
-                                        connection,
-                                        progress_bar,
-                                        &closure_key,
-                                        system_id,
-                                    )
-                                    .await?
+                                for item in &desired {
+                                    if !current.contains(item) {
+                                        config::add_to_list(
+                                            connection,
+                                            progress_bar,
+                                            &closure_key,
+                                            item,
+                                            system_id,
+                                        )
+                                        .await;
+                                    }
                                 }
                             }
-                            Ok(())
+                            Some(value) => {
+                                config::set_setting(
+                                    connection,
+                                    progress_bar,
+                                    &closure_key,
+                                    value,
+                                    system_id,
+                                )
+                                .await?
+                            }
+                            None => {
+                                config::unset_setting(
+                                    connection,
+                                    progress_bar,
+                                    &closure_key,
+                                    system_id,
+                                )
+                                .await?
+                            }
                         }
+                        Ok(())
                     })
                 },
             )
@@ -673,10 +621,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = purge_roms::subcommand().try_get_matches_from(argv)?;
-                            purge_roms::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = purge_roms::subcommand().try_get_matches_from(argv)?;
+                        purge_roms::main(connection, &matches, progress_bar).await
                     })
                 },
             )
@@ -703,16 +649,9 @@ impl OxyromonMcp {
         if !params.confirm {
             return Ok(need_confirm("purge_systems"));
         }
-        let system = {
-            let connection = &mut self
-                .pool
-                .acquire()
-                .await
-                .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-            match require_system(connection, params.system_id).await {
-                Ok(system) => system,
-                Err(result) => return Ok(result),
-            }
+        let system = match self.require_system(params.system_id).await? {
+            Ok(system) => system,
+            Err(result) => return Ok(result),
         };
         let name = system.name.clone();
         let outcome = self
@@ -723,9 +662,7 @@ impl OxyromonMcp {
                 ctx.meta.get_progress_token(),
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
-                    Box::pin(
-                        async move { purge_system(connection, progress_bar, &system).await },
-                    )
+                    Box::pin(async move { purge_system(connection, progress_bar, &system).await })
                 },
             )
             .await;
@@ -752,16 +689,9 @@ impl OxyromonMcp {
         if !params.confirm {
             return Ok(need_confirm("purge_irds"));
         }
-        let system = {
-            let connection = &mut self
-                .pool
-                .acquire()
-                .await
-                .map_err(|e| McpError::internal_error(format!("{e}"), None))?;
-            match require_system(connection, params.system_id).await {
-                Ok(system) => system,
-                Err(result) => return Ok(result),
-            }
+        let system = match self.require_system(params.system_id).await? {
+            Ok(system) => system,
+            Err(result) => return Ok(result),
         };
         let argv = vec![
             "purge-irds".to_string(),
@@ -777,10 +707,8 @@ impl OxyromonMcp {
                 ctx.ct.clone(),
                 move |connection, progress_bar| {
                     Box::pin(async move {
-                        {
-                            let matches = purge_irds::subcommand().try_get_matches_from(argv)?;
-                            purge_irds::main(connection, &matches, progress_bar).await
-                        }
+                        let matches = purge_irds::subcommand().try_get_matches_from(argv)?;
+                        purge_irds::main(connection, &matches, progress_bar).await
                     })
                 },
             )

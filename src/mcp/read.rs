@@ -2,7 +2,6 @@
 // library before touching it. Everything here is `readOnlyHint` and needs no
 // write lock.
 
-use super::OxyromonMcp;
 use super::actions::{ok_json, tool_error};
 use super::output::{
     DependencyOut, GameDetailOut, GameOut, PagedGamesOut, RomOut, RomfileOut, SearchHitOut,
@@ -12,6 +11,7 @@ use super::params::{
     DownloadableSystemsParams, GameIdParams, GetSettingsParams, ListGamesParams,
     ParseGameNameParams, SearchGamesParams, SystemIdParams,
 };
+use super::{OxyromonMcp, internal};
 use crate::config::{get_rom_directory, get_tmp_directory};
 use crate::database::*;
 use crate::download_dats::find_redump_systems;
@@ -30,10 +30,6 @@ const DEFAULT_GAMES_LIMIT: i64 = 100;
 const MAX_GAMES_LIMIT: i64 = 1000;
 const DEFAULT_SEARCH_LIMIT: i64 = 50;
 const MAX_SEARCH_LIMIT: i64 = 500;
-
-fn internal_error<E: std::fmt::Display>(e: E) -> rmcp::ErrorData {
-    rmcp::ErrorData::internal_error(format!("{e}"), None)
-}
 
 /// Mirrors the GraphQL `system_size` resolver: expected vs actual bytes, with
 /// and without the 1G1R selection. The id is a number interpolated after the
@@ -112,7 +108,7 @@ impl OxyromonMcp {
         annotations(read_only_hint = true)
     )]
     async fn status(&self) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let status = build_status(connection, self.read_only).await;
         Ok(ok_json(&status))
@@ -123,7 +119,7 @@ impl OxyromonMcp {
         annotations(read_only_hint = true)
     )]
     async fn list_systems(&self) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let systems: Vec<SystemOut> = find_systems(connection)
             .await
@@ -142,7 +138,7 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<SystemIdParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let Some(system) = find_system_by_id_opt(connection, params.system_id).await else {
             return Ok(tool_error(format!(
@@ -154,16 +150,16 @@ impl OxyromonMcp {
             system: SystemOut::from_system(&system),
             total_original_size: system_size(connection, system.id, false, false)
                 .await
-                .map_err(internal_error)?,
+                .map_err(internal)?,
             one_region_original_size: system_size(connection, system.id, false, true)
                 .await
-                .map_err(internal_error)?,
+                .map_err(internal)?,
             total_actual_size: system_size(connection, system.id, true, false)
                 .await
-                .map_err(internal_error)?,
+                .map_err(internal)?,
             one_region_actual_size: system_size(connection, system.id, true, true)
                 .await
-                .map_err(internal_error)?,
+                .map_err(internal)?,
         };
         Ok(ok_json(&detail))
     }
@@ -176,7 +172,7 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<ListGamesParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         if find_system_by_id_opt(connection, params.system_id)
             .await
@@ -203,7 +199,7 @@ impl OxyromonMcp {
                 .bind(offset)
                 .fetch_all(&mut *connection)
                 .await
-                .map_err(internal_error)?
+                .map_err(internal)?
             }
             None => {
                 sqlx::query_as::<_, Game>(
@@ -214,14 +210,14 @@ impl OxyromonMcp {
                 .bind(offset)
                 .fetch_all(&mut *connection)
                 .await
-                .map_err(internal_error)?
+                .map_err(internal)?
             }
         };
         let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM games WHERE system_id = ?")
             .bind(params.system_id)
             .fetch_one(&mut *connection)
             .await
-            .map_err(internal_error)?;
+            .map_err(internal)?;
         let returned = games.len();
         let out = PagedGamesOut {
             system_id: params.system_id,
@@ -241,13 +237,13 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<GameIdParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let games: Vec<Game> = sqlx::query_as::<_, Game>("SELECT * FROM games WHERE id = ?")
             .bind(params.game_id)
             .fetch_all(&mut *connection)
             .await
-            .map_err(internal_error)?;
+            .map_err(internal)?;
         let Some(game) = games.first() else {
             return Ok(tool_error(format!(
                 "game {} not found; list_games has the ids",
@@ -256,7 +252,7 @@ impl OxyromonMcp {
         };
         let system = find_system_by_id_opt(connection, game.system_id)
             .await
-            .ok_or_else(|| internal_error("game points at a missing system"))?;
+            .ok_or_else(|| internal("game points at a missing system"))?;
         let roms: Vec<Rom> = find_roms_by_game_id_parents(connection, game.id).await;
         let mut rom_outs = Vec::with_capacity(roms.len());
         for rom in &roms {
@@ -296,7 +292,7 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<SearchGamesParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let limit = params
             .limit
@@ -311,7 +307,7 @@ impl OxyromonMcp {
         .bind(limit)
         .fetch_all(&mut *connection)
         .await
-        .map_err(internal_error)?;
+        .map_err(internal)?;
         let count = hits.len();
         Ok(ok_json(&json!({ "count": count, "games": hits })))
     }
@@ -324,7 +320,7 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<GetSettingsParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let mut merged: std::collections::HashMap<String, SettingOut> =
             find_settings(connection, None)
@@ -366,7 +362,7 @@ impl OxyromonMcp {
         &self,
         Parameters(params): Parameters<DownloadableSystemsParams>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let mut conn = self.pool.acquire().await.map_err(internal_error)?;
+        let mut conn = self.pool.acquire().await.map_err(internal)?;
         let connection = &mut *conn;
         let systems = find_redump_systems(connection, params.update.unwrap_or(false)).await;
         let count = systems.len();

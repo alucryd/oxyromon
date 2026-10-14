@@ -132,8 +132,8 @@ pub(crate) struct CheckRomsParams {
 pub(crate) struct ConvertRomsParams {
     /// Convert this system's ROM files.
     pub system_id: i64,
-    /// Target format, e.g. "chd", "rvz", "7z", "zip", "cso", "zso", "nkit",
-    /// "wbfs", "iso", "gdi", "nsz" — the same values as PREFER_FORMAT.
+    /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP" or
+    /// "ZSO" — the same values as PREFER_FORMAT.
     pub format: String,
 }
 
@@ -165,7 +165,9 @@ pub(crate) struct PurgeRomsParams {
     /// Delete files in the ROM directories that oxyromon does not know.
     #[serde(default)]
     pub foreign: bool,
-    /// Must be true: the file deletions cannot be undone.
+    /// Must be true when trash or foreign is set: the file deletions cannot
+    /// be undone.
+    #[serde(default)]
     pub confirm: bool,
 }
 
@@ -174,6 +176,7 @@ pub(crate) struct PurgeSystemParams {
     /// Purge this system: its files move to its Trash directory.
     pub system_id: i64,
     /// Must be true to proceed.
+    #[serde(default)]
     pub confirm: bool,
 }
 
@@ -182,6 +185,7 @@ pub(crate) struct PurgeIrdsParams {
     /// Purge every IRD (JB folder) game of this system.
     pub system_id: i64,
     /// Must be true to proceed.
+    #[serde(default)]
     pub confirm: bool,
 }
 
