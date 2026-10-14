@@ -26,7 +26,7 @@ clap = { workspace = true, optional = true }
 console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }
 sha1.workspace = true
-flate2 = { workspace = true, default-features = false, features = ["zlib-rs"] }
+flate2.workspace = true
 zstd.workspace = true
 crc32fast.workspace = true
 libflac-sys = { version = "0.3.4", default-features = false, features = ["build-flac"] }
