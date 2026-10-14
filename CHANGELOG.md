@@ -24,6 +24,7 @@
 - Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
 - Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
 - The desktop app's Debian package no longer depends on `p7zip`
+- Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
 
 # 0.24.0
 

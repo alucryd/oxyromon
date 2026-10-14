@@ -125,6 +125,10 @@ pub(crate) const NULLABLES: &[&str] = &[
     "CHD_CD_COMPRESSION_ALGORITHMS",
     "CHD_DVD_HUNK_SIZE",
     "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "CHD_HD_HUNK_SIZE",
+    "CHD_HD_COMPRESSION_ALGORITHMS",
+    "CHD_LD_HUNK_SIZE",
+    "CHD_LD_COMPRESSION_ALGORITHMS",
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "LANGUAGES",
@@ -143,6 +147,8 @@ pub(crate) const NULLABLES: &[&str] = &[
 const SORTED_LISTS: &[&str] = &[
     "CHD_CD_COMPRESSION_ALGORITHMS",
     "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "CHD_HD_COMPRESSION_ALGORITHMS",
+    "CHD_LD_COMPRESSION_ALGORITHMS",
     "REGIONS_ONE",
 ];
 const LIST_SEPARATOR: &str = "|";
@@ -653,6 +659,8 @@ mod test_add_to_list;
 mod test_add_to_list_already_exists;
 #[cfg(test)]
 mod test_bool;
+#[cfg(test)]
+mod test_chd_settings;
 #[cfg(test)]
 mod test_cli;
 #[cfg(test)]
