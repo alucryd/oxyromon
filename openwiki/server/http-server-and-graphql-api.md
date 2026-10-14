@@ -12,8 +12,6 @@ sources:
     resource: repo://frontend/src/sse.rs
   - id: openwiki-source-c6e18f6fc03eca8f5fb94b75
     resource: repo://frontend/Trunk.toml
-  - id: openwiki-source-31c5d408b8f1718dfd9d4e59
-    resource: repo://PLAN.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
@@ -60,10 +58,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -422,7 +420,7 @@ The server has no authentication and no authorisation of any kind. Concretely:
 - `/mcp` is nested on the same listener with the same trust level as `/graphql`,
   and the HTTP-mounted MCP service is constructed **without** `--read-only`, so
   the mutating tools are live there. There is no bearer token; a non-loopback
-  bind is the operator's risk, recorded as an open item in `PLAN.md`.
+  bind is the operator's risk, which the README states plainly.
 
 If you change the default address, add a route, or expose the server through a
 reverse proxy, that is a security-relevant change, not a configuration change.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5248e3989b44477f56c8b86391ff7fd1f584a776186ab18f692ec10d67ff2014",
+  "pageVersion": "sha256:c02d612495f348ba53d6adcfd2ddf647221eba0e80c874603485b62eb3748a9b",
   "claims": [
     {
       "id": "claim_576b8c67163e49f78677876793d52f3a",
@@ -93,20 +93,24 @@
       "statement": "OxyromonMcp::run_action fans the same {prefix}_started/_complete/_error triple into the web server's broadcast channel, but only in server builds where self.sse_tx is Some (i.e. mounted at /mcp by mcp_http_service, which calls with_sse) *and* the tool passed an sse_prefix. The prefixes used are import_dats, download_dats, sort_roms, check_roms, convert_roms, purge_roms, purge and purge_irds; import_roms and set_setting pass None and therefore emit nothing to /events.",
       "evidence": [
         {
-          "resource": "repo://src/mcp.rs#L142-L170",
-          "version": "repo-lines-v1:sha256:6cc9b9473c56930fa22b8864dd9f2c5121848251e84fd01f1acb402b7ca5522e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWNlZDE5NDNmNzkxZmJkYjA5MjY4MmE2MDk2ODEyNWE2ZjA2YTVmNWJlMDNmNWU1N2JkMGVhMzYzMGUxMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmODU3MWY3MWY1NGM3YjkyM2VlOTQ0NWVmZTVlZjcxZGU1MmQ5ZDg5NGJhOWVjMzI2NDIyYTQ4NDA4NzE1MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YTBjYjE0OTU1MTllMjkxYjZkMjQ0MDg2ODkyZDg3YmQxNDYwY2MzZjIwYTE1MmI1OTQxZDEyM2RkYzY3NzAifQ"
+          "resource": "repo://src/mcp.rs#L170-L200",
+          "version": "repo-lines-v1:sha256:df230688914f34d14650a2b5b075aac2b3320dec21ad65045b3d587d36333438:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWNlZDE5NDNmNzkxZmJkYjA5MjY4MmE2MDk2ODEyNWE2ZjA2YTVmNWJlMDNmNWU1N2JkMGVhMzYzMGUxMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmODU3MWY3MWY1NGM3YjkyM2VlOTQ0NWVmZTVlZjcxZGU1MmQ5ZDg5NGJhOWVjMzI2NDIyYTQ4NDA4NzE1MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNGY5NGZkY2EyZmNmMWUxY2RiZDAyODg0NDM5NTM1Zjk2NGUxZTg2MmJlM2RjZWQ5MDJjZjQxMzBhYjAzOTUifQ"
         },
         {
           "resource": "repo://src/mcp/actions.rs#L57-L174",
           "version": "repo-lines-v1:sha256:7919221aa563b48a4c67ef3881cca211a12a3a36e2f64f5e31d0001f09dbaafe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNjQ5NGQ2ZjExMWNiNDU4MDNjMmM0N2Y2ZDhlMjQzMDE2M2YzYjJjNTUzZTQ0MGIzYTNhMjdkN2FkYmE3MmRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDY0MTMyNzk3NGNmYmExMjZiMjYyMTBiNTBjMjlhZTA3M2U4MTJkZjA3OWRjYzhlMDJkYTc2MjhlNDMyNjZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNTM4ZjU4YTZiYjVlMjJhNjVlZTZjNDNkMDMxMzRhZmE4NzVhY2QxZTZmMmY1NDcxYTg1OTNjZDg5NmUyZjBiIn0"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L718-L731",
-          "version": "repo-lines-v1:sha256:6994439499fcba091e1fda759119ced9485e2c56580a141eb3e20a181be0363a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NTI2MmIwODViZGQ0YTU2NTMzYjE5MTZmNTViYzk0YjczZWI4OTU0YmZmNzRkOTJkNDFlNmM3OTc2MDQ1YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NmM3NjNlMmYzZmVjMDkzMTc1NmE5ZWE0ZjNiNGY4MDMwZWM0NjY5MjM3OGNkZmJiYmU1MDY3NTBmYzgwNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTdiYTU4MDVlOTNmMTMwYmZjNDM5YTg4YzA1MzYyZmJkMDc3NDIxMzYyODg0NDc3YjQ4M2RjN2Y2OTJhNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NDhmODI4NGY4NTEwNGU2ZWZlYzBmZDQzOWVlZDViY2NiNGYzNGZiNDNkOGMyOTU3ZjBiNDFkZjJmOWQ0MmYifQ"
+          "resource": "repo://src/mcp/write.rs#L154-L222",
+          "version": "repo-lines-v1:sha256:e8d4a54f1780e6d4fe1cc73d440c6123a8bb5f51a1ced0c6972a0efc68decf73:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NDQ2ZTZjODU5MDZiNWMxZTI1MTc1OThkZDNkYjdmZDlhNWQwMWU4Y2IxNjA5ODhjYTAzZGFlYWJlNDI1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYWNlNDk5NWQxNGI4MDgzNGIzOTczNTBhMWQ3Y2M2OTdlNmFiYzEwMWI5NzAxNzAzNjAxMzkyYmUxMmIwNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMWVlY2RhY2IwNjQyMjkwMjNlNDY3MmFkNzJmMWY0NWY4NDQ1MWEwODE4N2E0MmMwZTU5MmIxMzJmNjY5MDMifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L75-L91",
-          "version": "repo-lines-v1:sha256:297e2b3a5fe470dd63a4b89239fb9eb567c352a3b9e4950f8a07d2e0834a44f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NTI2MmIwODViZGQ0YTU2NTMzYjE5MTZmNTViYzk0YjczZWI4OTU0YmZmNzRkOTJkNDFlNmM3OTc2MDQ1YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NmM3NjNlMmYzZmVjMDkzMTc1NmE5ZWE0ZjNiNGY4MDMwZWM0NjY5MjM3OGNkZmJiYmU1MDY3NTBmYzgwNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllYzAyM2RkNDFhMmJhODEyNmM4MDEwZjExNjc2ODJmOTI1MjA1MGZjYzQzMTY3MDcxNDRjNDJmNDE0NWJkODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NDhmODI4NGY4NTEwNGU2ZWZlYzBmZDQzOWVlZDViY2NiNGYzNGZiNDNkOGMyOTU3ZjBiNDFkZjJmOWQ0MmYifQ"
+          "resource": "repo://src/mcp/write.rs#L61-L102",
+          "version": "repo-lines-v1:sha256:e42fe247e5b59d6772496258175ba3e4360723e75b39f3561b2e1366aa550a37:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNzYzMDQxNTlhNGI4OGQxMTMxYTU3MmIxOTcxMmVhYTdlOGI3MjJmYWQ3ZjEzNTUyMzhmNzg0ZmJiZjFlYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOGUxOWM3OThkYTQ2NDNiMzZhNDk5ZmMzNDE0NmNjNDQzZDgyN2ViZmU0MTQ4MGY0NDZiZjc2MGI0YTlmMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYjBkMmY4NTNiN2RkOTA0MGU4MTk3YjRkMmQ4MTc3NDgwMjEyOGQ5NTAxODYwMzFkMDRlYmYzYjY4YzAwMjkifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L641-L675",
+          "version": "repo-lines-v1:sha256:4e626c9bc258551130787b7b5e2bd16de1931d168528a1c0a5f703ec66820508:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMGRlZWIwNmQzODdmZjkzZTNhNjAyMDg5ZTg2ZDkzNTJhMmRjM2I1MTNjOWQxZmM1YzA2ZDNkYjUxMzVhNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1ZTNhOWZhMzE2YjQzMGQ0ZDlmOTU2YTE5YjU2NzIzMWM2YTI2N2I4YzJhYWM2MTc3Y2ExNDZkMGZjYTlhMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNGM2NzE5Njg3Nzk2MDZkYWIwYjFkNWE5NTMwYmE3ZDcxZGMxMDlmZTcwYTQxYTNkZTJiNTNhMmU3MmUxN2MifQ"
         }
       ]
     },
@@ -259,8 +263,12 @@
       "statement": "The byte-level progress that ultimately reaches MCP clients comes from a workspace-wide contract: each format crate entry point takes `progress: &mut dyn FnMut(u64)` called with the input bytes consumed since the last call, adding up to the input size, and run_blocking in src/progress.rs adapts that callback to `bar.inc(n)` on a bytes-styled bar of `length` moved onto the blocking pool. Callers supply the matching total — the input file's metadata().len() for xso-rs/nsz/xdelta/xps, chd_rs::cd_input_size for a CD image, gdi_rs::input_size for GDI, and the CHD's info().logical_size when extracting — so those byte counts are precisely the position/total pair the poller forwards.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L205-L215",
-          "version": "repo-lines-v1:sha256:1e7b1797b29ed68f00c775c260aa15867a39ee60429065a6cec97c3ea84b09b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTIzN2NiNzI0MTZmZjkyY2M1MDViMjA3YjQ0MTAzMDE2NmFiYWIzNDU5ZGQ2MGY5YjA5YWQ3MjQyMzdkYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMjMwYTBjMWQ0OTUwMzc0N2JiNjJhNWU3MDNmNDg2MGE1YTIwZTMxYWQ0YTU4M2MwYWUxYTMwNTNlYzM3Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1YjIyYTExMmMxNzhjYzMwZDE2MzEzMGIyMzhlNjRmMmY0OGY5MDdiNmIxNTc3OGJmY2M5MmI1MDhlY2FjNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzOWY5NmQxNmY1ZDVjNjljM2Q2YWI3MDUwNWIxNDA0OGM5NDExNDY3MDUxNWMwNDA1MDYzM2M0OTAyMjc4YmMifQ"
+          "resource": "repo://AGENTS.md#L136-L138",
+          "version": "repo-lines-v1:sha256:de0117a85cf42524e917ba497d27f62428cb7d6c5322942857704e2196cf6e1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjNGE2NTRmNWQwNzllNmM2MTYyMTVlYjdhYmVjMTBjNGQyNWJiMTE3YjU3YWI5ZTAwNDU5NGEzNTBmM2I1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI1YTdkNDY1Y2NhYTNiNDJlN2I4ZjQ5MWJkMGUxYmI4OTg2ZWE2ZDFkZWY2OTEzOGIwZjFhZDdmNzA2NmJkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlmMjU2ZTNiZWExZTE4Njk5ZWZlOWE1Mzg0ZTM3MzlhMGFiZjU1MzM0MDI2NDlhMWZhYWUyZGFiMzg2YzdiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk4MTRiZjk2MGNhNWU1ZDlmOThmNjRjZTUwOTczNTA1N2NkMGU5ZTg2N2YzNDg3YWIyYjgxMTk3NzVmNDgwNyJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L90-L91",
+          "version": "repo-lines-v1:sha256:1a3d5473911f43327c1425e1453d1c6dd710b6117043491df7416b4b43748c9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg4ZjM4ZjI0Yjk3OTk1OTJhMjBiNjZmNTUxNGQzYzRjNDgxNWU5ZDdjOWU2N2E2NDlkZTMwMzY1OGRkYWY0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZkOWQ3YjE0NzE4ZGVjNzY2ZDk1YjY3ZjA5ZWM2M2I1OTc0NTU4NmJlYjEwN2ZkZmNjMzEwZjI4NzcyMTRjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2FhNmY2Y2ZjY2NjZTViNDBiMjhiOWE1ZGY5MTZhNjMwYTM4MmVjOTRiZTc2ZmM5YjI3NjUwNmJiNzVjMTViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEwODg5ODc2MzEyNmIyMzJmNjg5ZjUwYWQ0NzFmZjk3MWMwNTZiYmI0MTA5MTY4Y2Y1ZmFjYmU5MWQ4NTNiYyJ9"
         },
         {
           "resource": "repo://crates/chd-rs/src/cdrom.rs#L1425-L1438",
@@ -295,6 +303,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

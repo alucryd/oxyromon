@@ -70,10 +70,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Arcade Rebuilds and M3U Playlists

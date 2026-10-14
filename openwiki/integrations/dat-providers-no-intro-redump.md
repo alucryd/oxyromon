@@ -70,10 +70,10 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -98,9 +98,9 @@ providers, but `-f/--force` and `-s/--save` are only passed down the Redump bran
 on the No-Intro path clap accepts them and nothing consumes them.
 
 Nothing in the DAT path shells out to an external program: the Redump ZIP is read by
-the in-tree `zip` crate, and the README's *External programs* section now lists a single
-entry, `ctrtool`, which belongs to `import-roms` (CIA extraction) and has no part in DAT
-download or parsing. The format tools oxyromon once launched — `chdman` among them — were
+the in-tree `zip` crate, and the README's *Supported formats* table names a single
+external program, `ctrtool`, which belongs to `import-roms` (CIA extraction) and has no
+part in DAT download or parsing. The format tools oxyromon once launched — `chdman` among them — were
 replaced by the crates under `crates/`; see
 [External Tool Integration](external-tools.md).
 
@@ -357,6 +357,5 @@ production contents are never asserted.
 
 See also [DAT Ingestion](../workflows/dat-ingestion.md),
 [ROM Import Pipeline](../workflows/rom-import-pipeline.md), and
-<!-- openwiki: broken internal link [../workflows/sorting-and-1g1r-election.md] file "../workflows/sorting-and-1g1r-election.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md) for the
 `sort-roms` election that consumes the regions and version tokens described above.

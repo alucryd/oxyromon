@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d98df2ce20aab2169fa326c8b3ec76a1516186f3f63159b3fb3d0c8ba10d5fc3",
+  "pageVersion": "sha256:158e29e4ceb1c042aca77178fc72f3270a33f3b1a07e69f23dc1ce950f6b60ce",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -231,8 +231,8 @@
       "statement": "Recorded failure modes: a blank window on Linux is WebKitGTK's DMA-BUF renderer on some GPU/driver combinations (confirm with WEBKIT_DISABLE_DMABUF_RENDERER=1); `failed to locate the bundled oxyromon binary` means the sidecar was never staged for the current target triple; and `failed to run linuxdeploy` is linuxdeploy's too-old binutils failing on .relr.dyn sections, worked around with NO_STRIP=true.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L581-L593",
-          "version": "repo-lines-v1:sha256:25b78c48ef97e4fd7f765a9f5d091acc9a534736794844762b843af844bf7727:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjBhM2UzNDIwYjk4MDA2MmViYWM2ZWM1ODAxM2M2MzAxNTJlOGRhMWVmZWU4NDJjMjNjOGJlMDliOGRkYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMTI5NjMxOTBlYTk3ZTUzNGIzYzZjYTc0ZjY4ZTU5MjNkYzlhYTVlNGE1NmFiMGQ2MTBkYWZkNjNkMzFhMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4M2JhNmVhMDNiZDIxN2U1ZGIzYzk1YjQ0YmFlMmQ0YmYyZWQyNWVmYjZmZDk5NzFhOWVhODUwZjExNjEzNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNDg1ZDU0NzlhMWY5OTkxYzg3NjI2MWVhNWQzN2EyYmViYWY4ZWE2ODllNGZhZTQwZDM0MjM4Mjk0ZDQ2MTgifQ"
+          "resource": "repo://AGENTS.md#L225-L236",
+          "version": "repo-lines-v1:sha256:f27b4cfd7b3f4398ad7842ac3b448a6cfc2906e4ad7205ced4d5ae15a6e51d72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNjdmOTgyYzNjNTgxNDFjYzkzOTc3MGU2YmFlZDFhNzg5OWQ5YjQ1NmZhOTJiZGNjNjQ2MTJiYjU5NWRjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOThlZDM1ODFhYjExYWJjMmFjNzIwZmRmYWQ3YjU4ODkxNGNlYjVmNjZmNmMxZGY2OWZlNzUyNDFlZWNhOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2ODAzOGJkZTcxNWU2YzM1NTkwNTAyNzE2MGNmYWFiYzliMWRmZjY5MWUzYzk2MTg4MWQzZjY0ZjdiNmUwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5NDZiNTFiODZhN2U4OGQwNmQ5ZGNmMDgwODlhY2I2YWE4NDQ2MDUwOGUyODg5YjM1N2JmMDQ2NTg3YjExYzIifQ"
         },
         {
           "resource": "repo://desktop.sh#L3-L5",
@@ -303,12 +303,8 @@
       "statement": "The desktop runtime needs no external format tools: every format is served by in-tree crates or Rust dependencies (chd-rs, xso-rs, gdi-rs, xdelta-rs, xps-rs, nsz-rs, sevenz-rust2/zip, nod), which `src/info.rs` reports as built-in versions, leaving ctrtool as the only remaining optional external binary and only for CIA.",
       "evidence": [
         {
-          "resource": "repo://README.md#L100-L103",
-          "version": "repo-lines-v1:sha256:40979ee77bb4ff7d295aa77bd045f712bd2c3b7f2d86fca469948b6be3af7c01:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODBmNmNiODlmNjg0ZTUwYjVlZmY2NDlkZWY0ZDIxMGVhMTBmNzY4YjJmYWQwZDk3MmFlOTM0NTM4MTY3Y2EwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwMTJjMGQzMWQ3NDA0NWQ1ZTBmYjdjMzM1OGVkZGFjMzQzNTU3OGRjNjVhOTgxYjJkZTQyMmY2MDQyMDRmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M1ODdmODk4MDUxMzU2MGUzYWM4ODYzZTAwN2YxYjY0NjRkYjMxMzQwNWJiNzU4NzRjMGNkYzFkYTU2MDI2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY5NmFmNWVhYjM4OTdlNjZkOTE5MzExNWIyOGY2MWI3YTYzYjllM2JkM2M0ZWNiM2FiYmE2YzhjYTcxNGE0MiJ9"
-        },
-        {
-          "resource": "repo://README.md#L228-L236",
-          "version": "repo-lines-v1:sha256:d6b44f7b29ba39f5c19f9d252838e3033241984d7d06146ee289a0ba489b0bbe:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE3YzQzNjYyMjgxMDdjYjA1NjQxNTk4ODI1NWMwNWJmNWJkMzJkZDkxMWZjNjc2ZGRlODBmNTBmYTRkOGQyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ4ZDllY2E3MzYxMjk2MGUwYzk2ZTBmOTUxYWYwZmZjNzdhYjNhNTNmMmRlYjkwYmQwZmNiYjViNzdkNjkwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA1NjgxYmU5MmQ2NGI2MzVmZmRjMTg5MzhhOGZmN2E2ZDIxYmQ0ODk1Y2Q5NTk3M2ZlOWFlMTZmZWM2NTNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI0NGE2NGNhMmFjNTM1ODdmNDFjZjhiYzBjNjYzNDU1MTRiNmZjOGJlNjk3ODQyNDNmYWU1YjU1NTU5Yjk4YSJ9"
+          "resource": "repo://README.md#L202-L226",
+          "version": "repo-lines-v1:sha256:818e6cb609efbc8f1b163a1abc41f53a77eac4b6c19c80be74e85a483e028ad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzVjMDg5Yzc4OTkwZDU5M2Q4N2E2MjNmMWFlMjc4ZjllMjBkNGZhMjliMGIyMmFhN2U5MWExYjhkYmQ1NWMifQ"
         },
         {
           "resource": "repo://src/info.rs#L26-L37",
@@ -377,6 +373,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

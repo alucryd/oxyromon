@@ -102,10 +102,10 @@ sources:
     resource: repo://tests/Test%20System%20(20241228)%20(MAME%20CHD).dat
   - id: openwiki-source-d055e6a57bb9c1c3b426914e
     resource: repo://tests/Test%20System%20(20241230)%20(MAME%20Mixed).dat
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 
@@ -485,7 +485,8 @@ The behaviours pinned by the suite:
 | `status_reports_the_empty_library` | `structuredContent.version` equals `CARGO_PKG_VERSION`, `read_only` false, `systems` 0 |
 | `unknown_ids_are_tool_errors_with_pointers` | `get_system` with an unknown id is a **tool-level** `isError` whose text points at `list_systems` |
 | `import_dats_then_read_the_catalog_back` | Importing `tests/Test System (20200721).dat` through the tool yields one system with `games_total` 6, `search_games "test game"` count 6, `list_games limit 2` returning 2 of 6 |
-| `destructive_tools_need_confirmation` | `purge_roms` / `purge_systems` / `purge_irds` with `confirm: false` error and mention `confirm` |
+| `destructive_tools_need_confirmation` | `purge_roms` with `confirm` omitted, and `purge_systems` / `purge_irds` with `confirm: false`, error and mention `confirm` |
+| `convert_roms_accepts_any_case` | after a DAT import, `convert_roms` accepts `"zip"` and refuses `"nkit"` with "unknown format" |
 | `setting_validation_mirrors_the_cli` | `PREFER_REGIONS=broad` accepted, `mars` rejected with "valid", an unknown key rejected, and the accepted value read back through `get_settings` |
 | `read_only_hides_and_refuses_the_write_tools` | With `--read-only` the mutating tools are absent from `tools/list` **and** a direct `tools/call` returns a JSON-RPC `error` object, not a tool result |
 

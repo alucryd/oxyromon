@@ -22,6 +22,8 @@ sources:
     resource: repo://migrations/20210323000007_create_settings.sql
   - id: openwiki-source-18a298e115dabea0e367ca81
     resource: repo://migrations/20230528135145_use_pipe_as_separator_in_settings.sql
+  - id: openwiki-source-c51a16ff8998ac92968a3282
+    resource: repo://migrations/20240331210619_add_chd_settings.sql
   - id: openwiki-source-b3c27d89c13e00a083d3dc83
     resource: repo://migrations/20241008133304_add_more_chd_settings.sql
   - id: openwiki-source-e792c1af3374d9105b589924
@@ -46,6 +48,8 @@ sources:
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
+  - id: openwiki-source-f9e0e7f3ffa74d92a61bf4d0
+    resource: repo://src/config/test_chd_settings.rs
   - id: openwiki-source-14bdaf940b9be722639ecfcd
     resource: repo://src/config/test_cli.rs
   - id: openwiki-source-49be2dfb7139ef7701e1c1f3
@@ -92,10 +96,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Settings and Configuration Model
@@ -211,7 +215,6 @@ Consumers always pass a scope when one exists. `sort_roms::main` reads the whole
 `PREFER_VERSIONS`, `PREFER_FLAGS`, `REGIONS_ONE_STRICT`, the region/language/
 discard lists) with `system_id = Some(system.id)`, and `convert_roms` /
 `export_roms` do the same for the format-tuning keys. See
-<!-- openwiki: broken internal link [../workflows/sorting-and-1g1r-election.md] file "../workflows/sorting-and-1g1r-election.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md).
 
 ## Category constants: how a key is classified
@@ -246,23 +249,16 @@ declared in `config.rs` itself. Value casing follows those enums
 enum threaded through `get_hash_and_size` by import and DAT creation.
 
 `SORTED_LISTS` is easy to misread. `add_to_list` sorts the list after inserting
-unless the key is in `SORTED_LISTS`, and that slice names exactly three keys:
-`CHD_CD_COMPRESSION_ALGORITHMS`, `CHD_DVD_COMPRESSION_ALGORITHMS` and
-`REGIONS_ONE`. Membership means "this list's order is semantic" — `REGIONS_ONE`
-is a region *priority* order, and the CHD CD/DVD algorithm lists are laid out in
-order into the four compression slots of a CHD header, where earlier slots win a
-tie. The newer CHD keys do not share
-that treatment, and the asymmetry is worth knowing before you touch either
-category: `CHD_HD_COMPRESSION_ALGORITHMS` and `CHD_LD_COMPRESSION_ALGORITHMS`
-are validated choice lists but are absent from `SORTED_LISTS`, so `--add`
-alphabetizes them and a preferred codec trial order cannot be expressed for HD
-or LD media. Likewise `NULLABLES` covers the CD and DVD CHD keys only: all four
-`CHD_HD_*` / `CHD_LD_*` keys were seeded as `NULL` by
-`20241008133304_add_more_chd_settings.sql` yet cannot be unset — `unset_setting`
-refuses them and the MCP tool rejects them with the `NULLABLES` list — even
-though their CD and DVD counterparts can. Emptying an HD/LD algorithm list entry
-by entry still reaches `NULL`, because `set_list` stores an empty list that way,
-but an HD or LD hunk size has no in-app path back to "let the writer choose".
+unless the key is in `SORTED_LISTS`, so membership means "this list's order is
+semantic". It names `REGIONS_ONE`, a region *priority* order, and the four
+`CHD_*_COMPRESSION_ALGORITHMS` keys, whose entries are laid out in order into
+the four compression slots of a CHD header, where earlier slots win a tie.
+`NULLABLES` likewise covers every CHD tuning key, hunk sizes and algorithm lists
+for CDs, DVDs, hard disks and LaserDiscs alike, so each can be unset back to the
+writer's automatic choice. Both slices once listed only the CD and DVD keys,
+which left the hard disk and LaserDisc keys impossible to unset and the hard
+disk codecs alphabetized on `--add`; `src/config/test_chd_settings.rs` now pins
+both behaviours for all four media types.
 
 Category membership also determines which mutators accept a key, and the paths do
 not overlap uniformly. `set_setting` dispatches in the order `PATHS` →
@@ -270,6 +266,43 @@ not overlap uniformly. `set_setting` dispatches in the order `PATHS` →
 a choice-list key (`CHD_CD_COMPRESSION_ALGORITHMS`, `REGIONS_ONE_ARCADE`) is
 reported as `Unknown setting` by `--set` and can only be edited with `--add`.
 Conversely `--set` refuses every `LISTS` key with "Lists can't be set directly".
+
+## Every key at a glance
+
+A freshly migrated database holds exactly these global rows. "Auto" means the
+row is seeded `NULL` and the consumer picks a value itself.
+
+| Key | Category | Default | Unsettable |
+| --- | --- | --- | --- |
+| `ROM_DIRECTORY` | `PATHS` | `OXYROMON_ROM_DIRECTORY`, else `~/Emulation` | no |
+| `TMP_DIRECTORY` | `PATHS` | `OXYROMON_TMP_DIRECTORY`, else the system temp dir | no |
+| `REGIONS_ALL` | `LISTS` | empty | yes |
+| `REGIONS_ONE` | `LISTS`, `SORTED_LISTS` | empty | yes |
+| `REGIONS_ALL_SUBFOLDERS`, `REGIONS_ONE_SUBFOLDERS` | `choice_options` (`none`, `alpha`) | `none` | no |
+| `REGIONS_ONE_STRICT` | `BOOLEANS` | `false` | no |
+| `REGIONS_ALL_ARCADE`, `REGIONS_ONE_ARCADE` | `choice_list_options` (`bios`, `clone`, `parent`) | empty | yes |
+| `PREFER_PARENTS` | `BOOLEANS` | `true` | no |
+| `PREFER_REGIONS` | `choice_options` (`none`, `broad`, `narrow`) | `none` | no |
+| `PREFER_VERSIONS` | `choice_options` (`none`, `new`, `old`) | `new` | no |
+| `PREFER_FLAGS`, `DISCARD_FLAGS`, `DISCARD_RELEASES`, `LANGUAGES` | `LISTS` | empty | yes |
+| `PREFER_FORMAT` | `choice_options` (`convert_roms::ALL_FORMATS`) | unset | yes |
+| `GROUP_SUBSYSTEMS` | `BOOLEANS` | `true` | no |
+| `CHD_PARENTS` | `BOOLEANS` | `false` | no |
+| `CHD_CD/DVD/HD/LD_HUNK_SIZE` | `integer_range` | auto | yes |
+| `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS` | `choice_list_options`, `SORTED_LISTS` | auto | yes |
+| `RVZ_BLOCK_SIZE` | `integer_range` | `128` | no |
+| `RVZ_COMPRESSION_ALGORITHM` | `choice_options` | `zstd` | no |
+| `RVZ_COMPRESSION_LEVEL` | `integer_range` | `5` | no |
+| `RVZ_SCRUB` | `BOOLEANS` | `false` | no |
+| `SEVENZIP_COMPRESSION_ALGORITHM` | `choice_options` (`lzma2`, `zstd`) | `lzma2` | no |
+| `SEVENZIP_COMPRESSION_LEVEL`, `SEVENZIP_ZSTD_COMPRESSION_LEVEL` | `integer_range` | `9`, `19` | yes |
+| `SEVENZIP_SOLID_COMPRESSION` | `BOOLEANS` | `false` | no |
+| `ZIP_COMPRESSION_ALGORITHM` | `choice_options` (`deflate`, `zstd`) | `deflate` | no |
+| `ZIP_COMPRESSION_LEVEL`, `ZIP_ZSTD_COMPRESSION_LEVEL` | `integer_range` | `9`, `19` | yes |
+
+The region, language, discard and preference keys are consumed by `sort-roms`;
+see [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md).
+The format keys are consumed by conversion and export, below.
 
 ## The `config` subcommand
 
@@ -416,8 +449,7 @@ an `Option` and resolved by `create_ld`, which takes the parent's or one field.
 So an unset (NULL) tuning key is a meaningful "auto" value, not an absent
 setting.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: a semicolon inside a label breaks rendering; rephrase the label. -->
-```text
+```mermaid
 flowchart TD
   A["stored CHD hunk size and algorithm list"] --> B["convert_roms or export_roms reads them with Some(system.id)"]
   B --> C["chd.rs create_chd"]
@@ -427,7 +459,7 @@ flowchart TD
   E --> G["codecs packs up to four fourcc tags into the header slots, none clears them"]
   F --> G
   C --> H{"hunk size present"}
-  H -->|"no"| I["parent hunk size, else 8 CD frames or 4096 bytes; LD resolved in create_ld"]
+  H -->|"no"| I["parent hunk size, else 8 CD frames or 4096 bytes, LD resolved in create_ld"]
   H -->|"yes"| J["stored value"]
   G --> K["chd-rs create_cd / create_dvd / create_hd / create_ld"]
   I --> K
@@ -495,11 +527,11 @@ question for any change is whether they reuse config's classification:
 
 ## Adding a setting
 
-The repository's own checklist (`AGENTS.md`) and the shape of `config.rs` agree
-on the procedure; the only wrinkle is that three of the eight categories it
-names — `CHOICES`, `CHOICE_LISTS` and `INTEGERS` — do not exist as constants at
-all; they are the `choice_options`, `choice_list_options` and `integer_range`
-functions.
+The repository's own checklist (`AGENTS.md`, "New setting") and the shape of
+`config.rs` agree on the procedure: six categories, three of them const slices
+(`BOOLEANS`, `LISTS`, `PATHS`) and three of them functions (`choice_options`,
+`choice_list_options`, `integer_range`), plus `NULLABLES` and `SORTED_LISTS` as
+orthogonal flags.
 
 ```mermaid
 flowchart TD
@@ -561,6 +593,9 @@ throwaway database with `establish_connection` on a `NamedTempFile`:
 - `test_add_to_list.rs`, `test_add_to_list_already_exists.rs`,
   `test_remove_from_list.rs`, `test_remove_from_list_does_not_exist.rs` — list
   add/remove and their no-op cases.
+- `test_chd_settings.rs` — every CHD hunk size and algorithm list, for all four
+  media types, can be unset back to `NULL`, and `--add` keeps the hard disk
+  codecs in the order given.
 - `test_directory.rs` and `test_set_new_directory_when_old_is_missing.rs` — the
   canonicalize-on-read contract and recovery from a vanished directory.
 - `test_directory` siblings outside the module (`src/validator/test_*`,

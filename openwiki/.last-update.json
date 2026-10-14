@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-10-14T00:17:08.797Z",
+  "updatedAt": "2026-10-14T21:23:22.673Z",
   "command": "update",
-  "gitHead": "1d2a4354f8c8b59b016080469715523db39f6000",
-  "model": "qwen3.8-flash-next",
+  "gitHead": "fd25ded37cab8ef527d2e97f9bdc7cb249743278",
+  "model": "host-agent/claude",
   "status": "complete",
   "language": "en"
 }

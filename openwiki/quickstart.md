@@ -48,10 +48,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Quickstart & Task Routing
@@ -91,7 +91,7 @@ target/release/oxyromon sort-roms --system "Nintendo - Game Boy"
 
 A system must exist in the database before ROMs can match anything, and `sort-roms` needs at
 least one region in `REGIONS_ALL` or `REGIONS_ONE` (each can also be passed per run with
-`--regions` / `--one-regions`). ROMs that check out land in the system's base directory; sorting
+`-r/--regions` / `-o/--1g1r`). ROMs that check out land in the system's base directory; sorting
 then distributes files across the system directory, `1G1R`, and `Trash`.
 
 ```mermaid
@@ -109,8 +109,7 @@ flowchart LR
 
 - **Database**: `<data_dir>/oxyromon/oxyromon.db`, created on first run together with its parent
   directory, with embedded migrations applied automatically. Override the directory with
-  `OXYROMON_DATA_DIRECTORY` — note `README.md` still says `OXYROMON_DATA_DIR`, which is not what
-  the code reads.
+  `OXYROMON_DATA_DIRECTORY`.
 - **ROMs**: the `ROM_DIRECTORY` setting, defaulting to `~/Emulation`. `TMP_DIRECTORY` defaults to
   the system temp directory and should have several GB free for DVD-sized extractions. Both are
   ordinary settings rows: on first use each is seeded from `OXYROMON_ROM_DIRECTORY` /
@@ -180,12 +179,11 @@ shows up as `built-in, prod.keys not found`, since only compressing NCAs needs k
 | progress bars, `print_*` output, interactive prompts                                                      | [CLI Output, Progress & Prompts](concepts/cli-output-progress-and-prompts.md)  |
 | extension constants, magic-byte matchers                                                                  | [File Type Detection and Extension Constants](concepts/file-type-detection-and-extensions.md) |
 | adding or changing a format module (`archive`, `chd`, `rvz`, `xso`, …)                                    | [Format Modules and Their Crate Backends](concepts/format-modules-and-format-crates.md) |
-<!-- openwiki: broken internal link [concepts/chd-format-and-chd-rs.md] file "concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 | CHD read/write, hunk and codec behavior, parent CHDs, `src/chd.rs` ↔ `crates/chd-rs`                      | [CHD Format and the chd-rs Crate](concepts/chd-format-and-chd-rs.md)           |
 | `CommonRomfile` and its trait system                                                                      | [Romfile Trait System](concepts/romfile-trait-system.md)                       |
 | DAT parsing, header definitions, Redump/No-Intro downloads                                                | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)   |
 | hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |
-| region and 1G1R election, subfolder schemes, `Trash` placement                                             | [ROM Import Pipeline](workflows/rom-import-pipeline.md), [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md) |
+| region and 1G1R election, discard filters, subfolder schemes, `Trash` placement                            | [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md)        |
 | `convert-roms` / `export-roms` and the conversion matrix (CHD via in-process chd-rs)                       | [Format Conversion and Export](workflows/format-conversion-and-export.md)      |
 | `check-roms`, the purge family, empty-directory cleanup                                                   | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md) |
 | arcade merging strategies and M3U playlists                                                               | [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md) |

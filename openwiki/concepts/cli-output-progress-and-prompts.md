@@ -40,6 +40,8 @@ sources:
     resource: repo://src/mcp.rs
   - id: openwiki-source-8d46195d3bf969b1c0c3d484
     resource: repo://src/mcp/actions.rs
+  - id: openwiki-source-ef441c6f771dbed606c5c677
+    resource: repo://src/mcp/params.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
@@ -76,10 +78,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -379,9 +381,11 @@ mutations and the MCP write tools both synthesize argv with `--yes` for
 MCP maps a missing `unattended` parameter to `first`, and the web
 upload/URL import defaults to `first` for the same reason — no one is at a
 terminal. `import-irds` / `purge-irds` are reached the same way with `--system`
-supplying `headless`. MCP adds its own confirmation layer on top — destructive
-tools are refused with `need_confirm` unless the call carries `confirm: true` —
-so `--yes` only answers the CLI prompt, it does not authorize the tool.
+supplying `headless`. MCP adds its own confirmation layer on top — the
+destructive tools are refused with `need_confirm` unless the call carries
+`confirm: true`, which defaults to false when omitted (`purge_roms` asks for it
+only when `trash` or `foreign` would delete files) — so `--yes` only answers the
+CLI prompt, it does not authorize the tool.
 
 `prompt_for_games` receives its bypass from the compiler rather than from argv:
 `check_roms` and `common::select_games` call it as

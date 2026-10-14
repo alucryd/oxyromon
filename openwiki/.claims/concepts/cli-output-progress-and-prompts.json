@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5e973c8ddf14356b1b7fc4c6a31f8bc54141b156222960d76791b3676055b24e",
+  "pageVersion": "sha256:c159d9bf91f0792b2479c55f4f28f13f344a73738ccb11be10d134ae09ee8b12",
   "claims": [
     {
       "id": "claim_77b116c7739346779859b7ffe4c75f3b",
@@ -135,12 +135,8 @@
       "statement": "Every user-facing line goes through nine categorized helpers in src/progress.rs — `print_header` (◆ bold cyan), `print_subheader` (▸ bold), `print_info` (ℹ dim), `print_success` (✔ green), `print_warning` (⚠ yellow), `print_error` (✖ red bold), `print_skip` (↪ dim), `print_action` (→ dim), `print_separator` — each a `ProgressBar::println` with fixed icon and indent. The project rule is never to call `progress_bar.println(...)` directly from a subcommand or format module; the only surviving direct calls outside progress.rs are the two donation-footer lines in `info::main`, immediately followed by `finish_and_clear()`.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L616-L632",
-          "version": "repo-lines-v1:sha256:d1c738e1827af05f86ebb3508a93458f43e299b1611730601c37ce8c25246902:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3ZGM0YjQyMWVkZjEwMTlkM2M4ZDYzMjVjNzFiNTc1YzI3NTExOGRiMmM0YWZhOGEwNDRmNTRlZDIyMjExZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OGIwM2I3MGQwNmJkNDRhMGUyOTgwNGMyOGIzYTQ2MzAxMWExOThhMTFjOGFmNDE4MjBlMTUzMGZkZjBkMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNzgwNzMzZjE5NmJmZGI1MjA2YzZlZTg3NzA3MzY4OGYwMDM2MWMxNTc1MWYzNmQwYjEyNjY1ZTQ5MDU0YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkYzEzMDQ0ODEyMDY5YjgxNzc5OWFmYjEzYzJlZmQ5MTY1ZmNiNjVlNDk2ZjE0ZGFiMGQzMTEzNDViMTE4YTMifQ"
-        },
-        {
-          "resource": "repo://AGENTS.md#L676-L676",
-          "version": "repo-lines-v1:sha256:c3dc4e41bc0dd5ca1e890f913cdf3dbc6b8132338503c9816036c2153dbd19e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNkYzRlNDFiYzBkZDVjYTFlODkwZjkxM2NkZjNkYmM2YjgxMzIzMzg1MDNjOTgxNjAzNmMyMTUzZGJkMTllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNkYzRlNDFiYzBkZDVjYTFlODkwZjkxM2NkZjNkYmM2YjgxMzIzMzg1MDNjOTgxNjAzNmMyMTUzZGJkMTllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWFjNTdlMzRmZDNiNGE5ZmNmNGNlN2ZhNTY1NzMxYzMyOTI3MzRlNDhiNDFiNDdhZDM1MTk1MmVmNzZmYWRkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY0YmQyNDRiMWM3MWZjMWEyZTIwMTI2YTI4M2QxODBlMTkxYmE4MTJlZmUyMWM0MzFhMzM5MTc1Mzg1MzZkNiJ9"
+          "resource": "repo://AGENTS.md#L93-L111",
+          "version": "repo-lines-v1:sha256:76b3da0c81714f892058410a7eefccff3462acf68e0b112c87da8a7b5246b2ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjlmYzFmYzZlMjRhMTcwNzVmMTg3OWY2MDk0Nzg2NDYzYWZjNmIwZDkzMGIxYjEwZGEwOTdmNWZkYmI1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YWUyNzRmOGE0NGNkYzJkYzAyNGNjMDA0NmQ0MGYxMzRlM2IyNzBhMDBlZDIxNjU3YjQ1M2UxYjA5MGI5M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjM2ZDQzYTdjZDQ0ZjJlNzM1YTJjYWFkMTdiNjliZjA1MTk3ZmQzZTdiMDlhNDZhMmFhNTQ1OGM3OWVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
         },
         {
           "resource": "repo://src/info.rs#L61-L64",
@@ -171,8 +167,8 @@
       "statement": "Under `oxyromon mcp` stdout carries the MCP JSON-RPC channel and nothing else may write to it, which is why every helper in progress.rs and every log macro renders to stderr (the indicatif/env_logger defaults; nothing in src/ sets its own ProgressDrawTarget). `src/mcp.rs` documents the rule at the top of the module and `import_roms` carries a guard comment where a stray `println!` used to live, reporting per-file import errors with `print_error` + `print_info(\"Continuing\")`. The stdio integration test proves the split by spawning the real binary with `stderr(Stdio::null())` and `OXYROMON_LOG_LEVEL=off` and parsing every stdout line as JSON-RPC.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L676-L676",
-          "version": "repo-lines-v1:sha256:c3dc4e41bc0dd5ca1e890f913cdf3dbc6b8132338503c9816036c2153dbd19e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNkYzRlNDFiYzBkZDVjYTFlODkwZjkxM2NkZjNkYmM2YjgxMzIzMzg1MDNjOTgxNjAzNmMyMTUzZGJkMTllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNkYzRlNDFiYzBkZDVjYTFlODkwZjkxM2NkZjNkYmM2YjgxMzIzMzg1MDNjOTgxNjAzNmMyMTUzZGJkMTllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWFjNTdlMzRmZDNiNGE5ZmNmNGNlN2ZhNTY1NzMxYzMyOTI3MzRlNDhiNDFiNDdhZDM1MTk1MmVmNzZmYWRkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY0YmQyNDRiMWM3MWZjMWEyZTIwMTI2YTI4M2QxODBlMTkxYmE4MTJlZmUyMWM0MzFhMzM5MTc1Mzg1MzZkNiJ9"
+          "resource": "repo://AGENTS.md#L49-L52",
+          "version": "repo-lines-v1:sha256:4daaae8c99b0ae3b4ac547d72d154fcc904926f3e6b411511dabf9720ac27f5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRlYjM5ZGFhMDgzZDg5YmVjYzBjYzI0ZWU4OTlmZGI5NzM4ODhiNmY3OTVkMjZkMWRiYWQ0ZWVkZTA3ZDNjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzZDg0ZWMwODVhYWI0NGI4OGRiMmI5NGYwNzNlNzM5NjNlMTM3NzQ4M2JkMzQ0MmZjZjhkYjY1ZmE3N2QwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI0Y2NhZDU0MzUxOWJjNzI5OTA2MGJjNTY5NzFjYjMzNDdkM2Y1NWQ1YzNlOGVkMDUwNzEwMzI4MmQzNGQ5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjIzMDkzYmI0OWIwYzM1OGUyZGJkNmI4MGZlM2UwOWI5N2U1YzVjMmI3ODMxZmJmZWJhYzM2NzgzNjU2ODdlZCJ9"
         },
         {
           "resource": "repo://src/import_roms.rs#L305-L314",
@@ -336,19 +332,23 @@
     },
     {
       "id": "claim_970159fde3b949829a16dd37f66936ca",
-      "statement": "Non-CLI hosts reuse the CLI's own bypass switches rather than new code paths: GraphQL mutations and MCP write tools both synthesize argv containing `-y`/`--yes` for sort-roms and purge-roms, import paths always pass `--unattended` (MCP maps a missing parameter to `first`; the web upload/URL import also defaults to `first`), and import-irds/purge-irds are reached with `--system` supplying headless. MCP layers its own authorization on top: destructive tools are refused via `need_confirm` unless the call carries `confirm: true`, so `--yes` answers the CLI prompt but does not authorize the tool.",
+      "statement": "Non-CLI hosts reuse the CLI's own bypass switches rather than new code paths: GraphQL mutations and MCP write tools both synthesize argv containing `-y`/`--yes` for sort-roms and purge-roms, import paths always pass `--unattended` (MCP maps a missing parameter to `first`; the web upload/URL import also defaults to `first`), and import-irds/purge-irds are reached with `--system` supplying headless. MCP layers its own authorization on top: the destructive tools are refused via `need_confirm` unless the call carries `confirm: true`, which defaults to false when omitted, so `--yes` answers the CLI prompt but does not authorize the tool.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L184-L200",
-          "version": "repo-lines-v1:sha256:dd028c5038dbb55cb84cf869efa33f2a31f9d8d27a07a339d8355755fd7b6835:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0YjUyZTNhYjNkYTZkYWE5Njc0MGY4MDE0OWQ4YjhlYWU3YWQ4M2ViNTUxNTVmYzBlMGFmMGE3YTc0NDYxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiN2VlYjM2YmUwODIyYzMyNjllMzllZWQxMjEyMjlmYTVmNzg2YmMzMTg3YzdiNGFhMGU0MmI1NDA0ZTZkZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NWM1YmViMjQwMWU2N2UxOWE0MzA3NmZkMDRiNTBkYTdhMWNlOTlkNTM0MmI4Nzc5MWU0YzA2OWQzMTFjYWMifQ"
+          "resource": "repo://src/mcp/params.rs#L155-L195",
+          "version": "repo-lines-v1:sha256:60fc5fea96997a841bfa4eb20e53742de86efc34d200c4e8c2d5b9fac26d2193:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZWY3ZDIwNDUxZDA4OTg3YWM5YzhiNDNlMWRhZmVlMmE1NmIzZmQ5NjY1ODQyNjM5ZWEwOWQyNWZhMWU4NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMzZlNzY3ZjIxMTIzNWY4NTdkMzE4N2JkOWIwNjI5NDdlNTZmYTAzZTkwYWJmYmYwYjYzNGQ0ZDI3YzUwNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNTRkOGY3NWMzOTE0MjliNzI3MmUzM2QxM2UyMmQyODRkNGJkZTk4ZjJlNzFhMWEwNTU5ODExNzhlYTI5Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxNDcwZmU1YTNlODdhMjk3YTMzYjVmMzFiNTliNGRkNDQ3YjE0M2Y0ZDk0NmQxYzM0NTY4MWM4ZDkyMjdlZWEifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L251-L300",
-          "version": "repo-lines-v1:sha256:78eead6e579f0db0e80e077c778cf7811d18f7721b009d4cd1e7403973e7d34b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmNjZjVhZWI5ZDlmM2Q1NTNlMWRhZTE0ZGI4NmY2Njg2MTE4ZWM4NDc0ZjU5MWI1ZWFkYTYzZmMzMjRjNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiM2EyMTlhZTQxMmU2MjA3MjgxMTRkZDhlZTgyOGQ1YmZkZTBmODViMjJjYTc3NTMxNDk1ZDcyODIyOTVjYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwM2Y3MDlkNjU1ZTEzNTc0YTg1MTYxZjY4ODYyMzBjOGUyNDU2OTcyMmIyMzE2YzA2YzZlZWVhZDZmZGViNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyYWE3NzBhMjk2YWM5NWQ0ZTJjZTAwYjg3YzBkZjQ5OTI5ODA3ZmRlZDlhMjBhMDk5ZWM4YmViMTdmMDA5OTcifQ"
+          "resource": "repo://src/mcp/write.rs#L154-L222",
+          "version": "repo-lines-v1:sha256:e8d4a54f1780e6d4fe1cc73d440c6123a8bb5f51a1ced0c6972a0efc68decf73:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NDQ2ZTZjODU5MDZiNWMxZTI1MTc1OThkZDNkYjdmZDlhNWQwMWU4Y2IxNjA5ODhjYTAzZGFlYWJlNDI1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYWNlNDk5NWQxNGI4MDgzNGIzOTczNTBhMWQ3Y2M2OTdlNmFiYzEwMWI5NzAxNzAzNjAxMzkyYmUxMmIwNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMWVlY2RhY2IwNjQyMjkwMjNlNDY3MmFkNzJmMWY0NWY4NDQ1MWEwODE4N2E0MmMwZTU5MmIxMzJmNjY5MDMifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L643-L666",
-          "version": "repo-lines-v1:sha256:6792d4ae0bc83177c1aef947283e0ca9d6c86b6dace4b0458d89e8956f01757e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNzhjMTFhNWE0ZDNmZmViMzE4MGEzNDY4MGRjMzNkYzA5Mjg0ZjY1MTYxNDdmYWUyODkwZTQ0YWVmYTdkYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMTg3ZjMzNjk3ZDdiMzNhZmFiNjhhMDEzY2UyYTc2MjkwOThlMmNjNTJlZjJiMTU5ZmE1OTFlM2YxNjQxYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkM2M1NDIwMDliMGIzMDI1NWU1YTQwOWIyOTliNDYwMjA2YzMyNmY0NzQ5ZTRhZDhjMTE4ZmVlMGJkMTU1OTQifQ"
+          "resource": "repo://src/mcp/write.rs#L228-L292",
+          "version": "repo-lines-v1:sha256:b31364fa8239095b340afede9c68939ed1446fbd8111fc73edd7a1cb6819203f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxY2EwMzdiNjIxMjI0NGIxMmYzZDFmZDFiZDk1N2VkZjczZjcwMDcxMDBhMWEzNjFjYWJkNDgwZGEyYzQ5ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjY2QyMTNmZDFiOTU1ZDk4ZWZkZjlmZmVkMWEzNDFhMmIxY2Y5ZmM2NDllMDc1MmZhNjc2N2ZiMDkyOWQxYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNjJiMDliN2NkNjM0MTIwYWI5Y2U2ZDA2OWE0MWRiZGRmNGU3YzQ2NDMyOTE5ZTk5OTMzMDFkZTM4ZDUzZjgifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L583-L635",
+          "version": "repo-lines-v1:sha256:1af4048fe3fd53dd9bb95a55084e8cdec7c92025cc567399b26052cf9e17d421:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MjkzNDRmYjU3ZTI3OTk2NjQ1ZWRiZTMzOGMyNDE2NTEyNjk1YWMzZDRkOTY4OGYyMDZjOWNlNDg3NWI3MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZmJhNDgwYmNmYjdhY2M1ZmZmYzQzNzAxM2M0N2VhNTZjZTI2YzEwZDgxNzc2YWVlODI2MWMwOTViMmI3NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNjZiZWQyYjNiNzgyYWMwMGU5YmNkMzFiZWNkM2IzNWNmODA0MTEwYzYxZjQyNTc3NTBkYTBkNmFiMTkyMmMifQ"
         },
         {
           "resource": "repo://src/mutation.rs#L430-L443",
@@ -421,6 +421,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

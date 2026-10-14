@@ -82,10 +82,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -197,8 +197,7 @@ The remaining flags gate different things and are checked at different points:
 - **`-u/--update`** inverts the default for unknown systems: instead of creating
   one, the DAT is skipped with `Skipping unknown system` after parsing and before
   any write ([src/import_dats.rs](../../src/import_dats.rs#L189-L200),
-<!-- openwiki: broken internal link [<../../src/import_dats/test_zip_update_unknown_system.rs>] file "<../../src/import_dats/test_zip_update_unknown_system.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-  [`test_zip_update_unknown_system.rs`](<../../src/import_dats/test_zip_update_unknown_system.rs>)).
+  [`test_zip_update_unknown_system.rs`](../../src/import_dats/test_zip_update_unknown_system.rs)).
   Combined with a dat-o-matic pack this is the "refresh everything I already have"
   workflow; `test_zip_update_known_system` shows the other half, where a known
   system moves `20200721` → `20210401` and its catalog shrinks to the new DAT's 3
@@ -212,12 +211,10 @@ The remaining flags gate different things and are checked at different points:
   `systems.name` and keeps being the match key — and `-e` further refuses any game
   with more than one ROM or disk, since one extension cannot describe a multi-file
   set ([src/import_dats.rs](../../src/import_dats.rs#L202-L218),
-<!-- openwiki: broken internal link [<../../src/import_dats/test_dat_custom_name.rs>] file "<../../src/import_dats/test_dat_custom_name.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-  [`test_dat_custom_name.rs`](<../../src/import_dats/test_dat_custom_name.rs>)).
+  [`test_dat_custom_name.rs`](../../src/import_dats/test_dat_custom_name.rs)).
   Both are *replaced*, not merged: re-importing the same DAT with `-f` and no
   `--name` clears `custom_name` back to `NULL`
-<!-- openwiki: broken internal link [<../../src/import_dats/test_dat_custom_name_revert.rs>] file "<../../src/import_dats/test_dat_custom_name_revert.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-  ([`test_dat_custom_name_revert.rs`](<../../src/import_dats/test_dat_custom_name_revert.rs>)).
+  ([`test_dat_custom_name_revert.rs`](../../src/import_dats/test_dat_custom_name_revert.rs)).
 
 Nothing between these flags softens errors: `parse_dat` and `import_dat` are both
 awaited with `?` inside the loop, so a malformed DAT aborts the remaining arguments
@@ -291,8 +288,7 @@ shape later behaviour: roms with `status="nodump"` are skipped entirely, and
 `roms.original` is false when the DAT's file name carries an extension in
 `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, zso, 7z, zip)
 ([src/mimetype.rs](../../src/mimetype.rs#L37-L45),
-<!-- openwiki: broken internal link [<../../src/import_dats/test_dat_as_is.rs>] file "<../../src/import_dats/test_dat_as_is.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`test_dat_as_is.rs`](<../../src/import_dats/test_dat_as_is.rs>)). Hashes are
+[`test_dat_as_is.rs`](../../src/import_dats/test_dat_as_is.rs)). Hashes are
 lower-cased on write so a provider's upper-case CRC still matches a computed one.
 See [Arcade Rebuilds and M3U Playlists](./arcade-rebuild-and-playlists.md) for how
 `parent_id` / `bios` are later re-cut along merging strategies.
@@ -300,8 +296,7 @@ See [Arcade Rebuilds and M3U Playlists](./arcade-rebuild-and-playlists.md) for h
 Regions are computed from the game name with `shiratsu-naming`, No-Intro first and
 TOSEC as a fallback; a name the parser rejects is a **per-game** skip with a warning,
 not an import failure ([src/import_dats.rs](../../src/import_dats.rs#L420-L451),
-<!-- openwiki: broken internal link [<../../src/import_dats/test_regions_world.rs>] file "<../../src/import_dats/test_regions_world.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`test_regions_world.rs`](<../../src/import_dats/test_regions_world.rs>)).
+[`test_regions_world.rs`](../../src/import_dats/test_regions_world.rs)).
 
 ## Reconciling on-disk romfiles
 
@@ -329,13 +324,11 @@ shields the ROM directory, every system directory and every trash directory
 ([src/util.rs](../../src/util.rs#L278-L338)). Two invariants are visible in the
 tests: after a rename, the abandoned `T` subfolder is gone while the system
 directory itself remains
-<!-- openwiki: broken internal link [<../../src/import_dats/test_dat_updated_renamed_subfolder.rs>] file "<../../src/import_dats/test_dat_updated_renamed_subfolder.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-([`test_dat_updated_renamed_subfolder.rs`](<../../src/import_dats/test_dat_updated_renamed_subfolder.rs>));
+([`test_dat_updated_renamed_subfolder.rs`](../../src/import_dats/test_dat_updated_renamed_subfolder.rs));
 and when the system directory is read-only so the subdirectory *cannot* be deleted,
 the failure is demoted to a warning — the moves above already happened and must not
 be undone or abort the import
-<!-- openwiki: broken internal link [<../../src/import_dats/test_dat_updated_undeletable_subfolder.rs>] file "<../../src/import_dats/test_dat_updated_undeletable_subfolder.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-([`test_dat_updated_undeletable_subfolder.rs`](<../../src/import_dats/test_dat_updated_undeletable_subfolder.rs>)).
+([`test_dat_updated_undeletable_subfolder.rs`](../../src/import_dats/test_dat_updated_undeletable_subfolder.rs)).
 Directory cleanup is cosmetic; catalog and file placement are not.
 
 Finally `import_dat` recomputes completion for every game and the system before
@@ -377,8 +370,7 @@ the version defaulting to the creation timestamp `YYYYMMDD-HHMMSS`
 ([src/create_dats.rs](../../src/create_dats.rs#L121-L255)). The timestamp default is
 what makes a self-made catalog pass the lexicographic gate on the next regeneration
 rather than being skipped as older; the round trip (create then import) is exercised
-<!-- openwiki: broken internal link [<../../src/create_dats/test_dat.rs>] file "<../../src/create_dats/test_dat.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-by [`create_dats/test_dat.rs`](<../../src/create_dats/test_dat.rs>).
+by [`create_dats/test_dat.rs`](../../src/create_dats/test_dat.rs).
 
 ## Catalog entries that are not DATs
 
@@ -410,8 +402,7 @@ patches can share a ROM, the target path reuses the ROM's base name with the pat
 extension plus an index suffix (`foo.ips1` when one patch exists), and
 `patches UNIQUE (name, rom_id)` is enforced instead by an explicit name check that
 skips unless `-f` re-imports over the top
-<!-- openwiki: broken internal link [<../../src/import_patches/test_bps_ips.rs>] file "<../../src/import_patches/test_bps_ips.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-([`test_bps_ips.rs`](<../../src/import_patches/test_bps_ips.rs>)). `sort-roms`
+([`test_bps_ips.rs`](../../src/import_patches/test_bps_ips.rs)). `sort-roms`
 knows about this coupling and relocates a game's patch files alongside the ROM they
 patch ([src/sort_roms.rs](../../src/sort_roms.rs#L243-L246),
 [src/sort_roms.rs](../../src/sort_roms.rs#L683-L704)). Cataloging a patch does not
@@ -451,6 +442,6 @@ family of `test_dat_updated_*` files that all follow the same choreography: impo
 DAT, `import_rom` a real file, import a newer DAT, then assert where the file ended
 up and whether the directory it left behind still exists. The fixture DATs live in
 `tests/` and are named by version and variation, e.g.
-<!-- openwiki: broken internal link [<../../tests/Test System (20200721] file "<../../tests/Test System (20200721" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`tests/Test System (20200721).dat`](<../../tests/Test System (20200721).dat>) and
+<!-- openwiki: broken internal link [../../tests/Test%20System%20%2820200721%29.dat] file "../../tests/Test%20System%20%2820200721%29.dat" does not exist. Fix the href or restore the target, then delete this comment. -->
+[`tests/Test System (20200721).dat`](../../tests/Test%20System%20%2820200721%29.dat) and
 `Test System (20200723) (Changed Hashes).dat`.

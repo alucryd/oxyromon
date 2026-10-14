@@ -42,6 +42,8 @@ sources:
     resource: repo://src/import_roms/test_per_system_rom_directory.rs
   - id: openwiki-source-8d46195d3bf969b1c0c3d484
     resource: repo://src/mcp/actions.rs
+  - id: openwiki-source-ef441c6f771dbed606c5c677
+    resource: repo://src/mcp/params.rs
   - id: openwiki-source-b23fc7fb5544ff535eae8c43
     resource: repo://src/mcp/prompts.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
@@ -84,10 +86,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -233,7 +235,7 @@ literal string `built-in`
 task and returns its type, logical size, data SHA1, own SHA1, declared parent
 SHA1 and `track_count`. A **CD** CHD deliberately reports size `0` and an empty
 data hash: a CD has no single hash, only its tracks do
-([src/chd.rs](../../src/chd.rs#L541-L583)).
+([src/chd.rs](../../src/chd.rs#L548-L583)).
 
 `ChdRomfile::check` branches on that type. A CD CHD is extracted to cue/bin and
 each track's bin is checked against **its own** rom — `roms.iter().zip(bin_romfiles)`
@@ -469,7 +471,7 @@ destructive boundary.
   unconditionally; all three carry `destructive_hint = true`, refuse with
   `read_only_denial` under `--read-only`, and answer a missing confirmation with
   the `need_confirm` tool error
-  ([src/mcp/write.rs](../../src/mcp/write.rs#L631-L794),
+  ([src/mcp/write.rs](../../src/mcp/write.rs#L583-L722),
   [src/mcp/actions.rs](../../src/mcp/actions.rs#L40-L50)).
   `check_roms` is annotated `idempotent_hint = true` and needs no confirm, even
   though it trashes — it never destroys data.

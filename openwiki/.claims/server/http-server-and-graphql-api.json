@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5183e74123b496c90943eef99028214f954cd9efe65da216dbfef54f1fa98365",
+  "pageVersion": "sha256:effdcdb36facfbf3343ff9bde73d96e7d6ee499cd2eaf9b45cb9fc28c21e61c8",
   "claims": [
     {
       "id": "claim_fd03ca433bd84def895a64fd9e443d5f",
@@ -323,8 +323,8 @@
       "statement": "`/roms` accepts a `url` field that the **server** fetches, not the browser — so it can reach anything the server can, including its own private network, which the source comments and README flag as acceptable only for the default loopback bind. The in-code mitigations are a http/https scheme allow-list, a 30-second connect timeout, `error_for_status()`, and a 100 GiB cap enforced while streaming (`MAX_ROM_DOWNLOAD_SIZE`).",
       "evidence": [
         {
-          "resource": "repo://README.md#L740-L740",
-          "version": "repo-lines-v1:sha256:cd7557a3b96d43a97fd055de36ff5e4f6b4d6875338849fe4ffd725b60d8c033:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q3NTU3YTNiOTZkNDNhOTdmZDA1NWRlMzZmZjVlNGY2YjRkNjg3NTMzODg0OWZlNGZmZDcyNWI2MGQ4YzAzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q3NTU3YTNiOTZkNDNhOTdmZDA1NWRlMzZmZjVlNGY2YjRkNjg3NTMzODg0OWZlNGZmZDcyNWI2MGQ4YzAzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTdkMDAyYzQyNDRhZGNhYzgyYTRmYTllZTc3ZTQxZjYzYzEzYjY3NzJlNzU3NjU2NjNiNzNiODM2ZDk1NzY3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjVjYzljN2U2MTUxYTkxOWI4NmZkZGE1YjVkNjY4ZGNhZTZmNGY3ZDc0NmE4Y2VkYzAwYjg3ZWQwMGRhZjg5MSJ9"
+          "resource": "repo://README.md#L236-L238",
+          "version": "repo-lines-v1:sha256:286ff79601659f8af77afb5401677a51989d7838b4086c0a1cd2450cc8bed573:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmMzkyOGYxZDliNjc1ZmQwMDA4MDZjNmZmY2VlZmIzZmYxNGJjNmY3MWNlM2VmYTlhMDczMTZlZmZiMDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQyZmVjOWMxNmMyOGZjYzIzZDFiMjliNDExNWEwNGI3NzBiMWIwMmYwODA3OTYzZDc2NGI5NzhjMWFmOGEzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAzMTVhZmNjZmFlZWMwOGRkYzYxNDUzYjc2M2YwZmZhYmM5OGIyMzdiZjk5MWEzNGFhNTc0M2M2MzExMzg3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5NjRjODFhOWM5M2QzZWYzOTBmZDU1NmRiOWE5OTc2NGExYzIwZjQ1MjRmNjk5Y2I0OTg3ZDlmM2JmZjRmYSJ9"
         },
         {
           "resource": "repo://src/server.rs#L247-L257",
@@ -394,15 +394,15 @@
     },
     {
       "id": "claim_0fec8fd70a5b4774a99349f0c5cca7ed",
-      "statement": "The server has no authentication or authorisation: `/mcp` is nested on the same listener at the same trust level as `/graphql`, and `mcp_http_service` constructs its handler with `read_only = false`, so the mutating MCP tools are live over HTTP with no bearer token — recorded as an open item in PLAN.md.",
+      "statement": "The server has no authentication or authorisation: `/mcp` is nested on the same listener at the same trust level as `/graphql`, and `mcp_http_service` constructs its handler with `read_only = false`, so the mutating MCP tools are live over HTTP with no bearer token, as the README warns.",
       "evidence": [
         {
-          "resource": "repo://PLAN.md#L131-L131",
-          "version": "repo-lines-v1:sha256:4ef0a4ec31e335938795260f4d1c0de9d43374e727696b08fea328877063276b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVmMGE0ZWMzMWUzMzU5Mzg3OTUyNjBmNGQxYzBkZTlkNDMzNzRlNzI3Njk2YjA4ZmVhMzI4ODc3MDYzMjc2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVmMGE0ZWMzMWUzMzU5Mzg3OTUyNjBmNGQxYzBkZTlkNDMzNzRlNzI3Njk2YjA4ZmVhMzI4ODc3MDYzMjc2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGY1MTUyMTg3NzdhYzUxZGFhOTg0NmI0ODhkYmNjM2M3YjdmMDllMzkzODI5YzgyYTBmMDg5ZjBhN2U4ZjQxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjNmI3OGU0ZjhiNWEwZGJlZWFlMzU4OTUxNTlmN2Q3NGQxYTMzOTEyNDJlM2NkNGYxY2I5YTlmNmEyYTU0OCJ9"
+          "resource": "repo://README.md#L236-L238",
+          "version": "repo-lines-v1:sha256:286ff79601659f8af77afb5401677a51989d7838b4086c0a1cd2450cc8bed573:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNmMzkyOGYxZDliNjc1ZmQwMDA4MDZjNmZmY2VlZmIzZmYxNGJjNmY3MWNlM2VmYTlhMDczMTZlZmZiMDg0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQyZmVjOWMxNmMyOGZjYzIzZDFiMjliNDExNWEwNGI3NzBiMWIwMmYwODA3OTYzZDc2NGI5NzhjMWFmOGEzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAzMTVhZmNjZmFlZWMwOGRkYzYxNDUzYjc2M2YwZmZhYmM5OGIyMzdiZjk5MWEzNGFhNTc0M2M2MzExMzg3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5NjRjODFhOWM5M2QzZWYzOTBmZDU1NmRiOWE5OTc2NGExYzIwZjQ1MjRmNjk5Y2I0OTg3ZDlmM2JmZjRmYSJ9"
         },
         {
-          "resource": "repo://src/mcp.rs#L141-L162",
-          "version": "repo-lines-v1:sha256:3926ab1c08132dee996cf7655d52d5eb4abc9b839c8ec0b4cdee1378205974af:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYWMwNGUwYjhjZTQxNWUzOTQzMDE2NWExMTUyZGRmNzEzMTVkNzg2ZGIyY2QxNWNkMjRlODM4OTJjYTAxYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ZjYzNzU3ZDdiYmUxYzMxM2NiN2ViOGEyM2NkYTdhYmIzMWE1ODJhNTgzNDQ1Y2YzZDk3NDc2ODZmNGU1NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzYjY2ODE4YzQ2NTIwOTM5N2ZhZmM0ZDg2MjM3MDZiYzIyNjMwZTU5OTZkZTQ5NGFiYWJiNjNmNjRkNDYzNDEifQ"
+          "resource": "repo://src/mcp.rs#L170-L193",
+          "version": "repo-lines-v1:sha256:6452af74f453ffda8e09d549d34a121f095c20ad93a217d2df553bb64c6e60b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2ZWNlZDE5NDNmNzkxZmJkYjA5MjY4MmE2MDk2ODEyNWE2ZjA2YTVmNWJlMDNmNWU1N2JkMGVhMzYzMGUxMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmODU3MWY3MWY1NGM3YjkyM2VlOTQ0NWVmZTVlZjcxZGU1MmQ5ZDg5NGJhOWVjMzI2NDIyYTQ4NDA4NzE1MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzYjY2ODE4YzQ2NTIwOTM5N2ZhZmM0ZDg2MjM3MDZiYzIyNjMwZTU5OTZkZTQ5NGFiYWJiNjNmNjRkNDYzNDEifQ"
         },
         {
           "resource": "repo://src/server.rs#L212-L217",
@@ -443,7 +443,7 @@
       "statement": "The server tests boot the real `server::main` against a real listener and drive it over HTTP with reqwest, each file on its own port (8000-8003, 8010 mutations, 8011 queries, 8012 uploads) serialised by the test-only `config::MUTEX`; they are timing-based — sleep, then assert through GraphQL — so they cover the queue-and-notify contract, the DataLoader edges and the size aggregates, the status-code contract, and validator rejection surfacing as a GraphQL `errors` array rather than a panic. The query test now pins that `dependencies` lists both `chd-rs` and `sevenz-rust2` (linked-in engines that always report `built-in`) and that the list is sorted by name, rather than expecting a null version for a missing tool.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L631-L648",
+          "resource": "repo://src/config.rs#L637-L654",
           "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
         },
         {
@@ -485,7 +485,7 @@
           "version": "repo-lines-v1:sha256:73bb4cd7cb7b71e4019a979551ca4a6cb9d89d0773fa78ecac9ada89fa27ffab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiODY0ZTMzYzA5M2Y1YmQzZDEyNzZkZTU5ODlkYjZlODRiZTUzZDMyMDVkZDY0ZDViNTE2OWNlMjYyNGFlODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNjllMDhiYTdlNzcyYzUzOTlmYmY0NDUwNGFiZTlkM2M4ZDE3ZWZiZmNlZDk1ZjkzMTU1NzQyYjRkOGJhNmMifQ"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L72-L83",
+          "resource": "repo://src/mcp/read.rs#L68-L79",
           "version": "repo-lines-v1:sha256:9530ff0ec287ebf887774d51b11592f8c35fccd0a0402692e80762c65d7c1b76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzZGVlMTY4MThmNWJkYmEyYTk1MTQ4ODVhMGNjZWZhMzEyZGE0NGFjMzhkNjA5NDY2MWFkNTI2MTIxMTliMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxM2M1NTI1NDFlNjFhNTUxMzI4YWI0M2E1ZmU1MGFjZmEzYTQxM2FlMjkwMGVhMmZiOTE2YmUwMWE4N2NmNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2OGQ3MzcwN2UyZWIxZDI4ZjQ4NjA0YmNiNTcxZWRiNzg2NDhmYTM3MTE4YjczYWU0NWI2ZjlkODlkZjdhZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzUzZDFjYzVlNTkzMjRiODQxNjk0NDMzZWEwYzUxZGE3YzVlYmFmZGFlMGQ2YzM2ZTczYWNlMDQ4ODAxYjMifQ"
         },
         {
@@ -541,6 +541,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

@@ -74,10 +74,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Feature Flags and Build Topology
@@ -122,10 +122,8 @@ the `mcp`-without-`server` combination compiling.
 The TLS pair is a pure passthrough to `reqwest`, which is declared with
 `default-features = false` so no backend is implied by anything else. Choosing
 neither (`--no-default-features` alone) leaves the HTTP client without a TLS
-backend; the documented escape hatches pass one explicitly —
-`--no-default-features --features use-native-tls` for system OpenSSL, and
-`--no-default-features --features use-rustls` on Windows, where the README notes
-asm-hashes do not work with the MSVC toolchain. Nothing in `Cargo.toml` or
+backend; the documented way to switch passes one explicitly —
+`--no-default-features --features use-native-tls` for system OpenSSL. Nothing in `Cargo.toml` or
 `build.rs` asserts mutual exclusion: the flags are additive, and picking both is
 the operator's mistake to make, not something the build catches.
 

@@ -60,10 +60,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -112,8 +112,9 @@ see [Progress Bars, Categorized Output and Prompts](../concepts/cli-output-progr
 `service.serve(rmcp::transport::stdio())` — the point at which stdout becomes the
 protocol channel — and then blocks in `tokio::select!` on `server.waiting()`
 (stdin EOF or a transport error, which is how the tests observe a clean exit)
-against `tokio::signal::ctrl_c()`. Ctrl+C cancels the token, which unwinds any
-in-flight mutating action; dropping the running service stops the transport.
+against `tokio::signal::ctrl_c()` and, on Unix, SIGTERM. Either signal cancels
+the token, which unwinds any in-flight mutating action; dropping the running
+service stops the transport.
 `src/main.rs` runs the long-lived server *outside* the single-connection scope
 used by ordinary subcommands, then `optimize_database(pool)` after it returns.
 
@@ -172,17 +173,13 @@ plus the arcade restriction before starting. Those checks take their own
 short-lived pooled connection, so a malformed call neither queues on the write
 lock nor holds a connection for the duration of an action.
 
-`convert_roms` is the one gate that no longer agrees with the rest of the
-surface. `convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`,
-`CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes, which
-`set_setting` validates through `config::choice_options` without touching case),
-but the MCP handler lowercases `params.format` before testing membership, so no
-value can satisfy the check and every call is refused with "unknown format"; the
-same lowercased value would also fail clap's case-sensitive `PossibleValuesParser`
-downstream. GraphQL is unaffected because it validates the value as supplied. The
-tool's own description still advertises `iso`, `wbfs`, `gdi` and `raw`, which are
-not formats oxyromon converts to at all. Read the case handling and that
-description as defects to fix, not as the contract.
+`convert_roms` upper-cases `params.format` before the check, because
+`convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`,
+`RVZ`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes) and the validated
+value is what goes into the argv, where clap's `PossibleValuesParser` compares it
+case-sensitively. The tool description and the `format` parameter doc list
+exactly those eight values. `tests/mcp_stdio.rs` pins both sides: `"zip"` is
+accepted and `"nkit"` is refused with "unknown format".
 
 JSON Schema for every tool comes from the parameter structs in
 [`src/mcp/params.rs`](../../src/mcp/params.rs): field names and types give the
@@ -193,7 +190,8 @@ snake_case, enum *names* (`"merged"`, `"partial"`, `"romfile"`) instead of the
 integers stored in SQLite, and no bookkeeping ids a caller cannot use — because
 every field lands in a model's context window.
 
-A `system_id` argument always resolves through `require_system`, which maps the
+A `system_id` argument always resolves through the `require_system` method,
+which acquires its own pooled connection and maps the
 number to the system's *name* because that is what the CLI subcommands accept
 (`-s/--system`); an unknown id returns the tool-level message "system N not
 found; list_systems has the ids".
@@ -254,12 +252,12 @@ Every mutating tool funnels through `OxyromonMcp::run_action` in
 `write_lock` *before* acquiring a connection and holds it across the whole
 action, so writers queue politely instead of surfacing `SQLITE_BUSY` halfway
 through an import; SQLite serializes writers anyway, and this makes the ordering
-explicit. Note the scope: `OxyromonMcp::new` allocates a fresh
-`Arc<Mutex<()>>`, and the HTTP factory builds a handler per request. Under stdio
-there is exactly one handler and one process, so the lock is genuinely global;
-two concurrent `/mcp` requests get distinct locks, and there the backstop is
-SQLite itself plus the pool's 5-second `acquire_timeout`. GraphQL mutations
-(`spawn_cli_action`) take no such lock at all.
+explicit. The lock is created outside `OxyromonMcp::new` and passed in: the
+stdio server makes one for its single handler, and `mcp_http_service` makes one
+before its factory, which builds a handler per request, so every `/mcp` request
+shares it. GraphQL mutations (`spawn_cli_action`) take no such lock at all, so
+between GraphQL and MCP the backstop is SQLite itself plus the pool's 5-second
+`acquire_timeout`.
 
 The `work` closure is `for<'a> FnOnce(&'a mut SqliteConnection, &'a ProgressBar)
 -> BoxFuture<'a, Result<T>>` — the shape `spawn_cli_action` uses in
@@ -295,7 +293,10 @@ runs with --read-only"; the router disabling is what actually rejects calls. The
 flag lives only on the stdio subcommand — the HTTP factory constructs its handler
 with `read_only: false`, so `/mcp` always exposes the write tools.
 
-Destructive tools need an explicit `confirm: true` in the arguments.
+Destructive tools need an explicit `confirm: true` in the arguments. `confirm`
+is `#[serde(default)]`, so it is optional in the JSON Schema and an omitted
+value reaches the refusal path instead of looking like a required field the
+model must fill in.
 `purge_systems` and `purge_irds` gate unconditionally; `purge_roms` gates only
 when `trash` or `foreign` is set, since those delete files, and separately
 refuses a call with none of the four flags set. Refusal is `need_confirm(tool)`:
@@ -317,7 +318,8 @@ Three result channels, chosen deliberately:
   with a message the client renders to the user: bad ids, empty path lists, an
   unknown format, an invalid setting value. The model can act on these.
 - `Err(McpError)` is reserved for requests the server cannot route or serve at
-  all: pool-acquire failures, unknown resource URIs
+  all, built by the one `internal()` helper in `src/mcp.rs` when the cause is
+  an internal failure: pool-acquire failures, unknown resource URIs
   (`McpError::resource_not_found`) and resource-payload serialization failures —
   plus `audit_system` on a nonexistent system. A *tool* result that cannot be
   serialized degrades to `tool_error` instead, inside `ok_json`.
@@ -365,6 +367,8 @@ real client will find. It points `OXYROMON_DATA_DIRECTORY` at a temp directory
 and silences logging, then covers the handshake and the full tool/prompt/resource
 lists, `status` on an empty library, unknown-id tool errors, a DAT import read
 back through `list_systems`/`search_games`/`list_games` via `structuredContent`,
-confirm gating on all three purge tools, setting validation mirroring the CLI,
+confirm gating on all three purge tools (with `confirm` omitted for
+`purge_roms`), `convert_roms` accepting any case and refusing an unknown format,
+setting validation mirroring the CLI,
 and `--read-only` both hiding and refusing the write tools. `close()` drops stdin
 and asserts the server exits successfully on EOF.

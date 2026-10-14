@@ -96,10 +96,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Test Harness and Conventions
@@ -127,8 +127,8 @@ A third style exists once, inline: `#[cfg(test)] mod tests { … }` inside
 
 ## The canonical skeleton
 
-`AGENTS.md` prescribes the shape, and the modules follow it literally
-([AGENTS.md](../../AGENTS.md#L274-L307)):
+`AGENTS.md` describes the shape in its Tests section, and the modules follow
+it literally ([AGENTS.md](../../AGENTS.md#L113-L124)):
 
 ```rust
 #[tokio::test]
@@ -234,9 +234,9 @@ the price paid for the process-wide state the tests genuinely share: the global
 `MULTI_PROGRESS` instance every progress bar registers with
 ([src/progress.rs](../../src/progress.rs#L17-L34)), the `tests/` directory that
 hosts every scratch directory, and the fixed loopback ports the server tests bind.
-`AGENTS.md` lists a forgotten `MUTEX` under **Common Pitfalls**: the symptom is
+`AGENTS.md`'s Tests section warns about a forgotten `MUTEX`: the symptom is
 flakiness that only appears under a full `cargo test` run, not when the test is
-run alone ([AGENTS.md](../../AGENTS.md#L668-L677)).
+run alone ([AGENTS.md](../../AGENTS.md#L119-L120)).
 
 The lock is *not* universal, and the exceptions are deliberate: tests with no
 process-wide footprint skip it. Pure `#[test]` units — the `mimetype` matchers,
@@ -482,7 +482,7 @@ byte-identical to it
 ([tests/crates.rs](../../tests/crates.rs#L1-L17)). The format CLIs deliberately
 share one shell, so a change to that shell must be made in all six places at once;
 editing one turns any `cargo test --workspace` red, on any crate
-([AGENTS.md](../../AGENTS.md#L223-L232)).
+([AGENTS.md](../../AGENTS.md#L146-L155)).
 
 ## Invariants agents break most often
 
@@ -511,11 +511,12 @@ editing one turns any `cargo test --workspace` red, on any crate
 
 ## Adding tests for a new subcommand
 
-`AGENTS.md`'s checklist ends with tests: create `src/my_command/test_*.rs`, one
+`AGENTS.md`'s "New subcommand" checklist ends with tests, and its Tests section
+says where they go: create `src/my_command/test_*.rs`, one
 scenario per file, named for the behaviour (`test_sort_1g1r_strict.rs`,
 `test_dat_updated_orphan_chd.rs`), and register each with
 `#[cfg(test)] mod test_*;` at the bottom of `src/my_command.rs`
-([AGENTS.md](../../AGENTS.md#L323-L352)). Copy the skeleton verbatim, import the
+([AGENTS.md](../../AGENTS.md#L170-L174)). Copy the skeleton verbatim, import the
 system under test through `import_dats::main` rather than by inserting rows —
 except for the handful of pure helpers that build a `System`/`Game`/`Rom` struct
 in place, which is how `common/test_path_*.rs` pins the path-building logic

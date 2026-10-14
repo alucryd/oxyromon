@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:75e119087a08ba230a132fc92734c3a2a78da13bc25aa88c43557604800e0638",
+  "pageVersion": "sha256:989a2566c62e5c256b6dd28ec9e7eac76b501968aa3275cfecd5d93bc3e3555f",
   "claims": [
     {
       "id": "claim_ce732d8d7a774da796b56ec5ff282d1f",
@@ -19,8 +19,8 @@
           "version": "repo-lines-v1:sha256:21c5cd606f9a8625086a15a39e82fc323a749a8e91ab89b0176626cc41b743d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFjNWNkNjA2ZjlhODYyNTA4NmExNWEzOWU4MmZjMzIzYTc0OWE4ZTkxYWI4OWIwMTc2NjI2Y2M0MWI3NDNkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjFjNWNkNjA2ZjlhODYyNTA4NmExNWEzOWU4MmZjMzIzYTc0OWE4ZTkxYWI4OWIwMTc2NjI2Y2M0MWI3NDNkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNmNjBmM2JlOWRlNTRhNzM3OTI3OWY3NTdhNGRiMTQ2ZDY0NDNiNjdlNDk3OTM0YzMzMWI1YjgyNjUwMDNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzFlMDUyMzcyN2ZmMjQ3ZDI5M2RiODQ0OGU4MWJiOTM4MDQxNTJiM2FlYWE2YTAxZTM0NWQwNWJjZWM1ZjEyMSJ9"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L155-L236",
-          "version": "repo-lines-v1:sha256:06908158387f5e71b93b4230c5e94fed3158ecffe4824b89c2a541195af58dd6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZjEzYmFmZTU4MjJjZjIwYTE3MWY4YzRlOGFiNDg3MWVhZWViYjkzYmU2NWEwZmVjYjAzZDExY2MwOTIyMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMWVlY2RhY2IwNjQyMjkwMjNlNDY3MmFkNzJmMWY0NWY4NDQ1MWEwODE4N2E0MmMwZTU5MmIxMzJmNjY5MDMifQ"
+          "resource": "repo://src/mcp/write.rs#L154-L222",
+          "version": "repo-lines-v1:sha256:e8d4a54f1780e6d4fe1cc73d440c6123a8bb5f51a1ced0c6972a0efc68decf73:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NDQ2ZTZjODU5MDZiNWMxZTI1MTc1OThkZDNkYjdmZDlhNWQwMWU4Y2IxNjA5ODhjYTAzZGFlYWJlNDI1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYWNlNDk5NWQxNGI4MDgzNGIzOTczNTBhMWQ3Y2M2OTdlNmFiYzEwMWI5NzAxNzAzNjAxMzkyYmUxMmIwNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMWVlY2RhY2IwNjQyMjkwMjNlNDY3MmFkNzJmMWY0NWY4NDQ1MWEwODE4N2E0MmMwZTU5MmIxMzJmNjY5MDMifQ"
         },
         {
           "resource": "repo://src/rebuild_roms.rs#L155-L186",
@@ -105,7 +105,7 @@
       "statement": "Directory inputs differ from single-file inputs in two ways: a directory containing PS3_DISC.SFB is routed to import_jbfolder instead of being walked, and an Err from import_rom is printed with 'Continuing' rather than aborting the run (a top-level single file propagates the error).",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L150-L150",
+          "resource": "repo://src/config.rs#L156-L156",
           "version": "repo-lines-v1:sha256:3263e200d45f683e22cae24777295846272e2640fbb3437cb6a038ba366f5e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzI2M2UyMDBkNDVmNjgzZTIyY2FlMjQ3NzcyOTU4NDYyNzJlMjY0MGZiYjM0MzdjYjZhMDM4YmEzNjZmNWUxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmE1MDRlNWJhZjcwMzJmNDE3MTU4YTVjNTJhOWMwMWEyNGNjZDJmNjQ2ZjVmNDAwYTFjNTIyM2U5N2JlYzEyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y1NDZkMjdlYjNkYTgwNDgyNTQ5MTY4YjhhZTJjNjBkN2I1NjdmN2NlN2UxOWJjZjRjYTZmNjY1YzdlNGUxOCJ9"
         },
         {
@@ -279,7 +279,7 @@
           "version": "repo-lines-v1:sha256:2dd0ce9d627a319a964347aba802760c006e55ad88656121dd712fd61e11f3b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMTAwOTZlZjI5ODM2YTY5YjAyNWY2MzdiOWMyMDIzMWM4MmNkN2Q4ZDhmMDQ1MGVmZWM3MmVlNjliZDM3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MWNjYWZjMTg1OTQ4ZjBmMjVmYzE5MDFlZjE4MGNkZGI0ZDM4ZTIwYWUzNGI5M2IxYzY2OGNiZjEyZTUwYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMzkwYjNmN2VhYjkzOWFmYmViMjRkZWEzYjQ2ZmJhOWQ5MWQxOWNkNGRmMmIwY2RiZDM4ZWUwNTAxNWZlYmEifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L184-L193",
+          "resource": "repo://src/mcp/write.rs#L172-L181",
           "version": "repo-lines-v1:sha256:7a24d8a99e8e3e0deb502045d9253f2abc32a9a6c83a4f124aecbd8be55ab1ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0YjUyZTNhYjNkYTZkYWE5Njc0MGY4MDE0OWQ4YjhlYWU3YWQ4M2ViNTUxNTVmYzBlMGFmMGE3YTc0NDYxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0N2M2NmIyMGVmZDIwN2YwNWJiMjQ3YzQ5YjRhMTMwODU0Mjk5OTgxOWM1MDRiNDNhMmU5YWY5YTlmMWNkODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiN2VlYjM2YmUwODIyYzMyNjllMzllZWQxMjEyMjlmYTVmNzg2YmMzMTg3YzdiNGFhMGU0MmI1NDA0ZTZkZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyOTM2Mjk1MmRkYjdmMmJjYzBiZmU0ZmUwMWQ3OGZiNGEyNzQyNTdiNmRiNTNhN2ZhOWIzMDkxZjI2YWIwZGUifQ"
         },
         {
@@ -461,7 +461,7 @@
       "statement": "auto_convert runs only after every file has been committed, is skipped entirely under --as-is, reads the per-system PREFER_FORMAT (with global fallback via get_setting), and calls convert_system with ConvertOpts { recompress: false, diff: false, check: true, prompt_for_parents: false }; a conversion failure is downgraded to a warning so an import is never rolled back, and check: true means a produced file failing its integrity check is deleted with the original kept.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L306-L317",
+          "resource": "repo://src/config.rs#L312-L323",
           "version": "repo-lines-v1:sha256:713ccb8e20bbda52418825e8be1efced0b9098bb97fa779078a7c7d8337c94f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOWZmZDExOTA5YjFjMDNlOGY5ZTVmMGY5ZWIzOTgyMmM2YWZhODJkY2E2MTM3ZTRjMDFhMWE0NzVkZWE4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ODY5OGQwZmExODk1YTM2NWQxMmUzN2JmMTEwNjEzYzk1YTJmMTA4Y2Y2NjVkMDZmMTM4N2MwOGNhODZhYmYifQ"
         },
         {
@@ -573,6 +573,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

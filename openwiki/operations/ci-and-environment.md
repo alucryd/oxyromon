@@ -3,9 +3,6 @@ type: reference
 title: CI Pipelines and Runtime Environment
 description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the two clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
 tags: [ci, github-actions, clippy, coverage, environment-variables, trunk, sqlx, toolchain]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -17,8 +14,6 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-36f054f1f38f2197a6af5bca
     resource: repo://build.rs
-  - id: openwiki-source-16e6e7418602542c69565bde
-    resource: repo://Cargo.lock
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
   - id: openwiki-source-38b8a6db58a8dd7d870046a0
@@ -69,7 +64,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -168,8 +166,8 @@ Why each step exists:
   anywhere in the tree, so `dtolnay/rust-toolchain@stable` installs whatever
   stable is current on the day the workflow runs; the only MSRV anchor in the
   manifests is `rust-version = "1.94.0"` in `Cargo.toml`, shared with the format
-  crates through `[workspace.package]` (`AGENTS.md` still says "Rust 1.88.0+",
-  and nothing in CI enforces either number). Trunk is pinned to a specific
+  crates through `[workspace.package]` and repeated in `AGENTS.md`, and nothing
+  in CI enforces it). Trunk is pinned to a specific
   release by `TRUNK_VERSION` — the same `0.21.14` both Dockerfiles download — so
   the bundled UI is reproducible across CI and the published images without
   paying for a source build of trunk, while `cargo-llvm-cov` is installed
@@ -270,12 +268,6 @@ a machine without the distro packages: point `CHDMAN`, `FFMPEG` or `MAXCSO` at
 locally built binaries. (`xdelta3` and `flips` are the exception — their suites
 probe the bare command name on `$PATH` and have no override variable.)
 
-One naming hazard: the README's Configuration section says the data directory
-"may be overwritten using the `OXYROMON_DATA_DIR` environment variable", but no
-such variable is read anywhere in the source — the spelling the binary honors is
-`OXYROMON_DATA_DIRECTORY`. Setting `OXYROMON_DATA_DIR` is silently ignored, so a script that follows the README keeps
-writing to the platform data directory instead.
-
 Two lifetime distinctions matter more than the paths themselves:
 
 **`OXYROMON_DATA_DIRECTORY` is re-read every run and never persisted.** It
@@ -347,33 +339,18 @@ containers. That makes `cargo sqlx prepare -- --features server` part of any
 change to `migrations/` or to a query: an unprepared query change does not merely
 break the author's machine, it breaks the clippy passes, the release build and
 every container build, because none of them has a database to introspect. The
-root's `sqlx-data.json` (`{"db": "SQLite"}`) is the older companion file that
-`AGENTS.md` says may also need updating.
+root's `sqlx-data.json` (`{"db": "SQLite"}`) is a leftover of sqlx's older
+single-file offline format and is no longer read.
 
 ## Windows and TLS build notes
 
-The README tells Windows users not to build with the default feature set,
-because `asm-hashes` does not work with the MSVC toolchain, and offers two
-escapes:
-
-```sh
-cargo build --release --no-default-features --features use-rustls
-cargo build --release --target x86_64-pc-windows-gnu
-```
-
-Either is documented as sufficient — the first drops the default set while
-keeping rustls, the second fixes it by choosing a GNU target instead.
-`dist.sh` goes further and ships `x86_64-pc-windows-gnullvm` against
-`llvm-mingw` rather than MSVC. Note that the stated cause no longer checks out
-against this tree: `asm-hashes` appears nowhere in `Cargo.lock` (the hashing
-crates in use are `md-5`, `sha1` and `crc32fast`), so treat the workaround as
-documented but unverified for the current dependency set — the CI pass that runs
-`--no-default-features --features use-rustls` does so on Linux, and no CI job
-builds any Windows target. The system-OpenSSL alternative
-`--no-default-features --features use-native-tls` is documented but never
-compiled in CI, so an OpenSSL-only break is invisible until someone builds it.
-Nothing enforces that exactly one TLS backend is chosen; the flags are additive
-and picking both is the operator's error to make.
+No CI job builds a Windows or macOS target; those are produced only by
+`dist.sh`, which ships `x86_64-pc-windows-gnullvm` against `llvm-mingw` rather
+than MSVC. The system-OpenSSL alternative,
+`--no-default-features --features use-native-tls`, is documented in the README
+but never compiled in CI, so an OpenSSL-only break is invisible until someone
+builds it. Nothing enforces that exactly one TLS backend is chosen; the flags
+are additive and picking both is the operator's error to make.
 
 ## Docker publish workflow
 

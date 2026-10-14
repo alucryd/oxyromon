@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2aca4b0515f7e5546103d0ac07a3bc7a914c85b698c618c5c157f2440abd1443",
+  "pageVersion": "sha256:af877a2d4b7b1385a181d7fab272fc30dfd6968a7519e93736278c4fe3107967",
   "claims": [
     {
       "id": "claim_d42146da208949d8b60001552f88ad59",
@@ -21,7 +21,7 @@
       "statement": "config::get_setting resolves a setting by trying find_setting_by_key with Some(system_id) first and falling back to the global row, and both find_setting_by_key and find_settings bind the scope with SQL 'IS ?' so a bound NULL selects the global rows instead of never matching; every typed read therefore inherits from the global value until a per-system row exists.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L306-L317",
+          "resource": "repo://src/config.rs#L312-L323",
           "version": "repo-lines-v1:sha256:713ccb8e20bbda52418825e8be1efced0b9098bb97fa779078a7c7d8337c94f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOWZmZDExOTA5YjFjMDNlOGY5ZTVmMGY5ZWIzOTgyMmM2YWZhODJkY2E2MTM3ZTRjMDFhMWE0NzVkZWE4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ODY5OGQwZmExODk1YTM2NWQxMmUzN2JmMTEwNjEzYzk1YTJmMTA4Y2Y2NjVkMDZmMTM4N2MwOGNhODZhYmYifQ"
         },
         {
@@ -39,15 +39,15 @@
       "statement": "Per-system unset is not per-system delete: unset_setting only NULLs the row for the requested scope, so an override row with a NULL value is what get_setting returns for that system and the global value is never consulted again — a get_string caller sees None where a global default exists, and a get_bool caller on that shadowed key panics.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L306-L317",
+          "resource": "repo://src/config.rs#L312-L323",
           "version": "repo-lines-v1:sha256:713ccb8e20bbda52418825e8be1efced0b9098bb97fa779078a7c7d8337c94f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhOWZmZDExOTA5YjFjMDNlOGY5ZTVmMGY5ZWIzOTgyMmM2YWZhODJkY2E2MTM3ZTRjMDFhMWE0NzVkZWE4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ODY5OGQwZmExODk1YTM2NWQxMmUzN2JmMTEwNjEzYzk1YTJmMTA4Y2Y2NjVkMDZmMTM4N2MwOGNhODZhYmYifQ"
         },
         {
-          "resource": "repo://src/config.rs#L413-L430",
+          "resource": "repo://src/config.rs#L419-L436",
           "version": "repo-lines-v1:sha256:64d6f687f20075dd0caffd6fc5949271ce33f17ce235bb36548a447d8b579239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk4OWE4NGE3NDk2YjJlMTYwOTYxNjhiZmZkZWRjZmNkMWMwOGRjYzY3ODkxNzhmODM4ZGNmYmYwYjcyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NjIxN2Y2NTIxNjVjMGVjYzhmZDU3YTg1MzM3NjBiZmU4YzQ1ODFjNTI3NjBkZjllODhhODI5NzE2M2Q1NjYifQ"
         },
         {
-          "resource": "repo://src/config.rs#L432-L444",
+          "resource": "repo://src/config.rs#L438-L450",
           "version": "repo-lines-v1:sha256:0b3d8a8d823eb676af564261b12e6b8ea4f8fe71fea995883878197b0f679082:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTEyY2QyY2RjNjQ2YTM1N2QxMzNkMWE1NjgyYjZhNzAxNzA5ODY2YzFlMzkwMjcwN2ZjYzE3ZGJmODdlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmZjcxMmU1ZjJkN2NmM2JkZjJmZDAxNGNiMTgyYzMxZTM5NDFjOGRhMGZlZTlhZWUwMzRhM2IxOGY0ZDkzMzQifQ"
         }
       ]
@@ -57,11 +57,11 @@
       "statement": "All setting writes funnel through one private helper, upsert_setting, which looks up the exact scope and calls update_setting by id when a scoped row exists or create_setting otherwise; no public setter (set_bool, set_integer, set_string, set_directory, set_list) inserts directly.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L446-L465",
+          "resource": "repo://src/config.rs#L452-L471",
           "version": "repo-lines-v1:sha256:5cc629304df9206afcdb4cad9b003932983fe9a9940a17ac2f813afefce8514a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzZiMGMzZjA0NWEwNTZiNGUxY2U1NTJiM2RmODNkYWZiMWIyMzcwNzAwOGNjMGU3OTk5Y2NkMWI0NWQ4OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMmFlODhlNGJmM2QzMDIzMDBkYzdjYmNjODQwYTlkMDM4MTk2MDc3MjBkNjM0ODg4NDhmNDYyZTE1NzIxNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMGQwNzRkYzg0ZGVkZjM4ZTAwMjEwZjNhYTI1YTQ0MTIzYjQzZDk3ZjAzODM3NDAyNWMyYjY3Y2JhMWM5MzgifQ"
         },
         {
-          "resource": "repo://src/config.rs#L551-L601",
+          "resource": "repo://src/config.rs#L557-L607",
           "version": "repo-lines-v1:sha256:5bc5ba0a1a65c2b162434a1a40f3ac1712d886a3c03f7f2b1873a2b2873e3072:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
         },
         {
@@ -75,11 +75,11 @@
       "statement": "The typed accessors have deliberately different failure semantics: get_bool, get_integer and get_string unwrap the Setting so a key with no seeded row panics, get_list returns an empty Vec for both a missing row and a NULL value, and get_directory returns None for a missing row but panics on a NULL value while canonicalizing on read so a vanished path also yields None.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L432-L500",
+          "resource": "repo://src/config.rs#L438-L506",
           "version": "repo-lines-v1:sha256:f662ef48ab25afd54d323b029f5cbeaa62424e53b9d7e48f0e20f528aa8b6737:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTEyY2QyY2RjNjQ2YTM1N2QxMzNkMWE1NjgyYjZhNzAxNzA5ODY2YzFlMzkwMjcwN2ZjYzE3ZGJmODdlM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkZDI0MzNmY2I1ODRmOTFkYjEwYzM1NGM1NzM1OTcwZmY5MTU2ZjUwNmVjZjI4OTRhMmU4MWUzNThkMzUyMjEifQ"
         },
         {
-          "resource": "repo://src/config.rs#L565-L601",
+          "resource": "repo://src/config.rs#L571-L607",
           "version": "repo-lines-v1:sha256:11c3f4782f81f0d765b0b865f04f0998a835bacc2b31b6b83389384cbd9ca186:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDMzMGEyZDNjY2JlMTU5NGE3NzBiOWQyN2RlMjQ5MDk2MWJhODY2YTFjNzNhZTEzMTFiOWU3OTRlOTNlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDE5YjJiZTE1Yjk2NWVjZDRiMDZjODI1NGYzYWViOTU4ODcxZjA5ODI1OGJlNWY5ODdhZDY2MTM0YTVhNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
         },
         {
@@ -101,8 +101,8 @@
           "version": "repo-lines-v1:sha256:8e52d111225cb5b2ea92fc6c1550af7964c6b2433698271636c62b43021ac644:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYTcyM2VhODAwMzUzYWY2M2Q5ZTE5YzEwMGY1MjQ3NjJmNGYxMjQ0NmIxZWU1ZWRjNDY3MTA5NjEzYzJlZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ2YzkwNjAyYWE1YzI2YzM4ZTI3YzFlOTQ3ODkxZWRhMjNjYzQ3YWU0NDM4NzFjNjUyMWQ3YjEyZTNiZmY2ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkM2UwYmRhZjg0NGVmYTRhNWIzMTIzOWJiNjU5MzA1OTE5ODk2ZTA3Y2YyNTZhZjViODMxNGU1OTIwMmVmNzcifQ"
         },
         {
-          "resource": "repo://src/config.rs#L64-L148",
-          "version": "repo-lines-v1:sha256:6a9ae2d6cece03c9a6efd1891be9ef54a15835553a276c0e46bf0e62ef7e23be:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNjEyNTI3NTJiNDlhZjQ2ZjA4N2JmMTMwODMxMzU3ZjA5ZDdjMWUzOWY5MTIzYzc4Njk3NzQ5NjlkYjc1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNjdmYWZiOTU3NjBhMWZhNWI1ZGRmMDk0NDFjNjAyYTZiZTljMDE0NjgzZTgyOGIwYjFiNTBhMzc1OWYzYzkifQ"
+          "resource": "repo://src/config.rs#L64-L153",
+          "version": "repo-lines-v1:sha256:f6745f0f81bf10ad72247503cdfb3721b822af56a86e1a65c7284ea09683a21e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlYmIwNzIyMjUyMzkxNmIwMDExYTQwNWEwZmY2YWYxYzI4NmQwMzhlMTBmN2RiZTk4OTJlNDZiMzY1MDk3ZDYifQ"
         },
         {
           "resource": "repo://src/convert_roms.rs#L27-L27",
@@ -119,7 +119,7 @@
       "statement": "set_setting dispatches in a fixed order — PATHS, then BOOLEANS, then choice_options, then integer_range, then LISTS, then an unknown-key error — so a choice-list key such as CHD_CD_COMPRESSION_ALGORITHMS or REGIONS_ONE_ARCADE is reported as 'Unknown setting' by --set and is editable only through --add, while every LISTS key is refused with 'Lists can't be set directly'.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L361-L411",
+          "resource": "repo://src/config.rs#L367-L417",
           "version": "repo-lines-v1:sha256:46478e9e10ef887e55961b3032bf1711898094d99e6edeb16ed317dde1081d25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjFkOWQyODZmNzU4NWZhNTRmMDNhYzUwNDNkNWE4NTQ3NTVlN2U5MGU1NTFkYzczZTg4MmQwYTliMjE0ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NzE5ZDIyYjBiNDBmOThmZWFkMDVmZjljMzg1NTdjZGNjMjA5NTA1ZDIxMWMxOTNhOTcyZTNhMWMxMjQzMDgifQ"
         },
         {
@@ -130,7 +130,7 @@
     },
     {
       "id": "claim_77512a8031874355b62983ade33865e0",
-      "statement": "SORTED_LISTS membership means a list's order is semantic and must be preserved: add_to_list sorts the list after inserting unless the key is listed, so REGIONS_ONE (region priority) and the CHD CD/DVD algorithm lists keep insertion order while CHD_HD/CHD_LD_COMPRESSION_ALGORITHMS get alphabetized. For CHD the stored order is what the writer sees: create_chd hands the names to codecs(), which packs them into the four compression slots of the header in stored order, and chd-rs then tries every slot for each hunk and keeps the smallest encoding with ties going to the earliest slot.",
+      "statement": "SORTED_LISTS membership means a list's order is semantic and must be preserved: add_to_list sorts the list after inserting unless the key is listed, so REGIONS_ONE (region priority) and all four CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS lists keep insertion order. For CHD the stored order is what the writer sees: create_chd hands the names to codecs(), which packs them into the four compression slots of the header in stored order, and chd-rs then tries every slot for each hunk and keeps the smallest encoding with ties going to the earliest slot.",
       "evidence": [
         {
           "resource": "repo://crates/chd-rs/src/codec.rs#L579-L605",
@@ -141,38 +141,16 @@
           "version": "repo-lines-v1:sha256:3ef1ddd405ca31f35ac75ef92795126ea27bda5ad8dddb7984f9d3cc730facef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNDBmOTkyYzQ2ZjFlOTE4ZGMwZjA0YmVjNjljMDg4NmJmYmE4OTUxNjFjYTlhZTdiZDU1ZDFmZjQzMzllYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YTUwOTEwNzNkMGUwMTMzOWU5YmY0NGZiMmRkYjFhZGI1YmMxMjdiMGM4NWFkZTc3ZDk1OGEwYmM0MTFhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NjRkN2NmOWVjYjhhNjRhOTczZDkyZmI1ODU4NWVmZTAwODQ4YTIzMWI5ZjA0OWRhNjVhZjA2OTUxMzU5YzkifQ"
         },
         {
-          "resource": "repo://src/config.rs#L143-L147",
-          "version": "repo-lines-v1:sha256:3841275f8d3db5974ffc092756929fea0eedb48355b719fea6d1c2f0d71f36e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkYTQ1YzdjZWM3YjZjNzRiMzIxZmQ1ZmM3MjYzYmJhYjY4OWIyOWY2YzIyMTM5MTMxMTgyZDFhNGZmZTA5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QzMmE0MzI2NDJjZGFhZTNlYTJlNzIyODJhYmQ0NTc4MzU0NTE3M2U4ZmVkZGIxNDQwYWY1ZGIyMTE0NDM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWViYjA3MjIyNTIzOTE2YjAwMTFhNDA1YTBmZjZhZjFjMjg2ZDAzOGUxMGY3ZGJlOTg5MmU0NmIzNjUwOTdkNiJ9"
+          "resource": "repo://src/config.rs#L147-L153",
+          "version": "repo-lines-v1:sha256:526933561c5b19c80c0474e6b5adb41ca62db952d8a38e4c32a43d2a84b8d84d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkYTQ1YzdjZWM3YjZjNzRiMzIxZmQ1ZmM3MjYzYmJhYjY4OWIyOWY2YzIyMTM5MTMxMTgyZDFhNGZmZTA5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZDJjMGQ2ZGM1ZTc0ZDkyZmExNGI5MWRiZWEyNjQwOTBiZWIzNWZkYjkxODhkOWIzNDExODFkY2U5ZjRjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QzMmE0MzI2NDJjZGFhZTNlYTJlNzIyODJhYmQ0NTc4MzU0NTE3M2U4ZmVkZGIxNDQwYWY1ZGIyMTE0NDM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWViYjA3MjIyNTIzOTE2YjAwMTFhNDA1YTBmZjZhZjFjMjg2ZDAzOGUxMGY3ZGJlOTg5MmU0NmIzNjUwOTdkNiJ9"
         },
         {
-          "resource": "repo://src/config.rs#L502-L529",
+          "resource": "repo://src/config.rs#L508-L535",
           "version": "repo-lines-v1:sha256:af91b01fa87db9ff4f2db3e6dc0d5b6ce6e8a64e74f7c251e93e1ca4a4336ef8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNGE1NmUzNTA3OTY3NzFmYzI4MWJiOWU4NWQ0NTMzNGYzMGZlM2FiNWUwZjg0ZDgxNGJiZTVhMzI0MjE1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MWNjN2NiMzkyZDI1NzFhODIwOWNkMGI1Yzc0NjdiN2I5M2VjMjg5NzgxNDllNzg3NzgyMDEyOGZjNmY4MGEifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_8a36ee9b1c02485ea2f2ee470204a4e6",
-      "statement": "NULLABLES coverage is inconsistent for the CHD keys: CHD_HD_HUNK_SIZE, CHD_HD_COMPRESSION_ALGORITHMS, CHD_LD_HUNK_SIZE and CHD_LD_COMPRESSION_ALGORITHMS were seeded with NULL defaults by 20241008133304 but are absent from NULLABLES, so unset_setting refuses them in the CLI and the MCP set_setting tool rejects an unset with the NULLABLES list, while their CHD_CD/CHD_DVD counterparts can be unset. An HD/LD algorithm list can still reach NULL by removing entries one at a time (set_list stores an empty list as NULL), but an HD/LD hunk size has no in-app path back to the writer's automatic choice.",
-      "evidence": [
-        {
-          "resource": "repo://migrations/20241008133304_add_more_chd_settings.sql#L1-L11",
-          "version": "repo-lines-v1:sha256:86a5543c68721dabbd25ca8110a952ed85c10f5d67fc367d3c3682f404a20fcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzJiMTllMmQwMGJkNmNjMjY1YzMwYTkzN2E0NjhlODMyZDdiZTI1ZmM2YmRkNzljNzNkMzU4MzY4MWY2ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWI1YTM2MmZhYjdiYThjMGVmMDJiM2JmYzljMDg0ZDZhNWJjMzQwYjdiYTc5MGNkZjMyOGFlMmZlM2Q5ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/config.rs#L123-L141",
-          "version": "repo-lines-v1:sha256:05f640d709c6b6a221436622b427b9eccd58e9a029b0d827122204593c792271:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4OWM4NTA1NjNkMzg4NmU5Yjc5MjEyN2YwZDIwOTEyNTI5NTg4MWM4MjMwNWJjMmY3MTU0ODA0NzRjZDgyMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzZGQ5YzkwNWNhMDc5OTYxZDVhMmJhODUzZjU0ODUwYWU4YTU2NzJkNjdlNTRjODVhNjg4MWM2ODAyMTNjNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYTkzYTg5OTYxZWY0ZTM1YWU1ZWVjOTRhNWVjMzFkODFiODkxZTIwM2FkMzBmMmQ5MGE4YmM1MTJiYjljOGIifQ"
-        },
-        {
-          "resource": "repo://src/config.rs#L413-L430",
-          "version": "repo-lines-v1:sha256:64d6f687f20075dd0caffd6fc5949271ce33f17ce235bb36548a447d8b579239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk4OWE4NGE3NDk2YjJlMTYwOTYxNjhiZmZkZWRjZmNkMWMwOGRjYzY3ODkxNzhmODM4ZGNmYmYwYjcyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NjIxN2Y2NTIxNjVjMGVjYzhmZDU3YTg1MzM3NjBiZmU4YzQ1ODFjNTI3NjBkZjllODhhODI5NzE2M2Q1NjYifQ"
-        },
-        {
-          "resource": "repo://src/config.rs#L551-L563",
-          "version": "repo-lines-v1:sha256:50992753140ec29e568df02005afdd7367daa7129965ac624f00a7b4b5f2df41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZTczNTI0NDVjYWFiZjk2MzFmNGEzZmFlZTM5YmJiODg4NmM3YTRkZmIyMmIxNWU2MTBiMThkOTYyOGM5NTgifQ"
-        },
-        {
-          "resource": "repo://src/mcp/write.rs#L487-L494",
-          "version": "repo-lines-v1:sha256:24df31708c22885a84fcf76a4a86543a872b5544b3c8aaec850c03075f7190ab:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI4OTVkYmRhZDFjNzk0MDJhYmU0YzM1ODE2YTAwMzdmNWJiYTBlNjJmMGE1MGZiZGI4MTk0MGQ3MWQ4MWU1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTUyMmM0MmNkMTljNmQwM2Q4MDhjNDUyNzIwNTUyODI1YjdlYTFjNWI0OTFiMjE4NTExY2FjNzQxNWNmOWQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzMwYzJmY2FkZjk3MjJjZTAzZjc3NzgxYTdhNjVjNzgxM2U5Y2Q1OWE0ZWFmYTVlNTlkYzIzMmY3NjM3ZjQ1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmNmNWNiOTBmMDQyYmU1MDk5ZDkxZjVmYzljNjYzMzA3ODNiNDU1OWZlYzI3ODg4OTJiYjg3OTE4NzYyMDUwYyJ9"
+          "resource": "repo://src/config/test_chd_settings.rs#L1-L38",
+          "version": "repo-lines-v1:sha256:052286f02c4760b91c18ab1bc65e41645ea113de350ce4e9544aea9c663e8319:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -181,11 +159,11 @@
       "statement": "The config subcommand exposes one -n/--system flag (percent globs resolved via find_systems_by_name_like) plus six operations (--list, --get, --set, --unset, --add, --remove) each declared conflicts_with_all of the others, and main fans an edit out over every system matching the glob through prompt_for_systems_like while a read collapses to a single system through prompt_for_system_like; an edit glob with no match warns and returns Ok.",
       "evidence": [
         {
-          "resource": "repo://README.md#L288-L298",
-          "version": "repo-lines-v1:sha256:d75f316737553b955337b96b9bb3e7394ff8ec2e297d16447551f68fc7a2d438:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljOWYyYjIzM2U3MTljYjI5MjA2OTQyNzM1NGRlNmFlYjI0OTM3NWNhZDMzMzFlMWU2ODkzMDI5OTFhMzQwZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMjMwMmJmYjliYjcyY2Y1OTQwYTMxMmQ2MzQxYWNhNjYzZDhhYmQxNjFjYjc0MjlmNjEwODYxNTE2ODE3MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MzA4YjAxMjIzN2JiZjhlZGEyMDgxNDIxZjdhN2VjZDBhN2ZkZGJjYjIyODE1Y2E4NDJhN2VhMmUxYjE2YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5YzRjZTk3ODNjNzhkOWE1MDUwZjhmZGM1M2FmYTNmMWJkNzdlMGM4YTAxYWM0ZjBlZjRhYmVjYTE3MWZiMGUifQ"
+          "resource": "repo://README.md#L323-L340",
+          "version": "repo-lines-v1:sha256:9bb29a7d767b9bff427bfbdd00a3ce3e6b413b19e8e9d52a1f6882948e82699c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlN2UyMmU2ZjZjNWIxMzVkM2FiMzZmMmJlMzYwZmFhOGM3NzBiNjRjMGRiZDg5ZmMxMzM5OWE4OTcxYjRiNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MDY2MTIyMWE2MTM1NzU2YjFmYzc4ZWQ1NWQyMWM0YTYzMTZlM2EyNTY4NDU1M2E2NTAwZjE4MGJmZDY1MmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5MTBiYjE0ZDFkNzZmMzUyNzZmMTM4YTljNGMxZDQ4NDAyYmY2ZTg5NmQ4MTE1YjIxMjljZDc4MjI5OTNhNGYifQ"
         },
         {
-          "resource": "repo://src/config.rs#L152-L253",
+          "resource": "repo://src/config.rs#L158-L259",
           "version": "repo-lines-v1:sha256:b84b349475595f4cf3c2f3ba9aec86ade19503d2df5e56055c222bbb8306b75b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkZTQ0NTdjMDE5ZmZiYTk1ZGI1NWQwMzk0ODExNmE0ZTdiZWJmOTVmZGZjOTdlMjlkOWZjMDFmYzc0NmVkMjdlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZDllMTI1NDY0MjU1NzZkM2RlYWU4YzliOWRiZjEyOGQ1ZDZkZGFmNWQ3ZmU4NTc5MzQ5MjdkZWZmYTNiOWRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMzY3ZmFmYjk1NzYwYTFmYTViNWRkZjA5NDQxYzYwMmE2YmU5YzAxNDY4M2U4MjhiMGIxYjUwYTM3NTlmM2M5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NmQ4NDg5ZmQxZmFkYjQzOTc5MmRiYzBjMGI2NTQ4MjYxMjcwYTcyZGIyZWZlMTQ5ODZhYWJjMzQ1YWRlYmY2In0"
         }
       ]
@@ -195,7 +173,7 @@
       "statement": "CLI validation failures are reported, not returned: an illegal choice prints the valid choices, an out-of-range integer prints the range, and an unknown key prints an error, yet config::main still returns Ok(()) and the previously stored value is left untouched; the only path that propagates an Err is a PATHS key, whose canonicalization fails before the directory is created.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L361-L411",
+          "resource": "repo://src/config.rs#L367-L417",
           "version": "repo-lines-v1:sha256:46478e9e10ef887e55961b3032bf1711898094d99e6edeb16ed317dde1081d25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NjFkOWQyODZmNzU4NWZhNTRmMDNhYzUwNDNkNWE4NTQ3NTVlN2U5MGU1NTFkYzczZTg4MmQwYTliMjE0ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1OTM3Njc5MWU2OTQ3NmY3YTA3MTg5NmRjMjViOTEzN2VmODQyM2UzZTk2MzQwY2NmYWMzMzIzZDQyY2E1MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NzE5ZDIyYjBiNDBmOThmZWFkMDVmZjljMzg1NTdjZGNjMjA5NTA1ZDIxMWMxOTNhOTcyZTNhMWMxMjQzMDgifQ"
         },
         {
@@ -213,12 +191,12 @@
       "statement": "Effective settings for a system are computed as a merge rather than a per-key lookup — global rows are collected into a map keyed by key, per-system rows overwrite them, and the result is sorted by key — which is why config --list -n <system> prints the whole configuration as that system sees it, and the same merge is duplicated in the GraphQL systemSettings resolver and the MCP get_settings tool.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L319-L346",
+          "resource": "repo://src/config.rs#L325-L352",
           "version": "repo-lines-v1:sha256:c59a6ed3b19138b0ab7eb3ab0d14432dfa56cbf436724b6aa31687ed251156c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MDU4YTU0ZmZmMDNhNzc3NmFhODNlZmExODFhZjU4MjA0N2RjNjI1ZjRiYzM4ZjYzYjE0MDI1ZWY2M2E0NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NTIwNWY4NWZjZTcyNjVmNTE1MTk0OGY1Yjg3YzA5YWZkNzNhNWVhNGFjNGRmMDEyZWQyNzA0NTVmMTM3NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OTI5ZTcwNThmZjNmOTM5NDRjODVmZjlhZGU0ZmYyYjg1NTg2MjA3M2VhMmMzMDI5N2FkNzg1ZjE0OThjMTUifQ"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L319-L359",
-          "version": "repo-lines-v1:sha256:d6d574808ca6a992621964f959ce074f37853c988a0b32e5dd7b20ab6dddfbf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0M2Y1NTU5NjA4YTVlMzJlOTQwODVjN2M2OTY2YWZkMmExNGE1ZjNiYWZhMjA2ZjEyZWNkNGJkYzQ3MTY4MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
+          "resource": "repo://src/mcp/read.rs#L319-L355",
+          "version": "repo-lines-v1:sha256:5d775e9bcf593fe379de9639e57befdfc2530d15e9d5fe8ecdc74fc6da135f07:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZGQyYWQ0NjU1YThkZGUyYTEyZjA2MTBhMDViOTE3OGFlM2M4YTJhNWEwYjA5MmI2OTFjOTZmODdhNDdiYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZWJmNGY4YTBjMTZjZDdiYTRkYjE2OWQ0MmE5NjFiNjE0MTc3Y2U3MzNjMTZjNzdlNzNiYmNhMjAyZTQwODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
         },
         {
           "resource": "repo://src/query.rs#L295-L309",
@@ -253,7 +231,7 @@
           "version": "repo-lines-v1:sha256:79cfff8a5150abb1af52b25575e3e4c003481ffd30584e154645b9c420b97851:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMTAxYWExMGNlMDUyN2JkMmIwMjUwYzE1OTczMTMwM2Q4NDFhOTBlMjc4ODRjZGNjMDI3MTZiYmZiYmRkZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NTk4ZWEyZGZjYjBkMjViZjFhZTZmNGEzYzQwYWJiNmUzNmYzNjE3MzYxY2ZjZjM1NzU5OWViY2VmYzkwNjMifQ"
         },
         {
-          "resource": "repo://src/config.rs#L603-L629",
+          "resource": "repo://src/config.rs#L609-L635",
           "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
@@ -365,7 +343,7 @@
       "statement": "PREFER_FORMAT is written from outside config as well as by config --set: import-roms auto-converts each system's newly imported games when get_string finds a value, and convert-roms --save persists the format through set_string after converting; the arcade restriction to ORIGINAL/ZIP is enforced by config::set_setting, mutation::set_prefer_format and the MCP tool but not by --save, so a per-system value no validated surface would accept is reachable and honored by the next import.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L375-L394",
+          "resource": "repo://src/config.rs#L381-L400",
           "version": "repo-lines-v1:sha256:ddd2a1fd3bca8117538e7745dbe2839af3c486b5acf97b021e475d2a5883b380:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZDU2NTc5ZGJjMTE1NmY0ZmRlMTcwZTZkMzJjNThhM2Y3NzNhN2JiOGY3NDQyYzUwNmZhMGM2YmUyNzU1ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODAzZDM2ZjEwZDg3ZTFkN2U5ZTFjMmE1YWZiY2EzYjE3MGM1ZTQ5OTVlN2Y5NmNiNDI2ZDI4MmFlNGNmMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNWRhMDgxZGI3NjRkZjJmNzk2OTY4NjZhMmIyZjUzNjhiMmYwZjEzNGIxNzljMTc2ZWVmZTE2ZjdjZTI0NzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwOTczZmRjNzBkN2E5ZDM5MjgxMzUyNTBmNTBlY2FhY2EzN2UwNmYzYzE4NjJjOTc5ZDQzZThmYzc1MDVlYzcifQ"
         },
         {
@@ -423,16 +401,16 @@
           "version": "repo-lines-v1:sha256:cc42988a40d7ed2ed6e81e9dcac36553af8e7d8a446113d4be8bd017c5229d01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZDIwMTdiMjk2ZmJmZDMwOWRmZmQxMTkxOGI0ODQ4ZmJmNjI5NjNhZTljMTUxNTE2NzVjMGM3N2E4NWNmYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZmFkNjA3NDM0YjdmMTY3NGIyZTk5YmRkMzhmNzc5ZDlkMWQ3YTVlNTljNjUzMTQ0ZjQzYzFlNzAzMGMwMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4N2IwZDIyMzcwYmM3NDkzZDg4YzFjZTEwZDE5OGFiYzE4MjdiMzBlOTliNmQyOTkyMTc0NDEyOGQyOTk4ZmYifQ"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L319-L359",
-          "version": "repo-lines-v1:sha256:d6d574808ca6a992621964f959ce074f37853c988a0b32e5dd7b20ab6dddfbf5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0M2Y1NTU5NjA4YTVlMzJlOTQwODVjN2M2OTY2YWZkMmExNGE1ZjNiYWZhMjA2ZjEyZWNkNGJkYzQ3MTY4MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
+          "resource": "repo://src/mcp/read.rs#L319-L355",
+          "version": "repo-lines-v1:sha256:5d775e9bcf593fe379de9639e57befdfc2530d15e9d5fe8ecdc74fc6da135f07:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZGQyYWQ0NjU1YThkZGUyYTEyZjA2MTBhMDViOTE3OGFlM2M4YTJhNWEwYjA5MmI2OTFjOTZmODdhNDdiYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZWJmNGY4YTBjMTZjZDdiYTRkYjE2OWQ0MmE5NjFiNjE0MTc3Y2U3MzNjMTZjNzdlNzNiYmNhMjAyZTQwODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODlhMTA0YTcwZTViZjA0OGIzZGNmMjY0MDBiOWNkMTEwYzYwYzFlNWNlNzYyMTVkMjJkMmIwOGE4YTczNTcifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L16-L20",
-          "version": "repo-lines-v1:sha256:41d73679fd7566011b5a8ac62f0ea44d865360c6b394aa5e923089774d493679:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRmMGU2MzAyOWYyZjQxY2VlMDE2MDUzZTNiYWZiMTRiYjk0OTcyYjRjZmYxYTA4MThiMTcxZDE4Nzk3MjkwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFjNGFmNmVkZmIyZDRmZTRkYjc2M2U4MDVmMDgyNDMxMWU3NTYzYjc0MGM4NDg0ZWQzZTFjNzEwYzE3MTgxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY1OWIzNjE5OTI1NmZlYzJmYzk4ZDJjYzkyYzIyOTFkYWRmMTNkY2I0ODJjOTM1MzFhMTQxMWU0NGMyZjU0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY2ZTZiZDVkOTEzMGZhMDZjNjMwNTg4ZjVjMDM1Y2I1ZWY5NGU2OWNmODY0MWQ0MjYxOTg3ODU4YWQ1ZWZlOCJ9"
+          "resource": "repo://src/mcp/write.rs#L18-L18",
+          "version": "repo-lines-v1:sha256:d0c506a25e5af6a832d25765686410c41b168e5ed56a1959997d8aad7ee33a75:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjNTA2YTI1ZTVhZjZhODMyZDI1NzY1Njg2NDEwYzQxYjE2OGU1ZWQ1NmExOTU5OTk3ZDhhYWQ3ZWUzM2E3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjNTA2YTI1ZTVhZjZhODMyZDI1NzY1Njg2NDEwYzQxYjE2OGU1ZWQ1NmExOTU5OTk3ZDhhYWQ3ZWUzM2E3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M4ZDU5OTBiMDkyNjliZjM5NTIzYzU5ZDc1NjczODdjYWZhNGFhMWI4MGJhZjRkMTNhZTQxMTk3Njk4NDQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjRhOGY2MzY2YjY3YzRjOTE4ZDM2ODc5Y2ZkMTMwMzk0MDYxZTg4NDc1MzQ4YWFlNzY3YzQxMDk0ZjUzNWJlYSJ9"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L460-L547",
-          "version": "repo-lines-v1:sha256:3552711ad5fa1cb52101eb6d6e42a722a7bfb7fa8c25e86a5dba4d42dde1978f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmZGY1MjFmMjgzNWFiZTdiZjk1NmE1YmQ4MDhiYTRmN2M5YzA4ZmVkNzBlOGQwNDcxODY2NmYxZGNmZjAwMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZTY3ZGI2NzMxMjAxYmM5YTc0NmNmMDBlYWIyMGRlMzA4YjMwMGI5NWZjZGU4NTA2YjRjODIwMzhkNjZlZjIifQ"
+          "resource": "repo://src/mcp/write.rs#L423-L577",
+          "version": "repo-lines-v1:sha256:e0daf4a4d4379b797e093a6f06b888b0e8169b96100b1047c43dcbe6b6368cf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMTUyNjJmZjA2OTkzOGE1OWE0ZGQ0OGYyNTE0YjUxODEyMTI2Njg5MDJlMDcyN2NmNzZhMTQwNmEyNTI3M2FjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZGM4OWJlMTY5Y2FiNzIwODQxZjQ2YzFjMTY1NzBlMmVhMWVlMGQ3YzM3ZGY0YTEwZDhmMTRhYjFlZTBmYTRlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NDBjM2MwMmViZTFhZDQ3YWI4M2VlY2I5OGE2ZWVjMTk2ZDI3NjEzM2IxYjA0Yjc0NTIxYjdiNDBkZTc0YjBiIn0"
         }
       ]
     },
@@ -441,12 +419,8 @@
       "statement": "MCP set_setting diverges deliberately for list settings: the value is the complete desired comma-separated set, and the tool diffs it against config::get_list issuing remove_from_list and add_to_list per entry rather than writing the list wholesale, so list validation and SORTED_LISTS ordering still apply.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L460-L463",
-          "version": "repo-lines-v1:sha256:26f021b4d25c57f3ab5b442e0f5ef1a348fee1f98d3e32bc189aa993337e8ecb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIyYjBiMDlhOTYzNWRlM2U3Y2VkOTJiZjE3N2U1YmUzMzczNGIxODI0ZmYwOTE3ZjQxNzRiNjhjZTFjODVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU5Mzk1MzA0MWE1OTAwNzcwY2Q3NzcyOTg1OGZmZGZhNWFhNjViZmUzY2NmMzMwMzBmYWE5MGNlZTQ2YTI3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZkZjUyMWYyODM1YWJlN2JmOTU2YTViZDgwOGJhNGY3YzljMDhmZWQ3MGU4ZDA0NzE4NjY2ZjFkY2ZmMDAxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2E1YTk3NGIxZTdiZTA3Nzk4MzUzYzY3NzQzM2FmYzI0NjAyZjIzMmE1M2UyOWY0NzkwNDNiNmIxMzNhMzM3ZiJ9"
-        },
-        {
-          "resource": "repo://src/mcp/write.rs#L560-L595",
-          "version": "repo-lines-v1:sha256:0a4f623bcfb69c2ceb60792eb0e0d73862430e10d4c08439a98d2366be3b94a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYTA2NDI4MTk5Y2UyYjcwYmJjYjFlMDBlZjAwNDQ2MWU1MzIzMTk1N2IwMTRmNWZjYWZlYjQ4MGI4MzQxYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYjIwMjFlYmNlYWViY2JjMGM0N2FjYzUwNjhjMjYzNmY3YmYyZGZiZjA1YTNmNWQ0N2FjNzE0Y2Q1YzRkMjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViOTM5NWJkMGE2ZDhhZTAxNWUxZjZkZDY1MDZjZWMyOTQ5NTgxMzQwOTM5N2Y0YzhhZGRlNTJiOTA3MGMwOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNWJhYzQ1NTk5MjlmMDQ4ZmVlNDg3ZDZkMjZjYzA0NTg5ZTgzNzI5ZTkzYTUxYmE2NjJiY2Y1MjVmODkxZTYifQ"
+          "resource": "repo://src/mcp/write.rs#L423-L577",
+          "version": "repo-lines-v1:sha256:e0daf4a4d4379b797e093a6f06b888b0e8169b96100b1047c43dcbe6b6368cf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMTUyNjJmZjA2OTkzOGE1OWE0ZGQ0OGYyNTE0YjUxODEyMTI2Njg5MDJlMDcyN2NmNzZhMTQwNmEyNTI3M2FjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZGM4OWJlMTY5Y2FiNzIwODQxZjQ2YzFjMTY1NzBlMmVhMWVlMGQ3YzM3ZGY0YTEwZDhmMTRhYjFlZTBmYTRlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NDBjM2MwMmViZTFhZDQ3YWI4M2VlY2I5OGE2ZWVjMTk2ZDI3NjEzM2IxYjA0Yjc0NTIxYjdiNDBkZTc0YjBiIn0"
         }
       ]
     },
@@ -463,7 +437,7 @@
           "version": "repo-lines-v1:sha256:a5daf5bc0ace1a4a4e4ee04411998feec39fe473bde7c69542153d01c0f3ed06:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiMDA1MDk2NzMxMjg3MTliN2ZjODgyYTk1ZGRlMjNmY2E1OTM0MzU5NThhMTYxZmE2ZDk5MTgzNTAyMTJlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://src/config.rs#L148-L148",
+          "resource": "repo://src/config.rs#L154-L154",
           "version": "repo-lines-v1:sha256:ff61252752b49af46f087bf130831357f09d7c1e39f9123c7869774969db7547:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY2MTI1Mjc1MmI0OWFmNDZmMDg3YmYxMzA4MzEzNTdmMDlkN2MxZTM5ZjkxMjNjNzg2OTc3NDk2OWRiNzU0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY2MTI1Mjc1MmI0OWFmNDZmMDg3YmYxMzA4MzEzNTdmMDlkN2MxZTM5ZjkxMjNjNzg2OTc3NDk2OWRiNzU0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGRhN2JkYTE1YzFkNzAyMGMwN2RlNjk5MzJlNzBiZWM4ZGI5MTY1Mzg4ZjMzNGRkNjZlYTc4MjJjZDIwZjA4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM2N2ZhZmI5NTc2MGExZmE1YjVkZGYwOTQ0MWM2MDJhNmJlOWMwMTQ2ODNlODI4YjBiMWI1MGEzNzU5ZjNjOSJ9"
         }
       ]
@@ -477,7 +451,7 @@
           "version": "repo-lines-v1:sha256:700ab8bd6b71c223d27574e4a4fc73b0cfa71bdb7cf77a898ebe9d10acfda811:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNzhjNGViMmZhMmM5MWJmMDQxYWE4OGE3ZTNkOTRkOWI3ZTk3ZDM0ZTcyNzZmYWY2ZjBmMmU3OTQ5OTFlMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNWU4Y2EwMzYxNjlkM2ZlOWYyODg2NjRmOTU0OGQ4NjkwNGFmOTY1ZmI3YjcwYWY3M2Y1Y2IwZmU2NjhkM2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1ZjIzYjY3ZGM0ZmIzZWFkYTI2ZGM5OWM4ZjE5ZDhhNjJhYmYwMDMxZjdkYWFhOWExMWI4MzViZDg4NjkxZDYifQ"
         },
         {
-          "resource": "repo://src/config.rs#L551-L563",
+          "resource": "repo://src/config.rs#L557-L569",
           "version": "repo-lines-v1:sha256:50992753140ec29e568df02005afdd7367daa7129965ac624f00a7b4b5f2df41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZTczNTI0NDVjYWFiZjk2MzFmNGEzZmFlZTM5YmJiODg4NmM3YTRkZmIyMmIxNWU2MTBiMThkOTYyOGM5NTgifQ"
         }
       ]
@@ -502,19 +476,19 @@
     },
     {
       "id": "claim_7e320f7c10a1415f8d3613e96c9f0f45",
-      "statement": "Adding a setting means four coordinated edits: classify the key in config.rs (slice membership or a match arm, with a lowercase-serialized strum enum for choices), add a migration seeding the default, read it through the typed accessor with the system scope, and expose it in query.rs/mutation.rs only when the web UI needs it; AGENTS.md's checklist names CHOICES, CHOICE_LISTS and INTEGERS as constants but those three are in fact functions.",
+      "statement": "Adding a setting means four coordinated edits: classify the key in config.rs (slice membership or a match arm in choice_options, choice_list_options or integer_range, with a lowercase-serialized strum enum for choices, plus NULLABLES/SORTED_LISTS as needed), add a migration seeding the default, read it through the typed accessor with the system scope, and expose it in query.rs/mutation.rs only when the web UI needs it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L376-L389",
-          "version": "repo-lines-v1:sha256:c9647bd344e603258f9305e930c0ea74a4b48605693cb1e4800e6cf522a568e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MTdiZDBhZjFlMTYzNmI3OGI5NzliNWM2NmNmOWQ2YzZlNDM1ZDQ0MmE3OWRkNzY3YWFkYjg2NTgyZTdiZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDhkZWRkMTliNzc3ZDQxNzk2NGMxNzMwYzk3NTg5YTgxODY2ZDlkZjM2OWIyNTlkYjg2ZmYyNzllNWMzMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ZDA4YjhiZWVmMGM0MTRiNGMyZDlmN2I1NTcxYjk2YTljOWMyNTFjNzViYzkwMGEyYmNlMDMyMDYzNWIwYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWFjODQ5N2JjY2Y5MWYxZTUyYjcwNzEzNTA3MzE1MGFmNzMwMmQ2NjkzMTI4NmY2ZDk4N2M3MDE4ODMyZTAifQ"
+          "resource": "repo://AGENTS.md#L185-L191",
+          "version": "repo-lines-v1:sha256:be415a40abc3351cb271599e999c84455cfd7246f70a01cbafa6c88b3d2a7804:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM4MTFmMzNlYjJmNjMyOGUyZGZmMjI5YmFkNzdjMjJmNWU4MGQ4ZjlmMmYzYmQ5YzBiYTgwMDQzN2Q5NzE3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzM3ODAzNzBmYTllZjMwNTMyNTg0MjZlOTcwNmZmY2RlZGJlYmNlYTY3NDQ1Y2FmNjNkNTcyNzU3YjQ2MDAwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIyNjA4ZWVjNzYwNGQ1OGEwNGRmMjFmZWNjNTNkZGFlYmZiYmUzOGNhOGI1NjQxYzAxODQxNzZjOTM2ZmU5ZSJ9"
         },
         {
           "resource": "repo://migrations/20260811000001_add_prefer_format_setting.sql#L1-L2",
           "version": "repo-lines-v1:sha256:c541ba9f1d1ec4da22cc512e0002227d6bbe40c20362536334481b931fc3238b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZjMmIxOWUyZDAwYmQ2Y2MyNjVjMzBhOTM3YTQ2OGU4MzJkN2JlMjVmYzZiZGQ3OWM3M2QzNTgzNjgxZjZmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5MWFmMTRiZjkyYmY1ZTlkNDNjYTMwZTg5NDk3MmJkOGMwZDFmZDY0YTU1Y2NlM2IxNzcwZTkwMGY1NzQ1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://src/config.rs#L64-L148",
-          "version": "repo-lines-v1:sha256:6a9ae2d6cece03c9a6efd1891be9ef54a15835553a276c0e46bf0e62ef7e23be:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNjEyNTI3NTJiNDlhZjQ2ZjA4N2JmMTMwODMxMzU3ZjA5ZDdjMWUzOWY5MTIzYzc4Njk3NzQ5NjlkYjc1NDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNjdmYWZiOTU3NjBhMWZhNWI1ZGRmMDk0NDFjNjAyYTZiZTljMDE0NjgzZTgyOGIwYjFiNTBhMzc1OWYzYzkifQ"
+          "resource": "repo://src/config.rs#L64-L153",
+          "version": "repo-lines-v1:sha256:f6745f0f81bf10ad72247503cdfb3721b822af56a86e1a65c7284ea09683a21e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzA5YjVhNDA3YTJhNmZiOWJmYjQyY2ZmY2JmYmM0MTI1MzU1MjhlM2QyYzBhNGQ0NTNkYzlkZTNjYTQ4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZjNmNmQzZGY2MzAzYzExNDE5ZTg1ZWYyOTEyYmIwODNlNDc5NDdhYTA1NmJiNGU0NjYyMDU1ZjNkNWYwNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlYmIwNzIyMjUyMzkxNmIwMDExYTQwNWEwZmY2YWYxYzI4NmQwMzhlMTBmN2RiZTk4OTJlNDZiMzY1MDk3ZDYifQ"
         }
       ]
     },
@@ -523,8 +497,8 @@
       "statement": "src/config keeps one narrow test per behaviour over a throwaway migrated database: test_system_bool_fallback pins global inheritance, test_system_bool_override pins that the scoped read sees the override while the global read still sees the global, and test_cli drives the whole subcommand surface asserting that every rejection leaves the prior value intact; tests touching the global directory settings take the test-only config::MUTEX.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L631-L671",
-          "version": "repo-lines-v1:sha256:618c42225a49f53231be1c18e675bbfc0e247cbc1e6780e844887ac2417f9fb7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYTFjNThkZTRkMTk4ZDY5MjFhMzExMGRlZjQzZDNlMTJmYWVmY2I5Y2QyN2RiMTVkZThhOWU0MGFhOGQ3NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/config.rs#L637-L654",
+          "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
         },
         {
           "resource": "repo://src/config/test_cli.rs#L1-L104",
@@ -619,10 +593,36 @@
           "version": "repo-lines-v1:sha256:3ef1ddd405ca31f35ac75ef92795126ea27bda5ad8dddb7984f9d3cc730facef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNDBmOTkyYzQ2ZjFlOTE4ZGMwZjA0YmVjNjljMDg4NmJmYmE4OTUxNjFjYTlhZTdiZDU1ZDFmZjQzMzllYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YTUwOTEwNzNkMGUwMTMzOWU5YmY0NGZiMmRkYjFhZGI1YmMxMjdiMGM4NWFkZTc3ZDk1OGEwYmM0MTFhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NjRkN2NmOWVjYjhhNjRhOTczZDkyZmI1ODU4NWVmZTAwODQ4YTIzMWI5ZjA0OWRhNjVhZjA2OTUxMzU5YzkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2093a90b15cf426193960c537f841c1b",
+      "statement": "NULLABLES covers every CHD tuning key — the hunk size and the algorithm list for CD, DVD, hard disk and LaserDisc alike — all of which migrations seed as NULL, so unset_setting can return any of them to the writer's automatic choice; test_chd_settings pins the unset for all four media types.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20240331210619_add_chd_settings.sql",
+          "version": "repo-file-v1:sha256:4224f3a6dd222e1a73cb0c56780cc9e1ddbb8bd41cc1d459e6eb177236c13e8a"
+        },
+        {
+          "resource": "repo://migrations/20241008133304_add_more_chd_settings.sql#L1-L11",
+          "version": "repo-lines-v1:sha256:86a5543c68721dabbd25ca8110a952ed85c10f5d67fc367d3c3682f404a20fcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzJiMTllMmQwMGJkNmNjMjY1YzMwYTkzN2E0NjhlODMyZDdiZTI1ZmM2YmRkNzljNzNkMzU4MzY4MWY2ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYWI1YTM2MmZhYjdiYThjMGVmMDJiM2JmYzljMDg0ZDZhNWJjMzQwYjdiYTc5MGNkZjMyOGFlMmZlM2Q5ZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L123-L145",
+          "version": "repo-lines-v1:sha256:73b0c2274d37c8acec78f0f3be8561c7da522519bf4f9c25962f90a4dcd42d5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4OWM4NTA1NjNkMzg4NmU5Yjc5MjEyN2YwZDIwOTEyNTI5NTg4MWM4MjMwNWJjMmY3MTU0ODA0NzRjZDgyMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzZGQ5YzkwNWNhMDc5OTYxZDVhMmJhODUzZjU0ODUwYWU4YTU2NzJkNjdlNTRjODVhNjg4MWM2ODAyMTNjNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYTkzYTg5OTYxZWY0ZTM1YWU1ZWVjOTRhNWVjMzFkODFiODkxZTIwM2FkMzBmMmQ5MGE4YmM1MTJiYjljOGIifQ"
+        },
+        {
+          "resource": "repo://src/config.rs#L419-L436",
+          "version": "repo-lines-v1:sha256:64d6f687f20075dd0caffd6fc5949271ce33f17ce235bb36548a447d8b579239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3Njk4OWE4NGE3NDk2YjJlMTYwOTYxNjhiZmZkZWRjZmNkMWMwOGRjYzY3ODkxNzhmODM4ZGNmYmYwYjcyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NjIxN2Y2NTIxNjVjMGVjYzhmZDU3YTg1MzM3NjBiZmU4YzQ1ODFjNTI3NjBkZjllODhhODI5NzE2M2Q1NjYifQ"
+        },
+        {
+          "resource": "repo://src/config/test_chd_settings.rs#L1-L38",
+          "version": "repo-lines-v1:sha256:052286f02c4760b91c18ab1bc65e41645ea113de350ce4e9544aea9c663e8319:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

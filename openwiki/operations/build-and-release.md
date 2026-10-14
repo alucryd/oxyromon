@@ -54,10 +54,10 @@ sources:
     resource: repo://src/main.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Builds, Distribution and Releases
@@ -242,8 +242,8 @@ Release archives still do not bundle everything oxyromon can use, but the list h
 shrunk to one entry: `oxyromon info` reports `ctrtool` as the only dependency that
 can come back "not found", alongside the built-in `chd-rs`, `xso-rs`, `xps-rs`,
 `xdelta-rs`, `nsz-rs`, `sevenz-rust2` and `nod` (whose `get_version()` returns the
-literal string `built-in`). The README's "External programs" section likewise lists
-only ctrtool, for CIA support; see
+literal string `built-in`). The README's supported-formats table likewise names
+only ctrtool as an external backend, for CIA support; see
 [External Tools](../integrations/external-tools.md).
 
 ## Publishing order and the remaining git pin

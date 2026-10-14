@@ -106,10 +106,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Format Crates in crates/
@@ -139,7 +139,6 @@ dependency and survives only as a test-time reference binary, which leaves
 `ctrtool` as the one format oxyromon still runs as a child process
 ([External Tool Integration](external-tools.md)). CHD's container, codecs,
 media types and `src/chd.rs` adapter have a page of their own —
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md) — so
 this page covers only what that crate shares with the other five. The `src/`
 adapters that call into these crates are covered in
@@ -397,7 +396,6 @@ installable without the organizer.
   `cd_input_size` for the CD progress denominator. The media-specific writers are
   thin shells over `writer::write_part`, which is also where clone CHDs resolve
   unchanged hunks against a parent. Internal:
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
   [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md).
 - **`gdi_rs::convert(cue, output_dir, progress) -> Gdi`** plus
   `input_size(cue)`. `output_dir` must already exist, and the returned `Gdi`

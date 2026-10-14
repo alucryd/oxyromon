@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -63,7 +63,7 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -183,7 +183,8 @@ optimize_database(pool).await;
 This ordering matters twice. First, the CLI connection is returned before the
 server binds its socket, so the server's real pool (5 connections, `NORMAL`
 locking) starts uncontended. Second, the two server `main()`s only return when
-the transport ends — stdin closes for `mcp`, Ctrl+C/SIGTERM for `server` — so
+the transport ends — stdin closes or Ctrl+C/SIGTERM arrives for `mcp`,
+Ctrl+C/SIGTERM for `server` — so
 `optimize_database(pool)` runs as shutdown cleanup rather than after a batch job.
 `server::main` also checkpoints through its own `shutdown_signal` before
 cancelling in-flight work, so the CLI's final call is idempotent housekeeping on
@@ -309,8 +310,8 @@ The canonical checklist:
 Steps 5 and 6 are both required: registration makes the command visible to clap,
 the match arm makes it run. See [Test Harness and Conventions](../testing/testing-conventions.md)
 for the test skeleton step 7 refers to, and
-[Adding a New Subcommand](https://github.com/alucryd/oxyromon/blob/develop/AGENTS.md#adding-a-new-subcommand)
-(`AGENTS.md`) for the same checklist maintained alongside the code.
+the "New subcommand" checklist in [`AGENTS.md`](../../AGENTS.md#checklists),
+which keeps the same steps in condensed form.
 
 ## Why the contract is reused by the servers
 

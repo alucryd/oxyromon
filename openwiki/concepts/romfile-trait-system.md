@@ -64,10 +64,10 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Romfile Trait System
@@ -213,7 +213,6 @@ bar gets a real denominator instead of a spinner.
 The same `run_blocking` shape appears in `xso.rs`, `nsz.rs` and `gdi.rs`, each with
 the input file's length (or `gdi_rs::input_size` for a CUE's BINs), so nothing in
 the conversion layer blocks the runtime regardless of which backend a format uses.
-<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 See [CHD Format and the chd-rs Crate](chd-format-and-chd-rs.md) and
 [Format Modules and Their Crate Backends](format-modules-and-format-crates.md).
 

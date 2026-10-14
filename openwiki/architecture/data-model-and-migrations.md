@@ -68,8 +68,6 @@ sources:
     resource: repo://migrations/20260810000001_add_archive_compression_algorithms.sql
   - id: openwiki-source-543688cbca9cffab391f2283
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
-  - id: openwiki-source-31c5d408b8f1718dfd9d4e59
-    resource: repo://PLAN.md
   - id: openwiki-source-ab4f3ad4a46f3df51164583c
     resource: repo://sqlx-data.json
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
@@ -118,10 +116,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -358,7 +356,6 @@ Two deviations matter:
 schema alone: the CHD format stores the parent's SHA-1 inside the child file, and
 oxyromon reads it in process through `chd-rs` — `AsChd::parse_chd` calls
 `Chd::open`/`chd.info()` and hex-encodes `info.sha1`, `info.data_sha1` and
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 `info.parent_sha1` (see [CHD Format and chd-rs](../concepts/chd-format-and-chd-rs.md)).
 No external `chdman` binary is shelled out to and its stdout is never parsed, and
 the GraphQL `dependencies` resolver reports `chd-rs` as `built-in` for exactly

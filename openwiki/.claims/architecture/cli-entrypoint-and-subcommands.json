@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7c0a9e20f6855951d66c5786824a1d1f1bc3d53b285ab235e45ea3b15c9dc58f",
+  "pageVersion": "sha256:06e6fb424afb8a995b012dc2b01f0136051a29dce19f621f180b45f75c2e4e4a",
   "claims": [
     {
       "id": "claim_f854afcce118483faaa96aefa8a19eea",
@@ -73,7 +73,7 @@
       "statement": "get_rom_directory and get_tmp_directory are called at startup with their return values discarded, purely so their first-run defaults (OXYROMON_ROM_DIRECTORY or ~/Emulation; OXYROMON_TMP_DIRECTORY or the system temp dir) are written into the settings table for every later lookup.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L603-L629",
+          "resource": "repo://src/config.rs#L609-L635",
           "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
@@ -112,15 +112,15 @@
     },
     {
       "id": "claim_80632d1b0cb14b9b83a960c08120b8b6",
-      "statement": "The long-lived servers are dispatched after the scoped CLI block and receive pool.clone() instead of a connection, so the server's 5-connection pool starts uncontended; their main() returns only when the transport ends (stdin close for mcp, Ctrl+C/SIGTERM for server), making the entrypoint's optimize_database a shutdown checkpoint. server::shutdown_signal also optimizes the database itself before cancelling in-flight work.",
+      "statement": "The long-lived servers are dispatched after the scoped CLI block and receive pool.clone() instead of a connection, so the server's 5-connection pool starts uncontended; their main() returns only when the transport ends (stdin close or Ctrl+C/SIGTERM for mcp, Ctrl+C/SIGTERM for server), making the entrypoint's optimize_database a shutdown checkpoint. server::shutdown_signal also optimizes the database itself before cancelling in-flight work.",
       "evidence": [
         {
           "resource": "repo://src/main.rs#L172-L182",
           "version": "repo-lines-v1:sha256:8e3603c5f67de7c39964516a1cd57fca37626548faf5d3661e550cc9f0e05fae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYTM0OGUzZmIzOWE5MGJmYzI3NmUxZGMyNDA0YmE2OWM0OGM4Y2FlZjE2MGRiZGQzNTE2ZGMxOTRlNDQzY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNDM5MGEwMmY3NDQwMjc0MTNlYTQ0MjhmMzBmMzM0MmNkYzE2ZTA5M2MwNTllZTA1YWFkYjUwYjY3N2Q2NjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZjU4N2Q2ZGJiOWY4MGEwYTk1NDMxZWQxZmFjNDMyYWQ1OTI2NDUzNDU2YTlmMTQ5M2MyOGExN2FlMzY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5YjNlZDU4MWY5ODVlNTk5Zjk1ZTNlMmU2YTEzZDA1MTVjNzQzMzg1MmEzYjQ2NTFjODI1YTExNGIxOWJmZjEifQ"
         },
         {
-          "resource": "repo://src/mcp.rs#L116-L134",
-          "version": "repo-lines-v1:sha256:531053abcff892a7192c7bb949bd46781e77e3a4827a832c8ef88ea88b2bcd8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZDM2ZDQzMzNiMTRjYjA3NDlhMDExMGY3YTZhYzNiMDA2ZDBmYzNhZTAxZDk2OTcxOWIwMDA5ZmQ4YTM4ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5Y2Q3MDc4NTE3NjZhMDdjMTNhNzkwYzBkODA3ZDYzYzdjYzI5ZTc2ZGNhOGNhYjM0MzNjY2M3MDNjMjA5MjkifQ"
+          "resource": "repo://src/mcp.rs#L128-L162",
+          "version": "repo-lines-v1:sha256:8600025101b23d4d05921b73023118b1a6f3c884d161601a5c33ef24ba178c37:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZGVmYmYxODIwNWNmMTU1M2JmNGI2NTJlODI5MDIyYjM2MTY5NDg1YWEyOGM2NzY3NTY3MjZhYWYzNDE2MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzODBkZGQ3NzIwYTg0ODllNWY1NDE4N2ZhMjU0NGRhYWQ3M2QxMGYwZGNjZGM0MDAwYjljZmY0ZDYxYmFkMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5Y2Q3MDc4NTE3NjZhMDdjMTNhNzkwYzBkODA3ZDYzYzdjYzI5ZTc2ZGNhOGNhYjM0MzNjY2M3MDNjMjA5MjkifQ"
         },
         {
           "resource": "repo://src/server.rs#L146-L171",
@@ -155,7 +155,7 @@
           "version": "repo-lines-v1:sha256:11408d15400eae72fb547dcd7c318d14c02ac5962e6620e4d0b12cad8115130e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0NDU3YzAxOWZmYmE5NWRiNTVkMDM5NDgxMTZhNGU3YmViZjk1ZmRmYzk3ZTI5ZDlmYzAxZmM3NDZlZDI3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRhMGU2NjdmNTRkNjcxNjkzN2VmZTY0ZmUwMjZiZDQ2NDFkZjI0MjQ5NGFiOTkwNzNmNzFjY2M0ZjRiY2NjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTIzYWNjODViZjNkMDgwNTg0MWE4M2Q4YWJkYjExMGNiNTQ5NzJkZDBhZmYwOTBmNGM3ZGY4YmMzMWRhYjVjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQyZDE4MTU3N2E5Y2U0MjQzOGIzNGE5NzVlMmM5OWJmNzhhMTI2MmI3NDBmZDczM2I0N2ZlZWI2MWFkNDUwNCJ9"
         },
         {
-          "resource": "repo://src/mcp.rs#L104-L118",
+          "resource": "repo://src/mcp.rs#L114-L128",
           "version": "repo-lines-v1:sha256:63404287edc3db04faf13fc1bbb121242610b35bd8af9ad545ae04f4215efa35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZGVmYmYxODIwNWNmMTU1M2JmNGI2NTJlODI5MDIyYjM2MTY5NDg1YWEyOGM2NzY3NTY3MjZhYWYzNDE2MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyZDJjNjJlOTEyMTc1NDcxNDJjMGUwZDcwMjhiZDgxMWE4N2QyMmQxMTk3OWIyODkyMTgzYjI0YjVhMDcwYzAifQ"
         },
         {
@@ -254,15 +254,15 @@
     },
     {
       "id": "claim_ab4851bf53ac4b5c96d77c1990fea086",
-      "statement": "MCP write tools invoke the same subcommand mains through run_action, which takes the process-wide write lock, acquires a pooled connection, and hands the work a hidden progress bar that a ~400ms poller samples into MCP notifications/progress; because no TTY can answer confirm(), the host-synthesized argv carries the confirmation flag — --yes for the MCP tools, -y for the GraphQL mutations.",
+      "statement": "MCP write tools invoke the same subcommand mains through run_action, which takes the shared write lock, acquires a pooled connection, and hands the work a hidden progress bar that a ~400ms poller samples into MCP notifications/progress; because no TTY can answer confirm(), the host-synthesized argv carries the confirmation flag — --yes for the MCP tools, -y for the GraphQL mutations.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/actions.rs#L52-L139",
-          "version": "repo-lines-v1:sha256:56a0a541c013bff6669b215be57f7a0f64b501ad64bab7cb4d6d80f7943d6bb3:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjM2NGE5YWVlOWQxMGQ0MzM3MWU0MzJjYTNmYWE3NDc3MjQwMThkMWI4YWU4YzM0MWFmNTljMjMzZWYxYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZGY4ZDVkOTQyZmIwMTcwZTQ5Y2VmOTI5NTE4OTIwYTRiOTY0ZWU4NmMyY2Q5MWY0YzVhMWJlOTAyZTdhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzZTlkYWU1NDA4YzZhYWZjM2IzMGFjNzUwMGFjY2QzOTIxYTVhZmM4MjMyZWI3OWI2ZDY0MWNjOTBlODRmOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4YjE5MmExNzMwNDhjYTAyYTA0MTg3YThiYjllMWQ4NzRmMTgzNGI0ZmI4NGYwNGEyM2EwNTc2ZDk5MThmMTUifQ"
+          "resource": "repo://src/mcp/actions.rs#L57-L174",
+          "version": "repo-lines-v1:sha256:7919221aa563b48a4c67ef3881cca211a12a3a36e2f64f5e31d0001f09dbaafe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNjQ5NGQ2ZjExMWNiNDU4MDNjMmM0N2Y2ZDhlMjQzMDE2M2YzYjJjNTUzZTQ0MGIzYTNhMjdkN2FkYmE3MmRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDY0MTMyNzk3NGNmYmExMjZiMjYyMTBiNTBjMjlhZTA3M2U4MTJkZjA3OWRjYzhlMDJkYTc2MjhlNDMyNjZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNTM4ZjU4YTZiYjVlMjJhNjVlZTZjNDNkMDMxMzRhZmE4NzVhY2QxZTZmMmY1NDcxYTg1OTNjZDg5NmUyZjBiIn0"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L251-L302",
-          "version": "repo-lines-v1:sha256:5505d821aebba19530f779b968230564cbd0ca9447b94e6b9df5fbea7a597295:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmNjZjVhZWI5ZDlmM2Q1NTNlMWRhZTE0ZGI4NmY2Njg2MTE4ZWM4NDc0ZjU5MWI1ZWFkYTYzZmMzMjRjNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwM2Y3MDlkNjU1ZTEzNTc0YTg1MTYxZjY4ODYyMzBjOGUyNDU2OTcyMmIyMzE2YzA2YzZlZWVhZDZmZGViNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyY2NjYzZjOTc2ZTg1OTExODVlMzZhMGRiNTRhZjVlNTMyZGFlYzMxZjk5MjIzODlhODYzYjlhYjg5NDViODEifQ"
+          "resource": "repo://src/mcp/write.rs#L228-L292",
+          "version": "repo-lines-v1:sha256:b31364fa8239095b340afede9c68939ed1446fbd8111fc73edd7a1cb6819203f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxY2EwMzdiNjIxMjI0NGIxMmYzZDFmZDFiZDk1N2VkZjczZjcwMDcxMDBhMWEzNjFjYWJkNDgwZGEyYzQ5ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjY2QyMTNmZDFiOTU1ZDk4ZWZkZjlmZmVkMWEzNDFhMmIxY2Y5ZmM2NDllMDc1MmZhNjc2N2ZiMDkyOWQxYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNjJiMDliN2NkNjM0MTIwYWI5Y2U2ZDA2OWE0MWRiZGRmNGU3YzQ2NDMyOTE5ZTk5OTMzMDFkZTM4ZDUzZjgifQ"
         },
         {
           "resource": "repo://src/mutation.rs#L430-L445",
@@ -279,7 +279,7 @@
           "version": "repo-lines-v1:sha256:215959c8176ec373ed001ae820ddd740e8d40d23f4146fe3e7d29c505e27fa45:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjFkMGM5YzFmMTA1YTAzZTljOWU3ZWU1NTFmNTU3N2VlYmVlYWM2MDZmNDc2MjAxOWM3NTEwN2Q4NDVjOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3N2E4NTYyMzY5ODk5MmY3MzQ0YTVmMzcxMzEzMDc3NTc5MjBjZWYwMWEzZjRhYjQ4ZmQ4YzdiYmQ4NTIzODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://src/config.rs#L631-L648",
+          "resource": "repo://src/config.rs#L637-L654",
           "version": "repo-lines-v1:sha256:bc28a67f7c450053b9dd200ccd4feee65987b5f9bcd3049d0f18edaf83976964:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxM2EyZGU5ZDE1ZmMxNGJjZDJlMzkzNDRhYzgzOTgwMDJkNDFhMzA5OTE1MjljMmJjZDM1YWVlYTY3NmY2MTUifQ"
         },
         {
@@ -290,11 +290,15 @@
     },
     {
       "id": "claim_5fe2e22883b94b6b9863327f95700db5",
-      "statement": "Adding a subcommand is a fixed seven-step contract: create src/<name>.rs, implement subcommand() and async main(connection, matches, progress_bar), declare the module in src/main.rs, append it to the subcommands vec, add its match arm, and put tests in src/<name>/test_*.rs wired with #[cfg(test)] mod test_*; at the module bottom.",
+      "statement": "Adding a subcommand is a fixed contract: create src/<name>.rs, implement subcommand() and async main(connection, matches, progress_bar), declare the module in src/main.rs, append it to the subcommands vec, add its match arm, and put tests in src/<name>/test_*.rs wired with #[cfg(test)] mod test_*; at the module bottom.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L323-L352",
-          "version": "repo-lines-v1:sha256:3bef97e579fd7839438c3d9d38c6416de8ef9c81e7f1e48cd5fb287182116357:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNWEwYmRlYWUyNjgyMWU4MzRmN2Q5OWI2ZDE3YTE2M2JkYzlhZTE2OWY5ZDhkYTc1ODZiNGNlYzE5MDY4YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NGJjOTU4YmViMmE2MmIyOTk5NWYzNzI3NTA3OTUyYzI1ZWIyNjYxYTU2Mzc4ODZmN2RlODVhZjViNDVjNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NDk4YWY2OWUyYTI1ODkyN2Q0NWUyMmVlMzc1MWE5YWJhMmQzN2Y0ODdkZGE2OTQxMGE1YWJlNzk5OTE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1OGM5OGFkZWY3YjRhNDAyMDhmMjdiOGQ1MDhkMGY4Y2M1YWFkZjZkNjlhMmZjYWJhZTJhMjhhZTc2ZDdhOTQifQ"
+          "resource": "repo://AGENTS.md#L113-L117",
+          "version": "repo-lines-v1:sha256:98ebc325b73ac0bc6703bbeb56e511ead21727dfff6b2d25d11e708c5c635dbf:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU3ZjRiMzZhYzljZTBkMDZkY2Q3MmNjYzI0ZWIyOTBlY2NhM2RhZGNlZTM2Y2Q2NDE2ODlhMjgwNDhjODU0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxNGUxYzJiZGU2ODZjNzlmOTZiMzQxNWY3ZTA1OTcyYTNjM2M0ZTcwZjFhMGRlZDllOTg2OGVjMjg0Yzk1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjMwYjRjMmY4ZWVjYTYyNmQ3ZTczM2U3YTJiZWY5OGRjMjc4ZjY5ZTFhN2QxMWY0MGZiMDgxYWI4NDcxN2QwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBkZjRlZDU0Yjc3ODk0NmE3ODU0MGZmMDEyODUwZmM2MmRmOTgyNzdhOTk0YTY5ZDA0MTRmYTljNTY2ODcyMyJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L170-L174",
+          "version": "repo-lines-v1:sha256:9acf74cc4cef23e797fec56e0c97df4383ab4a94562b8be8dd2ae76f8d86c125:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZjVhYzAyZTVhZDRmMzkwMzM0NDQzODIyYTE0MTAzNDFhZTMwYWQ3NjIxNWEzYWZhZjFlMTlkM2EwNWI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGUzZDNlNDM1Mjc3NGQyYjY0ODNkMmUzNzU1ZDhkMzk3OThiNjFiNTBjZmY3MzFhMTU2ZWVhM2U2NzAyMWE2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM2ZGJhMTMxOWI2ZmI0MWE0OGQxM2YwZTljOTFhY2M1MzY2MGY2ZmU0MzQwYzllYTRlZjBlNzBkNDFjMzY0OSJ9"
         },
         {
           "resource": "repo://src/check_roms.rs#L302-L327",
@@ -329,12 +333,16 @@
       "statement": "Non-CLI hosts reuse the subcommand mains by building argv that also suppresses interactive selection, not only confirmation: `--all`/`--system <name>` replaces the system multiselect, `-u/--unattended` narrows import-roms matching, and the axum upload handlers build argv and call import_roms::main / import_irds::main directly instead of routing through the GraphQL mutation layer.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L251-L302",
-          "version": "repo-lines-v1:sha256:5505d821aebba19530f779b968230564cbd0ca9447b94e6b9df5fbea7a597295:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmNjZjVhZWI5ZDlmM2Q1NTNlMWRhZTE0ZGI4NmY2Njg2MTE4ZWM4NDc0ZjU5MWI1ZWFkYTYzZmMzMjRjNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwM2Y3MDlkNjU1ZTEzNTc0YTg1MTYxZjY4ODYyMzBjOGUyNDU2OTcyMmIyMzE2YzA2YzZlZWVhZDZmZGViNzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyY2NjYzZjOTc2ZTg1OTExODVlMzZhMGRiNTRhZjVlNTMyZGFlYzMxZjk5MjIzODlhODYzYjlhYjg5NDViODEifQ"
+          "resource": "repo://src/mcp/write.rs#L154-L222",
+          "version": "repo-lines-v1:sha256:e8d4a54f1780e6d4fe1cc73d440c6123a8bb5f51a1ced0c6972a0efc68decf73:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NDQ2ZTZjODU5MDZiNWMxZTI1MTc1OThkZDNkYjdmZDlhNWQwMWU4Y2IxNjA5ODhjYTAzZGFlYWJlNDI1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmYWNlNDk5NWQxNGI4MDgzNGIzOTczNTBhMWQ3Y2M2OTdlNmFiYzEwMWI5NzAxNzAzNjAxMzkyYmUxMmIwNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMWVlY2RhY2IwNjQyMjkwMjNlNDY3MmFkNzJmMWY0NWY4NDQ1MWEwODE4N2E0MmMwZTU5MmIxMzJmNjY5MDMifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L647-L683",
-          "version": "repo-lines-v1:sha256:742e1e5597f287d0753672a5711f2730ec241c9ae7b3d0ae63adf94f8c2285dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MjdlODc0YzliZWI1YmFhOTlhMDJlYjExN2JmMWU3YWU0N2M3YzUzZWJhNzE0MDQ4YmRiZDVlZTE3NjYwNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NmM3NjNlMmYzZmVjMDkzMTc1NmE5ZWE0ZjNiNGY4MDMwZWM0NjY5MjM3OGNkZmJiYmU1MDY3NTBmYzgwNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzOTlkYTcwYjA0YjEzMTgzZTk0YWZmNzgwMzRkMWEzODU2YmUwYWY3ZDNjOTFmY2U3MWExY2JiNThjYmQzZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1NDhmODI4NGY4NTEwNGU2ZWZlYzBmZDQzOWVlZDViY2NiNGYzNGZiNDNkOGMyOTU3ZjBiNDFkZjJmOWQ0MmYifQ"
+          "resource": "repo://src/mcp/write.rs#L228-L292",
+          "version": "repo-lines-v1:sha256:b31364fa8239095b340afede9c68939ed1446fbd8111fc73edd7a1cb6819203f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxY2EwMzdiNjIxMjI0NGIxMmYzZDFmZDFiZDk1N2VkZjczZjcwMDcxMDBhMWEzNjFjYWJkNDgwZGEyYzQ5ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjY2QyMTNmZDFiOTU1ZDk4ZWZkZjlmZmVkMWEzNDFhMmIxY2Y5ZmM2NDllMDc1MmZhNjc2N2ZiMDkyOWQxYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNjJiMDliN2NkNjM0MTIwYWI5Y2U2ZDA2OWE0MWRiZGRmNGU3YzQ2NDMyOTE5ZTk5OTMzMDFkZTM4ZDUzZjgifQ"
+        },
+        {
+          "resource": "repo://src/mcp/write.rs#L681-L722",
+          "version": "repo-lines-v1:sha256:dd20ee3d22aa140a6c49ecc9126d5fbb5e7880357f999356f8580b9c96336ac6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjY4M2UzMGY5MWUwNDFlMjgzMDJhOTU2OGFiZWEyZThlMzkzZmJlNTVmODQwZDI4OGZhZmVkOGMwNjY4NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3OWM3MjVkZjY3NGNkNGFjNjhhZmFkOGE2NzlhZTBhY2U0YjBhZDliMjQ5OGVhNTVmM2I3MjMzMjJhNjJjYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
           "resource": "repo://src/server.rs#L607-L632",
@@ -359,7 +367,7 @@
           "version": "repo-lines-v1:sha256:7a6d7dcf36182318ea5c87c5fe47d8236ad998fb29e2691c2c6903e36c281ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzQ0ZjUxNGJiMDE5NGUwYWQ0OGM1N2ZiZjZmMmUwOGVkZGJkYzBhYTliNmEyZGYxMDcwZTFkNDgzZjA1MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Mjg5MWZkY2I4NzNjMjhiNTk4OGNjMDU0N2NhNjZiY2YzNjVkMGIwNTkxZmNkMzQ3M2E3MzE0NWY2NjViNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ODA3YTYxMjg5YjE5MDBhNGJmY2MwMWRlZWNiMzQ4ZTVhNmJlNDZjNjZiOWE5NGNhMWJjMGY2Njc3NzgyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzNmM4NGY0MDJlMDYwMGUxNzM2ZDM5MGE4MWFmODJmMWFmNDc1NzA2ZDFhYWVkNmE3MDM5MWNjODUzZDg2MGUifQ"
         },
         {
-          "resource": "repo://src/mcp.rs#L104-L114",
+          "resource": "repo://src/mcp.rs#L114-L124",
           "version": "repo-lines-v1:sha256:8e83b736bf09c760542cb183cb8312101da58c008517e952fae0a7dd0bb1ea52:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzODBkZGQ3NzIwYTg0ODllNWY1NDE4N2ZhMjU0NGRhYWQ3M2QxMGYwZGNjZGM0MDAwYjljZmY0ZDYxYmFkMzcifQ"
         },
         {
@@ -463,6 +471,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0006e08a8c49e86f081179e916ddef758ec99119ea99c4b851bdae366122dfc8",
+  "pageVersion": "sha256:6e9379d5db6e98370b9ff73d0e995526c130be9086e793b93d854f68815f8006",
   "claims": [
     {
       "id": "claim_3d161cdd16bb42c5aac1664208725fb6",
@@ -69,8 +69,8 @@
       "statement": "An As* implementation is a validated claim about a file: as_iso/as_rvz/as_nsp/as_nsz/as_cue_bin/as_gdi compare the lowercased extension against the mimetype.rs constants and bail otherwise, while as_xso/as_riff/as_rdsk/as_chd require get_mimetype to match the content, and as_chd additionally opens the container through parse_chd (chd_rs::Chd::open) to populate ChdType, logical size, the data and file SHA1s, the parent SHA1 and the track count.",
       "evidence": [
         {
-          "resource": "repo://src/chd.rs#L541-L650",
-          "version": "repo-lines-v1:sha256:0e01f019240aebefbc80a3b771dd0474cb7970ae9814c4faa7178765cb4caf20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NTBlNzVjM2E0ZTQwM2VkMDE3YWJlNmEyYTg1NjdiOGRmZjc0YmJmMDQzYjM3NDE4ZTc1MzQ1MWI5ZmI0Y2UwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkNDNlOTQ1MDYwNmM4OTJhMDU0NjI3NDMxOTFhMDVhZmVmZTJiOTZlMTMwN2ZiNTc0YjJkZGNmMzMwZWU3ZDQxIn0"
+          "resource": "repo://src/chd.rs#L548-L650",
+          "version": "repo-lines-v1:sha256:79cb397e4abf2e43485f0259e08a5380b95c6bcecd58f74abd72cb293fb137c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MmVhMTg4ODZmZmE5NjIzYzkzMmMxNmUxZDM5NmE0OTZlMDg1ZmFlYTMzOWMxOGNkNGNjYmY3ZTE1NThiMjUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzODFiNWUxMDlkZTdmNzRjMDI0MzM0ODljZDY2MDM0YzUwMjA1ZDNmNjhlZjRkOTMzZGVkNjE5YmIyZGY1NTI4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkNDNlOTQ1MDYwNmM4OTJhMDU0NjI3NDMxOTFhMDVhZmVmZTJiOTZlMTMwN2ZiNTc0YjJkZGNmMzMwZWU3ZDQxIn0"
         },
         {
           "resource": "repo://src/common.rs#L747-L795",
@@ -395,7 +395,7 @@
       "statement": "Every transcode constructor takes a &TempDir created by util::create_tmp_directory, i.e. TempDir::new_in(get_tmp_directory(connection)), where TMP_DIRECTORY comes from settings, else OXYROMON_TMP_DIRECTORY, else the system temp dir; the directory is removed on drop, workflows create one per game inside their loop, and the deliverable is produced by a second To* call writing to decoded.source.path.parent() rather than by moving the temp file.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L617-L629",
+          "resource": "repo://src/config.rs#L623-L635",
           "version": "repo-lines-v1:sha256:fa862ffb21817089aa67c69311722cac8b57b5e89b709946eca9592a34072669:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmN2Y0NDczMTU4MTFlMThiNzcwOWFkOWQ1Y2Q5OTg2MTNmYzgzYTA5NjhmNjI1MTFiY2IxYmU1ZWZjOTllNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
@@ -538,7 +538,7 @@
       "evidence": [
         {
           "resource": "repo://src/chd.rs#L548-L556",
-          "version": "repo-lines-v1:sha256:80eba8a2588d25874fd1842a41edaac019fb464731ef8a524f439baea6d221ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJlYTE4ODg2ZmZhOTYyM2M5MzJjMTZlMWQzOTZhNDk2ZTA4NWZhZWEzMzljMThjZDRjY2JmN2UxNTU4YjI1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg3YzMzZGE0OTZmNjM0OTZjM2M5ZTViNzgwZTQ2NDQ0ZGU0MGQxMmVmNjVkN2JmZDRhYWQ2YjkzN2ZjYmNhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzgxYjVlMTA5ZGU3Zjc0YzAyNDMzNDg5Y2Q2NjAzNGM1MDIwNWQzZjY4ZWY0ZDkzM2RlZDYxOWJiMmRmNTUyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk5MTg5ZTE0N2JiY2VlMmRiYjA0MmJhYjVjNjJmM2M0NGE1Y2MyZGIzODIyZjQ1NWI3MmRjZTE4MDg3MGU4ZSJ9"
+          "version": "repo-lines-v1:sha256:c00502281f64c367e9628f4eb1001361f5bf69e7d2bdfec644d000590f7b0809:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJlYTE4ODg2ZmZhOTYyM2M5MzJjMTZlMWQzOTZhNDk2ZTA4NWZhZWEzMzljMThjZDRjY2JmN2UxNTU4YjI1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmNjNTFjYWQyOTZjYmNiNmUzOWQ5ZGVkNDRiYTk4MjA1Y2Y1NmY2YmQ3ZjFjNDhiMWMyNmZlYjVhMDFiYzEzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzgxYjVlMTA5ZGU3Zjc0YzAyNDMzNDg5Y2Q2NjAzNGM1MDIwNWQzZjY4ZWY0ZDkzM2RlZDYxOWJiMmRmNTUyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk5MTg5ZTE0N2JiY2VlMmRiYjA0MmJhYjVjNjJmM2M0NGE1Y2MyZGIzODIyZjQ1NWI3MmRjZTE4MDg3MGU4ZSJ9"
         },
         {
           "resource": "repo://src/chd.rs#L729-L790",
@@ -593,6 +593,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

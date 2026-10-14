@@ -66,10 +66,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -116,7 +116,6 @@ spawn failure is what propagates as `Err` and makes `info` print
 `ctrtool: not found`, GraphQL and MCP report a null version. CHD used to be a
 second such entry; since `src/chd.rs` drives the in-process `chd-rs` crate,
 `chd::get_version()` returns `"built-in"` like the other crates
-<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([CHD Format and chd-rs](chd-format-and-chd-rs.md)).
 
 Because every conversion target is now linked in, availability is a static
@@ -395,7 +394,6 @@ The module also owns the vocabulary behind the CHD settings: four strum enums
 `CHD_*_HUNK_SIZE` keys — `config` imports both from this module rather than
 defining them (the only other CHD setting is the `CHD_PARENTS` boolean, which the
 workflow layer reads directly). See
-<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [CHD Format and chd-rs](chd-format-and-chd-rs.md) for what each codec slot and
 hunk size does inside the crate.
 

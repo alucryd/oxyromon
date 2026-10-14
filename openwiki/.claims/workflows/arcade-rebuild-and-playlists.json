@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cec09ebbc95c4d9592b9ba31b87d837a07cfe2d7e1f9714b0f51cfc115a61957",
+  "pageVersion": "sha256:e6981a4db16975e01dd0388d4b0a2e54f70911140881e19598fe6bfad1330c03",
   "claims": [
     {
       "id": "claim_1d69630e40104e7987b6990c779738e8",
@@ -431,8 +431,8 @@
       "statement": "generate-playlists is not re-run automatically after format conversion: sort-roms relocates playlists with the games, but after convert-roms the command must be run again to reflect new filenames, and a rebuild only touches roms of games that are Full under the currently stored strategy, so incomplete BIOS sets leave clones Partial until a second rebuild.",
       "evidence": [
         {
-          "resource": "repo://README.md#L696-L703",
-          "version": "repo-lines-v1:sha256:35065dc5f18c8098420a1ab191bf902cc856fccf7caa8a4c4061b585966c0e3b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE2ZThkZjgzZTcxMmFlN2I1OTAwMGRiYTBlYjg0Yjc1Y2VhYzA3NDgzOTczMTBjZDAwZDI2MzBjMGM0ZmRhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmE0NWViMTA1YzNhZWViZmU4ZGEyZWRkZDRjYzRmNzIyMjFmNTM0N2QwM2FmNjA5ZWJmZjk1YTVkNTM2YzI5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDYzNGY2Mzc5YTg2ZGZjZTE3NmUyZmVlYjFiMWE0MmYyNWIyZDAyZWJhNTdmNmU1YjI1NzA1OGVkMDAwZDdmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFlNGFiZTA4OTAzZWQwOWI1Njg5NGZhNzMzODZkMTJhYzdmMWMzZTgwZjEzOGVjYjZlN2FlNzYzNDFlMGVjOCJ9"
+          "resource": "repo://README.md#L663-L675",
+          "version": "repo-lines-v1:sha256:2726964061b5d2a42471730bb2ffa6aa92e12cefc74abd8ecf8066888d3ede67:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDQ2ZGU2NWU4MTc3NzQyOWU4MmQ5MjExNjkzNTk3MTI3MjRmMzQ3ZjRlNTA2ZjYzNGE1YzMyYzE3MmYwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMzkxMzliMjBhZjdlN2FlZDU3YTY4OTMyMWFkZjNmMTQ3NzY0M2EzMmExNjhjNWVmM2UwYmNlOTE2NmJlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5MjkwZjBkYmZhNGUxNWViYTBmYmUyYjg5ZDA5ZDg4ZmFhMDM0NmQ0NjQ3ZTc0MjQzMmQ3NTBhMTUzOTU1ZjEifQ"
         },
         {
           "resource": "repo://src/rebuild_roms.rs#L195-L225",
@@ -481,6 +481,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

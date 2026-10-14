@@ -4,797 +4,724 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/alucryd)
 
 <p align="center">
-  <img src="https://github.com/alucryd/oxyromon/raw/refs/heads/master/resources/logo.svg" alt="logo" width="40%">
+  <img src="https://github.com/alucryd/oxyromon/raw/master/resources/logo.svg" alt="logo" width="40%">
 </p>
 
-<h1 align="center">oxyROMon 0.24.0</h1>
+<h1 align="center">oxyROMon</h1>
 
 <h2 align="center">Rusty ROM OrgaNizer</h2>
 
-oxyROMon is a cross-platform opinionated CLI ROM organizer written in Rust.
-Like most ROM managers, it checks ROM files against known good databases.
-It is designed with archiving in mind, so it only supports original and lossless ROM formats.
-It can, however, export in various popular lossy formats, leaving the lossless ROM files untouched.
-Sorting can be done in regions mode, in so-called 1G1R mode, or both.
-Console, computer, and arcade (WIP) systems are supported using Logiqx DAT files.
-The first two require No-Intro or Redump DAT files, while the latter uses MAME or FBNeo DAT files.
+oxyROMon is a cross-platform, opinionated ROM organizer written in Rust.
+It checks ROM files against known-good Logiqx DAT files, imports them into a tidy directory tree, and sorts them by region, in one-game-one-ROM (1G1R) mode, or both.
+
+It is designed with archiving in mind, so it only keeps original and lossless formats.
+It can still export to popular lossy formats, leaving your lossless files untouched.
+Console and computer systems use No-Intro or Redump DATs, and arcade systems (work in progress) use MAME or FBNeo DATs.
+
+Every format is handled in-process, so oxyROMon needs no external tool except `ctrtool` for 3DS CIA files.
+
+oxyROMon comes in three flavors, all driving the same code and the same database:
+
+- **A command-line tool**, the core of the project.
+- **A web UI**, served by `oxyromon server`, also available as a desktop app.
+- **A Model Context Protocol (MCP) server**, so an AI assistant can explore and maintain your library.
 
 <p align="center">
-  <img src="https://github.com/alucryd/oxyromon/raw/master/resources/screenshot.png" alt="screenshot" width="100%">
+  <img src="https://github.com/alucryd/oxyromon/raw/master/resources/cli.png" alt="the command-line interface" width="100%">
 </p>
 
-### Quick start
+## Quick start
 
-To create and manage a new system, you need a Logiqx DAT file.
-Cartridge-based consoles and older computers can be downloaded from [Dat-o-Matic](https://datomatic.no-intro.org/).
-CD-based ones can be downloaded from [Redump](http://redump.org/).
-Alternatively, the `download-dats` subcommand can download and import Redump DATs for you because they offer direct links.
-MAME DATs can be found on [Progetto-Snaps](https://www.progettosnaps.net/index.php). FBNeo DATs are harder to find; [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
+A system is created from a Logiqx DAT file:
 
-Manually downloaded DATs are then imported using the `import-dats` subcommand.
-Once a system has been created, you can import ROMs using the `import-roms` subcommand.
-Imported ROMs that check out will be placed in the main folder of their respective system.
-Then, the ROMs can be sorted using the `sort-roms` subcommand according to your configuration.
-Please add at least one region in the `REGIONS_ALL` or `REGIONS_ONE` list beforehand.
-See all configuration options below.
+- Cartridge-based consoles and older computers: [Dat-o-Matic](https://datomatic.no-intro.org/) (No-Intro).
+- Disc-based consoles: [Redump](http://redump.org/), or let `download-dats` fetch them for you.
+- MAME: [Progetto-Snaps](https://www.progettosnaps.net/index.php).
+- FBNeo: harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
 
-You can also convert ROMs between various formats using the `convert-roms` subcommand, check them later on with the `check-roms` subcommand, or purge them with the `purge-roms` subcommand to empty `Trash` folders or detect and forget manually deleted ROMs.
+Then the usual loop is:
 
-### Installation
+```sh
+oxyromon config -s ROM_DIRECTORY /path/to/Emulation  # where your library lives
+oxyromon config -s REGIONS_ALL US,EU,JP              # regions to keep
+oxyromon config -s REGIONS_ONE US,EU                 # 1G1R regions, by preference
+oxyromon import-dats "Nintendo - Game Boy (20260101-000000).dat"
+oxyromon import-roms ~/Downloads/roms
+oxyromon sort-roms --system "Game Boy"
+```
 
-You can grab pre-compiled Linux, Mac, and Windows binaries from the [release page](https://github.com/alucryd/oxyromon/releases).
+ROM files that match the database are moved into their system's directory, the rest are left alone.
+`sort-roms` then distributes them according to your settings, and needs at least one region in `REGIONS_ALL` or `REGIONS_ONE`.
 
-A docker image is also available on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon).
+From there, `convert-roms` switches formats, `check-roms` verifies integrity, and `purge-roms` empties the `Trash` directories and forgets files you deleted by hand.
 
-If you use Arch Linux, there's a package in the [official repos](https://archlinux.org/packages/extra/x86_64/oxyromon/).
+## Installation
 
-It is also possible to install from crates.io using `cargo install oxyromon`.
+- **Binaries** for Linux, macOS and Windows are on the [release page](https://github.com/alucryd/oxyromon/releases), along with the desktop app and the format crates' command-line tools.
+- **Arch Linux** has a package in the [official repositories](https://archlinux.org/packages/extra/x86_64/oxyromon/).
+- **Docker** images are on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon), with `/data` holding the database and `/roms` the library.
+- **crates.io**: `cargo install oxyromon` builds the command-line tool.
 
-Finally, if you're feeling adventurous, you can always build from the source, as shown in the instructions below.
+## Building
 
-### Compilation
+The command-line tool has no special requirement beyond a C toolchain, which the RVZ backend needs:
 
-The CLI has no specific requirement, and you can just:
+```sh
+cargo build --release
+```
 
-    cargo build --release
+The web UI is a [Leptos](https://leptos.dev) app compiled to WebAssembly and embedded into the binary.
+It needs the [Trunk](https://trunkrs.dev) bundler and the WebAssembly target:
 
-For Windows, asm-hashes don't work with MSVC toolchain at the moment so you need to build without it:
+```sh
+rustup target add wasm32-unknown-unknown
+cargo install --locked trunk
+cargo build --release --features server
+```
 
-    cargo build --release --no-default-features --features use-rustls
+Set `SKIP_TRUNK=true` to reuse web assets you already built.
 
-You can also target GNU to solve the asm-hashes issue:
+The desktop app lives in `desktop/`.
+It wraps the web UI in a [Tauri](https://tauri.app) window and starts a bundled `oxyromon server` behind it, so it shares the command-line tool's database and settings.
+It needs everything the web UI needs, the Tauri CLI, and your platform's webview development packages.
+On Linux, those are `webkit2gtk-4.1`, `gtk3`, `librsvg` and `libayatana-appindicator`.
 
-    cargo build --release --target x86_64-pc-windows-gnu
+```sh
+cargo install --locked tauri-cli --version "^2"
+cd desktop
+cargo tauri build  # or `cargo tauri dev` while working on it
+```
 
-For the web UI, you will also need the [Trunk](https://trunkrs.dev) bundler and
-the `wasm32-unknown-unknown` target:
+The repository also holds oxyROMon's format crates, under `crates/`.
+Each is a library and a standalone command-line tool:
 
-    rustup target add wasm32-unknown-unknown
-    cargo install --locked trunk
-    cargo build --release --features server
-
-The web UI (a [Leptos](https://leptos.dev) app) is compiled to WebAssembly and
-embedded into the binary during the build. Set `SKIP_TRUNK=true` to skip that
-step when the assets are already built.
-
-There is also an optional native desktop app, which wraps the same web UI in a
-[Tauri](https://tauri.app) window. It lives in `desktop/` and needs everything
-listed above for the web UI, plus the Tauri CLI and your platform's webview
-development packages (on Linux: `webkit2gtk-4.1`, `gtk3`, `librsvg` and
-`libayatana-appindicator`):
-
-    cargo install --locked tauri-cli --version "^2"
-    cd desktop
-    cargo tauri build
-
-This produces a `oxyromon-desktop` binary (and installers under
-`desktop/target/release/bundle/`). It bundles the regular `oxyromon` binary as a
-sidecar, starts `oxyromon server` on a free loopback port when launched, and
-points the window at it — so the desktop app and the CLI share the same database
-and settings. Use `cargo tauri dev` while working on it.
-
-The build uses rustls by default, but you can also opt for OpenSSL:
-
-    cargo build --no-default-features --features use-native-tls
-
-The repository also holds oxyROMon's own format crates, under `crates/`, which
-replaced the external tools it once needed. Each builds a standalone CLI too:
-
-    cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs    # chdrs, gdirs, nszrs, xdeltars, xpsrs and xsors
+```sh
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs
+```
 
 ### Features
 
-| feature        | description                                    | default |
-| -------------- | ---------------------------------------------- | ------- |
-| mcp            | build the MCP server subcommand                |         |
-| server         | build the server subcommand                    |         |
-| use-native-tls | use the system OpenSSL library                 |         |
-| use-rustls     | use rustls                                     | x       |
+| Feature          | Description                                                  | Default |
+| ---------------- | ------------------------------------------------------------ | ------- |
+| `mcp`            | The MCP server over stdio                                    |         |
+| `server`         | The web server and UI, which also serves MCP over HTTP      |         |
+| `use-rustls`     | TLS through rustls                                           | ✔       |
+| `use-native-tls` | TLS through the system's OpenSSL                             |         |
 
-The `server` feature implies `mcp`: an `oxyromon server` also serves MCP over
-HTTP at `/mcp`. `mcp` on its own builds the stdio server without the web UI.
+To use OpenSSL instead of rustls:
 
-7z and ZIP are handled by the [sevenz-rust2](https://crates.io/crates/sevenz-rust2)
-and [zip](https://crates.io/crates/zip) crates, so listing an archive is a metadata
-read rather than a process launch, and Zstandard archives can be read and written,
-which 7-Zip has no codec for. Renaming, deleting or adding an entry copies the rest
-of the archive as it is encoded; only deleting from a solid 7z block re-encodes the
-entries left in it, as 7-Zip does.
-
-RVZ and WBFS are handled by the [nod](https://crates.io/crates/nod) crate. RVZ
-files are interchangeable with Dolphin's own in both directions. `RVZ_SCRUB` has
-no equivalent in nod and is ignored, with a warning. nod builds its compression
-libraries from source, so building oxyROMon needs a C toolchain.
-
-### Configuration
-
-Configuration is done from the command line, and settings are stored in the SQLite database.
-The database itself is stored in `${data_dir}/oxyromon` as defined in the [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.data_dir.html) crate.
-This may be overwritten using the `OXYROMON_DATA_DIR` environment variable.
-
-Settings can be global or per-system. Per-system settings take precedence over global ones, with automatic fallback to the global value when no system-specific override is set.
-Use the `-n/--system` flag with the `config` subcommand to manage system-specific settings.
-
-Available settings:
-
-- `ROM_DIRECTORY`: Full path to your ROM directory, defaults to `${home_dir}/Emulation` as defined in the
-  [dirs](https://docs.rs/dirs/3.0.1/dirs/fn.home_dir.html) crate
-- `TMP_DIRECTORY`: Full path to a temporary directory for file extraction, defaults to
-  [temp_dir](https://doc.rust-lang.org/std/env/fn.temp_dir.html)
-- `PREFER_PARENTS`: Favor parents in the 1G1R election process, defaults to `true`
-- `PREFER_REGIONS`: Favor ROMs targeting more or fewer regions in the 1G1R election process, defaults to `none`, valid choices: `none`, `broad`, `narrow`
-- `PREFER_VERSIONS`: Favor newer or earlier versions of ROMs in the 1G1R election process, defaults to `new`, valid choices: `none`, `new`, `old`
-- `PREFER_FLAGS`: List of ROM flags to favor in the 1G1R election process (eg: `Rumble Version`)
-- `PREFER_FORMAT`: Format that ROMs imported into a system are automatically converted to (eg: `7Z`), unset by default, valid choices: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO` (arcade systems only support `ORIGINAL` and `ZIP`)
-- `DISCARD_FLAGS`: List of ROM flags to discard (eg: `Virtual Console`)
-- `DISCARD_RELEASES`: List of ROM releases to discard (eg: `Beta`)
-- `LANGUAGES`: List of languages you want to keep, applies only to ROMs that do specify them (eg: `En,Ja`)
-- `REGIONS_ALL`: Unordered list of regions for which you want to keep all ROM files (eg: `US,EU,JP`)
-- `REGIONS_ONE`: Ordered list of regions for which you want to keep a single ROM file (eg: `US,EU`)
-- `REGIONS_ALL_ARCADE`: Unordered list of ROM types you want to place in the main directory (eg: `clone`)
-- `REGIONS_ONE_ARCADE`: Unordered list of ROM types you want to place in the 1G1R directory (eg: `bios,parent`)
-- `REGIONS_ALL_SUBFOLDERS`: Sort ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
-- `REGIONS_ONE_SUBFOLDERS`: Sort 1G1R ROMs in subfolders, defaults to `none`, valid choices: `none`, `alpha`
-- `REGIONS_ONE_STRICT`: `true` will elect ROMs regardless of them being available, `false` will only elect available ROMs, defaults to `false`
-- `GROUP_SUBSYSTEMS`: Group all system variants in a single directory, defaults to `true`
-- `CHD_CD_HUNK_SIZE`: The CHD hunk size in bytes for CDs, defaults to auto, valid range: `16-1048576`
-- `CHD_CD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for CDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`
-- `CHD_DVD_HUNK_SIZE`: The CHD hunk size in bytes for DVDs, defaults to auto, valid range: `16-1048576`
-- `CHD_DVD_COMPRESSION_ALGORITHMS`: The CHD compression algorithms for DVDs, up to 4 can be specified, defaults to auto, valid choices: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`
-- `CHD_PARENTS`: Enables the CHD parents feature, needs playlists to have been generated, defaults to `false`
-- `RVZ_BLOCK_SIZE`: The RVZ block size in KiB, defaults to `128`, valid range: `32-2048`
-- `RVZ_COMPRESSION_ALGORITHM`: The RVZ compression algorithm, defaults to `zstd`, valid choices: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`
-- `RVZ_COMPRESSION_LEVEL`: The RVZ compression level, defaults to `5`, valid ranges: `1-22` for zstd, `1-9` for the other algorithms
-- `RVZ_SCRUB`: Enables RVZ scrubbing, applies only to `export-roms`, defaults to `false`; currently ignored, as nod cannot scrub RVZ
-- `SEVENZIP_COMPRESSION_ALGORITHM`: The 7Z compression algorithm, defaults to `lzma2`, valid choices: `lzma2`, `zstd`
-- `SEVENZIP_COMPRESSION_LEVEL`: The 7Z LZMA2 compression level, defaults to `9`, valid range: `1-9`
-- `SEVENZIP_ZSTD_COMPRESSION_LEVEL`: The 7Z Zstandard compression level, defaults to `19`, valid range: `1-22`
-- `SEVENZIP_SOLID_COMPRESSION`: Toggles 7Z solid compression, defaults to `false`
-- `ZIP_COMPRESSION_ALGORITHM`: The ZIP compression algorithm, defaults to `deflate`, valid choices: `deflate`, `zstd`
-- `ZIP_COMPRESSION_LEVEL`: The ZIP Deflate compression level, defaults to `9`, valid range: `1-9`
-- `ZIP_ZSTD_COMPRESSION_LEVEL`: The ZIP Zstandard compression level, defaults to `19`, valid range: `1-22`
-
-Zstandard is opt-in. It compresses a good deal faster than LZMA2 at a comparable
-size, but nothing else reads it: 7-Zip ships no Zstandard codec, and neither do
-emulators or Windows Explorer, so a zstd `.zip` or `.7z` opens in oxyromon and
-nowhere else. Worth it for archival, a poor idea for a library you play from.
-
-Note: `TMP_DIRECTORY` should have at least 8GB of free space to extract those big DVDs.
-
-Example configuration:
-
-```
-oxyromon config -l
-
-DISCARD_FLAGS = Aftermarket,Debug
-DISCARD_RELEASES = Beta,Proto,Sample,Demo,Hack,Bootleg,Homebrew
-GROUP_SUBSYSTEMS = true
-PREFER_FLAGS =
-PREFER_FORMAT =
-PREFER_PARENTS = true
-PREFER_REGIONS = none
-PREFER_VERSIONS = new
-REGIONS_ALL = US,EU,JP
-REGIONS_ALL_SUBFOLDERS = none
-REGIONS_ONE = US,EU
-REGIONS_ONE_STRICT = false
-REGIONS_ONE_SUBFOLDERS = none
-ROM_DIRECTORY = /home/alucryd/Emulation
-RVZ_COMPRESSION_ALGORITHM = zstd
-RVZ_COMPRESSION_LEVEL = 5
-SEVENZIP_COMPRESSION_ALGORITHM = lzma2
-SEVENZIP_COMPRESSION_ALGORITHM = lzma2
-ZIP_COMPRESSION_LEVEL = 9
-ZIP_ZSTD_COMPRESSION_LEVEL = 19
-SEVENZIP_SOLID_COMPRESSION = false
-SEVENZIP_ZSTD_COMPRESSION_LEVEL = 19
-TMP_DIRECTORY = /tmp
-ZIP_COMPRESSION_ALGORITHM = deflate
-ZIP_COMPRESSION_LEVEL = 9
-ZIP_ZSTD_COMPRESSION_LEVEL = 19
+```sh
+cargo build --release --no-default-features --features use-native-tls
 ```
 
-### Directory Layout
+## Configuration
 
-    ${ROM_DIRECTORY}
-        ...
-        ⮡ ${SYSTEM_NAME} # Base directory for each system, allowed regions will be stored here
-            ⮡ 1G1R # Sub directory for 1G1R games
-            ⮡ Trash # Sub directory for trashed games
-        ...
+Settings are stored in the database and managed with the `config` subcommand.
+They are global by default.
+Pass `-n/--system` to override one for a single system, which then falls back to the global value when unset.
 
-`${SYSTEM_NAME}` is influenced by the `GROUP_SUBSYSTEMS` setting
+The database lives in the platform's data directory, under `oxyromon`.
+These environment variables change where things go:
 
-### External programs
+| Variable                  | Purpose                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| `OXYROMON_DATA_DIRECTORY` | The directory holding the database                           |
+| `OXYROMON_ROM_DIRECTORY`  | The initial `ROM_DIRECTORY`, used only until it is set       |
+| `OXYROMON_TMP_DIRECTORY`  | The initial `TMP_DIRECTORY`, used only until it is set       |
+| `OXYROMON_LOG_LEVEL`      | Log verbosity, in [env_logger](https://docs.rs/env_logger) syntax |
 
-These should be in your `${PATH}` for extra features.
+### Directories
 
-- [ctrtool](https://github.com/3DSGuy/Project_CTR/releases): CIA support
+| Setting         | Description                                         | Default             |
+| --------------- | --------------------------------------------------- | ------------------- |
+| `ROM_DIRECTORY` | Your ROM library                                    | `~/Emulation`       |
+| `TMP_DIRECTORY` | Scratch space for conversions, at least 8 GB for DVDs | The system's temp directory |
 
-CHD support is built in via chd-rs, CSO/ZSO support via xso-rs, GDI support via gdi-rs, XDELTA support via xdelta-rs, and BPS and IPS support via xps-rs, all in `crates/`. 7Z and ZIP support is built in via sevenz-rust2 and zip, and RVZ and WBFS support via nod.
+### Sorting
 
-NSZ support is built in via [nsz-rs](https://crates.io/crates/nsz-rs). Your Switch keys at `~/.switch/prod.keys` are only needed to compress NSPs containing NCAs; importing, checking and decompressing NSZs never need them.
+| Setting                  | Description                                                                                  | Default |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ------- |
+| `REGIONS_ALL`            | Regions for which to keep every game, unordered (eg: `US,EU,JP`)                              |         |
+| `REGIONS_ONE`            | Regions for 1G1R, by order of preference (eg: `US,EU`)                                       |         |
+| `REGIONS_ALL_SUBFOLDERS` | Subfolders for games: `none` or `alpha`                                                      | `none`  |
+| `REGIONS_ONE_SUBFOLDERS` | Subfolders for 1G1R games: `none` or `alpha`                                                 | `none`  |
+| `REGIONS_ONE_STRICT`     | Elect 1G1R games whether you own them or not                                                 | `false` |
+| `REGIONS_ALL_ARCADE`     | Arcade set types for the main directory: `bios`, `parent`, `clone`                           |         |
+| `REGIONS_ONE_ARCADE`     | Arcade set types for the 1G1R directory: `bios`, `parent`, `clone`                           |         |
+| `PREFER_PARENTS`         | Favor parents in the 1G1R election                                                           | `true`  |
+| `PREFER_REGIONS`         | Favor games released in more (`broad`) or fewer (`narrow`) regions, or neither (`none`)       | `none`  |
+| `PREFER_VERSIONS`        | Favor `new` or `old` revisions, or neither (`none`)                                          | `new`   |
+| `PREFER_FLAGS`           | Flags to favor in the 1G1R election (eg: `Rumble Version`)                                   |         |
+| `DISCARD_FLAGS`          | Flags to discard (eg: `Virtual Console`)                                                     |         |
+| `DISCARD_RELEASES`       | Releases to discard (eg: `Beta,Proto`)                                                       |         |
+| `LANGUAGES`              | Languages to keep, for games that list theirs (eg: `En,Ja`)                                  |         |
+| `GROUP_SUBSYSTEMS`       | Put every variant of a system in the same directory                                          | `true`  |
 
-### TODO
+### Formats
+
+| Setting                           | Description                                                                                              | Default   |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------- | --------- |
+| `PREFER_FORMAT`                   | Format imported ROMs are converted to: `ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO`; arcade systems take only `ORIGINAL` and `ZIP` |           |
+| `CHD_PARENTS`                     | Use the other discs of a game as CHD parents, which needs playlists to have been generated              | `false`   |
+| `CHD_CD_HUNK_SIZE`                | CHD hunk size in bytes for CDs, `16` to `1048576`                                                        | auto      |
+| `CHD_CD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for CDs: `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs`                                       | auto      |
+| `CHD_DVD_HUNK_SIZE`               | CHD hunk size in bytes for DVDs, `16` to `1048576`                                                       | auto      |
+| `CHD_DVD_COMPRESSION_ALGORITHMS`  | Up to 4 CHD codecs for DVDs: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                              | auto      |
+| `CHD_HD_HUNK_SIZE`                | CHD hunk size in bytes for hard disks, `16` to `1048576`                                                 | auto      |
+| `CHD_HD_COMPRESSION_ALGORITHMS`   | Up to 4 CHD codecs for hard disks: `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd`                        | auto      |
+| `CHD_LD_HUNK_SIZE`                | CHD hunk size in bytes for LaserDiscs, `16` to `1048576`                                                 | auto      |
+| `CHD_LD_COMPRESSION_ALGORITHMS`   | CHD codecs for LaserDiscs: `none`, `avhu`                                                                | auto      |
+| `RVZ_BLOCK_SIZE`                  | RVZ block size in KiB, `32` to `2048`                                                                    | `128`     |
+| `RVZ_COMPRESSION_ALGORITHM`       | RVZ codec: `none`, `zstd`, `bzip2`, `lzma`, `lzma2`                                                      | `zstd`    |
+| `RVZ_COMPRESSION_LEVEL`           | RVZ level, `1` to `22` for zstd and `1` to `9` otherwise                                                 | `5`       |
+| `RVZ_SCRUB`                       | Scrub RVZ exports; currently ignored with a warning, as the RVZ backend cannot scrub                     | `false`   |
+| `SEVENZIP_COMPRESSION_ALGORITHM`  | 7Z codec: `lzma2` or `zstd`                                                                              | `lzma2`   |
+| `SEVENZIP_COMPRESSION_LEVEL`      | 7Z LZMA2 level, `1` to `9`                                                                               | `9`       |
+| `SEVENZIP_ZSTD_COMPRESSION_LEVEL` | 7Z Zstandard level, `1` to `22`                                                                          | `19`      |
+| `SEVENZIP_SOLID_COMPRESSION`      | Solid 7Z archives                                                                                        | `false`   |
+| `ZIP_COMPRESSION_ALGORITHM`       | ZIP codec: `deflate` or `zstd`                                                                           | `deflate` |
+| `ZIP_COMPRESSION_LEVEL`           | ZIP Deflate level, `1` to `9`                                                                            | `9`       |
+| `ZIP_ZSTD_COMPRESSION_LEVEL`      | ZIP Zstandard level, `1` to `22`                                                                         | `19`      |
+
+Zstandard archives are opt-in.
+They compress much faster than LZMA2 at a comparable size, but almost nothing else reads them.
+7-Zip, emulators and Windows Explorer cannot open a Zstandard `.7z` or `.zip`, so keep them for archival rather than for a library you play from.
+
+## Directory layout
+
+```text
+${ROM_DIRECTORY}
+├── ${SYSTEM_NAME}  # each system's games, from the regions you keep
+│   ├── 1G1R        # its 1G1R games
+│   └── Trash       # its discarded games
+└── Trash           # files import-roms -t matched to no system
+```
+
+`GROUP_SUBSYSTEMS` controls `${SYSTEM_NAME}`: when on, every variant of a system shares one directory.
+
+## Supported formats
+
+| Format                  | Import and check | Convert | Export | Backend                                                      |
+| ----------------------- | :--------------: | :-----: | :----: | ------------------------------------------------------------ |
+| Original files          | ✔                | ✔       | ✔      |                                                              |
+| 7Z, ZIP                 | ✔                | ✔       | ✔      | [sevenz-rust2](https://crates.io/crates/sevenz-rust2), [zip](https://crates.io/crates/zip) |
+| CHD                     | ✔                | ✔       | ✔      | chd-rs                                                       |
+| CSO, ZSO                | ✔                | ✔       | ✔      | xso-rs                                                       |
+| NSZ                     | ✔                | ✔       | ✔      | nsz-rs                                                       |
+| RVZ                     | ✔                | ✔       | ✔      | [nod](https://crates.io/crates/nod)                          |
+| WBFS                    |                  |         | ✔      | nod                                                          |
+| GDI                     |                  |         | ✔      | gdi-rs                                                       |
+| ISO (from CUE/BIN)      |                  |         | ✔      |                                                              |
+| CIA                     | ✔                |         |        | [ctrtool](https://github.com/3DSGuy/Project_CTR/releases), in your `PATH` |
+| JB folders (PS3)        | ✔                |         |        | IRD files                                                    |
+| BPS, IPS, XDELTA patches | ✔               |         |        | xps-rs, xdelta-rs                                            |
+
+The crates without a link are oxyROMon's own, in `crates/`.
+Each began as a port of the tool oxyROMon used to run: chdman, maxcso, nsz, gdidrop, Flips and xdelta3.
+
+Your Switch keys, at `~/.switch/prod.keys`, are only needed to compress NSPs that contain NCAs.
+Importing, checking and decompressing NSZs never need them.
+
+RVZ files are interchangeable with Dolphin's in both directions.
+
+## Web UI and desktop app
+
+`oxyromon server` serves the web UI at `http://127.0.0.1:8000` by default, and the desktop app shows the same UI in its own window.
+From there you can browse systems, games and ROM files, see each system's completion, download a ROM file, edit global and per-system settings, purge a system, import or download DAT files, and import ROM files.
+
+<p align="center">
+  <img src="https://github.com/alucryd/oxyromon/raw/master/resources/web.png" alt="the web UI" width="100%">
+</p>
+
+The server has no authentication.
+It can also import ROM files from a URL, which the server itself downloads, so it reaches anything the server can reach.
+Keep it on the default loopback address unless you trust your network.
+
+## MCP server
+
+The MCP server lets an AI assistant explore and maintain your library with the same actions as the command-line tool:
+
+- **Read-only tools:** `status`, `list_systems`, `get_system`, `list_games`, `get_game`, `search_games`, `get_settings`, `downloadable_systems` and `parse_game_name`.
+- **Mutating tools:** `import_dats`, `download_dats`, `import_roms`, `sort_roms`, `check_roms`, `convert_roms` and `set_setting`.
+- **Destructive tools:** `purge_roms`, `purge_systems` and `purge_irds`, which refuse to run without `confirm: true`.
+
+Mutating tools run to completion within the call, report progress as they go, and can be cancelled.
+The server also exposes resources (`oxyromon://status`, `oxyromon://systems`, `oxyromon://systems/{id}` and `oxyromon://settings`) and two guided prompts, `onboard_system` and `audit_system`.
+
+`oxyromon mcp` speaks over stdio, and `--read-only` hides every mutating tool:
+
+```json
+{
+  "mcpServers": {
+    "oxyromon": {
+      "command": "oxyromon",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+`oxyromon server` also serves it over HTTP at `/mcp`:
+
+```json
+{
+  "mcpServers": {
+    "oxyromon": {
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+## Commands
+
+```text
+Usage: oxyromon [COMMAND]
+
+Commands:
+  info                Print system information
+  config              Query and modify the oxyromon settings
+  create-dats         Create DAT files from directories
+  import-dats         Parse and import Logiqx DAT files into oxyromon
+  download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
+  import-irds         Parse and import PlayStation 3 IRD files into oxyromon
+  import-patches      Import patch files into oxyromon
+  import-roms         Validate and import ROM files or directories into oxyromon
+  purge-irds          Unassociate games from IRD files
+  sort-roms           Sort ROM files according to region and version preferences
+  convert-roms        Convert ROM files between common formats
+  export-roms         Export ROM files to common formats
+  rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
+  check-roms          Check ROM files' integrity
+  purge-roms          Purge trashed, missing, and orphan ROM files
+  purge-systems       Purge systems
+  generate-playlists  Generate M3U playlists for multi-disc games
+  benchmark           Benchmark oxyromon
+  mcp                 Serve the Model Context Protocol on stdin/stdout
+  server              Launch the backend server
+  help                Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
+`mcp` needs the `mcp` feature, and `server` the `server` feature.
+
+### info
+
+Prints the version, every format backend and its version, and some library statistics.
+A missing `ctrtool` is reported rather than treated as an error.
+
+```text
+Usage: oxyromon info
+
+Options:
+  -h, --help  Print help
+```
+
+### config
+
+Lists, reads, sets and unsets settings, and adds or removes entries of list settings.
+Every operation is global unless `-n/--system` scopes it to one system.
+
+```text
+Usage: oxyromon config [OPTIONS]
+
+Options:
+  -n, --system <NAME>         Select a system by name (supports % globs)
+  -l, --list                  Print the whole configuration
+  -g, --get <KEY>             Print a single setting
+  -s, --set <KEY> <VALUE>     Set a single setting
+  -u, --unset <KEY>           Unset a single setting
+  -a, --add <KEY> <VALUE>     Add an entry to a list
+  -r, --remove <KEY> <VALUE>  Remove an entry from a list
+  -h, --help                  Print help
+```
+
+### create-dats
+
+Builds a DAT file from a directory, which oxyROMon or any other tool can then import.
+Name and description default to the directory's name, and the version to the current date and time, No-Intro style.
+Each file becomes a game named after the file without its extension, with all three checksums.
+
+Files are hashed as they are and subdirectories are ignored.
+Use original, uncompressed files if you plan to import the DAT and then convert or export its ROMs.
+
+```text
+Usage: oxyromon create-dats [OPTIONS] <DIRECTORIES>...
+
+Arguments:
+  <DIRECTORIES>...  Set the directories to process
+
+Options:
+  -n, --name <NAME>                Customize the DAT name
+  -d, --description <DESCRIPTION>  Customize the DAT description
+  -v, --version <VERSION>          Customize the DAT version
+  -a, --author <AUTHOR>            Customize the DAT author
+  -u, --url <URL>                  Customize the DAT URL
+  -o, --output <OUTPUT>            Customize the output directory
+  -h, --help                       Print help
+```
+
+### import-dats
+
+Imports Logiqx DAT files from No-Intro, Redump or MAME, including Parent-Clone DATs.
+ZIP files such as No-Intro's daily packs are read directly, including DATs in nested directories.
+With `-u`, only systems already in the database are updated, which keeps a collection in sync with those packs.
+
+An update keeps a system's custom name and extension unless new ones are given.
+`-f` sets each to what is given, so one left out reverts to the DAT's.
+When an update moves ROM files, to a renamed game or to `Trash`, the directories they leave empty are deleted, except the ROM, system and `Trash` directories.
+
+Some systems need a header definition next to their DAT file.
+oxyROMon falls back to its own when it is missing.
+
+MAME ships separate DATs for ROMs, CHDs and more.
+Turn `GROUP_SUBSYSTEMS` on and name them `MAME (ROMs)`, `MAME (CHDs)` and so on, so they share a `MAME` directory that MAME reads as is.
+
+```text
+Usage: oxyromon import-dats [OPTIONS] <DATS>...
+
+Arguments:
+  <DATS>...  Set the DAT files to import
+
+Options:
+  -i, --info                   Show the DAT information and exit
+  -u, --update                 Only import DAT files for systems already in the database
+  -s, --skip-header            Skip parsing the header even if the system has one
+  -f, --force                  Force import of outdated DAT files
+  -n, --name <NAME>            Customize the system name
+  -e, --extension <EXTENSION>  Customize the system extension
+  -h, --help                   Print help
+```
+
+### download-dats
+
+Redump offers direct downloads, so this can download new Redump systems and update those you have.
+No-Intro offers no direct downloads, so for No-Intro it only reports which systems have an update.
+As with `import-dats`, an update keeps custom names and extensions, and `-f` reverts them.
+
+```text
+Usage: oxyromon download-dats [OPTIONS]
+
+Options:
+  -n, --nointro           Download No-Intro DAT files
+  -r, --redump            Download Redump DAT files
+  -u, --update            Check for system updates
+  -a, --all               Import all systems
+  -f, --force             Force import of outdated DAT files
+  -s, --save <DIRECTORY>  Save downloaded DAT files to the specified directory
+  -h, --help              Print help
+```
+
+### import-irds
+
+Imports PlayStation 3 IRD files, which validate JB folders, the extracted form PS3 games are usually dumped in.
+A game counts as complete without its `PS3_CONTENT`, `PS3_EXTRA` and `PS3_UPDATE` directories.
+When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to `Trash`.
+
+Import a PS3 DAT first.
+If it doesn't come from Redump, make sure its name contains `PlayStation 3`.
+Only IRD version 9, the latest, is supported.
+
+```text
+Usage: oxyromon import-irds [OPTIONS] <IRDS>...
+
+Arguments:
+  <IRDS>...  Set the IRD files to import
+
+Options:
+  -i, --info             Show the IRD information and exit
+  -f, --force            Force import of already imported IRD files
+      --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
+  -h, --help             Print help
+```
+
+### purge-irds
+
+Removes the ROMs an IRD import created, moving their files to the system's `Trash` directory.
+The game is no longer a JB folder afterwards, so a different IRD can be imported.
+
+```text
+Usage: oxyromon purge-irds [OPTIONS] [GAMES]...
+
+Arguments:
+  [GAMES]...  Set the game names to purge
+
+Options:
+      --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
+  -h, --help             Print help
+```
+
+### import-patches
+
+Imports BPS, IPS and XDELTA patches, named after their ROM files following RetroArch's softpatching convention.
+
+```text
+Usage: oxyromon import-patches [OPTIONS] <PATCHES>...
+
+Arguments:
+  <PATCHES>...  Set the patch files to import
+
+Options:
+  -n, --name       Customize patch names
+  -f, --force      Force import of already imported patch files
+      --rom <ROM>  Select the target ROM by id, skipping the prompts
+  -h, --help       Print help
+```
+
+### import-roms
+
+Hashes files and directories and moves those that match the database into their system's directory.
+The system is usually detected, but you can narrow the search with `-s`, by a case-insensitive partial name.
+`-s` is also needed to match headered ROMs, for the Nintendo Entertainment System (Headerless), Famicom Disk System, Atari 7800 and Atari Lynx.
+
+Files are moved as they are, except archives holding several games, which are extracted.
+When the system has a `PREFER_FORMAT`, imported ROMs are then converted to it, unless you pass `--as-is`.
+Files needing a choice, such as JB folders or ambiguous matches, prompt by default, and `-u` skips them or picks the first match instead.
+
+Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, RVZ, ZSO and JB folders.
+Arcade systems accept uncompressed files, ZIP and CHD.
+
+```text
+Usage: oxyromon import-roms [OPTIONS] <ROMS>...
+
+Arguments:
+  <ROMS>...  Set the ROM files or directories to import
+
+Options:
+  -s, --system <SYSTEM>    Select systems by name
+  -t, --trash              Trash invalid ROM files
+  -d, --delete             Delete invalid ROM files (hard delete)
+  -f, --force              Force import of existing ROM files
+  -u, --unattended <MODE>  Handle ROM files that require human intervention (skip: skip, first: auto-select first match) [default: none] [possible values: none, skip, first]
+  -x, --extract            Extract top-level archives before importing their contents
+  -a, --as-is              Import ROM files as-is without converting them
+  -h, --help               Print help
+```
+
+### sort-roms
+
+Moves games between the system directory, `1G1R` and `Trash`, according to your settings.
+
+- **Regions mode** keeps every game from the `REGIONS_ALL` regions in the system directory.
+- **1G1R mode** keeps one game per Parent-Clone group in `1G1R`, elected by `REGIONS_ONE` order and the `PREFER_*` settings.
+- **Hybrid mode** does both: the 1G1R election, plus every remaining game from the `REGIONS_ALL` regions.
+
+By default, the election only considers games you own.
+`REGIONS_ONE_STRICT` makes it follow your preferences regardless, so a missing game shows as wanted instead of being replaced.
+1G1R is useful even without a Parent-Clone DAT: it separates the games you play from, say, Japanese originals kept for translation patches.
+
+Arcade systems sort by set type instead.
+`REGIONS_ALL_ARCADE` and `REGIONS_ONE_ARCADE` say which of `bios`, `parent` and `clone` go to each directory.
+With both empty, everything stays in the system directory, and otherwise the types left out are discarded.
+
+Discarded games always go to `Trash`.
+Regions use TOSEC's [two-letter codes](https://www.tosecdev.org/tosec-naming-convention), and `ZZ`, the unknown region, works as a catch-all in `REGIONS_ALL`.
+
+```text
+Usage: oxyromon sort-roms [OPTIONS]
+
+Options:
+  -r, --regions <REGIONS_ALL>...
+          Set the regions to keep (unordered)
+      --subfolders <REGIONS_ALL_SUBFOLDERS>
+          Set the subfolders scheme for games [possible values: none, alpha]
+  -o, --1g1r <REGIONS_ONE>...
+          Set the 1G1R regions to keep (ordered)
+      --1g1r-subfolders <REGIONS_ONE_SUBFOLDERS>
+          Set the subfolders scheme for 1G1R games [possible values: none, alpha]
+  -w, --wanted
+          Show wanted games
+  -a, --all
+          Sort all systems
+  -s, --system <SYSTEM>
+          Select systems by name
+  -y, --yes
+          Automatically say yes to prompts
+  -h, --help
+          Print help
+```
+
+### convert-roms
+
+Converts ROM files between lossless formats and back to their originals:
+
+- Any original format to and from 7Z and ZIP.
+- CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
+- ISO to and from CSO, ZSO and RVZ.
+- NSP to and from NSZ.
+
+Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
+`--save` also stores the format as each processed system's `PREFER_FORMAT`, so future imports follow it.
+
+```text
+Usage: oxyromon convert-roms [OPTIONS]
+
+Options:
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP, ZSO]
+  -g, --game <GAME>      Select games by name
+  -s, --system <SYSTEM>  Select systems by name
+  -a, --all              Convert all systems/games
+  -r, --recompress       Force conversion even if already in the selected format
+  -d, --diff             Print size differences
+  -c, --check            Check ROM files after conversion
+  -p, --parents          Prompt for CHD parents
+  -S, --save             Persist the format as the systems' preferred format (PREFER_FORMAT)
+  -h, --help             Print help
+```
+
+### export-roms
+
+Like `convert-roms`, but writes copies to another directory and leaves your library untouched, so lossy formats are allowed.
+It is meant for real hardware, through an EverDrive or an optical drive emulator.
+
+`ISO` targets OPL on the PlayStation 2.
+It turns CUE/BIN CD games into an ISO of the first track's 2048-byte data sectors, as bchunk does, keeping only that track for multi-track games.
+
+```text
+Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
+
+Options:
+  -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, GDI, ISO, NSZ, RVZ, WBFS, ZIP, ZSO]
+  -g, --game <GAME>            Select games by name
+  -s, --system <SYSTEM>        Select systems by name
+  -d, --directory <DIRECTORY>  Set the output directory
+  -o, --1g1r                   Export 1G1R games only
+  -h, --help                   Print help
+```
+
+### rebuild-roms
+
+Rebuilds arcade sets with another merging strategy:
+
+- **Split:** each set holds only its own files.
+- **Non-merged:** each set also holds its parent's files.
+- **Full non-merged:** each set also holds its parent's files and the BIOS files it needs.
+
+Merged sets are not supported yet.
+
+```text
+Usage: oxyromon rebuild-roms [OPTIONS]
+
+Options:
+  -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+  -f, --force              Force rebuild even if merging strategy is unchanged
+  -a, --all                Rebuild all arcade systems
+  -y, --yes                Automatically say yes to prompts
+  -h, --help               Print help
+```
+
+### check-roms
+
+Hashes every ROM file of the selected systems again and moves corrupt ones to `Trash`.
+`--size` also recomputes stored file sizes.
+
+```text
+Usage: oxyromon check-roms [OPTIONS]
+
+Options:
+  -a, --all              Check all systems
+  -g, --game <GAME>      Select games by name
+  -s, --size             Recalculate ROM file sizes
+      --system <SYSTEM>  Select systems by name
+  -h, --help             Print help
+```
+
+### purge-roms
+
+Forgets ROM files that went missing or that no ROM references, and deletes the files in every `Trash` directory, the ROM directory's own included.
+`--foreign` deletes files in the ROM directory that the database doesn't know.
+Directories left empty are deleted, except the ROM, system and `Trash` directories.
+
+```text
+Usage: oxyromon purge-roms [OPTIONS]
+
+Options:
+  -m, --missing  Delete missing ROM files from the database
+  -o, --orphan   Delete ROM files without an associated ROM from the database
+  -t, --trash    Physically delete ROM files from the trash directories
+  -f, --foreign  Physically delete ROM files unknown to the database
+  -y, --yes      Automatically say yes to prompts
+  -h, --help     Print help
+```
+
+### purge-systems
+
+Removes systems and their ROMs from the database and moves their files to `Trash`, for you to delete afterwards.
+
+```text
+Usage: oxyromon purge-systems [OPTIONS]
+
+Options:
+  -e, --empty            Only list empty systems for selection
+  -s, --system <SYSTEM>  Select systems by name
+  -h, --help             Print help
+```
+
+### generate-playlists
+
+Writes M3U playlists for multi-disc Redump games, so RetroArch can swap discs.
+The playlists also tell `CHD_PARENTS` which discs belong together.
+`sort-roms` moves playlists along with their games, but run this again after `convert-roms`.
+
+```text
+Usage: oxyromon generate-playlists [OPTIONS]
+
+Options:
+  -a, --all   Generate playlists for all systems
+  -h, --help  Print help
+```
+
+### benchmark
+
+Measures read and write speeds in the ROM and temporary directories, and ranks the checksum algorithms.
+CRC is usually fastest, then SHA1, then MD5, though it depends on your hardware.
+
+```text
+Usage: oxyromon benchmark [OPTIONS]
+
+Options:
+  -c, --chunk-size <CHUNK_SIZE>  Set the chunk size in KB for read and writes (Default: 256) [default: 256]
+  -h, --help                     Print help
+```
+
+### mcp
+
+Serves MCP over stdio, as described in [MCP server](#mcp-server).
+Nothing else may write to standard output while it runs.
+
+```text
+Usage: oxyromon mcp [OPTIONS]
+
+Options:
+      --read-only  Expose only non-mutating tools
+  -h, --help       Print help
+```
+
+### server
+
+Serves the web UI at `/`, the GraphQL API at `/graphql`, and MCP at `/mcp`.
+
+```text
+Usage: oxyromon server [OPTIONS]
+
+Options:
+  -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
+  -p, --port <PORT>        Specify the server port [default: 8000]
+  -h, --help               Print help
+```
+
+## TODO
 
 - Add more actions to the web UI
 - Find a way to automatically download No-Intro DAT files
 - Support merged sets for arcade systems
-- Craft some unit tests for arcade systems
-- Craft some unit tests for NSZ with a compressible NCA
-- Craft some unit tests for IRD and PS3 in general
-- Support rebuilding PS3 ISOs using IRD files, if possible, and requested
-- Add a metadata scraper in the retroarch format
+- Write tests for arcade systems, for NSZ with a compressible NCA, and for IRD and PS3 in general
+- Support rebuilding PS3 ISOs from IRD files, if possible and requested
+- Add a metadata scraper in the RetroArch format
 
-## oxyromon
+## Contributing
 
-    Usage: oxyromon [COMMAND]
-
-    Commands:
-        info                Print system information
-        config              Query and modify the oxyromon settings
-        create-dats         Create DAT files from directories
-        import-dats         Parse and import Logiqx DAT files into oxyromon
-        download-dats       Download No-Intro and Redump DAT files and import them into oxyromon
-        import-irds         Parse and import PlayStation 3 IRD files into oxyromon
-        import-patches      Import patch files into oxyromon
-        import-roms         Validate and import ROM files or directories into oxyromon
-        sort-roms           Sort ROM files according to region and version preferences
-        convert-roms        Convert ROM files between common formats
-        export-roms         Export ROM files to common formats
-        rebuild-roms        Rebuild arcade ROM sets according to the selected strategy
-        check-roms          Check ROM files' integrity
-        purge-irds          Unassociate games from IRD files
-        purge-roms          Purge trashed, missing, and orphan ROM files
-        purge-systems       Purge systems
-        generate-playlists  Generate M3U playlists for multi-disc games
-        benchmark           Benchmark oxyromon
-        mcp                 Serve the Model Context Protocol on stdin/stdout
-        server              Launch the backend server
-        help                Print this message or the help of the given subcommand(s)
-
-    Options:
-        -h, --help     Print help information
-        -V, --version  Print version information
-
-## oxyromon-config
-
-Query and modify the oxyromon settings
-
-The settings can be queried, modified, and deleted from the command line.
-All operations are global by default. Use `-y/--system` to scope them to a specific system.
-Per-system settings take precedence over global ones, with fallback to the global value.
-
-    Usage: oxyromon config [OPTIONS]
-
-    Options:
-        -n, --system <NAME>         Select a system by name (supports % globs)
-        -l, --list                  Print the whole configuration
-        -g, --get <KEY>             Print a single setting
-        -s, --set <KEY> <VALUE>     Set a single setting
-        -u, --unset <KEY>           Unset a single setting
-        -a, --add <KEY> <VALUE>     Add an entry to a list
-        -r, --remove <KEY> <VALUE>  Remove an entry from a list
-        -h, --help                  Print help information
-
-## oxyromon-info
-
-Print system information
-
-Prints the program version, installed dependencies and their version (when possible), as well as some basic system statistics.
-
-    Usage: oxyromon info
-
-    Options:
-    -h, --help  Print help
-
-## oxyromon-import-dats
-
-Parse and import Logiqx DAT files into oxyromon
-
-The standard Logiqx XML format is supported, this includes Parent-Clone DAT files.
-ZIP files such as the No-Intro daily dat-o-matic packs can be imported directly without extracting them first.
-All `.dat` files inside the archive will be found, including those nested in subdirectories.
-When used with the `-u` flag, only systems that were previously imported will be updated, making it
-ideal for keeping your collection in sync with daily releases.
-An update keeps a system's custom name and extension unless new ones are given. Importing the DAT again
-with `-f` sets each to what is given, so one left out is reverted.
-When an update moves ROM files, to a renamed game or to the `Trash` directory, the directories they leave
-empty are deleted, except for the ROM, system and `Trash` directories.
-
-Supported console DAT providers:
-
-- No-Intro
-- Redump
-
-Note: Some systems require a header definition to be placed alongside the DAT file.
-If not provided, oxyromon will use its own fallback header definition.
-
-Supported arcade DAT providers:
-
-- MAME
-
-Note: MAME DATs are commonly found as separate files for ROMs, CHDs, and others.
-It is recommended to turn `GROUP_SUBSYSTEMS` on and give them custom names like `MAME (ROMs)`, `MAME (CHDs)`, etc...
-That way they will be physically grouped in a single `MAME` folder and work in MAME out of the box.
-
-    Usage: oxyromon import-dats [OPTIONS] <DATS>...
-
-    Arguments:
-        <DATS>...  Set the DAT files to import
-
-    Options:
-        -i, --info                   Show the DAT information and exit
-        -u, --update                 Only import DAT files for systems already in the database
-        -s, --skip-header            Skip parsing the header even if the system has one
-        -f, --force                  Force import of outdated DAT files
-        -n, --name <NAME>            Customize the system name
-        -e, --extension <EXTENSION>  Customize the system extension
-        -h, --help                   Print help information
-
-## oxyromon-download-dats
-
-Download No-Intro and Redump DAT files and import them into oxyromon
-
-Redump offers direct downloads, but no summary, whereas No-Intro offers a summary
-but no direct downloads. For now, the No-intro counterpart will only tell you if
-an update is available, but the Redump one is able to download brand new dats
-and update those you've already imported.
-As with `import-dats`, an update keeps a system's custom name and extension, and `-f` reverts them.
-
-Supported DAT providers:
-
-- Redump (Download and update)
-- No-Intro (Update check only)
-  <!-- -->
-
-      Usage: oxyromon download-dats [OPTIONS]
-
-      Options:
-          -n, --nointro                 Download No-Intro DAT files
-          -r, --redump                  Download Redump DAT files
-          -u, --update                  Check for system updates
-          -a, --all                     Import all systems
-          -f, --force                   Force import of outdated DAT files
-          -s, --save <DIRECTORY>        Save downloaded DAT files to the specified directory
-          -h, --help                    Print help information
-
-## oxyromon-create-dats
-
-Create DAT files from directories
-
-This makes it possible to build DAT files from scratch, they can be subsequently imported into oxyromon or any other tool.
-If no customization is specified, name and description are set to the directory name, and version is set to the creation datetime (No-Intro style).
-Each game name is set to the file name stripped of its extension, all 3 checksums are computed.
-
-Note: Any file in the directory is processed as is, and directories are ignored. It is necessary to use original uncompressed file formats if you plan to import the generated DAT file and use oxyromon's `convert-roms`/`export-roms` commands.
-
-    Usage: oxyromon create-dats [OPTIONS] <DIRECTORIES>...
-
-    Arguments:
-    <DIRECTORIES>...  Set the directories to process
-
-    Options:
-    -n, --name <NAME>                Customize the DAT name
-    -d, --description <DESCRIPTION>  Customize the DAT description
-    -v, --version <VERSION>          Customize the DAT version
-    -a, --author <AUTHOR>            Customize the DAT author
-    -u, --url <URL>                  Customize the DAT URL
-    -o, --output <OUTPUT>            Customize the output directory
-    -h, --help                       Print help
-
-## oxyromon-import-irds
-
-Parse and import PlayStation 3 IRD files into oxyromon
-
-IRD files allow validation of extracted PS3 ISOs, a.k.a. JB folders.
-Games will be considered complete, as far as oxyromon goes, even if you don't have the `PS3_CONTENT`, `PS3_EXTRA`, and `PS3_UPDATE` directories.
-When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
-directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
-
-Note: Currently supports IRD version 9 only. Should cover most online sources as it is the latest version.
-
-    Usage: oxyromon import-irds [OPTIONS] <IRDS>...
-
-    Arguments:
-        <IRDS>...  Set the IRD files to import
-
-    Options:
-        -i, --info             Show the IRD information and exit
-        -f, --force            Force import of already imported IRD files
-            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
-        -h, --help             Print help information
-
-## oxyromon-purge-irds
-
-Unassociate games from IRD files
-
-This will remove all child ROMs that were created when importing an IRD file, effectively unassociating the game from the IRD.
-All ROM files associated with the deleted ROMs will be moved to the system's `Trash` directory.
-The game will be marked as not being a JB folder anymore, allowing you to re-import a different IRD if needed.
-
-    Usage: oxyromon purge-irds [OPTIONS] [GAMES]...
-
-    Arguments:
-        [GAMES]...  Set the game names to purge
-
-    Options:
-            --system <SYSTEM>  Select the system to purge from, skipping the prompt and purging every IRD game when no names are given
-        -h, --help             Print help
-
-## oxyromon-import-roms
-
-Validate and import ROM files or directories into oxyromon
-
-ROM files that match against the database will be placed in the base directory of the system they belong to.
-In most cases the system is auto-detected, however, you will still be prompted for the system you want when importing JB folders. You can also force specific systems by name to narrow the search. The name doesn't have to be the full name and is case-insensitive.
-Systems that use a header definition require the `-s` flag to be passed to match ROM files that contain a header. This currently affects Nintendo Entertainment System (Headerless), Famicom Disc System, Atari 7800, and Atari Lynx.
-Most files are moved as-is, with the exception of archives containing multiple games which are extracted.
-If the target system has the `PREFER_FORMAT` setting, imported ROMs are converted to that format right after import; pass `--as-is` to skip this.
-
-Supported console ROM formats:
-
-- All No-Intro and Redump supported file formats
-- 7Z and ZIP archives
-- CHD (Compressed Hunks of Data)
-- CIA (Installable 3DS title)
-- CSO (Compressed ISO)
-- NSZ (Compressed NSP)
-- RVZ (Modern Dolphin format)
-- ZSO (LZ4 Compressed ISO)
-- JB folders (Extracted PS3 ISO)
-
-Supported arcade ROM formats:
-
-- Uncompressed file formats
-- ZIP archives
-- CHD (Compressed Hunks of Data)
-
-  Usage: oxyromon import-roms [OPTIONS] <ROMS>...
-
-  Arguments:
-  <ROMS>... Set the ROM files or directories to import
-
-  Options:
-  -s, --system <SYSTEM> Select systems by name
-  -t, --trash Trash invalid ROM files
-  -d, --delete Delete invalid ROM files (hard delete)
-  -f, --force Force import of existing ROM files
-  -u, --unattended <MODE> Handle ROM files that require human intervention (skip: skip, first: auto-select first match) [default: skip] [possible values: skip, first]
-  -x, --extract Extract top-level archives before importing their contents
-  -a, --as-is Import ROM files as-is without converting them
-  -h, --help Print help
-
-## oxyromon-import-patches
-
-Import patch files into oxyromon
-
-Supported formats are BPS, IPS and XDELTA. Patches are named after the ROM files following the RetroArch softpatching naming convention.
-
-    Usage: oxyromon import-patches [OPTIONS] <PATCHES>...
-
-    Arguments:
-    <PATCHES>...  Set the patch files to import
-
-    Options:
-    -n, --name   Customize patch names
-    -f, --force  Force import of already imported patch files
-    --rom <ROM>  Select the target ROM by id, skipping the prompts
-    -h, --help   Print help
-
-## oxyromon-sort-roms
-
-Sort ROM files according to region and version preferences
-
-Sorting can be done using several strategies.
-You can also choose to discard certain types of games.
-Optionally you can print a list of games you may be missing, you hoarder, you.
-
-Supported console modes:
-
-- Regions mode
-- 1G1R mode
-- Hybrid mode
-
-Supported arcade modes:
-
-- BIOS/Parent/Clone
-
-In regions mode, games belonging to at least one of the specified regions will be placed in the base directory of the
-system.
-Regions are set via the `REGIONS_ALL` setting and can be overridden via the CLI `-r` flag.
-
-In 1G1R mode, only one game from a Parent-Clone game group will be placed in the 1G1R subdirectory, by order of
-precedence.
-Regions are set via the `REGIONS_ONE` setting and can be overridden via the CLI `-o` flag.
-
-In hybrid mode, the 1G1R rule applies, plus all remaining games from the selected regions will be placed in the base
-directory.
-
-1G1R and hybrid modes have an additional knob you can turn via `REGIONS_ONE_STRICT`.
-Setting it to false will elect the first available ROM you possess following your region preferences.
-Setting to true will elect ROMs following region preferences regardless of whether you actually possess the ROM or not.
-
-Arcade systems can be split according to 3 archetypes: BIOS files, parent games and clone games.
-Which type goes where is defined using `REGIONS_ONE_ARCADE` and `REGIONS_ALL_ARCADE`. Valid choices are `bios`, `parent` and `clone`.
-Keeping both lists empty puts everything in the main directory.
-On the other hand, attributing at least one of these types will discard those that are omitted.
-
-In every mode, discarded games are placed in the `Trash` subdirectory.
-
-1G1R and hybrid modes are still useful even without a Parent-Clone DAT file, it lets you separate games you will
-actually play, while keeping original Japanese games for translation patches and other hacks.
-
-The region format uses 2-letter codes according to [TOSEC's naming convention](https://www.tosecdev.org/tosec-naming-convention). The `Unknown` region, represented by `ZZ`, is used as a catch-all region in `REGIONS_ALL` for the hybrid mode.
-
-    Usage: oxyromon sort-roms [OPTIONS]
-
-    Options:
-        -r, --regions <REGIONS_ALL>...
-                Set the regions to keep (unordered)
-            --subfolders <REGIONS_ALL_SUBFOLDERS>
-                Set the subfolders scheme for games [possible values: NONE, ALPHA]
-        -o, --1g1r <REGIONS_ONE>...
-                Set the 1G1R regions to keep (ordered)
-            --1g1r-subfolders <REGIONS_ONE_SUBFOLDERS>
-                Set the subfolders scheme for 1G1R games [possible values: NONE, ALPHA]
-        -w, --wanted
-                Show wanted games
-        -a, --all
-                Sort all systems
-        -s, --system <SYSTEM>
-                Select systems by name
-        -y, --yes
-                Automatically say yes to prompts
-        -h, --help
-                Print help information
-
-## oxyromon-rebuild-roms
-
-Rebuild arcade ROM sets according to the selected strategy
-
-ROM sets can be rebuilt using popular merging strategies.
-
-Supported merging strategies:
-
-- Split (each parent and clone set contains only its own ROM files)
-- Non-Merged (each parent and clone set contains its ROM files and its parent's files)
-- Full Non-Merged (each parent and clone set contains its ROM files, its parent's files, and the required BIOS files)
-- ~~Merged (parent and clones are stored together, alongside the required BIOS files)~~
-  <!-- -->
-
-      Usage: oxyromon rebuild-roms [OPTIONS]
-
-      Options:
-          -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
-          -a, --all                Rebuild all arcade systems
-          -y, --yes                Automatically say yes to prompts
-          -h, --help               Print help information
-
-## oxyromon-convert-roms
-
-Convert ROM files between common formats
-
-ROMs can be converted back and forth between reversible formats and their original formats.
-Invoking this command will convert all eligible roms for some or all systems.
-You may optionally filter games by name, the matching string is case-insensitive and can use SQL wildcards.
-Systems can also be selected the same way so as to avoid being prompted for them. Both systems and game flags can be passed multiple times.
-
-Supported ROM formats:
-
-- All No-Intro and Redump supported formats <-> 7Z and ZIP archives
-- CUE/BIN <-> CHD (Compressed Hunks of Data)
-- ISO <-> CHD (Compressed Hunks of Data)
-- ISO <-> CSO (Compressed ISO)
-- ISO <-> ZSO (LZ4 Compressed ISO)
-- ISO <-> RVZ (Modern Dolphin format)
-
-Note: CHD will be extracted to their original split CUE/BIN where applicable.
-
-    Usage: oxyromon convert-roms [OPTIONS]
-
-    Options:
-        -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP, ZSO]
-        -g, --game <GAME>      Select games by name
-        -s, --system <SYSTEM>  Select systems by name
-        -a, --all              Convert all systems/games
-        -r, --recompress       Force conversion even if already in the selected format
-        -d, --diff             Print size differences
-        -c, --check            Check ROM files after conversion
-        -p, --parents          Prompt for CHD parents
-        -S, --save             Persist the format as the systems' preferred format (PREFER_FORMAT)
-        -h, --help             Print help information
-
-With `--save`, the destination format is also stored as the `PREFER_FORMAT` setting of every processed system, so future imports are converted to the same format automatically.
-
-## oxyromon-export-roms
-
-Export ROM files to common formats
-
-Similar to `convert-roms`, however, this one leaves your original ROM files untouched, thus allowing the use of lossy formats. It is designed to export all or a subset of ROM files for use with external systems like original consoles via an EverDrive or an ODE.
-
-Note: ISO is a variant of ORIGINAL specifically designed for OPL on PlayStation 2, it allows converting CUE/BIN CD games to ISO, keeping the first track's 2048-byte data sectors as bchunk does. Games split over several tracks are converted too, keeping that first track alone.
-
-    Usage: oxyromon export-roms [OPTIONS] --directory <DIRECTORY>
-
-    Options:
-        -f, --format <FORMAT>        Set the destination format [possible values: ORIGINAL, 7Z, ZIP, ISO, CHD, CSO, GDI, NSZ, RVZ, WBFS, ZSO]
-        -g, --game <Game>            Select games by name
-        -s, --system <SYSTEM>        Select systems by name
-        -d, --directory <DIRECTORY>  Set the output directory
-        -o, --1g1r                   Export 1G1R games only
-        -h, --help                   Print help
-
-## oxyromon-check-roms
-
-Check ROM files' integrity
-
-This will scan every ROM file in each specified system and move corrupt files to their respective Trash directory.
-File sizes can also be computed again, useful for ROM files imported in v0.8.1 or below.
-
-    Usage: oxyromon check-roms [OPTIONS]
-
-    Options:
-        -a, --all              Check all systems
-        -g, --game <GAME>      Select games by name
-        -s, --size             Recalculate ROM file sizes
-            --system <SYSTEM>  Select systems by name
-        -h, --help             Print help information
-
-## oxyromon-purge-roms
-
-Purge trashed, missing, and orphan ROM files
-
-This will optionally purge the database from every ROM file that has gone missing or that is not currently associated
-with a ROM, as well as physically deleting all files in the `Trash` subdirectories: each system's, and the ROM
-directory's own, where `import-roms -t` puts files that match no system. Directories left empty by a purge are
-deleted as well, except for the ROM, system and `Trash` directories.
-
-    Usage: oxyromon purge-roms [OPTIONS]
-
-    Options:
-        -m, --missing  Delete missing ROM files from the database
-        -o, --orphan   Delete ROM files without an associated ROM from the database
-        -t, --trash    Physically delete ROM files from the trash directories
-        -f, --foreign  Physically delete ROM files unknown to the database
-        -y, --yes      Automatically say yes to prompts
-        -h, --help     Print help
-
-## oxyromon-purge-systems
-
-Purge systems
-
-This will wipe the system and all its ROMs from the database. All ROMs will be placed in the `Trash` folder, it is up to you to physically delete them afterward.
-
-    Usage: oxyromon purge-systems [OPTIONS]
-
-    Options:
-        -e, --empty            Only list empty systems for selection
-        -s, --system <SYSTEM>  Select systems by name
-        -h, --help             Print help
-
-## oxyromon-generate-playlists
-
-Generate M3U playlists for multi-disc games
-
-This will generate playlists to be able to swap discs from within RetroArch. Limited to Redump only.
-The playlist information is also used to determine parents if you enable the CHD parents feature.
-
-Note: `sort-roms` will move them accordingly but if you use `convert-roms` you will need to run this command again at the moment.
-
-    Usage: oxyromon generate-playlists [OPTIONS]
-
-    Options:
-        -a, --all   Generate playlists for all systems
-        -h, --help  Print help information
-
-## oxyromon-import-irds
-
-Parse and import PlayStation 3 IRD files into oxyromon
-
-One of the most common ways PlayStation 3 games are dumped is as JB folders, IRD files are used to describe and validate the contents of these folders, not unlike what a DAT file does.
-When an IRD no longer matches a file already in its JB folder, that file is imported again or moved to the `Trash`
-directory, and the directories it leaves empty are deleted, except for the ROM, system and `Trash` directories.
-
-Note: You still need to import a PS3 DAT file from Redump or elsewhere beforehand. Please make sure it has `PlayStation 3` in the name if you don't go with Redump.
-
-    Usage: oxyromon import-irds [OPTIONS] <IRDS>...
-
-    Arguments:
-        <IRDS>...  Set the IRD files to import
-
-    Options:
-        -i, --info             Show the IRD information and exit
-        -f, --force            Force import of already imported IRD files
-            --system <SYSTEM>  Select the system to import into, matching the game and ROM automatically
-        -h, --help             Print help information
-
-## oxyromon-server
-
-Launch the backend server
-
-The server exposes a GraphQL API endpoint at `/graphql`. An associated Leptos (WebAssembly) web UI is also exposed at `/`. It also serves the Model Context Protocol at `/mcp` (see [oxyromon-mcp](#oxyromon-mcp)).
-
-From the web UI you can browse systems, games and ROM files, see how many games in each system are complete, navigate the games list with the keyboard, download a ROM file, edit global and per-system settings, purge a system, import and download DAT files, and import ROM files.
-
-ROM files are imported either by uploading them, or by giving a URL which the **server** downloads. That download is made by the server, so it can reach anything the server can, including hosts on its own network. This is fine for the default loopback address; think twice before exposing the server beyond it.
-
-    Usage: oxyromon server [OPTIONS]
-
-    Options:
-        -a, --address <ADDRESS>  Specify the server address [default: 127.0.0.1]
-        -p, --port <PORT>        Specify the server port [default: 8000]
-        -h, --help               Print help information
-
-## oxyromon-mcp
-
-Serve the Model Context Protocol on stdin/stdout
-
-The MCP server lets an AI assistant explore and maintain the library with the same actions as the CLI: nine read-only tools (`status`, `list_systems`, `get_system`, `list_games`, `get_game`, `search_games`, `get_settings`, `downloadable_systems`, `parse_game_name`), seven mutating ones (`import_dats`, `download_dats`, `import_roms`, `sort_roms`, `check_roms`, `convert_roms`, `set_setting`), and three destructive ones (`purge_roms`, `purge_systems`, `purge_irds`) that refuse to run without an explicit `confirm: true`.
-
-Mutating tools run synchronously and stream progress notifications as they work; the client can cancel mid-action. The server also exposes resources (`oxyromon://status`, `oxyromon://systems`, `oxyromon://systems/{id}`, `oxyromon://settings`) and two guided prompts (`onboard_system`, `audit_system`).
-
-Use `--read-only` to expose only the read tools: the mutating ones are not registered at all, so they do not even show up in the tool list.
-
-    Usage: oxyromon mcp [OPTIONS]
-
-    Options:
-          --read-only  Expose only non-mutating tools
-      -h, --help       Print help
-
-Configure a client with the stdio transport:
-
-    {
-      "mcpServers": {
-        "oxyromon": {
-          "command": "oxyromon",
-          "args": ["mcp"]
-        }
-      }
-    }
-
-…or, when running `oxyromon server`, point the client at its Streamable HTTP endpoint:
-
-    {
-      "mcpServers": {
-        "oxyromon": {
-          "url": "http://127.0.0.1:8000/mcp"
-        }
-      }
-    }
-
-MCP support is the Cargo feature `mcp`, implied by `server`. Because the stdio transport speaks over standard output, nothing else may be written there — a good rule to keep in mind when adding output to any code path the MCP server can reach.
-
-## oxyromon-benchmark
-
-Benchmark oxyromon
-
-Gives some idea about the various read/write performance of the ROM and TMP directories.
-It will also rank checksum algorithms, typically CRC should be the fastest, followed by SHA1, and then MD5.
-Your mileage may vary depending on your architecture.
-
-    Usage: oxyromon benchmark [OPTIONS]
-
-    Options:
-        -c, --chunk-size <CHUNK_SIZE>  Set the chunk size in KB for read and writes (Default: 256) [default: 256]
-        -h, --help                     Print help information
+[AGENTS.md](AGENTS.md) holds the project's conventions, and `openwiki/` a generated wiki of how the code works.

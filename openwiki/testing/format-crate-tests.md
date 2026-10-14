@@ -58,10 +58,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Format Crate Test Strategy
@@ -500,6 +500,5 @@ cargo test -p xps-rs                           # needs flips on PATH
 
 See also [Testing Conventions](testing-conventions.md) for the oxyromon-side test
 infrastructure (temporary databases, the `MUTEX`, DAT and ROM fixtures), and
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md) for the
 crate these parity suites cover.

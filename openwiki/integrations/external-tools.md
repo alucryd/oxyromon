@@ -45,10 +45,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 
@@ -56,16 +56,14 @@ generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 
 Every format oxyromon handles is now decoded in-process except one. **`ctrtool`**
 (CIA, from Project_CTR) is the only external program the binary looks for at
-runtime; the README lists it alone under "External programs". Everything else that
+runtime; the README's supported-formats table names it as the only external backend. Everything else that
 once went through a child process has an in-tree replacement: `chdman` →
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [chd-rs](../concepts/chd-format-and-chd-rs.md), `flips` → `xps-rs`, `xdelta3` →
 `xdelta-rs`, `nsz` → `nsz-rs`, `maxcso` → `xso-rs`, `gdidrop` → `gdi-rs`, 7-Zip →
 `sevenz-rust2` + `zip`, and `dolphin-tool`/`wit` → `nod`
 ([CHANGELOG.md](../../CHANGELOG.md#L11-L15),
-[AGENTS.md](../../AGENTS.md#L184-L199)). In particular there is no
+[AGENTS.md](../../AGENTS.md#L127-L166)). In particular there is no
 `src/chdman.rs` any more — CHD work lives in [`src/chd.rs`](../../src/chd.rs) and
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [`crates/chd-rs`](../concepts/chd-format-and-chd-rs.md).
 
 Because a missing `ctrtool` is an everyday condition rather than an edge case, the

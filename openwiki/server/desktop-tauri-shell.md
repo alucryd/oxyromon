@@ -3,9 +3,6 @@ type: desktop-shell
 title: Desktop App (Tauri Sidecar)
 description: How the standalone desktop/ Tauri v2 crate wraps the existing web UI without a backend of its own — staging the server binary as a sidecar, reserving a loopback port, polling for readiness, pointing an external webview at that origin, and killing the child on exit.
 tags: [tauri, sidecar, desktop, webview, loopback, lifecycle, appimage]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -56,6 +53,9 @@ sources:
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
 generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Desktop App (Tauri Sidecar)

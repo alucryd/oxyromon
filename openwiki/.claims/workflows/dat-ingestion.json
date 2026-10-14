@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e8abdff6bd04a2f87435ea7e476e6598bc29a04facf89a90832db08e888f67e3",
+  "pageVersion": "sha256:a824e90985c1149abe77ae66bab220523faff4e3d98b20b4ee534431d755eb48",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -507,8 +507,8 @@
       "statement": "The MCP import_dats tool rebuilds an argv and invokes the same clap subcommand() and main() the CLI uses, so the agent-facing tool and the terminal command cannot drift apart; --update is the only flag it can convey and read-only mode refuses the call.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L53-L100",
-          "version": "repo-lines-v1:sha256:c9176b5b75999241cff2d001c9971a7ab8cd398ee3e666313d0ae1628a2ca38c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0NjkwNWI3ODhkNDJhZTU5Y2MyMWJlMjEyNjA4ZWNkNDc5NDM1NjY3NjdjMmIzOTBkNjU0MzI5YTZlOGEwMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYjBkMmY4NTNiN2RkOTA0MGU4MTk3YjRkMmQ4MTc3NDgwMjEyOGQ5NTAxODYwMzFkMDRlYmYzYjY4YzAwMjkifQ"
+          "resource": "repo://src/mcp/write.rs#L61-L102",
+          "version": "repo-lines-v1:sha256:e42fe247e5b59d6772496258175ba3e4360723e75b39f3561b2e1366aa550a37:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNzYzMDQxNTlhNGI4OGQxMTMxYTU3MmIxOTcxMmVhYTdlOGI3MjJmYWQ3ZjEzNTUyMzhmNzg0ZmJiZjFlYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOGUxOWM3OThkYTQ2NDNiMzZhNDk5ZmMzNDE0NmNjNDQzZDgyN2ViZmU0MTQ4MGY0NDZiZjc2MGI0YTlmMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYjBkMmY4NTNiN2RkOTA0MGU4MTk3YjRkMmQ4MTc3NDgwMjEyOGQ5NTAxODYwMzFkMDRlYmYzYjY4YzAwMjkifQ"
         }
       ]
     },
@@ -561,6 +561,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

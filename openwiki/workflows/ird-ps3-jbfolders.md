@@ -54,10 +54,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+  - by: openwiki/0.7.2
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # PS3 IRD Files and JB Folders
@@ -184,8 +184,7 @@ one, so `unattended_game` compares `title_key` — the title with `(...)` and
 `[...]` tags, punctuation and case removed — and accepts exactly one candidate,
 bailing with "import the IRD from the CLI to pick one" on zero or several
 ([src/import_irds.rs](../../src/import_irds.rs#L158-L197),
-<!-- openwiki: broken internal link [<../../src/import_irds/test_title.rs>] file "<../../src/import_irds/test_title.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`src/import_irds/test_title.rs`](<../../src/import_irds/test_title.rs>)).
+[`src/import_irds/test_title.rs`](../../src/import_irds/test_title.rs)).
 Headless mode has no fallback in the other direction either: a system with no
 games is a hard error naming `import its DAT first`, where interactive mode would
 just prompt
@@ -371,7 +370,7 @@ The parent rom and its file survive by design; the game's IRD association, not t
 game, is what is retired. `compute_system_completion` runs afterwards, and because
 the flag is now false the ordinary SQL re-decides the game
 ([src/mutation.rs](../../src/mutation.rs#L649-L687),
-[src/mcp/write.rs](../../src/mcp/write.rs#L740-L794)). Both server surfaces run
+[src/mcp/write.rs](../../src/mcp/write.rs#L681-L722)). Both server surfaces run
 `purge-irds` with `--system` only — the whole system's IRD games go at once — and
 MCP gates it behind `confirm: true` plus a read-only denial, marking it
 `destructive_hint = true` because it moves files.
@@ -400,10 +399,9 @@ rom name, so a PKG and its RAP keep their pairing
 `(PSN)` fixture — `UP0001-BLUS00001.pkg` plus `prfgmHWxGNxsfJ.rap` — is what those
 companion files look like, and its test asserts the pair ending as two rom rows
 sharing one game-named zip
-<!-- openwiki: broken internal link [<../../tests/Test System (20230527] file "<../../tests/Test System (20230527" does not exist. Fix the href or restore the target, then delete this comment. -->
-([tests/Test System (20230527) (PSN).dat](<../../tests/Test System (20230527) (PSN).dat>),
-<!-- openwiki: broken internal link [<../../src/convert_roms/test_original_to_zip_multiple_roms.rs>] file "<../../src/convert_roms/test_original_to_zip_multiple_roms.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`src/convert_roms/test_original_to_zip_multiple_roms.rs`](<../../src/convert_roms/test_original_to_zip_multiple_roms.rs>)).
+<!-- openwiki: broken internal link [../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat] file "../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat" does not exist. Fix the href or restore the target, then delete this comment. -->
+([tests/Test System (20230527) (PSN).dat](../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat),
+[`src/convert_roms/test_original_to_zip_multiple_roms.rs`](../../src/convert_roms/test_original_to_zip_multiple_roms.rs)).
 Nothing in `import-irds` special-cases those extensions.
 
 ## Failures, tests, and the known coverage gap
@@ -417,27 +415,23 @@ units committed and the failing one untouched.
 
 The focused tests are these:
 
-<!-- openwiki: broken internal link [<../../src/import_irds/test_ird.rs>] file "<../../src/import_irds/test_ird.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-- [`src/import_irds/test_ird.rs`](<../../src/import_irds/test_ird.rs>) — import the
-<!-- openwiki: broken internal link [<../../tests/Test Game (USA] file "<../../tests/Test Game (USA" does not exist. Fix the href or restore the target, then delete this comment. -->
-  fixture DAT, then [`tests/Test Game (USA).ird`](<../../tests/Test Game (USA).ird>),
+- [`src/import_irds/test_ird.rs`](../../src/import_irds/test_ird.rs) — import the
+<!-- openwiki: broken internal link [../../tests/Test%20Game%20%28USA%29.ird] file "../../tests/Test%20Game%20%28USA%29.ird" does not exist. Fix the href or restore the target, then delete this comment. -->
+  fixture DAT, then [`tests/Test Game (USA).ird`](../../tests/Test%20Game%20%28USA%29.ird),
   and assert 208 rom rows: the DAT's disc row plus the IRD's per-file children.
-<!-- openwiki: broken internal link [<../../src/import_irds/test_ird_orphan_subfolder.rs>] file "<../../src/import_irds/test_ird_orphan_subfolder.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-- [`src/import_irds/test_ird_orphan_subfolder.rs`](<../../src/import_irds/test_ird_orphan_subfolder.rs>) —
+- [`src/import_irds/test_ird_orphan_subfolder.rs`](../../src/import_irds/test_ird_orphan_subfolder.rs) —
   re-import over a file an older IRD described differently, and assert that file
   now lives in `Trash`, the subdirectory it left empty is gone, the game directory
   and the untouched root file survive.
-<!-- openwiki: broken internal link [<../../src/purge_irds/test_ird.rs>] file "<../../src/purge_irds/test_ird.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-- [`src/purge_irds/test_ird.rs`](<../../src/purge_irds/test_ird.rs>) — after
+- [`src/purge_irds/test_ird.rs`](../../src/purge_irds/test_ird.rs) — after
   `purge_ird`, one rom remains and `jbfolder` is false.
-<!-- openwiki: broken internal link [<../../src/mimetype/test_ird_matcher.rs>] file "<../../src/mimetype/test_ird_matcher.rs>" does not exist. Fix the href or restore the target, then delete this comment. -->
-- [`src/mimetype/test_ird_matcher.rs`](<../../src/mimetype/test_ird_matcher.rs>) —
+- [`src/mimetype/test_ird_matcher.rs`](../../src/mimetype/test_ird_matcher.rs) —
   the `3IRD` magic byte.
 
 `src/iso/iso9660.rs` carries no unit tests of its own — it is exercised only
 through the IRD imports above — and the README still lists the platform as a gap:
-*"Craft some unit tests for IRD and PS3 in general"* alongside *"Support rebuilding
-PS3 ISOs using IRD files, if possible, and requested"*
-([README](../../README.md#L239-L247)). Rebuilding a PS3 ISO from an IRD is
+its TODO asks for tests *"for IRD and PS3 in general"* alongside *"Support
+rebuilding PS3 ISOs from IRD files, if possible and requested"*
+([README](../../README.md#L716-L723)). Rebuilding a PS3 ISO from an IRD is
 therefore not implemented: the IRD's embedded header is used for reading a tree,
 never for producing one.

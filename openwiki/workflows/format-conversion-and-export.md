@@ -84,10 +84,10 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # Format Conversion and Export
@@ -169,9 +169,9 @@ The remaining gates:
   tool — so a format the converter would refuse can never be stored through a
   validated surface
   ([src/convert_roms.rs](../../src/convert_roms.rs#L30-L34),
-  [src/config.rs](../../src/config.rs#L375-L394),
+  [src/config.rs](../../src/config.rs#L381-L400),
   [src/mutation.rs](../../src/mutation.rs#L171-L191),
-  [src/mcp/write.rs](../../src/mcp/write.rs#L412-L424)).
+  [src/mcp/write.rs](../../src/mcp/write.rs#L361-L417)).
 - **GDI** additionally requires the system name to contain `Dreamcast`
   ([src/export_roms.rs](../../src/export_roms.rs#L119-L133)).
 
@@ -216,13 +216,13 @@ after reading the **per-system** settings for `system.id`
 validated `set_setting` path, so the arcade check above does not apply to it —
 though the format itself is already confined to `ALL_FORMATS` by clap
 ([src/convert_roms.rs](../../src/convert_roms.rs#L380-L382),
-[src/config.rs](../../src/config.rs#L594-L601)).
+[src/config.rs](../../src/config.rs#L600-L607)).
 
 The MCP `convert_roms` tool does not call `convert_system` directly; it
 reconstructs a `convert-roms` argv (`--system`, `--format`) and runs
 `convert_roms::main` inside the job runner, which is why MCP conversions never
 carry `--recompress`, `--check` or `--save`
-([src/mcp/write.rs](../../src/mcp/write.rs#L389-L458)).
+([src/mcp/write.rs](../../src/mcp/write.rs#L361-L417)).
 
 `convert_system` loads roms with `load_rom_data(.., true)`, i.e. only rows with
 `original = true`, while `export_roms` passes `false` and therefore also exports
@@ -588,7 +588,6 @@ files for CHD→CUE/BIN, no destination file for CHD→CSO/ZSO
 ([src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs](../../src/convert_roms/test_multiple_tracks_chd_to_cue_bin.rs#L82-L138)).
 `chdman` survives only inside `crates/chd-rs`' own interop tests, where it is an
 optional oracle that skips when absent
-<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 ([CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md)).
 See [Test Harness and Conventions](../testing/testing-conventions.md).
 

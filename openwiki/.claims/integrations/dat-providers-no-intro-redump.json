@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:12828ee02437d0e5b86ab08a8cf5439a85eafdd79b0b09421452a2206fe452c2",
+  "pageVersion": "sha256:80b0b05005b4a71b3d347ef99b94e5fc48276b9625280dc6ad5a6ce619c909d5",
   "claims": [
     {
       "id": "claim_efe0fa849f8445de9c6ed9311f3b26ac",
       "statement": "oxyromon supports two networked DAT providers with asymmetric capability: Redump supports both downloading new DATs and refreshing imported ones, while No-Intro supports update-check only because it publishes a summary (profile.xml) but no direct DAT links; `download-dats` without `-u` for No-Intro prints the warning \"Not supported\", and the mutually exclusive `-n/--nointro` / `-r/--redump` flags each require the other to be absent. Automatically downloading No-Intro DATs is still an open item in the README TODO list.",
       "evidence": [
         {
-          "resource": "repo://README.md#L238-L242",
-          "version": "repo-lines-v1:sha256:e4ec63bb0fb62496b7e648c5a381e877c25dd6b99524ba0c21d6ef154066218c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdjMzFhNGE4MzUwOGQ2ZWFmNzJlZDM1MDJjOTU0YTdlYzIzNWVlNjFlYzc2MTllNTQwMmQwMjE5ZTU1NWVmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmVmYmE4MmY0NTdhY2Q4YTE3ZDczZjBiMzYwZDliY2FhOTNiYjNhNWQ2YTViZTRmNDNhOWIwMTQwYjU3MDMyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTAxODg1NTAwODQ5YjMyY2Q3MGNiNjc2YmFkM2JmMjQyMWVlYjFjNGMzZmU4NzdmZWQwMzM1ZWQzZTUwOWViMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDczY2VjNzA2ZDg1YWE1MGQyNDdmM2JhODdlNWNhNmVlMGJiMGEwMzZlZGExN2E4NzYyYzY2Y2VlYTdmNTMxZCJ9"
+          "resource": "repo://README.md#L399-L416",
+          "version": "repo-lines-v1:sha256:cd851bc269950ce82cd0527ee4788a9bb8515b48e570c9c3954953c6b214be82:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjc5M2U5NjcxMjRlMWE5YmI0NzA4ZDUwZjM3Y2FjMzJiN2MxNDRmMDYyMGRkMzczMTZlZGI0MmJmYjM4MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZDA4OGQ1YTk3ZWNjZWVmMWJiOGRjMGZlNDIwYTRmZWNlN2E1NWU5MjM5ZjQ5MTlmNTJlZDYzNWVhMmNjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3M2U3M2FiYjc0NTgwMmMzMzNiODcyNjQ0MzVlMjQ5NDdiNmI3YmYwZjU2ZmUzMDI4ZThmMjBlODljODVmYmEifQ"
         },
         {
-          "resource": "repo://README.md#L355-L368",
-          "version": "repo-lines-v1:sha256:30a2662ff5f20a89bfd352fe4d3bfa4e2a627224d1ce90e320543d2efee05eb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzZTIyZDEzMTJmZDllMzFkNTk2YTUyMWZjOWVjODBmMjJjM2M5NjNjYjkwMmY2MTIzYTA5NzMzYjNhZTFmOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MmFmZGFlY2M4MDU3OThiN2JlZjkxYWZlODFhYjRlYjk5NDY2ODcwYmYyODJlMWExNDI5NWM0NTY2OGFiY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzM2ZjOWM3M2Q4NThjOWFhMjU1ZmQ4ZjM1YzIyYjkxZmM5ZjA5Y2Y5ZjQyNDFjMWZlZjQwNTZhZWY5MDVkODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NjNlMmRiOWY3NDcyYjA2OGQzMWQxNmFiNGQyN2M2ODA0ZDkyMDA0YzhlZmFkMzk4ZTg5MThmZDFjMmZhYzAifQ"
+          "resource": "repo://README.md#L716-L723",
+          "version": "repo-lines-v1:sha256:79b5cb9ad94e111179bfd2345cbde503f0a6062721a9fe07306e0b3e57ed349e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIzMGEyMmNiN2M3MjYxMDU0YjRkZDY1N2I1ZGIxNDY4MThjM2JkZGNkMTRmOWQyZTBkZmI0ZmQ3ZDliNWNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjN2JhYmEwYjdlZTIwZTA3OTc3ZmUzMTQ5YjU1YmQyYjNmMTRkZmNmODdjMDlhMTE0NjBjMGMzOWQ4NWYzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyYzcwMjA0YjQ2ZmJmODkwMWRhOGZkMjM5ODliNzIwZGNkMTg5NzQ0MTI1MzUxOWQ5MDViZTU3YjY1OWQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU5MTJiMDQxNTBjZDVjMmJhZTliYTRhNmEwNTZkNmQ2N2U4MGJkMTE1YWIyM2U0N2ZhZWQ3ZWIzMGNlMTY1YSJ9"
         },
         {
           "resource": "repo://src/download_dats.rs#L142-L197",
@@ -29,8 +29,8 @@
       "statement": "Provider families map to content types and entry paths: No-Intro (datomatic.no-intro.org) for cartridge consoles/computers, Redump (redump.org) for optical systems, MAME/FBNeo for arcade; only Redump is fetched by oxyromon, so No-Intro, MAME and FBNeo catalogs must be downloaded by hand and brought in through `import-dats`.",
       "evidence": [
         {
-          "resource": "repo://README.md#L20-L32",
-          "version": "repo-lines-v1:sha256:a2b2c31540036083e96d5e77207fe385ca8cec70f6f523781206675c484052cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ODgyODA4ZmVjMDM3MmQzMTQ4MDY3ZmJjNDUzZWEzNjg3Y2U5ZjJkNmUyNzQ2ZjQ4MWU4N2RiMzRmODg0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YjFiNzdhMTNkMDM4OGJjNGJkYjFmZTQ2NWIwZWExMTJlNjYxNmRlM2MzN2I4ZTQ0YTBjOTM1YjMxMTAzM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlMGUxMTdhM2U5NDg2MmU0MDU1Y2ExMjI2YWFkYTU4M2I2NWI2MDlmNTExOWI0MTliOGVhOTU2YzQzMzFkZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjM2MwNjhiZWZhYmMxYjU0OGQyNThjN2U1MGVmMDQ2M2U2M2ZjZTg3ZDQ2MzVkYTg0NmY5ZmM1YmZlZjVkYzUifQ"
+          "resource": "repo://README.md#L33-L42",
+          "version": "repo-lines-v1:sha256:0af166756f1c8209fda71f088f40a2ec9cd2a6ede3cd8fe7131f31c0b1bafb40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1M2ZiMjQ5MTZhYTk5ZDZkNTdiMTI2NzM1ZDVjZDNlNGJkOWVlNmQwNGU3YTFhYzViYTE5MjNhNGQxMTJhMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMTE5NzM5NDRhNDg0MjZjOWVjMzgzMWYwZGIxNmI0OGI2N2UxNzJkYjJhNGY2NjQ0ZWY2NzFkMmNlMDVjYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZGQxMmRjZmRmYTBlY2QzMTMzOTMxYmU0NTZjY2UzN2FiZTM2Zjk3MmVlZGM3YmJmYWM0Y2FlNjdlZmYwZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwODlmNTIwZTU3ZjEyZjIwOGU5Nzc2YmIyNWRkYTdjZDkzYTM4MzVkZTlmZTZjZjUyZTZkMGQ2MWI4ZGVlMzAifQ"
         },
         {
           "resource": "repo://src/download_dats.rs#L21-L26",
@@ -199,12 +199,12 @@
           "version": "repo-lines-v1:sha256:15229f30287e39f9831bb5222a5e05da8bffe0cb6d6bc1128cabe8395180cf43:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzQ4M2U0MGI4MzNkNDM2ZTE4NGEzOThlY2UwMjAzNWViYmNlOWVhNjUzMDRjZTc2YjYxZDYxY2E3NzU4MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZWIzZDBiMjNlZjBlY2I1OWYzMjc2MDc0Y2M5MTE3NDJlMWE5ZDg1NDA2ZmU1OWZiNDRhZWNmYmU1OTg4YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjNzI0YjVhYmI1NDU4YjViNDllYmMzZDA4NzNhZGVmMDA5NGZiNzU5NzhkZjkwMjU1NDBiY2U1YTljYTkwN2QifQ"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L361-L374",
-          "version": "repo-lines-v1:sha256:925d95d5b574986cf61279b6f071e4155ec4181b9f425fadd39924840d1e1835:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlYjllZWFiMzNkMmJhMTUxN2NlOTJiNzlhMmQ2YjU0NjE2MWE3NzYwZmUxYzM0NjA5NjFiNjc4NGVkOTM2NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYmI1ZWU4NmI3MDAzNGMwYWUyODMyYjZjZjU0YjUyYzA1Yjk1MzdmMGM4OWJjMWY1ZWJiYjczZDk3NjAwNWQifQ"
+          "resource": "repo://src/mcp/read.rs#L361-L370",
+          "version": "repo-lines-v1:sha256:f8599a43c8deb066feb4d1784d09ed1c693c55a7dc3c422fd46e1eade57462b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYjYxYWUwY2EyYzZjYjZhNjMzOGQ3OWVhYTI1NTBiYThmNmZjYzY3YWI2MWFiZTNhYjg2ZGQ0NmQ2ZTU4OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMjQyOTg1NGRiOTZlMzJhNmE1ZTgyNDExYzE5OTllZGE4YjU0MDA4NWYzZTAzYjNkNmVmNTQ3MzYxYzdmOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYmI1ZWU4NmI3MDAzNGMwYWUyODMyYjZjZjU0YjUyYzA1Yjk1MzdmMGM4OWJjMWY1ZWJiYjczZDk3NjAwNWQifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L102-L153",
-          "version": "repo-lines-v1:sha256:be35c64ab02c1a3f32f75a922f3dad74c03acc582dbe55bf078ebd47db00a103:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZjEzYmFmZTU4MjJjZjIwYTE3MWY4YzRlOGFiNDg3MWVhZWViYjkzYmU2NWEwZmVjYjAzZDExY2MwOTIyMzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMmIyNzZmODBmYjZiYzI3ZjgxYjE2YzQxNzFlYzA2Y2I4MDQ0ZGQzODhjZTM4MTNiMWJjNDRiMzg5N2QyZTMifQ"
+          "resource": "repo://src/mcp/write.rs#L108-L148",
+          "version": "repo-lines-v1:sha256:980469809a7af604f51b08dc23dc0db3e649b266083dabfe810e56401cdbc2d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmYzE1M2EwMzU0MTAwNmRlZDY3ZjMzZmU2ZjY2NzcxNTM2MjVlMmUzYWUzOTFiMmI0ZjA5ODFiOGU5ZjMyYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTM3YjdhNDM5YjJjY2VmOGYyMDQwNzY3MDdhNzE2N2JjMzVlNjNmYzU0ZmJhMGYwYzU0NWMyNmQxOGVlYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMmIyNzZmODBmYjZiYzI3ZjgxYjE2YzQxNzFlYzA2Y2I4MDQ0ZGQzODhjZTM4MTNiMWJjNDRiMzg5N2QyZTMifQ"
         },
         {
           "resource": "repo://src/query.rs#L263-L272",
@@ -217,8 +217,8 @@
       "statement": "The GraphQL `download_dats` mutation returns immediately and runs the fetches on a spawned tokio task, emitting `download_dats_started` then `download_dats_complete` or `download_dats_error` with the failed system names over SSE; individual system failures are collected rather than aborting the batch, and per-system events are deliberately suppressed because the selection can be the whole catalogue. The MCP equivalent refuses with `read_only_denial` when the server runs read-only.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L110-L153",
-          "version": "repo-lines-v1:sha256:89b6d6a9ce47c3e353b4778d4bd7ad917296edbc844a2cbba221db4ea161c01c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNmIyYzdjMjNlYTAzYzhkY2M4Y2NmNTViMGExMTZmYmRhM2UyZGQyMjk0YTczZWZjNDdhNzNkYjNhNjBlZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMGM3MDk2ZDA1M2RiYjlhMzIyOGI1N2M0YTBmYzFmZjdkY2EzYjZjODdjMTI2MjA2NDE3ZDAwYjlhNjlkNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMmIyNzZmODBmYjZiYzI3ZjgxYjE2YzQxNzFlYzA2Y2I4MDQ0ZGQzODhjZTM4MTNiMWJjNDRiMzg5N2QyZTMifQ"
+          "resource": "repo://src/mcp/write.rs#L108-L148",
+          "version": "repo-lines-v1:sha256:980469809a7af604f51b08dc23dc0db3e649b266083dabfe810e56401cdbc2d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmYzE1M2EwMzU0MTAwNmRlZDY3ZjMzZmU2ZjY2NzcxNTM2MjVlMmUzYWUzOTFiMmI0ZjA5ODFiOGU5ZjMyYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzOTM3YjdhNDM5YjJjY2VmOGYyMDQwNzY3MDdhNzE2N2JjMzVlNjNmYzU0ZmJhMGYwYzU0NWMyNmQxOGVlYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMmIyNzZmODBmYjZiYzI3ZjgxYjE2YzQxNzFlYzA2Y2I4MDQ0ZGQzODhjZTM4MTNiMWJjNDRiMzg5N2QyZTMifQ"
         },
         {
           "resource": "repo://src/mutation.rs#L233-L308",
@@ -235,7 +235,7 @@
           "version": "repo-lines-v1:sha256:2d0eff76604cb18e5964dd095435c04e7b438746d0982a219afbf1b4487046be:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzI4NmViODQ4ZGYxYTUwMjZmYTUzYTczNzQxMTY5MDA3ODFhNGU0YWZmZjlmNDFlNjgzNmJiM2U1MmFhZDk0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTM5NzJhZTgzZTE3ODVhYjNkMzcxYmRmZWUwZGEwOGU5ODE2YWMwYmNmYmYzNDkwOTk3Yjg2MWUwY2U0MThmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTExMDI0MGFlOWM2YzNlNDNjZGE0MTBkYTRlMjI3ZWE3NTc3NzA5ZjhkY2ViMTJlM2NiZGQ4M2JkMTM4MDdlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE4OGQxOTJlM2UxYTEzZGQ1ZDc1YzViOGMwZWZiZDk1MDUwZTIxZTY4OGQ0NWI1YjhiMmE5YmNkM2Q2MWY0NiJ9"
         },
         {
-          "resource": "repo://src/mcp/read.rs#L376-L433",
+          "resource": "repo://src/mcp/read.rs#L372-L429",
           "version": "repo-lines-v1:sha256:c33d884decdb9e685d7fffc7f3c740ad1b48fb511267df83b19c8eb79b4b7c25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMmIwYjA5YTk2MzVkZTNlN2NlZDkyYmYxNzdlNWJlMzM3MzRiMTgyNGZmMDkxN2Y0MTc0YjY4Y2UxYzg1YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZGY1MTg5NmE4MjA5Zjk2MTlmYzUyYmRiOGUyMzMzZGI5YmU5ZDM5YmJkNTY5ODRiZjU1YWYwMmQ3MzE2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
@@ -418,15 +418,15 @@
     },
     {
       "id": "claim_ebceeb0488fd4664896bfa2c28f82b01",
-      "statement": "The DAT download and import path launches no external program: the Redump ZIP is read in-process by the `zip` crate, and the README's \"External programs\" section now lists a single optional tool, `ctrtool`, which is probed and used only by `import-roms` for CIA extraction — the format tools oxyromon once shelled out to (chdman among them) were replaced by the crates under `crates/`.",
+      "statement": "The DAT download and import path launches no external program: the Redump ZIP is read in-process by the `zip` crate, and the README's supported-formats table names a single external tool, `ctrtool`, which is probed and used only by `import-roms` for CIA extraction — the format tools oxyromon once shelled out to (chdman among them) were replaced by the crates under `crates/`.",
       "evidence": [
         {
           "resource": "repo://Cargo.toml#L16-L20",
           "version": "repo-lines-v1:sha256:59f96640adb6f1f4dd7d639f4ff6000895d8bee99dbadc3eb325b9d36cf6a8b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThiZGZmNGUyZTg3ZGY1MzE1YjcyYmMwMmQzODQyNzhjZDhkODM4NGVjMmFmOGJmYjE1MGU0YWY2ZTJjYWYzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0YTAxMzI4NzI1NTFjZTViMTE2ZjQyMzYxOWNmZjQyMGMzNTU1MDJmYjg4NTBjYmJhMGM1MDE1NGZmNjFmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NkN2MwN2Q1ZTM1MzliYzcwZGE5MjczMDhhNjU5MTZiYzlmZTE1ZWJlOWVlZTUyNmIyY2UxNGIwYzIyMDMzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA2NTI5MWMxMDc5ZDEwNDhjNGFjNjMxMWM5ZWI4MzMwZmMxZDMzZGY1OTdlMGRkMjUwNTk2MGQ3YjA3MjgzYSJ9"
         },
         {
-          "resource": "repo://README.md#L228-L234",
-          "version": "repo-lines-v1:sha256:b555ea45b246e361139193a3b5d88822ee48a34446a5e3541c124c4bd9f9ad7b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE3YzQzNjYyMjgxMDdjYjA1NjQxNTk4ODI1NWMwNWJmNWJkMzJkZDkxMWZjNjc2ZGRlODBmNTBmYTRkOGQyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM2YTNmMjBlNmU1OGRlZjI4Njc0OTljZDIwMzBiN2M0NTJkZDExMzNkOGZjYmZlMmUwZTI2MWFjMDIzN2I0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA1NjgxYmU5MmQ2NGI2MzVmZmRjMTg5MzhhOGZmN2E2ZDIxYmQ0ODk1Y2Q5NTk3M2ZlOWFlMTZmZWM2NTNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTAxODg1NTAwODQ5YjMyY2Q3MGNiNjc2YmFkM2JmMjQyMWVlYjFjNGMzZmU4NzdmZWQwMzM1ZWQzZTUwOWViMSJ9"
+          "resource": "repo://README.md#L202-L226",
+          "version": "repo-lines-v1:sha256:818e6cb609efbc8f1b163a1abc41f53a77eac4b6c19c80be74e85a483e028ad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzVjMDg5Yzc4OTkwZDU5M2Q4N2E2MjNmMWFlMjc4ZjllMjBkNGZhMjliMGIyMmFhN2U5MWExYjhkYmQ1NWMifQ"
         },
         {
           "resource": "repo://src/download_dats.rs#L16-L19",
@@ -465,6 +465,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-10T22:10:44.671Z"
+    "at": "2026-10-14T21:01:38.051Z"
   }
 }

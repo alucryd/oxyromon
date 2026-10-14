@@ -74,10 +74,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
+generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-10T22:10:44.671Z
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+    at: 2026-10-14T21:01:38.051Z
 ---
 
 # ROM Import Pipeline
@@ -491,3 +491,4 @@ each is a full given/when/then over a temp database and temp ROM directory:
 - [DAT Ingestion](dat-ingestion.md) — what must have run before an import can match anything, and the orphan re-import that reuses `import_rom`.
 - [Format Conversion and Export](format-conversion-and-export.md) — the `convert_system` entry point auto-conversion calls.
 - [Integrity Checking, Purging and Trash](integrity-check-and-purge.md) — what happens to the files `import-roms -t` retired.
+- [Sorting and the 1G1R Election](sorting-and-1g1r-election.md) — what moves the imported files out of the system directory into `1G1R` and `Trash` afterwards.
