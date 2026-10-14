@@ -4,8 +4,8 @@ title: Desktop App (Tauri Sidecar)
 description: How the standalone desktop/ Tauri v2 crate wraps the existing web UI without a backend of its own — staging the server binary as a sidecar, reserving a loopback port, polling for readiness, pointing an external webview at that origin, and killing the child on exit.
 tags: [tauri, sidecar, desktop, webview, loopback, lifecycle, appimage]
 verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -13,6 +13,12 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-36f054f1f38f2197a6af5bca
     resource: repo://build.rs
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
+  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
+    resource: repo://CHANGELOG.md
+  - id: openwiki-source-0bc9c609aef896964e961315
+    resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
     resource: repo://desktop.sh
   - id: openwiki-source-84cd9e505b2c0929e86b0067
@@ -33,17 +39,23 @@ sources:
     resource: repo://desktop/tauri.conf.json
   - id: openwiki-source-19a65c75a2d97f6840dee349
     resource: repo://dist.sh
+  - id: openwiki-source-74b8949e6d5862f8f52e4791
+    resource: repo://Dockerfile.archlinux
   - id: openwiki-source-2d75c6f9d7c9aa4292af3447
     resource: repo://frontend/src/api.rs
   - id: openwiki-source-5d0bfd830d431dc56dd8187c
     resource: repo://frontend/src/page.rs
   - id: openwiki-source-ac01f1b1baa1f53a9e45a31f
     resource: repo://frontend/src/sse.rs
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # Desktop App (Tauri Sidecar)
@@ -67,11 +79,21 @@ desktop-specific variant of either.
 to the root package, and `publish = false`. That separation is deliberate: `tauri`
 and `tauri-plugin-shell` (the crate's only two dependencies) plus the platform
 webview stay out of the CLI build, exactly as `frontend/` keeps the wasm toolchain
-out of it. It also means `cargo clippy --workspace` and `cargo test --workspace` run
-from the repository root never touch this crate, and no CI workflow installs the
-Tauri CLI or `webkit2gtk` — the desktop bundle is built only by hand or by `dist.sh`.
-Its `[profile.release]` is size-oriented (`opt-level = "z"`, `lto`, `strip`) and
-independent of the root profile.
+out of it. It also means `cargo clippy --workspace` and `cargo test --workspace`
+run from the repository root never touch this crate — the desktop bundle is built
+only by hand or by `dist.sh`. Its `[profile.release]` is size-oriented
+(`opt-level = "z"`, `lto`, `codegen-units = 1`, `strip`), independent of the root
+profile, and it keeps its own `Cargo.lock`.
+
+That separation is also why CI never validates the shell: the single `CI` workflow
+sets `SKIP_TRUNK: "true"` workflow-wide, builds the web UI once in its `Build web
+UI` step (`cd frontend && trunk build --release`, with trunk pinned by
+`TRUNK_VERSION` and the `wasm32-unknown-unknown` target installed), and then lets
+`cargo clippy --workspace`, `cargo build --release --features server` and
+`cargo llvm-cov --workspace` reuse those assets instead of recompiling the wasm.
+That matrix builds and tests exactly the binary the sidecar is, but no CI step
+installs the Tauri CLI or `webkit2gtk`, and the root workspace's members are only
+`crates/*`, so `--workspace` skips `desktop/` entirely.
 
 `desktop/build.rs` is a single `tauri_build::build()` call, which is what makes the
 staged sidecar a build-time requirement rather than a runtime one (see
@@ -258,6 +280,31 @@ The server-side trust model applies unchanged: the sidecar binds loopback only, 
 it exposes the same upload endpoints (including the server-fetched URL import) and
 the `/mcp` endpoint that the standalone `oxyromon server` does.
 
+## Runtime dependencies: nothing but the bundled binary
+
+The sidecar is self-sufficient. Every format oxyromon handles is now produced by an
+in-tree crate under `crates/` or a Rust dependency — CHD via chd-rs, CSO/ZSO via
+xso-rs, GDI via gdi-rs, XDELTA via xdelta-rs, BPS/IPS via xps-rs, NSZ via nsz-rs,
+7z/ZIP via sevenz-rust2 and zip, RVZ/WBFS via nod — so the tools oxyromon once
+shelled out to (`chdman`, `xdelta3`, `flips`, `maxcso`, `dolphin-tool`, `wit`,
+7-Zip/p7zip) are gone from the runtime entirely. `src/info.rs` reflects that: its
+dependency list reports `chd-rs`, `nod`, `nsz-rs`, `sevenz-rust2`, `xdelta-rs`,
+`xps-rs` and `xso-rs` as built-in versions, and `ctrtool` is the one remaining
+external binary — optional, and only needed for CIA.
+
+That has two packaging consequences:
+
+- **The bundled Debian package declares no external-tool dependency.**
+  `desktop/tauri.conf.json` has no `bundle.linux.deb.depends` table at all, so the
+  `.deb` carries only what Tauri derives itself (the webview stack and libraries
+  linked at build time). The `p7zip` dependency the desktop package used to carry is
+  gone, as recorded in the 0.25.0 changelog.
+- **The container images confirm the same floor.** `Dockerfile.archlinux` installs
+  only `base-devel`, `curl` and `rustup` to build, adds the
+  `wasm32-unknown-unknown` target and `trunk` for the web UI, then removes the
+  toolchain — no codec or archive tools are left in the image that runs
+  `oxyromon server`.
+
 ## Building and running
 
 ```sh
@@ -275,7 +322,17 @@ release matrix with `NO_STRIP=true`, then copies the `.deb`, `.rpm` and `.AppIma
 artefacts into `dist/`; Tauri links the platform's own webview, which the cross
 images do not carry and for which no cross toolchain exists, so a Windows or macOS
 bundle must be produced on that operating system. `desktop.sh` is the standalone
-equivalent. Release version strings for this crate live in `desktop/Cargo.toml` and
+equivalent.
+
+The rest of the release matrix is CLI-only, and per target it emits **seven
+binaries**: the server-enabled `oxyromon`, plus the six format-crate CLIs built with
+`cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p
+xso-rs` — `chdrs`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs`, `xsors` — packed as
+`.tar.xz` on Linux and macOS (`7z` archives on `x86_64-pc-windows-gnullvm`), signed
+with `rcodesign` on the Apple targets. `SKIP_TRUNK=true` is exported for the whole
+script, so each target reuses the `trunk build --release` the loop runs first on the
+host; `Cross.toml` passes that variable through into the cross images.
+Release version strings for the desktop crate live in `desktop/Cargo.toml` and
 `desktop/tauri.conf.json` and are bumped by hand alongside the root and `frontend/`
 manifests — see
 [Builds, Distribution and Releases](../operations/build-and-release.md).

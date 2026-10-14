@@ -1,16 +1,13 @@
 ---
 type: concept
-title: The CommonRomfile Trait System
-description: How CommonRomfile plus the FromPath, CommonFile, GetRomfile, As*/To*, Size, HashAndSize, HeaderedHashAndSize, Check, Playlist and Persist traits abstract over every ROM file format, how format modules plug into them, and the tmp-directory contract around conversion and verification.
+title: Romfile Trait System
+description: How CommonRomfile plus the FromPath, CommonFile, GetRomfile, As*/To*, Size, HashAndSize, HeaderedHashAndSize, Check, Playlist and Persist traits abstract over every ROM file format, how format modules such as src/chd.rs plug into them across the spawn_blocking boundary, and the tmp-directory contract around conversion and verification.
 tags: [romfile, traits, common-romfile, transcode, conversion, headers, hashing, tmp-directory]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
@@ -51,6 +48,8 @@ sources:
     resource: repo://src/model.rs
   - id: openwiki-source-d3402490d16a663b822e8a00
     resource: repo://src/nsz.rs
+  - id: openwiki-source-6330834d320d84b814c24c5f
+    resource: repo://src/progress.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
@@ -65,10 +64,13 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
-# The CommonRomfile Trait System
+# Romfile Trait System
 
 `src/common.rs` is the layer that lets `import-roms`, `sort-roms`, `convert-roms`,
 `export-roms`, `check-roms` and `purge-roms` talk about "a ROM file" without
@@ -89,8 +91,9 @@ pub struct CueBinRomfile { pub cue_romfile: CommonRomfile, pub bin_romfiles: Vec
 `CommonRomfile` is *not* a parser and holds no I/O state — it is an absolute path
 plus an optional system scope, and `Display` prints the path. Every other wrapper
 is a `CommonRomfile` plus whatever a format needs (`ChdRomfile` carries `ChdType`,
-`track_count` and SHA1s; `ArchiveRomfile` carries the entry name, archive type,
-size and CRC recorded when the archive was parsed).
+`track_count`, the data and file SHA1s and an optional `parent_romfile`;
+`ArchiveRomfile` carries the entry name, archive type, size and CRC recorded when
+the archive was parsed).
 
 `FromPath::from_path` is the only constructor and never touches the filesystem;
 `with_system` attaches a system id so that later path math can honour a
@@ -117,13 +120,24 @@ file has to survive its own conversion.
   `as_iso`, `as_rvz`, `as_nsp`, `as_nsz`, `as_cue_bin` (and its BINs) and `as_gdi`
   (and its track files) check the lowercased extension against the constants in
   `mimetype.rs`; `as_xso`, `as_riff`, `as_rdsk` and `as_chd` call `get_mimetype` so
-  the *content* must match, and `as_chd` additionally runs `chdman info` to fill in
-  `ChdType`, size, SHA1s and track count. A wrapper is a claim about the file, so a
-  weakly validating `As*` would let a misnamed file reach a decoder.
+  the *content* must match, and `as_chd` goes further still: after the magic bytes
+  it opens the container with `chd_rs::Chd::open` and caches what it finds —
+  `ChdType`, logical `size`, the data and file SHA1s, the parent's SHA1 and the
+  track count ([src/chd.rs](../../src/chd.rs#L541-L650)). A wrapper is a claim
+  about the file, so a weakly validating `As*` would let a misnamed file reach a
+  decoder.
 - `To*` writes a file: it picks the destination name (`file_name()` with
   `with_extension`), prints an action line, drives the backend, and returns the new
   wrapper built by running `CommonRomfile::from_path` **back through the matching
-  `As*`**, so the output is re-validated on the way out.
+  `As*`**, so the output is re-validated on the way out
+  (`to_iso` → `as_iso`, `to_riff` → `as_riff`, `to_rdsk` → `as_rdsk`, `to_xso` →
+  `as_xso`, `to_nsp`/`to_nsz` → `as_nsp`/`as_nsz`). `to_chd` is the deliberate
+  exception: the four `ToChd` impls build the `ChdRomfile` directly with `size: 0`
+  and empty SHA1s, because the freshly written container's facts are not known
+  until something reopens it — a caller that needs them calls `as_chd` on the
+  result ([src/chd.rs](../../src/chd.rs#L279-L416)). `to_wbfs` returns `Result<()>`
+  for the same reason: WBFS is an export target, never a wrapper anything converts
+  from.
 
 ```mermaid
 flowchart LR
@@ -152,6 +166,8 @@ flowchart LR
     ISO -->|to_wbfs| WBFS["WBFS output"]
     CUEBIN -->|to_chd| CHD
     CUEBIN -->|to_gdi| GDI["GdiRomfile"]
+    RIFF -->|to_chd| CHD
+    RDSK -->|to_chd| CHD
     NSP -->|to_nsz| NSZ
     NSZ -->|to_nsp| NSP
     COMMON -->|to_archive| ARCHIVE
@@ -165,6 +181,41 @@ targets: almost every disc format converts to or from ISO, and CUE/BIN is the
 multi-file neutral shape. `CommonRomfile` is itself a member of the graph — it is
 both the source of every `As*` and the destination of `ToCommon for
 ArchiveRomfile` (extraction).
+
+## Where the blocking pool begins
+
+The traits are `async`, but the format crates behind them are synchronous and CPU
+bound. The boundary is `progress::run_blocking`: it clones the `ProgressBar`,
+resets it to a bytes style with the `length` the caller supplies, moves the closure
+onto `tokio::task::spawn_blocking`, and turns each crate progress callback into
+`bar.inc(n)` ([src/progress.rs](../../src/progress.rs#L72-L97)). So the contract is
+that a `To*`/`Check` implementation never decodes on the async executor, and the
+bar gets a real denominator instead of a spinner.
+
+`src/chd.rs` is the clearest case now that CHD handling runs in process through
+`chd-rs` rather than by shelling out to `chdman`:
+
+- `create_chd` (behind every `ToChd`) computes the bar length as
+  `chd_rs::cd_input_size(&input)` for a CD — the total of the files the CUE/GDI/ISO
+  names — and `input.metadata()?.len()` for every other type, then calls
+  `run_blocking` around `create_cd` / `create_dvd` / `create_hd` / `create_ld`
+  ([src/chd.rs](../../src/chd.rs#L729-L790)). The distinction matters: for a CD the
+  CHD's logical size is not the input size once padding and subcode are added.
+- `extract_chd` (behind `to_iso`, `to_cue_bin`, `to_rdsk`, `to_riff`) opens the
+  container with `Chd::open` / `Chd::open_with_parent` inside its own
+  `spawn_blocking`, then drives the extraction through `run_blocking` with
+  `chd.info().logical_size` as the length
+  ([src/chd.rs](../../src/chd.rs#L844-L870)).
+- `parse_chd` uses `spawn_blocking` directly, without `run_blocking`, because
+  reading a header has no progress to draw; a failure there is wrapped as
+  `Failed to open "<path>"` ([src/chd.rs](../../src/chd.rs#L548-L556)).
+
+The same `run_blocking` shape appears in `xso.rs`, `nsz.rs` and `gdi.rs`, each with
+the input file's length (or `gdi_rs::input_size` for a CUE's BINs), so nothing in
+the conversion layer blocks the runtime regardless of which backend a format uses.
+<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+See [CHD Format and the chd-rs Crate](chd-format-and-chd-rs.md) and
+[Format Modules and Their Crate Backends](format-modules-and-format-crates.md).
 
 ## File verbs: `CommonFile`
 
@@ -213,7 +264,10 @@ implement.
   `RvzRomfile::hash_disc` feeds the `nod` `DiscReader` straight into it, so a
   dual-layer Wii disc is verified without several gigabytes of temporary ISO.
   `XsoRomfile` and `NszRomfile` do the opposite — decode to a temp directory, hash
-  the decoded file, delete it.
+  the decoded file, delete it. `ChdRomfile` short-circuits only the SHA1 it already
+  read from the container header (`sha1` plus `size`), and decodes to a temp
+  directory for CRC or MD5 — or bails for `ChdType::Cd`, which has no single hash
+  ([src/chd.rs](../../src/chd.rs#L171-L230)).
 - `get_hash_algorithm` picks CRC, then MD5, then SHA1 from whichever checksum the
   DAT row holds (else `bail!("Not possible")`), and `compare_hash_and_size` fails
   with `Size mismatch` (only when the DAT declares a non-zero size) or `Checksum
@@ -269,6 +323,23 @@ file an archive holds), `chd_to_iso` (DVD CHDs only; returns `None` for other
 `ChdType`s so the caller skips), `xso_to_iso`, `nsz_to_nsp`, `rvz_to_iso`,
 `archive_to_cue_bin`, plus `romfile_as_chd` which resolves a CHD's parent from
 `romfile.parent_id` before wrapping.
+
+`romfile_as_chd` is the only place the two parent strategies meet, and the
+difference in failure mode is deliberate
+([src/transcode.rs](../../src/transcode.rs#L57-L78)):
+
+- With no `parent_id`, `as_chd` validates the magic bytes with `get_mimetype`,
+  parses the header, and — when the header names a `parent_sha1` — scans the CHD's
+  own directory for another CHD whose file SHA1 matches, silently yielding no
+  parent if none is found ([src/chd.rs](../../src/chd.rs#L584-L650)).
+- With a `parent_id`, `as_chd_with_parent` re-parses the caller-supplied parent and
+  **bails** with `Parent CHD SHA1 mismatch: expected …, got …` rather than quietly
+  decoding a clone against the wrong base
+  ([src/chd.rs](../../src/chd.rs#L651-L680)).
+
+`import-roms` relies on the same `parse_chd` header field to order its input list
+so children are imported before their parents
+([src/import_roms.rs](../../src/import_roms.rs#L169-L214)).
 
 Every constructor takes a `&TempDir`, and the contract around it is
 `util::create_tmp_directory`: `TempDir::new_in(get_tmp_directory(connection))`,
@@ -349,13 +420,18 @@ workflows about it — nothing in `common.rs` changes:
 1. Wrapper struct over `CommonRomfile`, plus `GetRomfile`.
 2. `Size`, `HashAndSize`, `Check` — usually by decoding to the temp directory and
    delegating to the decoded format's impl.
-3. `As*` (validate + wrap) and `To*` (write + re-validate through `As*`).
+3. `As*` (validate + wrap) and `To*` (write + re-validate through `As*`). Drive a
+   synchronous backend through `run_blocking`, with the bar length derived from
+   whatever the crate says its input is (`chd_rs::cd_input_size`,
+   `gdi_rs::input_size`, or the file's own length).
 4. Extension constants and, if the format has magic bytes, a matcher in
    `mimetype.rs`; see
    [File Type Detection and Extension Constants](file-type-detection-and-extensions.md).
 5. Registration in the workflow layers: an extension branch in
    `check_roms::check_system`, source partitioning plus a target function in
-   `convert_roms`/`export_roms`, and an import branch in `import_roms`.
+   `convert_roms`/`export_roms`, and an import branch in `import_roms`
+   ([src/check_roms.rs](../../src/check_roms.rs#L148-L198),
+   [src/import_roms.rs](../../src/import_roms.rs#L476-L491)).
    See [Format Conversion and Export](../workflows/format-conversion-and-export.md)
    and [Integrity Check and Purge](../workflows/integrity-check-and-purge.md).
 
@@ -378,7 +454,13 @@ original-extension case at `rom name.rom`; `test_path_cso` and `test_path_rvz` p
 those formats; `test_path_chd_single_track` / `test_path_chd_multiple_tracks` pin CHD
 naming; `test_path_subfolder_alpha_letter` / `test_path_subfolder_alpha_other` pin
 the alpha subfolder; and `test_path_playlist` and
-`test_path_playlist_subfolder_alpha` pin `Playlist`. Header behaviour is covered by
+`test_path_playlist_subfolder_alpha` pin `Playlist`. Format-level behaviour is
+pinned next to the modules: `src/chd/test_ld.rs` round-trips a LaserDisc RIFF
+through `to_chd` → `as_chd` → `to_riff` → `to_chd` and asserts the two CHDs are
+byte-identical, and the unit tests in `src/iso.rs` pin the CUE parsing that
+`ToIso for CueBinRomfile` depends on (pregap start, next-track end, per-track BINs,
+and that only MODE1/2352 and MODE2/2352 convert). Header behaviour is covered by
 integration tests instead: `check_roms/test_original_with_header`,
 `check_roms/test_sevenzip_with_header`, `import_roms/test_original_headered` and
-`import_dats/test_dat_headered*`.
+`import_dats/test_dat_headered*`; CHD checking by `check_roms/test_iso_chd` and
+`check_roms/test_multiple_tracks_chd`.

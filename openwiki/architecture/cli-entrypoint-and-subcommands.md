@@ -1,16 +1,20 @@
 ---
 type: architecture
 title: CLI Entrypoint and the Subcommand Contract
-description: How src/main.rs registers clap subcommands, runs global startup (dotenv, OXYROMON_LOG_LEVEL logger bridged to the progress UI, data directory, SQLite pool, ROM/tmp settings), dispatches inside one scoped pooled connection, and hands long-lived servers the pool before optimize_database.
-tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite]
+description: How src/main.rs registers clap subcommands, runs global startup (dotenv, OXYROMON_LOG_LEVEL logger bridged to the progress UI, data directory, SQLite pool, ROM/tmp settings), dispatches inside one scoped pooled connection, and hands long-lived servers the pool before optimize_database. Also documents the `info` dependency/statistics report.
+tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
-  - by: openwiki/0.7.1
+  - by: openwiki/0.7.2
     at: 2026-10-10T22:10:44.671Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-02628a361dd4faa0f62f87a2
+    resource: repo://src/archive.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
@@ -21,6 +25,8 @@ sources:
     resource: repo://src/config.rs
   - id: openwiki-source-14bdaf940b9be722639ecfcd
     resource: repo://src/config/test_cli.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -35,17 +41,29 @@ sources:
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-d3402490d16a663b822e8a00
+    resource: repo://src/nsz.rs
   - id: openwiki-source-6330834d320d84b814c24c5f
     resource: repo://src/progress.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
+  - id: openwiki-source-db13c01516e9bd04294e339d
+    resource: repo://src/rvz.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+  - id: openwiki-source-66dda2cecfc81c486446cc8e
+    resource: repo://src/util.rs
+  - id: openwiki-source-1c38b81542bfb683299ad2cd
+    resource: repo://src/xdelta.rs
+  - id: openwiki-source-9b5bca3734529131a5ec0d1b
+    resource: repo://src/xps.rs
+  - id: openwiki-source-196778315263fb8bcc8066e5
+    resource: repo://src/xso.rs
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -201,11 +219,13 @@ only `(connection, progress_bar)`. The server pair breaks the shape
 deliberately: `mcp::main(pool, matches)` and `server::main(pool, matches)` take
 a `SqlitePool` because they must multiplex requests.
 
-The dispatch table in `src/main.rs` covers `info`, `config`, `create-dats`,
-`import-dats`, `download-dats`, `import-irds`, `import-patches`, `import-roms`,
-`sort-roms`, `convert-roms`, `export-roms`, `rebuild-roms`, `check-roms`,
-`purge-roms`, `purge-systems`, `generate-playlists`, and `benchmark`, plus the
-feature-gated `mcp` and `server`.
+The dispatch table in `src/main.rs` covers, in vec order: `info`, `config`,
+`create-dats`, `import-dats`, `download-dats`, `import-irds`, `purge-irds`,
+`import-patches`, `import-roms`, `sort-roms`, `convert-roms`, `export-roms`,
+`rebuild-roms`, `check-roms`, `purge-roms`, `purge-systems`,
+`generate-playlists`, and `benchmark`, plus the feature-gated `mcp`
+(`--read-only` exposes non-mutating tools only) and `server`
+(`--address`/`--port`).
 
 Selection of work follows a consistent pattern across the batch subcommands:
 
@@ -224,9 +244,49 @@ file-deleting modules (`sort-roms`, `purge-roms`) expose `-y/--yes` so the
 goes through the categorized `print_header` / `print_subheader` / `print_info` /
 `print_success` / `print_warning` / `print_error` / `print_skip` / `print_action`
 helpers rather than raw `println!` (`import_roms` carries an explicit comment at
-the one place a stray `println!` used to live). `cfg!(test)` is used where a
-selection would otherwise hang headless
+the one place a stray `println!` used to live: stdout can be the MCP protocol
+channel). `cfg!(test)` is used where a selection would otherwise hang headless
 (`prompt_for_games(games, cfg!(test))`).
+
+## The `info` report: dependencies and statistics
+
+`info` is the diagnostic subcommand — no arguments, no prompts, no filesystem
+writes beyond what its queries do. It prints two sections on the shared bar and
+then finishes it.
+
+The **Dependencies** section is a table assembled from each format module's
+`get_version()`. The entries are collected into a vec and sorted by the name
+reported, so the display order is `chd-rs`, `ctrtool`, `nod`, `nsz-rs`,
+`sevenz-rust2`, `xdelta-rs`, `xps-rs`, `xso-rs` regardless of push order:
+
+| Reported name | Backing module | Value on a working install |
+| --- | --- | --- |
+| `chd-rs` | `src/chd.rs` | `built-in` |
+| `ctrtool` | `src/ctrtool.rs` | version matched by regex from the subprocess |
+| `nod` | `src/rvz.rs` (also backs WBFS) | `built-in` |
+| `nsz-rs` | `src/nsz.rs` | `built-in`, or `built-in, prod.keys not found` |
+| `sevenz-rust2` | `src/archive.rs` | `built-in` |
+| `xdelta-rs` | `src/xdelta.rs` | `built-in` |
+| `xps-rs` | `src/xps.rs` | `built-in` |
+| `xso-rs` | `src/xso.rs` | `built-in` |
+
+The distinction the report encodes is *linked library vs. external tool*. The
+format crates are compiled in, so they have no runtime version to query and
+report the literal `built-in` — the fact worth knowing is that the module is
+present, not which point release it is. `ctrtool` is the one remaining external
+subprocess: its `get_version()` shells out through `util::tool_version`, which
+fails (rather than returning a placeholder) when the binary cannot be spawned,
+so a missing `ctrtool` prints as `↪ ctrtool: not found` through `print_skip`.
+That failure is *reported, not fatal*: `info` always exits successfully, and so
+does any other subcommand whose format path the missing tool would serve.
+`nsz-rs` adds a second dimension — it never fails, but reports
+`built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, so the
+missing-keys condition is discovered at `info` time instead of mid-compression.
+
+The **Statistics** section is three counts against the connected database
+(`count_systems`, `count_games`, `count_roms`), followed by the project's
+donation footer and `progress_bar.finish_and_clear()` — the subcommand, not the
+entrypoint, ends the bar it was handed.
 
 ## Adding a subcommand
 

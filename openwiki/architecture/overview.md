@@ -1,11 +1,8 @@
 ---
 type: architecture
 title: System Architecture Overview
-description: The layered shape of oxyromon — a clap entrypoint, one module per subcommand, shared database/model/common/config/util/mimetype/progress/prompt layers, format modules over the crates/* format crates, and SQLite — plus how the GraphQL and MCP surfaces enter at the subcommand layer and reuse the exact same implementation per action.
+description: The layered shape of oxyromon — a clap entrypoint, one module per subcommand, shared database/model/common/config/util/transcode layers, format modules running every codec in-process over the crates/* format crates, and SQLite — plus how the GraphQL and MCP surfaces enter at the subcommand layer, and why ctrtool is the only remaining external tool.
 tags: [architecture, layers, cli, graphql, mcp, sqlite, workspace, cargo-features]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -13,22 +10,38 @@ sources:
     resource: repo://build.rs
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
+    resource: repo://CHANGELOG.md
   - id: openwiki-source-92ee3a60a9826201e8ce6fa7
     resource: repo://desktop/Cargo.toml
   - id: openwiki-source-c1fba58d5f1ff9717d354a3c
     resource: repo://desktop/src/server.rs
   - id: openwiki-source-182eb6366058c61b0d4d15e9
     resource: repo://frontend/Cargo.toml
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-02628a361dd4faa0f62f87a2
+    resource: repo://src/archive.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
+  - id: openwiki-source-f1234afbb261ce7190a87845
+    resource: repo://src/check_roms.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
   - id: openwiki-source-14bdaf940b9be722639ecfcd
     resource: repo://src/config/test_cli.rs
+  - id: openwiki-source-10fddfccad5d7bf89d675953
+    resource: repo://src/convert_roms.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-bfaccf08e532321769e4b6b5
+    resource: repo://src/export_roms.rs
+  - id: openwiki-source-6f95130cb448e88dd97ab560
+    resource: repo://src/import_dats.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -47,8 +60,12 @@ sources:
     resource: repo://src/model.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-d3402490d16a663b822e8a00
+    resource: repo://src/nsz.rs
   - id: openwiki-source-6330834d320d84b814c24c5f
     resource: repo://src/progress.rs
+  - id: openwiki-source-313c10a1161be7da48ebd676
+    resource: repo://src/purge_roms.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
     resource: repo://src/query.rs
   - id: openwiki-source-db13c01516e9bd04294e339d
@@ -59,9 +76,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-  - id: openwiki-source-196778315263fb8bcc8066e5
-    resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # System Architecture Overview
@@ -89,14 +107,15 @@ flowchart TD
   MCPC -->|"mcp/actions.rs run_action, synthesized argv plus write lock"| SUB
 
   SUB --> SHARED["Shared layers: database.rs, model.rs, common.rs, config.rs, util.rs, mimetype.rs, progress.rs, prompt.rs, transcode.rs"]
-  SHARED --> FMT["Format modules: archive, chdman, ctrtool, rvz, wbfs, iso, xso, nsz, gdi, xdelta, xps, crc32"]
-  FMT --> CRATES["crates/* format crates, plus chdman and ctrtool subprocesses"]
+  SHARED --> FMT["Format modules: archive, chd, ctrtool, rvz, wbfs, iso, xso, nsz, gdi, xdelta, xps, crc32"]
+  FMT --> CRATES["In-process engines: crates chd-rs gdi-rs nsz-rs xdelta-rs xps-rs xso-rs, plus sevenz-rust2, zip, nod"]
+  FMT --> EXT["ctrtool subprocess"]
   SHARED --> SQLITE[("oxyromon.db, SQLite via sqlx")]
   SHARED --> DISK[("ROM directory on the filesystem")]
   SUB --> PROG["progress.rs output on stderr"]
 ```
 
-*Caption: the layer stack and the three places a request can enter — argv, GraphQL, and MCP — converging on the same subcommand `main()`.*
+*Caption: the layer stack and the three places a request can enter — argv, GraphQL, and MCP — converging on the same subcommand `main()`, with every codec now running in-process except the one `ctrtool` subprocess.*
 
 **Entrypoint.** `src/main.rs` is the root package's only binary target. It builds the clap
 `Command` from each module's `subcommand()`, runs the process-wide startup
@@ -124,20 +143,39 @@ system id) and the trait system that abstracts over file formats. `config.rs`
 reads and writes the `settings` table with per-system override falling back to
 the global row; `util.rs` wraps filesystem operations and the directory layout;
 `mimetype.rs` sniffs ROM magic bytes; `progress.rs` owns the progress bars and all
-categorized output; `prompt.rs` supplies interactive selection; `transcode.rs`
-decodes a stored romfile into a neutral format for conversion, checking and
-export.
+categorized output; `prompt.rs` supplies interactive selection.
+
+**The decode layer.** `transcode.rs` is the one place that turns a stored romfile
+into something a conversion can consume. Each helper returns
+`Decoded<T> { source, inner }`: `source` is the romfile as the database knows it
+— the path and size a conversion must be committed against — and `inner` is the
+same content in a neutral format (`CommonRomfile`, `IsoRomfile`, `CueBinRomfile`,
+`NspRomfile`) written into the caller's `TempDir`. `archive_to_common` extracts an
+archive's single file, `common_as_source` views a plain file as its own source,
+`xso_to_iso`/`nsz_to_nsp`/`rvz_to_iso` decode a compressed container, and
+`archive_to_cue_bin`/`assemble_cue_bin` build a CUE/BIN set from an archive or from
+loose romfiles. Because every path into a neutral format passes here, parent-CHD
+resolution lives in one function: `romfile_as_chd` follows `romfile.parent_id` and
+calls `as_chd_with_parent`, so `check_roms`, `convert_roms` and `export_roms` never
+re-implement it, and `chd_to_iso` layers the DVD-only step on top — returning
+`Ok(None)` for a non-DVD CHD so a caller can skip the chain rather than branch on
+the type itself.
 
 **Format modules.** Each builds a format-specific romfile struct and `As*` /
-`To*` / `Check` traits around `CommonRomfile`. The built-in codecs (`archive.rs`,
-`rvz.rs`, `wbfs.rs`, `xso.rs`, `nsz.rs`, `gdi.rs`, `xdelta.rs`, `xps.rs`) call a
-library — a `crates/*` member or the `nod` dependency — on the blocking pool
-(`run_blocking`, or `spawn_blocking` directly in `archive.rs` and `rvz.rs`), and
-the ones that report a version return `"built-in"` from `get_version()`. The two
-that still shell out (`chdman.rs`, `ctrtool.rs`) spawn a subprocess and parse its
-version output instead. Both kinds sit behind the same `get_version()` contract,
-which `info` and the GraphQL `dependencies` query walk to report availability
-rather than failing later. Details in
+`To*` / `Check` traits around `CommonRomfile`. Every codec is now an in-process
+engine: `chd.rs` drives `chd-rs` (a port of chdman, for CDs, DVDs, hard disks and
+LaserDiscs), `xso.rs`/`nsz.rs`/`gdi.rs`/`xdelta.rs`/`xps.rs` drive the matching
+`crates/*` member, `archive.rs` uses sevenz-rust2 and zip, and `rvz.rs`/`wbfs.rs`
+use `nod`. Each runs its crate's synchronous entry point on the blocking pool —
+`run_blocking` for the crate codecs that report byte progress, `spawn_blocking`
+directly in `archive.rs`, `rvz.rs` and for the CHD header read — so the runtime is
+never blocked by a compress or a hash. These modules report `"built-in"` from
+`get_version()`; `nsz.rs` adds when `prod.keys` is missing so that is not first
+discovered mid-compression. **`ctrtool.rs` is the only module left that spawns an
+external process**, and only for CIA: `parse_cia` and `extract_files_from_cia` run
+`ctrtool -p -v` and parse its listing, and `import_roms` checks
+`ctrtool::get_version()` and prints `Required tool not found: ctrtool` instead of
+failing deeper in. Details in
 [Format Modules and Format Crates](../concepts/format-modules-and-format-crates.md).
 
 **Storage.** One SQLite file. `establish_connection` shapes the pool from the
@@ -233,9 +271,9 @@ spawns the same binary as a Tauri sidecar running `server --address 127.0.0.1
 ## Workspace and build boundaries
 
 The repository is a Cargo workspace whose members are the root `oxyromon` package
-plus `crates/*` — the format crates (`gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`,
-`xso-rs`) that replaced the external tools oxyromon used to shell out to. They
-share one lockfile and CI but are versioned and published independently, and
+plus `crates/*` — the format crates (`chd-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`,
+`xps-rs`, `xso-rs`) that replaced the external tools oxyromon used to shell out to.
+They share one lockfile and CI but are versioned and published independently, and
 oxyromon depends on them by `path` + `version` with `default-features = false`.
 
 `frontend/` and `desktop/` are **not** workspace members. Each declares its own
@@ -264,13 +302,28 @@ on the `model.rs` types is what turns the same structs into GraphQL
   `log::*` records are bridged there too.
 - **Blocking work stays off the async runtime.** Format-crate entry points are
   synchronous and take a `&mut dyn FnMut(u64)` progress callback;
-  `run_blocking` runs them on the blocking pool and feeds that callback into a
-  bytes progress bar. External tools are spawned with `tokio::process::Command`
-  via `run_tool`, which bails with the subprocess stderr on a non-zero exit.
+  `run_blocking` runs them on the blocking pool, resetting the bar to a bytes
+  style with the input size as its length and feeding that callback into it. The
+  one external process, `ctrtool`, is spawned with `tokio::process::Command`
+  directly, and `util::tool_version` is the only place a version probe shells out.
+- **Availability is reported, not guessed.** `info`, the GraphQL `dependencies`
+  query and the MCP `status` payload all walk the same `get_version()` set —
+  `sevenz-rust2`, `chd-rs`, `ctrtool`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`,
+  and `nod` for RVZ/WBFS. An in-process engine always succeeds with `built-in`, so
+  only `ctrtool` can come back missing, and a missing `ctrtool` is surfaced as a
+  skip rather than a failure deep inside an import.
 - **Shutdown is housekeeping.** `optimize_database` (incremental vacuum, optimize,
   WAL checkpoint truncate) runs after the CLI batch finishes, and
   `server.rs`'s `shutdown_signal` runs it before cancelling in-flight work, so a
   server exits with a checkpointed database.
+- **The directory tree is reclaimed as well as the rows.** `util::get_kept_directories`
+  names the ROM, system and `Trash` directories that must survive, and
+  `util::remove_empty_directories` climbs from a deleted file's directory up to a
+  kept or non-empty one — the rule `purge-roms` and DAT/IRD updates follow so an
+  emptied game folder does not linger. `util::compute_system_completion` is the
+  counterpart on the database side: import, sort, check, rebuild and purge all end
+  by recomputing game and system completion rather than patching the counter
+  themselves.
 - **Tests use the same front door.** A test builds a temp database with
   `establish_connection`, points the ROM and tmp settings at `TempDir`s, parses
   argv with the module's `subcommand()`, calls `main(&mut connection, &matches,

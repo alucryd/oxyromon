@@ -3,9 +3,6 @@ type: architecture
 title: Data Model, SQLite Usage and Migrations
 description: The systems/games/roms/romfiles/patches/headers/rules/settings schema behind oxyromon.db, how src/model.rs row types and int-encoded enums map onto it, the standalone-query and transaction conventions in src/database.rs, and the migrations/ plus cargo sqlx prepare offline workflow.
 tags: [database, sqlite, sqlx, schema, migrations, offline-queries, settings]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -13,6 +10,8 @@ sources:
     resource: repo://.sqlx/query-159507facaddc85d01d94dcb41aab488a243f5b084e0d52199f65f5cf2f1f6fb.json
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
   - id: openwiki-source-33aa7c8f46f7c20859f70960
     resource: repo://migrations/20210323000001_create_systems.sql
   - id: openwiki-source-779ed029d00f33eb5dbefc5c
@@ -65,12 +64,16 @@ sources:
     resource: repo://migrations/20260317000001_add_system_id_to_settings.sql
   - id: openwiki-source-76521838de1f93f55c8cfb0e
     resource: repo://migrations/20260808000001_rename_rvz_bzip_compression.sql
+  - id: openwiki-source-96c83262fa92895f13ea94e8
+    resource: repo://migrations/20260810000001_add_archive_compression_algorithms.sql
   - id: openwiki-source-543688cbca9cffab391f2283
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
   - id: openwiki-source-31c5d408b8f1718dfd9d4e59
     resource: repo://PLAN.md
   - id: openwiki-source-ab4f3ad4a46f3df51164583c
     resource: repo://sqlx-data.json
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
@@ -81,6 +84,8 @@ sources:
     resource: repo://src/config/test_bool.rs
   - id: openwiki-source-b130a948cf6dedfa0b9c4edd
     resource: repo://src/config/test_system_bool_override.rs
+  - id: openwiki-source-10fddfccad5d7bf89d675953
+    resource: repo://src/convert_roms.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-316c0afa4f03f2eedd9022b5
@@ -99,15 +104,24 @@ sources:
     resource: repo://src/mcp/read.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
+  - id: openwiki-source-fcdf0f9c4361c1ee384f2689
+    resource: repo://src/prompt.rs
+  - id: openwiki-source-313c10a1161be7da48ebd676
+    resource: repo://src/purge_roms.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-4fe52c7cb090ec0387522035
+    resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -177,7 +191,7 @@ erDiagram
   games |o--o| romfiles : "listed in playlist"
   systems |o--|| headers : "detected by"
   headers ||--o{ rules : "recognized through"
-  romfiles |o--o{ romfiles : "contains child file"
+  romfiles |o--o{ romfiles : "is CHD parent of"
   systems |o--o{ settings : "owns scoped settings"
   systems {
     integer id PK
@@ -271,6 +285,14 @@ deleting a file row detaches rather than destroys the declaration. The
 relationship is many-to-one, not one-to-one: in merged sets one romfile serves
 many roms across clone games.
 
+Wantedness is filtered by `roms.parent_id`, not just by the null romfile id.
+The "wanted ROMs" readers the completion, sort and rebuild paths use — e.g.
+`find_roms_without_romfile_by_size_and_crc` and
+`find_roms_without_romfile_by_game_ids` — add `parent_id IS NULL`, so a merged
+child whose data lives in its parent romfile is never reported as missing, while
+the PS3/IRD helpers invert the filter (`parent_id = ?`, or `IS NOT NULL`) to walk
+the children of a matched parent.
+
 Uniqueness is scoped deliberately: `systems.name` is globally unique,
 `games` is unique on `(name, system_id)`, `roms` on `(name, game_id)`, `patches`
 on `(name, rom_id)`, and `headers` on `(system_id)` — at most one header per
@@ -282,8 +304,13 @@ Parent/child structures are self-referential rather than junction tables:
 `games.parent_id` is the clone-to-parent link, `games.bios_id` the BIOS a game
 needs, `games.playlist_id` the `.m3u` romfile a game belongs to
 (`ON DELETE SET NULL`), `roms.parent_id` the merged-set parent rom, and
-`romfiles.parent_id` the containing archive of a child file, e.g. a CHD inside a
-playlist (`ON DELETE SET NULL`).
+`romfiles.parent_id` the CHD a given CHD was written against (`ON DELETE
+SET NULL`). The romfile link is deliberately not "the archive that contains this
+file": oxyromon registers whole files, and the only child rows it creates point
+from one CHD to the parent CHD it needs. `update_romfile_parent` is the single
+writer of that column and `find_romfiles_by_parent_id` the only reader of it —
+`convert-roms` uses the latter as a guard ("CHD has children, skipping") before
+touching a parent, and clears the link when it converts one away.
 
 `rules` is the historical tail of `headers`: `20211114103012_create_rules.sql`
 created the table, copied `start_byte`/`hex_value` out of `headers`, and dropped
@@ -319,10 +346,39 @@ Two deviations matter:
   None, `romfile_type = 0` Romfile). The row structs keep the raw `i64` field so
   `FromRow` stays trivial, and call sites narrow with
   `Merging::from_i64(system.merging)` / `Sorting::from_i64(game.sorting)`.
-  `romfile_type` distinguishes ordinary romfiles from generated playlists — the
-  backfill in `20240824155008_add_romfile_type_to_romfiles.sql` reclassified
-  existing `%.m3u` rows as `Playlist` — and `Patch` rows are currently created
-  with `RomfileType::Romfile`.
+  `romfile_type` distinguishes ordinary romfiles, generated playlists and patches —
+  the backfill in `20240824155008_add_romfile_type_to_romfiles.sql` reclassified
+  existing `%.m3u` rows as `Playlist` — but `import_patches` still creates a
+  patch's romfile with `RomfileType::Romfile`, so value 2 is only a label the MCP
+  output layer maps to `"patch"`, not something the write path produces.
+
+### CHD parentage lives in the file, not the row
+
+`romfiles.parent_id` is the one column whose meaning is not readable from the
+schema alone: the CHD format stores the parent's SHA-1 inside the child file, and
+oxyromon reads it in process through `chd-rs` — `AsChd::parse_chd` calls
+`Chd::open`/`chd.info()` and hex-encodes `info.sha1`, `info.data_sha1` and
+<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+`info.parent_sha1` (see [CHD Format and chd-rs](../concepts/chd-format-and-chd-rs.md)).
+No external `chdman` binary is shelled out to and its stdout is never parsed, and
+the GraphQL `dependencies` resolver reports `chd-rs` as `built-in` for exactly
+this reason. The database column is only a denormalised cache of that in-file
+value: `romfile_as_chd` (in `transcode.rs`) resolves a row's parent by loading
+`find_romfile_by_id(romfile.parent_id)` and handing it to `as_chd_with_parent`,
+which re-parses both files and bails with "Parent CHD SHA1 mismatch" if the
+cached link no longer matches what the child demands. When the file itself
+carries no link — the import path — `as_chd` scans the containing directory and
+adopts the first CHD whose own hash equals the child's `parent_sha1`. Import order
+depends on the same in-file field: `import_roms` sorts candidate paths so CHDs
+reporting a `parent_sha1` are processed before parentless ones.
+
+The write side keeps a second, independent notion of "which file should be this
+CHD's parent": when `export-roms`/`convert-roms` builds a child CHD it asks
+`util::find_parent_chd_romfile_by_game`, which walks the game's
+`games.playlist_id` to the first game in that playlist and takes that game's
+`.chd` romfile — a playlist-derived parent chosen by set membership, not by
+reading the child's `parent_sha1`. `update_romfile_parent` then records the
+result, and the read path above verifies it.
 
 ## Query conventions in `database.rs`
 
@@ -393,8 +449,32 @@ before the change. The payoff is that pointing `ROM_DIRECTORY` at a moved or
 renamed library is a single settings-row update with no table rewrite — and the
 cost is that any new code touching `path` must never assume it is absolute (the
 same convention appears in `purge-roms` and `rebuild-roms` strip_prefix calls,
-and `find_romfiles_in_trash` pattern-matches `%/Trash/%` against the relative
-path).
+and `find_romfiles_in_trash` pattern-matches `%/Trash/%` (plus the bare
+`Trash/%` prefix for a trashed library root) against the relative path).
+
+## Orphan and missing-file queries
+
+The romfile cleanup readers in `database.rs` define what "unreferenced" means,
+and both are strict about the parent link:
+
+- `find_orphan_romfiles` returns rows with **no** `roms.romfile_id` pointing at
+  them **and** no `games.playlist_id` pointing at them. It deliberately does not
+  consult `romfiles.parent_id`, so a child CHD whose parent row is about to be
+  deleted is itself reported as an orphan in the same pass — `purge-roms --orphan`
+  walks that set in one transaction, deleting the file and the row together and
+  then pruning emptied directories.
+- `purge-roms --missing` is not a query at all: `find_romfiles` reads every row
+  and the module checks `as_common(...).path.is_file()` on disk, deleting rows
+  whose file is gone. `--foreign` inverts the same lookup, walking the ROM
+  directory and reporting relative paths for which `find_romfile_by_path` returns
+  `None`. Both paths are the DB-side of the relative-path invariant, and every
+  purge branch finishes by recomputing completion for all systems.
+
+`find_romfiles_by_system_id_and_extension_and_no_parent_id` is the fourth shape:
+candidate parents for a conversion or export. It restricts to a system's romfiles
+by extension and excludes rows that already have a parent, so a chained CHD is
+never offered as a parent; `prompt_for_parent_romfile` then ranks that set by
+jaro-winkler similarity to the game name.
 
 ## Settings: one table, two scopes
 
@@ -420,7 +500,13 @@ and `ROM_DIRECTORY` / `TMP_DIRECTORY` self-seed their first-run defaults.
 Default values themselves live in migrations as `INSERT OR REPLACE INTO
 settings` — the same statement style is used for idempotent retcons such as
 rewriting the RVZ `bzip` algorithm value to `bzip2`, which dolphin-tool would
-otherwise refuse to parse. See [Settings and Configuration](settings-and-configuration.md)
+otherwise refuse to parse. Migration
+`20260810000001_add_archive_compression_algorithms.sql` shows the other use of
+the same idempotent seed: it installs the per-format compression
+algorithm/level defaults (`SEVENZIP_COMPRESSION_ALGORITHM`,
+`ZIP_COMPRESSION_ALGORITHM`, and the two `*_ZSTD_COMPRESSION_LEVEL` rows) in one
+file, and `20260811000001_add_prefer_format_setting.sql` seeds `PREFER_FORMAT`
+to `NULL`, which is what makes an unset choice behave as "no preference". See [Settings and Configuration](settings-and-configuration.md)
 for the key catalogue and CLI surface.
 
 ## Adding a migration

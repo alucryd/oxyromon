@@ -10,10 +10,22 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-02628a361dd4faa0f62f87a2
+    resource: repo://src/archive.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
+  - id: openwiki-source-10fddfccad5d7bf89d675953
+    resource: repo://src/convert_roms.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
@@ -34,13 +46,23 @@ sources:
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-d3402490d16a663b822e8a00
+    resource: repo://src/nsz.rs
+  - id: openwiki-source-1365b33b317f3d0f1e82b7b0
+    resource: repo://src/purge_irds.rs
+  - id: openwiki-source-313c10a1161be7da48ebd676
+    resource: repo://src/purge_roms.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
+  - id: openwiki-source-0a9271029eb893aacec54c15
+    resource: repo://src/sort_roms.rs
+  - id: openwiki-source-66dda2cecfc81c486446cc8e
+    resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 verified:
-  - by: openwiki/0.7.1
+  - by: openwiki/0.7.2
     at: 2026-10-10T22:10:44.671Z
 ---
 
@@ -120,9 +142,15 @@ annotated `read_only_hint = true`, take a pooled connection per call and never
 touch the write lock — `parse_game_name` being the one that needs no connection at
 all. `status` and the `oxyromon://status` resource
 share `build_status`, which reports version, `read_only`, ROM/tmp directories,
-three counts and the availability of eight codec/external-tool groups
-(`sevenz-rust2`, `chdman`, `ctrtool`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`,
-`nod`) with `version: null` when one is missing. Paging is clamped server-side:
+three counts and the same alphabetized dependency list `oxyromon info` prints —
+eight groups (`sevenz-rust2`, `chd-rs`, `ctrtool`, `xps-rs`, `xso-rs`, `nsz-rs`,
+`xdelta-rs`, `nod`). Every one of them except `ctrtool` is a linked crate whose
+`get_version()` returns the literal `"built-in"`, so it can never come back
+missing; `ctrtool` is the only optional external program in the payload and the
+only entry that can report `version: null`, because its probe is a spawn of
+`ctrtool` that fails when it is not on `PATH`. `nsz-rs` is the one codec that
+qualifies its answer — `"built-in, prod.keys not found"` when the keys file is
+absent — since only NSZ compression needs keys. Paging is clamped server-side:
 `list_games` defaults to 100 and caps at 1000, `search_games` defaults to 50 and
 caps at 500. `parse_game_name` is pure `shiratsu-naming` parsing with no
 connection at all.
@@ -143,6 +171,18 @@ lists, and `convert_roms` checks the format against `convert_roms::ALL_FORMATS`
 plus the arcade restriction before starting. Those checks take their own
 short-lived pooled connection, so a malformed call neither queues on the write
 lock nor holds a connection for the duration of an action.
+
+`convert_roms` is the one gate that no longer agrees with the rest of the
+surface. `convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`,
+`CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes, which
+`set_setting` validates through `config::choice_options` without touching case),
+but the MCP handler lowercases `params.format` before testing membership, so no
+value can satisfy the check and every call is refused with "unknown format"; the
+same lowercased value would also fail clap's case-sensitive `PossibleValuesParser`
+downstream. GraphQL is unaffected because it validates the value as supplied. The
+tool's own description still advertises `iso`, `wbfs`, `gdi` and `raw`, which are
+not formats oxyromon converts to at all. Read the case handling and that
+description as defects to fix, not as the contract.
 
 JSON Schema for every tool comes from the parameter structs in
 [`src/mcp/params.rs`](../../src/mcp/params.rs): field names and types give the

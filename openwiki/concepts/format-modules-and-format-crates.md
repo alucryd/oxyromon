@@ -1,11 +1,8 @@
 ---
 type: concept
 title: Format Modules and Their Crate Backends
-description: The per-format modules in src/ (archive, chdman, ctrtool, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, crc32), the wrapper-plus-As*/To* pattern they share, which are backed by in-process crates and which shell out to chdman or ctrtool, and the archive and disc-image behaviours worth not breaking.
-tags: [formats, crates, archive, 7z, zip, chd, rvz, wbfs, nsz, xso, gdi, patches, progress]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+description: The per-format modules in src/ (archive, chd, ctrtool, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates except CIA which shells out to ctrtool, and the archive and disc-image behaviours worth not breaking.
+tags: [formats, crates, archive, 7z, zip, chd, chd-rs, rvz, wbfs, nsz, xso, gdi, patches, progress]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
@@ -15,8 +12,8 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-937d0f578ac89ef5963c651a
     resource: repo://src/archive/test_rewrite.rs
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -27,10 +24,14 @@ sources:
     resource: repo://src/crc32.rs
   - id: openwiki-source-63f87054c5f9055be025dd77
     resource: repo://src/ctrtool.rs
+  - id: openwiki-source-68a9457efd4964d6e3fa17be
+    resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
   - id: openwiki-source-7a3d5614c68ed1a3729171e7
     resource: repo://src/gdi.rs
+  - id: openwiki-source-6f95130cb448e88dd97ab560
+    resource: repo://src/import_dats.rs
   - id: openwiki-source-d079c81879111b8d75173838
     resource: repo://src/import_irds.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
@@ -65,18 +66,21 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Format Modules and Their Crate Backends
 
 oxyromon keeps one module per format family in `src/`. Each module is a thin,
 opinionated adapter between the [CommonRomfile trait system](romfile-trait-system.md)
-and one backend: an in-process Rust crate, or an external executable found on
-`${PATH}`. The distinction is visible from three places — `oxyromon info`, the
-GraphQL `dependencies` query and the MCP `status` tool — and it decides what a
-user must install, how progress is reported, and whether a format works at all
-when a dependency is missing.
+and one backend: an in-process Rust crate, or — in a single remaining case — an
+external executable found on `${PATH}`. The distinction is visible from three
+places — `oxyromon info`, the GraphQL `dependencies` query and the MCP `status`
+tool — and it decides what a user must install, how progress is reported, and
+whether a format works at all when a dependency is missing.
 
 ## Module → backend → formats
 
@@ -85,6 +89,7 @@ when a dependency is missing.
 | `archive` | `sevenz-rust2` + `zip` (in-process) | 7z, ZIP | `"built-in"` |
 | `rvz` | `nod` (in-process) | RVZ | `"built-in"` |
 | `wbfs` | `nod`, via `rvz::write_disc` | WBFS | none — reported under `nod` |
+| `chd` | `chd-rs` (`crates/chd-rs`) | CHD (CD/DVD/HDD/LD) | `"built-in"` |
 | `xso` | `xso-rs` (`crates/xso-rs`) | CSO, ZSO | `"built-in"` |
 | `nsz` | `nsz-rs` (`crates/nsz-rs`) | NSP, NSZ | `"built-in"`, or `"built-in, prod.keys not found"` |
 | `gdi` | `gdi-rs` (`crates/gdi-rs`) | GDI + track BINs | none |
@@ -92,8 +97,7 @@ when a dependency is missing.
 | `xps` | `xps-rs` (`crates/xps-rs`) | IPS, BPS patches | `"built-in"` |
 | `iso` | in-module Rust, a port of bchunk | CUE/BIN → ISO; vendored ISO 9660 reader | none |
 | `crc32` | `crc32fast` behind `digest` traits | CRC32 hashing primitive | none |
-| `chdman` | external `chdman` executable | CHD (CD/DVD/HDD/LD) | version parsed from its output |
-| `ctrtool` | external `ctrtool` executable | CIA | version parsed from its output |
+| `ctrtool` | external `ctrtool` executable | CIA | version parsed from its stderr |
 
 Every built-in backend returns the literal string `"built-in"` from
 `get_version()` because a linked library has no runtime version to query; the
@@ -104,20 +108,32 @@ so a user does not discover the missing file mid-compression. `gdi`, `iso`,
 `wbfs` and `crc32` export no `get_version()` at all, so they appear in no
 dependency table.
 
-Only two entries can actually fail, and only one of them is load-bearing for the
-conversion path. `convert_roms::format_available` and `export_roms::main` treat
-every format as available except `"CHD"`, which is probed through
-`util::tool_available(chdman::get_version, …)`; `ctrtool` is probed separately
-where CIA files are imported. `info` prints a failing probe as
-`<name>: not found`, GraphQL and MCP report it as a null version.
+`ctrtool` is the only entry that can actually fail, and the only one whose
+version is real: `util::tool_version` spawns the tool with no arguments, reads
+line 0 of its **stderr**, and takes the first `\d+\.\d+\.\d+` match, falling back
+to the string `unknown` when the tool ran but printed nothing parseable — a
+spawn failure is what propagates as `Err` and makes `info` print
+`ctrtool: not found`, GraphQL and MCP report a null version. CHD used to be a
+second such entry; since `src/chd.rs` drives the in-process `chd-rs` crate,
+`chd::get_version()` returns `"built-in"` like the other crates
+<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+([CHD Format and chd-rs](chd-format-and-chd-rs.md)).
 
-`chdman` additionally gates features on its *version*, not just its presence:
-`MIN_SPLITBIN_VERSION = "0.265"` for multi-track CHDs and
-`MIN_DREAMCAST_VERSION = "0.264"` for creating Dreamcast CHDs. Callers compare
-the parsed version string and skip the game with a warning rather than
-attempting a command the installed tool cannot run. See
-[External Tool Integration](../integrations/external-tools.md) for the
-shelling-out recipe itself.
+Because every conversion target is now linked in, availability is a static
+question rather than a runtime probe: `convert_roms::format_available` is a
+`matches!` over the eight formats `convert-roms` lists, and `export_roms` accepts
+one longer list, adding `GDI`, `ISO` and `WBFS`. Neither consults a tool version.
+The one runtime availability check left in the format layer is in `import_roms`:
+before importing a `.cia` it calls `ctrtool::get_version()` and, on `Err`, prints
+`Required tool not found: ctrtool` and returns without importing the file.
+
+The version gates that used to guard CHD features are gone with the subprocess.
+There is no `MIN_SPLITBIN_VERSION` (0.265, multi-track CHDs) or
+`MIN_DREAMCAST_VERSION` (0.264, Dreamcast CHD creation) anywhere in `src/`:
+multi-track extraction and GDI-bound Dreamcast conversions are simply features
+of `chd-rs`, so no caller has to skip a game because the installed binary is too
+old. See [External Tool Integration](../integrations/external-tools.md) for the
+shelling-out recipe `ctrtool` still uses.
 
 ## The shape every module shares
 
@@ -166,9 +182,10 @@ It clones the shared bar, moves the closure to `spawn_blocking`, resets the bar
 to the bytes style with `length` — the input bytes the crate will consume, which
 its `progress: &mut dyn FnMut(u64)` callback reports incrementally — and maps a
 `JoinError` to `"Conversion task failed"`, distinct from the crate's own error.
-Callers supply `length` as `input.metadata()?.len()`, or as
-`gdi_rs::input_size(&cue)` where the input is a CUE and its BINs. It is used by
-`gdi`, `nsz`, `xdelta`, `xps` and `xso`.
+Callers supply `length` as `input.metadata()?.len()`, as `gdi_rs::input_size(&cue)`
+where the input is a CUE and its BINs, or as `chd_rs::cd_input_size(&input)` for a
+CD CHD, where the bar must track the sheet and its tracks rather than the
+container. It is used by `chd`, `gdi`, `nsz`, `xdelta`, `xps` and `xso`.
 
 ```mermaid
 sequenceDiagram
@@ -192,14 +209,16 @@ sequenceDiagram
 
 *Caption: how a synchronous format crate runs behind the async progress bar.*
 
-Subprocess-backed modules cannot do this. `chdman` drives its commands through
-`util::run_tool`, which waits for exit and bails with the tool's stderr, and
-`ctrtool` calls `Command::output` directly only so it can exclude one tolerated
-tool error (below); neither reports measurable progress, so both modules use
-`start_action`/`stop_action` for a spinner-plus-message line instead. `nod` sits
-in between: `rvz.rs` drives it directly on `spawn_blocking` rather than through
-`run_blocking`, because the crate exposes a `Read`er and a writer callback with
-its own progress semantics rather than a bytes-consumed closure.
+Subprocess-backed modules cannot do this, and only one module still is one:
+`ctrtool` calls `Command::output` directly rather than through a shared helper,
+only so it can exclude one tolerated tool error (below), and reports no
+measurable progress, so the CIA path uses `start_action`/`stop_action` for a
+spinner-plus-message line instead. `nod` sits in between: `rvz.rs` drives it
+directly on `spawn_blocking` rather than through `run_blocking`, because the
+crate exposes a `Read`er and a writer callback with its own progress semantics
+rather than a bytes-consumed closure. `chd.rs` uses `run_blocking` for both
+directions, but not for metadata: `parse_chd` opens the container on
+`spawn_blocking` directly, since a header read has no progress to draw.
 
 ## `archive.rs`: entry-level edits that must not re-encode
 
@@ -255,15 +274,18 @@ Three consequences worth knowing before changing this file:
    arrives per call — and the file carries a TODO to batch `to_archive` so a
    game's files land in one solid block.
 
-**Zstandard is readable and writable in `archive.rs` and nowhere else.** The
-`zip` dependency is built with `deflate` + `zstd` and `sevenz-rust2` with
-`zstd`, and neither crate is used outside this module. `get_archive_compression`
-maps the settings keys onto an `ArchiveCompression` variant with the algorithm's
-own scale: `SEVENZIP_COMPRESSION_ALGORITHM` / `ZIP_COMPRESSION_ALGORITHM` select
-`lzma2`, `deflate` (ZIP only) or `zstd`, with `SEVENZIP_ZSTD_COMPRESSION_LEVEL` /
-`ZIP_ZSTD_COMPRESSION_LEVEL` on a 1–22 scale defaulting to 19 — the level
-RomVault writes — while `SEVENZIP_COMPRESSION_LEVEL` / `ZIP_COMPRESSION_LEVEL`
-run 1–9 and default to 9. Unset algorithm means `ArchiveCompression::Default`.
+**Zstandard is readable and writable for ROM containers in `archive.rs` and
+nowhere else.** The `zip` dependency is built with `deflate` + `zstd` and
+`sevenz-rust2` with `zstd`; `sevenz-rust2` is confined to this module, while
+`zip` also appears in `download_dats.rs` and `import_dats.rs`, where it only ever
+*unpacks* a downloaded DAT archive and never chooses a codec.
+`get_archive_compression` maps the settings keys onto an `ArchiveCompression`
+variant with the algorithm's own scale: `SEVENZIP_COMPRESSION_ALGORITHM` /
+`ZIP_COMPRESSION_ALGORITHM` select `lzma2`, `deflate` (ZIP only) or `zstd`, with
+`SEVENZIP_ZSTD_COMPRESSION_LEVEL` / `ZIP_ZSTD_COMPRESSION_LEVEL` on a 1–22 scale
+defaulting to 19 — the level RomVault writes — while
+`SEVENZIP_COMPRESSION_LEVEL` / `ZIP_COMPRESSION_LEVEL` run 1–9 and default to 9.
+Unset algorithm means `ArchiveCompression::Default`.
 Rewriting a 7z preserves its codec: `is_zstd` inspects the block coders and
 re-applies Zstandard at the default level, so a zstd archive never silently
 drifts back to LZMA2. LZMA2 is configured with a chunk size of 1, asking for the
@@ -323,31 +345,59 @@ rather than rejects for `bzip2`, `lzma` and `lzma2` (1–9), keeping an existing
 configuration working instead of failing the conversion. `RVZ_BLOCK_SIZE` is
 stored in KiB and multiplied by 1024 for nod.
 
-## `chdman.rs`: one tool, four CHD personalities
+## `chd.rs`: one module, four CHD personalities
 
-`ChdType` (`Cd`, `Dvd`, `Hd`, `Ld`) is the module's controlling fact. It comes
-from parsing `chdman info -i` output — the `Metadata:` fourcc, `Logical size`,
-`Data SHA1`, `SHA1`, optional `Parent SHA1` and a `TRACK:` count — and it
-determines what a CHD converts to and out of: CD ↔ CUE/BIN, DVD ↔ ISO,
-HD ↔ RDSK, LD ↔ RIFF. The four destination traits (`ToCueBin`, `ToIso`,
-`ToRdsk`, `ToRiff`) and their `As*` counterparts all live here, and the command
-subcommand is derived from the same enum (`createcd`/`createdvd`/`createhd`/
-`createld`, and `extractcd`/… on the way back).
+`src/chd.rs` owns CHD end to end on top of the in-process `chd-rs` crate: the
+`ChdType` enum (`Cd`, `Dvd`, `Hd`, `Ld`), the `ChdRomfile` wrapper with its cached
+`size`/`sha1`/`chd_sha1`/`track_count`/`parent_romfile`, the `AsChd` and `ToChd`
+traits, the RDSK and RIFF pairs it declares itself (`ToRdsk`/`AsRdsk`,
+`ToRiff`/`AsRiff`), the `ToCueBin`/`ToIso` impls for `ChdRomfile` (those two
+traits come from `common`), and the two private functions that actually move
+bytes — `create_chd` and `extract_chd`. `ChdType`
+comes from `Chd::open(...).info()` rather than from parsing any tool's text
+output: the crate's `chd_type`, `logical_size`, `data_sha1`, `sha1` and optional
+`parent_sha1`, with `chd.track_count()` for the track count
+(`chd_rs::sha1_hex` renders the digests).
+
+`ChdType` remains the controlling fact. It picks which `chd_rs` entry point runs
+(`create_cd` / `create_dvd` / `create_hd` / `create_ld`, and `extract_cd`,
+`extract_ld`, or `Chd::extract` on the way back), which format a CHD converts to
+(CD ↔ CUE/BIN, DVD ↔ ISO, HD ↔ RDSK, LD ↔ RIFF), and the defaults substituted
+when a system names no codecs — chdman's own lists: `cdlz, cdzl, cdfl` for a CD,
+`avhu` for a LaserDisc, `lzma, zlib, huff, flac` for DVDs and hard disks.
+`codecs()` packs up to four names into the header's four big-endian fourcc slots.
 
 Two behaviours are easy to break:
 
-- **A CD-type CHD has no size or hash of its own.** `Size` and `HashAndSize`
-  `bail!("Not possible")` for `ChdType::Cd`; the caller must go through
-  `to_cue_bin` and check each BIN against its own DAT row.
-- **Parents are resolved by content, not name.** `as_chd` reads `Parent SHA1`
-  and scans sibling files, running `parse_chd` on each candidate CHD until one
-  reports a matching SHA1; `as_chd_with_parent` takes an explicit parent
-  (from the database's `romfile.parent_id`, via `transcode::romfile_as_chd`)
-  and fails loudly on a mismatch. Extract and create then pass `-ip` / `-op`.
+- **A CD-type CHD has no size or hash of its own.** `parse_chd` returns size 0
+  and an empty data SHA-1 for `ChdType::Cd` because only its tracks have them,
+  and `Size` and `HashAndSize` `bail!("Not possible")` on that type; `Check`
+  instead extracts and verifies each BIN against its own DAT row. A SHA-1 request
+  on a non-CD CHD is answered straight from the cached header hash, with no
+  decode at all.
+- **Parents are resolved by content, not name.** `as_chd` reads `parent_sha1`
+  and scans sibling files in the same directory, running `parse_chd` on each
+  candidate CHD until one reports a matching file SHA-1; `as_chd_with_parent`
+  takes an explicit parent (from the database's `romfile.parent_id`, via
+  `transcode::romfile_as_chd`) and fails loudly on a mismatch. On the way out,
+  `create_chd` opens the parent so a clone inherits its hunk size when none is
+  configured, and `extract_chd` opens through `Chd::open_with_parent`.
 
-Multi-track extraction uses chdman's splitbin mode: the output pattern carries a
-`%t` placeholder, and the module expands it per track and renames each BIN to
-its DAT rom name.
+Multi-track extraction asks `extract_cd` for a split layout: the output pattern
+carries a `%t` placeholder, which the module expands per track and renames each
+BIN to its DAT rom name. CD creation sizes the progress bar from
+`chd_rs::cd_input_size` rather than the CHD's logical size, since a sheet pulls
+in several BINs.
+
+The module also owns the vocabulary behind the CHD settings: four strum enums
+(`ChdCd/Dvd/Hd/LdCompressionAlgorithm`) supply the valid choices for
+`CHD_*_COMPRESSION_ALGORITHMS`, and `CHD_HUNK_SIZE_RANGE` bounds the four
+`CHD_*_HUNK_SIZE` keys — `config` imports both from this module rather than
+defining them (the only other CHD setting is the `CHD_PARENTS` boolean, which the
+workflow layer reads directly). See
+<!-- openwiki: broken internal link [chd-format-and-chd-rs.md] file "chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+[CHD Format and chd-rs](chd-format-and-chd-rs.md) for what each codec slot and
+hunk size does inside the crate.
 
 ## `ctrtool.rs`: CIA is a listing plus a TMD patch-up
 
@@ -363,8 +413,9 @@ extracted `tmd` file so the result matches what the size implied.
 Both calls tolerate one specific failure — `NcchHeader is corrupted (Bad struct
 magic)` on stdout — because it is the expected result of `-p` on a non-homebrew
 title. Removing that allowance makes retail CIA imports fail. Note that neither
-call goes through `util::run_tool`: they inspect status themselves precisely so
-the tolerated error can be excluded.
+call goes through a shared runner: `util` offers only `tool_version`, which is
+for version probes, and these two inspect the exit status themselves precisely
+so the tolerated error can be excluded.
 
 ## `nsz.rs`: keys as a lazy loader
 

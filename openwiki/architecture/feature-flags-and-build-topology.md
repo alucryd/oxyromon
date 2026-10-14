@@ -1,11 +1,8 @@
 ---
 type: build-topology
 title: Feature Flags and Build Topology
-description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports, and how build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the embedded web UI and the Tauri desktop artifact.
-tags: [cargo-features, build-rs, trunk, rust-embed, skip-trunk, tauri, ci, publishing]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the six format CLIs, the embedded web UI and the Tauri desktop artifact.
+tags: [cargo-features, cargo-workspace, path-dependencies, build-rs, trunk, rust-embed, skip-trunk, tauri, ci, publishing]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -13,12 +10,16 @@ sources:
     resource: repo://.gitignore
   - id: openwiki-source-36f054f1f38f2197a6af5bca
     resource: repo://build.rs
+  - id: openwiki-source-8a2e26d4137b8250f68bb869
+    resource: repo://build.sh
   - id: openwiki-source-16e6e7418602542c69565bde
     resource: repo://Cargo.lock
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
   - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
     resource: repo://CHANGELOG.md
+  - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
+    resource: repo://crates/chd-rs/Cargo.toml
   - id: openwiki-source-0bc9c609aef896964e961315
     resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
@@ -49,10 +50,16 @@ sources:
     resource: repo://frontend/Trunk.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
@@ -67,7 +74,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Feature Flags and Build Topology
@@ -78,7 +88,9 @@ endpoint, and a Tauri desktop bundle. Four Cargo features decide which of those
 an existing binary is, and `build.rs` decides whether the web UI is compiled at
 all. The features are not decoration: they change which modules exist, which
 transports a process serves, and even how many SQLite connections the process
-opens.
+opens. Around that package the repository is a Cargo workspace whose `crates/*`
+members supply the format support oxyromon used to shell out for; they share its
+lockfile, CI run and release script, but are versioned and published on their own.
 
 ## The feature graph
 
@@ -168,6 +180,14 @@ Note also that the `server` feature pulls `tower-http` unconditionally while the
 permissive `CorsLayer` is compiled only under `#[cfg(debug_assertions)]`. Release
 server builds link the crate and serve without CORS — same-origin is assumed,
 which is what both the embedded SPA and the desktop webview rely on.
+
+Finally, these four are the whole set. The `nod` and `sevenz` features older
+releases carried are gone, and with them every gate around the tools they used to
+guard: no `#[cfg(feature = "nod")]` or `#[cfg(feature = "sevenz")]` survives in
+`src/`, because nod, sevenz-rust2, zip and the six crates under `crates/` are now
+plain unconditional dependencies. `cargo build` always compiles the CHD, RVZ/WBFS,
+7z and ZIP code paths — `src/chd.rs` has no feature gate at all — so only `mcp`
+and `server` still add or remove functionality.
 
 ## build.rs: when the web UI is built, and when it must not be
 
@@ -271,13 +291,28 @@ and drives the real binary over stdin/stdout with raw JSON-RPC, so the stdio
 transport contract is exercised by the lean combination rather than by the
 server build.
 
+`test.sh` mirrors that invocation exactly — a single
+`cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path
+lcov.info` — now that the `nod`/`sevenz` feature passes it once also ran refer to
+flags that no longer exist. A second pass with those names would fail on unknown
+features, so the script is one command: workspace-wide coverage of the
+`--features server` shape, which subsumes `mcp`. `build.sh` is the host-side
+equivalent of the release build (`trunk build --release`, then
+`cargo build --release --features server`).
+
 `dist.sh` is where `SKIP_TRUNK` earns its keep. It exports `SKIP_TRUNK=true`, and
 `Cross.toml` passes that variable through into the cross container
 (`[build.env] passthrough`). For every target it runs `(cd frontend && trunk
 build --release)` on the host first — the wasm bundle is target-independent, so
 it is built once per loop iteration outside the container — then
-`cross build --release --target <t> --features server`, and packages the
-`oxyromon` binary alongside the five format-crate CLIs. The desktop app is built
+`cross build --release --target <t> --features server`. Then a second
+`cross build` with `-p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p
+xso-rs` builds all six format-crate CLIs, and each of `chdrs`, `gdirs`, `nszrs`,
+`xdeltars`, `xpsrs` and `xsors` is archived next to `oxyromon` — `tar -cJf` for
+the four Linux and two macOS targets, `7z a` for
+`x86_64-pc-windows-gnullvm` — before `cargo clean` resets `target/` for the next
+iteration. The Apple targets additionally run every binary through `rcodesign
+sign` before it is archived. The desktop app is built
 for the host only: Tauri links the platform's own webview, which the cross images
 do not carry and for which no cross toolchain exists. That final step runs with
 `NO_STRIP=true` because linuxdeploy bundles a binutils too old to read the
@@ -289,18 +324,53 @@ and run `cargo install --features server`. Alpine additionally installs `gcompat
 because trunk downloads prebuilt wasm-bindgen/wasm-opt binaries compiled against
 glibc.
 
-## Workspace topology and the desktop artifact
+## Workspace topology and the format crates
 
-The root package declares `members = ["crates/*"]`, and the only binary target is
-`oxyromon` from `src/main.rs`. `frontend/` and `desktop/` are deliberately **not**
-workspace members: each declares an empty `[workspace]` in its own `Cargo.toml`,
-has its own `Cargo.lock`, and is `publish = false`. That keeps the Leptos/wasm
-toolchain and the Tauri/webkit dependency trees out of the native CLI build and
-out of the root lockfile. Profiles diverge accordingly: the CLI release profile
+The root package declares `members = ["crates/*"]` alongside the `oxyromon`
+package itself, and the only binary target of the root package is `oxyromon` from
+`src/main.rs`. `frontend/` and `desktop/` are deliberately **not** workspace
+members: each declares an empty `[workspace]` in its own `Cargo.toml`, has its own
+`Cargo.lock`, and is `publish = false`. That keeps the Leptos/wasm toolchain and
+the Tauri/webkit dependency trees out of the native CLI build and out of the root
+lockfile. Profiles diverge accordingly: the CLI release profile
 optimizes for throughput (`lto = "thin"`, `codegen-units = 1`, `panic = "abort"`)
 and forces `[profile.dev.package."*"] opt-level = 3` so debug builds are usable at
-all, while the frontend and desktop profiles both use `opt-level = "z"` to shrink
-a wasm payload and a bundled shell.
+all — compression and hashing now live in dependencies, and at opt-level 0 the
+pure Rust codecs run roughly an order of magnitude slower than their release
+selves — while the frontend and desktop profiles both use `opt-level = "z"` to
+shrink a wasm payload and a bundled shell. The format crates carry no
+`[profile]` at all: only the root workspace's applies to them.
+
+`crates/` holds six format crates — `chd-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`,
+`xps-rs` and `xso-rs` — each a port of an external tool oxyromon used to shell
+out to, each published to crates.io on its own schedule and under its upstream's
+license, and each taking `edition`, `rust-version`, `repository` and shared
+dependency versions from `[workspace.package]` / `[workspace.dependencies]`. The
+dependency contract is uniform and load-bearing: oxyromon depends on every crate
+by `path = "crates/<name>"` **and** a `version` requirement matching that crate
+(`chd-rs = { path = "crates/chd-rs", version = "0.1.0", default-features = false }`)
+with
+`default-features = false`, which pulls in the library while leaving the crate's
+`default = ["cli"]` feature — and with it `clap`, `console` and `indicatif` —
+turned off. That is why the `[[bin]]` target in every crate is declared
+`required-features = ["cli"]`: the CLI exists only for standalone use and for
+`dist.sh`, never inside the oxyromon binary. `Cargo.lock` shows the result: the
+entries for `chd-rs`, `gdi-rs`, `nsz-rs` and the rest carry a version but **no
+`source` and no checksum**, which is how a lockfile records a workspace path
+member rather than a crates.io download — the local `crates/` tree is what the
+root build compiles, and the registry version matters only at publish time.
+
+The `path` + `version` pair is what makes releases safe: cargo resolves the crate
+from `crates/` during development, but rejects a publish whose declared version
+does not exist on crates.io, so a crate must be published before an oxyromon
+release that needs its new version. Within oxyromon the crates are consumed
+synchronously, file to file, through `run_blocking` in `src/progress.rs` — for
+instance `src/chd.rs` calling `chd_rs::create_cd`, `create_dvd`, `create_hd`,
+`create_ld` and `extract_cd` — with `chd-rs` replacing the external `chdman`
+entirely, so no CHD code path launches a process anymore. `ctrtool` is the only
+external tool left: it is still spawned for CIA support, and `oxyromon info`
+reports each of these dependencies with a version string, printing `built-in` for
+the crates that replaced a tool.
 
 The desktop app adds no backend code. `tauri.conf.json` declares
 `externalBin: ["binaries/oxyromon"]` and runs `desktop/scripts/stage-sidecar.sh`
@@ -324,8 +394,10 @@ permission set for the same reason: the page never calls Tauri IPC.
 flowchart LR
   subgraph root["root workspace, one lockfile"]
     PKG["oxyromon package"] --> MAIN["bin oxyromon from src/main.rs"]
-    CRATES["crates/* format crates"]
+    CRATES["crates format crates"]
   end
+  PKG -->|"path plus version, default-features off"| CRATES
+  CRATES -->|"cli feature on, dist.sh -p"| CLI["chdrs, gdirs, nszrs, xdeltars, xpsrs, xsors"]
   PKG --> BR["build.rs"]
   BR -->|server and not SKIP_TRUNK| TRUNK["trunk build in frontend"]
   TRUNK --> ASSETS["target/assets"]
@@ -336,26 +408,29 @@ flowchart LR
   SIDECAR --> DESK["desktop crate, own workspace"]
 ```
 
-*Caption: how one package plus two standalone crates compose the shipped artifacts.*
+*Caption: how one package plus six path dependencies and two standalone crates compose the shipped artifacts.*
 
 ## What blocks publishing
 
-`Cargo.toml` carries two `ponytail` comments recording that the package cannot be
+`Cargo.toml` carries a `ponytail` comment recording that the package cannot be
 published as-is, because crates.io rejects git dependencies:
 
 - `nod = { git = "https://github.com/encounter/nod", tag = "v2.0.0-alpha.12" }` —
-  pinned to a git tag until `nod` publishes past 2.0.0-alpha.9 to crates.io.
-- `sevenz-rust2 = { git = "https://github.com/alucryd/sevenz-rust2", rev =
-  "d574d725e717d647c5ae67d3760e8af320920974", features = ["zstd"] }` — the fork's
-  `feat/raw-copy` branch pinned by revision until upstream releases
-  `push_raw_block`.
+  pinned to a git tag until `nod` publishes past 2.0.0-alpha.9 to crates.io. It
+  is the only remaining git source in `Cargo.lock`, and it must return to a plain
+  version requirement before a release.
 
-Both are mandatory dependencies, not optional features: 0.25.0 removed the old
-`nod` and `sevenz` features when RVZ/WBFS and 7z/ZIP support stopped shelling out
-to `dolphin-tool`, `wit` and 7-Zip. Before a release, each pin must go back to a
-plain version requirement. Relatedly, `test.sh` still runs a second coverage pass
-with `--features oxyromon/nod,oxyromon/server,oxyromon/sevenz`; those two feature
-names no longer exist, so that invocation fails on unknown features.
+`sevenz-rust2`, which an earlier release pinned to a fork revision, is back on the
+registry (`0.24.0`, `features = ["zstd"]`) and no longer blocks anything. Both
+archive libraries are mandatory dependencies rather than optional features: 0.25.0
+removed the `nod` and `sevenz` features when RVZ/WBFS and 7z/ZIP support stopped
+shelling out to `dolphin-tool`, `wit` and 7-Zip.
+
+The package also ships `exclude = [".github/", "crates/", "dist/", "tests/"]`, so
+a published tarball contains neither the format crates nor the integration
+fixtures. That is the same mechanism that makes `build.rs` assert on a missing
+`frontend/`: `cargo install oxyromon --features server` gets sources plus
+`build.rs`, and nothing else in the repository.
 
 ```mermaid
 flowchart TD

@@ -1,20 +1,83 @@
 ---
 type: reference
 title: CI Pipelines and Runtime Environment
-description: How .github/workflows/continuous_integration.yml gates every change (apt dependencies, toolchain, trunk, the two clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
+description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the two clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
 tags: [ci, github-actions, clippy, coverage, environment-variables, trunk, sqlx, toolchain]
 verified:
-  - by: openwiki/0.7.1
+  - by: openwiki/0.7.2
     at: 2026-10-10T22:10:44.671Z
+sources:
+  - id: openwiki-source-90dbbac45e714e041e170795
+    resource: repo://.github/workflows/continuous_integration.yml
+  - id: openwiki-source-1bc83e59b3e3c64091f68169
+    resource: repo://.github/workflows/docker.yml
+  - id: openwiki-source-ea70eb6c045047448e446296
+    resource: repo://.gitignore
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
+  - id: openwiki-source-36f054f1f38f2197a6af5bca
+    resource: repo://build.rs
+  - id: openwiki-source-16e6e7418602542c69565bde
+    resource: repo://Cargo.lock
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
+  - id: openwiki-source-38b8a6db58a8dd7d870046a0
+    resource: repo://crates/chd-rs/tests/ld.rs
+  - id: openwiki-source-dace695e1efd12a88e32dd04
+    resource: repo://crates/chd-rs/tests/write.rs
+  - id: openwiki-source-7c41df92324ca8ddc11ad14b
+    resource: repo://crates/xdelta-rs/tests/interop.rs
+  - id: openwiki-source-fc949ff54825cd4750b9e1d5
+    resource: repo://crates/xps-rs/tests/interop.rs
+  - id: openwiki-source-0c6adbcf77da61d03e900821
+    resource: repo://crates/xso-rs/tests/common/mod.rs
+  - id: openwiki-source-33ab0e331223101757a2c45d
+    resource: repo://docker.sh
+  - id: openwiki-source-819b62175bb3c42d5bb268ab
+    resource: repo://Dockerfile.alpine
+  - id: openwiki-source-74b8949e6d5862f8f52e4791
+    resource: repo://Dockerfile.archlinux
+  - id: openwiki-source-182eb6366058c61b0d4d15e9
+    resource: repo://frontend/Cargo.toml
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
+  - id: openwiki-source-2a737474d86fc75cc9d9694f
+    resource: repo://src/config.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
+  - id: openwiki-source-b94e49e3da43d66b03ed7c7e
+    resource: repo://src/database.rs
+  - id: openwiki-source-b1a773ad2966952330a5f92d
+    resource: repo://src/import_roms/test_cia.rs
+  - id: openwiki-source-b55a21a31ede1b56cd31a6a6
+    resource: repo://src/main.rs
+  - id: openwiki-source-b95ec25c5cfc0be350df258c
+    resource: repo://src/mcp.rs
+  - id: openwiki-source-6330834d320d84b814c24c5f
+    resource: repo://src/progress.rs
+  - id: openwiki-source-db13c01516e9bd04294e339d
+    resource: repo://src/rvz.rs
+  - id: openwiki-source-66dda2cecfc81c486446cc8e
+    resource: repo://src/util.rs
+  - id: openwiki-source-1c38b81542bfb683299ad2cd
+    resource: repo://src/xdelta.rs
+  - id: openwiki-source-9b5bca3734529131a5ec0d1b
+    resource: repo://src/xps.rs
+  - id: openwiki-source-196778315263fb8bcc8066e5
+    resource: repo://src/xso.rs
+  - id: openwiki-source-9a02c1f55f47430403921057
+    resource: repo://tests/mcp_stdio.rs
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # CI Pipelines and Runtime Environment
 
-Three workflows live in `.github/workflows/`, and each guards a different thing:
+Two workflows live in `.github/workflows/`, and each guards a different thing:
 `continuous_integration.yml` is the change gate for the code and the feature
-matrix, `docker.yml` publishes a container image, `openwiki-update.yml` keeps
-this documentation current. None of them is a release workflow — nothing here
-runs `dist.sh`, `docker.sh`, `desktop.sh` or `cargo publish` (see
+matrix, `docker.yml` publishes a container image. Neither is a release workflow —
+nothing here runs `dist.sh`, `docker.sh`, `desktop.sh` or `cargo publish` (see
 [Builds, Distribution and Releases](build-and-release.md)).
 
 The runtime side is small and worth pinning down exactly: six variables read at
@@ -22,20 +85,28 @@ three sites (`src/main.rs`, `src/config.rs`, `build.rs`) plus one compile-time
 consumer (`sqlx`), and they do not share a lifetime. `OXYROMON_DATA_DIRECTORY`
 and `OXYROMON_LOG_LEVEL` are honored on every run; `OXYROMON_ROM_DIRECTORY` and
 `OXYROMON_TMP_DIRECTORY` are consulted only until a settings row exists;
-`SKIP_TRUNK` and `DATABASE_URL` never reach the running binary at all.
+`SKIP_TRUNK` and `DATABASE_URL` never reach the running binary at all. A separate
+category, `CHDMAN`/`FFMPEG`/`MAXCSO`, exists only inside the format crates' test
+harnesses.
 
 ## Workflow trigger matrix
 
 | Workflow | Trigger | Runs on | What it produces |
 | --- | --- | --- | --- |
-| `continuous_integration.yml` | `push` and `pull_request` to `master` | `ubuntu-26.04` | clippy verdicts, a release `server` binary, `lcov.info` uploaded to Codecov |
+| `continuous_integration.yml` | `push` and `pull_request` to `master` and `develop` | `ubuntu-26.04` | clippy verdicts, a release `server` binary, `lcov.info` uploaded to Codecov |
 | `docker.yml` | `push` to `develop` | `ubuntu-latest` | `alucryd/oxyromon` image pushed to Docker Hub, tags from the git ref |
-| `openwiki-update.yml` | `schedule` at `0 8 * * *` plus `workflow_dispatch` | `ubuntu-latest` | a pull request from branch `openwiki/update` touching `openwiki/`, `AGENTS.md`, and the workflow itself |
 
-CI and Docker publish watch **different branches**: code is gated on `master`,
-images are pushed from `develop`. Because `docker/metadata-action` derives its
-tags from the git ref, a push to `develop` publishes an image before the change
-has ever passed the CI gate.
+Both workflows fire on a push to `develop`, but nothing orders them: the image
+publish derives its tags from the git ref via `docker/metadata-action` and does
+not depend on the CI job, so a `develop` push publishes a container image while
+the clippy/build/coverage verdict on that same commit is still running — and
+even after it fails. `master` is gated by CI but publishes nothing.
+
+This page itself is produced by the OpenWiki generator rather than by a workflow
+file: `AGENTS.md` documents "the scheduled OpenWiki GitHub Actions workflow" that
+refreshes `openwiki/`, but no such workflow exists in `.github/workflows/` in the
+current tree, so the regeneration cadence is not something CI here defines or
+gates.
 
 ## The CI job, step by step
 
@@ -45,7 +116,7 @@ as separate cargo invocations instead. Job-level `env` sets `CARGO_TERM_COLOR`,
 
 ```mermaid
 flowchart TD
-  CO["checkout v7"] --> APT["apt-get update with Acquire Retries 3, then install mame-tools xdelta3"]
+  CO["checkout v7"] --> APT["apt-get update with Acquire Retries 3, then install mame-tools xdelta3 ffmpeg"]
   APT --> TC["rust-toolchain stable plus wasm32-unknown-unknown, clippy, llvm-tools-preview"]
   TC --> DEF["rustup default stable"]
   DEF --> CACHE["Swatinem/rust-cache v2"]
@@ -68,14 +139,25 @@ Why each step exists:
   days; Ubuntu rolls superseded `.deb`s out of the pool when a newer point
   version lands, so installing against the cached lists 404s. The retries cover
   transient mirror failures on the refresh itself, not just the install.
-- **`mame-tools`** provides `chdman`, and **`xdelta3`** is installed purely for
-  the `xdelta-rs` tests, which compare against the reference binary and skip
-  rather than fail when it is missing
-  (`crates/xdelta-rs/tests/interop.rs` returns early on `xdelta3 -V`). CI
-  installs both so those interop paths actually execute instead of silently
-  skipping. `ctrtool` is *not* installed, so CIA tests skip in CI, and neither
-  `maxcso` nor `flips` is installed, so the `xso-rs` and `xps-rs` interop suites
-  also skip there — those two are a local responsibility.
+- **`mame-tools` (which provides `chdman`), `xdelta3` and `ffmpeg` are installed
+  purely as reference implementations for the format crates' tests**, as the
+  workflow's own comment says: the chd-rs suites compare `chdrs` against
+  `chdman`, the xdelta-rs suite compares against `xdelta3`, and `ffmpeg` makes
+  the AVI fixtures the LaserDisc tests feed to both tools. Every one of these
+  suites **skips rather than fails when its reference binary is missing** —
+  `crates/xdelta-rs/tests/interop.rs` returns early when `xdelta3 -V` fails, and
+  `crates/chd-rs/tests/ld.rs` skips unless it finds *both* `chdman` and
+  `ffmpeg`. CI installs all three so those interop paths actually execute
+  instead of silently reporting a green run.
+- **These are not runtime dependencies.** The oxyromon binary shells out to no
+  format tool any more: `get_version()` in `src/chd.rs`, `src/xdelta.rs`,
+  `src/xps.rs`, `src/xso.rs`, `src/archive.rs`, `src/nsz.rs` and `src/rvz.rs`
+  returns `"built-in"`, and the work goes through the workspace crates.
+  `src/ctrtool.rs` is the one remaining module that runs an external tool, and
+  `ctrtool` is deliberately *not* installed, so CIA import tests skip in CI.
+  Neither `maxcso` nor `flips` is installed either, so the `xso-rs` and `xps-rs`
+  interop suites also skip there — those two are a local responsibility
+  (`$MAXCSO`, `flips` on `$PATH`).
 - **`wasm32-unknown-unknown` on the toolchain** is needed by the "Build web UI"
   step: `frontend/` is a standalone crate with its own `[workspace]`, so no
   `cargo` invocation in the job compiles the Leptos app — only `trunk` does, and
@@ -178,6 +260,15 @@ not a CI check.
 | `OXYROMON_LOG_LEVEL` | `src/main.rs`, logger construction | `env_logger` filter (`off`, `debug`, `module=trace`, …) | unset, i.e. env_logger's own default filter |
 | `SKIP_TRUNK` | `build.rs` only | Set to exactly `true` to skip `trunk build --release` for `server` builds | unset, i.e. build the UI |
 | `DATABASE_URL` | `sqlx` macro expansion, compile time | Query verification when `.sqlx/` offline data is missing or stale | unset (relies on committed `.sqlx/`) |
+| `CHDMAN` / `FFMPEG` / `MAXCSO` | format-crate test harnesses only | Absolute path to the reference binary the tests compare against | fall back to `PATH`; the test skips when neither yields a file |
+
+The reference-tool variables never reach `src/`: each format crate's tests look
+up their binary themselves, preferring the environment variable and otherwise
+scanning `$PATH` for `chdman`/`ffmpeg`/`maxcso`, and print `skipping: …` when
+nothing is found. That is the extension point for running the interop suites on
+a machine without the distro packages: point `CHDMAN`, `FFMPEG` or `MAXCSO` at
+locally built binaries. (`xdelta3` and `flips` are the exception — their suites
+probe the bare command name on `$PATH` and have no override variable.)
 
 One naming hazard: the README's Configuration section says the data directory
 "may be overwritten using the `OXYROMON_DATA_DIR` environment variable", but no
@@ -303,27 +394,6 @@ and Arch disables pacman signature checking to keep the build scripted. Because
 `CMD ["oxyromon"]` carries no subcommand, `docker run alucryd/oxyromon` alone is
 a no-op — append `server` (or any other subcommand).
 
-## OpenWiki update workflow
-
-This page is produced by `.github/workflows/openwiki-update.yml`, whose
-mechanics are worth knowing because they shape how documentation recovers from a
-failed run:
-
-- `fetch-depth: 0` on checkout — a shallow clone hides the commit last
-  documented, so the update would run against an empty change summary.
-- Actions are pinned by full commit SHA, and the toolchain is
-  `openwiki@0.7.1` plus `mermaid` and `jsdom`, which add high-fidelity
-  validation of the Mermaid diagrams embedded in these pages.
-- The `openwiki code --update --print` step is `continue-on-error: true`, and
-  the transient `openwiki/.run.json` is deleted afterwards (`if: !cancelled()`),
-  so a mid-run failure still produces a pull request containing only the pages
-  completed before the failure — merging it makes that progress the baseline for
-  the next scheduled run. The workflow's own status is then re-failed at the
-  last step (`Propagate OpenWiki failure`) so the run is still visibly red.
-- `add-paths` is computed at run time: `openwiki,AGENTS.md,.github/workflows/openwiki-update.yml`,
-  with `CLAUDE.md` appended **only when the file exists**, because `git add`
-  fails on a missing path and then stages nothing.
-
 ## Practical checklist
 
 - Touching a query or a migration? Run
@@ -334,6 +404,10 @@ failed run:
 - Touching `src/database.rs` pool setup or any `cfg_if` around `server`/`mcp`?
   Also compile the bare configuration with `cargo clippy --no-default-features
   --all-targets`; CI never builds that branch.
+- Touching a format crate's interop suite? Install `mame-tools`, `xdelta3` and
+  `ffmpeg` (or point `CHDMAN`/`FFMPEG`/`MAXCSO` at local builds) before trusting
+  a green run — without the reference binary these tests skip and say so only on
+  stderr.
 - Touching the frontend? CI rebuilds it once into `target/assets`; locally
   `cd frontend && trunk build --release` refreshes assets under `SKIP_TRUNK=true`.
 - Writing to stdout from a code path the MCP server can reach? Don't — stdout is

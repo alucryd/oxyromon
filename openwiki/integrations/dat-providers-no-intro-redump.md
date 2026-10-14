@@ -4,6 +4,8 @@ title: DAT Providers and Naming Conventions
 description: The external catalog providers oxyromon knows about (No-Intro dat-o-matic, Redump, MAME/FBNeo), the provider URLs and Redump system-code catalogue that drive download and update-check, the download path's pacing and save option, and how shiratsu-naming No-Intro/TOSEC tokens become the regions, languages, flags and version order used by both DAT import and sorting.
 tags: [dat-providers, no-intro, redump, mame, fbneo, download-dats, naming-tokens, regions]
 sources:
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
   - id: openwiki-source-66de04ab1b5b16fdc2ef21f2
     resource: repo://data/No-Intro_NES.xml
   - id: openwiki-source-9594fdc8eb7c8cc0ab2dd040
@@ -24,6 +26,12 @@ sources:
     resource: repo://src/generate_playlists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-d7a0d0f607461a016e622fb2
+    resource: repo://src/import_dats/test_dat_custom_name_forced.rs
+  - id: openwiki-source-733a84bef8a992742971d01c
+    resource: repo://src/import_dats/test_dat_custom_name_revert.rs
+  - id: openwiki-source-2843a1f9a1aeeffbc72b2e2d
+    resource: repo://src/import_dats/test_dat_custom_name_updated.rs
   - id: openwiki-source-97dfaec832a2274db4c8c770
     resource: repo://src/import_dats/test_dat_headered_embedded.rs
   - id: openwiki-source-9d464240a7b7d0d02b932ef0
@@ -34,6 +42,10 @@ sources:
     resource: repo://src/import_dats/test_regions_world.rs
   - id: openwiki-source-30ed0eedcb90a24300e7a1fe
     resource: repo://src/import_dats/test_zip_update_unknown_system.rs
+  - id: openwiki-source-9add64e166d8ef19bd58c5af
+    resource: repo://src/import_roms.rs
+  - id: openwiki-source-b23fc7fb5544ff535eae8c43
+    resource: repo://src/mcp/prompts.rs
   - id: openwiki-source-f6b27667092492e425164ff8
     resource: repo://src/mcp/read.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
@@ -58,9 +70,9 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 verified:
-  - by: openwiki/0.7.1
+  - by: openwiki/0.7.2
     at: 2026-10-10T22:10:44.671Z
 ---
 
@@ -75,13 +87,22 @@ families feed it, and only one of them can be reached over the network.
 | Redump | CD/DVD optical systems | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs |
 | MAME / FBNeo | arcade | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo); never fetched |
 
-The asymmetry is documented in the README and encoded in `download_dats::main`:
+The asymmetry is documented in the README (where "Find a way to automatically download
+No-Intro DAT files" is still an open TODO) and encoded in `download_dats::main`:
 No-Intro publishes a summary (`profile.xml`) but no direct DAT links, so the No-Intro
 branch prints `Not supported` unless `-u` is passed; Redump publishes direct
 `/datfile/<code>/` ZIPs but no summary, so it can both download and update. The
 `-n/--nointro` and `-r/--redump` flags conflict with each other and one of them is
-required (`required_unless_present`), and `-u`, `-a` and `-f` modulate whichever
-provider was chosen.
+required (`required_unless_present`). Of the remaining flags, `-u` and `-a` reach both
+providers, but `-f/--force` and `-s/--save` are only passed down the Redump branches —
+on the No-Intro path clap accepts them and nothing consumes them.
+
+Nothing in the DAT path shells out to an external program: the Redump ZIP is read by
+the in-tree `zip` crate, and the README's *External programs* section now lists a single
+entry, `ctrtool`, which belongs to `import-roms` (CIA extraction) and has no part in DAT
+download or parsing. The format tools oxyromon once launched — `chdman` among them — were
+replaced by the crates under `crates/`; see
+[External Tool Integration](external-tools.md).
 
 Arcade versus console is not a provider switch but a DAT-shape switch: a DAT whose
 entries are `<machine>` rather than `<game>` sets `systems.arcade = true`
@@ -219,6 +240,13 @@ the same convention by defaulting a DAT version to the creation datetime. The te
 `test_dat_outdated_forced` (the same older DAT, with `force`, replaces the catalog
 with its 3 games) pin both sides.
 
+The same `force` flag also decides what happens to a system's custom name and extension.
+On a plain update the stored customizations win — `custom_name.or(system.custom_name)`
+— while a forced import applies the customizations exactly as given, so an omitted
+`-n`/`-e` reverts to the DAT header value. `test_dat_custom_name_updated`,
+`test_dat_custom_name_forced` and `test_dat_custom_name_revert` pin the three
+combinations.
+
 `update_nointro_dats` fetches `https://datomatic.no-intro.org/profile.xml`,
 deserializes it into `ProfileXml` (a wrapper aliasing each `<datfile>` element to a
 `SystemXml`, so only name and version matter) and, for each system in the database
@@ -329,5 +357,6 @@ production contents are never asserted.
 
 See also [DAT Ingestion](../workflows/dat-ingestion.md),
 [ROM Import Pipeline](../workflows/rom-import-pipeline.md), and
+<!-- openwiki: broken internal link [../workflows/sorting-and-1g1r-election.md] file "../workflows/sorting-and-1g1r-election.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md) for the
 `sort-roms` election that consumes the regions and version tokens described above.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1495eb5fbd81355e4d38af2609dbd94078bbdd94670f4e637b1c8b38915f78a2",
+  "pageVersion": "sha256:d98df2ce20aab2169fa326c8b3ec76a1516186f3f63159b3fb3d0c8ba10d5fc3",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -231,7 +231,7 @@
       "statement": "Recorded failure modes: a blank window on Linux is WebKitGTK's DMA-BUF renderer on some GPU/driver combinations (confirm with WEBKIT_DISABLE_DMABUF_RENDERER=1); `failed to locate the bundled oxyromon binary` means the sidecar was never staged for the current target triple; and `failed to run linuxdeploy` is linuxdeploy's too-old binutils failing on .relr.dyn sections, worked around with NO_STRIP=true.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L580-L592",
+          "resource": "repo://AGENTS.md#L581-L593",
           "version": "repo-lines-v1:sha256:25b78c48ef97e4fd7f765a9f5d091acc9a534736794844762b843af844bf7727:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNjBhM2UzNDIwYjk4MDA2MmViYWM2ZWM1ODAxM2M2MzAxNTJlOGRhMWVmZWU4NDJjMjNjOGJlMDliOGRkYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMTI5NjMxOTBlYTk3ZTUzNGIzYzZjYTc0ZjY4ZTU5MjNkYzlhYTVlNGE1NmFiMGQ2MTBkYWZkNjNkMzFhMWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4M2JhNmVhMDNiZDIxN2U1ZGIzYzk1YjQ0YmFlMmQ0YmYyZWQyNWVmYjZmZDk5NzFhOWVhODUwZjExNjEzNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkNDg1ZDU0NzlhMWY5OTkxYzg3NjI2MWVhNWQzN2EyYmViYWY4ZWE2ODllNGZhZTQwZDM0MjM4Mjk0ZDQ2MTgifQ"
         },
         {
@@ -246,11 +246,19 @@
     },
     {
       "id": "claim_9873b14ce8424e8e9f514fba2fe72784",
-      "statement": "No CI workflow builds the desktop crate — CI installs neither the Tauri CLI nor webkit2gtk and runs cargo only from the root workspace, which desktop/'s own [workspace] excludes — so shell regressions are caught only by a manual or dist.sh build.",
+      "statement": "CI never validates the desktop crate: the single CI workflow pins SKIP_TRUNK=true workflow-wide and builds the web UI once in its `Build web UI` step (`cd frontend && trunk build --release`, trunk pinned by TRUNK_VERSION) so the clippy/build/llvm-cov `--workspace` steps reuse those assets, and since desktop/ declares its own [workspace] while the root workspace members are only crates/*, no CI step ever compiles the shell or installs the Tauri CLI or webkit2gtk — regressions there surface only in a manual or dist.sh build.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L40-L61",
-          "version": "repo-lines-v1:sha256:6031b60a06392b0226ec3ac774cdace8c56ad69fb334eecbed7a2306688b0029:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMDAyZTIxYzUwNDgwODBiMTMxMGNjZmMyYjA4M2YxNjAxMmI5YTljMmI4YzljYjcwYTU1MTI5YTQwMTBiMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMDY0ZWJjNDc1MDk0MmVjNmMxMDIyNzdkOGNmODIzN2MzNGIxMDI1NTk1ZTY4NThhZDM0ZjZlZjhmYWY0MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L62",
+          "version": "repo-lines-v1:sha256:b1264f4ade706ab68f90a3cb5f61718b85640563582c65fe180497af304ec694:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
+          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5MzgyODhkYzc1NjJjYTBmMzc0YjQwMTU3ZGM1NzMwMDQ0YjRlMjc4MTMwYTg1MDQwYWZiNGQ2NzAxNjkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+        },
+        {
+          "resource": "repo://Cargo.toml#L19-L20",
+          "version": "repo-lines-v1:sha256:c63381e8eaa4d9394d149f1a99184fb0563eb940c2fcf6c8d715e18f9217c9ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0ZTEwMmM4NjFmOTk0ZDJhYWNlOTExNGQzOTJkYmMxNjIxOTBlMDBiZThmZTM1N2Q0NzIxNTBjYTQzOTYxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0YTAxMzI4NzI1NTFjZTViMTE2ZjQyMzYxOWNmZjQyMGMzNTU1MDJmYjg4NTBjYmJhMGM1MDE1NGZmNjFmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODRkZmY1NjIxZjRlYjRkMDNmMmYxZDZhM2Q0NTgzYzBmNDRiZmZiMDBhYjJmNzEwMWJlOTEzNDYyYTQyZmNiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA2NTI5MWMxMDc5ZDEwNDhjNGFjNjMxMWM5ZWI4MzMwZmMxZDMzZGY1OTdlMGRkMjUwNTk2MGQ3YjA3MjgzYSJ9"
         },
         {
           "resource": "repo://desktop/Cargo.toml#L8-L10",
@@ -289,10 +297,86 @@
           "version": "repo-lines-v1:sha256:1e11b852db8d7e945db3a6c8984d404ea70b9caeece694af532f3f6129f3ec68:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkzNmFiOGUyNDgyOGIxZmFhNGQ2MzM3NmU4ZDEyYjA4OWQ0ZDRjMzNjNGJmZGIxOGY2Y2NlZDUyZDZjNjYxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc3ZTk3NTBmMzIxMjYxZmE5ZDlkZGFlODA1YzY2ZGQyMjg5MjQ1NmQ4OGY0Y2EyMTBhMzAwZjFiZTM5NTEzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE1ZmFiNzU4NmYwYWUxYjgwNjMzNDcxOWRiNjgyZWU0Y2U5YzJlYzQyYTk0YjAwM2VmNWE3ZTJmZDQ3OGI2MSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_f688b9e42edc49b18dd3ce5724c3a66c",
+      "statement": "The desktop runtime needs no external format tools: every format is served by in-tree crates or Rust dependencies (chd-rs, xso-rs, gdi-rs, xdelta-rs, xps-rs, nsz-rs, sevenz-rust2/zip, nod), which `src/info.rs` reports as built-in versions, leaving ctrtool as the only remaining optional external binary and only for CIA.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L100-L103",
+          "version": "repo-lines-v1:sha256:40979ee77bb4ff7d295aa77bd045f712bd2c3b7f2d86fca469948b6be3af7c01:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODBmNmNiODlmNjg0ZTUwYjVlZmY2NDlkZWY0ZDIxMGVhMTBmNzY4YjJmYWQwZDk3MmFlOTM0NTM4MTY3Y2EwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMwMTJjMGQzMWQ3NDA0NWQ1ZTBmYjdjMzM1OGVkZGFjMzQzNTU3OGRjNjVhOTgxYjJkZTQyMmY2MDQyMDRmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2M1ODdmODk4MDUxMzU2MGUzYWM4ODYzZTAwN2YxYjY0NjRkYjMxMzQwNWJiNzU4NzRjMGNkYzFkYTU2MDI2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY5NmFmNWVhYjM4OTdlNjZkOTE5MzExNWIyOGY2MWI3YTYzYjllM2JkM2M0ZWNiM2FiYmE2YzhjYTcxNGE0MiJ9"
+        },
+        {
+          "resource": "repo://README.md#L228-L236",
+          "version": "repo-lines-v1:sha256:d6b44f7b29ba39f5c19f9d252838e3033241984d7d06146ee289a0ba489b0bbe:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE3YzQzNjYyMjgxMDdjYjA1NjQxNTk4ODI1NWMwNWJmNWJkMzJkZDkxMWZjNjc2ZGRlODBmNTBmYTRkOGQyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ4ZDllY2E3MzYxMjk2MGUwYzk2ZTBmOTUxYWYwZmZjNzdhYjNhNTNmMmRlYjkwYmQwZmNiYjViNzdkNjkwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA1NjgxYmU5MmQ2NGI2MzVmZmRjMTg5MzhhOGZmN2E2ZDIxYmQ0ODk1Y2Q5NTk3M2ZlOWFlMTZmZWM2NTNjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI0NGE2NGNhMmFjNTM1ODdmNDFjZjhiYzBjNjYzNDU1MTRiNmZjOGJlNjk3ODQyNDNmYWU1YjU1NTU5Yjk4YSJ9"
+        },
+        {
+          "resource": "repo://src/info.rs#L26-L37",
+          "version": "repo-lines-v1:sha256:73bb4cd7cb7b71e4019a979551ca4a6cb9d89d0773fa78ecac9ada89fa27ffab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiODY0ZTMzYzA5M2Y1YmQzZDEyNzZkZTU5ODlkYjZlODRiZTUzZDMyMDVkZDY0ZDViNTE2OWNlMjYyNGFlODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNjllMDhiYTdlNzcyYzUzOTlmYmY0NDUwNGFiZTlkM2M4ZDE3ZWZiZmNlZDk1ZjkzMTU1NzQyYjRkOGJhNmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07becb6ea50948d887c521b3d19ef445",
+      "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Arch container likewise installs no codec or archive tool to run the server.",
+      "evidence": [
+        {
+          "resource": "repo://CHANGELOG.md#L11-L26",
+          "version": "repo-lines-v1:sha256:f99cc791ee481973fb4534833082b6ca89e72e5879aa8c4696a3b3f2da24ebcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNzZlMDYwZjZkMDE0MWI3OGJiOWI5NzA2NWQxNDMzOGJjNTRjODI3ODVlNTJkZTdiMThhOGE4NjY3ZDY1YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjNlMTk3YTcxZjU5NDQ1ODM5YzZlM2VlODEyNGZmMjg5NTE5ZmI1MDg0NDc2MTdlMDJjNzkyOTZlZWE3YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZTdiM2YwMGI0ZTIwZjk5YTYyOWNjMzI1ZmVhOGQzYjc1YjBhZDZmMGMwYTVmODlkODljMGI4NTNjYzlmNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYTRjMjA0Y2I3YzRmMjJhMzA5ZDY0ZjExOGQzZTdjNGNiZWFkYTIxODAzYjM1YjE1ZTcxZTBiMTk1ZGQ2ZGQifQ"
+        },
+        {
+          "resource": "repo://Dockerfile.archlinux#L5-L17",
+          "version": "repo-lines-v1:sha256:079135e88fdcf80a1347f8496cb036b2dcade3df44adc4bcd87fb3d85ed8f564:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYWExZDRmYTViNGJlN2ZlZTI5OGRjNDUxNTdmNGY1MjkwY2I3ZTNhNTgyNDQ3Yzg4MTVjOTE2ZWFmMTgxYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4N2Y2MjUyZWZjMzk2ZWQzNmZlNDk1ZjVhMWFlNTY1NWNiY2U0NzgxOTY1OWVjOTkyYjEzZjU5MzFiYTUyMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L17-L31",
+          "version": "repo-lines-v1:sha256:2eb1f3ad4c0de28194701c8419e166937a83bbccf5def08aac3787b6361f74de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMDcyNDlhZjgzOGY5NDg0OTM5YjM3ZGE3OGQ3MTIxZGM0ZTVkNGFjNTI2N2JkNzIzMDkwMGU3NGE4NjMzZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkNDQ4YjVhYTFiYmY4MTdkYzBlMzdiMDA4OGU2MmQwM2MyYWE4MmVmZTAyOTIxNzUyMzY0MDQ5NjNmZTZiNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_571a60f8d4064c298331b4fb8e811618",
+      "statement": "dist.sh's release matrix emits seven binaries per target — the server-enabled oxyromon plus the six format-crate CLIs (chdrs, gdirs, nszrs, xdeltars, xpsrs, xsors) built with `cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs` — packed as .tar.xz (7z on windows gnullvm) and rcodesign-signed on Apple targets, before the host-only desktop bundle is appended to dist/.",
+      "evidence": [
+        {
+          "resource": "repo://dist.sh#L23-L35",
+          "version": "repo-lines-v1:sha256:0565a2bc7ad7e92c8ef02ff367b347e3c1ed4669e30a2cd660600750a9ad9643:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNDk5ZTA4NzIzYjUzNWIwOTUzODM3NDJkZGM3Mjg1OTc1ZTgzNjRjZjAzYzc0MDRjOGFjOWFmMmMzZTRkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3M2E3NDg1Njc1YWI3ZmJkMGFkOWNkZDIxYWRhZGZiZTEzY2NhOWE5ODVjMmMxZDg5Zjc0ODkxM2Y5NjU3YjEifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L37-L51",
+          "version": "repo-lines-v1:sha256:0acbedc99a3bc5be921b8907a84e05e3c9276aa2f7bcd732dfd218508b2d4b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OTdiNzJmMWExMjE1ZTFmNDFiMGU5ZmNmYWQxM2M2YmYxMTM1NmU0YmMzY2MyYjBlYmVmZGIyZGZmMjEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5MzVlOTdiYzMzMWFjNDc0MGRhMTM1MTg1NDAyZjk4NGFhMDIxZDY2OWEwYTVlNjZiZWZkYTQzOWRhNmI4YjUifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L53-L63",
+          "version": "repo-lines-v1:sha256:96ebf4bc036347fb6d3ab34cdf86693aa6e83a77e42d17e6e29370a5196b0a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NWM3YTg1ZmJkNDQwOWY4NjFiYzY2OTIzNWUxOWFhZjhmNGRlY2NiYjExNDk2MDVmYmYwYTNmMTJjZDBiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MmFmMWFjMDU1MjU1M2VhOWNlNjhlZmM5MTc3Y2RkZWRlM2E5ZDZkM2IwNTFjODJiYjY2MTc5ZGVmMTUxMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L9-L21",
+          "version": "repo-lines-v1:sha256:87e4b225353ad798211fab34c2166672213e74527b9853f29ffa5ce34956be2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZTE5NTg5MDMxNzk3MzVmYjM4Y2MyZDE1ZGNjNDI1NGNkYzg3ZjZkMTYzZDViZTI1ZGQ5NTNlNmQxMzhlN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0ZjJjMjhkMjkzYmNjZjUwMzM0ODg4MzIwOWI0OTU1NmEwZTkzNGMzZDljNTJkODM5MGIwZGZiYzEzYjkwMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNmYwZjE2ZWQ5MGU5NmQ4YTEwNDA2Y2YwMTkyOTkwNjNiODQwYzhhZWQ5MWFhZmE2ZDZlOTkyZDY1YTk5MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07daa3d1dc014c8e9c3f7e912929f30a",
+      "statement": "dist.sh exports SKIP_TRUNK=true for the entire release run and Cross.toml passes that variable through to the cross images, so each target build embeds the host-built target/assets from the loop's own `trunk build --release` instead of rebuilding the wasm; the desktop staging build inherits the same value.",
+      "evidence": [
+        {
+          "resource": "repo://Cross.toml#L1-L2",
+          "version": "repo-lines-v1:sha256:8cd25240a1b13914777f9186147aaa51eca03e064f37497472095a93c7403bfc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE2ZjhlM2ZmYjY4NWQ1OWRkMDhmZTAyM2RjYjg1Y2MwZWIxNDBjZTE5Mjg2MGQ3ZmIyODZkNDA4YjdmYjk3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVhYTI1OGE2OWZhYjU2OTRjYjU1MjVlZTg1NzY3OTgzNzg3ZDdiMTUxOGFmODE2MDZhNzk0MjJlYzM4MTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTljYzRjNjljMWFkNjliNGQ0ZTBjMzg5MGQ5OTFhMThmNzJkNGNhMzhiYTBjZGVmYjdiYjYwNTViMjEwZThiMiJ9"
+        },
+        {
+          "resource": "repo://build.rs#L6-L8",
+          "version": "repo-lines-v1:sha256:ef15d36ec42a3928de98ba2adbe5c63ddf539662b0fe47727fdcd1f6474374a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE1NmRlMzA4NzFhNzc1M2IzODE1NDFlMzhiMGZmODhmOTBiNWVlY2FjMzRmMWI3YTVjYzRmNTdhM2Y4OTQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgzYzdjMTk2YTY5NDk5YTdkNGQ0YWE4NWIxMTA0YzU5MjIzZWVjNDQ1N2QzYzE0ZTAxYTkzY2EyMmQ5NjM3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIzZmVhY2NkMzIyYTRiODE1ZjMzNTZlNmNiZDIzNmQwOTQzN2Q0Y2ZiNjQxMTljMTJmODQ1N2M1M2Q5MTk1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjQ2NDlhMzI4ZWFjMzVlMDIxYTFkOWQ3MTc3N2QxOTc2ZThkZDBlNDM1NjIzMDI0MmVhMjRiOGJiNDY0ODlkMyJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L5-L10",
+          "version": "repo-lines-v1:sha256:b554c428795bf2a775cc9b2bf83e77ef014cf56c3be57245914f760c3838e042:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwNDU0Y2QwNDExYTJlZjk5MjEwNGU5ZDA1YTVlOGJjNjRhMjQ2OWI5YWRmYmE4M2I1NDYyNTZkYjRiOTg3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVhNGRlM2RhN2QxYWNmNjNiYzE1NTZkNTY4MjZiNDIwYTMyMGRmOGYyMWJjMzI3MmRhNzAzZTA2NDFiZDAwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Q2ZWI4MmNmMjZjMWJiMzJmYjcyY2Q2YWI4ZjQ1ZTc2NDQwY2I0YzY4MDhhNTk2MmJiZGE1YWMyMzc2ZjU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGZmYmMzNjQzMDRlMmY3NjRmMWJiY2E2MzcyNTg5OWQxMmI4M2UxZThmY2M3ZGEyN2NhYjU3Yzc0ZjQ0MmFhOCJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-09T16:11:37.544Z"
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-10T22:10:44.671Z"
   }
 }

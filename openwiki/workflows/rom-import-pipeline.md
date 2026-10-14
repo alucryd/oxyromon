@@ -1,16 +1,13 @@
 ---
 type: workflow
 title: ROM Import Pipeline
-description: How import-roms hashes a file, matches it against the DAT catalog, places it on disk and records a romfiles row linked from roms.romfile_id — per-format dispatch, the transaction-per-file boundary, the system/game id sets returned to callers, and the PREFER_FORMAT auto-conversion pass that follows.
+description: How import-roms hashes a file, matches it against the DAT catalog, places it on disk and records a romfiles row linked from roms.romfile_id — per-format dispatch, the transaction-per-file boundary, chd-rs backed CHD handling, the Trash path, and the PREFER_FORMAT auto-conversion pass that follows.
 tags: [import-roms, hashing, catalog-matching, romfiles, transactions, trash, prefer-format, chd, archives, jbfolder]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -25,10 +22,14 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-d2a3ecfe56b135e9acbf7c81
     resource: repo://src/import_roms/test_mame_chd.rs
+  - id: openwiki-source-29cce0b2b6a22a67a00d0a31
+    resource: repo://src/import_roms/test_multiple_tracks_chd.rs
   - id: openwiki-source-c63a2a415ce9850aa169d04a
     resource: repo://src/import_roms/test_original_delete.rs
   - id: openwiki-source-f13ad111e0b94e6baae4cb31
     resource: repo://src/import_roms/test_original_headered.rs
+  - id: openwiki-source-f420b427c4acf1e5c69e9987
+    resource: repo://src/import_roms/test_original_shared.rs
   - id: openwiki-source-29b30bb0ed8fedcdfd03a4f3
     resource: repo://src/import_roms/test_original_trash.rs
   - id: openwiki-source-72ac7329667332f8c07f2f9c
@@ -45,6 +46,8 @@ sources:
     resource: repo://src/import_roms/test_sevenzip_multiple_files_mixed_games.rs
   - id: openwiki-source-bd10baabc6433c6d5ac9ecd0
     resource: repo://src/import_roms/test_sevenzip_multiple_files_partial_game.rs
+  - id: openwiki-source-28688ed391a3497d6be6a0e0
+    resource: repo://src/import_roms/test_single_track_chd.rs
   - id: openwiki-source-67041cdcd7062eab68afff98
     resource: repo://src/import_roms/test_zip_single_file_extract.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
@@ -71,7 +74,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # ROM Import Pipeline
@@ -82,15 +88,15 @@ integrity checking — consumes the result, so the two things this page is reall
 about are **(1) how a file gets matched to a catalog `roms` row** and **(2) what
 the unit of work is**, because that decides what a crash or a rejected file costs.
 
-The one surface is [`import_roms::main`](../../src/import_roms.rs#L138-L353).
+The one surface is [`import_roms::main`](../../src/import_roms.rs#L136-L351).
 The CLI dispatches to it directly ([src/main.rs](../../src/main.rs#L151)), the
-HTTP server synthesises an `ArgMatches` for `POST /roms`
-([src/server.rs](../../src/server.rs#L804-L817)), and the MCP `import_roms` tool
+HTTP server synthesises an `ArgMatches` for uploads and URL imports
+([src/server.rs](../../src/server.rs#L803-L817)), and the MCP `import_roms` tool
 does the same ([src/mcp/write.rs](../../src/mcp/write.rs#L155-L236)). Other
 modules bypass `main` and call the internals: `import-dats` re-imports orphaned
-files through `import_rom` ([src/import_dats.rs](../../src/import_dats.rs#L880-L935))
+files through `import_rom` ([src/import_dats.rs](../../src/import_dats.rs#L891-L946))
 and `rebuild-roms` fills arcade sets through `import_other`
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L155-L186)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L174)).
 
 ## Command line
 
@@ -106,11 +112,12 @@ oxyromon import-roms [OPTIONS] <ROMS>...
 ```
 
 `--trash` and `--delete` are mutually exclusive and bail before any work starts
-([src/import_roms.rs](../../src/import_roms.rs#L155-L161)). The clap default for
+([src/import_roms.rs](../../src/import_roms.rs#L153-L159)). The clap default for
 `--unattended` is `none`, i.e. **interactive**: anything driven by the server or
 MCP must pass the flag explicitly, and both of them default to `first` because no
 one is at a terminal
-([src/server.rs](../../src/server.rs#L749-L760)).
+([src/server.rs](../../src/server.rs#L749-L760),
+[src/mcp/write.rs](../../src/mcp/write.rs#L184-L193)).
 
 ## System scoping, and why `-s` also enables headered matching
 
@@ -121,11 +128,12 @@ to match a system name exactly
 ([src/database.rs](../../src/database.rs#L294-L312)). The resolved list is then
 de-duplicated by id, and when nothing is passed it becomes a single `None` entry
 meaning "every system"
-([src/import_roms.rs](../../src/import_roms.rs#L143-L153)).
+([src/import_roms.rs](../../src/import_roms.rs#L141-L151)).
 
 That list is not just a filter — `main` loops **once per system**, so `-s A -s B`
 scans the input twice, and each pass carries the `Header` row loaded for that
-system ([src/database.rs](../../src/database.rs#L3031-L3047)). For directory
+system ([src/database.rs](../../src/database.rs#L3032),
+[src/import_roms.rs](../../src/import_roms.rs#L236-L244)). For directory
 inputs the `WalkDir` walk restarts inside that loop, so files claimed by an
 earlier pass have already been moved out and are not seen again.
 
@@ -136,23 +144,25 @@ if all rules match ([src/common.rs](../../src/common.rs#L575-L671)). Systems who
 DAT declares a header definition therefore only match headered dumps **when named
 with `-s`**; without it the file is hashed whole and, if the DAT is headerless,
 lands in Trash. The pair `test_original_headered` / `test_original_trash` pins
-exactly this: the same 272-byte file imports with a header and is trashed without
-one.
+exactly this: the same headered file imports when a `Header` is passed and is
+trashed as `Invalid` when it is not.
 
 ## Input ordering and `--extract`
 
-Before touching the database, `main` assigns each input path a priority: **child
-CHDs first (0), parentless CHDs second (1), everything else last (2)**
-([src/import_roms.rs](../../src/import_roms.rs#L171-L216)). This exists because
-`as_chd` resolves a CHD's `Parent SHA1` by scanning *the directory the child sits
-in* ([src/chdman.rs](../../src/chdman.rs#L636-L702)); importing — and therefore
-moving away — the parent first would strand every child in the batch.
+Before touching the database, `main` assigns each input path a priority: **CHDs
+with a parent first (0), CHDs without a parent second (1), everything else last
+(2)** ([src/import_roms.rs](../../src/import_roms.rs#L169-L214)). The parent link
+is read straight out of the CHD header with `parse_chd` — chd-rs, no external
+binary — and it matters because `as_chd` resolves a CHD's `Parent SHA1` by
+scanning *the directory the child sits in*
+([src/chd.rs](../../src/chd.rs#L584-L650)); importing — and therefore moving
+away — the parent first would strand every child in the batch.
 
 Each path then gets its own temp directory and is canonicalised. With `-x`, a
 top-level archive (as reported by `get_mimetype`, membership in
 `ARCHIVE_EXTENSIONS`) has all of its members extracted into the temp directory,
 which is then walked as if it had been the input
-([src/import_roms.rs](../../src/import_roms.rs#L218-L237)). Without `-x`, archives
+([src/import_roms.rs](../../src/import_roms.rs#L216-L235)). Without `-x`, archives
 are imported as containers. `test_zip_single_file_extract` is the fixture for this
 path: a `.rom.zip` becomes a `.rom` in the system directory.
 
@@ -168,14 +178,14 @@ Both the directory walk and its error path keep output on the `progress` helpers
 which write to stderr; the walk's `Err` arm carries the guard comment that keeps
 this code stdout-silent — under `oxyromon mcp` stdout *is* the JSON-RPC channel, so
 a stray `println!` here would corrupt the protocol stream
-([src/import_roms.rs](../../src/import_roms.rs#L307-L316),
+([src/import_roms.rs](../../src/import_roms.rs#L305-L314),
 [src/mcp.rs](../../src/mcp.rs#L1-L20)).
 
 ## import_rom(): one transaction per file
 
 `import_rom` is the unit of work. It opens a transaction on entry and commits
 exactly once on the success path
-([src/import_roms.rs](../../src/import_roms.rs#L403-L599),
+([src/import_roms.rs](../../src/import_roms.rs#L401-L594),
 [src/database.rs](../../src/database.rs#L74-L85)). Every early return — empty
 file, already in database, missing external tool — returns `Ok` **without
 committing**, so the transaction is dropped and rolled back; only the filesystem
@@ -196,7 +206,7 @@ flowchart TD
     C -->|"no"| D["extension from mimetype, else from filename"]
     D --> E{"dispatch on extension"}
     E -->|"7z or zip"| F["import_archive"]
-    E -->|"chd"| G["chdman required, then import_chd"]
+    E -->|"chd"| G["import_chd via chd-rs"]
     E -->|"cia"| H["ctrtool required, then import_cia"]
     E -->|"cso or zso"| I["import_cso / import_zso"]
     E -->|"nsz"| J2["import_nsz"]
@@ -210,7 +220,7 @@ flowchart TD
     J2 --> M
     K --> M
     L --> M
-    E -.->|"external tool missing"| N["print error, return without commit"]
+    E -.->|"ctrtool missing"| N["print error, return without commit"]
     F -.->|"no match"| O["trash with -t, delete with -d"]
     L -.->|"no match"| O
     O --> M
@@ -221,7 +231,7 @@ flowchart TD
 
 Two cheap guards run first: a zero-byte file is deleted outright, and a file whose
 path is already a `romfiles.path` is skipped unless `--force`
-([src/import_roms.rs](../../src/import_roms.rs#L427-L448)). The second guard only
+([src/import_roms.rs](../../src/import_roms.rs#L425-L446)). The second guard only
 fires once the file is *inside* a ROM directory — `get_relative_path` fails for
 anything outside it — so re-running an import from a staging directory falls
 through to matching, where the `Duplicate` result handles it.
@@ -235,12 +245,21 @@ The dispatch is an ordered `if`/`else if` chain in which every specialised branc
 is additionally gated on `!as_is`: archive, CHD, CIA, CSO, NSZ, RVZ, ZSO, and
 finally `import_other`. `--as-is` therefore does two things at once — it sends
 every file to `import_other` (hash the container as it sits, move it, no
-decompression), and it suppresses the auto-conversion pass below.
+decompression), and it suppresses the auto-conversion pass below
+([src/import_roms.rs](../../src/import_roms.rs#L448-L593)).
+
+Only one external tool is still required on this path: `.cia` needs `ctrtool`, and
+if it cannot report a version `import_rom` prints `Required tool not found`,
+returns `Ok` with the empty id sets and never commits, so the file stays where it
+is ([src/import_roms.rs](../../src/import_roms.rs#L492-L496)). CHDs have no such
+gate — the former `chdman` branch is gone along with the module, and
+`chd::get_version()` reports `built-in`
+([src/chd.rs](../../src/chd.rs#L896-L898)).
 
 ## Matching a file to a catalog rom
 
 All eight format handlers funnel into
-[`find_rom_by_size_and_hash`](../../src/import_roms.rs#L2162-L2499), which answers
+[`find_rom_by_size_and_hash`](../../src/import_roms.rs#L2141-L2477), which answers
 one question per hash algorithm: *which catalog roms could this be?*
 
 - **Progressive narrowing.** Three queries in order, stopping at the first that
@@ -250,14 +269,16 @@ one question per hash algorithm: *which catalog roms could this be?*
   parent directory; the rom name from the entry name. Every query carries
   `romfile_id IS NULL AND parent_id IS NULL`, so only unclaimed roms compete — and
   not the merged arcade roms whose `parent_id` points at the parent-game or BIOS
-  copy ([src/database.rs](../../src/database.rs#L2084-L2148)).
-- **Algorithm order.** `HashAlgorithm::iter()` tries CRC, then MD5, then SHA1. The
-  CHD handler uses `iter().rev()` so SHA1 goes first, because CHD DATs are
-  SHA1-native ([src/import_roms.rs](../../src/import_roms.rs#L1050)).
+  copy ([src/database.rs](../../src/database.rs#L2084-L2113)).
+- **Algorithm order.** `HashAlgorithm::iter()` tries CRC, then MD5, then SHA1
+  ([src/config.rs](../../src/config.rs#L25-L31)). The CHD handler uses
+  `iter().rev()` so SHA1 goes first, because CHD DATs are SHA1-native
+  ([src/import_roms.rs](../../src/import_roms.rs#L1044)).
 - **`Duplicate` vs `Invalid`.** If nothing unclaimed matches, a follow-up
   `count_roms_with_romfile_*` decides between "already imported" (`Duplicate`) and
   "no match" (`Invalid`). That distinction is what feeds Trash subfolder names and
-  the `--trash` decision.
+  the `--trash` decision
+  ([src/import_roms.rs](../../src/import_roms.rs#L2327-L2379)).
 - **Ambiguity ladder.** One candidate wins immediately. Otherwise: a candidate
   whose game was already imported *during this run* (the `game_ids` set threaded
   through every handler) wins; then, under `--unattended first`, the closest name
@@ -265,10 +286,11 @@ one question per hash algorithm: *which catalog roms could this be?*
   left returns `Skipped` rather than hanging on a prompt nobody will answer. An
   interactive run always gets a prompt — labelled `rom (game)` when `-s` narrowed
   the search, `rom (game) [system]` when it did not
-  ([src/import_roms.rs](../../src/import_roms.rs#L2403-L2471)).
+  ([src/import_roms.rs](../../src/import_roms.rs#L2381-L2449)).
 - **Already-linked rom.** If the chosen rom already has a `romfile_id`, the result
   is downgraded to `Duplicate`, which protects one-file-per-rom even when the path
-  check at the top of `import_rom` did not catch it.
+  check at the top of `import_rom` did not catch it
+  ([src/import_roms.rs](../../src/import_roms.rs#L2451-L2466)).
 
 ## Where the file goes
 
@@ -281,12 +303,12 @@ represents exactly one complete game, otherwise take the members out.**
 | Archive = whole game | archive kept intact, entries renamed inside it to the catalog rom names; the container becomes `<game name>.<archive ext>` when it holds several entries, and `<rom name stem>.<archive ext>` when it holds one — unless the system is arcade or the entry is a PS3 `.pkg`/`.pup`/`.rap`, which take `<game name>.<archive ext>` | 1 romfile → *n* roms |
 | Archive = mixed or partial game | each matched member extracted and **copied** to the system directory (arcade and jbfolder games get a `<game>/` subfolder) | 1 romfile per member |
 | CD CHD | unpacked to cue/bin in tmp; only if *every* track matches one game **and** one system is the CHD moved as `<game>.chd` | 1 romfile → 1 rom per track |
-| DVD / HD / LD CHD | hashed by extracting (or reusing the CHD's own SHA1), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder | 1 romfile → 1 rom |
+| DVD / HD / LD CHD | hashed by extracting (or reusing the hashes the CHD header publishes), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder | 1 romfile → 1 rom |
 | CIA | parts extracted with `ctrtool` for hashing; whole `.cia` moved as `<game>.cia` | 1 romfile → *n* roms |
-| CSO / ZSO / NSZ / RVZ | container kept, renamed `<rom.name>.<ext>` after hashing the decoded image | 1 romfile → 1 rom |
+| CSO / ZSO / NSZ / RVZ | container kept, renamed `<rom name>.<ext>` after hashing the decoded image | 1 romfile → 1 rom |
 
 The archive decision is the interesting one
-([src/import_roms.rs](../../src/import_roms.rs#L937-L1035)): the archive is kept
+([src/import_roms.rs](../../src/import_roms.rs#L931-L1029)): the archive is kept
 intact only when every entry matched, all matches belong to a single game, *and*
 the matched set covers every rom of that game
 (`find_roms_by_game_id_no_parents`). Anything short of that falls through to the
@@ -295,30 +317,47 @@ archive is never moved or removed by that branch, and only the extracted members
 get `romfiles` rows (an archive left behind inside a ROM directory is exactly what
 `purge-roms --foreign` reports). Unmatched members stay inside it; only a
 **single-entry** archive whose sole entry fails all three algorithms is itself
-trashed ([src/import_roms.rs](../../src/import_roms.rs#L924-L934)).
+trashed ([src/import_roms.rs](../../src/import_roms.rs#L918-L928)).
 
 Hashing compressed formats is delegated to the wrapper types in the
 [trait system](../concepts/romfile-trait-system.md): `ArchiveRomfile` reuses the
 CRC already recorded in the archive's central directory instead of extracting
 ([src/archive.rs](../../src/archive.rs#L194-L215)), `XsoRomfile` and `NszRomfile`
 decompress into a temp directory and delete the result
-([src/xso.rs](../../src/xso.rs#L52-L70)), `RvzRomfile` hashes while decoding with
-no ISO ever written ([src/rvz.rs](../../src/rvz.rs#L44-L67)), and `ChdRomfile`
-answers SHA1 from `chdman info` when it can
-([src/chdman.rs](../../src/chdman.rs#L179-L238)). The consequence visible from
-the tests: a `.cso` imports against the catalog entry for the `.iso`
-(`test_cso`), and a `.rvz` against `Test Game (USA).iso` (`test_rvz`) — while
-`test_rvz_as_is` needs a DAT that publishes the RVZ's *own* hash, because
-`--as-is` hashes the container.
+([src/xso.rs](../../src/xso.rs#L52-L70), [src/nsz.rs](../../src/nsz.rs#L76-L94)),
+`RvzRomfile` hashes while decoding with no ISO ever written
+([src/rvz.rs](../../src/rvz.rs#L44-L67)), and `ChdRomfile` answers SHA1 from the
+hashes chd-rs read out of the CHD header — `sha1` for the logical data and
+`chd_sha1` for the container — falling back to a real decode to ISO/RDSK/RIFF only
+when it has neither
+([src/chd.rs](../../src/chd.rs#L171-L230)). The consequence visible from the
+tests: a `.cso` imports against the catalog entry for the `.iso` (`test_cso`), and
+a `.rvz` against `Test Game (USA).iso` (`test_rvz`) — while `test_rvz_as_is` needs
+a DAT that publishes the RVZ's *own* hash, because `--as-is` hashes the container.
 
-CD CHDs also carry a version gate: a multi-track CHD needs
-`chdman >= MIN_SPLITBIN_VERSION` (`0.265`) or the import is refused with a warning
-before anything is written
-([src/import_roms.rs](../../src/import_roms.rs#L1052-L1069),
-[src/chdman.rs](../../src/chdman.rs#L18-L20)).
+The CHD branch is a single `import_chd` over the four `ChdType`s
+([src/import_roms.rs](../../src/import_roms.rs#L1032-L1519)). A CD CHD is expanded
+to cue/bin in a temp directory — one `.bin` per track whenever the CHD carries more
+than one — and each track is matched **by name as well as hash**: the track hashes
+are looked up against the CHD's own file stem, the ambiguity ladder is narrowed by
+the games already resolved in this same CHD, and the CHD is only moved when every
+track resolved, all to one game and one system. That is what lets a multi-track CHD
+whose tracks are byte-identical to another game's tracks land in the right game
+(`test_single_track_chd`, `test_multiple_tracks_chd`). DVD, HD and LD CHDs are
+hashed as a unit, and when a SHA1 lookup comes back `Invalid` each of the three
+repeats the query with **size 0 and the CHD's own `chd_sha1`**, because MAME's CHD
+DATs publish no size and hash the CHD container rather than the extracted data
+([src/import_roms.rs](../../src/import_roms.rs#L1192-L1215)). `test_mame_chd`
+pins the arcade placement that follows: `<system directory>/<game>/<game>.chd`.
+
+CD and DVD CHDs are decoded by chd-rs through the same `extract_chd` helper, with
+the parent CHD passed to `Chd::open_with_parent` when one was found next to the
+child ([src/chd.rs](../../src/chd.rs#L796-L874)). There is no minimum tool version
+anywhere on this path: the old split-bin and Dreamcast version gates left with the
+`chdman` module.
 
 Every branch ends in the same persistence helper
-([src/import_roms.rs](../../src/import_roms.rs#L2609-L2637)): build a
+([src/import_roms.rs](../../src/import_roms.rs#L2587-L2615)): build a
 `CommonRomfile` scoped to the system, strip the (possibly per-system)
 `ROM_DIRECTORY` prefix to get the stored relative path
 ([src/common.rs](../../src/common.rs#L354-L367)), update the `romfiles` row at that
@@ -330,7 +369,7 @@ representable.
 ## Rejected files: nothing, Trash, or deletion
 
 If no algorithm matches, `trash_or_delete_romfile` runs
-([src/import_roms.rs](../../src/import_roms.rs#L2639-L2699)):
+([src/import_roms.rs](../../src/import_roms.rs#L2617-L2677)):
 
 - **Neither flag** — the file stays exactly where it was. Import is non-destructive
   by default.
@@ -340,14 +379,25 @@ If no algorithm matches, `trash_or_delete_romfile` runs
   *why* it failed. If that path already exists the file is deleted instead, and the
   trashed file gets its own `romfiles` row.
 
-Trash is a directory convention rather than a flag, and `purge-roms --trash` is the
-only thing that empties it — see
-[Integrity Checking, Purging and Trash](integrity-check-and-purge.md).
+The Trash root follows the file's system when the match narrowed to one and the
+global ROM directory otherwise
+([src/util.rs](../../src/util.rs#L277-L288)). Trash is a directory convention
+rather than a flag, and `purge-roms --trash` is the only thing that empties it —
+see [Integrity Checking, Purging and Trash](integrity-check-and-purge.md).
+
+Where a move leaves a directory behind, `util::remove_empty_directories` is the
+shared cleaner: it climbs from the emptied directory, deleting until it meets a
+directory that is not empty or one of `get_kept_directories` — the ROM directory,
+every system directory and every Trash directory, which survive even when empty
+([src/util.rs](../../src/util.rs#L290-L337)). `import-roms` itself does not call
+it; the caller that leaves emptied source directories behind does, and does so on a
+best-effort basis — a directory that cannot be deleted is a warning, never a rolled
+back import ([src/import_dats.rs](../../src/import_dats.rs#L896-L945)).
 
 ## Jukebox folders
 
 A directory containing `PS3_DISC.SFB` is a PS3 JB folder and never reaches
-`import_rom` ([src/import_roms.rs](../../src/import_roms.rs#L602-L792)). The rules
+`import_rom` ([src/import_roms.rs](../../src/import_roms.rs#L596-L786)). The rules
 that make it different:
 
 - It **requires a system**. The folder names no system of its own, so without `-s`
@@ -356,8 +406,8 @@ that make it different:
 - Matching is **MD5 only**, because IRD catalogs only publish MD5s. The `SFB` file
   identifies the game; each remaining file is looked up by `size + md5 +
   sfb_rom.parent_id`, disambiguated by filename suffix and then by `jaro_winkler`.
-- Files are moved into `<system directory>/<game name>/<rom name>`, and empty
-  directories are pruned behind them.
+- Files are moved into `<system directory>/<game name>/<rom name>`, and the source
+  directories are pruned while they stay empty.
 - It returns only a `system.id`. Since the auto-conversion pass works from the
   *game* set, a run whose only imports are jukebox folders converts nothing.
 - Trashing and deleting are not implemented here — a `TODO` leaves unmatched
@@ -371,7 +421,7 @@ The IRD side that makes these games exist is covered in
 `main` accumulates the `(system_ids, game_ids)` pairs returned by every
 `import_rom` call, and only after **all** inputs are committed runs
 `auto_convert` — skipped entirely under `--as-is`
-([src/import_roms.rs](../../src/import_roms.rs#L343-L400)). It groups the imported
+([src/import_roms.rs](../../src/import_roms.rs#L341-L398)). It groups the imported
 games by system, reads `PREFER_FORMAT` for that system (per-system setting with the
 global fallback of `get_setting`), and calls `convert_system` with
 `ConvertOpts { recompress: false, diff: false, check: true, prompt_for_parents: false }`.
@@ -379,17 +429,18 @@ global fallback of `get_setting`), and calls `convert_system` with
 The ordering is the contract: a failed conversion never rolls back an import. The
 ROM simply stays in the format it was imported in, with a warning. `check: true`
 means each produced file is verified against the catalog before the source is
-deleted — a failed check deletes the conversion and keeps the original
-([src/convert_roms.rs](../../src/convert_roms.rs#L1946-L1993)). How
+deleted — a failed check deletes the conversion, prints `Integrity check failed,
+reverting conversion` and keeps the original
+([src/convert_roms.rs](../../src/convert_roms.rs#L512-L535)). How
 `PREFER_FORMAT` itself is validated — arcade systems reject everything outside
-`ORIGINAL` and `ZIP` — is covered in
+`ARCADE_FORMATS` — is covered in
 [Settings and Configuration](../architecture/settings-and-configuration.md).
-`test_prefer_format` covers the four observable combinations: converts when set,
-untouched when unset, untouched under `--as-is`, and `convert-roms --save` making
-the choice permanent.
+`test_prefer_format` covers the observable combinations: converts when set,
+untouched when unset, untouched under `--as-is`, `convert-roms --save` making the
+choice permanent, and an arcade system refusing `CHD` while accepting `ZIP`.
 
 Finally `compute_system_completion` runs for each touched system
-([src/util.rs](../../src/util.rs#L422-L492)). It also creates zero-byte placeholder
+([src/util.rs](../../src/util.rs#L429-L460)). It also creates zero-byte placeholder
 files for size-0 roms in partial games, so a partially imported set is visible on
 disk as well as in the database.
 
@@ -397,8 +448,8 @@ disk as well as in the database.
 
 | Situation | Behaviour |
 | --- | --- |
-| `chdman` missing for a `.chd` | error printed, file untouched, transaction rolled back, run continues |
-| `ctrtool` missing for a `.cia` | same as above |
+| `ctrtool` missing for a `.cia` | error printed, file untouched, transaction rolled back, run continues |
+| CHD whose parent sits in the same batch | children import first, so the parent is still there when `as_chd` looks for it |
 | Empty file | deleted immediately, no rows |
 | Path already in `romfiles` | skipped unless `--force` |
 | Ambiguous match, `--unattended skip` | `Skipped`, file left in place |
@@ -415,7 +466,9 @@ disk as well as in the database.
 each is a full given/when/then over a temp database and temp ROM directory:
 
 - `test_original`, `test_original_headered`, `test_original_trash`,
-  `test_original_delete` — the happy path plus the three header/rejection outcomes.
+  `test_original_delete` — the happy path plus the three header/rejection outcomes;
+  `test_original_shared` — two DATs declaring the same rom name import two copies,
+  one per system, each with its own `romfiles` row.
 - `test_sevenzip_single_file` (container kept, re-extensioned to `.7z`),
   `test_sevenzip_multiple_files_full_game` (one romfile, three roms),
   `test_sevenzip_multiple_files_mixed_games` (two games in one archive → two

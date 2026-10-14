@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:27a51cd70ae93a392c6423f908af43c95084eab68341c1fb78adaec5fdb42d6d",
+  "pageVersion": "sha256:496681c3f217e08b927c05c31ef6f9cc022ca95775d00bb1a4f8c140dee51290",
   "claims": [
     {
       "id": "claim_2916724381064a98beaccce1a88c3633",
       "statement": "frontend/ is a standalone cargo package (oxyromon-frontend, publish = false, Leptos 0.8 csr) that declares an empty [workspace] in its Cargo.toml so cargo does not treat the root oxyromon package as its workspace root; the wasm dependency tree therefore stays out of the native build and root-level --workspace cargo commands never lint, test or build the frontend.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L400-L403",
+          "resource": "repo://AGENTS.md#L401-L404",
           "version": "repo-lines-v1:sha256:e132ee474da53dda4ac76ea62dce930e6ae236cee93eb78c36ec03742920e392:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk2NzUyOTI5MTc2ZDIxNjMwYmZjMmRiOGJiYmVmY2JjMGE2MzVlMDVhMDI0OTFmMDY1ZjM0NmQ1ZGRhZWI3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiOTcyOTEwZjhiMTUxNGE5NDAxZGEwZWJkMmM1YzRlYmExMmIyYmUxMjNlY2ZlNzQ3N2RkNTA0NzAzMmQ0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDczZTJjYjIzNTY4ZDRlZGRmNjcyNWJmMWRhNWIzNWJjZTcyZDMxY2UzYjk3ZmY2ZDAzMTkxMzQxMDM5ZTc0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMxYmYzZDcxZDlmNDI4MmJhYjU2MzNjZDk2NDBmMDg2NGRkY2NlNDA4NTJlMzhhODY3MzM5ZDg3OWExNDM4YSJ9"
         },
         {
@@ -62,15 +62,23 @@
     },
     {
       "id": "claim_477de01fb7de45a58c96ad8246644b0f",
-      "statement": "dist.sh exports SKIP_TRUNK=true and runs `trunk build --release` on the host inside each target loop before `cross build --features server`, because the wasm output is target-independent and trunk does not run inside the cross images.",
+      "statement": "dist.sh exports SKIP_TRUNK=true once and re-runs `trunk build --release` on the host at the top of every target loop (linux, windows-gnullvm, darwin) before `cross build --release --target … --features server`: the wasm bundle is target-independent and trunk does not run inside the cross images, so the UI is built natively once per target and embedded from the shared target/assets.",
       "evidence": [
         {
-          "resource": "repo://dist.sh#L37-L45",
-          "version": "repo-lines-v1:sha256:0103aa420fcc555cc15e5213b52888e867bebf26749a5558e760274f4d66cce7:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzc5N2I3MmYxYTEyMTVlMWY0MWIwZTlmY2ZhZDEzYzZiZjExMzU2ZTRiYzNjYzJiMGViZWZkYjJkZmYyMTM5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjViMjliYmNmM2I3YjY1NWVkNGUxOWJmNGRmZGRhZWY2NDFmZDM1OTFmMTY4MjM5Yzg5ZTYxMTM2NmVjNDhkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTYzNDliZDBmNjgyMzFkNWIyNDFlNzM0ZjIxOGFjY2I0NGY2Mzg5MDk4YmZlMjNjMzA4NGZmZjNiM2E3ZTA3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM0Y2RjNGViNzVmZWFlYjdhMzdjNTgzYmUyZDFmNzE0OGZmNDcxYTUzODljNzcyMzVlZjRmNWY5NTQxNGUzOSJ9"
+          "resource": "repo://build.rs#L8-L33",
+          "version": "repo-lines-v1:sha256:f98c947e316b81823150baf26d43da3b775c4b64921cfd981829e5f10a19b67e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4M2M3YzE5NmE2OTQ5OWE3ZDRkNGFhODViMTEwNGM1OTIyM2VlYzQ0NTdkM2MxNGUwMWE5M2NhMjJkOTYzNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyMDczYTY1NTgyNGE5N2U5Y2EzZGM0NTNiMzQwNzgyNzA3ZWNkNjEzM2FhMWU4ODY3ZjEyMDgyMTIxODZlYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZWU0MzMyYzc1MzRkMTRlZjcwYWRjYjM0ZTgwMDI5YTMzMWJkNDRlMzM5YTE3ZWE0MjU1OTZiMTE0MzYwNDIifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L23-L35",
+          "version": "repo-lines-v1:sha256:0565a2bc7ad7e92c8ef02ff367b347e3c1ed4669e30a2cd660600750a9ad9643:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNDk5ZTA4NzIzYjUzNWIwOTUzODM3NDJkZGM3Mjg1OTc1ZTgzNjRjZjAzYzc0MDRjOGFjOWFmMmMzZTRkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3M2E3NDg1Njc1YWI3ZmJkMGFkOWNkZDIxYWRhZGZiZTEzY2NhOWE5ODVjMmMxZDg5Zjc0ODkxM2Y5NjU3YjEifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L37-L51",
+          "version": "repo-lines-v1:sha256:0acbedc99a3bc5be921b8907a84e05e3c9276aa2f7bcd732dfd218508b2d4b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OTdiNzJmMWExMjE1ZTFmNDFiMGU5ZmNmYWQxM2M2YmYxMTM1NmU0YmMzY2MyYjBlYmVmZGIyZGZmMjEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5MzVlOTdiYzMzMWFjNDc0MGRhMTM1MTg1NDAyZjk4NGFhMDIxZDY2OWEwYTVlNjZiZWZkYTQzOWRhNmI4YjUifQ"
         },
         {
           "resource": "repo://dist.sh#L5-L21",
-          "version": "repo-lines-v1:sha256:8c24f060eaf23a1a8b949a6bf64d30109e01fc6279fa5459adc3a35d4081be29:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDQ1NGNkMDQxMWEyZWY5OTIxMDRlOWQwNWE1ZThiYzY0YTI0NjliOWFkZmJhODNiNTQ2MjU2ZGI0Yjk4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkNmViODJjZjI2YzFiYjMyZmI3MmNkNmFiOGY0NWU3NjQ0MGNiNGM2ODA4YTU5NjJiYmRhNWFjMjM3NmY1NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNmYwZjE2ZWQ5MGU5NmQ4YTEwNDA2Y2YwMTkyOTkwNjNiODQwYzhhZWQ5MWFhZmE2ZDZlOTkyZDY1YTk5MjUifQ"
+          "version": "repo-lines-v1:sha256:c893c3015978a0f7c68286464eddc8034b466c7d870ab6569cd775a13b34e228:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDQ1NGNkMDQxMWEyZWY5OTIxMDRlOWQwNWE1ZThiYzY0YTI0NjliOWFkZmJhODNiNTQ2MjU2ZGI0Yjk4NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkNmViODJjZjI2YzFiYjMyZmI3MmNkNmFiOGY0NWU3NjQ0MGNiNGM2ODA4YTU5NjJiYmRhNWFjMjM3NmY1NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNmYwZjE2ZWQ5MGU5NmQ4YTEwNDA2Y2YwMTkyOTkwNjNiODQwYzhhZWQ5MWFhZmE2ZDZlOTkyZDY1YTk5MjUifQ"
         }
       ]
     },
@@ -415,7 +423,7 @@
       "statement": "Four constraints govern talking to the Lit-based Web Awesome elements from view!: state must be set with prop: bindings (not attributes); unknown on: events need an explicit web_sys::Event payload annotation while known events must not be annotated; custom events bubble and are composed so handlers must compare event.target() with current_target() (Modal's wa-after-hide and remember_position's wa-reposition both do); and form controls re-dispatch input/change from the custom element, which is why ui.rs reads value/checked/position off event.target() with js_sys::Reflect instead of event_target_value.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L446-L464",
+          "resource": "repo://AGENTS.md#L447-L465",
           "version": "repo-lines-v1:sha256:9d7169ec099f8c2b591d55ba775dfc17c3532fa31527732c2b7e1c8e85de193b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZTNhOGNkYzQyOWY0M2RhNDVlNzRkYTBjNjRhN2QzOGVkYTM4NWFlMDBkNjczYjY2Y2VjZjU3MzkxYzBiMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NjNjNzQ1YTk5YjQ2ZmViMjUzNGY0Y2IzOTBjNzNiOGI2ZmMwZTc0NWQwNDYzNjFjMDRmNTlhZGIwNzk0NzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZTM4NGE2OTAyZmRmZGU3MjFmNzMyYmQ1YmRiMjY1OTA4ZDYxNjgyYzk1ZjVmYTQ0MTk0ODdhODJhM2Y1NjEifQ"
         },
         {
@@ -437,7 +445,7 @@
       "statement": "The app root carries the wa-cloak class so nothing paints until every custom element inside has been upgraded (otherwise each <wa-*> is an unknown inline element and the navbar renders as unstyled run-on text), and Modal builds its children only while open for the same reason: a closed, not-yet-upgraded <wa-dialog> would spill its contents onto the page.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L483-L486",
+          "resource": "repo://AGENTS.md#L484-L487",
           "version": "repo-lines-v1:sha256:0aaa4c9d81201b6a552ce7c3180a5fd36f34d6b5149c70f978e5b61a75be3717:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5ZDQ2MDNiNzU5NDA1ZDMyZTU2YTY5NDI3ZWIyM2YyMDVkYWE5YjMxNWQ4NTdhNzgyYThmZDQ1OWUzZWE5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY4OTJiYjAwZGRlNzg4MGQ2ZmI4MTY2NjY4YjE2YjdkNDg1MTAyNWNjNjliYzBhMGQxODE5ZjVkMzUyM2ExZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWI3ODYzODQ1Y2QxODYzNDUxNWEwZGM1ZTBiNzg3ODViOWVhODQ4Yjg5N2JlMGQ1N2Q5OWNkMGI1ZjhlYzcxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE2NDU1MTAwMTk1NmQxYjI1NGIxYzdjZGUxYTViZjdiNGYwYTdkMjQ3ZjQ1ZmE5OWVlM2UzNjk1ZmQ3YTAzMSJ9"
         },
         {
@@ -531,7 +539,7 @@
       "statement": "styles.css is wrapped in @layer app, declared after webawesome.css so its rules beat the component library without specificity (and order within the layer still matters, since the bare-target reset must precede the classes built on it). index.html must also load styles/color/variants.css, because the theme alone defines --wa-color-brand-* only inside component shadow styles and any app rule using those tokens is otherwise silently dropped as invalid.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L465-L476",
+          "resource": "repo://AGENTS.md#L466-L477",
           "version": "repo-lines-v1:sha256:d5172a02ff60c4d89fa054cfe8135680cf257f7d70a9d8c712d0ab0cb5b9a644:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwY2RkYzgyMTgyMmRkN2ZiNTljODAyOTliMjUxNTMyOTA1ODgxZThiOTllNmIyYzA3ZjVmZmRmNDYyMWNkMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNmZiMWFkYWIwMzlkZjU1NmEzOWRmNjNhZTdlMGEzMDE5ZDhlZTMwMTg0NzUzZmRlZmNiOGM3NmIxYzg4NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMDc3MGU1YmUzMWQ2NWQxYzJkNDViZTJkY2Y1N2ZlNTg0ZGUwNjNjNzU0OTE2NGFlNDBjOWMxYjkxMDI0OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYzAxMmVhNzcwNmIyOWI4NjMyOTMxMDIzNGVkNjQwNDZiOWJjY2JmZGNmMDczMmYyYzc2NzI5NGM3MjdhZjkifQ"
         },
         {
@@ -549,7 +557,7 @@
       "statement": "Anything that is a <button> only for semantics — a whole list row, an icon target, a dropzone — needs the .plain-button class, because Web Awesome's native.css gives native buttons chrome, a fixed height, centred flex layout and nowrap text; the reset also sets justify-content: flex-start explicitly since any .plain-button that later becomes a flex container would otherwise inherit the centring.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L478-L481",
+          "resource": "repo://AGENTS.md#L479-L482",
           "version": "repo-lines-v1:sha256:eb56434e482a5afdde7117d3d9d873310a00dc1c1d1ce47bedf5013e69076a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNkZTUzYjExZDg4MDlhY2QxZjk1YzRiOTRjZDk3MzFkMTliODFlOGU3ZjQ5NDZhNDZjMDc2NzY2Y2Y4ZTk3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzI2NzNiMjc3ZGIxYmEzNDY4ZjlhOTBiNTAwMTIzNTVjMzU2NDQwMTY2OTFlNzY5NzEwMDkyMWM4NDE1YzFhNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMyZjc5MGViYzZjYjdjZWUyNGZjZDVmZjY3ZjM0MzI0MjRhZTcyYjAxZDMwMGMyNjMzNmQ0MmZmOGM5NjQzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc3MjYyY2M1MjcxOGIwNjNkYmJjZGExYTQ4OTgyZTUxZTY3NWE4Y2UwM2YwMmMxYWNmZDUyOGNiNGZkMzE5YSJ9"
         },
         {
@@ -585,7 +593,7 @@
       "statement": "Nothing may load from a CDN at runtime — the UI is served by oxyromon server and bundled into the desktop app, both required to work offline. index.html calls setBasePath(\"/webawesome\") and setIconPath(\"/icons\") to override the Font Awesome CDN defaults, and the Trunk pre_build hook fetch-webawesome.sh vendors the pinned dist-cdn build plus an explicit icon allow-list into gitignored frontend/vendor/; its stamp hashes the icon list as well as both versions so adding an icon forces a re-fetch instead of silently rendering nothing.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L493-L497",
+          "resource": "repo://AGENTS.md#L494-L498",
           "version": "repo-lines-v1:sha256:f97a872d07d5bd1f9c50029aff641cad5022b843a0b1e723cb5408e9a2a095a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg5NWZkYzkyMWMwYjhmNjg4ODk3YzAxZmQ4MWMyNzQ5NTY0OGUxMzI4MzVlNWVhNzI0NmRjYjEzNWJmN2VlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThiYmQ5N2I3YjdlOGZkN2VmMzk2YWJmOWY3ZWE3Njk4MWZkMzUzYjc1MDlmMTRjNmJlYzMyOTA1Y2FkMTE2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmUzMzMzNjI1MDE0OTNmZDE2ZWVkYmEzMjUzMTViZmU5MzYxMTEyMzU5NTM4MWQ1MzliOTcxNjgwMWQ1NzJiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRmMGQ3NWY1MGQ2NmQ1NjQwN2FlMDAxMzAyNWM3MWEwM2E1NzJmZGNlZTM0NTg4YjgyODVmODM2MWRkMWM0ZiJ9"
         },
         {
@@ -611,7 +619,7 @@
       "statement": "Dark mode is a single wa-dark class toggled on <html> by set_dark and persisted to localStorage under color-theme, applied by init_theme before mount and defaulting to dark; the --wa-* tokens carry both values so styles.css never mentions a colour scheme, with the logo's two variants the only exception. init_language overwrites document.documentElement.lang from navigator.language because index.html hardcodes lang=\"en\", which Web Awesome's localization would otherwise fall back to for <wa-format-bytes> and <wa-relative-time>.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L499-L501",
+          "resource": "repo://AGENTS.md#L500-L502",
           "version": "repo-lines-v1:sha256:c4865c457416a55f773d11dfd5ec5e9c35c567eee3f7cc219cec77620157f755:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE3NGEwYTBlMjAyMzQzMzM0OTNmY2ZmOTFiNGEwYjNmNGQxNmU1ZWQzNmFmZjk4ZTUwNDFkMmRiOTcwYWNhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODNjYThkOWE1NjhmZDhiOGY4YmRjZmEwYzhmNWIwOGJlMjg1YzVjNWMwYTM4YjVjMWE5MjdkOGFkYWQwODA3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFlMjBhYmY1ZjUxMTNlNDY5MTFiNDVjMTI2N2I3ODExOWFkOTVjYTMzY2QzODU5NDA0NGE0ZmZhMjc1OWExYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ1ZmZlMjkyMDA0MzZkMDlhOWYyMDg2ZWNiZmI2ZGM4NDRlNzQ1MWM3YzUyNTcwYjg4NzlkMWNmYzRjNDIxZCJ9"
         },
         {
@@ -695,7 +703,7 @@
       "statement": "Adding a query or mutation end to end means: a resolver in the #[Object] impl in src/query.rs or src/mutation.rs, a backend type in src/model.rs with #[cfg_attr(feature = \"server\", derive(Clone, SimpleObject))], a document string in frontend/src/api.rs deserializing into a frontend/src/model.rs type with camelCase naming, and a component call via spawn_local that updates AppState signals and reports failure through report_error. A long-running action must additionally emit {prefix}_started/_complete/_error and register the listeners in sse.rs.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L503-L509",
+          "resource": "repo://AGENTS.md#L504-L510",
           "version": "repo-lines-v1:sha256:932b696c3431edb6d38ffc8437aed9d91f940700d1252750af4edaae2d1e2b02:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDk2Yjg3MDNkOWM2NDllMWY2ZGRlZjU0NTJmZjUxMDEyOGVhMjQ2ZjhlYzBhZmRjNzlkOGY3ODY3MjY2YTk4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE5MDQ3MTkwNzIzYWVkMDY3ZjA3NDhmZDg3NTk3YTI4ZTM1MmFmNDUzZWM5MWVkNWM2ZWNlZTRjMTc3YTA4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWNiMmRkYzhlZjBkYWVkMmMyN2YxYzliODdhNGNkM2JmYTc1OTBhMDI5NWM1OWZjMDQ2ZTI1YTVhNDI5YzI4NCJ9"
         },
         {
@@ -717,7 +725,7 @@
       "statement": "The frontend has no tests of its own and CI does not lint it: continuous_integration.yml pins TRUNK_VERSION, exports SKIP_TRUNK=true, builds the UI once with `cd frontend && trunk build --release`, then runs clippy and cargo llvm-cov only over --workspace, which excludes frontend/ because that crate declares its own workspace.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L42-L61",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L62",
           "version": "repo-lines-v1:sha256:b1264f4ade706ab68f90a3cb5f61718b85640563582c65fe180497af304ec694:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
@@ -743,10 +751,36 @@
           "version": "repo-lines-v1:sha256:755145a3ecb340c62240e643fb7e02cd8f33cf6e20fabbf705423d35fcf3f23f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiOWVlZTkxYmMwYjFhNzdiNWYyMjRmZDY5NDVmM2RlYzIzNGU1NTk2Yjk0NzVjOTBjNWFlYzllNmFlMjBiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDViYmYwMWY3OTMzNjk2ZTAzMmVmMTZmMTZmMjZhYTkzOTU2ZDQ5OWQyNGIyYzUxYTgyYWY2Yzg2YjY2YTFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_6e51de4a8a3a403bbb7187258cc13da1",
+      "statement": "Each dist.sh target loop ends with `cargo clean`, which wipes the target/assets the host trunk build produced, so the wasm UI must be rebuilt per target and again before the final host-only `cargo tauri build`; the exported SKIP_TRUNK=true is passed into the cross images by Cross.toml's [build.env] passthrough, which is what keeps build.rs from trying to run trunk there and from silently embedding an empty asset set into the staged desktop sidecar.",
+      "evidence": [
+        {
+          "resource": "repo://Cross.toml#L1-L2",
+          "version": "repo-lines-v1:sha256:8cd25240a1b13914777f9186147aaa51eca03e064f37497472095a93c7403bfc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE2ZjhlM2ZmYjY4NWQ1OWRkMDhmZTAyM2RjYjg1Y2MwZWIxNDBjZTE5Mjg2MGQ3ZmIyODZkNDA4YjdmYjk3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVhYTI1OGE2OWZhYjU2OTRjYjU1MjVlZTg1NzY3OTgzNzg3ZDdiMTUxOGFmODE2MDZhNzk0MjJlYzM4MTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTljYzRjNjljMWFkNjliNGQ0ZTBjMzg5MGQ5OTFhMThmNzJkNGNhMzhiYTBjZGVmYjdiYjYwNTViMjEwZThiMiJ9"
+        },
+        {
+          "resource": "repo://build.rs#L35-L38",
+          "version": "repo-lines-v1:sha256:a1e734b165e67608222be97fd8a49401cdf6da010b33aa0c01fa1cd492e8564c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRmNDBkZTE2MGY0NmY5NjdjMWNiNmZiNDkzNTBiMWM5ODZmZGM0YWU1N2Y3N2Q5NWUwNTc0MzRlOTVlOTk4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJlMTc2NjA4YjUxMTkyNGE3N2Q4M2M2MzliMWUyOGY5ODkyNmI5MjBhMzQ5MGI5M2Q3Y2U1OTRiZjFjNjQwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdjNTJmY2Q0ZTVkZTZjYTg0MzFjNWJjZjlkNzhhYzcxNjlhMmQ5ZmFiNWRlNDU0ZjVmNTdmNzE1MWVlMzdlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzgyYmJlZmNjZDAyNDk1NGZjMWZhNTRhYzkwZjZiMzRiYjE2MjZkM2NmYzRmMDk0M2I3NTI5YTcyYzE0NzVjMCJ9"
+        },
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L18-L22",
+          "version": "repo-lines-v1:sha256:3c607960d939d19872ce3e3af19b60231f6c29112037ea8ab9ccc7b6e9aa4d83:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU4ZDUxYjhjMGY1MTI5MGY2YTA3YTY1MDhjY2M4YzhhMDdjY2M3ZjkxNWFkZDRjODU2ZTIyYWY5YWZiNmYwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMwY2Q0MDU2MTEyMWJkNjhlNTUwZGQ0YzkzZDE1NzIxZGQ1NjliY2I2N2EzNmM4YjlmOGRjMGZlMDdjNDg2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOThiNTFkNGUyMDMwZTNmMGM4OTEzZTAyYTUwYmYzOTQyYjhlODBkNTFhYTZhNmFjNTAwYTI0NDhjZGVkMzBlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L15-L21",
+          "version": "repo-lines-v1:sha256:39355245550ceab34b1b0e5d210cd8983ba8a3204ec05f7eb2e9d72b0a529dab:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI0MWEwNjQ1ODE4MjYzYmViMzU1MjY0OWI4M2U1OTZjZWNlNzc1YTMwNTQwNjIxNjc5ZjA4YjYwNGZhZjQwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExN2ZhMDA2YmE5MjA4NTAwYjI5MzBjZTY5Y2JkZTQzNmM2NDdhZmE5MTdjYjczOTZhOWJjOTExMWE0NmRkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I0YjMzMzdjNTFjMmI4ZmQ3N2U2ZWMxMzg4MTI1ZTVlZTNjN2FmYjkzN2I2ZTU4YTY2MzQyZmY5Yjk3YzkyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzA2ZjBmMTZlZDkwZTk2ZDhhMTA0MDZjZjAxOTI5OTA2M2I4NDBjOGFlZDkxYWFmYTZkNmU5OTJkNjVhOTkyNSJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L53-L63",
+          "version": "repo-lines-v1:sha256:96ebf4bc036347fb6d3ab34cdf86693aa6e83a77e42d17e6e29370a5196b0a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NWM3YTg1ZmJkNDQwOWY4NjFiYzY2OTIzNWUxOWFhZjhmNGRlY2NiYjExNDk2MDVmYmYwYTNmMTJjZDBiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MmFmMWFjMDU1MjU1M2VhOWNlNjhlZmM5MTc3Y2RkZWRlM2E5ZDZkM2IwNTFjODJiYjY2MTc5ZGVmMTUxMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.7.1",
-    "at": "2026-10-09T16:11:37.544Z"
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-10T22:10:44.671Z"
   }
 }

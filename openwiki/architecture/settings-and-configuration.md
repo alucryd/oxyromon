@@ -1,11 +1,19 @@
 ---
 type: architecture
 title: Settings and Configuration Model
-description: The settings key/value table and its category constants in src/config.rs (BOOLEANS, choice_options, choice_list_options, integer_range, LISTS, PATHS, NULLABLES, SORTED_LISTS), the per-system override with global fallback read path, the config subcommand surface, and the GraphQL/MCP surfaces that reuse the same validators.
+description: The settings key/value table and its category constants in src/config.rs (BOOLEANS, choice_options, choice_list_options with the chd.rs codec enums, integer_range with CHD_HUNK_SIZE_RANGE, LISTS, PATHS, NULLABLES, SORTED_LISTS), the per-system override with global fallback read path, the config subcommand surface, and the GraphQL/MCP surfaces that reuse the same validators. CHD tuning is consumed in-process by the chd-rs crate through src/chd.rs, so no tool-path or tool-version setting exists.
 tags: [config, settings, cli, graphql, mcp, sqlite, format-tuning]
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
+  - id: openwiki-source-0c4734252d645c167b3af15a
+    resource: repo://crates/chd-rs/src/codec.rs
+  - id: openwiki-source-3b812eb8bded02c6c14a4b23
+    resource: repo://crates/chd-rs/src/ld.rs
+  - id: openwiki-source-84d75d6d1e1e60c51643c99f
+    resource: repo://crates/chd-rs/src/writer.rs
   - id: openwiki-source-2d75c6f9d7c9aa4292af3447
     resource: repo://frontend/src/api.rs
   - id: openwiki-source-09f0260084265b9e66fa1efc
@@ -32,8 +40,8 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-969423144217bcca78dffcb0
     resource: repo://src/benchmark.rs
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -58,6 +66,8 @@ sources:
     resource: repo://src/import_roms/test_per_system_rom_directory.rs
   - id: openwiki-source-2e0110a5b76b7e42ecbced1f
     resource: repo://src/import_roms/test_prefer_format.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-389985405c3e5c30c5b6cede
@@ -82,9 +92,9 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 verified:
-  - by: openwiki/0.7.1
+  - by: openwiki/0.7.2
     at: 2026-10-10T22:10:44.671Z
 ---
 
@@ -201,6 +211,7 @@ Consumers always pass a scope when one exists. `sort_roms::main` reads the whole
 `PREFER_VERSIONS`, `PREFER_FLAGS`, `REGIONS_ONE_STRICT`, the region/language/
 discard lists) with `system_id = Some(system.id)`, and `convert_roms` /
 `export_roms` do the same for the format-tuning keys. See
+<!-- openwiki: broken internal link [../workflows/sorting-and-1g1r-election.md] file "../workflows/sorting-and-1g1r-election.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 [Sorting and the 1G1R Election](../workflows/sorting-and-1g1r-election.md).
 
 ## Category constants: how a key is classified
@@ -221,7 +232,9 @@ discard lists) with `system_id = Some(system.id)`, and `convert_roms` /
 `choice_options` and `choice_list_options` are functions precisely because their
 option sets are not local to config: `PREFER_FORMAT` borrows
 `convert_roms::ALL_FORMATS`, `RVZ_/SEVENZIP_/ZIP_COMPRESSION_ALGORITHM` borrow
-`VariantNames::VARIANTS` from `rvz.rs`, `archive.rs` and `chdman.rs`, and the
+`VariantNames::VARIANTS` from `rvz.rs` and `archive.rs`, the four
+`CHD_*_COMPRESSION_ALGORITHMS` keys borrow them from the
+`ChdCd/Dvd/Hd/LdCompressionAlgorithm` enums in `chd.rs`, and the
 `REGIONS_*_SUBFOLDERS` / `PREFER_REGIONS` / `PREFER_VERSIONS` choices come from
 the `SubfolderScheme`, `PreferredRegion` and `PreferredVersion` strum enums
 declared in `config.rs` itself. Value casing follows those enums
@@ -236,19 +249,20 @@ enum threaded through `get_hash_and_size` by import and DAT creation.
 unless the key is in `SORTED_LISTS`, and that slice names exactly three keys:
 `CHD_CD_COMPRESSION_ALGORITHMS`, `CHD_DVD_COMPRESSION_ALGORITHMS` and
 `REGIONS_ONE`. Membership means "this list's order is semantic" — `REGIONS_ONE`
-is a region *priority* order, and the CHD CD/DVD algorithm lists are the trial
-order `chdman` receives via `--compression`. The newer CHD keys do not share
+is a region *priority* order, and the CHD CD/DVD algorithm lists are laid out in
+order into the four compression slots of a CHD header, where earlier slots win a
+tie. The newer CHD keys do not share
 that treatment, and the asymmetry is worth knowing before you touch either
 category: `CHD_HD_COMPRESSION_ALGORITHMS` and `CHD_LD_COMPRESSION_ALGORITHMS`
 are validated choice lists but are absent from `SORTED_LISTS`, so `--add`
-alphabetizes them and a preferred chdman trial order cannot be expressed for HD
+alphabetizes them and a preferred codec trial order cannot be expressed for HD
 or LD media. Likewise `NULLABLES` covers the CD and DVD CHD keys only: all four
 `CHD_HD_*` / `CHD_LD_*` keys were seeded as `NULL` by
 `20241008133304_add_more_chd_settings.sql` yet cannot be unset — `unset_setting`
 refuses them and the MCP tool rejects them with the `NULLABLES` list — even
 though their CD and DVD counterparts can. Emptying an HD/LD algorithm list entry
 by entry still reaches `NULL`, because `set_list` stores an empty list that way,
-but an HD or LD hunk size has no in-app path back to "let chdman choose".
+but an HD or LD hunk size has no in-app path back to "let the writer choose".
 
 Category membership also determines which mutators accept a key, and the paths do
 not overlap uniformly. `set_setting` dispatches in the order `PATHS` →
@@ -339,21 +353,46 @@ in `choice_options` / `choice_list_options` and, for the integers, in
 
 | Key | Range owner |
 | --- | --- |
-| `CHD_CD/DVD/HD/LD_HUNK_SIZE` | `chdman::CHD_HUNK_SIZE_RANGE` = 16..1048576 |
+| `CHD_CD/DVD/HD/LD_HUNK_SIZE` | `chd::CHD_HUNK_SIZE_RANGE` = 16..1048576 |
 | `RVZ_BLOCK_SIZE` | `rvz::RVZ_BLOCK_SIZE_RANGE` = 32..2048 (KiB) |
 | `RVZ_COMPRESSION_LEVEL` | `rvz::RVZ_COMPRESSION_LEVEL_RANGE` = 1..22 |
 | `SEVENZIP_COMPRESSION_LEVEL`, `ZIP_COMPRESSION_LEVEL` | `archive.rs` `_RANGE` = 1..9 |
 | `SEVENZIP_ZSTD_COMPRESSION_LEVEL`, `ZIP_ZSTD_COMPRESSION_LEVEL` | `archive::ZSTD_COMPRESSION_LEVEL_RANGE` = 1..22 |
 
 Likewise the algorithm choices are the `VARIANTS` of `ChdCd/Dvd/Hd/LdCompressionAlgorithm`
-(`chdman.rs`), `RvzCompressionAlgorithm` (`rvz.rs`), and
-`SevenzipCompressionAlgorithm` / `ZipCompressionAlgorithm` (`archive.rs`).
+(`chd.rs`), `RvzCompressionAlgorithm` (`rvz.rs`), and
+`SevenzipCompressionAlgorithm` / `ZipCompressionAlgorithm` (`archive.rs`). Each CHD
+key is pinned to the codec list its media type supports, so the four keys are not
+interchangeable vocabularies:
+
+| Key | Enum (`chd.rs`) | Accepted values |
+| --- | --- | --- |
+| `CHD_CD_COMPRESSION_ALGORITHMS` | `ChdCdCompressionAlgorithm` | `none`, `cdfl`, `cdlz`, `cdzl`, `cdzs` |
+| `CHD_DVD_COMPRESSION_ALGORITHMS` | `ChdDvdCompressionAlgorithm` | `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd` |
+| `CHD_HD_COMPRESSION_ALGORITHMS` | `ChdHdCompressionAlgorithm` | `none`, `flac`, `huff`, `lzma`, `zlib`, `zstd` |
+| `CHD_LD_COMPRESSION_ALGORITHMS` | `ChdLdCompressionAlgorithm` | `none`, `avhu` |
+
+These are the codecs the in-tree `chd-rs` writer can actually encode
+(`crates/chd-rs/src/codec.rs`), so an entry `--add` accepts is a codec the writer
+supports for that media type — a CD key never offers the plain `zlib`/`lzma`
+codes and LaserDisc only ever `avhu`.
 Validation therefore cannot drift from what the writers accept, and a format
-module changing its range changes what `config --set` will accept.
+module changing its range or its enum changes what `config --set` / `--add` will
+accept. Note that these keys tune an *in-process library call*, not a subprocess:
+CHD comes from the in-workspace `chd-rs` crate (`crates/chd-rs`), 7z and ZIP from
+`sevenz-rust2` and `zip`, RVZ and WBFS from `nod`, so CHD has **no external
+dependency** and there is no tool-path or tool-version setting anywhere — `PATHS`
+holds only `ROM_DIRECTORY` and `TMP_DIRECTORY`, and `info` reports `chd-rs` as
+`built-in`. The `sevenz` and `nod` Cargo features that once gated the external
+binaries are gone, and with them any notion of a missing or too-old binary; the
+only Cargo features left that gate settings surfaces are `server` and `mcp`.
 
 Reading happens per system at conversion time: `convert_roms` pulls all four CHD
-hunk sizes and algorithm lists for `Some(system.id)`, while `export_roms` reads
-only the CD and DVD pairs — the HD and LD tuning keys therefore affect
+hunk sizes and algorithm lists for `Some(system.id)`, plus `CHD_PARENTS` — the
+only reader of that key, which decides whether a conversion clones a parent CHD
+(`--parents` prompts instead) — while `export_roms` reads
+only the CD and DVD pairs and clones whatever parent the database already
+records, so the HD and LD tuning keys and `CHD_PARENTS` itself affect
 `convert-roms` alone. `archive::get_archive_compression` maps an archive type onto its
 (algorithm, level, zstd-level) key triple and produces an `ArchiveCompression`
 that carries the level on the chosen algorithm's own scale. The consumers apply
@@ -362,10 +401,52 @@ the units and per-algorithm limits the setting layer deliberately does not:
 level with `level.clamp(1, 9)` for bzip2/lzma/lzma2 and `clamp(1, 22)` for zstd
 (the `integer_range` entry is the union 1..22), and prints a warning that
 `RVZ_SCRUB is unsupported by nod, writing unscrubbed` rather than failing.
-`chdman` omits `--hunksize` for a `None` hunk size and joins the algorithm list
-with `,` into `--compression`, leaving chdman's own auto-selection in place when
-the list is empty — which is why an unset (NULL) tuning key is a meaningful
-value, not an absent setting.
+
+CHD tuning is resolved inside `chd.rs::create_chd` as arguments to the `chd-rs`
+writer, not on a command line. An empty algorithm list is not "no compression":
+it selects the media defaults `create_chd` applies itself — `cdlz, cdzl, cdfl`
+for CDs, `avhu` for LaserDiscs, `lzma, zlib, huff, flac` for DVDs and hard disks
+— while a populated list is packed by `codecs()` into the four compression slots
+of the header, in stored order, with `none` alone clearing all four slots.
+Each hunk is then compressed with every slot in turn and the smallest result
+wins, ties going to the earliest slot, which is why the list's order matters.
+Likewise a `None` hunk size takes the parent CHD's hunk size when cloning, and
+otherwise 8 CD frames or 4096 bytes; a LaserDisc hunk size is passed through as
+an `Option` and resolved by `create_ld`, which takes the parent's or one field.
+So an unset (NULL) tuning key is a meaningful "auto" value, not an absent
+setting.
+
+<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: a semicolon inside a label breaks rendering; rephrase the label. -->
+```text
+flowchart TD
+  A["stored CHD hunk size and algorithm list"] --> B["convert_roms or export_roms reads them with Some(system.id)"]
+  B --> C["chd.rs create_chd"]
+  C --> D{"algorithm list empty"}
+  D -->|"yes"| E["media defaults: cdlz cdzl cdfl for CD, avhu for LD, lzma zlib huff flac otherwise"]
+  D -->|"no"| F["stored order kept"]
+  E --> G["codecs packs up to four fourcc tags into the header slots, none clears them"]
+  F --> G
+  C --> H{"hunk size present"}
+  H -->|"no"| I["parent hunk size, else 8 CD frames or 4096 bytes; LD resolved in create_ld"]
+  H -->|"yes"| J["stored value"]
+  G --> K["chd-rs create_cd / create_dvd / create_hd / create_ld"]
+  I --> K
+  J --> K
+  K --> L["chd-rs validate: hunk a multiple of the unit size, each slot a known codec"]
+```
+
+*Caption: how a CHD tuning row becomes header slots and a hunk size; the defaults and the geometric checks live in the format layer, not in `config.rs`.*
+
+Because config's checks are only "is this a member of the enum" and "is this
+inside the byte range", the format layer still owns the rejections that a valid
+configuration can hit. `codecs()` errors with *"At most four CHD compression
+algorithms can be used"* when a key holds more than four entries, chd-rs rejects
+a hunk size that is not a multiple of the media's unit size (2448 for a CD frame,
+2048 for a DVD, 512 for a hard disk) even though `CHD_HUNK_SIZE_RANGE` admits it,
+and an explicit `none` in `CHD_LD_COMPRESSION_ALGORITHMS` reaches
+`create_ld`'s refusal of an uncompressed LaserDisc CHD. Changing the settings
+layer to be stricter about those cases would be a behaviour change for existing
+databases, so today they surface as a conversion error on the affected ROM.
 
 `PREFER_FORMAT` is also written from outside `config`. `convert-roms --save`
 persists the format it just converted to through `set_string` directly, and

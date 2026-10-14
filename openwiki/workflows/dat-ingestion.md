@@ -83,6 +83,9 @@ sources:
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
 generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads

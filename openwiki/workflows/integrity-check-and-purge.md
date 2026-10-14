@@ -1,12 +1,11 @@
 ---
 type: workflow
 title: Integrity Checking, Purging and Trash
-description: How check-roms re-hashes and re-sizes imported ROM files and trashes mismatches, and how the purge family (purge-roms missing/orphan/trash/foreign, purge-systems, purge-irds) reconciles the database with the filesystem without ever deleting the ROM, system or Trash directories.
+description: How check-roms re-hashes imported ROM files and trashes mismatches (CHDs verified in process through the built-in chd-rs crate, per track for multi-track CDs), and how the purge family (purge-roms missing/orphan/trash/foreign, purge-systems, purge-irds) reconciles the database with the filesystem without ever deleting the ROM, system or Trash directories.
 tags: [check-roms, purge-roms, purge-systems, purge-irds, trash, integrity, crc, orphan, foreign, empty-directories, destructive]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
+  - id: openwiki-source-651d1fb6c9e49916a916ab51
+    resource: repo://Cargo.toml
   - id: openwiki-source-856f981d403ccfe0cdc72f3a
     resource: repo://frontend/src/components/purge_rom_modal.rs
   - id: openwiki-source-5d0bfd830d431dc56dd8187c
@@ -19,10 +18,12 @@ sources:
     resource: repo://migrations/20210323000005_create_roms.sql
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
-  - id: openwiki-source-8afb0fa0e0b1612b673e51d6
-    resource: repo://src/chdman.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
+  - id: openwiki-source-ae112a898ad2b964864b4498
+    resource: repo://src/check_roms/test_multiple_tracks_chd.rs
   - id: openwiki-source-de387659b991f4f153cbd6d1
     resource: repo://src/check_roms/test_original_crc_mismatch.rs
   - id: openwiki-source-ac8824e0da82b44765db720c
@@ -51,6 +52,8 @@ sources:
     resource: repo://src/mutation.rs
   - id: openwiki-source-d3402490d16a663b822e8a00
     resource: repo://src/nsz.rs
+  - id: openwiki-source-fcdf0f9c4361c1ee384f2689
+    resource: repo://src/prompt.rs
   - id: openwiki-source-1365b33b317f3d0f1e82b7b0
     resource: repo://src/purge_irds.rs
   - id: openwiki-source-3c95c695729a3d795fe5d1a9
@@ -63,6 +66,8 @@ sources:
     resource: repo://src/purge_roms/test_missing_subfolder.rs
   - id: openwiki-source-1a56648aeb72c94b841e96ad
     resource: repo://src/purge_roms/test_orphans_subfolder.rs
+  - id: openwiki-source-c0a904a5cd1b3999bf247146
+    resource: repo://src/purge_roms/test_trashed_rom_directory.rs
   - id: openwiki-source-f2631dded73227f17eb95a91
     resource: repo://src/purge_roms/test_trashed.rs
   - id: openwiki-source-c138af21b9b0996b6c64846f
@@ -73,11 +78,16 @@ sources:
     resource: repo://src/rvz.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-4fe52c7cb090ec0387522035
+    resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # Integrity Checking, Purging and Trash
@@ -106,15 +116,22 @@ None => get_rom_directory(connection).await.join("Trash"),
 ```
 
 `get_trash_directory` derives it from the *system* directory, so a system that
-overrides `ROM_DIRECTORY` per-system gets its trash under that override, and
-`purge-roms --trash` finds those rows with a plain
-`WHERE path LIKE '%/Trash/%'` query ([src/database.rs](../../src/database.rs#L2869-L2882)).
+overrides `ROM_DIRECTORY` per-system gets its trash under that override.
+`find_romfiles_in_trash` then matches those rows on the stored relative path with
+`WHERE path LIKE '%/Trash/%' OR path LIKE 'Trash/%'`
+([src/database.rs](../../src/database.rs#L2869-L2883)).
 
-The `LIKE '%/Trash/%'` match is what makes the convention robust: `import-roms`
-sorts its own rejects one level deeper — `Trash/<Valid|Duplicate|Invalid|Skipped>/`
-with the computed hash appended to the filename — and those files are swept by the
-same `--trash` pass as the flat names `check-roms` produces
-([src/import_roms.rs](../../src/import_roms.rs#L2639-L2699)).
+The second pattern is the 0.25 fix, and it matters: `import-roms -t` files a ROM
+that matches **no** system into the *ROM directory's* own `Trash`, whose stored
+path begins with `Trash/` rather than containing `/Trash/`. Without that clause
+`purge-roms -t` never saw them
+([src/purge_roms/test_trashed_rom_directory.rs](../../src/purge_roms/test_trashed_rom_directory.rs#L33-L79)).
+
+Both patterns are substring/prefix matches, which is what makes the convention
+robust: `import-roms` sorts its rejects one level deeper —
+`Trash/<Valid|Duplicate|Invalid|Skipped>/` with the computed hash appended to the
+filename — and those files are swept by the same `--trash` pass as the flat names
+`check-roms` produces ([src/import_roms.rs](../../src/import_roms.rs#L2620-L2677)).
 
 Two consequences matter when changing this area:
 
@@ -128,17 +145,27 @@ Two consequences matter when changing this area:
 
 ## check-roms: re-hash, report, trash
 
-`check-roms` selects systems by `--system` (name-like, deduplicated) or `--all`,
-defaulting to an interactive multiselect; within a system it checks
-`--game`-filtered games or every game already at `completion = 2`
-([src/check_roms.rs](../../src/check_roms.rs#L56-L101)). A `--game` pattern that
-matches nothing prints `No matching games found` and moves to the next system
-rather than failing the run.
+`check-roms` takes `-a/--all`, `-g/--game`, `-s/--size` and `--system`
+([src/check_roms.rs](../../src/check_roms.rs#L19-L53)). `--system` is name-like
+and resolved by `resolve_systems_by_name_like`, which sorts by id and
+de-duplicates so two overlapping patterns cannot check the same system twice;
+without it, `-a` checks every system and anything else opens an interactive
+multiselect ([src/database.rs](../../src/database.rs#L314-L331),
+[src/prompt.rs](../../src/prompt.rs#L9-L46)). The same `--system` resolution is
+what makes the GraphQL and MCP wrappers headless, and `purge-systems -s` behaves
+identically ([src/purge_systems.rs](../../src/purge_systems.rs#L35-L53)).
+
+Within a system, `--game` patterns are collected, de-duplicated and handed to a
+game multiselect that is skipped entirely in test builds; with no `--game`, the
+work set is every game already at `completion = 2`. An empty selection prints
+`No matching games found` **only** when `--game` was given, and moves on rather
+than failing the run
+([src/check_roms.rs](../../src/check_roms.rs#L55-L100)).
 
 For each system, `check_system` loads only `original = true` roms that have a
 `romfile_id`, groups them by `romfile_id`, and dispatches on the romfile's
 extension. The whole pass runs inside one transaction that is committed at the
-end of the system ([src/check_roms.rs](../../src/check_roms.rs#L103-L254)).
+end of the system ([src/check_roms.rs](../../src/check_roms.rs#L102-L249)).
 
 ```mermaid
 flowchart TD
@@ -146,15 +173,13 @@ flowchart TD
     B --> C["group roms by romfile_id, load romfiles, load system header"]
     C --> D{"romfile extension"}
     D -->|7z or zip| E["check_archive: entry count must equal rom count"]
-    D -->|chd| F{"chdman available"}
-    F -->|no| G["print error and stop this system"]
-    F -->|yes| H["romfile_as_chd then ChdRomfile check"]
+    D -->|chd| F["romfile_as_chd then ChdRomfile check, in process"]
     D -->|cso or zso| I["decompress to ISO in tmp, check ISO"]
     D -->|nsz| J["extract to NSP in tmp, check NSP"]
     D -->|rvz| K["hash while decoding, no ISO written"]
     D -->|other| L["CommonRomfile check"]
     E --> M{"check returned Ok"}
-    H --> M
+    F --> M
     I --> M
     J --> M
     K --> M
@@ -184,14 +209,9 @@ Every format implements the same `Check` trait, and the leaf comparison is alway
   declare no size cannot fail on size.
 - `ArchiveRomfile::check` extracts the member into a temp directory before
   hashing, and `check_archive` first bails when the archive holds a different
-  number of files than the game has roms
-  ([src/archive.rs](../../src/archive.rs#L217-L236)).
-- `ChdRomfile::check` branches on CHD type: a CD CHD is unpacked to cue/bin and
-  each track is checked against its own rom; DVD/HDD/LaserDisc CHDs are unpacked
-  to a single image ([src/chdman.rs](../../src/chdman.rs#L240-L285)). CHDs are
-  opened through `romfile_as_chd`, which resolves a CHD `parent_id` first, so a
-  chained CHD is verified against the parent it depends on
-  ([src/transcode.rs](../../src/transcode.rs#L57-L78)).
+  number of files than the game has roms, then matches each member to its rom by
+  name ([src/archive.rs](../../src/archive.rs#L217-L236),
+  [src/check_roms.rs](../../src/check_roms.rs#L251-L276)).
 - `RvzRomfile::check` hashes *while decoding*, writing no ISO at all; it falls
   back to the extract-then-check path only if a header is configured
   ([src/rvz.rs](../../src/rvz.rs#L69-L98)).
@@ -201,11 +221,44 @@ row, `get_file_and_header_size` peeks at the configured bytes and, only if every
 `rules` row matches, subtracts `header.size` from the file size before comparing
 ([src/common.rs](../../src/common.rs#L575-L607)).
 
+### CHDs are verified in process, per track
+
+CHDs no longer shell out to `chdman` — the external binary is gone and
+`src/chdman.rs` does not exist. Everything goes through the in-repo `chd-rs`
+crate ([Cargo.toml](../../Cargo.toml#L78)), and `chd::get_version()` reports the
+literal string `built-in`
+([src/chd.rs](../../src/chd.rs#L896-L898)).
+
+`CommonRomfile::parse_chd` opens the container with `Chd::open` on a blocking
+task and returns its type, logical size, data SHA1, own SHA1, declared parent
+SHA1 and `track_count`. A **CD** CHD deliberately reports size `0` and an empty
+data hash: a CD has no single hash, only its tracks do
+([src/chd.rs](../../src/chd.rs#L541-L583)).
+
+`ChdRomfile::check` branches on that type. A CD CHD is extracted to cue/bin and
+each track's bin is checked against **its own** rom — `roms.iter().zip(bin_romfiles)`
+— so a multi-track disc passes only when every track matches; DVD, HDD and
+LaserDisc CHDs are unpacked to a single image checked against the rom set. The
+bin/CUE go to a temp directory, and the CUE `extract_chd` writes is hidden
+(`.name.cue`) so a caller that keeps the original sheet deletes it
+([src/chd.rs](../../src/chd.rs#L232-L277),
+[src/chd.rs](../../src/chd.rs#L833-L842)).
+
+Two paths feed `ChdRomfile::check` a parent. `romfile_as_chd` reads the
+romfile's `parent_id` and, when set, attaches the parent through
+`as_chd_with_parent`, which re-parses the candidate and **bails on a SHA1
+mismatch** rather than extracting against the wrong disc. When there is no
+`parent_id` but the header declares a `parent_sha1`, `as_chd` scans the CHD's own
+directory for a sibling CHD whose own SHA1 equals it and adopts that one
+([src/transcode.rs](../../src/transcode.rs#L57-L78),
+[src/chd.rs](../../src/chd.rs#L584-L680)). Extraction then opens the container
+with `Chd::open_with_parent`.
+
 ### Failure is per-file, and expensive
 
 A failed file is renamed into the system's Trash with `rename` + `Persist::update`
 inside the same transaction; the run continues to the next romfile
-([src/check_roms.rs](../../src/check_roms.rs#L283-L305)). Only if at least one
+([src/check_roms.rs](../../src/check_roms.rs#L200-L300)). Only if at least one
 file failed does `check_system` call `compute_system_completion`, which is what
 turns "complete" games back into "partial" ones in the UI. The summary line
 reports `{passed}/{checked} files passed, {errors} moved to trash`.
@@ -230,7 +283,7 @@ flowchart TD
     C --> D["delete_romfile_by_id, then remove_empty_directories"]
     B -->|no| E{"--trash"}
     D --> E
-    E -->|yes| F["rows whose path contains /Trash/"]
+    E -->|yes| F["rows whose path is under Trash"]
     E -->|no| G{"--orphan"}
     F --> H["summary, confirm or --yes, then delete file and row"]
     G -->|yes| I["rows no rom references and no game playlist points at"]
@@ -296,9 +349,13 @@ before pointing these commands at a tree that uses the per-system override.
 
 ## Empty-directory cleanup
 
+Deleting a file is only half of what a purge does — the directories it empties go
+too, under rules tight enough that the cleanup can never take down something the
+library owns.
+
 `get_kept_directories` builds the set of directories that must survive: the ROM
 directory, the global `Trash`, and every system directory plus every system
-`Trash` ([src/util.rs](../../src/util.rs#L291-L303)). `remove_empty_directories`
+`Trash` ([src/util.rs](../../src/util.rs#L290-L302)). `remove_empty_directories`
 then walks *upward* from the directory a purge emptied:
 
 - It stops immediately on a kept directory, even an empty one.
@@ -311,17 +368,18 @@ then walks *upward* from the directory a purge emptied:
   concurrently stops the walk instead of being taken down with its directory.
 - Any other error is propagated with the directory in the context message.
 
-`purge-roms --foreign` defers all of its climbs until the `WalkDir` iterator is
-finished, collecting the emptied parents in a `HashSet` first — the source
-comment states the reason plainly: "once the walk is over, so that no directory
-is deleted while being read"
+All three purge categories call it on the parent of each deleted file
+([src/purge_roms.rs](../../src/purge_roms.rs#L94-L147)). `purge-roms --foreign`
+defers its climbs until the `WalkDir` iterator is finished, collecting the
+emptied parents in a `HashSet` first — the source comment states the reason
+plainly: "once the walk is over, so that no directory is deleted while being read"
 ([src/purge_roms.rs](../../src/purge_roms.rs#L173-L207)).
 
 `sort-roms` has its own older loop that stops at the system directory only, and
 `reimport_orphan_romfiles` treats cleanup as purely cosmetic — it warns instead
 of propagating, so a directory it cannot remove never undoes the re-imports above
 it ([src/sort_roms.rs](../../src/sort_roms.rs#L626-L642),
-[src/import_dats.rs](../../src/import_dats.rs#L925-L933)).
+[src/import_dats.rs](../../src/import_dats.rs#L936-L944)).
 
 ## purge-systems: the catalog goes, the files stay (in Trash)
 
@@ -456,11 +514,19 @@ The bundled `audit_system` prompt encodes the intended operator sequence:
 
 The focused tests track these boundaries rather than the happy path:
 `test_original_crc_mismatch` and `test_original_size_mismatch` assert the failing
-row survives with `/Trash/` in its path and the file still on disk;
+row survives with `/Trash/` in its path and the file still on disk, and
+`test_check_by_name` drives the same outcome through `check-roms --system` so the
+unattended selection path is covered; `test_iso_chd` and
+`test_multiple_tracks_chd` assert a DVD CHD and a multi-track CD CHD each pass
+without being moved
+([src/check_roms/test_check_by_name.rs](../../src/check_roms/test_check_by_name.rs#L59-L72),
+[src/check_roms/test_multiple_tracks_chd.rs](../../src/check_roms/test_multiple_tracks_chd.rs#L51-L63));
 `test_missing_subfolder` and `test_orphans_subfolder` assert the emptied alpha
 subfolder is gone while the system directory remains;
 `test_foreign_subfolder` asserts that deleting the last foreign file removes
-`Test System` but never the ROM directory; and `test_trashed` asserts the
-`Trash` directory itself is left in place, empty
-([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),
-[src/purge_roms/test_trashed.rs](../../src/purge_roms/test_trashed.rs#L58-L75)).
+`Test System` but never the ROM directory; `test_trashed` asserts the system
+`Trash` directory itself is left in place, empty; and
+`test_trashed_rom_directory` asserts the same for the **ROM directory's** `Trash`
+holding an `import-roms` reject ([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),
+[src/purge_roms/test_trashed.rs](../../src/purge_roms/test_trashed.rs#L58-L75),
+[src/purge_roms/test_trashed_rom_directory.rs](../../src/purge_roms/test_trashed_rom_directory.rs#L69-L79)).

@@ -1,12 +1,13 @@
 ---
 type: concept
 title: SSE Events and Progress Bridging
-description: How long-running work reports back — the SseMessage broadcast channel behind GET /events, the {prefix}_started/_complete/_error contract emitted by mutation.rs, the upload handlers and the MCP SSE bridge, why the channel is lossy for slow clients, how an indicatif progress bar becomes MCP notifications/progress, and how cancellation and shutdown_signal terminate the stream.
+description: How long-running work reports back — the SseMessage broadcast channel behind GET /events, the {prefix}_started/_complete/_error contract emitted by mutation.rs, the upload handlers and the MCP action bridge, why the channel is lossy for slow clients, how chd-rs's byte callback through run_blocking moves an indicatif bar that becomes MCP notifications/progress, and how cancellation and shutdown_signal terminate the stream.
 tags: [sse, events, broadcast, progress, keepalive, cancellation, shutdown, mcp, frontend, eventsource]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
+  - id: openwiki-source-791152eebc06b2994c82630a
+    resource: repo://crates/chd-rs/src/cdrom.rs
   - id: openwiki-source-c1fba58d5f1ff9717d354a3c
     resource: repo://desktop/src/server.rs
   - id: openwiki-source-2d75c6f9d7c9aa4292af3447
@@ -15,8 +16,12 @@ sources:
     resource: repo://frontend/src/sse.rs
   - id: openwiki-source-c6e18f6fc03eca8f5fb94b75
     resource: repo://frontend/Trunk.toml
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-7a3d5614c68ed1a3729171e7
+    resource: repo://src/gdi.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
@@ -27,13 +32,22 @@ sources:
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-6330834d320d84b814c24c5f
+    resource: repo://src/progress.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
   - id: openwiki-source-da31a7c38b2966a8a0185145
     resource: repo://src/server/test_uploads.rs
+  - id: openwiki-source-1c38b81542bfb683299ad2cd
+    resource: repo://src/xdelta.rs
+  - id: openwiki-source-196778315263fb8bcc8066e5
+    resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # SSE Events and Progress Bridging
@@ -93,6 +107,27 @@ That is the intended contract: **progress is best-effort telemetry, not a work
 queue.** Nothing may depend on an event being delivered; the authoritative state
 lives in SQLite and is re-fetched. Do not add an event whose only purpose is to
 carry a value the client cannot otherwise obtain.
+
+## The `/mcp` mount shares the same bus
+
+The MCP server is not a second process or a second event pipeline. `server::main`
+nests `crate::mcp::mcp_http_service(pool.clone(), cancel.clone(), sse_tx.clone())`
+as a service at `/mcp` on the same axum router as `/graphql` and `/events`, so an
+MCP client and the SPA watch the same channel and the same pool. `mcp_http_service`
+holds a `LocalSessionManager` and builds the `OxyromonMcp` handler per request —
+rmcp serves `2026-07-28` clients statelessly — and each fresh handler is passed
+`with_sse(sse_tx.clone())`, which is what turns its `sse_tx` from `None` to
+`Some`. The `CancellationToken` handed to it is the server's own, which is how a
+server shutdown reaches in-flight MCP actions.
+
+Two consequences are worth keeping in mind:
+
+- `/mcp` is unauthenticated, like `/graphql` and `/events`: the route comment
+  calls it "same-origin as the web app and the same trust level as `/graphql`".
+  Anything that can reach the bound address can run mutating tools.
+- In a stdio-only build (`--features mcp` without `server`) the SSE branch does
+  not exist at all: `sse_prefix` is consumed by a `let _ = sse_prefix;` and only
+  MCP progress notifications leave the process.
 
 ## The `/events` stream
 
@@ -154,23 +189,24 @@ Two details the table hides:
   `import_dat_complete` per entry (`skipped: true` for an already-current system,
   which the frontend renders as a warning and does *not* refresh on) or
   `import_dat_error` per failure. `ImportDatResult::Skipped` — `--update` against
-  a system that does not exist — emits nothing at all.
+  a system that does not exist — is filtered out before the handler ever sees it,
+  so it emits nothing at all.
 
 The invariant that makes the UI correct: **one terminal event on every code path**.
 `spawn_cli_action` acquires its connection *inside* the task, after
 `{prefix}_started` has already gone out, precisely so a pool-exhaustion failure
 becomes `{prefix}_error` rather than silence. The same discipline appears in
-`upload_dat`, where a failed `TempDir::new()` or `pool.acquire()` emits
-`import_dat_error` and returns. A new action that can return early without a
+`upload_dat`, where a failed `TempDir::new()`, `pool.acquire()` or `fs::write`
+emits `import_dat_error` and returns. A new action that can return early without a
 terminal event leaves a menu spinner turning forever.
 
 The ordering difference between the two hosts is worth knowing when debugging a
 "nothing appeared" report: `spawn_cli_action` emits `started` *before* waiting
 for a connection, so a queued action announces itself even when the pool is
-saturated. `purge_system` and `download_dats` — which predate the helper — and
-MCP's `run_action` all acquire first, so an action waiting on a connection (or,
-for MCP, on the process-wide write lock) is invisible on `/events` until it
-actually starts.
+saturated. `purge_system` and `download_dats` — which inline the sequence instead
+of using the helper — and MCP's `run_action` all acquire first, so an action
+waiting on a connection (or, for MCP, on the process-wide write lock) is
+invisible on `/events` until it actually starts.
 
 ## Why the lossy channel is survivable: the frontend's rules
 
@@ -204,34 +240,68 @@ prefix is what makes MCP work visible.
 
 ## Bridging a progress bar
 
-A subcommand reports depth by ticking an `indicatif` bar. Whether that movement
-reaches a client depends on the host:
+A subcommand reports depth by ticking an `indicatif` bar. Where that bar's
+movement comes from has changed as the external converters became in-process
+crates: CPU-bound format work now runs through `run_blocking` in
+[`src/progress.rs`](../../src/progress.rs#L72-L97), which clones the caller's
+bar, moves the conversion onto the blocking pool, and hands the format crate a
+`&mut dyn FnMut(u64)` that does nothing but `bar.inc(n)` with the input bytes
+just consumed:
+
+```rust
+spawn_blocking(move || {
+    bar.reset();
+    bar.set_style(get_bytes_progress_style());
+    bar.set_length(length);
+    work(&mut |n| bar.inc(n))
+})
+```
+
+That callback shape is the workspace-wide contract for the format crates —
+[`AGENTS.md`](../../AGENTS.md#L205-L215) states that entry points take
+`progress: &mut dyn FnMut(u64)`, called with the input bytes consumed since the
+last call, and that **the calls add up to the input size**. `length` is that
+total: the input file's `metadata().len()` for `xso-rs`, `nsz`, `xdelta` and
+`xps`; the sum of the files a CUE names, from `chd_rs::cd_input_size`, for a CD
+image ([`crates/chd-rs/src/cdrom.rs`](../../crates/chd-rs/src/cdrom.rs#L1425-L1438));
+`gdi_rs::input_size` for a GDI conversion; and the CHD's
+`info().logical_size` when extracting one. So the byte counts chd-rs and its
+siblings push through this callback are exactly the `position`/`total` a client
+eventually sees.
+
+Whether that movement reaches a client depends on the host:
 
 - **CLI** — the bar is the real output, plus `indicatif_log_bridge`.
 - **GraphQL / uploads** — every action runs on `ProgressBar::hidden()`, and
-  **nothing is bridged**. SSE carries lifecycle events and their `message`
-  string, never percentages. Adding per-file progress to the web UI would mean
-  inventing a new event stream, not wiring up the bar.
-- **MCP** — `run_action` deliberately creates a *visible* bar
+  **nothing is bridged**. The byte callback still runs and still ticks a bar
+  that renders nowhere; SSE carries lifecycle events and their `message` string,
+  never percentages. Adding per-file progress to the web UI would mean inventing
+  a new event stream, not wiring up the bar.
+- **MCP** — `run_action` deliberately creates a real bar
   (`get_progress_bar(0, get_none_progress_style())` plus `start_action(label)`)
-  so something exists to read, then polls it.
+  rather than a hidden one, so both the poller below and the log bridge have
+  something to read, and that same bar is the one threaded down through the
+  subcommand into `run_blocking`.
 
 ```mermaid
 sequenceDiagram
   participant RUN as run_action
   participant BAR as indicatif bar
   participant SUB as subcommand main
+  participant BLK as blocking pool
   participant POL as poller task
-  participant MCP as MCP client
+  participant CLI as MCP client
   participant BUS as SSE broadcast
 
   RUN->>BAR: none-style bar, start_action label
   RUN->>BUS: prefix_started when mounted
   RUN->>SUB: work with connection and bar
   SUB->>BAR: restyle, set length, tick
+  SUB->>BLK: run_blocking with length and byte callback
+  BLK->>BAR: inc bytes consumed
   loop every 400 ms while work runs
     POL->>BAR: read position, length, message
-    POL-->>MCP: notifications/progress only when changed
+    POL-->>CLI: notifications/progress only when changed
   end
   RUN->>POL: abort once work settles
   RUN->>BAR: stop_action, finish_and_clear
@@ -242,7 +312,7 @@ sequenceDiagram
   end
 ```
 
-*Caption: the only bar-to-client bridge — a 400 ms poller mirrors the subcommand's own progress bar into MCP progress notifications while the same lifecycle events fan out to `/events`.*
+*Caption: the only bar-to-client bridge — a 400 ms poller mirrors the subcommand's own progress bar (including the byte counts chd-rs pushes through `run_blocking`) into MCP progress notifications, while the same lifecycle events fan out to `/events`.*
 
 The poller exists because subcommands own their bar (they set style, length and
 message and tick it); `run_action` only ever reads it. It samples
@@ -291,8 +361,23 @@ test-only `config::MUTEX`) boot the real `main()` and assert the contract from
 outside instead: `test_uploads.rs` checks only the HTTP status code (202 for
 accepted work, 400 for a missing field or unknown id), while `test_mutations.rs`
 and `test_server.rs` re-query GraphQL a short `sleep` after the request for the
-effect. `tests/mcp_stdio.rs` speaks raw JSON-RPC over the child process's
-stdin/stdout and likewise never sends a `progressToken`.
+effect.
+
+[`tests/mcp_stdio.rs`](../../tests/mcp_stdio.rs) (`#![cfg(feature = "mcp")]`)
+spawns the real binary in `mcp` mode with its own `OXYROMON_DATA_DIRECTORY` and
+`OXYROMON_LOG_LEVEL=off`, and speaks line-delimited JSON-RPC over its
+stdin/stdout with a hand-rolled client — deliberately no SDK client, so the wire
+format itself is under test. The client's `request()` reads lines until one
+carries **its own** `id`, which is what lets it survive unsolicited notifications
+on the same stream; `close()` drops stdin and asserts a clean exit. Coverage is
+the handshake plus the full tool/prompt/resource lists (`audit_system`,
+`onboard_system`, `oxyromon://status`, `oxyromon://systems`,
+`oxyromon://settings`), `status` on an empty library, an unknown `system_id`
+coming back as a tool error that points at `list_systems`, a DAT import read back
+through `structuredContent`, confirm gating on all three purge tools,
+`set_setting` validation mirroring the CLI, and `--read-only` both hiding and
+refusing the write tools. Notably no test sends a `progressToken`, so the progress
+poller never runs under test.
 
 So the SSE event names and payloads are an unverified contract in both
 directions: changing a prefix compiles cleanly, breaks the SPA's listener for

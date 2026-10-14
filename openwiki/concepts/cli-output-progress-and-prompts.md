@@ -1,24 +1,27 @@
 ---
 type: concept
-title: Progress Bars, Categorized Output and Prompts
-description: The user-feedback layer — the global indicatif MultiProgress and its bar styles, the print_* helpers that render every line to stderr, the indicatif-log-bridge, and the dialoguer selection prompts with their -y/--yes, --unattended and cfg!(test) bypass paths that keep headless runs (and the MCP stdout JSON-RPC channel) unblocked.
-tags: [cli, progress, indicatif, output, stderr, prompts, dialoguer, unattended, mcp]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+title: CLI Output, Progress & Prompts
+description: The user-feedback layer — the global indicatif MultiProgress and its three bar styles, run_blocking as the bridge that turns a format crate's &mut dyn FnMut(u64) progress callback into bar increments (now including CHD via chd-rs), the print_* helpers that render every line to stderr, the indicatif-log-bridge, and the dialoguer prompts with their -y/--yes, --unattended, --system/--rom and cfg!(test) bypasses that keep headless runs (and the MCP stdout JSON-RPC channel) unblocked.
+tags: [cli, progress, indicatif, output, stderr, prompts, dialoguer, unattended, mcp, run-blocking]
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
     resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
+  - id: openwiki-source-7a3d5614c68ed1a3729171e7
+    resource: repo://src/gdi.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-d079c81879111b8d75173838
@@ -29,6 +32,8 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
+  - id: openwiki-source-3a747acc24019bf2bf34f312
+    resource: repo://src/iso.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
@@ -55,17 +60,26 @@ sources:
     resource: repo://src/purge_systems.rs
   - id: openwiki-source-2d7562030526fe478e02c8ca
     resource: repo://src/rebuild_roms.rs
+  - id: openwiki-source-db13c01516e9bd04294e339d
+    resource: repo://src/rvz.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-1c38b81542bfb683299ad2cd
+    resource: repo://src/xdelta.rs
+  - id: openwiki-source-9b5bca3734529131a5ec0d1b
+    resource: repo://src/xps.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -78,8 +92,8 @@ text entry), and the `indicatif_log_bridge::LogWrapper` installed once in
 [`src/main.rs`](../../src/main.rs). Everything they emit lands on **stderr**.
 That is not a stylistic choice: under `oxyromon mcp` stdout is the JSON-RPC
 transport, so a stray `println!` corrupts the protocol stream. The same modules
-carry the escape hatches — `-y/--yes`, `--unattended`, `--all`, `cfg!(test)` —
-that let a run finish with nobody at the keyboard.
+carry the escape hatches — `-y/--yes`, `--unattended`, `--all`, `--system`,
+`--rom`, `cfg!(test)` — that let a run finish with nobody at the keyboard.
 
 ## One global MultiProgress, one shared bar
 
@@ -111,14 +125,18 @@ chars:
 | --- | --- | --- |
 | `get_none_progress_style()` | spinner + `wide_msg`, no bar | default for every bar; `start_action` restores it |
 | `get_count_progress_style()` | spinner + msg, then `pos/len [bar] speed elapsed (ETA)` | `import_dats`, which counts catalog rows |
-| `get_bytes_progress_style()` | same, with `bytes/total_bytes` | `run_blocking`, for library conversions |
+| `get_bytes_progress_style()` | same, with `bytes/total_bytes` | `run_blocking`, plus the paths that drive `spawn_blocking` themselves: hashing in `common.rs`, CUE/BIN extraction in `iso.rs`, and `nod` reads and writes in `rvz.rs` |
 
 `start_action(bar, Some(msg))` sets the message, forces the none style and
 starts a 100 ms steady tick, giving an animated "spinner + what we are doing"
 line for work with no measurable progress. `stop_action(bar)` clears the message
 and disables the tick. Because the tick is state on the shared bar, callers that
-start one are responsible for stopping it — archive, chdman, ctrtool, nsz, xso,
-gdi, iso and `util::compute_system_completion` all pair the two.
+start one are responsible for stopping it — `archive`, `chd`, `ctrtool`, `gdi`,
+`iso`, `nsz`, `xso` and `util::compute_system_completion` all pair the two.
+Two modules take the tick without the message: `sort_roms` and `purge_systems`
+call `enable_steady_tick` / `disable_steady_tick` directly around their long
+loops, and `rvz` / `wbfs` set a message with `set_message` before calling
+`stop_action`.
 
 ```rust
 pub async fn run_blocking<T, E>(
@@ -134,7 +152,43 @@ the bar to the bytes style with `length` (the input bytes the crate will
 consume), and hands the crate a callback that increments the bar. A blocking
 task that panics surfaces as `"Conversion task failed"` from the `JoinError`,
 distinct from the crate's own error, which is mapped with
-`anyhow::Error::from`. It is used by `gdi`, `nsz`, `xdelta`, `xps` and `xso`.
+`anyhow::Error::from`.
+
+Callers: `chd` (both `create_chd` and `extract_chd`), `gdi`, `nsz`, `xdelta`,
+`xps` and `xso`. CHD is the main path this replaced: through 0.24 the format
+module shelled out to the external `chdman` binary, whose stdout gave no
+measurable progress, so the only thing to draw was a spinner. Now
+`src/chd.rs` sizes the bar itself — `chd_rs::cd_input_size(&input)` for a CUE's
+BINs, otherwise `input.metadata()?.len()` on create, and
+`chd.info().logical_size` on extract — and lets `chd-rs` report the input bytes
+it consumes into `bar.inc(n)` ([chd.rs](../../src/chd.rs#L734-L788)). The one
+format module still backed by a subprocess, `ctrtool`, has nothing to report and
+still draws only the spinner pair; `archive` moved in-process too but edits
+archive entries rather than streaming a byte count. `rvz`/`wbfs` drive `nod` on
+`spawn_blocking` directly because that crate exposes a `Read`er and a
+writer callback rather than a bytes-consumed closure.
+
+```mermaid
+sequenceDiagram
+    participant Sub as subcommand
+    participant RB as progress run_blocking
+    participant BP as tokio blocking pool
+    participant CR as chd_rs create_dvd
+    participant PB as shared ProgressBar
+
+    Sub->>RB: bar, input size, closure
+    RB->>BP: spawn_blocking
+    BP->>PB: reset, bytes style, set_length input bytes
+    BP->>CR: invoke with progress callback
+    loop as input is consumed
+        CR-->>BP: bytes consumed since last call
+        BP->>PB: inc
+    end
+    CR-->>BP: crate Result
+    BP-->>Sub: anyhow Result, "Conversion task failed" on panic
+```
+
+*Caption: the crate-to-blocking-pool bridge every in-process conversion (CHD included) uses to feed one shared bar.*
 
 ## The categorized output helpers
 
@@ -156,18 +210,21 @@ with a fixed icon, indent and `console::Style`:
 **Hard rule: never call `progress_bar.println(...)` directly from a subcommand
 or format module.** Go through the `print_*` helpers, which route through the
 MultiProgress and therefore never tear an animating bar in half or interleave
-with another bar's redraw. [`AGENTS.md`](../../AGENTS.md#L615-L631) records the
-same rule for contributors.
+with another bar's redraw. [`AGENTS.md`](../../AGENTS.md#L616-L632) records the
+same rule for contributors, and its "Common Pitfalls" list repeats it as the
+reason nothing may `println!` on a path the MCP server can reach
+([AGENTS.md](../../AGENTS.md#L676-L676)).
 The only surviving direct calls outside `progress.rs` are the two
 donation-footer lines in `info::main`, which are printed after the useful output
 and immediately followed by `finish_and_clear()` — an exception, not a pattern
 to copy.
 
 Shared helpers take the bar so the categorization stays uniform:
-`util::tool_available` reports a missing external tool with `print_error`,
 `util::is_update` expresses version comparison entirely as
-`print_skip`/`print_info`, and `config` reports invalid setting values with
-`print_warning` / `print_error`.
+`print_skip`/`print_info`, `config` reports invalid setting values with
+`print_warning` / `print_error`, and `import_roms` reports a missing external
+tool with `print_error("Required tool not found: ctrtool")` and skips the
+feature instead of failing the import.
 
 ## Logs are bridged onto the same renderer
 
@@ -270,7 +327,8 @@ choices prompt independently of that gate:
 no `--system`, `config` resolves a named system through
 `prompt_for_system_like` / `prompt_for_systems_like`, and `import-patches` walks
 the full `prompt_for_system` → `prompt_for_game` → `prompt_for_rom` chain when
-nothing identifies the target.
+nothing identifies the target — a chain `--rom <id>` short-circuits entirely,
+which is how the web server's patch upload reaches `import_patch`.
 
 ```mermaid
 flowchart TD

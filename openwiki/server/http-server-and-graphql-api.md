@@ -1,11 +1,8 @@
 ---
 type: server-surface
 title: HTTP Server, GraphQL API and Uploads
-description: The axum surface built by oxyromon server — one loopback listener serving /graphql, the /events SSE stream, four multipart upload endpoints, /romfiles/{id} downloads, /mcp and the embedded SPA; plus AppState, the DataLoader trio, pool-failure semantics, the server-fetched URL import and graceful shutdown.
-tags: [axum, graphql, async-graphql, dataloader, sse, multipart, upload, loopback, shutdown]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+description: The axum surface built by oxyromon server — one loopback listener serving /graphql, the /events SSE stream, four multipart upload endpoints, /romfiles/{id} downloads, /mcp and the embedded SPA; plus AppState, the DataLoader trio, the read surface (counts, merged per-system settings, the built-in-vs-ctrtool dependency report), pool-failure semantics, the server-fetched URL import and graceful shutdown.
+tags: [axum, graphql, async-graphql, dataloader, dependencies, sse, multipart, upload, loopback, shutdown]
 sources:
   - id: openwiki-source-36f054f1f38f2197a6af5bca
     resource: repo://build.rs
@@ -19,20 +16,34 @@ sources:
     resource: repo://PLAN.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
+  - id: openwiki-source-63f87054c5f9055be025dd77
+    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-68a9457efd4964d6e3fa17be
+    resource: repo://src/download_dats.rs
+  - id: openwiki-source-9add64e166d8ef19bd58c5af
+    resource: repo://src/import_roms.rs
+  - id: openwiki-source-7fb657fead83b71b9836ddac
+    resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-b95ec25c5cfc0be350df258c
     resource: repo://src/mcp.rs
   - id: openwiki-source-8d46195d3bf969b1c0c3d484
     resource: repo://src/mcp/actions.rs
+  - id: openwiki-source-f6b27667092492e425164ff8
+    resource: repo://src/mcp/read.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
     resource: repo://src/mutation.rs
+  - id: openwiki-source-d3402490d16a663b822e8a00
+    resource: repo://src/nsz.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
@@ -45,9 +56,14 @@ sources:
     resource: repo://src/server/test_server.rs
   - id: openwiki-source-da31a7c38b2966a8a0185145
     resource: repo://src/server/test_uploads.rs
+  - id: openwiki-source-66dda2cecfc81c486446cc8e
+    resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -99,7 +115,7 @@ flowchart TD
   API -->|"POST /graphql"| GQL["async-graphql GraphQL service"]
   API -->|"GET /events"| SSE["SSE stream from the broadcast channel"]
   API -->|"POST /dats /roms /patches /irds"| UP["multipart upload, DefaultBodyLimit disabled"]
-  API -->|"GET /romfiles/:id"| DL["stream the file out of ROM_DIRECTORY"]
+  API -->|"GET /romfiles/{id}"| DL["stream the file out of ROM_DIRECTORY"]
   API -->|"/mcp"| MCP["rmcp Streamable HTTP service"]
   API -->|"no"| ASSET["catch-all /{*path} asset handler"]
   ASSET -->|"found"| EMB["target/assets via rust-embed"]
@@ -130,6 +146,48 @@ Assets come from `target/assets` via `rust-embed`, which is why `build.rs` runs
 `trunk build --release` (skippable with `SKIP_TRUNK=true`) and still creates the
 folder when it does not: rust-embed needs the directory at compile time, and an
 empty one yields a working API with no UI.
+
+## The read surface
+
+`QueryRoot` is the whole read API. Most fields take a fresh pooled connection:
+`systemSettings(systemId)`, `systems`, `games(systemId, offset, limit)`,
+`roms(gameId)`, `settings`, the counts, `downloadableSystems(update)` and the
+size aggregates; `version`, `dependencies` and `gameInformation(gameName)` need
+no database at all. There is no filtering, sorting or search beyond what those
+arguments give: the games list is ordered by name, and `roms(gameId)` returns
+the game's rows ordered by name with no completion or region filter.
+
+Two of those fields are worth understanding rather than treating as lookups:
+
+- **`dependencies` reports the format engines, and only one of them can be
+  missing.** The eight entries are `sevenz-rust2`, `chd-rs`, `ctrtool`,
+  `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` (which backs RVZ and
+  WBFS), sorted by name. All but `ctrtool` are linked-in crates whose
+  `get_version()` returns the literal `built-in` and cannot fail — `nsz-rs` is
+  the one that adds detail, returning `built-in, prod.keys not found` when
+  `~/.switch/prod.keys` is absent. `ctrtool` is the only external binary in the
+  list: it is spawned with no arguments and its first stderr line matched against
+  a `\d+\.\d+\.\d+` regex, so `version` comes back `null` exactly when the binary
+  is not on `PATH` (`unknown` if it is there but says nothing parseable). It is
+  the only dependency whose absence a client can detect here, and CIA import
+  checks `ctrtool` again at import time rather than trusting this report. The
+  same eight-entry list backs `oxyromon info` and the MCP read tool, so the three
+  surfaces agree.
+- **`systemSettings(systemId)` is the effective configuration, not a row
+  lookup.** It loads the global settings and the system's overrides and merges
+  them by key (override wins), sorted by key. A client that read `settings`
+  alone would show defaults a system has already overridden.
+
+`downloadableSystems(update)` returns the Redump catalogue names filtered
+against what the database already holds: without `update` the systems that can
+be fetched, with it the ones already imported whose DATs can be refreshed. It is
+the same `find_redump_systems` the CLI's interactive picker uses, and names
+outside that catalogue cannot be fetched at all — `downloadDats` bails with
+`Unknown Redump system` before any request.
+
+`gameInformation(gameName)` is pure computation: it parses a No-Intro-style name
+into title, regions, languages, release status and flags and touches neither the
+pool nor the filesystem.
 
 ## DataLoaders and N+1 prevention
 
@@ -247,8 +305,9 @@ sequenceDiagram
 
 Because the action is asked for from a browser, arguments that would prompt on a
 TTY are pre-answered: `sort_roms` and `purge_roms` append `-y`, `import_rom_source`
-forces `-u first`, and every bar is `ProgressBar::hidden()`. Anything that needs a
-human answer would hang the task.
+always passes `-u` with the caller's mode (`first` when the upload omitted it),
+and every bar is `ProgressBar::hidden()`. Anything that needs a human answer would
+hang the task.
 
 `purge_system` and `download_dats` predate the helper and inline the same shape.
 They differ in one respect worth knowing: `purge_system` validates the id on the
@@ -392,6 +451,7 @@ be the slow part.
 | `Download exceeds the 100 GiB limit` | `MAX_ROM_DOWNLOAD_SIZE`, enforced while streaming, not from `Content-Length`. |
 | `GET /romfiles/{id}` returns 404 | The `romfiles` row exists but the file does not under `ROM_DIRECTORY`, or cannot be opened. A *nonexistent* id instead panics inside `find_romfile_by_id`, which is a different bug. |
 | API works, `/` and assets do not | The binary was built without a UI: `SKIP_TRUNK=true` against an empty `target/assets`, or from the published crate where `frontend/` is absent. `serve_index` unwraps `index.html`. |
+| `dependencies` reports a `null` version for `ctrtool` | It is the only external binary on that list; every other entry is a linked-in crate reporting `built-in`. CIA imports are refused with `Required tool not found: ctrtool` until it is on `PATH`. |
 | A mutation fails with `Failed to acquire database connection` | Five-connection budget exhausted by long-running spawned actions. The mutation failed cleanly; retry once an action finishes. |
 | A read query fails where a mutation would have errored cleanly | Query resolvers still `unwrap()` on pool acquire — a known asymmetry, not a new bug. |
 | A `PREFER_FORMAT` or directory setting is rejected | `PreferFormatValidator` / `DirectoryValidator` ran before any write; the message lists the valid choices or says `Missing or invalid directory`. |
@@ -415,9 +475,11 @@ unit-testing handlers.
 - `src/server/test_mutations.rs` (port 8010) — settings round-trips, validator
   rejection surfacing as a GraphQL `errors` array rather than a panic, and the
   up-front refusals (`System 999 not found`, `No ROM files selected to purge`).
-- `src/server/test_queries.rs` (port 8011) — `version`, sorted `dependencies`
-  with `null` versions for absent tools, `downloadableSystems`,
-  `systemSettings`, `gameInformation` name parsing, `ignored`.
+- `src/server/test_queries.rs` (port 8011) — `version`, the `dependencies` list
+  (that `chd-rs` and `sevenz-rust2` are both reported — they are linked-in
+  engines whose version is always `built-in` — and that the list is sorted by
+  name), `downloadableSystems`, `systemSettings`, `gameInformation` name
+  parsing, `ignored`.
 - `src/validator/` — per-validator unit tests, including that a *file* is not a
   valid directory.
 

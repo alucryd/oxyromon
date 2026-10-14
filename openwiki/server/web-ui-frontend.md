@@ -3,9 +3,6 @@ type: frontend-architecture
 title: "Web UI (Leptos SPA + Web Awesome)"
 description: "The standalone frontend/ crate: how api.rs GraphQL strings, model.rs serde types and AppState signals feed the Leptos components, how sse.rs turns /events into notifications and busy-flag clears, how Trunk builds and vendors Web Awesome offline into target/assets for rust-embed, and the CSS cascade and custom-element gotchas that bite when changing the UI."
 tags: [frontend, leptos, wasm, trunk, web-awesome, graphql, sse, css, offline]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -15,6 +12,10 @@ sources:
     resource: repo://build.rs
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-0bc9c609aef896964e961315
+    resource: repo://Cross.toml
+  - id: openwiki-source-b758f5266102887201b4a0ff
+    resource: repo://desktop/scripts/stage-sidecar.sh
   - id: openwiki-source-19a65c75a2d97f6840dee349
     resource: repo://dist.sh
   - id: openwiki-source-f7e1e08343a2e806d4b73d9c
@@ -71,7 +72,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -146,9 +150,17 @@ directory identically to a missing binary and would otherwise blame trunk.
 `lto`, `codegen-units = 1`, plus `data-wasm-opt="z"` in `index.html`) for the same
 reason everything else here is: the bundle is embedded in a shipped binary.
 
-`dist.sh` sets `SKIP_TRUNK=true` and runs `trunk build --release` on the **host**
-before each `cross build --target …`, since the wasm output is target-independent
-and trunk cannot run inside the cross images.
+`dist.sh` exports `SKIP_TRUNK=true` once and runs `trunk build --release` on the
+**host** at the top of each target loop, before `cross build --release --target …
+--features server`. Two things make that shape necessary rather than redundant. The
+wasm bundle is target-independent and lands in `target/assets`, but every loop ends
+with `cargo clean`, which wipes that directory — so the next loop has to rebuild it.
+And `SKIP_TRUNK` only helps if it reaches `build.rs`, which executes inside the cross
+image: `Cross.toml` lists it under `[build.env] passthrough` for exactly that. The
+same exported value covers the host-only desktop step at the end, which is why that
+step runs trunk again first: without it, `desktop/scripts/stage-sidecar.sh`'s
+`cargo build --release --features server` would embed the empty `target/assets` the
+previous `cargo clean` left behind and ship a sidecar with no UI.
 
 Dev mode is a different topology: `trunk serve` hot-reloads and the four `[[proxy]]`
 entries forward `/graphql`, `/events`, `/dats` and `/romfiles/` to a locally running

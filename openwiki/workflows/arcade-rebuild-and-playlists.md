@@ -16,6 +16,8 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -40,8 +42,6 @@ sources:
     resource: repo://src/import_dats.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
-  - id: openwiki-source-351b888a3823a95b61bcb42a
-    resource: repo://src/mimetype.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
   - id: openwiki-source-528b2bf14ffa06b3842b8c96
@@ -64,11 +64,16 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-78c9736757ef1bc06ad635a3
     resource: repo://src/sort_roms/test_sort_1g1r_playlist.rs
+  - id: openwiki-source-4fe52c7cb090ec0387522035
+    resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -81,7 +86,7 @@ that tie multi-disc games together and that the CHD parents feature reads back a
 a parent relationship.
 
 Both are CLI subcommands registered in `src/main.rs`
-([src/main.rs](../../src/main.rs#L82-L167)), and both mutate the same
+([src/main.rs](../../src/main.rs#L71-L167)), and both mutate the same
 `roms` / `romfiles` / `games` tables documented in
 [Data Model, SQLite Usage and Migrations](../architecture/data-model-and-migrations.md).
 
@@ -116,7 +121,7 @@ The stored value changes the meaning of two other things:
   `games.completion` according to the stored strategy: `Split` ignores every rom
   that has a `parent_id`, `NonMerged`/`Merged` ignores only roms merged from a
   *non-BIOS* parent, `FullNonMerged`/`FullMerged` require every rom
-  ([src/util.rs](../../src/util.rs#L459-L492),
+  ([src/util.rs](../../src/util.rs#L429-L462),
   [src/database.rs](../../src/database.rs#L493-L575)). This is why a clone can be
   `Full` under `Split` with zero of its own shared files, and `None` the moment
   you switch to `FullNonMerged`.
@@ -133,20 +138,20 @@ the graph that DAT import built. `create_or_update_games` partitions machines in
 neither `cloneof` nor `romof` and the rest, resolves each child's `cloneof` /
 `romof` into `games.parent_id` and `games.bios_id`, and retries until a DAT with
 nested clones is fully linked — a child whose parent name matches nothing is
-skipped with a warning ([src/import_dats.rs](../../src/import_dats.rs#L518-L655)).
+skipped with a warning ([src/import_dats.rs](../../src/import_dats.rs#L521-L703)).
 
 Per-file merging comes from the Logiqx `merge="..."` attribute: when it is present,
 import searches the clone's own BIOS, its parent, and its parent's BIOS for a rom
 with the same size and CRC, and records the hit as `roms.parent_id` plus
 `roms.bios = true` when the source rom was a BIOS rom
-([src/import_dats.rs](../../src/import_dats.rs#L737-L831)). `roms.parent_id IS NULL`
+([src/import_dats.rs](../../src/import_dats.rs#L748-L842)). `roms.parent_id IS NULL`
 therefore means "exclusive to this set", and `roms.bios` distinguishes a BIOS
 dependency from a parent dependency — exactly the two axes the rebuild below cuts
 along.
 
 The fixture that exercises all of this is
-<!-- openwiki: broken internal link [<../../tests/Test System (20200721] file "<../../tests/Test System (20200721" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`tests/Test System (20200721) (MAME Rebuild).dat`](<../../tests/Test System (20200721) (MAME Rebuild).dat>):
+<!-- openwiki: broken internal link [<../../tests/Test%20System%20(20200721] file "<../../tests/Test%20System%20(20200721" does not exist. Fix the href or restore the target, then delete this comment. -->
+[`tests/Test System (20200721) (MAME Rebuild).dat`](<../../tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat>):
 `Test BIOS` (`isbios`), `Test Parent`, and `Test Clone` (`cloneof="Test Parent"
 romof="Test BIOS"`) whose `Test Clone.rom` and `Test Clone Common.rom` merge from
 the parent and whose `Test Clone Bios.rom` merges from the BIOS.
@@ -182,15 +187,18 @@ flowchart TD
 ### The repair pass runs before the merge check
 
 `rebuild_system` starts by looking for files it already owns but has not linked:
-for every `Partial` game it takes the roms with `romfile_id IS NULL` (skipping
-`size == 0` placeholder roms) and searches the **same system** for a rom that
-already has a romfile with the same size and CRC, then MD5, then SHA1
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L104-L154)). If found, the file is
+for every `Partial` game it takes the roms with `romfile_id IS NULL` **and
+`parent_id IS NULL`** (skipping `size == 0` placeholder roms) and searches the
+**same system** for a rom that already has a romfile with the same size and CRC,
+then MD5, then SHA1
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L104-L154),
+[src/database.rs](../../src/database.rs#L1298-L1310)). If found, the file is
 extracted from its archive or copied into the tmp directory and handed to
 `import_roms::import_other` with a single-game allow-list
 (`HashSet::from_iter(vec![missing_rom.game_id])`) and
 `UnattendedMode::Skip`
-([src/import_roms.rs](../../src/import_roms.rs#L2063-L2160)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L155-L187),
+[src/import_roms.rs](../../src/import_roms.rs#L2041-L2138)).
 
 This is the mechanism that lets a rebuild "grow" a clone without ever knowing the
 strategy yet: the import path is reused verbatim, but constrained so a duplicate
@@ -219,7 +227,7 @@ after manual tampering.
 
 The target rom set defines the strategy, and the two SQL shapes are the whole
 difference between `NON_MERGED` and `FULL_NON_MERGED`
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L252-L260),
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L252-L258),
 [src/database.rs](../../src/database.rs#L1196-L1239)):
 
 - `NonMerged` → `find_roms_by_game_id_parents_no_parent_bioses`: own roms plus
@@ -337,7 +345,7 @@ The rules worth knowing before changing this function:
   otherwise `CommonRomfile::from_path(…).create(.., RomfileType::Playlist)` inserts
   a row typed `Playlist`
   ([src/generate_playlists.rs](../../src/generate_playlists.rs#L153-L173),
-  [src/common.rs](../../src/common.rs#L708-L724)). Beware the shape of the lookup:
+  [src/common.rs](../../src/common.rs#L708-L737)). Beware the shape of the lookup:
   `find_romfile_by_path` is called with the **absolute** path while
   `Persist::create` stores the **ROM-directory-relative** path (see
   [the relative-path migration](../../migrations/20241117210150_make_romfile_paths_relative.sql)),
@@ -350,13 +358,11 @@ The rules worth knowing before changing this function:
 The final step of each group is `update_game_playlist(connection, game.id,
 playlist_id)` for every game in the group
 ([src/generate_playlists.rs](../../src/generate_playlists.rs#L174-L176),
-[src/database.rs](../../src/database.rs#L654-L661)). The column was added by
+[src/database.rs](../../src/database.rs#L654-L667)). The column was added by
 [`20230106190403_add_playlist_id_to_games.sql`](../../migrations/20230106190403_add_playlist_id_to_games.sql)
 as `INTEGER REFERENCES romfiles(id) ON DELETE SET NULL` with an index — so a
 playlist is an ordinary `romfiles` row, and deleting it never deletes the discs, it
 only unlinks them.
-
-Three consumers depend on that link:
 
 ```
 games (Disc 1) ──playlist_id──▶ romfiles (Playlist: Game.m3u) ◀──playlist_id── games (Disc 2)
@@ -367,36 +373,78 @@ games (Disc 1) ──playlist_id──▶ romfiles (Playlist: Game.m3u) ◀─�
 
 *Figure: multi-disc games are related to each other only through the shared playlist row.*
 
-- **CHD parents.** With `CHD_PARENTS` enabled, `to_chd` resolves a disc's parent
-  image via `find_parent_chd_romfile_by_game`, which reads `game.playlist_id`, takes
-  the *first game ordered by name* in that playlist as the parent disc, and picks
-  that game's `.chd` romfile
-  ([src/util.rs](../../src/util.rs#L494-L524)). The result is written to
-  `romfiles.parent_id` after the conversion, and `to_chd` sorts games so children
-  are converted before parents so the parent's CHD exists when the child asks for
-  it ([src/convert_roms.rs](../../src/convert_roms.rs#L1299-L1312),
-  [src/convert_roms.rs](../../src/convert_roms.rs#L1899-L1904)).
-  **Playlists must therefore be generated first**: with `playlist_id = NULL` the
-  lookup short-circuits to `None` and the CHDs are written parentless. This is the
-  ordering the tests encode — `test_iso_to_chd_parents` runs `generate-playlists`
-  before `to_chd` and then asserts `romfile.parent_id == Some(disc1_id)`
-  ([src/convert_roms/test_iso_to_chd_parents.rs](../../src/convert_roms/test_iso_to_chd_parents.rs#L53-L137)).
-- **Configuration.** `CHD_PARENTS` is a per-system boolean setting, defaulting to
-  `false` and read with `get_bool(connection, "CHD_PARENTS", Some(system.id))`
-  ([src/config.rs](../../src/config.rs#L64-L71),
-  [`20240403223843_add_chd_parents_setting.sql`](../../migrations/20240403223843_add_chd_parents_setting.sql)).
-  `convert-roms --parents` overrides the setting with an interactive
-  `prompt_for_parent_romfile`, ranked by Jaro–Winkler similarity between the game
-  name and candidate CHD paths — that is the escape hatch when the playlist guess is
-  wrong ([src/convert_roms.rs](../../src/convert_roms.rs#L1914-L1929),
-  [src/prompt.rs](../../src/prompt.rs#L192-L231)). `export-roms` calls
-  `find_parent_chd_romfile_by_game` unconditionally
-  ([src/export_roms.rs](../../src/export_roms.rs#L777-L779)), so exports of
-  multi-disc CHDs quietly degrade to non-parent CHDs if you never ran
-  `generate-playlists`.
+### CHD parents: the playlist is the only parent guess
+
+Three consumers depend on that link. The first is the CHD parents feature, and the
+chain is entirely DB-mediated — no M3U text is ever parsed:
+
+1. `convert-roms` reads the per-system boolean `CHD_PARENTS`
+   ([src/convert_roms.rs](../../src/convert_roms.rs#L225-L263),
+   [`20240403223843_add_chd_parents_setting.sql`](../../migrations/20240403223843_add_chd_parents_setting.sql)).
+2. `find_parent_chd` branches on it: `--parents` (`prompt_for_parents`)
+   interactively asks instead, otherwise the setting decides
+   ([src/convert_roms.rs](../../src/convert_roms.rs#L1860-L1875)).
+3. `find_parent_chd_romfile_by_game` reads `game.playlist_id`, takes the *first
+   game ordered by name* in that playlist, returns `None` if that is the game
+   itself, and picks that game's `.chd` romfile
+   ([src/util.rs](../../src/util.rs#L464-L494),
+   [src/database.rs](../../src/database.rs#L937-L955)).
+4. The chosen parent is handed to `ToChd::to_chd` as a `CommonRomfile` and written
+   to `romfiles.parent_id` once the conversion persists
+   ([src/convert_roms.rs](../../src/convert_roms.rs#L1481-L1544),
+   [src/database.rs](../../src/database.rs#L2718-L2735)).
+
+**Playlists must therefore be generated first**: with `playlist_id = NULL` the
+lookup short-circuits to `None` and the CHDs are written parentless. This is the
+ordering `test_iso_to_chd_parents` encodes — `generate-playlists` runs before
+`to_chd`, and Disc 2's romfile ends up with `parent_id == Some(disc1_id)` while
+Disc 1's stays `None`
+([src/convert_roms/test_iso_to_chd_parents.rs](../../src/convert_roms/test_iso_to_chd_parents.rs#L53-L137)).
+
+`convert-roms` `--parents` is the escape hatch when the playlist guess is wrong:
+it offers every CHD romfile in the system that has no `parent_id` of its own,
+ranked by Jaro–Winkler similarity between the game name and the candidate path,
+with "None" available when nothing matches
+([src/prompt.rs](../../src/prompt.rs#L192-L231),
+[src/database.rs](../../src/database.rs#L2794-L2822)).
+
+### Ordering and protection inside `to_chd`
+
+`to_chd` partitions games by source media (archives, CUE/BIN, ISO, CSO, ZSO, CHD,
+then other raw types) and calls `find_parent_chd` once per game in every bucket,
+including `--recompress` of existing CHDs
+([src/convert_roms.rs](../../src/convert_roms.rs#L1241-L1275)). Because the parent
+must already be a CHD when the child asks for it, the CHD bucket is sorted so games
+whose romfiles **already have** a `parent_id` — i.e. children — are converted
+first; the same sort exists in `to_xso`
+([src/convert_roms.rs](../../src/convert_roms.rs#L1264-L1274),
+[src/convert_roms.rs](../../src/convert_roms.rs#L1965-L1975)).
+
+Reading an existing parent back out of a CHD goes through `transcode::romfile_as_chd`:
+when `romfiles.parent_id` is set, the parent row is opened with
+`as_chd_with_parent`, which verifies the parent's own CHD SHA1 against the child's
+recorded `parent_sha1` and bails on mismatch; when it is unset, `as_chd` scans the
+parent CHD's own directory for a sibling whose CHD SHA1 matches
+([src/transcode.rs](../../src/transcode.rs#L57-L78),
+[src/chd.rs](../../src/chd.rs#L584-L680)). Recompressing a CHD that other romfiles
+point at as their parent is refused outright — `to_chd` prints `CHD has children,
+skipping` — so rewriting a parent would never silently orphan its children
+([src/convert_roms.rs](../../src/convert_roms.rs#L1726-L1756)).
+
+CHDs themselves are created **in-process by chd-rs**: `create_chd` calls
+`chd_rs::create_cd` / `create_dvd` / `create_hd` / `create_ld` with the opened
+parent, and there is no `chdman` subprocess and no external-version gate — the
+reported dependency version is the literal `built-in`
+([src/chd.rs](../../src/chd.rs#L683-L794),
+[src/chd.rs](../../src/chd.rs#L896-L898)). Hunk size and codec defaults mirror
+chdman's (parent's hunk size when unspecified; `cdlz,cdzl,cdfl` for CD, `avhu` for
+LaserDisc, `lzma,zlib,huff,flac` for HD).
+
+### Sorting, export and purge
+
 - **Sorting.** `sort_system` pre-loads `find_playlist_romfiles_by_system_id` into
   its romfile map so playlist rows can be moved at all
-  ([src/sort_roms.rs](../../src/sort_roms.rs#L248-L251)), and `sort_game` appends a
+  ([src/sort_roms.rs](../../src/sort_roms.rs#L237-L251)), and `sort_game` appends a
   move for `game.playlist_id` whenever its current path differs from
   `Game::get_playlist_path`, which honours the 1G1R directory and the
   `REGIONS_*_SUBFOLDERS` alpha scheme
@@ -406,29 +454,35 @@ games (Disc 1) ──playlist_id──▶ romfiles (Playlist: Game.m3u) ◀─�
   sorting with one-region settings, both ISOs **and** `Test Game (USA, Europe).m3u`
   live under `system_directory/1G1R`
   ([src/sort_roms/test_sort_1g1r_playlist.rs](../../src/sort_roms/test_sort_1g1r_playlist.rs#L58-L126)).
-
-Playlists are also protected from cleanup: `find_orphan_romfiles` excludes any
-romfile referenced by `games.playlist_id`, so `purge-roms --orphan` will not delete
-an M3U that has no roms pointing at it
-([src/database.rs](../../src/database.rs#L2845-L2867)).
+- **Export.** `export-roms` calls `find_parent_chd_romfile_by_game` unconditionally
+  for the archive, CUE/BIN, ISO, CSO/ZSO and CHD export paths, with no `CHD_PARENTS`
+  check
+  ([src/export_roms.rs](../../src/export_roms.rs#L739-L741),
+  [src/export_roms.rs](../../src/export_roms.rs#L812-L816)),
+  so exports of multi-disc CHDs quietly degrade to non-parent CHDs if you never ran
+  `generate-playlists`.
+- **Purge.** Playlists are protected from cleanup: `find_orphan_romfiles` excludes
+  any romfile referenced by `games.playlist_id`, so `purge-roms --orphan` will not
+  delete an M3U that has no roms pointing at it
+  ([src/database.rs](../../src/database.rs#L2845-L2867)).
 
 ## Operational notes and known edges
 
 - `generate-playlists` does not re-run itself after conversion: as the README
   states, `sort-roms` moves playlists with the games, but after `convert-roms` you
   must run the command again to reflect new filenames
-  ([README.md](../../README.md#L695-L703)).
+  ([README.md](../../README.md#L696-L703)).
 - Arcade games are stored one directory per set when the extension is not an
   archive (`system.arcade && !ARCHIVE_EXTENSIONS`), which is why `expand_game` and
   `trim_game` both compute paths under `<system_directory>/<game_name>/` and look
   up `<game_name>.zip` as the alternative layout
-  ([src/common.rs](../../src/common.rs#L444-L466),
+  ([src/common.rs](../../src/common.rs#L444-L449),
   [src/rebuild_roms.rs](../../src/rebuild_roms.rs#L236-L251)).
-- `rebuild-roms -y/--yes` is declared but never read, unlike `sort-roms` and
-  `purge-roms` which do consume it — rebuilding performs no confirmation prompt, so
-  it does not need one, and passing the flag is a no-op
-  ([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L51-L57),
-  [src/sort_roms.rs](../../src/sort_roms.rs#L110-L120)).
+- `rebuild-roms -y/--yes` is declared but never read, unlike `sort-roms` which does
+  consume its `YES` flag — rebuilding performs no confirmation prompt, so it does
+  not need one, and passing the flag is a no-op
+  ([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L50-L57),
+  [src/sort_roms.rs](../../src/sort_roms.rs#L116-L116)).
 - `rebuild-roms` has no GraphQL mutation today; it is CLI-only, while
   `generate-playlists` has one
   ([src/mutation.rs](../../src/mutation.rs#L507-L534)).
@@ -437,7 +491,7 @@ an M3U that has no roms pointing at it
   are incomplete, the BIOS roms stay unlinked and the clones end up `Partial` —
   run the rebuild again after importing the BIOS.
 
-<!-- openwiki: broken internal link [sorting-and-1g1r-election.md] file "sorting-and-1g1r-election.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-See also [Sorting and 1G1R Election](sorting-and-1g1r-election.md) for how games
-are elected and laid out, and [Format Conversion and Export](format-conversion-and-export.md)
-for the CHD pipeline that consumes these playlists.
+See also [Format Conversion and Export](format-conversion-and-export.md) for the
+CHD pipeline that consumes these playlists, and
+[Catalog Ingestion: DATs, Headers and Downloads](dat-ingestion.md) for how the
+parent/clone graph rebuild consumes is built.

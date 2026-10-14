@@ -1,11 +1,8 @@
 ---
 type: integration
 title: Format Crates in crates/
-description: The five in-repo format crates (gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs) that replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
-tags: [crates, workspace, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-09T16:11:37.544Z
+description: The six in-repo format crates (chd-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs) that replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
+tags: [crates, workspace, chd-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -13,6 +10,32 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
+    resource: repo://CHANGELOG.md
+  - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
+    resource: repo://crates/chd-rs/Cargo.toml
+  - id: openwiki-source-f652141db50cb9f0dce8c6fe
+    resource: repo://crates/chd-rs/README.md
+  - id: openwiki-source-05b12b6f45cbcde3b69bdfdd
+    resource: repo://crates/chd-rs/src/bin/chdrs/main.rs
+  - id: openwiki-source-451efc56b1b11560177f2d9a
+    resource: repo://crates/chd-rs/src/container.rs
+  - id: openwiki-source-9a03a1f712d91d693134083a
+    resource: repo://crates/chd-rs/src/error.rs
+  - id: openwiki-source-3a39ba8cc3839b0fbf3be2e6
+    resource: repo://crates/chd-rs/src/extract.rs
+  - id: openwiki-source-3b812eb8bded02c6c14a4b23
+    resource: repo://crates/chd-rs/src/ld.rs
+  - id: openwiki-source-84d75d6d1e1e60c51643c99f
+    resource: repo://crates/chd-rs/src/writer.rs
+  - id: openwiki-source-87aab858391fe90e7855fcfa
+    resource: repo://crates/chd-rs/tests/cd.rs
+  - id: openwiki-source-6f5af9e6dfe3a21ba40721b8
+    resource: repo://crates/chd-rs/tests/cli.rs
+  - id: openwiki-source-38b8a6db58a8dd7d870046a0
+    resource: repo://crates/chd-rs/tests/ld.rs
+  - id: openwiki-source-dace695e1efd12a88e32dd04
+    resource: repo://crates/chd-rs/tests/write.rs
   - id: openwiki-source-16c849e86b1d340adbc8eca0
     resource: repo://crates/gdi-rs/src/error.rs
   - id: openwiki-source-677cadb1f4a36dab4e6c2937
@@ -21,8 +44,6 @@ sources:
     resource: repo://crates/gdi-rs/tests/convert.rs
   - id: openwiki-source-b69e5f5da7beb0a728369e2f
     resource: repo://crates/nsz-rs/Cargo.toml
-  - id: openwiki-source-8720e0b4f0d085598e82214c
-    resource: repo://crates/nsz-rs/CHANGELOG.md
   - id: openwiki-source-23ec944a2b2aa3fdb67cb90d
     resource: repo://crates/nsz-rs/src/bin/nszrs/main.rs
   - id: openwiki-source-6fc8cca2c873b2934e5dd26b
@@ -33,8 +54,6 @@ sources:
     resource: repo://crates/nsz-rs/src/pipeline.rs
   - id: openwiki-source-95961593538c6afbde4e76cc
     resource: repo://crates/nsz-rs/tests/malformed.rs
-  - id: openwiki-source-44768ea85f7b7deee0a36895
-    resource: repo://crates/nsz-rs/tests/vectors.rs
   - id: openwiki-source-3177d2bf46b3b23d873f6783
     resource: repo://crates/xdelta-rs/src/bin/xdeltars/main.rs
   - id: openwiki-source-b284ee56f1a8ed8eeb895333
@@ -53,8 +72,6 @@ sources:
     resource: repo://crates/xps-rs/src/ips.rs
   - id: openwiki-source-a69d4f26e372ad7e44e682a0
     resource: repo://crates/xps-rs/src/lib.rs
-  - id: openwiki-source-fc949ff54825cd4750b9e1d5
-    resource: repo://crates/xps-rs/tests/interop.rs
   - id: openwiki-source-6933fe5a19eb2a199452b761
     resource: repo://crates/xso-rs/Cargo.toml
   - id: openwiki-source-0315d9b847e75c2c6933fffa
@@ -77,6 +94,8 @@ sources:
     resource: repo://dist.sh
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-c3dbd15c40e250cdf06fed8d
+    resource: repo://src/chd.rs
   - id: openwiki-source-7a3d5614c68ed1a3729171e7
     resource: repo://src/gdi.rs
   - id: openwiki-source-d3402490d16a663b822e8a00
@@ -85,16 +104,17 @@ sources:
     resource: repo://src/progress.rs
   - id: openwiki-source-9b5bca3734529131a5ec0d1b
     resource: repo://src/xps.rs
-  - id: openwiki-source-196778315263fb8bcc8066e5
-    resource: repo://src/xso.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "openwiki/0.7.1", at: "2026-10-09T16:11:37.544Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-10T22:10:44.671Z
 ---
 
 # Format Crates in crates/
 
-`crates/` holds the five format crates oxyromon wrote to replace the external
+`crates/` holds the six format crates oxyromon wrote to replace the external
 programs it used to shell out to. Each began as a port of one upstream tool,
 keeps that tool's license, and stays a standalone library plus its own CLI
 published to crates.io; oxyromon is the workspace root and depends on them as
@@ -104,6 +124,7 @@ real byte-level progress instead of a spinner.
 
 | Crate | Began as a port of | CLI | License | oxyromon module |
 | --- | --- | --- | --- | --- |
+| `chd-rs` | chdman | `chdrs` | BSD-3-Clause | `chd` |
 | `gdi-rs` | gdidrop | `gdirs` | BSD-2-Clause | `gdi` |
 | `nsz-rs` | nsz (nicoboss) | `nszrs` | MIT | `nsz` |
 | `xdelta-rs` | xdelta3 | `xdeltars` | Apache-2.0 | `xdelta` |
@@ -113,11 +134,23 @@ real byte-level progress instead of a spinner.
 The crates are workspace members (`members = ["crates/*"]`), so they share one
 lockfile, one CI run and one set of conventions; `frontend/` and `desktop/` are
 deliberately *not* members so their wasm and webview dependencies stay out of
-the native build. Which formats still run as child processes
-(`chdman`, `ctrtool`) is covered in
-[External Tool Integration](external-tools.md); the `src/` adapters that call
-into these crates are covered in
+the native build. CHD joined the set with 0.25: `chdman` is gone as a runtime
+dependency and survives only as a test-time reference binary, which leaves
+`ctrtool` as the one format oxyromon still runs as a child process
+([External Tool Integration](external-tools.md)). CHD's container, codecs,
+media types and `src/chd.rs` adapter have a page of their own —
+<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+[CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md) — so
+this page covers only what that crate shares with the other five. The `src/`
+adapters that call into these crates are covered in
 [Format Modules and Their Crate Backends](../concepts/format-modules-and-format-crates.md).
+
+`chd-rs` is also the crate with the heaviest build: `libflac-sys` (a vendored
+libFLAC, built with CMake, so a CMake toolchain is needed to build the crate),
+`lzma-rust2`, `flate2` with the `zlib-rs` backend, `zstd`, `sha1`, `crc32fast`
+and `rayon`. Its `chdrs` CLI sits behind the same default `cli` feature as the
+others, and oxyromon depends on the crate with `default-features = false`, so
+none of the CLI stack is linked into the organizer.
 
 ## The entry-point contract
 
@@ -131,6 +164,14 @@ not a position, and the calls add up to the input size — where "input" means t
 thing whose bytes dominate the work:
 
 - `xso_rs::compress` / `xso_rs::decompress`: the ISO or CSO/ZSO being read.
+- `chd_rs::create` / `create_hd` / `create_dvd` / `create_cd` / `create_ld`: the
+  image, sheet or AVI being read — for a CD that total is what
+  `chd_rs::cd_input_size` sums over the files a CUE, GDI or ISO names, not the
+  sheet's own size.
+- `chd_rs::Chd::extract` / `extract_cd` / `extract_ld`: the **CHD's logical
+  size**, reported as decompressed bytes written — decompressing hunks rather
+  than reading them is what takes the time, so `src/chd.rs` passes
+  `chd.info().logical_size` as the bar length for an extraction.
 - `xdelta_rs::decode` / `xps_rs::apply`: the **patch** size, reported window by
   window or action by action, since a patch is small and the source read is
   driven by it.
@@ -148,7 +189,9 @@ oxyromon adapts that contract in exactly one place,
 bar, moves the closure to `tokio::spawn_blocking`, resets the bar to the bytes
 style with `length`, and wires `bar.inc` into the crate's callback. `length` is
 therefore always what the crate's calls sum to: `input.metadata()?.len()` for
-`xso`, `nsz`, `xdelta` and `xps`, and `gdi_rs::input_size(&cue)` for `gdi`. A
+`xso`, `nsz`, `xdelta` and `xps` and for a DVD, hard disk or LaserDisc being
+compressed, `gdi_rs::input_size(&cue)` for `gdi`, `chd_rs::cd_input_size(&input)`
+for a CD being compressed, and `chd.info().logical_size` for a CHD extraction. A
 `JoinError` becomes `"Conversion task failed"`, kept distinct from the crate's
 own error. Running these on a runtime worker instead would stall it for the
 length of a several-gigabyte compression.
@@ -161,9 +204,9 @@ pub async fn run_blocking<T, E>(
 ) -> anyhow::Result<T>
 ```
 
-The same signature is what makes a new backend drop-in: `src/xso.rs`, `src/nsz.rs`,
-`src/gdi.rs`, `src/xdelta.rs` and `src/xps.rs` differ only in the settings they
-build and the length they pass.
+The same signature is what makes a new backend drop-in: `src/chd.rs`,
+`src/xso.rs`, `src/nsz.rs`, `src/gdi.rs`, `src/xdelta.rs` and `src/xps.rs`
+differ only in the settings they build and the length they pass.
 
 ## `.part` output discipline
 
@@ -192,9 +235,11 @@ stateDiagram-v2
 *Caption: the write lifecycle every format crate shares; nothing at the destination path changes until the whole output is complete.*
 
 The halves are literally the same code, duplicated per crate:
-`xso-rs` factors it into `crate::io::{part, finish}`, while `nsz-rs`,
+`xso-rs` factors it into `crate::io::{part, finish}`, while `chd-rs`
+(`writer::part_path` plus a rename-or-remove arm shared by `write_part`,
+`Chd::extract`, `extract_cd` and `extract_ld`), `nsz-rs`,
 `xdelta-rs`, `xps-rs` and `gdi-rs` each carry a private `part`/`finish` pair.
-Two crate-specific variations matter:
+Three crate-specific variations matter:
 
 - **`gdi-rs` stages a whole set.** A GDI is one descriptor plus one file per
   track, so it writes every `.part` first and renames them all only after the
@@ -202,6 +247,9 @@ Two crate-specific variations matter:
   the CUE layout, the output directory, and the rule that no track may be
   written over a BIN the CUE reads — happens in `plan`, before any file opens,
   so a rejected input is "not ours to delete".
+- **`chd-rs` stages a CD set the same way.** `extract_cd` writes the CUE, GDI or
+  cdrdao TOC and every track BIN to `.part` files, renames them all only once
+  the last has been written, and removes them all if anything failed.
 - **`nsz-rs` back-patches its header.** `with_output` creates the `.part`, seeks
   past the reserved PFS0 header, lets the caller stream members, then rewinds
   and writes the header from the recorded `(name, offset, size)` layout. It
@@ -218,11 +266,11 @@ same whichever backend produced it:
 
 | Variant | Text | In |
 | --- | --- | --- |
-| `Io` | `io error: …` | all five, `#[from] std::io::Error` |
-| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Unsupported` | `unsupported format: …` | `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Corrupt` | `corrupt data: …` | all five |
-| `InvalidOption` | `invalid option: …` | `xso-rs`, `gdi-rs`, `xdelta-rs` |
+| `Io` | `io error: …` | all six, `#[from] std::io::Error` |
+| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
+| `Unsupported` | `unsupported format: …` | `chd-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
+| `Corrupt` | `corrupt data: …` | all six |
+| `InvalidOption` | `invalid option: …` | `chd-rs`, `xso-rs`, `gdi-rs`, `xdelta-rs` |
 | `WrongSource` | `wrong source: …` | `xdelta-rs`, `xps-rs` only |
 
 `WrongSource` exists only in the two patch crates and is the interesting one:
@@ -231,8 +279,8 @@ checking the patch's own CRC, then the source's size and CRC — with a distinct
 message when the "source" is actually the patch's output already — and xdelta
 raises it when a window's Adler-32 does not match what it rebuilt. Crates add
 only what their format needs: `nsz-rs` has `MissingKey`, `InvalidKey`,
-`Verification`, `Compression` and `Hex`; `xso-rs` has nothing beyond the shared
-five.
+`Verification`, `Compression` and `Hex`; `chd-rs` has only `Compression`
+alongside the shared five; `xso-rs` has nothing beyond them.
 
 Errors are the *only* failure channel — no panics on malformed input. Crafted
 inputs are tested explicitly in `nsz-rs/tests/malformed.rs`: an `NCZSECTN`
@@ -251,10 +299,10 @@ patch. oxyromon prints it as `Patched, but …`.
 
 Each crate's `[[bin]]` is gated on `required-features = ["cli"]` and consists of
 a `main.rs` with a clap builder `cli()` plus one `convert(input, matches,
-outputs)` closure, and a `ui.rs` that is **byte-identical across all five**.
+outputs)` closure, and a `ui.rs` that is **byte-identical across all six**.
 `tests/crates.rs` reads `crates/xso-rs/src/bin/xsors/ui.rs` and asserts the
-copies in `gdirs`, `nszrs`, `xdeltars` and `xpsrs` equal it, so the shared shell
-must be changed in all five at once.
+copies in `chdrs`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` equal it, so the
+shared shell must be changed in all six at once.
 
 ```mermaid
 flowchart TD
@@ -288,9 +336,16 @@ output may not land on `-s`'s source file.
 
 Flag meanings are fixed across tools that share them — `-o DIR`, `-b SIZE` in
 **bytes** (`nszrs` converts it to the zstd block exponent the library wants and
-rejects anything not a power of two in 16384..=4294967296), and `-s FILE` for the
-patch crates' source — with lowercase short forms reserved for common options.
-`--`-only long flags carry no short alias.
+rejects anything not a power of two in 16384..=4294967296; `chdrs` uses it for
+the hunk size, 16..=1048576, and refuses one that differs from the parent CHD's),
+and `-s FILE` for the patch crates' source — with lowercase short forms reserved
+for common options. `--`-only long flags carry no short alias.
+
+`chdrs` is the one tool whose `main` does not hand argv straight to `ui::run`:
+it intercepts `info` and `verify` as subcommands that read a CHD and report to
+stdout only, and falls through to the shared loop for everything else. Those two
+are where it departs from `chdman`'s exit codes deliberately — a hash mismatch
+exits non-zero where `chdman` succeeds.
 
 ## Library-first manifests
 
@@ -303,8 +358,11 @@ optional extra:
 - oxyromon depends on each crate with `default-features = false`, so it links
   the library and none of the CLI's UI stack.
 - `edition`, `rust-version` and `repository` come from `[workspace.package]`, and
-  shared dependencies (`clap`, `console`, `crc32fast`, `indicatif`, `rayon`,
-  `tempfile`, `thiserror`) from `[workspace.dependencies]`.
+  shared dependencies (`clap`, `console`, `crc32fast`, `flate2`, `indicatif`,
+  `lzma-rust2`, `rayon`, `sha1`, `tempfile`, `thiserror`, `zstd`) from
+  `[workspace.dependencies]`. `chd-rs` is the heaviest consumer of that list and
+  the only crate that pulls in a C build: its `libflac-sys` dependency builds a
+  vendored libFLAC with CMake, so building the crate needs a CMake toolchain.
 - No crate declares `[profile]`: only the root's applies, and the root sets
   `opt-level = 3` for dependencies in dev builds precisely because these codecs
   are unreadable at opt-level 0.
@@ -320,17 +378,27 @@ version, since the root pins each dependency by `path` **and** `version`. The
 root's own `0.x` tags are a separate series.
 
 ```sh
-cargo build --release -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the five CLIs
+cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the six CLIs
 cargo test -p xso-rs                            # one crate
 cargo test --release -p xso-rs -- --ignored     # its slow tests
 ```
 
-`dist.sh` cross-compiles the five CLIs alongside oxyromon for every target and
-packages each binary separately (`gdirs`, `nszrs`, `xdeltars`, `xpsrs`, `xsors`
-per target triple), so a standalone tool is installable without the organizer.
+`dist.sh` cross-compiles the six CLIs alongside oxyromon for every target
+(Linux gnu/musl on aarch64 and x86_64, Windows gnullvm, and both Apple targets)
+and packages each binary separately (`chdrs`, `gdirs`, `nszrs`, `xdeltars`,
+`xpsrs`, `xsors` per target triple, signed on macOS), so a standalone tool is
+installable without the organizer.
 
 ## Per-crate entry points worth knowing
 
+- **`chd_rs::create` / `create_hd` / `create_dvd` / `create_cd` / `create_ld`**
+  and the reading side — `Chd::open` / `open_with_parent`, `info`,
+  `track_count`, `verify`, `extract`, `extract_cd`, `extract_ld`, and
+  `cd_input_size` for the CD progress denominator. The media-specific writers are
+  thin shells over `writer::write_part`, which is also where clone CHDs resolve
+  unchanged hunks against a parent. Internal:
+<!-- openwiki: broken internal link [../concepts/chd-format-and-chd-rs.md] file "../concepts/chd-format-and-chd-rs.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+  [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md).
 - **`gdi_rs::convert(cue, output_dir, progress) -> Gdi`** plus
   `input_size(cue)`. `output_dir` must already exist, and the returned `Gdi`
   names the `.gdi` descriptor and each track file so the caller can wrap them.
@@ -377,11 +445,19 @@ The convention is *agreement with the reference implementation*, not
 self-consistency: `tests/interop.rs` in `xso-rs`, `xdelta-rs` and `xps-rs` runs
 the upstream binary (maxcso via `$MAXCSO`/`$PATH`, `xdelta3`, `flips`) and checks
 that each reads the other's output, and that our CSO is byte-identical to
-`maxcso --only-zlib`. Those tests **skip rather than fail** when the tool is
-absent; CI installs `xdelta3` specifically so the xdelta-rs comparison runs, and
-slow cases are `#[ignore]`d. `nsz-rs` leans on generated known-answer vectors
-(`tests/vectors.rs`, produced by `scripts/gen_vectors.py`) plus round-trip and
-malformed-input suites.
+`maxcso --only-zlib`. `chd-rs` does the same against `chdman` (`$CHDMAN`, then
+`$PATH`) across four suites: `cli.rs` compares `info` reports and `verify`
+verdicts on repository CHD fixtures, `write.rs` checks that each tool verifies
+and extracts the other's CHDs — plain and clone — byte-identically, `cd.rs`
+compares CHDs built from CUE, GDI and ISO inputs, and `ld.rs` builds its AVIs
+with `ffmpeg`. Where the bytes depend on the compression library rather than on
+the port (LZMA, deflate, zstd) the suites compare the header hashes instead, and
+only demand byte parity under `CHDRS_STRICT_PARITY=1`.
+Those tests **skip rather than fail** when the tool is absent; CI installs
+`mame-tools`, `xdelta3` and `ffmpeg` — all only for the crates' tests — so the
+chd-rs and xdelta-rs comparisons run, and slow cases are `#[ignore]`d. `nsz-rs`
+leans on generated known-answer vectors (`tests/vectors.rs`, produced by
+`scripts/gen_vectors.py`) plus round-trip and malformed-input suites.
 
 Two suites specifically pin the `.part` contract: `xso-rs/tests/roundtrip.rs`
 truncates a CSO so decompression fails mid-write and asserts the pre-existing
@@ -406,7 +482,8 @@ The seams are narrow and fixed by the conventions above:
 4. Write to `<output>.part` and rename on success; validate everything before
    the first file is created so an output you did not make is never removed.
 5. Report input bytes consumed as deltas summing to the length a caller can
-   compute up front; export a helper like `gdi_rs::input_size` when you cannot.
+   compute up front; export a helper like `gdi_rs::input_size` or
+   `chd_rs::cd_input_size` when you cannot.
 6. Add the dependency to the root `Cargo.toml` with `path` + `version` +
    `default-features = false`, then wire the module behind
    `progress::run_blocking` and list it in `info`, the GraphQL dependency query
