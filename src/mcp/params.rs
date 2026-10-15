@@ -143,7 +143,9 @@ pub(crate) struct SetSettingParams {
     /// "REGIONS_ONE_SUBFOLDERS". get_settings lists the keys in use.
     pub key: String,
     /// The new value as a string ("true"/"false" for booleans, a number for
-    /// integers, a single choice for enums). Omit to unset a nullable setting.
+    /// integers, a single choice for enums). For list settings, a
+    /// comma-separated value replaces the whole list. Omit to unset a nullable
+    /// setting.
     #[serde(default)]
     pub value: Option<String>,
     /// Apply the override to this system only; omit for the global setting.

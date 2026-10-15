@@ -6,6 +6,11 @@
       "rule": "OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under the version heading that matches Cargo.toml's version for anything user-visible — a new flag, a new default behaviour, a directory the tool now deletes; do not report internal refactors with no user-visible effect."
     },
     {
+      "path": "src/mcp/**/*.rs",
+      "merge_system_rule": true,
+      "rule": "MCP tool surface reviewed as the interface the model actually reads. Check: every value list in a tool description or parameter doc comment matches exactly what the validation code and the synthesized clap parser accept, including case; every parameter doc comment states the semantics the handler applies to the value (for example a list value replacing the whole list), not only its type; any boolean whose true value triggers an irreversible action defaults so that omitting it reaches the refusal path."
+    },
+    {
       "path": "README.md",
       "merge_system_rule": true,
       "rule": "OxyRomon README reviewed as prose against the code it documents. Check: every flag, default, path, command example and supported-format claim still matches the clap definition and the module that implements it, including code added in this diff; counts and lists it states (supported systems, formats, flags) match what the code accepts; two sections of the document do not contradict each other; the diff does not leave a section describing behaviour the diff removed."
