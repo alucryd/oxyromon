@@ -552,8 +552,8 @@ impl AsChd for CommonRomfile {
             Ok::<_, chd_rs::Error>((chd.info(), chd.track_count()?))
         })
         .await
-            .context("Failed to read CHD")?
-            .with_context(|| format!("Failed to open \"{}\"", self.path.display()))?;
+        .context("Failed to read CHD")?
+        .with_context(|| format!("Failed to open \"{}\"", self.path.display()))?;
         let hex = |sha1: Option<[u8; 20]>| sha1.map(|sha1| chd_rs::sha1_hex(&sha1));
         let sha1 = hex(info.sha1).unwrap_or_default();
         let parent_sha1 = hex(info.parent_sha1);

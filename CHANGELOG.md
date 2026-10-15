@@ -3,6 +3,8 @@
 ## Features
 
 - Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
+- Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
+- The web server serves the same MCP server over Streamable HTTP at `/mcp`, sharing its pool and its event stream, so most MCP-triggered actions show up in the web UI; ROM imports and setting changes do not yet
 
 ## Changes
 
@@ -22,6 +24,8 @@
 - Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
 - Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
 - The desktop app's Debian package no longer depends on `p7zip`
+- Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
+- Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
 
 # 0.24.0
 

@@ -195,7 +195,7 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
             tokio::task::spawn,
         ))
         .data(pool.clone())
-        .data(sse_tx)
+        .data(sse_tx.clone())
         .finish();
 
     let app = Router::new()
@@ -209,6 +209,12 @@ pub async fn main(pool: SqlitePool, matches: &ArgMatches) -> Result<()> {
         )
         .route("/irds", post(upload_ird).layer(DefaultBodyLimit::disable()))
         .route("/romfiles/{id}", get(download_romfile))
+        // the MCP server shares this listener; same-origin as the web app and
+        // the same trust level as /graphql
+        .nest_service(
+            "/mcp",
+            crate::mcp::mcp_http_service(pool.clone(), cancel.clone(), sse_tx.clone()),
+        )
         .route("/{*path}", get(serve_asset))
         .route("/", get(serve_index))
         .with_state(state);

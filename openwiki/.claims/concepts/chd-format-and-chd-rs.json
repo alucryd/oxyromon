@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4896a97c7f40c08e1e850c40d7bc377dcfc29e36a538cae3f159e159944c1bc5",
+  "claims": [
+    {
+      "id": "claim_b087aba3f1c046f49eec90868ad7d336",
+      "statement": "CHD handling runs entirely in process through the in-tree chd-rs crate: chd.rs opens files with Chd::open/open_with_parent on spawn_blocking, writes through chd_rs::create_cd/create_dvd/create_hd/create_ld and extracts through extract_cd/extract_ld/Chd::extract via run_blocking, and get_version returns the literal \"built-in\".",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L683-L794",
+          "version": "repo-lines-v1:sha256:47d46d4a641da3c8f98ed2e6da49594aa800f1798efb3517ccfbf207178b4f69:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NzY4MjM4MDNlMTgwOTkxZmUxYWMxMGI5YTVhMGE1M2NiM2JjNGYxZDhkMDU0ODRkY2E1NGE1NTVmMDFjMzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZWI0ZDlhYmYwMzk3ODdkMWJmMmJjNjEyMWM0OTI0ZWNhOGE5ZDdiMzJlOTM0NWJjNjE0Y2RhZWEyYjUzMmViIn0"
+        },
+        {
+          "resource": "repo://src/chd.rs#L796-L874",
+          "version": "repo-lines-v1:sha256:d2aec4826016f580210ada1ffc2d8be7f20658fedd13f8ec96d91f581e535cf1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MGNlNGM3YmExN2FkYmE3YjYxYTE0YzQyZjAwY2M1NGM3NDg0MDRiZTg1MjI3MmYxMDY0Y2FhMTcxMjJlZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNmYyY2IwNDg0MzEyODQzNGNiNmVlZDA3ODA4ZmUwNTM0YTJkODNiNjU4YjQ2MDVmMjk0MDhmMzAxNjg5NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4N2U2YzlhMTc2N2NmYTRmNmVjY2ZjZTIxN2Q5ZTM5MjcwODkwNjQxYzAyNTVjMWY4MmIxZTc0ODBmZjNmM2UifQ"
+        },
+        {
+          "resource": "repo://src/chd.rs#L896-L898",
+          "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYyNDkxMDJhYjhkMDhmYWUyYmJmZjdiYjFhYmM4NjE2OWRhYzA5MTNhN2I2MzhlMTIzYWE3MGMxZmFhZWI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFlYzYyYWE0Y2Q1NzE3ZTUzZGZmN2VjNDI2YTU1NjAyMmIzZmU3ZDhiMGJkZDMzOTEwNGI3NWMzYmU0ZjkxMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff11222a8c724ab7859b3b21a8ad8d1a",
+      "statement": "parse_chd maps the crate's ChdInfo onto oxyromon's ChdType and returns logical size, data SHA-1, the CHD's own SHA-1, the parent SHA-1 and the track count; a CD yields size 0 and an empty data SHA-1 because only its tracks have a size and hash, and any type other than CD, DVD or LaserDisc is treated as a hard disk.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L548-L583",
+          "version": "repo-lines-v1:sha256:42f3ce7f8f4c1908fa4d0d778e56d0108f3f5db43c134127030ae49e590c52c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZWExODg4NmZmYTk2MjNjOTMyYzE2ZTFkMzk2YTQ5NmUwODVmYWVhMzM5YzE4Y2Q0Y2NiZjdlMTU1OGIyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4MWI1ZTEwOWRlN2Y3NGMwMjQzMzQ4OWNkNjYwMzRjNTAyMDVkM2Y2OGVmNGQ5MzNkZWQ2MTliYjJkZjU1MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwYjkyNzAzNzdiYTIxNzI0OTFhOTA3NTQzMDA5MjRiMGNhNWY5ZTUyMTczMDA3NDRiNWQzOWZjN2FkMDNkMTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98ae382beba44dffbd9b86737633ec65",
+      "statement": "as_chd resolves a CHD's parent by scanning its own directory for another CHD whose CHD SHA-1 equals the parent SHA-1 in the header, while as_chd_with_parent takes the parent from the caller and fails with a SHA-1 mismatch error when the header disagrees.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L584-L650",
+          "version": "repo-lines-v1:sha256:372abd0063d6c06a43005e1c9baf727f1d6946132bc692b8a8b60cde70e764ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3YzU0MThjZDZiMTMxYTkyMTYzMDE1ZmM5YjY2NTc4ZDgwMTZiNjJkMjY2MGFlYjRiMzAyMjFiOWRjMGMxMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOGJlZDA2NmZlNWI4NGI3NjlmNTEwNjlhMTcwNzY2ZTk4YTE2NDRjN2EyZjA4OWYzNjU0ZjcyZDQ3M2MzMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0M2U5NDUwNjA2Yzg5MmEwNTQ2Mjc0MzE5MWEwNWFmZWZlMmI5NmUxMzA3ZmI1NzRiMmRkY2YzMzBlZTdkNDEifQ"
+        },
+        {
+          "resource": "repo://src/chd.rs#L651-L680",
+          "version": "repo-lines-v1:sha256:5693fdbe1c8ad8b7b9944502ea18d835cce58ad6e492c8816fb5dd6fb511a578:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YTZiYmRhNDk4OWI4YmE1NWUzOTllZjZlNjVhN2ZlNDY1N2QwYWYyYzQyMTU2ZWM2Mzc1NTI4NzBhYjM0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MmFlMzBlYjA0ZTZkNDJhZTM2NTY2YWJlMzMwMzIzZGI0ZDJjNjVjNjBjMTZlNzE4NGMzYjI0NDQ2MGI3YTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ZTM5OWRmODk0MDhkODBkZWE2MGY4YjlkOGZjN2YwOTRmNmYxMjFmODk0MTg4ZDJiNDhlZDAyNGEyZjk1ZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fdf8aebe37b4417cb8de538e9c1c399d",
+      "statement": "Hashing a CHD skips decompression when SHA-1 is the algorithm and the header already supplied data SHA-1 and size; otherwise DVD, hard disk and LaserDisc CHDs are extracted to a temporary directory and the extracted file hashed, and a CD cannot be hashed whole, so check extracts it to CUE/BIN and checks each track against its own ROM.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L171-L230",
+          "version": "repo-lines-v1:sha256:01d12d3398fa6aae35839b212c1434bdb7802f9ac7682754c29c0322a2e56055:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YTk5NjY3ODI0YzQ2ODE0ZmNhOTI4ZDI4ZmE4NjUxOTZjMDM2Njk5YjY4NmMwNzM5MzkyZDA3ZDFiYTUwY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MjM1Yjc1ZGUxNGFiMWIyMzdmYTc1MmQ0MmI1N2Y3NDk1OWJmNGZhZmZiOTQ3MjUxMzA1ZTRmODRlNmZlYTkifQ"
+        },
+        {
+          "resource": "repo://src/chd.rs#L232-L277",
+          "version": "repo-lines-v1:sha256:c4da8b1e7488521866c62163bd497a7f7ae575c54505606c35abbdc320146f4c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NmQ3ZGVlZjhmMDU2NDc3OGZjNWNiMTE3ZjFjNWM4MjA4MjEzMjg1YmQwY2Q4Y2I1YTcyYThmMmU0NDY4OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3YjExN2RiYjI1NDA2ZWEyMWEzZGQyYWUzZmRjZjQ4ODY1ZTExMmQ0YTE4MDBjNjA2NmI3MzhiNjRkYmZiMTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99f0ceb2df824b918852cf5382eb05d6",
+      "statement": "Because MAME's CHD DATs carry no size and list the CHD's own SHA-1, import_roms retries a failed SHA-1 match of a CHD with its chd_sha1 and size 0.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_roms.rs#L1192-L1213",
+          "version": "repo-lines-v1:sha256:af4522997a446005b273e1d8e3861c56c534902f89f00ad45155983e9fb3421c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YTkyYTYzNTM1NGNmZGFkNjlkNWM4MmNlNjMxMjdiMzhiMDE5NjNlZDdmNDc1OGMxZmJlMGIwYzFkZjg2NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDEwNWUwYTY4NTIxYzNkMzMyNjE1MzkwZTg1OWUzOWNmMjQxMjc0YTdkNzgxZDE5NmEzYWRhMDdiMTBmZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNjVjZjdkMDcwZDg3ODkyNzNkOWRlZWZjZTg5NjgwMjJiMmQ4MjY4Njg4ZTQwZDQ3ZWFkNzQ1OTEzMmE2Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4MTdlZTAxMzNkOGZlMTRjMGU0ZWNkY2EyZjk5MTM2Mzc5NmU5NzhiNDViZmJmYjJkNDVmNDc5NWI2NGQxYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5e6f45c5349449d88e0b55f32300d12",
+      "statement": "create_chd applies chdman's defaults when the codec list is empty (cdlz, cdzl, cdfl for CDs, avhu for LaserDiscs, lzma, zlib, huff, flac otherwise); a given list is packed in order into the header's four compression slots by codecs(), which leaves all slots empty for `none` alone and rejects more than four entries. An unset hunk size takes the parent's, else 8 CD frames for a CD or 4096 bytes, while a LaserDisc hunk size is left to create_ld.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L716-L789",
+          "version": "repo-lines-v1:sha256:5e53cd6954f0bcc8e87be86157a64269924342e920503fbe75358bc46269aa70:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyZDgyOGEwMzdhYzFjODE1MzViMWQ1NTAwODMyMzIzYmZiYjg2NmEzYTNmODdlN2E2OGMxM2EyYmFlNTZmZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmYmMwOTlhMDFjYjdiYTg4ODMwZjY0Mzk2YTliNzhhMTc0NjdiYTQwMDc1ZDhkYWY2ODYzOTdjMGEwMmQ4NmIifQ"
+        },
+        {
+          "resource": "repo://src/chd.rs#L878-L894",
+          "version": "repo-lines-v1:sha256:a9c0ad945ba448fef88ca3a2c137fcb669dd8295cb7cf0d8e1b6a4e7e8908420:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0Y2RjMmY1OWZlNzljZmI4MzE2NzE0M2QxZTAyMDZmZTk2NjJkNDI4Y2VlZDMwMjA5OGZlOWFlMGM2OTYzZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4N2U2YzlhMTc2N2NmYTRmNmVjY2ZjZTIxN2Q5ZTM5MjcwODkwNjQxYzAyNTVjMWY4MmIxZTc0ODBmZjNmM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NjRkN2NmOWVjYjhhNjRhOTczZDkyZmI1ODU4NWVmZTAwODQ4YTIzMWI5ZjA0OWRhNjVhZjA2OTUxMzU5YzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa41c20618bc4246ac1394898060d2ef",
+      "statement": "Extracting a multi-track CD CHD writes one BIN per track under a %t placeholder that to_cue_bin renames to each ROM's DAT name, and writes the CUE as a hidden dot-file so a caller keeping the original sheet can delete it.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd.rs#L419-L478",
+          "version": "repo-lines-v1:sha256:b984ef3f1e083debf8ac1d678f6a56827fac7627e9d5df600c396f560152622d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYTVlZjZiYzc2ZmUxYzNiYTU2NDhhOTAyMzdmMWRiNTdhMjU2ZDA2OGY3YzVkODE4ZjUzMTBiMjMzYzI2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYjI0MmZmYTJiNDVlNWZhMmI3MWE1MDJkMjM1NmQ2ZDAwNjcwZjAzNWU2ZGM0NDk4YWNiZWYwODkzMjJkMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTdmNjM1ODM0N2E1Y2Y5MzczODM4NGQ4OGNjN2QzZmJkMThiNWFkZjkxNjJmOGM2MTEwYmJhMDk2N2EyMDkifQ"
+        },
+        {
+          "resource": "repo://src/chd.rs#L796-L874",
+          "version": "repo-lines-v1:sha256:d2aec4826016f580210ada1ffc2d8be7f20658fedd13f8ec96d91f581e535cf1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MGNlNGM3YmExN2FkYmE3YjYxYTE0YzQyZjAwY2M1NGM3NDg0MDRiZTg1MjI3MmYxMDY0Y2FhMTcxMjJlZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNmYyY2IwNDg0MzEyODQzNGNiNmVlZDA3ODA4ZmUwNTM0YTJkODNiNjU4YjQ2MDVmMjk0MDhmMzAxNjg5NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4N2U2YzlhMTc2N2NmYTRmNmVjY2ZjZTIxN2Q5ZTM5MjcwODkwNjQxYzAyNTVjMWY4MmIxZTc0ODBmZjNmM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_10961f163b0c4d3da364bc92cb7a455b",
+      "statement": "convert-roms chooses a parent CHD by prompting with --parents, or, when CHD_PARENTS is true, by taking the CHD of the first game in the same playlist; export-roms to CHD uses that playlist lookup unconditionally; and converting CHDs to another format processes clones before their parents.",
+      "evidence": [
+        {
+          "resource": "repo://src/convert_roms.rs#L1862-L1875",
+          "version": "repo-lines-v1:sha256:6afe5a641e52976dfb0c26b77325bcffc36640643cab3bf9bdeaa91775e5377f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMzYxOWM4MDMyZmZiMmMzNTY3NzE3MTVmZTI4ODI3NWExMjhmMjlkMzQwNzcyOWM3NjMxODFkMDA2ZTRkZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhOWRiODc2MzdhMjU2MTdkZGQyZGFjMGU2YjFiY2I5ZWIwOWRkODJhZjI4N2RlMzU1Y2E0ZWE1OTY1ZjVlNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYTNiOTAyY2YwMzQwMzdhNjI2NWJkNjFhMzA0ZjVmNDllYjQyOGVlZDRkYTU3NTJjM2QwMjQyODIxMzUzNjEifQ"
+        },
+        {
+          "resource": "repo://src/convert_roms.rs#L403-L412",
+          "version": "repo-lines-v1:sha256:7a142ebdd34cf4cb9a6a11eb37635b2df734a67dccc3f468e14c5f5fa5f28a4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OGEzYzI4N2RiYzIwNjA2MTIyZDVlYmQwY2NhM2JhMjE4MjBmYmVhYzUxN2I5ZTU5MmRjOTgxNmI4MmM3NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNmJiMTU2ZDE0YzNiODE0OThlMmZiY2ViOTg5NjMxMTYyN2U5NTA3MzgzNzcxZTFlMmYyZmRkYjcwMmIyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMDI0ZDQ4M2EyNzBjNjkyMGNjMWE3NDMyYjM0M2Q3ZTJjN2I5ZDU0ODJlMmM4MGE3ODBkNGVkMTU3OGNmYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlOTNjZDJiY2FjYjNhOTIwOGY2YWJkZmM5MDU1MDQ3YTEyOTdmZTJhYzBlMDJiZDc1NjQ5MGYyMDZkMjc5NGEifQ"
+        },
+        {
+          "resource": "repo://src/export_roms.rs#L739-L740",
+          "version": "repo-lines-v1:sha256:b31dc20fc60df3da39922768f52459dda426b8847685006e6ba63e73961d1745:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3ZmM1MTViNjc4YTNkMzczMzIyNGM3ZmZhZjdhZDE4NjQ1NzcwN2NhYWMyNTBmN2NjOTdkZjc0NzcwNjE2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlYWY2ZWNiMzliNmVjNDlmMTQ0NzQyMjk1NDc0YWJjZWUxOTNkMzE0OGU0NWZiYTgyZjI4YjExYmJjMzNkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE5Zjg2ZDI4ZTc4NGY5ZmQzMWZiNzJkMTVmNjBjYmNlYWFmZGQ2NjljYmQ1YjZkYTc4ODhhMDIzMzIxZWJiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg0MmVhYjBkYzdiMGNhZTUwMzc3YWQ1YjQ2YzQxNTQ2MjU4MTdiODY4NThlMDZkYTA1MTA0YzNiZTJhMmNjMiJ9"
+        },
+        {
+          "resource": "repo://src/util.rs#L464-L494",
+          "version": "repo-lines-v1:sha256:d670ed5bc51c90f7885eb9056930c6e3cf5f72895bed0327ab9436e206586c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYTU2ZjhhMWYwYjhhYzMxMDMwMmY2YmVjNWFkMTk4YTZkYjRjMWMwYWI5MTkyYTA2YTg2NGNiNTIxZDk3YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYzM3N2RjNGQ3MTczYjlmNzIzMGRlNDcxMjE4N2FjMzRlN2MyM2U4NDBlODM5M2IwMDc1NGZiYzU2MGI0OTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_89bae95d8d994185afef201b69cdd21e",
+      "statement": "chd-rs reads CHD v3 to v5 and writes v5, targets chdman 0.289 compatibility for CUE/GDI parsing, CD layout and extraction, tries every header codec per hunk keeping the shortest result, and re-exports a small API: Chd, ChdInfo, ChdType, create/create_cd/create_dvd/create_hd/create_ld, extract_cd/extract_ld, sha1_hex, fourcc, CD_FRAME_SIZE and cd_input_size.",
+      "evidence": [
+        {
+          "resource": "repo://crates/chd-rs/README.md#L27-L55",
+          "version": "repo-lines-v1:sha256:0f3df0d4f8879ab4210e320779840f47b3ca1388bf0d0286f7f7d2556ac1b08c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZWVjOGNiMzkzMTY1ZTk1MTgxMTk3ZWJlZmVjYTQ0YTQyNTZiZWY2ZjRjZmMxMGRlNjg4NDMxMzVkMWVjYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmMzNlYWFkOTI1OTUwZGZmOGY5YzBmZDM5MjQxOTExZjI3MjI3NWRkYjAxNWZlNjAxN2M2NmViOWU3Y2M3MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MzBkMDk2MTFiOGFlZDFiNzEyYjE1Mzc4MGRjMzBhYmY3NDJjNDNkZmZkYzdmOTM4Yzk5YWZkOWFjMTRkZmEifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/lib.rs#L31-L36",
+          "version": "repo-lines-v1:sha256:9536e7d04f28f6ae945f5fa8d339cc960a4db3be722cbb643a4ed1c36f42a4d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZkNzIxZDMzYmU4NTVmMTYyN2RlZjgzZjdjMjUyMzQ4NzA0ZWVkMzY2NGMxZDA1ZGU3OGM0MGIwNzA1YTcyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIwZWNhMGE3NzI0YzBkZDU2ZWM3ZWE2NmRkZTU3MjVmYzQ1OGEwN2MxMDBkMzVhNWZmODQxYzVlMDQzN2QwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVkZTU4N2QzYTU3NmRhZjBhNTE1ODgzM2E5MGU4YjkyNzAyMWRjMmY5ZDdkMjhjMTdiMjY0OWIwNjVkNTNhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec82f1f07d54463fb40e09e0fa92cd42",
+      "statement": "src/chd/test_ld.rs round-trips the LaserDisc fixture to a CHD and back to an AVI without chdman and checks that a CHD made from the extracted AVI is the same.",
+      "evidence": [
+        {
+          "resource": "repo://src/chd/test_ld.rs#L1-L40",
+          "version": "repo-lines-v1:sha256:545c7a60925a9f8e74c3ff9632063e356076b3157b845075c815ef16a73048c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTcyNmFjNTI1YWY4ZDA2MjJkMjI5YzJiNTk2NDg5NzA5OTMxMDRmNjUxMzZlYzFhN2Q2YWVlNzk2MTAyMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0OTg4OGQxMjBhMmE4ZDZmYjRmZDhhZGE1Y2M0MjgyODQzMTc5NTcwZTQ5MzNhNjlmZTc2ZGM3NmU5ODlmMjgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-14T21:01:38.051Z"
+  }
+}

@@ -61,7 +61,7 @@ pub enum ArcadeRomType {
     Parent,
 }
 
-const BOOLEANS: &[&str] = &[
+pub(crate) const BOOLEANS: &[&str] = &[
     "CHD_PARENTS",
     "GROUP_SUBSYSTEMS",
     "PREFER_PARENTS",
@@ -69,7 +69,7 @@ const BOOLEANS: &[&str] = &[
     "RVZ_SCRUB",
     "SEVENZIP_SOLID_COMPRESSION",
 ];
-fn choice_options(key: &str) -> Option<&[&str]> {
+pub(crate) fn choice_options(key: &str) -> Option<&[&str]> {
     match key {
         "PREFER_FORMAT" => Some(crate::convert_roms::ALL_FORMATS),
         "PREFER_REGIONS" => Some(PreferredRegion::VARIANTS),
@@ -95,7 +95,7 @@ fn choice_list_options(key: &str) -> Option<&[&str]> {
     }
 }
 
-fn integer_range(key: &str) -> Option<&[usize; 2]> {
+pub(crate) fn integer_range(key: &str) -> Option<&[usize; 2]> {
     match key {
         "CHD_CD_HUNK_SIZE" | "CHD_DVD_HUNK_SIZE" | "CHD_HD_HUNK_SIZE" | "CHD_LD_HUNK_SIZE" => {
             Some(&CHD_HUNK_SIZE_RANGE)
@@ -110,7 +110,7 @@ fn integer_range(key: &str) -> Option<&[usize; 2]> {
         _ => None,
     }
 }
-const LISTS: &[&str] = &[
+pub(crate) const LISTS: &[&str] = &[
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "LANGUAGES",
@@ -118,13 +118,17 @@ const LISTS: &[&str] = &[
     "REGIONS_ALL",
     "REGIONS_ONE",
 ];
-const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
+pub(crate) const PATHS: &[&str] = &["ROM_DIRECTORY", "TMP_DIRECTORY"];
 
-const NULLABLES: &[&str] = &[
+pub(crate) const NULLABLES: &[&str] = &[
     "CHD_CD_HUNK_SIZE",
     "CHD_CD_COMPRESSION_ALGORITHMS",
     "CHD_DVD_HUNK_SIZE",
     "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "CHD_HD_HUNK_SIZE",
+    "CHD_HD_COMPRESSION_ALGORITHMS",
+    "CHD_LD_HUNK_SIZE",
+    "CHD_LD_COMPRESSION_ALGORITHMS",
     "DISCARD_FLAGS",
     "DISCARD_RELEASES",
     "LANGUAGES",
@@ -143,6 +147,8 @@ const NULLABLES: &[&str] = &[
 const SORTED_LISTS: &[&str] = &[
     "CHD_CD_COMPRESSION_ALGORITHMS",
     "CHD_DVD_COMPRESSION_ALGORITHMS",
+    "CHD_HD_COMPRESSION_ALGORITHMS",
+    "CHD_LD_COMPRESSION_ALGORITHMS",
     "REGIONS_ONE",
 ];
 const LIST_SEPARATOR: &str = "|";
@@ -653,6 +659,8 @@ mod test_add_to_list;
 mod test_add_to_list_already_exists;
 #[cfg(test)]
 mod test_bool;
+#[cfg(test)]
+mod test_chd_settings;
 #[cfg(test)]
 mod test_cli;
 #[cfg(test)]
