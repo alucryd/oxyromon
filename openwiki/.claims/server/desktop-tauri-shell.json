@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:158e29e4ceb1c042aca77178fc72f3270a33f3b1a07e69f23dc1ce950f6b60ce",
+  "claims": [
+    {
+      "id": "claim_39904a0122234866be08ff0536490482",
+      "statement": "desktop/ is an additive Tauri v2 shell that implements no backend logic of its own: it spawns the ordinary `oxyromon` binary as a sidecar running `server --address 127.0.0.1 --port <port>` and points the webview at it, so the SPA, GraphQL API, uploads, downloads, database and settings are all reused unchanged from the CLI's server build.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/main.rs#L10-L31",
+          "version": "repo-lines-v1:sha256:6c51f3ff6535965bc667e43b66fd90e9339bfbe0b65b73fabda0e1a3d7f0a3de:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjllZWU5MWJjMGIxYTc3YjVmMjI0ZmQ2OTQ1ZjNkZWMyMzRlNTU5NmI5NDc1YzkwYzVhZWM5ZTZhZTIwYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMWQ0MjRiZTI3MWE5NWNjYjBhY2ZkZmJjMjYwYjBiMzFiNmRjNmQ2Y2VmZTE1ZWIwMzlhZmI1OGFiNTljOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyMTdhZTU0NDgyY2Q4NDU1NWM1YjA4NTVmNGY0MTI5NGQwZmFiZmIwNGM4ZTVmZTQ1ZjU0MGJmNmE0ZDBkOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhMzhlOTE1Zjg0ZTdiMmJlYWUwZjM4ZWY2YjBkMDg5NmQ2ZDc3YTMyMWRlZDk3YWJhYTQ1MTlmNTMzMDU0YzQifQ"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L1-L8",
+          "version": "repo-lines-v1:sha256:ec079a33310433d6bfa8a0adea6024e43e3311639dbef41ce9cd500e838f7491:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkNTcxYjk0ZmE4MjRiMGM5YzdhMTE2MDQ4M2ExNGRhZjhjZmQ2MDc5NWVjN2RlMDM1YWUyYWIwZTNiYjA3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FhZWFiNGVjMDg2ZWQ5ZDU1MmJmZWM2OGExNGIwNmE4MTkzYWIwZjRhYmM0OTA2MmMwN2UzMjNhOTk5OTQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZjZWM5OGM0YmI1ZTIyMTY1M2ZlYmVjYTZiNDZlNzVlODFlZWIxNDFkOTA4ZWU3OGY4Yzg5MjhjOGYwMjBjMyJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L72-L91",
+          "version": "repo-lines-v1:sha256:4a89cf6521f0dd89a312bdc801ab24e2e5df1df9ff2916fb23f4395018e38d99:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ODk1NDJlMTkwYzI2ZDVkYjYwMTQzYjNkOGE4ZWQzNmYwMzUyOGI5ZTc1ZWQ1YmE2ZmM1NzE3YWZlNjA4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NmU3Zjg5NjZiOGI4NTk2YzI1OTViNDQ3MTAyNGFkMzFjMzBlYjdkOWNlNmVlYzg4YTE4MTU0MDhkYjM0Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5Njg3ZmE5MzRiNzM0YjQ5NjkwM2U1N2ZlODM0MWI4YTAxNTEyMDBjZWNiYzA1NDZhZTc1ZDNiMjdiMGU5ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiM2YyZGEwZTc4OGNlMGM2NzU5OTVkMDNlNzE0Mjk2OGNjODhjMjM1NDhmMDNlMjFlYTdkNTU3YjkzMDIxZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6cf705cd2d5645278422b961aaad748e",
+      "statement": "desktop/Cargo.toml declares its own empty [workspace] and publish = false so tauri and tauri-plugin-shell (its only dependencies) and the platform webview stay out of the CLI build; as a standalone crate it carries its own size-oriented [profile.release] (opt-level \"z\", lto, codegen-units 1, strip) independent of the root profile.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/Cargo.toml#L1-L23",
+          "version": "repo-lines-v1:sha256:948d382a5e8ab59667a1e934157906b57e7bd8c79deb07a101de6461c5edecb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmOGZjYTZhODkzMGMyYWRmNDdjZDlkNGUzZjdhZjQ0ZjE2YTEwNWZkOThjNGM2ZTA4N2E4ZGYxYTdjOGU1ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b51ef24f456446ef87d36d36e8982728",
+      "statement": "The loopback port is reserved by binding 127.0.0.1:0 and reading back the assigned port; the listener is dropped before the sidecar binds it, which the code documents as a small reuse race whose only consequence is a failed readiness check.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/server.rs#L39-L47",
+          "version": "repo-lines-v1:sha256:a0097e6abfe5b3a8e80626e8312074e2b3d0e9b8d4e9b50f63f78dbe69d16df3:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTNlOTFkMjRhYjQ1YjEzN2QxNTVkYWM1ZGU2ZjRmZTJkNGU4NjFlNjc4MjdjNDIyMmNkMzViZTBjZmVhYzUxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYThkZjA5OWNiMTg2Y2I5NDhmZmFiMGNlYWViNzNhODNjOWU5ODNlODM0NjQ0NmJhM2QyZmFjNDFkMDRjOTE1ZCJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L72-L74",
+          "version": "repo-lines-v1:sha256:a9a4bb466786f309e2f6b9c5da89211e3bb6b4795f4e3807bdd52f046e45148e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg4OTU0MmUxOTBjMjZkNWRiNjAxNDNiM2Q4YThlZDM2ZjAzNTI4YjllNzVlZDViYTZmYzU3MTdhZmU2MDgxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk2ODdmYTkzNGI3MzRiNDk2OTAzZTU3ZmU4MzQxYjhhMDE1MTIwMGNlY2JjMDU0NmFlNzVkM2IyN2IwZTk4MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTczYjAyZGNkNGVkZTE0MzA4YWMyMTNiNmJmZTllZjlkODcwODMxYjcwYjI5MmE3NWVlYzhkMDkyY2RhN2NlZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_77b7640ec33745b295ce90ae437ce946",
+      "statement": "Startup blocks on readiness by polling TcpStream::connect to 127.0.0.1:<port> every 50 ms for up to 30 seconds; on timeout server::start returns an error naming the port and deadline, and no window is opened.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/server.rs#L109-L110",
+          "version": "repo-lines-v1:sha256:8b1dfb2661711678d496c022820caa3ce4f35902a35d2f38678c14c356bbf510:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc1ZGMzZDUyMmFjZTFmZTljNDJiYTMyY2EyMjI2ODMwMGI3ZDRmMmQ2OTI1ODVlMmE4YjFjZDFjMjVjY2M5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJkMTA2MjUxYWQyMzE5YjVjMjA5MzExNWNmYmY1NzRjMjVjYTM4NDdlMGJhMDMyOWIxZTZmZmNhMTk4YjJhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY2ZDNhMjZkOGZjNWM1OGU0ZTNhN2UzNWNhZGE3YmY4NzJmZjQwZTQwMzdlYWE2MWI0NThiZTUwZGU1YjEzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L19-L21",
+          "version": "repo-lines-v1:sha256:e32e67e99984bcc2e1e5858d05e704dbe1bd78b8bdb179ef8896b92e50671bac:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTRmNzkxZTkwNTJjNTNhNTliZDE2ZDI4ZGZhZWZlZDRmZGExNDcyYzY0YmZmYjBhNTVkZTIxYmM5OTYzMzVlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU0ZDM1N2IwZGMzODQzYmJjMjRkYWU3ZTQ4Y2NlNmRhMTVlYzAzOTcwYjlkZjgyYjI4YWI2ZGVmM2EzNTEyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWJiY2FmNWU3NzBkMTk4ODBhM2IzYTZmOTAyZThhYzE5OGI1Mjk5ODMyOTFlM2QzMTY3YjE0ZGU1OTYxNGE1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2VlZDU2NTI2NGJkY2FlZGE2NGQ1NGRkZDBiYjk1Yzk4MWVmNjNlZjg4ZjM2OGI2MzIzNDA0NTc2MTQwNDczMyJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L49-L63",
+          "version": "repo-lines-v1:sha256:e74cae2720079fb25e52252752513ac89afc56aeeb0316b8e67c8de8d66d6f66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMmE3NmUzMzAyY2E2MmFmYzhhN2QyZTIxMmUxNGU4MjhmMmFhNDJiZmRkZDE1NjgyMjM0OGQzMWExOGQxMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5MDIwZDNiYjQwNDFkY2I5NmEyZGM1OGU5OWUyNzNkMDI4ODcyODY2MmY0ZDgxMzlmOTNhYzlhMDgyNTU3MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4MDJhMzlhNGJmNjgxYzZlZDI0N2NhM2MyNDE2YmM5ZDYyMmRiNTkyNTA0Y2M2OWU1ZDZkYjgyZTBkYjZlYjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46434e06356e4d31902a05b2878f3ec9",
+      "statement": "desktop/src/main.rs runs sidecar startup synchronously inside the Tauri setup hook, so the child is spawned and confirmed listening before the 1400x900 (minimum 800x600) webview is built.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/main.rs#L14-L29",
+          "version": "repo-lines-v1:sha256:b4c238cdfff992b29cd5bbccd6a7ffc916016e4bd5720c45bf45cd5dcc9ae6f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxN2MxYTA3MGVjNGVkYWE4MWExZTdkNDA2ZWZjMDYzZDcxMWFmMDgxYmUyNjFhZTI1ZThkNGQ4Yjc3ZjJhY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YjE5ODJlOGRkNzQ4MTE4MTQ2YjM5YTJkMDA2MmY0MDgxZTM0Nzc5Yjg2NzVjMjM0YzRmYjEyNGRjMzkzOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjNzIzNjcwNWMyMWIzZjgwOTA4NzYyODJiMGQ3M2U0NGNjZjMxNDY1NTY5ZjYzMmVjNjgxODMwYjNhM2MxMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYTVhNjczMWYyZjMzMGQyMzA3ODkyYjk1NThiYmE0MmU1OTZlZDVmYWZiODZmZGE5MTA5OGI4YzI1ZDMxMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c1a84ee65034654afb4208942020f85",
+      "statement": "Because the window is loaded via WebviewUrl::External from the sidecar's own http://127.0.0.1:<port> origin, the Leptos SPA keeps using same-origin relative URLs (/graphql, /events, /dats, /romfiles/{id}), so no CORS handling and no desktop-specific frontend build are needed; desktop/capabilities/default.json accordingly grants an empty permission set to the \"main\" window and tauri.conf.json sets withGlobalTauri false and csp null.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/capabilities/default.json#L1-L7",
+          "version": "repo-lines-v1:sha256:7b5c3251ffd6ddd0527c123a74e48733bf3acad7d9bc4158c7eeee491c943568:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://desktop/src/main.rs#L18-L26",
+          "version": "repo-lines-v1:sha256:32c3023aa46c1fd25eb1d06f3eb04e0c34524c6a1c73f7e0ba8c8f1129229331:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM3OTkxYjkyMzJjYWI3ODkyYjE4YjliOTk4YzgyMjIxNDIyODEzMDc3NGY2YzM2YjEyMjQyMzAwOGY4MGRhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdmNzdmZTU4MWYzNTk3ZTE3ZjFlMDBlOWI4ZWZmOWRhYTZiYTAwMzQ3NjA3MWE3YTkxOWNmOWM5ZDljOTg4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTM4OTIzN2I2NzUwOGUzMGYyYjU5MzMzYTE2YjEyZjYyYTZhOGZhNWQ5ZGQyN2Y3ZTdiNDEwNDkyM2ZiNzA2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM3NzUxYjQxODUwNDNmYWNlZWQxMTIxYTIzMmU4YmVhNWFhZGY0ZDQ5YzYyNmY2NGFhNzI0ZDhmMGU5ZDQzYyJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L1-L8",
+          "version": "repo-lines-v1:sha256:ec079a33310433d6bfa8a0adea6024e43e3311639dbef41ce9cd500e838f7491:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkNTcxYjk0ZmE4MjRiMGM5YzdhMTE2MDQ4M2ExNGRhZjhjZmQ2MDc5NWVjN2RlMDM1YWUyYWIwZTNiYjA3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FhZWFiNGVjMDg2ZWQ5ZDU1MmJmZWM2OGExNGIwNmE4MTkzYWIwZjRhYmM0OTA2MmMwN2UzMjNhOTk5OTQyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjZjZWM5OGM0YmI1ZTIyMTY1M2ZlYmVjYTZiNDZlNzVlODFlZWIxNDFkOTA4ZWU3OGY4Yzg5MjhjOGYwMjBjMyJ9"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L10-L16",
+          "version": "repo-lines-v1:sha256:1e11b852db8d7e945db3a6c8984d404ea70b9caeece694af532f3f6129f3ec68:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkzNmFiOGUyNDgyOGIxZmFhNGQ2MzM3NmU4ZDEyYjA4OWQ0ZDRjMzNjNGJmZGIxOGY2Y2NlZDUyZDZjNjYxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc3ZTk3NTBmMzIxMjYxZmE5ZDlkZGFlODA1YzY2ZGQyMjg5MjQ1NmQ4OGY0Y2EyMTBhMzAwZjFiZTM5NTEzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE1ZmFiNzU4NmYwYWUxYjgwNjMzNDcxOWRiNjgyZWU0Y2U5YzJlYzQyYTk0YjAwM2VmNWE3ZTJmZDQ3OGI2MSJ9"
+        },
+        {
+          "resource": "repo://frontend/src/api.rs#L39-L46",
+          "version": "repo-lines-v1:sha256:50a1ee922df3010d25cf1810bbd2f320e40810d57e58f5940ba5b7304ba110bd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg0NTRiMWE5YmY1MTg1MTU3NzJmNTFhNzM5ZDgwYzdhYjdiMjMzMDAzZDI3ZGY2ODdmM2VhMmVkZDFlYTRmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMTQyZDZjNzA0OWQ0NjhkYmIyOTg2NTg0NjEzMDkxYTM4OTE3M2U0MzI0Y2EyOWMwYjVlZGY4YzEyNWUxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAzNTEyZTBmOTFkOWIwYzBjOWY4YTMzYzM1NTQ5Zjg4NWY2OTFlYjIwNjkwNTY1YjNmNGEyMDViZTg4NzU2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQxZGNjZjBjODQ2ZmU2ZmNlMmI4ZDc3ZTdmN2EwNGQyNDI1YmM5YWFmNjZiNDhiMjE0NTFhZjJhY2I3ZmU5NCJ9"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L664-L674",
+          "version": "repo-lines-v1:sha256:321bf63990484cbb345a3155ed63a0784905df54405666f18d1174d12efd8bad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZTQyNGE1ZTNlNWU1YTU3NDkxNGZhZDcxYTAyMWQzN2MxZjZmMTE2NWY2ODMwNjFkMWEwNjIyNjE4MzNhMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNzI2NThhMWE5NDU4NjM5ODRhZjJmOGZkMzI4ZjZlNGQ4ZTE1MDI0MmFjMTcwYzE1YWM2ZDZhN2M3YWRiNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5YjY3ZDJjYzMwMTFjNmM2NGNkMzAwZjc0NGNkZmNiOGE0ZDRiM2E4NmM3ZTQ1MTI5ZDhlYTk2OGI2MzdhNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MzU0NmIxYTU2YTY2MzQ2NjAzYTA2YmZjMzZmMWRjNzIwNzU0NjZiNmJiNzcwM2FhOTZhZDAzNmVkNWRkZWIifQ"
+        },
+        {
+          "resource": "repo://frontend/src/sse.rs#L88-L95",
+          "version": "repo-lines-v1:sha256:5bad69a6e56e1556d2bb037a34bab72022b02b57bc13e283fcb80eed6d5649bf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkzMWM2MGViMDkwYzg1ZTZjMjg1NDRjMGYzMDgwNDg0OWZkMWYzMTY5MTNlOTAxYzVjMTYyMmU4ZGU5Nzg2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQxZDIwZDcyMzY3NWIyNDI2YjU3MjFjNmJiY2YwMGIxMzEwMDNhZDM0MzNiODY2NjlmN2VhMTEwNzUxYzczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGI0ZDkxZDRlYzZhMTYxOWJmOTcxOWQ0NDQyYjI5MzMxMGI5YjIzYjI0MzEwMmViYjdjYTFiNDRjNjU0NDQ3OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6acaee83ba4b4c338aceff4118dc21f0",
+      "statement": "desktop/scripts/stage-sidecar.sh resolves the repository root from its own location and the target triple from TARGET_TRIPLE or `rustc -vV`, runs `cargo build --release --features server` from the repo root, and copies the result to desktop/binaries/oxyromon-<triple>[.exe] — the triple-suffixed name Tauri requires for the externalBin entry [\"binaries/oxyromon\"]; beforeDevCommand and beforeBuildCommand both invoke it.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L1-L22",
+          "version": "repo-lines-v1:sha256:b65559e5788d0886e4a8adc967136d8759088cebcd7f547a0a80c13c640cbdcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMGNkNDA1NjExMjFiZDY4ZTU1MGRkNGM5M2QxNTcyMWRkNTY5YmNiNjdhMzZjOGI5ZjhkYzBmZTA3YzQ4NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L30-L31",
+          "version": "repo-lines-v1:sha256:41b1e3e3fc4b565ae148bc2335ffb79c71c8837c144741826371bcb7db97be79:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzOTNiMjIyNjVmMWYyMmU4MTI4ZWVjNzgzMTA3ZWNlNjYwMjg3ZmJjMDEyOWYwNGViZjJmMTUyZTA5ZTliMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNhMjU0MGYwNTdjYTVmOTMxZjQ1YWZlYWRmZDY2Y2U1YjM2ZTI0MjQwOTZlNDZmMTI4MTQ5OTI4OTUyNDA4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L6-L9",
+          "version": "repo-lines-v1:sha256:bf61a14ad0ac67ab65ff15739f15e501751dc38aa7f74459e23debd828872546:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IwNzIwMWJkYjZiYzA1OTIwODQ5NjM2ODE4NjFhNGZhMTRhZmRhNTkxYjZkNTY2MWI3NDU4ZDkyMWQ1ZDBlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg0MGE4MzA4MjA2YWE1ZTU1NjUzNjgwMDE4NGMzNjgzZDliOTY2ZDVhYTRlNTIyZWM3YzMyZmU5ZjEyMDQ1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDZiNjY1Mzc0ZDc3NWE5MmJjYmIwZTNhYmNhMDk1YTIwMDAyNDg4YWNhNGI1M2UyMDJmM2QzNjVmNjViOGRiZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_577ddaa01e2c491b939d9eb8d18b3dd5",
+      "statement": "Because staging builds with the `server` feature, the desktop toolchain includes the web UI toolchain: root build.rs runs `trunk build --release` unless SKIP_TRUNK=true, so trunk and the wasm32-unknown-unknown target are prerequisites for any desktop build.",
+      "evidence": [
+        {
+          "resource": "repo://build.rs#L6-L33",
+          "version": "repo-lines-v1:sha256:0aa275a9607f7300c5e84e684a6d2e0cfe210481144059f3c85ab1060f3fbc36:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNTZkZTMwODcxYTc3NTNiMzgxNTQxZTM4YjBmZjg4ZjkwYjVlZWNhYzM0ZjFiN2E1Y2M0ZjU3YTNmODk0MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyM2ZlYWNjZDMyMmE0YjgxNWYzMzU2ZTZjYmQyMzZkMDk0MzdkNGNmYjY0MTE5YzEyZjg0NTdjNTNkOTE5NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZWU0MzMyYzc1MzRkMTRlZjcwYWRjYjM0ZTgwMDI5YTMzMWJkNDRlMzM5YTE3ZWE0MjU1OTZiMTE0MzYwNDIifQ"
+        },
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L19-L21",
+          "version": "repo-lines-v1:sha256:3aee567c92a7cf0bc5ad87807aa687a8c44d7ec1405a7002d35f57b0be376c95:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAzZjEwOTcxOWFhNzBlZjQwMjI0ZGJmNjMxNGMxMjliZTlmNjEwNDRkNDVjODAzMjhmNzNiZTJkYzE5MTc4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZjOTM4ZWE3ODY2NGVhODc1MmExYmViNzFhNmNkYmNiNTUzZmU5MzZiMmEzZTg4ZWJkYjRjYmFlMjZhOTY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA2NGFmZDRiMDgyODZmYWU1YzkxMjNlNjhmYWUwYzRjOTBjY2YzZTc1NWM5YjZjZGI1ZmU5NTczMDYyZTdlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMwY2Q0MDU2MTEyMWJkNjhlNTUwZGQ0YzkzZDE1NzIxZGQ1NjliY2I2N2EzNmM4YjlmOGRjMGZlMDdjNDg2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_55ccdeb4762147bd9a04845b8abc91f3",
+      "statement": "desktop/build.rs calls tauri_build::build(), which makes the staged sidecar a build-time requirement: a plain `cargo build` in desktop/ fails until desktop/binaries/oxyromon-<triple> exists. binaries/, gen/ and target/ are generated and gitignored.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/.gitignore#L1-L6",
+          "version": "repo-lines-v1:sha256:01a0fea0fec9618537e1f375f817d4d2faedcab13c5601cfcb3864e09686d881:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc1ZDFjMDJlNWIyNGFhNDE3ZWViYWNkNTU2ZTBhNjMwZTA5MWY2Y2VmMmI4ZmQzNjBmODUxZGE4YTdlNGQ0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJhOWRlMDdjMjA1M2Q1NDEyNDk0MmExMTNlMTE3Mjg1OGI2ZjA2MDZkNmY4NjNjNDU4ZGI4YWMwZTZlNDUwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://desktop/build.rs#L1-L3",
+          "version": "repo-lines-v1:sha256:487059eaf8a947b80f20a9aacac038a5047b2ad69d2401b827376c67d6fe847f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBiOWVlZTkxYmMwYjFhNzdiNWYyMjRmZDY5NDVmM2RlYzIzNGU1NTk2Yjk0NzVjOTBjNWFlYzllNmFlMjBiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2252dcbbae8412bb1ce556c144a0afa",
+      "statement": "The sidecar's CommandChild is stored in Tauri managed state as Server(Mutex<Option<CommandChild>>) immediately after spawn and before the readiness wait; Server::shutdown() take()s the slot and kill()s the child, making it idempotent, and main.rs invokes it on RunEvent::Exit because the sidecar is not in the shell's process group and would otherwise be orphaned holding the database.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/main.rs#L33-L39",
+          "version": "repo-lines-v1:sha256:f76558df2f017d1d46867724afbf92248d1d7a361f575d2e1ffc134878fe6e84:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlMmY4YjQzYmM0MGI3NGVkYTU5NTJkOGJkZDQyMzU2M2QwMTE0OGU5MjA4ZjdlMmM2ZTBkZjA3NGZhYzE0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJkMTFjYWY0M2U5N2VmMzY5ZTZiZWVkMWEyNjhiZDA1ODM4ZjI5YjlkZDI1NGJmNjliYTY0ODg0MTQ3MjM0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNhNWE2NzMxZjJmMzMwZDIzMDc4OTJiOTU1OGJiYTQyZTU5NmVkNWZhZmI4NmZkYTkxMDk4YjhjMjVkMzExYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L23-L37",
+          "version": "repo-lines-v1:sha256:6f95df625856dbe6e0779824d5b82146f248ffeecf96d24af9f35ef55847e5f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4OTYxYWMxYmFjYTU4NWMwMDU2N2JhYTAyZGJmYzNiMTZlZjVmMzQzZDdhNzc4NGYzNWVlYjM3ZGViN2U1ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1NTdmNjMxZDk2YTlhM2JkY2I2NDhkYzgxODNkZjRlNTUzYzgyODkwZmJlNWZmNzg0ZTJkN2YwYjI4N2MxZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlNTBhMzIwZGVlMWU4YWQ1NzNjZmU2ZDFiYmEwYmI1M2JmNTdhYTRmNzhiOGZjM2VlZmMzODBjYWMyZmM3MTEifQ"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L87-L91",
+          "version": "repo-lines-v1:sha256:bf6f2292b14b2084c87fff4da9f4c101ccf5e60e886c8d32eaa5741b3bd4101a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA2YjFhMmIzMjIxZGU2ODQ4ZDZlNDUwNjExN2MyZDM3MzlhOGYxYTJmYjYwYWQxN2YyYWYwMjA2NWZmN2Q2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc2ZTdmODk2NmI4Yjg1OTZjMjU5NWI0NDcxMDI0YWQzMWMzMGViN2Q5Y2U2ZWVjODhhMTgxNTQwOGRiMzRjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM3OTZmZmJkOTczNjFiMzc5ZTFkNmIzYjY5NjNhMzQzNzk0NWE5ZGM5NzhlZGE4M2NkNjg2YjQwYmRlOWExZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmIzZjJkYTBlNzg4Y2UwYzY3NTk5NWQwM2U3MTQyOTY4Y2M4OGMyMzU0OGYwM2UyMWVhN2Q1NTdiOTMwMjFmNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_36bc7be7bf7046e4a26a96b0114e8d98",
+      "statement": "Sidecar stdout, stderr, CommandEvent::Error and CommandEvent::Terminated are drained by a spawned async task and re-emitted on the desktop process's stderr with an `[oxyromon]` prefix, giving the only diagnostic channel for server startup failures.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/server.rs#L65-L67",
+          "version": "repo-lines-v1:sha256:5f72ab6595a4d81b2a3358bba4497bde9b3bdcbca014d2706323278c3b1448cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDlkYWRhMTYyNjM0ZWFhNTA4NzhmMDMyYTAyZjljMDgwODFkNjc2NGJmMmFkY2RiN2ExYTk4OGUzNjE0YjA3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODNlOWRhZTU0MDhjNmFhZmMzYjMwYWM3NTAwYWNjZDM5MjFhNWFmYzgyMzJlYjc5YjZkNjQxY2M5MGU4NGY5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMwYTBhNDU1NDJhM2JkODg5NmUwMjljY2Q3ZWZhNGI4OTM5ZTFhMTAwY2RjZWNlMTdhYzYwMTJmZGFhZGI4NCJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L93-L107",
+          "version": "repo-lines-v1:sha256:e0a299a085a559697dd5abd4e4ab6f6c66a7c685e7907cd730dd36d4276d68a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NWVkOTM2YzAwZDA1NTUzY2U1YzM0NDVkOThmZjkyZDMwM2VmY2IwOTNiMWJiNzI4YWU1NjQ1YTY3ZjJmYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyNmY2OTVhYzAyMjVhZDE0ZTE2ZmVkNDY1ZTY0NGY4ZDVhNWFmYjA1YjYwZDhiNTIxNzgxOWU4NjEwZmI4ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YjViOWYzZDdiNzc2YTJlODIyZDk0ZmQ4MGY4ZDY3YmFmYTFhOTJiMWQwZjAyNzU2NWU2NDNlMWUwNTI2YzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f44ce16c1e6a42aa81fe5d452405317b",
+      "statement": "The desktop sidecar is the ordinary oxyromon binary and resolves its database the same way as the CLI — OXYROMON_DATA_DIRECTORY, else the platform data directory, plus oxyromon.db — so the desktop app and the CLI share one database and one set of settings.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L19-L21",
+          "version": "repo-lines-v1:sha256:3aee567c92a7cf0bc5ad87807aa687a8c44d7ec1405a7002d35f57b0be376c95:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAzZjEwOTcxOWFhNzBlZjQwMjI0ZGJmNjMxNGMxMjliZTlmNjEwNDRkNDVjODAzMjhmNzNiZTJkYzE5MTc4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZjOTM4ZWE3ODY2NGVhODc1MmExYmViNzFhNmNkYmNiNTUzZmU5MzZiMmEzZTg4ZWJkYjRjYmFlMjZhOTY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA2NGFmZDRiMDgyODZmYWU1YzkxMjNlNjhmYWUwYzRjOTBjY2YzZTc1NWM5YjZjZGI1ZmU5NTczMDYyZTdlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMwY2Q0MDU2MTEyMWJkNjhlNTUwZGQ0YzkzZDE1NzIxZGQ1NjliY2I2N2EzNmM4YjlmOGRjMGZlMDdjNDg2ZiJ9"
+        },
+        {
+          "resource": "repo://src/main.rs#L118-L128",
+          "version": "repo-lines-v1:sha256:d923ef86470508e496cc8833b68300d8d448dab36b49f9942770a6c3935b382a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZDkzM2RiNDUwMTM1ZTZmODYzMGExZTk3NTU3NzcwMTZjZmRiZDY2YmEwOWFkN2M1YWY3NmQ3ZTQxYTE2ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExOTlkODVlODUwOTdkYzU4ZDMwNmFhYzFhMDQ3OTc0Y2E2YTMxNmNlMzJkODk2OThiYTY5NDA3YTY0ODE3MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MTYxOGQxYTBiNzBkZjAwZDcwM2E3MzkzYmI4OWU4ZjdlNTQ2MTIwYzkzYmYzMDZkNGRlZjE4YWJiZjI4NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1Yjg3N2Y2NzM4N2ZjYzEzNjAxMzRkMjM4OTYyYzlmNWNjNDAzMmFjNTVjNzA1OWQ3ZWE3NTY5MWMyNzllNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d046f5b4e4e405e83e6af0a53a68ec3",
+      "statement": "Since the sidecar is built with `server`, its pool uses max_connections 5 and PRAGMA locking_mode = NORMAL with WAL instead of the headless build's single EXCLUSIVE connection, which is what lets the desktop's long-lived server coexist with CLI invocations on the same database file.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L19-L21",
+          "version": "repo-lines-v1:sha256:3aee567c92a7cf0bc5ad87807aa687a8c44d7ec1405a7002d35f57b0be376c95:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAzZjEwOTcxOWFhNzBlZjQwMjI0ZGJmNjMxNGMxMjliZTlmNjEwNDRkNDVjODAzMjhmNzNiZTJkYzE5MTc4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWZjOTM4ZWE3ODY2NGVhODc1MmExYmViNzFhNmNkYmNiNTUzZmU5MzZiMmEzZTg4ZWJkYjRjYmFlMjZhOTY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTA2NGFmZDRiMDgyODZmYWU1YzkxMjNlNjhmYWUwYzRjOTBjY2YzZTc1NWM5YjZjZGI1ZmU5NTczMDYyZTdlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWMwY2Q0MDU2MTEyMWJkNjhlNTUwZGQ0YzkzZDE1NzIxZGQ1NjliY2I2N2EzNmM4YjlmOGRjMGZlMDdjNDg2ZiJ9"
+        },
+        {
+          "resource": "repo://src/database.rs#L13-L52",
+          "version": "repo-lines-v1:sha256:0dbca5825e5972705027ab4d8a7ccd48dea1b2b70bac68277d987ae406977deb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmE2Yzk5MTE4ZDk0ZWE0N2JkNDYzMzNhMWM4NTc4ZGIwZGI3YjcyYTFmNTMyZTVkZGJiMDk2YWJlN2UwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2N2YzZDU5NTc3OTEwMWRkNGE5ZGZiMzFkNTNkMTdkMGRkZmY1MTk3M2IzY2ViZWJhNTc5YTg0MjM3YWE3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4OGZlMjMyMTA1YjMxNjgwMjc0MGQzZDc4ZjUwNDJhODQ5MjNhOTE0ZTBmOTMyZmUxNGExOTJmNzZlNzAxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwM2RkMGYzZTdmMDc2ODEyZTBhM2FlMWFjYTBhNzk4YzUyZmYwN2FiMTZhY2E1MjlmYzM4ZDA1MTZmMTA5ZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b08b0c1e8273436eaa3870403b1fd456",
+      "statement": "The desktop bundle is host-only: dist.sh builds it once after the whole cross matrix with NO_STRIP=true and copies the resulting .deb, .rpm and .AppImage into dist/, because Tauri links the platform's own webview and no cross toolchain exists for it; desktop.sh is the standalone equivalent.",
+      "evidence": [
+        {
+          "resource": "repo://desktop.sh#L1-L7",
+          "version": "repo-lines-v1:sha256:0c35bc2503579b7d5e2a83e84b835da98cecba8e14117bdbf13bc8d4b816c9d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGExMTRmOTI3OGYyZTFiMzRkYTQ3NTBiMTRkNmU3Y2ZmMDExMmU4ODNhZWQ2MDU3MTIxYjY1ZTEzOTc3YTY2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L53-L63",
+          "version": "repo-lines-v1:sha256:96ebf4bc036347fb6d3ab34cdf86693aa6e83a77e42d17e6e29370a5196b0a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NWM3YTg1ZmJkNDQwOWY4NjFiYzY2OTIzNWUxOWFhZjhmNGRlY2NiYjExNDk2MDVmYmYwYTNmMTJjZDBiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MmFmMWFjMDU1MjU1M2VhOWNlNjhlZmM5MTc3Y2RkZWRlM2E5ZDZkM2IwNTFjODJiYjY2MTc5ZGVmMTUxMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96bd2f4e095e4f41aeb1fbfcfd7059d5",
+      "statement": "Recorded failure modes: a blank window on Linux is WebKitGTK's DMA-BUF renderer on some GPU/driver combinations (confirm with WEBKIT_DISABLE_DMABUF_RENDERER=1); `failed to locate the bundled oxyromon binary` means the sidecar was never staged for the current target triple; and `failed to run linuxdeploy` is linuxdeploy's too-old binutils failing on .relr.dyn sections, worked around with NO_STRIP=true.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L225-L236",
+          "version": "repo-lines-v1:sha256:f27b4cfd7b3f4398ad7842ac3b448a6cfc2906e4ad7205ced4d5ae15a6e51d72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNjdmOTgyYzNjNTgxNDFjYzkzOTc3MGU2YmFlZDFhNzg5OWQ5YjQ1NmZhOTJiZGNjNjQ2MTJiYjU5NWRjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOThlZDM1ODFhYjExYWJjMmFjNzIwZmRmYWQ3YjU4ODkxNGNlYjVmNjZmNmMxZGY2OWZlNzUyNDFlZWNhOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2ODAzOGJkZTcxNWU2YzM1NTkwNTAyNzE2MGNmYWFiYzliMWRmZjY5MWUzYzk2MTg4MWQzZjY0ZjdiNmUwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5NDZiNTFiODZhN2U4OGQwNmQ5ZGNmMDgwODlhY2I2YWE4NDQ2MDUwOGUyODg5YjM1N2JmMDQ2NTg3YjExYzIifQ"
+        },
+        {
+          "resource": "repo://desktop.sh#L3-L5",
+          "version": "repo-lines-v1:sha256:72903e38c9585be0e31316026017ac27d30ff8df64beb25de16d6f34ce9174e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM4ZjExMDEwNTcyYjg4ZTg2ZDdiNmVlOGIwYWZhYTNlYmYzNTRkYmYzNzAwZDM2MDc1NDEzMzhiYTg1OTQ0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjEyYjI5MGQ5ZGY2ODc0YmQ1NjQ1OGExNGE4MzNiMDk5OTlhNjliNzljY2JkZmVmMjNiMmI5MGI0YmU3MTBmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmVjNzFmYzk1NWQwMTA3YTZlOTBkMWFiNGU2ZjAwYzk0MzhiNTZkM2U2MjFlZjAxOGQ1N2M4ZWYwN2JmYWU3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2IzNTc1YmM5ZDcyMWExMThhZmRmZWZlNTBiMzc2MWMxZGJlODY3MDVhYzExMTMwOGQ1Mzc3YzQ4MzdiNDVkOSJ9"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L75-L78",
+          "version": "repo-lines-v1:sha256:2240db4a187b7a33582f5a94d3a772970048a5efe09bdc9dfd1f999ecb41a623:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUwNGNiMTRmMThlMjUzYzRiNjA0ZjJhNTVmOTg4ZWZjMzc0MDc4Yzc0OGM4MGYwMDhiZDJiMTNiY2QzYTY5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVkNjQwMDZkYTgzZGYxOGRhOTYyMGI5YzY4YzE1MmNiZmEzNzA0OWJmZmNlYmI3MDBkMDcyODJkOTFiNzEyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTlhNGJiNDY2Nzg2ZjMwOWUyZjZiOWM1ZGE4OTIxMWUzYmI2YjQ3OTVmNGUzODA3YmRkNTJmMDQ2ZTQ1MTQ4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJjY2YxOTlkYzYxOTE2NzRmM2Y2YTFiODA1OTE1NTI4YzM0NzBhZGI1OGQxMzhmMzhlOTVmNmE3ZTQ0ZmQ4MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9873b14ce8424e8e9f514fba2fe72784",
+      "statement": "CI never validates the desktop crate: the single CI workflow pins SKIP_TRUNK=true workflow-wide and builds the web UI once in its `Build web UI` step (`cd frontend && trunk build --release`, trunk pinned by TRUNK_VERSION) so the clippy/build/llvm-cov `--workspace` steps reuse those assets, and since desktop/ declares its own [workspace] while the root workspace members are only crates/*, no CI step ever compiles the shell or installs the Tauri CLI or webkit2gtk — regressions there surface only in a manual or dist.sh build.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L62",
+          "version": "repo-lines-v1:sha256:b1264f4ade706ab68f90a3cb5f61718b85640563582c65fe180497af304ec694:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
+          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5MzgyODhkYzc1NjJjYTBmMzc0YjQwMTU3ZGM1NzMwMDQ0YjRlMjc4MTMwYTg1MDQwYWZiNGQ2NzAxNjkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+        },
+        {
+          "resource": "repo://Cargo.toml#L19-L20",
+          "version": "repo-lines-v1:sha256:c63381e8eaa4d9394d149f1a99184fb0563eb940c2fcf6c8d715e18f9217c9ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0ZTEwMmM4NjFmOTk0ZDJhYWNlOTExNGQzOTJkYmMxNjIxOTBlMDBiZThmZTM1N2Q0NzIxNTBjYTQzOTYxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M0YTAxMzI4NzI1NTFjZTViMTE2ZjQyMzYxOWNmZjQyMGMzNTU1MDJmYjg4NTBjYmJhMGM1MDE1NGZmNjFmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODRkZmY1NjIxZjRlYjRkMDNmMmYxZDZhM2Q0NTgzYzBmNDRiZmZiMDBhYjJmNzEwMWJlOTEzNDYyYTQyZmNiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTA2NTI5MWMxMDc5ZDEwNDhjNGFjNjMxMWM5ZWI4MzMwZmMxZDMzZGY1OTdlMGRkMjUwNTk2MGQ3YjA3MjgzYSJ9"
+        },
+        {
+          "resource": "repo://desktop/Cargo.toml#L8-L10",
+          "version": "repo-lines-v1:sha256:495afe9a7952d841a964c6d11b09fc87fb3cfbac842f510b9a0efdfd8f75cde8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE2YmRmNzk0YTIzZmVlMjFjNGJkMTZkNzEzNGM3ODM0Y2QzN2UxYzI0YWJhNzJmMWRkZTA2NWFjMzFkM2YzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM0ZTEwMmM4NjFmOTk0ZDJhYWNlOTExNGQzOTJkYmMxNjIxOTBlMDBiZThmZTM1N2Q0NzIxNTBjYTQzOTYxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU2YTUwYTAzNGUzYTlkNTRjNjFhNDBmNGFhMTZmYjRlOGNkZWZmMDg3ZmI0YzViYzczM2VmZGVkNGZlOTQ3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM0NTBiOGFlYjExMzhiZjE3NWZkYzFkOThmOTVhZmNkNjdjMzI3NDgzNjZjMTY4MDg1NWQ4ZGFjMTQ1YWZlNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a997523f25434ea3a353c395cee9c62a",
+      "statement": "The child-kill path is reachable only through the Tauri run loop: if setup fails after the spawn (e.g. the readiness timeout), main's expect on building the app aborts before app.run, so nothing in this code reaps the already-spawned sidecar.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/src/main.rs#L28-L39",
+          "version": "repo-lines-v1:sha256:9306831ecf8425a6317bf5c70dbc50a6525d6e3d5213d4ef2d1be6e0a8d1750c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2YzIxNTA4YWJiMGI2MzNjZDc3NzI0YmRmMzYzZDM0ZjFiYjU0OGM4OWFlY2IwZDJlZDNiMDg0ZTJlOTQ2MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyMjVjNjlhZWJjZTFhN2E1M2E3OWVjYThhMzA3ZmU2NjMwNzdiYzcwZjIxYjY3MjY5YzI1OWY0YmQxMGRmZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://desktop/src/server.rs#L109-L110",
+          "version": "repo-lines-v1:sha256:8b1dfb2661711678d496c022820caa3ce4f35902a35d2f38678c14c356bbf510:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc1ZGMzZDUyMmFjZTFmZTljNDJiYTMyY2EyMjI2ODMwMGI3ZDRmMmQ2OTI1ODVlMmE4YjFjZDFjMjVjY2M5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJkMTA2MjUxYWQyMzE5YjVjMjA5MzExNWNmYmY1NzRjMjVjYTM4NDdlMGJhMDMyOWIxZTZmZmNhMTk4YjJhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY2ZDNhMjZkOGZjNWM1OGU0ZTNhN2UzNWNhZGE3YmY4NzJmZjQwZTQwMzdlYWE2MWI0NThiZTUwZGU1YjEzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9fa812267f6f4148a20951c065aa0018",
+      "statement": "tauri.conf.json declares no static windows and registers tauri-plugin-shell only so Rust code can call app.shell().sidecar(...); combined with the empty capability permission set, page scripts get no Tauri IPC, shell or process surface at all.",
+      "evidence": [
+        {
+          "resource": "repo://desktop/capabilities/default.json#L4-L7",
+          "version": "repo-lines-v1:sha256:6873b7473063b11112de97092f8f053087cf118731a521b6bee96b31eedb6106:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc5YjU4MzM0YzUwNjZjNmQ5M2YyOGFlN2UxMDQ3ZjgyOTZmMDc1OGM0MjgyY2UwODlkMDQ1MGQ2Njg3YWM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzI5Mjg2Y2RhZmMyN2M0Mzg1MWRkY2JmOTY1M2FmYThjMmM0YTJlYzA3OTQzYzA2OTgxN2VkOGZjMDFiYzIyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://desktop/src/main.rs#L11-L26",
+          "version": "repo-lines-v1:sha256:6f984cf9f67a37009f46a573da62c9037efb386b4a3cfb8f1d0ad4e76605c721:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjZDdjMzVmNzM0MDFmNzJmMWYxMjRlZWVlOTk0ZTI5ZWM3OWYxZDdjZTcwZTJlNzJhNGU3M2E4M2RhZmYyYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3Zjc3ZmU1ODFmMzU5N2UxN2YxZTAwZTliOGVmZjlkYWE2YmEwMDM0NzYwNzFhN2E5MTljZjljOWQ5Yzk4ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0YjBjYzE5NzFjNjIyNDBmMzIwYTE1ZTQ2YjYzMDBjMzJmMzAwMjI5MGU4NzdiNjNiYWQ4M2VkZDhkMTI2MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzNzc1MWI0MTg1MDQzZmFjZWVkMTEyMWEyMzJlOGJlYTVhYWRmNGQ0OWM2MjZmNjRhYTcyNGQ4ZjBlOWQ0M2MifQ"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L10-L16",
+          "version": "repo-lines-v1:sha256:1e11b852db8d7e945db3a6c8984d404ea70b9caeece694af532f3f6129f3ec68:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkzNmFiOGUyNDgyOGIxZmFhNGQ2MzM3NmU4ZDEyYjA4OWQ0ZDRjMzNjNGJmZGIxOGY2Y2NlZDUyZDZjNjYxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc3ZTk3NTBmMzIxMjYxZmE5ZDlkZGFlODA1YzY2ZGQyMjg5MjQ1NmQ4OGY0Y2EyMTBhMzAwZjFiZTM5NTEzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE1ZmFiNzU4NmYwYWUxYjgwNjMzNDcxOWRiNjgyZWU0Y2U5YzJlYzQyYTk0YjAwM2VmNWE3ZTJmZDQ3OGI2MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f688b9e42edc49b18dd3ce5724c3a66c",
+      "statement": "The desktop runtime needs no external format tools: every format is served by in-tree crates or Rust dependencies (chd-rs, xso-rs, gdi-rs, xdelta-rs, xps-rs, nsz-rs, sevenz-rust2/zip, nod), which `src/info.rs` reports as built-in versions, leaving ctrtool as the only remaining optional external binary and only for CIA.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L202-L226",
+          "version": "repo-lines-v1:sha256:818e6cb609efbc8f1b163a1abc41f53a77eac4b6c19c80be74e85a483e028ad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzVjMDg5Yzc4OTkwZDU5M2Q4N2E2MjNmMWFlMjc4ZjllMjBkNGZhMjliMGIyMmFhN2U5MWExYjhkYmQ1NWMifQ"
+        },
+        {
+          "resource": "repo://src/info.rs#L26-L37",
+          "version": "repo-lines-v1:sha256:73bb4cd7cb7b71e4019a979551ca4a6cb9d89d0773fa78ecac9ada89fa27ffab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiODY0ZTMzYzA5M2Y1YmQzZDEyNzZkZTU5ODlkYjZlODRiZTUzZDMyMDVkZDY0ZDViNTE2OWNlMjYyNGFlODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNjllMDhiYTdlNzcyYzUzOTlmYmY0NDUwNGFiZTlkM2M4ZDE3ZWZiZmNlZDk1ZjkzMTU1NzQyYjRkOGJhNmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07becb6ea50948d887c521b3d19ef445",
+      "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Arch container likewise installs no codec or archive tool to run the server.",
+      "evidence": [
+        {
+          "resource": "repo://CHANGELOG.md#L11-L26",
+          "version": "repo-lines-v1:sha256:f99cc791ee481973fb4534833082b6ca89e72e5879aa8c4696a3b3f2da24ebcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNzZlMDYwZjZkMDE0MWI3OGJiOWI5NzA2NWQxNDMzOGJjNTRjODI3ODVlNTJkZTdiMThhOGE4NjY3ZDY1YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjNlMTk3YTcxZjU5NDQ1ODM5YzZlM2VlODEyNGZmMjg5NTE5ZmI1MDg0NDc2MTdlMDJjNzkyOTZlZWE3YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZTdiM2YwMGI0ZTIwZjk5YTYyOWNjMzI1ZmVhOGQzYjc1YjBhZDZmMGMwYTVmODlkODljMGI4NTNjYzlmNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYTRjMjA0Y2I3YzRmMjJhMzA5ZDY0ZjExOGQzZTdjNGNiZWFkYTIxODAzYjM1YjE1ZTcxZTBiMTk1ZGQ2ZGQifQ"
+        },
+        {
+          "resource": "repo://Dockerfile.archlinux#L5-L17",
+          "version": "repo-lines-v1:sha256:079135e88fdcf80a1347f8496cb036b2dcade3df44adc4bcd87fb3d85ed8f564:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYWExZDRmYTViNGJlN2ZlZTI5OGRjNDUxNTdmNGY1MjkwY2I3ZTNhNTgyNDQ3Yzg4MTVjOTE2ZWFmMTgxYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4N2Y2MjUyZWZjMzk2ZWQzNmZlNDk1ZjVhMWFlNTY1NWNiY2U0NzgxOTY1OWVjOTkyYjEzZjU5MzFiYTUyMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L17-L31",
+          "version": "repo-lines-v1:sha256:2eb1f3ad4c0de28194701c8419e166937a83bbccf5def08aac3787b6361f74de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMDcyNDlhZjgzOGY5NDg0OTM5YjM3ZGE3OGQ3MTIxZGM0ZTVkNGFjNTI2N2JkNzIzMDkwMGU3NGE4NjMzZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkNDQ4YjVhYTFiYmY4MTdkYzBlMzdiMDA4OGU2MmQwM2MyYWE4MmVmZTAyOTIxNzUyMzY0MDQ5NjNmZTZiNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_571a60f8d4064c298331b4fb8e811618",
+      "statement": "dist.sh's release matrix emits seven binaries per target — the server-enabled oxyromon plus the six format-crate CLIs (chdrs, gdirs, nszrs, xdeltars, xpsrs, xsors) built with `cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs` — packed as .tar.xz (7z on windows gnullvm) and rcodesign-signed on Apple targets, before the host-only desktop bundle is appended to dist/.",
+      "evidence": [
+        {
+          "resource": "repo://dist.sh#L23-L35",
+          "version": "repo-lines-v1:sha256:0565a2bc7ad7e92c8ef02ff367b347e3c1ed4669e30a2cd660600750a9ad9643:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNDk5ZTA4NzIzYjUzNWIwOTUzODM3NDJkZGM3Mjg1OTc1ZTgzNjRjZjAzYzc0MDRjOGFjOWFmMmMzZTRkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3M2E3NDg1Njc1YWI3ZmJkMGFkOWNkZDIxYWRhZGZiZTEzY2NhOWE5ODVjMmMxZDg5Zjc0ODkxM2Y5NjU3YjEifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L37-L51",
+          "version": "repo-lines-v1:sha256:0acbedc99a3bc5be921b8907a84e05e3c9276aa2f7bcd732dfd218508b2d4b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3OTdiNzJmMWExMjE1ZTFmNDFiMGU5ZmNmYWQxM2M2YmYxMTM1NmU0YmMzY2MyYjBlYmVmZGIyZGZmMjEzOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5MzVlOTdiYzMzMWFjNDc0MGRhMTM1MTg1NDAyZjk4NGFhMDIxZDY2OWEwYTVlNjZiZWZkYTQzOWRhNmI4YjUifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L53-L63",
+          "version": "repo-lines-v1:sha256:96ebf4bc036347fb6d3ab34cdf86693aa6e83a77e42d17e6e29370a5196b0a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NWM3YTg1ZmJkNDQwOWY4NjFiYzY2OTIzNWUxOWFhZjhmNGRlY2NiYjExNDk2MDVmYmYwYTNmMTJjZDBiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MmFmMWFjMDU1MjU1M2VhOWNlNjhlZmM5MTc3Y2RkZWRlM2E5ZDZkM2IwNTFjODJiYjY2MTc5ZGVmMTUxMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://dist.sh#L9-L21",
+          "version": "repo-lines-v1:sha256:87e4b225353ad798211fab34c2166672213e74527b9853f29ffa5ce34956be2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZTE5NTg5MDMxNzk3MzVmYjM4Y2MyZDE1ZGNjNDI1NGNkYzg3ZjZkMTYzZDViZTI1ZGQ5NTNlNmQxMzhlN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0ZjJjMjhkMjkzYmNjZjUwMzM0ODg4MzIwOWI0OTU1NmEwZTkzNGMzZDljNTJkODM5MGIwZGZiYzEzYjkwMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNmYwZjE2ZWQ5MGU5NmQ4YTEwNDA2Y2YwMTkyOTkwNjNiODQwYzhhZWQ5MWFhZmE2ZDZlOTkyZDY1YTk5MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_07daa3d1dc014c8e9c3f7e912929f30a",
+      "statement": "dist.sh exports SKIP_TRUNK=true for the entire release run and Cross.toml passes that variable through to the cross images, so each target build embeds the host-built target/assets from the loop's own `trunk build --release` instead of rebuilding the wasm; the desktop staging build inherits the same value.",
+      "evidence": [
+        {
+          "resource": "repo://Cross.toml#L1-L2",
+          "version": "repo-lines-v1:sha256:8cd25240a1b13914777f9186147aaa51eca03e064f37497472095a93c7403bfc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE2ZjhlM2ZmYjY4NWQ1OWRkMDhmZTAyM2RjYjg1Y2MwZWIxNDBjZTE5Mjg2MGQ3ZmIyODZkNDA4YjdmYjk3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVhYTI1OGE2OWZhYjU2OTRjYjU1MjVlZTg1NzY3OTgzNzg3ZDdiMTUxOGFmODE2MDZhNzk0MjJlYzM4MTA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTljYzRjNjljMWFkNjliNGQ0ZTBjMzg5MGQ5OTFhMThmNzJkNGNhMzhiYTBjZGVmYjdiYjYwNTViMjEwZThiMiJ9"
+        },
+        {
+          "resource": "repo://build.rs#L6-L8",
+          "version": "repo-lines-v1:sha256:ef15d36ec42a3928de98ba2adbe5c63ddf539662b0fe47727fdcd1f6474374a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzE1NmRlMzA4NzFhNzc1M2IzODE1NDFlMzhiMGZmODhmOTBiNWVlY2FjMzRmMWI3YTVjYzRmNTdhM2Y4OTQyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgzYzdjMTk2YTY5NDk5YTdkNGQ0YWE4NWIxMTA0YzU5MjIzZWVjNDQ1N2QzYzE0ZTAxYTkzY2EyMmQ5NjM3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIzZmVhY2NkMzIyYTRiODE1ZjMzNTZlNmNiZDIzNmQwOTQzN2Q0Y2ZiNjQxMTljMTJmODQ1N2M1M2Q5MTk1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjQ2NDlhMzI4ZWFjMzVlMDIxYTFkOWQ3MTc3N2QxOTc2ZThkZDBlNDM1NjIzMDI0MmVhMjRiOGJiNDY0ODlkMyJ9"
+        },
+        {
+          "resource": "repo://dist.sh#L5-L10",
+          "version": "repo-lines-v1:sha256:b554c428795bf2a775cc9b2bf83e77ef014cf56c3be57245914f760c3838e042:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwNDU0Y2QwNDExYTJlZjk5MjEwNGU5ZDA1YTVlOGJjNjRhMjQ2OWI5YWRmYmE4M2I1NDYyNTZkYjRiOTg3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTVhNGRlM2RhN2QxYWNmNjNiYzE1NTZkNTY4MjZiNDIwYTMyMGRmOGYyMWJjMzI3MmRhNzAzZTA2NDFiZDAwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Q2ZWI4MmNmMjZjMWJiMzJmYjcyY2Q2YWI4ZjQ1ZTc2NDQwY2I0YzY4MDhhNTk2MmJiZGE1YWMyMzc2ZjU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGZmYmMzNjQzMDRlMmY3NjRmMWJiY2E2MzcyNTg5OWQxMmI4M2UxZThmY2M3ZGEyN2NhYjU3Yzc0ZjQ0MmFhOCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-14T21:01:38.051Z"
+  }
+}

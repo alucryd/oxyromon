@@ -305,7 +305,10 @@ pub async fn main(
                             let (new_system_ids, new_game_ids) = match result {
                                 Ok(v) => v,
                                 Err(e) => {
-                                    println!("{}\n\nContinuing", e);
+                                    // never write to stdout: it can be an MCP
+                                    // protocol channel (see src/mcp.rs)
+                                    print_error(progress_bar, &format!("{e:#}"));
+                                    print_info(progress_bar, "Continuing");
                                     continue;
                                 }
                             };

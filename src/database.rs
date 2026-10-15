@@ -16,7 +16,9 @@ pub async fn establish_connection(url: &str) -> SqlitePool {
     #[allow(clippy::needless_late_init)]
     let locking_mode: &str;
     cfg_if! {
-        if #[cfg(feature = "server")] {
+        // long-lived processes — the web server and the MCP server — need a
+        // real pool and must not hold the database with EXCLUSIVE locking
+        if #[cfg(any(feature = "server", feature = "mcp"))] {
             max_connections = 5;
             locking_mode = "NORMAL";
         } else {
