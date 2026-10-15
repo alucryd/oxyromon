@@ -23,6 +23,8 @@ mod import_patches;
 mod import_roms;
 mod info;
 mod iso;
+#[cfg(feature = "mcp")]
+mod mcp;
 mod mimetype;
 mod model;
 #[cfg(feature = "server")]
@@ -84,6 +86,8 @@ async fn main() -> Result<()> {
         generate_playlists::subcommand(),
         benchmark::subcommand(),
     ];
+    #[cfg(feature = "mcp")]
+    subcommands.push(mcp::subcommand());
     #[cfg(feature = "server")]
     subcommands.push(server::subcommand());
     let matches = Command::new(env!("CARGO_BIN_NAME"))
@@ -164,6 +168,12 @@ async fn main() -> Result<()> {
                 "benchmark" => benchmark::main(connection, sub_matches, &progress_bar).await?,
                 _ => (),
             }
+        }
+        // long-lived servers run outside the single-connection scope above and
+        // keep serving on the pool
+        #[cfg(feature = "mcp")]
+        if subcommand == "mcp" {
+            mcp::main(pool.clone(), sub_matches).await?;
         }
         #[cfg(feature = "server")]
         if subcommand == "server" {

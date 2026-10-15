@@ -52,6 +52,10 @@ jobs:
       # feature has to name its package once several are selected.
       - name: Run clippy
         run: cargo clippy --workspace --all-targets --features oxyromon/server
+      # The MCP stdio server also ships without the web server; exercise that
+      # feature combination on its own.
+      - name: Run clippy (MCP without server)
+        run: cargo clippy --no-default-features --features use-rustls,mcp --all-targets
       - name: Build
         run: cargo build --release --features server
       - name: Test

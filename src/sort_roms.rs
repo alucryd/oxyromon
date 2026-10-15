@@ -283,17 +283,15 @@ async fn sort_system(
             });
 
             // trim ignored games
-            if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-                let (mut left_games, right_games) = trim_ignored_games(
-                    games,
-                    languages,
-                    ignored_releases,
-                    ignored_flags,
-                    system.arcade,
-                );
-                ignored_games.append(&mut left_games);
-                games = right_games;
-            }
+            let (mut left_games, right_games) = trim_ignored_games(
+                games,
+                languages,
+                ignored_releases,
+                ignored_flags,
+                system.arcade,
+            );
+            ignored_games.append(&mut left_games);
+            games = right_games;
 
             // find the one game we want to keep, if any
             for region in one_regions {
@@ -343,17 +341,15 @@ async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim ignored games
-        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut left_games, right_games) = trim_ignored_games(
-                games,
-                languages,
-                ignored_releases,
-                ignored_flags,
-                system.arcade,
-            );
-            ignored_games.append(&mut left_games);
-            games = right_games;
-        }
+        let (mut left_games, right_games) = trim_ignored_games(
+            games,
+            languages,
+            ignored_releases,
+            ignored_flags,
+            system.arcade,
+        );
+        ignored_games.append(&mut left_games);
+        games = right_games;
 
         for game in games {
             let region_in_all_regions = all_regions.iter().any(|region| {
@@ -377,26 +373,24 @@ async fn sort_system(
         let mut clone_games = find_clone_games_by_system_id(connection, system.id).await;
 
         // trim ignored games
-        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut left_games, right_games) = trim_ignored_games(
-                parent_games,
-                languages,
-                ignored_releases,
-                ignored_flags,
-                system.arcade,
-            );
-            ignored_games.append(&mut left_games);
-            parent_games = right_games;
-            let (mut left_games, right_games) = trim_ignored_games(
-                clone_games,
-                languages,
-                ignored_releases,
-                ignored_flags,
-                system.arcade,
-            );
-            ignored_games.append(&mut left_games);
-            clone_games = right_games;
-        }
+        let (mut left_games, right_games) = trim_ignored_games(
+            parent_games,
+            languages,
+            ignored_releases,
+            ignored_flags,
+            system.arcade,
+        );
+        ignored_games.append(&mut left_games);
+        parent_games = right_games;
+        let (mut left_games, right_games) = trim_ignored_games(
+            clone_games,
+            languages,
+            ignored_releases,
+            ignored_flags,
+            system.arcade,
+        );
+        ignored_games.append(&mut left_games);
+        clone_games = right_games;
 
         let (mut bios_games, mut parent_games): (Vec<Game>, Vec<Game>) =
             parent_games.into_iter().partition(|game| game.bios);
@@ -426,17 +420,15 @@ async fn sort_system(
         games = find_games_by_system_id(connection, system.id).await;
 
         // trim ignored games
-        if !ignored_releases.is_empty() || !ignored_flags.is_empty() {
-            let (mut left_games, right_games) = trim_ignored_games(
-                games,
-                languages,
-                ignored_releases,
-                ignored_flags,
-                system.arcade,
-            );
-            ignored_games.append(&mut left_games);
-            games = right_games;
-        }
+        let (mut left_games, right_games) = trim_ignored_games(
+            games,
+            languages,
+            ignored_releases,
+            ignored_flags,
+            system.arcade,
+        );
+        ignored_games.append(&mut left_games);
+        games = right_games;
 
         for game in games {
             if game.completion == Completion::Full as i64 {
@@ -722,6 +714,9 @@ fn trim_ignored_games(
     ignored_flags: &[&str],
     arcade: bool,
 ) -> (Vec<Game>, Vec<Game>) {
+    if languages.is_empty() && ignored_releases.is_empty() && ignored_flags.is_empty() {
+        return (vec![], games);
+    }
     // TODO: use drain_filter when it hits stable
     if arcade {
         games.into_iter().partition(|game| {
@@ -1018,3 +1013,5 @@ mod test_sort_discard_asia_and_beta;
 mod test_sort_discard_beta;
 #[cfg(test)]
 mod test_trim_ignored;
+#[cfg(test)]
+mod test_trim_languages_only;
