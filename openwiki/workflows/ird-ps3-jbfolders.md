@@ -399,8 +399,7 @@ rom name, so a PKG and its RAP keep their pairing
 `(PSN)` fixture — `UP0001-BLUS00001.pkg` plus `prfgmHWxGNxsfJ.rap` — is what those
 companion files look like, and its test asserts the pair ending as two rom rows
 sharing one game-named zip
-<!-- openwiki: broken internal link [../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat] file "../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat" does not exist. Fix the href or restore the target, then delete this comment. -->
-([tests/Test System (20230527) (PSN).dat](../../tests/Test%20System%20%2820230527%29%20%28PSN%29.dat),
+(`tests/Test System (20230527) (PSN).dat`,
 [`src/convert_roms/test_original_to_zip_multiple_roms.rs`](../../src/convert_roms/test_original_to_zip_multiple_roms.rs)).
 Nothing in `import-irds` special-cases those extensions.
 
@@ -416,8 +415,7 @@ units committed and the failing one untouched.
 The focused tests are these:
 
 - [`src/import_irds/test_ird.rs`](../../src/import_irds/test_ird.rs) — import the
-<!-- openwiki: broken internal link [../../tests/Test%20Game%20%28USA%29.ird] file "../../tests/Test%20Game%20%28USA%29.ird" does not exist. Fix the href or restore the target, then delete this comment. -->
-  fixture DAT, then [`tests/Test Game (USA).ird`](../../tests/Test%20Game%20%28USA%29.ird),
+  fixture DAT, then `tests/Test Game (USA).ird`,
   and assert 208 rom rows: the DAT's disc row plus the IRD's per-file children.
 - [`src/import_irds/test_ird_orphan_subfolder.rs`](../../src/import_irds/test_ird_orphan_subfolder.rs) —
   re-import over a file an older IRD described differently, and assert that file

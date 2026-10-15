@@ -442,6 +442,5 @@ family of `test_dat_updated_*` files that all follow the same choreography: impo
 DAT, `import_rom` a real file, import a newer DAT, then assert where the file ended
 up and whether the directory it left behind still exists. The fixture DATs live in
 `tests/` and are named by version and variation, e.g.
-<!-- openwiki: broken internal link [../../tests/Test%20System%20%2820200721%29.dat] file "../../tests/Test%20System%20%2820200721%29.dat" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`tests/Test System (20200721).dat`](../../tests/Test%20System%20%2820200721%29.dat) and
+`tests/Test System (20200721).dat` and
 `Test System (20200723) (Changed Hashes).dat`.

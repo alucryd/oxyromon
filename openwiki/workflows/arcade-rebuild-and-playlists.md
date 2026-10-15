@@ -150,8 +150,7 @@ dependency from a parent dependency — exactly the two axes the rebuild below c
 along.
 
 The fixture that exercises all of this is
-<!-- openwiki: broken internal link [<../../tests/Test%20System%20(20200721] file "<../../tests/Test%20System%20(20200721" does not exist. Fix the href or restore the target, then delete this comment. -->
-[`tests/Test System (20200721) (MAME Rebuild).dat`](<../../tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat>):
+`tests/Test System (20200721) (MAME Rebuild).dat`:
 `Test BIOS` (`isbios`), `Test Parent`, and `Test Clone` (`cloneof="Test Parent"
 romof="Test BIOS"`) whose `Test Clone.rom` and `Test Clone Common.rom` merge from
 the parent and whose `Test Clone Bios.rom` merges from the BIOS.
