@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b48e9ff91b7eb5bc2ac48c09382c594bd0f1f5e71bd8ee715ed49086c1c1d5d1",
+  "pageVersion": "sha256:d3ce8b1e44890e1f8648ac8862b2c947265a83783e5a2ff7b2350e2c1091d8fc",
   "claims": [
     {
       "id": "claim_5763ae02551d4203b1e6af658726e5c1",
-      "statement": "build.sh is the host build entry point: it runs `trunk build --release` in `frontend/` and then `cargo build --release --features server --features mcp` (mcp being implied by server already), and because it does not export SKIP_TRUNK, build.rs re-runs `trunk build --release` for the same assets during the cargo build.",
+      "statement": "build.sh is the host build entry point: it runs `trunk build --release` in `frontend/` and then `cargo build --release --features server`, and because it does not export SKIP_TRUNK, build.rs re-runs `trunk build --release` for the same assets during the cargo build.",
       "evidence": [
         {
           "resource": "repo://build.rs#L5-L33",
           "version": "repo-lines-v1:sha256:6a819b8449f4e3e6db89e7b0ee833fd46997721a14e526faf5eb2a4516ca6b44:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjllZWU5MWJjMGIxYTc3YjVmMjI0ZmQ2OTQ1ZjNkZWMyMzRlNTU5NmI5NDc1YzkwYzVhZWM5ZTZhZTIwYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjcyYTZlNDI5ZjZjY2I1MWQ4ZDc5MjQxY2E5NTU5YjU2ZGYwOTMzOTUxYTE0YWY3OWZhM2QzMjUwNTI2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZWU0MzMyYzc1MzRkMTRlZjcwYWRjYjM0ZTgwMDI5YTMzMWJkNDRlMzM5YTE3ZWE0MjU1OTZiMTE0MzYwNDIifQ"
         },
         {
-          "resource": "repo://build.sh#L1-L7",
-          "version": "repo-lines-v1:sha256:c5ca3444774bd092d9e46cac50ab68e9db8e2beab458fd5d6830aae603f1513f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRhNjA3YTY2ZTQyYzNmNmNkMTUxZmNmMWFjMTMyZjlmZGZlMjE2NDU5OTJiOGI4NTMwODEzZDU3Y2QwYjA2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://build.sh#L1-L6",
+          "version": "repo-lines-v1:sha256:901aadd4e877da866217dc4f0dfa1ca97844b5f73bb12392f4d6ae1adf7e2eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg0MWYwNjNlYzVmMDc0NDk2MzIxZTgwMThmOWUzZWU2ZTY1Y2RlMGUwZGQ0MzZlYzMwNWQ4ZDdiZTNlMGQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -409,6 +409,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-15T21:23:38.942Z"
+    "at": "2026-10-15T21:32:23.349Z"
   }
 }
