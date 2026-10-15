@@ -68,8 +68,6 @@ sources:
     resource: repo://migrations/20260810000001_add_archive_compression_algorithms.sql
   - id: openwiki-source-543688cbca9cffab391f2283
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
-  - id: openwiki-source-ab4f3ad4a46f3df51164583c
-    resource: repo://sqlx-data.json
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
@@ -116,10 +114,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-15T21:23:38.942Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -538,8 +536,7 @@ parameter count and the described result columns. With the `server` feature the
 macro set is larger — `query.rs`, `mutation.rs` and `mcp/` add queries — which
 is why the documented command passes `-- --features server`, and why CI builds
 and tests with that feature so an unrefreshed cache cannot slip through. The
-root `sqlx-data.json` is only a `{"db": "SQLite"}` stub naming the backend; the
-real payload lives one file per query in `.sqlx/`. Editing SQL, or changing a
+whole payload lives one file per query in `.sqlx/`. Editing SQL, or changing a
 table a macro reads, invalidates the cached describe and the macro fails to
 compile until `prepare` runs again. The converse is equally useful at review
 time: the runtime `sqlx::query_as::<_, T>` calls in `query.rs` and

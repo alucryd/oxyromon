@@ -3,9 +3,6 @@ type: workflow
 title: Sorting and the 1G1R Election
 description: How sort-roms classifies every game of a system into the system directory, 1G1R or Trash — regions, 1G1R and hybrid modes, the discard filters, the weighted 1G1R election and REGIONS_ONE_STRICT, arcade set-type sorting, subfolders, and the confirmed, transactional move plan.
 tags: [sort-roms, 1g1r, regions, election, discard, languages, arcade, subfolders, trash, workflow]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
 sources:
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
@@ -19,9 +16,14 @@ sources:
     resource: repo://src/sort_roms/test_sort_1g1r_catch_all.rs
   - id: openwiki-source-367e36977d822190bc47723f
     resource: repo://src/sort_roms/test_sort_1g1r_strict.rs
+  - id: openwiki-source-b008f89c29b69a50d520efbf
+    resource: repo://src/sort_roms/test_trim_languages_only.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-15T21:23:38.942Z
 ---
 
 # Sorting and the 1G1R Election
@@ -165,10 +167,10 @@ systems it parses each name as a No-Intro name and discards a game when:
 For arcade systems only `DISCARD_RELEASES` applies, matched as a substring of
 the game's DAT comment.
 
-The filter only runs when `DISCARD_RELEASES` or `DISCARD_FLAGS` is non-empty.
-`LANGUAGES` is checked inside it, so setting `LANGUAGES` alone discards
-nothing; it takes effect once either discard list has an entry. The naming
-tokens are described in
+Every branch calls the filter unconditionally, and the filter returns early,
+keeping every game, only when `LANGUAGES`, `DISCARD_RELEASES` and
+`DISCARD_FLAGS` are all empty, so each of the three works on its own. The
+naming tokens are described in
 [DAT Providers and Naming Conventions](../integrations/dat-providers-no-intro-redump.md).
 
 ## From classification to moves
@@ -222,7 +224,9 @@ on the confirmation prompt. See
   `test_sort_1g1r_playlist` and `test_sort_1g1r_subfolders_alpha` cover groups
   of one, revision ordering, playlists moving with games and alphabetical
   subfolders.
-- `test_sort_discard_*` and `test_trim_ignored` cover the discard filter.
+- `test_sort_discard_*` and `test_trim_ignored` cover the discard filter, and
+  `test_trim_languages_only` pins `LANGUAGES` discarding with no discard list
+  set.
 - `test_all_regions_from_*` and `test_one_region_from_*` pin that command-line
   regions override the settings.
 

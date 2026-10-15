@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:05947551d28326e0eff30b9ceb9650f4a7c55821e7e0c5e6c43fe1ff62fa1572",
+  "pageVersion": "sha256:8e210a8b7be0c16d86f055af4f3503a0a593c90bad36f7ac04f2f5235d4346cd",
   "claims": [
     {
       "id": "claim_44357edf534742ce98dabc19de5096a1",
@@ -287,7 +287,7 @@
           "version": "repo-lines-v1:sha256:5c41394b10c502ded8bad7ddc31e26a50a0a772dd08bb7ac1023fd07acd1a561:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWEwN2ZlYjZmMGM5MjA1NTU3N2Q1OTVjYzZhNjAxNDRlNWUzMmJiMGVlYTUyZTFjNDg2MDQ1NjJiMjA1NDY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzllNjc0YWQyOWQ2Y2EwZGNlODFjYjdlYTA0ZGM3NjYzZjJkYmZmMGQ4NWIxODEwNWZhZTdmYWQxNjI4NjVkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjMzOTgzNDdmZjFlNGE2MGExZWUyYmJkMTJlMmUyMTkzMTRhYjYxYWM0YjRkZWM2YTAyZWFmODM5YTUxOTIzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmRkYmQ0ODY3YzYwZjZjOGE5MGI0NjU2YmQwNDYyODUwZjk2YzExMjQ4ZTIzYjJhMGZmYzU5ZDAxZmRiMzMxOCJ9"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L616-L651",
+          "resource": "repo://src/sort_roms.rs#L608-L643",
           "version": "repo-lines-v1:sha256:6065646d43241e75650b0438ec733abe9a894f99dd51c485a7e2473054822575:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNzgwYTM4MjVlZTBlM2Q0NTY2MGYyZjQ3ZWI1MTc3ZmMzZTdlMGZhMjJiMzVhMmNiMmU4ZjFhNzQ4OWQ0NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTAwOTA1ZGY0ODQyZjEyMWY0NDg0YzdiMjNiMGM3ZmI1Yzc0NjczOTMyZWVmNDE0NzkxYjdhMjcwMjAyZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MDZjYWRiY2MyMGFmZmNhZWQwOTUwNjMwYjU3ZDBmZjAxZjg5MTBjNTNmMzFmYjgwNGViZTdmZWYzOTE2MDcifQ"
         }
       ]
@@ -444,7 +444,7 @@
     },
     {
       "id": "claim_68b9a8e50fa2415dacf4b5d9c181fbe1",
-      "statement": "The sqlx macros are compile-time verified against the committed `.sqlx/` cache rather than a live database: one JSON file per query, named by the query hash, holding the query text, parameter count and described result columns; `sqlx-data.json` in the root is only a `{\"db\": \"SQLite\"}` stub naming the backend.",
+      "statement": "The sqlx macros are compile-time verified against the committed `.sqlx/` cache rather than a live database: one JSON file per query, named by the query hash, holding the query text, parameter count and described result columns.",
       "evidence": [
         {
           "resource": "repo://.sqlx/query-159507facaddc85d01d94dcb41aab488a243f5b084e0d52199f65f5cf2f1f6fb.json#L1-L12",
@@ -453,10 +453,6 @@
         {
           "resource": "repo://AGENTS.md#L65-L65",
           "version": "repo-lines-v1:sha256:b0b8480644d6c21dd8519e69035f782e66692f1b0a24033c6e77b5792ea8e473:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBiODQ4MDY0NGQ2YzIxZGQ4NTE5ZTY5MDM1Zjc4MmU2NjY5MmYxYjBhMjQwMzNjNmU3N2I1NzkyZWE4ZTQ3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBiODQ4MDY0NGQ2YzIxZGQ4NTE5ZTY5MDM1Zjc4MmU2NjY5MmYxYjBhMjQwMzNjNmU3N2I1NzkyZWE4ZTQ3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmU0YzI0ZWMwNjRlMDQ3ZjEzMGVmNDA5Y2I5YjUzMDllNDllMjFhYjYwODA5NzA4M2NlZTdkM2ZjZDFkMWU5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTYyZjYzMTQ1MWNkZjk5ODg4ZDcxNjY2MjQxZjRhNTc4OWY0YWI1MjkzYWJhYzVhYTY5NGYyNDU0MDM5Yjk5ZCJ9"
-        },
-        {
-          "resource": "repo://sqlx-data.json#L1-L3",
-          "version": "repo-lines-v1:sha256:143202607a38ef5b9c5a53238b1a8b3e8895531de2789680d03a63dbe2af31fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEwYjM2YWE3NGE1OWJjZjRhODgxODU4MzdmNjU4YWZhZjM2NDZlZmYyYmIxNmMzOTI4ZDBlOTMzNWU5NDVkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -673,6 +669,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-15T21:23:38.942Z"
   }
 }

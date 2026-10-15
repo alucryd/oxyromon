@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:67e245d4ea229f1f263952ab6302f8529c5d1f55647711e1cb01b9de66b2b073",
+  "pageVersion": "sha256:c687d2d3b71c2e444c9b1369c56063c8387701b1a967bfad86da1dcb46d382f6",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -371,11 +371,11 @@
       "statement": "Publishing is blocked by a single mandatory git dependency recorded with a `ponytail` comment: nod pinned to git tag v2.0.0-alpha.12 until it publishes past 2.0.0-alpha.9 to crates.io, and it is the only git source left in Cargo.lock. sevenz-rust2, formerly pinned to a fork revision, is back on the registry at 0.24.0 with features [zstd] and no longer blocks a release.",
       "evidence": [
         {
-          "resource": "repo://Cargo.lock#L2649-L2652",
+          "resource": "repo://Cargo.lock#L2637-L2640",
           "version": "repo-lines-v1:sha256:b6f3c531060a342cf999467013a53ed016ed58d9ac82b1acf8775b0697c8aa19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY3ZTk1NDZmMDk5ZGQ0NmJiNGRmNDc0YjcwYjg4NmQ0YjMzMzIzNGE1ZTBmMWY0NjBkMDU1M2NhNzI3NmZiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUzYjg3ZmY4NTAxZjNkZTMzZjg3YjJkOWY5MDU2YjA0N2I5OTJkMGFiZDgzMjZlNDcwYjY0Y2UwZDJlODAzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVmMTBjNTY1ZGNlZjkzYzExMzVkNWU2ZWFkMTAxZWFkMTBjZmQwYjEzZDQ5MjBjNGM1YmFhOWJjY2IwMjYyMSJ9"
         },
         {
-          "resource": "repo://Cargo.lock#L3871-L3875",
+          "resource": "repo://Cargo.lock#L3859-L3863",
           "version": "repo-lines-v1:sha256:e47c52fa935db8b791f7fad7dc130371d06084466ca2fc602d09ecaa04972819:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiYWY3MTgyMTM2ZjZjN2E2OTg5ZDE1YWViN2IwYWMzNGIyNmU4YWM0NzNiYTc3YWI2ZjE5OWI5ZjA5MmNlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGZlNGEyN2M5ZDZjZjAwZTY5Njk0NTI0ODc2YjA2ZWRmYmYwOGEyMTg2ODVhZDQ4ZjdiMWFlYmYyZGVlYzA2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQzOGEwZjgzNDg2MWFjMDZlNzQyM2U1ODIyYWNkNWQ2N2ZmMWY1ODQ3MTRmZGUxNzhmZWEzNDMwNTcwNDkwYiJ9"
         },
         {
@@ -476,15 +476,15 @@
     },
     {
       "id": "claim_d7d91f3ec5af4b4580ec525f70ff1449",
-      "statement": "test.sh is a single command — `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` — matching CI's test step exactly, and build.sh is the host-side release build (trunk build --release, then cargo build --release --features server); the older second coverage pass gated on oxyromon/nod and oxyromon/sevenz is gone, and would now fail on unknown features.",
+      "statement": "test.sh is a single command — `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` — matching CI's test step exactly, and build.sh is the host-side release build (trunk build --release, then cargo build --release with the server feature, plus mcp, which server already implies); the older second coverage pass gated on oxyromon/nod and oxyromon/sevenz is gone, and would now fail on unknown features.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L59-L62",
           "version": "repo-lines-v1:sha256:4b2dceeb85a11272aa8018f4c7bbffe3490bbc4de6a44a399227ca0cc1ece9b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
         },
         {
-          "resource": "repo://build.sh#L1-L6",
-          "version": "repo-lines-v1:sha256:901aadd4e877da866217dc4f0dfa1ca97844b5f73bb12392f4d6ae1adf7e2eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg0MWYwNjNlYzVmMDc0NDk2MzIxZTgwMThmOWUzZWU2ZTY1Y2RlMGUwZGQ0MzZlYzMwNWQ4ZDdiZTNlMGQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://build.sh#L1-L7",
+          "version": "repo-lines-v1:sha256:c5ca3444774bd092d9e46cac50ab68e9db8e2beab458fd5d6830aae603f1513f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRhNjA3YTY2ZTQyYzNmNmNkMTUxZmNmMWFjMTMyZjlmZGZlMjE2NDU5OTJiOGI4NTMwODEzZDU3Y2QwYjA2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
           "resource": "repo://test.sh#L1-L3",
@@ -509,6 +509,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-15T21:23:38.942Z"
   }
 }

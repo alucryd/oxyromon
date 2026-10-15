@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-15T21:23:38.942Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -339,8 +339,8 @@ containers. That makes `cargo sqlx prepare -- --features server` part of any
 change to `migrations/` or to a query: an unprepared query change does not merely
 break the author's machine, it breaks the clippy passes, the release build and
 every container build, because none of them has a database to introspect. The
-root's `sqlx-data.json` (`{"db": "SQLite"}`) is a leftover of sqlx's older
-single-file offline format and is no longer read.
+root no longer carries the `sqlx-data.json` of sqlx's older single-file offline
+format.
 
 ## Windows and TLS build notes
 

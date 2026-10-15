@@ -106,10 +106,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-15T21:23:38.942Z
 ---
 
 # Format Crates in crates/
@@ -359,7 +359,13 @@ optional extra:
 - `edition`, `rust-version` and `repository` come from `[workspace.package]`, and
   shared dependencies (`clap`, `console`, `crc32fast`, `flate2`, `indicatif`,
   `lzma-rust2`, `rayon`, `sha1`, `tempfile`, `thiserror`, `zstd`) from
-  `[workspace.dependencies]`. `chd-rs` is the heaviest consumer of that list and
+  `[workspace.dependencies]`. Feature choices for a shared dependency belong
+  there too: Cargo unifies features across the workspace, so a member's
+  `default-features = false` cannot remove what another member enables. `flate2`
+  is declared once with `default-features = false` and the `zlib-rs` backend
+  for that reason; while only `chd-rs` opted out, oxyromon's plain
+  `flate2.workspace = true` still compiled the default `miniz_oxide` backend
+  alongside it. `chd-rs` is the heaviest consumer of that list and
   the only crate that pulls in a C build: its `libflac-sys` dependency builds a
   vendored libFLAC with CMake, so building the crate needs a CMake toolchain.
 - No crate declares `[profile]`: only the root's applies, and the root sets
