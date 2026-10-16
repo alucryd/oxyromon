@@ -60,10 +60,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-16T12:33:55.258Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-16T12:33:55.258Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -163,6 +163,15 @@ also carry an annotation hint: `idempotent_hint = true` on the safe-repeat
 actions, `open_world_hint = true` on `download_dats` (it reaches redump.org), and
 `destructive_hint = true` on the three purges, so clients can decide how eagerly
 to auto-invoke each. `convert_roms` is annotated only as non-read-only.
+
+`download_dats` downloads *and imports* each named Redump system, which its
+description says, and reports per system rather than per call: it carries on
+past a failed system and returns `DownloadDatsOut`, which lists every system once
+under `imported`, `up_to_date` (a DAT no newer than the imported one, which
+changes nothing) or `failed` with its error. It is a tool error only when every
+system failed, and it notifies resource changes only when something was
+imported. `tests/mcp_stdio.rs` pins the all-failed case with two unknown names,
+which fail before any request, so the test needs no network.
 
 Argument validation happens in the handler, before `run_action` is ever reached:
 `sort_roms` and `check_roms` demand exactly one of `system_id` / `all: true`,

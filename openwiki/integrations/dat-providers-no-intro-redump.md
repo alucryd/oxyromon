@@ -16,6 +16,8 @@ sources:
     resource: repo://src/database.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
     resource: repo://src/download_dats.rs
+  - id: openwiki-source-0e518f793c5021d3e200387b
+    resource: repo://src/download_dats/test_nointro_failures.rs
   - id: openwiki-source-885c8766d237f8340462593b
     resource: repo://src/download_dats/test_nointro.rs
   - id: openwiki-source-dba7f68f124dba00236ec096
@@ -70,10 +72,10 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-16T12:33:55.258Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-15T21:23:38.942Z
+    at: 2026-10-16T12:33:55.258Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -167,7 +169,7 @@ Both consumer lists are drawn **from the catalogue**, intersected with the datab
 Because a name is only ever offered if the catalogue holds its code, a system
 imported from a hand-downloaded Redump DAT under a name the catalogue does not know
 is never offered for a download. Note the asymmetry: the *update* list
-(`update_redump_dats`) is built from the database via `prompt_for_systems(..., Some(REDUMP_SYSTEM_URL), ...)`, not from the catalogue, so every name it yields must have a catalogue code — `download_redump_dat` looks it up with `REDUMP_SYSTEMS_CODES.get(system_name).unwrap()`. A Redump system whose DAT header name has drifted out of the catalogue is a panic, not a skip.
+(`update_redump_dats`) is built from the database via `prompt_for_systems(..., Some(REDUMP_SYSTEM_URL), ...)`, not from the catalogue, so every name it yields must have a catalogue code — `fetch_redump_dat` looks it up with `REDUMP_SYSTEMS_CODES.get(system_name).unwrap()`. A Redump system whose DAT header name has drifted out of the catalogue is a panic, not a skip.
 
 ## Fetch control flow
 
@@ -186,42 +188,51 @@ flowchart TD
     R -->|on| RU["DB systems with redump url"]
     RL --> SEL["multiselect, or all with the all flag"]
     RU --> SEL
-    SEL --> DL["download_redump_dat per system"]
-    DL --> GET["GET base/datfile/CODE/"]
+    SEL --> BATCH["download_redump_batch"]
+    BATCH --> DL["download_redump_dat per system"]
+    DL --> GET["GET base/datfile/CODE/, HTTP errors included"]
+    GET -->|"fails"| ERR["error for this system"]
     GET --> Z{"ZIP entry count"}
-    Z -->|zero| ZEmpty["warning: ZIP is empty"]
-    Z -->|more than one| ZMany["warning: ZIP contains too many files"]
+    Z -->|"zero or several"| ERR
     Z -->|one| SAVE{"save dir given"}
     SAVE -->|yes| CP["copy DAT into save dir"]
     SAVE -->|no| PARSE
     CP --> PARSE["parse_dat with skip_header on"]
     PARSE --> IMP["import_dat with the force flag"]
-    IMP --> RATE["sleep one second"]
-    ZEmpty --> RATE
-    ZMany --> RATE
+    IMP -->|"newer or new"| IMPORTED["Imported"]
+    IMP -->|"no newer"| UPTODATE["UpToDate"]
+    IMPORTED --> RATE["sleep one second"]
+    UPTODATE --> RATE
+    ERR --> RATE
+    RATE --> NEXT{"more systems"}
+    NEXT -->|yes| DL
+    NEXT -->|no| END["fail the run naming every failed system"]
 ```
 
-Per-system fetch is `download_redump_dat`: `GET {base}/datfile/{code}/` into memory,
-`ZipArchive::new` over the bytes, extraction into a `TempDir` under `TMP_DIRECTORY`,
-then `parse_dat(..., skip_header = true)` and `import_dat(..., None, None, force)`.
-The ZIP must contain exactly one file; empty and multi-entry ZIPs are reported as
-warnings and skipped without touching the database, which the failure test asserts by
-checking `find_systems` stays empty after each shape. A body that is not a ZIP at all
-(an HTML error page from a 404, for instance) surfaces as an `Err` from the
-`ZipArchive::new` context, aborting the loop of the caller.
+Per-system fetch is `download_redump_dat`, which wraps `fetch_redump_dat`:
+`GET {base}/datfile/{code}/` into memory, rejecting an HTTP error status,
+`ZipArchive::new` over the bytes, extraction into a `TempDir` under
+`TMP_DIRECTORY`, then `parse_dat(..., skip_header = true)` and
+`import_dat(..., None, None, force)`. It returns a `DatOutcome`: `Imported` when
+`import_dat` produced a summary, and `UpToDate` when it returned `None` because
+the DAT was no newer than the imported one. Everything else is an error for that
+system: an unreachable host, an HTTP error status, a body that is not a ZIP, or a
+ZIP that does not hold exactly one DAT. The failure test asserts each of those
+shapes returns `Err` and leaves `find_systems` empty, and the Redump test asserts
+that downloading the same DAT again is `UpToDate` while forcing it is `Imported`.
 
-Pacing and failure handling are deliberately simple:
+Pacing and failure handling:
 
-- **Rate limiting** is one unconditional `sleep(Duration::from_secs(1))` at the end of
-  every system, on success and on the warning paths alike. There is no retry, no
-  backoff and no status-code check anywhere in the download path.
-- **Transport failures panic**: `reqwest::get(zip_url).await.expect("Failed to download ZIP")`
-  and, on the No-Intro side, `.expect("Failed to download No-Intro profiles")`. A DNS or
-  connect error kills the process rather than returning `Err`; only failures *after*
-  the response body is in hand become recoverable results.
+- **Rate limiting** is one `sleep(Duration::from_secs(1))` after every system,
+  failures included, applied by `download_redump_dat` around the fetch. There is no
+  retry or backoff.
+- **Batches carry on past a failure.** Both CLI paths hand their selection to
+  `download_redump_batch`, which prints each system's error, moves on to the next,
+  and fails the run at the end with `Failed to download: …` naming every system
+  that failed, so the exit status still reports it.
 - **`-s/--save <DIRECTORY>`** copies the extracted `.dat` (not the ZIP) into a
   directory created on demand, preserving its provider file name. This is the only way
-  to keep a fetched DAT: the extraction `TempDir` is dropped when `download_redump_dat`
+  to keep a fetched DAT: the extraction `TempDir` is dropped when the fetch
   returns. The Redump test asserts the saved `Test System (20200721).dat` exists.
 
 `-f/--force` is threaded only into the update path (`download_redump_dats` always
@@ -254,8 +265,9 @@ whose url is `NOINTRO_SYSTEM_URL`, looks up the profile entry by exact name:
 
 - found → `is_update(progress_bar, &system.version, &system_xml.version)` prints the verdict;
 - not found → `System is no longer available`;
-- nothing is ever downloaded, and a body that fails to deserialize is reported as
-  `Failed to parse No-Intro profiles`.
+- nothing is ever downloaded. A profile that cannot be fetched (an unreachable host
+  or an HTTP error status) is an error, as is a body that fails to deserialize
+  (`Failed to parse No-Intro profiles`); `test_nointro_failures` pins the first two.
 
 ## Server and MCP surfaces
 
@@ -263,7 +275,8 @@ The same two primitives are reused by the `server` and `mcp` features, guarded b
 `#[cfg(any(feature = "server", feature = "mcp"))]`:
 
 - `find_redump_systems` backs the GraphQL `downloadableSystems(update:)` query, the
-  MCP `downloadable_systems` tool, and the Leptos *Download DATs* modal, which re-reads
+  MCP `downloadable_systems` tool, and the Leptos *Import DATs from Redump* modal
+  (the *DATs from Redump…* item of the navbar's Import menu), which re-reads
   the list whenever it opens or flips *Update only*.
 - `download_redump_system` backs the GraphQL `download_dats` mutation and the MCP
   `download_dats` tool. Unlike the CLI — which can only offer names it already holds —
@@ -271,11 +284,15 @@ The same two primitives are reused by the `server` and `mcp` features, guarded b
   `REDUMP_SYSTEMS_CODES.contains_key(system_name)` first and bails with
   `Unknown Redump system "..."`.
 - The GraphQL mutation returns immediately and runs the fetches on a `tokio::spawn`
-  task, reporting `download_dats_started`, then `download_dats_complete` or
-  `download_dats_error` with the list of failed system names over SSE. Per-system
-  events are deliberately suppressed: the selection can be the whole catalogue and each
-  event is a UI toast. Individual failures are logged and collected rather than aborting
-  the batch. The MCP tool is refused by `read_only_denial` when the server runs read-only.
+  task, reporting `download_dats_started`, then `download_dats_complete` — counting
+  imported and already up-to-date DATs — or `download_dats_error` with the list of
+  failed system names over SSE. Per-system events are deliberately suppressed: the
+  selection can be the whole catalogue and each event is a UI toast. Individual
+  failures are logged and collected rather than aborting the batch.
+- The MCP tool likewise carries on past a failure and returns each system in one of
+  three lists — `imported`, `up_to_date`, `failed` with its error — and is a tool
+  error only when every system failed. It is refused by `read_only_denial` when the
+  server runs read-only.
 
 ## shiratsu-naming: one parser behind regions, languages, flags, versions
 
@@ -346,7 +363,8 @@ declarations and uses `wiremock` so no request leaves the machine:
 | Test | What it pins |
 | --- | --- |
 | `src/download_dats/test_redump.rs` | mocks `^/datfile/[a-z0-9-]+/$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs imported and the `-s` copy written |
-| `src/download_dats/test_redump_failures.rs` | empty ZIP and two-entry ZIP leave the database empty; a non-ZIP 404 body returns `Err` |
+| `src/download_dats/test_redump_failures.rs` | an empty ZIP, a two-entry ZIP and a 404 each return `Err` and leave the database empty |
+| `src/download_dats/test_nointro_failures.rs` | an HTTP error status and an unreachable host on the No-Intro profile each return `Err` |
 | `src/download_dats/test_nointro.rs` | mocks `/profile.xml` with `tests/profile.xml` and runs the update check against a DAT-imported system |
 | `src/import_dats/test_regions_world.rs`, `test_regions_france_germany.rs` | the normalized region string produced by token parsing |
 | `src/sort_roms/test_order_*` | weight ordering for parents, broad/narrow regions, new/old versions and preferred flags, each with the arguments swapped |
