@@ -26,7 +26,7 @@
 - Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
 - Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
 - The desktop app's Debian package no longer depends on `p7zip`
-- Fixed `download-dats` panicking when redump.org could not be reached
+- Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
 - Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order

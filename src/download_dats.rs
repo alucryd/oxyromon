@@ -246,30 +246,31 @@ async fn update_nointro_dats(
     base_url: &str,
     all: bool,
 ) -> Result<()> {
-    if let Ok(response) = reqwest::get(format!("{}{}", base_url, NOINTRO_PROFILE_URL))
+    let profile_url = format!("{}{}", base_url, NOINTRO_PROFILE_URL);
+    let response = reqwest::get(&profile_url)
         .await
-        .expect("Failed to download No-Intro profiles")
+        .and_then(|response| response.error_for_status())
+        .with_context(|| format!("Failed to download \"{profile_url}\""))?
         .text()
         .await
-    {
-        let profile: ProfileXml =
-            de::from_str(&response).context("Failed to parse No-Intro profiles")?;
-        let systems =
-            prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
-        for system in systems {
-            print_header(progress_bar, &format!("Processing \"{}\"", system.name));
-            let system_xml = profile
-                .systems
-                .par_iter()
-                .find_first(|system_xml| system_xml.name == system.name);
-            match system_xml {
-                Some(system_xml) => {
-                    is_update(progress_bar, &system.version, &system_xml.version);
-                }
-                None => print_warning(progress_bar, "System is no longer available"),
+        .with_context(|| format!("Failed to download \"{profile_url}\""))?;
+    let profile: ProfileXml =
+        de::from_str(&response).context("Failed to parse No-Intro profiles")?;
+    let systems =
+        prompt_for_systems(connection, Some(NOINTRO_SYSTEM_URL), false, false, all).await?;
+    for system in systems {
+        print_header(progress_bar, &format!("Processing \"{}\"", system.name));
+        let system_xml = profile
+            .systems
+            .par_iter()
+            .find_first(|system_xml| system_xml.name == system.name);
+        match system_xml {
+            Some(system_xml) => {
+                is_update(progress_bar, &system.version, &system_xml.version);
             }
-            print_separator(progress_bar);
+            None => print_warning(progress_bar, "System is no longer available"),
         }
+        print_separator(progress_bar);
     }
     Ok(())
 }
@@ -461,6 +462,8 @@ async fn fetch_redump_dat(
 
 #[cfg(test)]
 mod test_nointro;
+#[cfg(test)]
+mod test_nointro_failures;
 #[cfg(test)]
 mod test_redump;
 #[cfg(test)]
