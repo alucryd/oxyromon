@@ -207,3 +207,20 @@ pub(crate) struct ActionOut {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
 }
+
+/// Per-system result of download_dats: each named system lands in exactly one
+/// list.
+#[derive(Serialize)]
+pub(crate) struct DownloadDatsOut {
+    /// Downloaded and imported: new systems, or newer DATs.
+    pub imported: Vec<String>,
+    /// Downloaded, but the database already holds this version or a newer one.
+    pub up_to_date: Vec<String>,
+    pub failed: Vec<FailedSystemOut>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct FailedSystemOut {
+    pub system: String,
+    pub error: String,
+}

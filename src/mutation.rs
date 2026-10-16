@@ -2,7 +2,7 @@ use super::check_roms;
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
 use super::convert_roms;
 use super::database::*;
-use super::download_dats::download_redump_system;
+use super::download_dats::{DatOutcome, download_redump_system};
 use super::generate_playlists;
 use super::progress::*;
 use super::purge_irds;
@@ -272,12 +272,17 @@ impl Mutation {
             // Deliberately quiet between the two: a per-system event would mean
             // a toast each, and this list can run to the whole catalogue.
             let mut failed: Vec<String> = Vec::new();
+            let mut imported = 0;
             for system_name in systems.iter() {
-                if let Err(e) =
-                    download_redump_system(&mut connection, &progress_bar, system_name, false).await
+                match download_redump_system(&mut connection, &progress_bar, system_name, false)
+                    .await
                 {
-                    log::error!("Failed to download {}: {:#}", system_name, e);
-                    failed.push(system_name.clone());
+                    Ok(DatOutcome::Imported) => imported += 1,
+                    Ok(DatOutcome::UpToDate) => {}
+                    Err(e) => {
+                        log::error!("Failed to download {}: {:#}", system_name, e);
+                        failed.push(system_name.clone());
+                    }
                 }
             }
 
@@ -288,7 +293,11 @@ impl Mutation {
                     json!({
                         "total": total,
                         "success": true,
-                        "message": format!("Downloaded {} DAT file(s)", total),
+                        "message": format!(
+                            "Imported {} DAT file(s), {} already up to date",
+                            imported,
+                            total - imported
+                        ),
                     }),
                 );
             } else {
