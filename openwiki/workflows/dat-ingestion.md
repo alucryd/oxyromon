@@ -82,10 +82,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-16T12:33:55.258Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-16T12:33:55.258Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -351,17 +351,20 @@ the moves happen as late as they do.
 `GET {base}/datfile/{code}/` into memory, `ZipArchive` over the bytes, extraction
 into a `TempDir` under `TMP_DIRECTORY`, `parse_dat(..., skip_header = true)`,
 `import_dat(..., None, None, force)`
-([src/download_dats.rs](../../src/download_dats.rs#L338-L403)). Three operational
-details follow directly from that shape:
+([src/download_dats.rs](../../src/download_dats.rs#L377-L461)). It returns
+`Imported` or `UpToDate` from `import_dat`'s summary, so callers can tell a
+refreshed system from one the version gate skipped. A few operational details
+follow from that shape:
 
-- The ZIP must contain **exactly one** file; zero or many print a warning and
-  return without touching the database.
+- The ZIP must contain **exactly one** file; zero or many is an error, as are an
+  unreachable host and an HTTP error status, and none of them touch the database.
+- CLI batches run through `download_redump_batch`, which reports a failed system,
+  carries on with the next, and fails the run at the end naming every failure.
 - `-s/--save <DIRECTORY>` copies the extracted `.dat` (not the ZIP) to a directory
   created on demand, and is the only way to keep a fetched DAT — the `TempDir` is
-  dropped when the function returns.
-- Pacing is one unconditional `sleep(1s)` at the end of every system, warning
-  paths included. `-f/--force` reaches only the update path; a fresh download
-  always passes `force = false`.
+  dropped when the fetch returns.
+- Pacing is one `sleep(1s)` after every system, failures included. `-f/--force`
+  reaches only the update path; a fresh download always passes `force = false`.
 
 `create-dats` closes the loop in the other direction: it walks a directory, emits
 one `<game>` per file with size, CRC32, MD5 and SHA1 computed from the file, writes

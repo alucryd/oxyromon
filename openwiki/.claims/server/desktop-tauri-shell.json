@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:158e29e4ceb1c042aca77178fc72f3270a33f3b1a07e69f23dc1ce950f6b60ce",
+  "pageVersion": "sha256:694edcdc57be732ab0ac0caf93b41af10487f7a0c1b13306e54f9449cfea4fb8",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -317,8 +317,8 @@
       "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Arch container likewise installs no codec or archive tool to run the server.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L11-L26",
-          "version": "repo-lines-v1:sha256:f99cc791ee481973fb4534833082b6ca89e72e5879aa8c4696a3b3f2da24ebcf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNzZlMDYwZjZkMDE0MWI3OGJiOWI5NzA2NWQxNDMzOGJjNTRjODI3ODVlNTJkZTdiMThhOGE4NjY3ZDY1YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjNlMTk3YTcxZjU5NDQ1ODM5YzZlM2VlODEyNGZmMjg5NTE5ZmI1MDg0NDc2MTdlMDJjNzkyOTZlZWE3YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZTdiM2YwMGI0ZTIwZjk5YTYyOWNjMzI1ZmVhOGQzYjc1YjBhZDZmMGMwYTVmODlkODljMGI4NTNjYzlmNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYTRjMjA0Y2I3YzRmMjJhMzA5ZDY0ZjExOGQzZTdjNGNiZWFkYTIxODAzYjM1YjE1ZTcxZTBiMTk1ZGQ2ZGQifQ"
+          "resource": "repo://CHANGELOG.md#L28-L28",
+          "version": "repo-lines-v1:sha256:3c63e197a71f59445839c6e3ee8124ff289519fb508447617e02c79296eea7be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhmYWFmNzhlMzQyMDgzOTBkNTljODFkYjQ2ZGQ2ZjkyZWI1ZmYwNGQzYjc3YWZkNzUwY2QwYmY5NWRiOTgyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVkZWQwMzcwMzhlZjJmZjAzZGM4MDk2ZjE5ZmNiMzM5NjMzMTQ4OWY3MzkxZjU3YTcwMjQ4YTVjZTdiYWMxMCJ9"
         },
         {
           "resource": "repo://Dockerfile.archlinux#L5-L17",
@@ -373,6 +373,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-16T12:33:55.258Z"
   }
 }
