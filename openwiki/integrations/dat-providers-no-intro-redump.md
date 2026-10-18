@@ -72,10 +72,10 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "claude-code", at: "2026-10-16T12:33:55.258Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T12:33:55.258Z
+    at: 2026-10-18T21:05:05.320Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -189,7 +189,8 @@ flowchart TD
     RL --> SEL["multiselect, or all with the all flag"]
     RU --> SEL
     SEL --> BATCH["download_redump_batch"]
-    BATCH --> DL["download_redump_dat per system"]
+    BATCH --> COL["collect_redump_dats"]
+    COL --> DL["download_redump_dat per system"]
     DL --> GET["GET base/datfile/CODE/, HTTP errors included"]
     GET -->|"fails"| ERR["error for this system"]
     GET --> Z{"ZIP entry count"}
@@ -226,10 +227,16 @@ Pacing and failure handling:
 - **Rate limiting** is one `sleep(Duration::from_secs(1))` after every system,
   failures included, applied by `download_redump_dat` around the fetch. There is no
   retry or backoff.
-- **Batches carry on past a failure.** Both CLI paths hand their selection to
-  `download_redump_batch`, which prints each system's error, moves on to the next,
-  and fails the run at the end with `Failed to download: …` naming every system
-  that failed, so the exit status still reports it.
+- **Batches carry on past a failure.** Every surface loops through one collector,
+  `collect_redump_dats`, which prints each system's error, moves on to the next,
+  and returns a `DatOutcomes` sorting every system into `imported`, `up_to_date`
+  or `failed` (the name with its error). Both CLI paths go through
+  `download_redump_batch`, which fails the run at the end with
+  `Failed to download: …` naming every system that failed, so the exit status
+  still reports it.
+- **Unknown names** are rejected in `fetch_redump_dat`, where the code is looked
+  up in `REDUMP_SYSTEMS_CODES`: `Unknown Redump system "..."` is an error for that
+  system only.
 - **`-s/--save <DIRECTORY>`** copies the extracted `.dat` (not the ZIP) into a
   directory created on demand, preserving its provider file name. This is the only way
   to keep a fetched DAT: the extraction `TempDir` is dropped when the fetch
@@ -278,11 +285,11 @@ The same two primitives are reused by the `server` and `mcp` features, guarded b
   MCP `downloadable_systems` tool, and the Leptos *Import DATs from Redump* modal
   (the *DATs from Redump…* item of the navbar's Import menu), which re-reads
   the list whenever it opens or flips *Update only*.
-- `download_redump_system` backs the GraphQL `download_dats` mutation and the MCP
-  `download_dats` tool. Unlike the CLI — which can only offer names it already holds —
-  these callers accept arbitrary strings, so the function checks
-  `REDUMP_SYSTEMS_CODES.contains_key(system_name)` first and bails with
-  `Unknown Redump system "..."`.
+- `download_redump_systems` backs the GraphQL `download_dats` mutation and the MCP
+  `download_dats` tool. It runs `collect_redump_dats` against the real Redump URL
+  without a save directory, and each caller only maps the returned `DatOutcomes`
+  to its own shape. Unlike the CLI, which can only offer names it already holds,
+  these callers accept arbitrary strings; an unknown name lands in `failed`.
 - The GraphQL mutation returns immediately and runs the fetches on a `tokio::spawn`
   task, reporting `download_dats_started`, then `download_dats_complete` — counting
   imported and already up-to-date DATs — or `download_dats_error` with the list of

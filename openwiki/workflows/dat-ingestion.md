@@ -82,10 +82,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-16T12:33:55.258Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T12:33:55.258Z
+    at: 2026-10-18T21:05:05.320Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -173,7 +173,7 @@ deletes then re-inserts its rules, so a DAT revision never accumulates stale rul
 
 `download-dats` passes `skip_header = true` when it parses a fetched Redump DAT:
 the ZIP carries only the DAT, so there is no header file to resolve
-([src/download_dats.rs](../../src/download_dats.rs#L381-L392)).
+([src/download_dats.rs](../../src/download_dats.rs#L480-L490)).
 
 ## Version gating and the flags that bypass it
 
@@ -351,15 +351,17 @@ the moves happen as late as they do.
 `GET {base}/datfile/{code}/` into memory, `ZipArchive` over the bytes, extraction
 into a `TempDir` under `TMP_DIRECTORY`, `parse_dat(..., skip_header = true)`,
 `import_dat(..., None, None, force)`
-([src/download_dats.rs](../../src/download_dats.rs#L377-L461)). It returns
+([src/download_dats.rs](../../src/download_dats.rs#L414-L500)). It returns
 `Imported` or `UpToDate` from `import_dat`'s summary, so callers can tell a
 refreshed system from one the version gate skipped. A few operational details
 follow from that shape:
 
 - The ZIP must contain **exactly one** file; zero or many is an error, as are an
   unreachable host and an HTTP error status, and none of them touch the database.
-- CLI batches run through `download_redump_batch`, which reports a failed system,
-  carries on with the next, and fails the run at the end naming every failure.
+- Every surface loops through `collect_redump_dats`, which reports a failed
+  system, carries on with the next, and returns per-system `imported`,
+  `up_to_date` and `failed` lists. The CLI's `download_redump_batch` then fails
+  the run at the end naming every failure.
 - `-s/--save <DIRECTORY>` copies the extracted `.dat` (not the ZIP) to a directory
   created on demand, and is the only way to keep a fetched DAT — the `TempDir` is
   dropped when the fetch returns.

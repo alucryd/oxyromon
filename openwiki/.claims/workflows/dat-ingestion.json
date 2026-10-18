@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:35dbaba05c7bd2c70d9ce92fc0cd18d3e442debc27cfdd9f63a50a58cb36bbf7",
+  "pageVersion": "sha256:4bf9321b5ae85fe1b20558cf77577f9be86ec3c3bce2eaa91b67d252ef6f4f1e",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -363,18 +363,18 @@
       "statement": "download_redump_dat is a thin transport wrapper over the same ingest primitives — GET {base}/datfile/{code}/ into memory, ZipArchive extraction into a TempDir under TMP_DIRECTORY, parse_dat with skip_header = true, import_dat with force — returning Imported or UpToDate from import_dat's summary, treating a ZIP without exactly one file, an unreachable host or an HTTP error as an error, and pacing every system, failures included, with a one-second sleep.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L377-L461",
-          "version": "repo-lines-v1:sha256:83edb733f8bd911b0902c2e2af44de7129dddade3417d4dd2e6fa43eda918f03:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
+          "resource": "repo://src/download_dats.rs#L414-L500",
+          "version": "repo-lines-v1:sha256:1e742334d410e93fe51d5adbd8e3767d8f2a7049d8f82ba719b349f2cdc4cbaf:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
         }
       ]
     },
     {
       "id": "claim_4fa8483a8b9d43529abc14fe2ab1776b",
-      "statement": "download-dats -s/--save copies the extracted .dat (not the ZIP) into a directory created on demand and is the only way to retain a fetched DAT, since the extraction TempDir is dropped when the fetch returns; -f/--force is threaded only through the update path, and both CLI paths run through download_redump_batch, which carries on past a failed system and fails the run at the end naming every failure.",
+      "statement": "download-dats -s/--save copies the extracted .dat (not the ZIP) into a directory created on demand and is the only way to retain a fetched DAT, since the extraction TempDir is dropped when the fetch returns; -f/--force is threaded only through the update path, and every surface loops through collect_redump_dats, which carries on past a failed system, with the CLI's download_redump_batch failing the run at the end naming every failure.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L278-L366",
-          "version": "repo-lines-v1:sha256:e30df93d24a3ad81e66644105cd7a2acd75c27544e3b61be0b2aa197d62819bd:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTBlMTVjZDQ4ZjI2MjQ4YTgyYTlkNzA2NTg0ZDc2YzhlNDgzNzM2NTk0Nzg4NzQ1ZDVjMjE2MGVmOGUyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MjcyYjdiNGY0YzA4ZmZmYzdjNzViNzJiZDJkNjIzYjNlYmU3YTQwYjBkYzVmZjkwZDJiNDEwMTFjYWE4NDAifQ"
+          "resource": "repo://src/download_dats.rs#L275-L403",
+          "version": "repo-lines-v1:sha256:026d96aeda60b9d58b7394dd592bae820adf6e219af3e216d1ee89a7190b65dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYjkwZTE1Y2Q0OGYyNjI0OGE4MmE5ZDcwNjU4NGQ3NmM4ZTQ4MzczNjU5NDc4ODc0NWQ1YzIxNjBlZjhlMmZjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNWY2ZjQ2NmU1OWNmYzMwNzAzYzQ1ZjcyYWY2NWRlNTRhYzM2M2QzNTRjYzFhMzMzMDM1MGFjZDQ1MjQzNGM0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NjI3MmI3YjRmNGMwOGZmZmM3Yzc1YjcyYmQyZDYyM2IzZWJlN2E0MGIwZGM1ZmY5MGQyYjQxMDExY2FhODQwIn0"
         },
         {
           "resource": "repo://src/download_dats/test_redump.rs#L44-L70",
@@ -561,6 +561,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T12:33:55.258Z"
+    "at": "2026-10-18T21:05:05.320Z"
   }
 }

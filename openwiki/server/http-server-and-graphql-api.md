@@ -61,7 +61,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T12:33:55.258Z
+    at: 2026-10-18T21:05:05.320Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
