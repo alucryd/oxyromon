@@ -62,10 +62,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:05:05.320Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -185,6 +185,10 @@ lists, and `convert_roms` checks the format against `convert_roms::ALL_FORMATS`
 plus the arcade restriction before starting. Those checks take their own
 short-lived pooled connection, so a malformed call neither queues on the write
 lock nor holds a connection for the duration of an action.
+
+`import_dats` maps its optional booleans straight onto argv: `update: true`
+adds `--update` and `arcade: true` adds `--arcade`, which imports DATs that
+list games instead of machines, such as FBNeo's, as arcade systems.
 
 `convert_roms` upper-cases `params.format` before the check, because
 `convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`,

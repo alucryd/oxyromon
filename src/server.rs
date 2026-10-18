@@ -875,6 +875,7 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
     let mut filename = None;
     let mut data = None;
     let mut update = false;
+    let mut arcade = false;
 
     loop {
         let field = match multipart.next_field().await {
@@ -911,6 +912,10 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
                 Ok(text) => update = text.trim() == "true",
                 Err(e) => log::warn!("upload_dat: failed to read update field: {}", e),
             },
+            Some("arcade") => match field.text().await {
+                Ok(text) => arcade = text.trim() == "true",
+                Err(e) => log::warn!("upload_dat: failed to read arcade field: {}", e),
+            },
             other => {
                 log::debug!("upload_dat: skipping unknown field {:?}", other);
                 let _ = field.bytes().await;
@@ -930,9 +935,10 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
     };
 
     log::info!(
-        "upload_dat: queuing import for '{}' (update={})",
+        "upload_dat: queuing import for '{}' (update={}, arcade={})",
         filename,
-        update
+        update,
+        arcade
     );
 
     let sse_tx = state.sse_tx.clone();
@@ -997,7 +1003,7 @@ async fn upload_dat(State(state): State<AppState>, mut multipart: Multipart) -> 
         }
 
         let results =
-            process_dat_upload(&mut connection, &progress_bar, &upload_path, update).await;
+            process_dat_upload(&mut connection, &progress_bar, &upload_path, update, arcade).await;
 
         for result in results {
             match result {

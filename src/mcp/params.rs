@@ -71,6 +71,11 @@ pub(crate) struct ImportDatsParams {
     /// Update existing systems from the DATs instead of skipping them.
     #[serde(default)]
     pub update: Option<bool>,
+    /// Import the systems as arcade, for DATs that list games instead of
+    /// machines (FinalBurn Neo, for example). DATs with machines are always
+    /// arcade. An update keeps a system arcade once it is.
+    #[serde(default)]
+    pub arcade: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]

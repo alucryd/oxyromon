@@ -26,6 +26,8 @@ sources:
     resource: repo://src/download_dats/test_redump.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-2d4a135c93b4a3bee8970761
+    resource: repo://src/import_dats/test_dat_arcade.rs
   - id: openwiki-source-800e7ec2359e0ddee3595705
     resource: repo://src/import_dats/test_dat_as_is.rs
   - id: openwiki-source-733a84bef8a992742971d01c
@@ -70,6 +72,8 @@ sources:
     resource: repo://src/import_patches/test_bps_ips.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
+  - id: openwiki-source-ef441c6f771dbed606c5c677
+    resource: repo://src/mcp/params.rs
   - id: openwiki-source-762e9c43ab8143e7dda872d3
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-351b888a3823a95b61bcb42a
@@ -82,10 +86,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:05:05.320Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -128,12 +132,21 @@ once.
 The DAT itself is deserialized with `quick_xml` into `DatfileXml`, whose `game`
 and `machine` elements share the `GameXml` type
 ([src/model.rs](../../src/model.rs#L188-L284)). A DAT made of `<machine>` entries
-is arcade: `import_dat` passes `!datfile_xml.machines.is_empty()` down as the
-`arcade` flag written to `systems.arcade`, and that same boolean suppresses
-name-based region parsing for the whole import
-([src/import_dats.rs](../../src/import_dats.rs#L320-L385),
-[src/import_dats.rs](../../src/import_dats.rs#L529-L539)). That is the only place
+is arcade, and so is any DAT imported with `-a/--arcade`: `import_dat` passes
+`arcade || !datfile_xml.machines.is_empty()` to `create_or_update_system`, which
+writes `systems.arcade` and returns the value it settled on. A plain update keeps
+a system arcade once it is (`arcade || system.arcade`), while a forced import
+applies the flag as given, the same rule custom names follow. That settled
+boolean suppresses name-based region parsing for the whole import
+([src/import_dats.rs](../../src/import_dats.rs#L319-L408),
+[src/import_dats.rs](../../src/import_dats.rs#L464-L514),
+[src/import_dats.rs](../../src/import_dats.rs#L553-L563)). That is the only place
 console and arcade diverge during ingest.
+
+The flag exists for DATs that list `<game>` entries but describe arcade sets, such
+as FBNeo's. `romof` or `cloneof` cannot stand in for detection: FBNeo's console
+DATs carry `romof` too, and No-Intro parent/clone DATs carry `cloneof`.
+`test_dat_arcade` pins the flag, the sticky update and the forced revert.
 
 ## Header definitions and the embedded fallback
 
@@ -417,11 +430,11 @@ apply it — application is not wired up yet.
 
 The web upload path does not shell out to the CLI; it calls
 `process_dat_upload`, which mirrors `import-dats` with a smaller surface: ZIP-or-file,
-`update` flag, header parsing always enabled, `force` always false, and a typed
-result the SSE bridge turns into a toast
-([src/import_dats.rs](../../src/import_dats.rs#L937-L1036),
+`update` and `arcade` flags, header parsing always enabled, `force` always false,
+and a typed result the SSE bridge turns into a toast
+([src/import_dats.rs](../../src/import_dats.rs#L961-L1065),
 [src/server.rs](../../src/server.rs#L204),
-[src/server.rs](../../src/server.rs#L999-L1026)). `ImportDatResult::Skipped` (update
+[src/server.rs](../../src/server.rs#L1005-L1046)). `ImportDatResult::Skipped` (update
 mode, unknown system) is filtered out of the result vector, while
 `ImportDatResult::UpToDate` surfaces as a `skipped: true` completion — so a version
 gate that produced *no write at all* is still reported to the user. `ImportSummary`
@@ -429,8 +442,8 @@ carries the system name, version and game count for the success case.
 
 The MCP `import_dats` tool takes the opposite route: it rebuilds an argv and calls
 the same clap `subcommand()` and `main()` the CLI uses, so the agent-facing tool and
-the terminal command cannot drift apart, and `--update` is the only flag it can
-convey ([src/mcp/write.rs](../../src/mcp/write.rs#L53-L100)). Patch uploads go
+the terminal command cannot drift apart; `--update` and `--arcade` are the only
+flags it can convey ([src/mcp/write.rs](../../src/mcp/write.rs#L61-L105)). Patch uploads go
 through `parse_patch` / `import_patch` directly with a `--rom`-style id, skipping the
 prompts the CLI would otherwise need
 ([src/server.rs](../../src/server.rs#L408-L459)).

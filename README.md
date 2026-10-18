@@ -377,6 +377,10 @@ When an update moves ROM files, to a renamed game or to `Trash`, the directories
 Some systems need a header definition next to their DAT file.
 oxyROMon falls back to its own when it is missing.
 
+A DAT that lists machines, like MAME's, is imported as an arcade system.
+FBNeo's arcade DATs list games, so import them with `-a` to make them arcade.
+An update keeps a system arcade, and `-f` without `-a` reverts it.
+
 MAME ships separate DATs for ROMs, CHDs and more.
 Turn `GROUP_SUBSYSTEMS` on and name them `MAME (ROMs)`, `MAME (CHDs)` and so on, so they share a `MAME` directory that MAME reads as is.
 
@@ -393,6 +397,7 @@ Options:
   -f, --force                  Force import of outdated DAT files
   -n, --name <NAME>            Customize the system name
   -e, --extension <EXTENSION>  Customize the system extension
+  -a, --arcade                 Import as arcade systems, for DATs that list games instead of machines
   -h, --help                   Print help
 ```
 
