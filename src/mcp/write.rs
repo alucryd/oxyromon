@@ -74,6 +74,9 @@ impl OxyromonMcp {
         if update {
             argv.push("--update".to_string());
         }
+        if params.arcade.unwrap_or(false) {
+            argv.push("--arcade".to_string());
+        }
         argv.extend(params.paths);
 
         let outcome = self

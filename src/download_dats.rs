@@ -491,6 +491,7 @@ async fn fetch_redump_dat(
         None,
         None,
         force,
+        false,
     )
     .await?;
     Ok(match summary {

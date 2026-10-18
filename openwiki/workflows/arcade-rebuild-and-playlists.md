@@ -40,6 +40,8 @@ sources:
     resource: repo://src/generate_playlists/test_iso_incomplete.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-2d4a135c93b4a3bee8970761
+    resource: repo://src/import_dats/test_dat_arcade.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
@@ -70,10 +72,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -158,10 +160,16 @@ the parent and whose `Test Clone Bios.rom` merges from the BIOS.
 ## rebuild-roms: control flow
 
 `main` prompts for systems with `arcade_only = true` — the candidate list is
-`find_arcade_systems`, so console systems can never be rebuilt — then resolves the
-target strategy either from `-m/--merging` or from an interactive `select`, and
-runs `rebuild_system` per system
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L60-L95)).
+`find_arcade_systems`, so console systems can never be rebuilt. With no arcade
+system it warns `No arcade systems found` and stops before asking for a strategy;
+otherwise it resolves the target strategy either from `-m/--merging` or from an
+interactive `select`, and runs `rebuild_system` per system
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L60-L99)).
+
+A system is arcade when its DAT lists `<machine>` entries, as MAME's do, or when
+it was imported with `import-dats -a/--arcade`. FBNeo's DATs list `<game>`
+entries, so they need the flag; without it they import as console systems and
+`rebuild-roms` finds nothing to rebuild.
 
 ```mermaid
 flowchart TD

@@ -15,6 +15,7 @@ use crate::ui::{Dropzone, Modal, control_checked};
 pub fn ImportDatModal() -> impl IntoView {
     let state = expect_context::<AppState>();
     let update_only = RwSignal::new(false);
+    let arcade = RwSignal::new(false);
     let importing = RwSignal::new(false);
     let selected = RwSignal::new(Option::<web_sys::File>::None);
     let input_ref = NodeRef::<html::Input>::new();
@@ -25,10 +26,12 @@ pub fn ImportDatModal() -> impl IntoView {
         };
         importing.set(true);
         let update = update_only.get_untracked();
+        let arcade = arcade.get_untracked();
         spawn_local(async move {
             let form = FormData::new().unwrap();
             let _ = form.append_with_blob_and_filename("file", &file, &file.name());
             let _ = form.append_with_str("update", &update.to_string());
+            let _ = form.append_with_str("arcade", &arcade.to_string());
             // The import itself reports progress over SSE; this only covers
             // failures to hand the upload over in the first place.
             let outcome = match Request::post(DATS_ENDPOINT).body(form) {
@@ -77,6 +80,14 @@ pub fn ImportDatModal() -> impl IntoView {
                     on:change=move |ev| update_only.set(control_checked(&ev))
                 >
                     Update only
+                </wa-switch>
+
+                <wa-switch
+                    hint="Import as arcade systems, for DATs that list games instead of machines."
+                    prop:checked=move || arcade.get()
+                    on:change=move |ev| arcade.set(control_checked(&ev))
+                >
+                    Arcade
                 </wa-switch>
             </div>
 

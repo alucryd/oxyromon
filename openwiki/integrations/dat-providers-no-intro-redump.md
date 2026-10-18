@@ -28,6 +28,8 @@ sources:
     resource: repo://src/generate_playlists.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
+  - id: openwiki-source-2d4a135c93b4a3bee8970761
+    resource: repo://src/import_dats/test_dat_arcade.rs
   - id: openwiki-source-d7a0d0f607461a016e622fb2
     resource: repo://src/import_dats/test_dat_custom_name_forced.rs
   - id: openwiki-source-733a84bef8a992742971d01c
@@ -72,10 +74,10 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:05:05.320Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -87,7 +89,7 @@ families feed it, and only one of them can be reached over the network.
 | --- | --- | --- |
 | No-Intro (dat-o-matic) | cartridge consoles, older computers | `import-dats` with a hand-downloaded DAT; `download-dats -n -u` can **only check for updates** |
 | Redump | CD/DVD optical systems | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs |
-| MAME / FBNeo | arcade | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo); never fetched |
+| MAME / FBNeo | arcade | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo, with `-a` for FBNeo); never fetched |
 
 The asymmetry is documented in the README (where "Find a way to automatically download
 No-Intro DAT files" is still an open TODO) and encoded in `download_dats::main`:
@@ -108,9 +110,13 @@ replaced by the crates under `crates/`; see
 
 Arcade versus console is not a provider switch but a DAT-shape switch: a DAT whose
 entries are `<machine>` rather than `<game>` sets `systems.arcade = true`
-(`!datfile_xml.machines.is_empty()` in `import_dat`). That flag later disables
-name-based region parsing at import and routes sorting through `REGIONS_*_ARCADE`
-instead of regions.
+(`arcade || !datfile_xml.machines.is_empty()` in `import_dat`). FBNeo's DATs list
+`<game>` entries, so they need `import-dats -a/--arcade` to import as arcade;
+`romof` cannot stand in for detection, since FBNeo's console DATs carry it too. A
+plain update keeps a system arcade, and a forced import applies the flag as given.
+Redump downloads always pass `arcade = false`. The flag later disables name-based
+region parsing at import and routes sorting through `REGIONS_*_ARCADE` instead of
+regions.
 
 ## Provider identity is stored on the system
 

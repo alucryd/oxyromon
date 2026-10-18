@@ -31,6 +31,7 @@ async fn test() {
         Some(&String::from("Custom Test System")),
         None,
         false,
+        false,
     )
     .await
     .unwrap();
@@ -44,6 +45,7 @@ async fn test() {
         None,
         None,
         true,
+        false,
     )
     .await
     .unwrap();

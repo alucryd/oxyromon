@@ -30,6 +30,7 @@ async fn test() {
         Some(&String::from("Custom Test System")),
         Some(&String::from("bin")),
         false,
+        false,
     )
     .await
     .unwrap();
@@ -46,6 +47,7 @@ async fn test() {
         &detector_xml,
         Some(&String::from("Renamed Test System")),
         None,
+        false,
         false,
     )
     .await
