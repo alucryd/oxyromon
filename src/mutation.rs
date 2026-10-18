@@ -2,7 +2,7 @@ use super::check_roms;
 use super::config::{add_to_list, remove_from_list, set_bool, set_directory, set_string};
 use super::convert_roms;
 use super::database::*;
-use super::download_dats::{DatOutcome, download_redump_system};
+use super::download_dats::download_redump_systems;
 use super::generate_playlists;
 use super::progress::*;
 use super::purge_irds;
@@ -271,20 +271,16 @@ impl Mutation {
 
             // Deliberately quiet between the two: a per-system event would mean
             // a toast each, and this list can run to the whole catalogue.
-            let mut failed: Vec<String> = Vec::new();
-            let mut imported = 0;
-            for system_name in systems.iter() {
-                match download_redump_system(&mut connection, &progress_bar, system_name, false)
-                    .await
-                {
-                    Ok(DatOutcome::Imported) => imported += 1,
-                    Ok(DatOutcome::UpToDate) => {}
-                    Err(e) => {
-                        log::error!("Failed to download {}: {:#}", system_name, e);
-                        failed.push(system_name.clone());
-                    }
-                }
-            }
+            let outcomes =
+                download_redump_systems(&mut connection, &progress_bar, &systems, false).await;
+            let failed: Vec<String> = outcomes
+                .failed
+                .into_iter()
+                .map(|(system_name, e)| {
+                    log::error!("Failed to download {}: {:#}", system_name, e);
+                    system_name
+                })
+                .collect();
 
             if failed.is_empty() {
                 sse_send(
@@ -295,8 +291,8 @@ impl Mutation {
                         "success": true,
                         "message": format!(
                             "Imported {} DAT file(s), {} already up to date",
-                            imported,
-                            total - imported
+                            outcomes.imported.len(),
+                            outcomes.up_to_date.len()
                         ),
                     }),
                 );

@@ -114,25 +114,22 @@ pub async fn find_redump_systems(connection: &mut SqliteConnection, update: bool
     names
 }
 
-/// Fetch one Redump system's DAT and import it.
+/// Fetch the named Redump systems' DATs and import them.
 ///
-/// The name is checked against the catalogue first: unlike the CLI, which can
-/// only offer names it already holds, callers here may pass anything.
+/// Unlike the CLI, which can only offer names it already holds, callers here
+/// may pass anything: an unknown name lands in `failed`.
 #[cfg(any(feature = "server", feature = "mcp"))]
-pub async fn download_redump_system(
+pub async fn download_redump_systems(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
-    system_name: &str,
+    system_names: &[String],
     force: bool,
-) -> Result<DatOutcome> {
-    if !REDUMP_SYSTEMS_CODES.contains_key(system_name) {
-        bail!("Unknown Redump system \"{}\"", system_name);
-    }
-    download_redump_dat(
+) -> DatOutcomes {
+    collect_redump_dats(
         connection,
         progress_bar,
         REDUMP_BASE_URL,
-        system_name,
+        system_names,
         force,
         None,
     )
@@ -253,7 +250,7 @@ async fn update_nointro_dats(
         .with_context(|| format!("Failed to download \"{profile_url}\""))?
         .text()
         .await
-        .with_context(|| format!("Failed to download \"{profile_url}\""))?;
+        .with_context(|| format!("Failed to read \"{profile_url}\""))?;
     let profile: ProfileXml =
         de::from_str(&response).context("Failed to parse No-Intro profiles")?;
     let systems =
@@ -332,9 +329,7 @@ async fn update_redump_dats(
     .await
 }
 
-/// Download and import each system in turn. A system that fails is reported
-/// and skipped, so one broken DAT does not cost the rest of the batch, and the
-/// run still fails at the end, naming them.
+/// The CLI batch: the run still fails at the end, naming the failed systems.
 async fn download_redump_batch(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -343,9 +338,50 @@ async fn download_redump_batch(
     force: bool,
     save_directory: Option<&str>,
 ) -> Result<()> {
-    let mut failed: Vec<&str> = vec![];
-    for &system_name in system_names {
-        if let Err(e) = download_redump_dat(
+    let outcomes = collect_redump_dats(
+        connection,
+        progress_bar,
+        base_url,
+        system_names,
+        force,
+        save_directory,
+    )
+    .await;
+    if !outcomes.failed.is_empty() {
+        let failed: Vec<&str> = outcomes
+            .failed
+            .iter()
+            .map(|(system_name, _)| system_name.as_str())
+            .collect();
+        bail!("Failed to download: {}", failed.join(", "));
+    }
+    Ok(())
+}
+
+/// What a batch did, per system: each system lands in exactly one list.
+#[derive(Debug, Default)]
+pub struct DatOutcomes {
+    pub imported: Vec<String>,
+    pub up_to_date: Vec<String>,
+    /// The system, and the error that stopped it.
+    pub failed: Vec<(String, anyhow::Error)>,
+}
+
+/// Download and import each system in turn. A system that fails is reported
+/// and skipped, so one broken DAT does not cost the rest of the batch. The CLI,
+/// GraphQL and MCP all go through this one loop.
+async fn collect_redump_dats(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    base_url: &str,
+    system_names: &[impl AsRef<str>],
+    force: bool,
+    save_directory: Option<&str>,
+) -> DatOutcomes {
+    let mut outcomes = DatOutcomes::default();
+    for system_name in system_names {
+        let system_name = system_name.as_ref();
+        match download_redump_dat(
             connection,
             progress_bar,
             base_url,
@@ -355,14 +391,15 @@ async fn download_redump_batch(
         )
         .await
         {
-            print_error(progress_bar, &format!("{e:#}"));
-            failed.push(system_name);
+            Ok(DatOutcome::Imported) => outcomes.imported.push(system_name.to_owned()),
+            Ok(DatOutcome::UpToDate) => outcomes.up_to_date.push(system_name.to_owned()),
+            Err(e) => {
+                print_error(progress_bar, &format!("{e:#}"));
+                outcomes.failed.push((system_name.to_owned(), e));
+            }
         }
     }
-    if !failed.is_empty() {
-        bail!("Failed to download: {}", failed.join(", "));
-    }
-    Ok(())
+    outcomes
 }
 
 /// What downloading one Redump system's DAT did.
@@ -406,7 +443,9 @@ async fn fetch_redump_dat(
     force: bool,
     save_directory: Option<&str>,
 ) -> Result<DatOutcome> {
-    let code = *REDUMP_SYSTEMS_CODES.get(system_name).unwrap();
+    let Some(code) = REDUMP_SYSTEMS_CODES.get(system_name) else {
+        bail!("Unknown Redump system \"{}\"", system_name);
+    };
     let zip_url = format!("{}/datfile/{}/", base_url, code);
     let response = reqwest::get(&zip_url)
         .await
@@ -414,7 +453,7 @@ async fn fetch_redump_dat(
         .with_context(|| format!("Failed to download \"{zip_url}\""))?
         .bytes()
         .await
-        .with_context(|| format!("Failed to download \"{zip_url}\""))?;
+        .with_context(|| format!("Failed to read \"{zip_url}\""))?;
     let tmp_directory = create_tmp_directory(connection).await?;
     let mut zip_archive =
         ZipArchive::new(Cursor::new(response)).context("Failed to read Redump ZIP")?;

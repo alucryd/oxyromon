@@ -18,7 +18,7 @@ use crate::check_roms;
 use crate::config::{self, BOOLEANS, LISTS, NULLABLES, PATHS, choice_options, integer_range};
 use crate::convert_roms;
 use crate::database::*;
-use crate::download_dats::{DatOutcome, download_redump_system};
+use crate::download_dats::download_redump_systems;
 use crate::import_dats;
 use crate::import_roms;
 use crate::model::System;
@@ -128,24 +128,25 @@ impl OxyromonMcp {
                     Box::pin(async move {
                         start_action(progress_bar, Some("Downloading DAT files"));
                         // one failure does not cost the rest of the batch
-                        let mut out = DownloadDatsOut {
-                            imported: vec![],
-                            up_to_date: vec![],
-                            failed: vec![],
-                        };
-                        for system in params.systems {
-                            match download_redump_system(connection, progress_bar, &system, false)
-                                .await
-                            {
-                                Ok(DatOutcome::Imported) => out.imported.push(system),
-                                Ok(DatOutcome::UpToDate) => out.up_to_date.push(system),
-                                Err(e) => out.failed.push(FailedSystemOut {
+                        let outcomes = download_redump_systems(
+                            connection,
+                            progress_bar,
+                            &params.systems,
+                            false,
+                        )
+                        .await;
+                        Ok(DownloadDatsOut {
+                            imported: outcomes.imported,
+                            up_to_date: outcomes.up_to_date,
+                            failed: outcomes
+                                .failed
+                                .into_iter()
+                                .map(|(system, e)| FailedSystemOut {
                                     system,
                                     error: format!("{e:#}"),
-                                }),
-                            }
-                        }
-                        Ok(out)
+                                })
+                                .collect(),
+                        })
                     })
                 },
             )
