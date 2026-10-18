@@ -7,7 +7,7 @@
 // an explicit `confirm: true`.
 
 use super::actions::{need_confirm, ok_json, ok_text, read_only_denial, tool_error};
-use super::output::ActionOut;
+use super::output::{ActionOut, DownloadDatsOut, FailedSystemOut};
 use super::params::{
     CheckRomsParams, ConvertRomsParams, DownloadDatsParams, ImportDatsParams, ImportRomsParams,
     PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams, SetSettingParams, SortRomsParams,
@@ -18,7 +18,7 @@ use crate::check_roms;
 use crate::config::{self, BOOLEANS, LISTS, NULLABLES, PATHS, choice_options, integer_range};
 use crate::convert_roms;
 use crate::database::*;
-use crate::download_dats::download_redump_system;
+use crate::download_dats::download_redump_systems;
 use crate::import_dats;
 use crate::import_roms;
 use crate::model::System;
@@ -102,7 +102,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Fetch DAT files for Redump systems from redump.org — the systems listed by downloadable_systems.",
+        description = "Download the DAT files of Redump systems from redump.org and import them — the systems listed by downloadable_systems. A DAT no newer than the imported one changes nothing; the result lists each system as imported, up_to_date or failed.",
         annotations(read_only_hint = false, idempotent_hint = true, open_world_hint = true)
     )]
     async fn download_dats(
@@ -127,24 +127,46 @@ impl OxyromonMcp {
                 move |connection, progress_bar| {
                     Box::pin(async move {
                         start_action(progress_bar, Some("Downloading DAT files"));
-                        for system_name in &params.systems {
-                            download_redump_system(connection, progress_bar, system_name, false)
-                                .await?;
-                        }
-                        Ok(params.systems.len())
+                        // one failure does not cost the rest of the batch
+                        let outcomes = download_redump_systems(
+                            connection,
+                            progress_bar,
+                            &params.systems,
+                            false,
+                        )
+                        .await;
+                        Ok(DownloadDatsOut {
+                            imported: outcomes.imported,
+                            up_to_date: outcomes.up_to_date,
+                            failed: outcomes
+                                .failed
+                                .into_iter()
+                                .map(|(system, e)| FailedSystemOut {
+                                    system,
+                                    error: format!("{e:#}"),
+                                })
+                                .collect(),
+                        })
                     })
                 },
             )
             .await;
-        let downloaded = match outcome {
-            Ok(downloaded) => downloaded,
+        let out = match outcome {
+            Ok(out) => out,
             Err(message) => return Ok(tool_error(message)),
         };
-        self.notify_resources_changed(&ctx.peer).await;
-        Ok(ok_json(&ActionOut {
-            action: "download_dats".to_string(),
-            detail: Some(format!("downloaded DATs for {downloaded} systems")),
-        }))
+        if !out.imported.is_empty() {
+            self.notify_resources_changed(&ctx.peer).await;
+        }
+        if out.imported.is_empty() && out.up_to_date.is_empty() {
+            let errors: Vec<String> = out
+                .failed
+                .iter()
+                .map(|failed| format!("{}: {}", failed.system, failed.error))
+                .collect();
+            return Ok(tool_error(errors.join("; ")));
+        }
+        Ok(ok_json(&out))
     }
 
     #[tool(

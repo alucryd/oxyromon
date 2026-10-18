@@ -227,7 +227,7 @@ RVZ files are interchangeable with Dolphin's in both directions.
 ## Web UI and desktop app
 
 `oxyromon server` serves the web UI at `http://127.0.0.1:8000` by default, and the desktop app shows the same UI in its own window.
-From there you can browse systems, games and ROM files, see each system's completion, download a ROM file, edit global and per-system settings, purge a system, import or download DAT files, and import ROM files.
+From there you can browse systems, games and ROM files, see each system's completion, download a ROM file, edit global and per-system settings, purge a system, import DAT files, uploaded or fetched from Redump, and import ROM files.
 
 <p align="center">
   <img src="https://github.com/alucryd/oxyromon/raw/master/resources/web.png" alt="the web UI" width="100%">
@@ -398,7 +398,9 @@ Options:
 
 ### download-dats
 
-Redump offers direct downloads, so this can download new Redump systems and update those you have.
+Redump offers direct downloads, so this can download and import new Redump systems and update those you have.
+A DAT no newer than the imported one changes nothing, unless `-f` forces it.
+A system that fails to download is reported and skipped, and the run then fails, naming it.
 No-Intro offers no direct downloads, so for No-Intro it only reports which systems have an update.
 As with `import-dats`, an update keeps custom names and extensions, and `-f` reverts them.
 

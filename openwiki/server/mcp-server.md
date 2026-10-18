@@ -22,6 +22,8 @@ sources:
     resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-68a9457efd4964d6e3fa17be
+    resource: repo://src/download_dats.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -60,10 +62,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-18T21:05:05.320Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -85,7 +87,7 @@ connection — the exact trick the GraphQL mutations use, so CLI, GraphQL and MC
 cannot drift apart per surface. `download_dats`, `purge_systems` and
 `set_setting` skip the argv step and call the same library entry points the
 subcommands call
-(`download_redump_system`, `purge_system`, `config::set_setting` /
+(`download_redump_systems`, `purge_system`, `config::set_setting` /
 `unset_setting` / `add_to_list` / `remove_from_list`), and the read tools go
 straight to `database.rs` helpers.
 
@@ -163,6 +165,17 @@ also carry an annotation hint: `idempotent_hint = true` on the safe-repeat
 actions, `open_world_hint = true` on `download_dats` (it reaches redump.org), and
 `destructive_hint = true` on the three purges, so clients can decide how eagerly
 to auto-invoke each. `convert_roms` is annotated only as non-read-only.
+
+`download_dats` downloads *and imports* each named Redump system, which its
+description says, and reports per system rather than per call: it carries on
+past a failed system and returns `DownloadDatsOut`, which lists every system once
+under `imported`, `up_to_date` (a DAT no newer than the imported one, which
+changes nothing) or `failed` with its error. Those lists are the `DatOutcomes`
+that `download_redump_systems` returns, the same collector the CLI and GraphQL
+use, mapped field by field. It is a tool error only when every
+system failed, and it notifies resource changes only when something was
+imported. `tests/mcp_stdio.rs` pins the all-failed case with two unknown names,
+which fail before any request, so the test needs no network.
 
 Argument validation happens in the handler, before `run_action` is ever reached:
 `sort_roms` and `check_roms` demand exactly one of `system_id` / `all: true`,

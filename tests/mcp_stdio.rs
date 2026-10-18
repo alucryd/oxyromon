@@ -244,6 +244,21 @@ fn destructive_tools_need_confirmation() {
 }
 
 #[test]
+fn download_dats_reports_each_failed_system() {
+    let mut client = Client::spawn(&[]);
+    // unknown systems fail before any request, so this needs no network
+    let result = client.call(
+        "download_dats",
+        json!({"systems": ["Not A System", "Nor This One"]}),
+    );
+    assert_eq!(result["isError"].as_bool(), Some(true));
+    let message = text(&result);
+    assert!(message.contains("Not A System"), "{message}");
+    assert!(message.contains("Nor This One"), "{message}");
+    client.close();
+}
+
+#[test]
 fn convert_roms_accepts_any_case() {
     let mut client = Client::spawn(&[]);
     let dat =

@@ -15,6 +15,8 @@
 - CHD support now comes from the new chd-rs crate, a port of chdman, instead of the external `chdman` tool, for CDs, DVDs, hard disks and LaserDiscs. Its CLI (`chdrs`) ships in the release archives too. CHDs it creates are interchangeable with chdman 0.289's, and byte-identical except for LZMA- and deflate-compressed hunks; it compresses on every core, as chdman does, and decodes faster. The minimum chdman versions for Dreamcast and split-bin support are gone
 - Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
 - `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty, except for the ROM, system and `Trash` directories
+- `download-dats` keeps going when one Redump system fails, reporting it, and fails the run at the end naming every system that did; an empty ZIP, or one with several DATs, is now such a failure rather than a warning
+- The web UI's Upload and Download menus are one Import menu, where fetching Redump DATs is "DATs from Redump…": a Download menu read as saving files to the browser
 
 ## Fixes
 
@@ -24,6 +26,8 @@
 - Fixed copying entries between ZIP archives panicking on an entry it could not read, and reporting success when the archive's central directory failed to write, leaving it corrupt
 - Fixed a 7z and a ZIP of the same name in one directory sharing a scratch file when both were rewritten at once
 - The desktop app's Debian package no longer depends on `p7zip`
+- Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
+- Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
 

@@ -1,4 +1,4 @@
-//! Download DAT dialog: pick Redump systems and let the server fetch them.
+//! Redump DAT dialog: pick Redump systems for the server to download and import.
 
 use std::collections::HashSet;
 
@@ -95,7 +95,7 @@ pub fn DownloadDatModal() -> impl IntoView {
     };
 
     view! {
-        <Modal open=open title=Signal::derive(|| "Download DATs".to_string()) size="sm">
+        <Modal open=open title=Signal::derive(|| "Import DATs from Redump".to_string()) size="sm">
             <div class="wa-stack wa-gap-m">
                 <wa-switch
                     hint="Refresh the DATs of Redump systems already in the database."
@@ -193,7 +193,7 @@ pub fn DownloadDatModal() -> impl IntoView {
             >
                 {move || {
                     let count = selected.get().len();
-                    let verb = if update_only.get() { "Update" } else { "Download" };
+                    let verb = if update_only.get() { "Update" } else { "Import" };
                     if count == 0 { verb.to_string() } else { format!("{verb} ({count})") }
                 }}
             </wa-button>
