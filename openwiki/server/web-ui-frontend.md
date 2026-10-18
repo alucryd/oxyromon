@@ -72,10 +72,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -345,6 +345,9 @@ dialog stays open with the file still selected so the attempt can be retried, an
 only a success clears the input and closes. `ImportRomModal` additionally accepts a
 URL instead of a file — fetched by the server, so the bytes never pass through the
 browser — and treats file and URL as mutually exclusive.
+`ImportDatModal` sends two switches with the file, *Update only* and *Arcade*,
+as the `update` and `arcade` form fields; *Arcade* imports a DAT that lists
+games instead of machines, such as FBNeo's, as an arcade system.
 
 ## Virtualization and the `ROW_HEIGHT` coupling
 

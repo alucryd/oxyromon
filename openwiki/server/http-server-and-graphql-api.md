@@ -58,10 +58,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:05:05.320Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -343,7 +343,7 @@ how they land the bytes and what they require:
 
 | Route | Fields | Bytes | Extra validation |
 | --- | --- | --- | --- |
-| `/dats` | `file`, `update` | buffered in memory via `field.bytes()`, written to a temp dir inside the task | none; per-result SSE, with `skipped: true` for an already-current DAT |
+| `/dats` | `file`, `update`, `arcade` | buffered in memory via `field.bytes()`, written to a temp dir inside the task | none; per-result SSE, with `skipped: true` for an already-current DAT |
 | `/roms` | `file` **or** `url`, `system`, `unattended` | streamed chunk-by-chunk to a fresh `TempDir` | `unattended` must be `skip` or `first` (default `first`) |
 | `/patches` | `file`, `rom` (ROM id) | streamed to a `TempDir` | the ROM must exist, else 400 |
 | `/irds` | `file`, `system` (system id) | streamed to a `TempDir` | the system must exist; its **name** is kept for `--system` |

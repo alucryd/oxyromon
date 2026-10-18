@@ -78,10 +78,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-18T21:36:28.347Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -322,8 +322,8 @@ happens; only the absence of `--system` falls through to `prompt_for_systems` â€
 which `purge-systems` narrows to empty systems with `--empty`, and
 `generate-playlists` restricts to Redump systems by passing the DAT url. Other
 choices prompt independently of that gate:
-`rebuild-roms` asks for arcade-only systems and `select`s a merge strategy when
-`--merging` is absent, `convert-roms` and `export-roms` `select` a format when
+`rebuild-roms` asks for arcade-only systems, warns and stops when there are
+none, and `select`s a merge strategy when `--merging` is absent, `convert-roms` and `export-roms` `select` a format when
 `--format` is absent, `download-dats` `multiselect`s Redump systems unless
 `--all`, `import-irds` and `purge-irds` resolve `%PlayStation 3%` when they get
 no `--system`, `config` resolves a named system through
