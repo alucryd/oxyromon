@@ -38,26 +38,28 @@ async fn test() {
 
     let system_name = "Test System";
 
-    // an empty ZIP is reported and skipped, not imported
+    // an empty ZIP is an error, and nothing is imported
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/datfile/ts/"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(zip_with(&[])))
         .mount(&mock_server)
         .await;
-    download_redump_dat(
-        &mut connection,
-        &progress_bar,
-        &mock_server.uri(),
-        system_name,
-        false,
-        None,
-    )
-    .await
-    .unwrap();
+    assert!(
+        download_redump_dat(
+            &mut connection,
+            &progress_bar,
+            &mock_server.uri(),
+            system_name,
+            false,
+            None,
+        )
+        .await
+        .is_err()
+    );
     assert!(find_systems(&mut connection).await.is_empty());
 
-    // a ZIP with more than one entry is reported and skipped
+    // so is a ZIP with more than one entry
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/datfile/ts/"))
@@ -67,19 +69,21 @@ async fn test() {
         ])))
         .mount(&mock_server)
         .await;
-    download_redump_dat(
-        &mut connection,
-        &progress_bar,
-        &mock_server.uri(),
-        system_name,
-        false,
-        None,
-    )
-    .await
-    .unwrap();
+    assert!(
+        download_redump_dat(
+            &mut connection,
+            &progress_bar,
+            &mock_server.uri(),
+            system_name,
+            false,
+            None,
+        )
+        .await
+        .is_err()
+    );
     assert!(find_systems(&mut connection).await.is_empty());
 
-    // a body that is not a ZIP surfaces as an error
+    // and an HTTP error status
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/datfile/ts/"))

@@ -25,7 +25,11 @@ async fn test() {
 
         // then: back to auto
         assert_eq!(get_string(&mut connection, &hunk_size, None).await, None);
-        assert!(get_list(&mut connection, &algorithms, None).await.is_empty());
+        assert!(
+            get_list(&mut connection, &algorithms, None)
+                .await
+                .is_empty()
+        );
     }
 
     // when: the codec order is kept as given, like CD and DVD
