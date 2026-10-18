@@ -68,4 +68,20 @@ async fn test() {
             .join("Test System (20200721).dat")
             .exists()
     );
+
+    // the same DAT again changes nothing, unless forced
+    let system_name = *REDUMP_SYSTEMS_CODES.keys().next().unwrap();
+    for (force, expected) in [(false, DatOutcome::UpToDate), (true, DatOutcome::Imported)] {
+        let outcome = download_redump_dat(
+            &mut connection,
+            &progress_bar,
+            &mock_server.uri(),
+            system_name,
+            force,
+            None,
+        )
+        .await
+        .unwrap();
+        assert_eq!(outcome, expected);
+    }
 }

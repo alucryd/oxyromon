@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:20b553c8cfae3ab701fd6821ebab22e319c3b7bd45474ac6183c11e33241ee9c",
+  "pageVersion": "sha256:4bf9321b5ae85fe1b20558cf77577f9be86ec3c3bce2eaa91b67d252ef6f4f1e",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -360,25 +360,25 @@
     },
     {
       "id": "claim_b0be8e7a29cd42e389d269aa6cc9803c",
-      "statement": "download_redump_dat is a thin transport wrapper over the same ingest primitives — GET {base}/datfile/{code}/ into memory, ZipArchive extraction into a TempDir under TMP_DIRECTORY, parse_dat with skip_header = true, import_dat with force — requiring exactly one file in the ZIP and pacing every system with an unconditional one-second sleep.",
+      "statement": "download_redump_dat is a thin transport wrapper over the same ingest primitives — GET {base}/datfile/{code}/ into memory, ZipArchive extraction into a TempDir under TMP_DIRECTORY, parse_dat with skip_header = true, import_dat with force — returning Imported or UpToDate from import_dat's summary, treating a ZIP without exactly one file, an unreachable host or an HTTP error as an error, and pacing every system, failures included, with a one-second sleep.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L338-L403",
-          "version": "repo-lines-v1:sha256:25ad4c4f629c725506bf58f55b5290a7177029d6fbb950e2986a6ad61f785c42:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
+          "resource": "repo://src/download_dats.rs#L414-L500",
+          "version": "repo-lines-v1:sha256:1e742334d410e93fe51d5adbd8e3767d8f2a7049d8f82ba719b349f2cdc4cbaf:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
         }
       ]
     },
     {
       "id": "claim_4fa8483a8b9d43529abc14fe2ab1776b",
-      "statement": "download-dats -s/--save copies the extracted .dat (not the ZIP) into a directory created on demand and is the only way to retain a fetched DAT, since the extraction TempDir is dropped when the function returns; -f/--force is threaded only through the update path.",
+      "statement": "download-dats -s/--save copies the extracted .dat (not the ZIP) into a directory created on demand and is the only way to retain a fetched DAT, since the extraction TempDir is dropped when the fetch returns; -f/--force is threaded only through the update path, and every surface loops through collect_redump_dats, which carries on past a failed system, with the CLI's download_redump_batch failing the run at the end naming every failure.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L277-L336",
-          "version": "repo-lines-v1:sha256:bb681933a4f32f75fe86000e5591890942d297b67cd4b8da23bd1d9548e5ecea:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTBlMTVjZDQ4ZjI2MjQ4YTgyYTlkNzA2NTg0ZDc2YzhlNDgzNzM2NTk0Nzg4NzQ1ZDVjMjE2MGVmOGUyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyNWY5OTYzNDgxMDUzNTg1Y2Y4MDVkMzAzMjhiNmMwNjk2YjMwYzFkNzQwYTVmZDY1YTZlMjZlOGI5Y2I4MjgifQ"
+          "resource": "repo://src/download_dats.rs#L275-L403",
+          "version": "repo-lines-v1:sha256:026d96aeda60b9d58b7394dd592bae820adf6e219af3e216d1ee89a7190b65dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYjkwZTE1Y2Q0OGYyNjI0OGE4MmE5ZDcwNjU4NGQ3NmM4ZTQ4MzczNjU5NDc4ODc0NWQ1YzIxNjBlZjhlMmZjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNWY2ZjQ2NmU1OWNmYzMwNzAzYzQ1ZjcyYWY2NWRlNTRhYzM2M2QzNTRjYzFhMzMzMDM1MGFjZDQ1MjQzNGM0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NjI3MmI3YjRmNGMwOGZmZmM3Yzc1YjcyYmQyZDYyM2IzZWJlN2E0MGIwZGM1ZmY5MGQyYjQxMDExY2FhODQwIn0"
         },
         {
           "resource": "repo://src/download_dats/test_redump.rs#L44-L70",
-          "version": "repo-lines-v1:sha256:368b4ca34234810dd8f769d50b9c645e312008b4d477b10ce3a3f525c6e6e077:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzZDAwZjAxOThhMDcxMzlmNDdmMTc0OWIyZjQwOWY0Njc0M2UzNTUyYjFiZjBhMjkzNzM2NzVhOTZjZGY4OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "version": "repo-lines-v1:sha256:368b4ca34234810dd8f769d50b9c645e312008b4d477b10ce3a3f525c6e6e077:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzA5ZWMxOWJjZjhlZjRkYWRmZDcxN2YyMzU1Zjg4NjExMTgyNjBhNmE0MmE0ZDAwNWNlMWFmMWQxYzc2YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzZDAwZjAxOThhMDcxMzlmNDdmMTc0OWIyZjQwOWY0Njc0M2UzNTUyYjFiZjBhMjkzNzM2NzVhOTZjZGY4OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZDM1N2FjZjM5ODgxYjI1ZWQxOTliZWY3ZTMzN2EzZTkyZDZjMGUyNDQyNmUwZGI3MTViODNkMTRmNDhhNTEifQ"
         }
       ]
     },
@@ -483,7 +483,7 @@
           "version": "repo-lines-v1:sha256:ef3f5d6d101081a4cce761ed864dc40446607bf039e1caf9fc396045bbc29e95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYTVkZjhjY2RjY2Y0NjhkOTEyYmE5MzIzNTFhYmYxMjYzYzYxN2IwOWQyNjg3MGM4ZDg3NTFiYzE5MWIwODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2ZDY3MzljYmRjOGY5MWYzMGY0ZjZmYTM3YmVkZWNjZmRiYjdmOGIxZDFjNWIwZDM0YmQ0YThkMjAyNDQ2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkOWY2Y2ZkZWFlZDJlYjJhZDBmMWZkNTUwMzVkNjhlNDVmMWM5Y2RkZDc4OTcwYTA5ZjIyYjllMzY2Nzk3NTUifQ"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L683-L704",
+          "resource": "repo://src/sort_roms.rs#L675-L696",
           "version": "repo-lines-v1:sha256:bda514fa99c62ce0657feb1ba125ca09c8289745527fd28ad23588ce00737323:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMWI4N2Y4M2MzZGUyMjg1ZTdkMWZmZTUyNGMyMzQxZThkZDQ1ZjEzYTY2NGE4ZWJiZGZhMjNhN2UyYzQxYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MjM5NGE3NjFkYjRhOTk2NDQ1OGQ2NGJkM2ZjOGVlZDA3MzgwZmU0OTg5ZDRkOGI0YzQ3MTQwM2U1MDc5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0OWNmZGZmNDA3NWRmNGJmMzA5ZjEyZmY0MjI5NDM1ZjU5ZmM3OTU4MDI3OGM3MmZhYTc5OTZhZjE5MjgyZjYifQ"
         }
       ]
@@ -561,6 +561,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-18T21:05:05.320Z"
   }
 }

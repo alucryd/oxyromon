@@ -38,6 +38,8 @@ sources:
     resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-68a9457efd4964d6e3fa17be
+    resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
@@ -76,10 +78,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-18T21:05:05.320Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-18T21:05:05.320Z
 ---
 
 # System Architecture Overview
@@ -233,7 +235,7 @@ a human would answer at a prompt — `-y`/`--yes` for `confirm()` on destructive
 subcommands, `-u`/`--unattended` for ambiguous ROM matches, `--system <name>` to
 skip the system multiselect. Where argv is the wrong shape the host still does not
 get a second implementation: it calls the module's exported helper directly —
-`purge_systems::purge_system` for the GraphQL purge, `download_dats::download_redump_system`
+`purge_systems::purge_system` for the GraphQL purge, `download_dats::download_redump_systems`
 for the MCP `download_dats` tool. A subcommand that grows a prompt that cannot be
 bypassed, or that reads process state outside its three arguments, breaks both
 servers and the test suite at once.

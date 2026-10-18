@@ -44,6 +44,8 @@ sources:
     resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-0e518f793c5021d3e200387b
+    resource: repo://src/download_dats/test_nointro_failures.rs
   - id: openwiki-source-885c8766d237f8340462593b
     resource: repo://src/download_dats/test_nointro.rs
   - id: openwiki-source-dba7f68f124dba00236ec096
@@ -99,7 +101,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-16T12:33:55.258Z
 ---
 
 # Test Harness and Conventions
