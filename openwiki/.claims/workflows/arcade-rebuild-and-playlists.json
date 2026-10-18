@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:976f4f534da3b53a5dc3f0c1ce1ca04ab28e2b3600bcf25ef44a7ae7e61e0610",
+  "pageVersion": "sha256:0637c2186241d2c9777637999355bdf211a3e42ba7af9975db6871fc6f40bac4",
   "claims": [
     {
       "id": "claim_1d69630e40104e7987b6990c779738e8",
@@ -23,7 +23,7 @@
           "version": "repo-lines-v1:sha256:fad10374c1ebbf2ac765ab15776789601203aef4722b31db823b39417009fb89:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYjFiOGNmYmFlZjljNzdlMzUxYzg5ODc4YjhjYzI2ZGNkZDA5ODcxYWNhZDk0YWNlOTZmODlhMDYzOTBlYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzYmIzMTljZDk1NDEzZjJlMzZiOTdhZDZjYjljMWViM2I1NTZhMTQ3NGQ1MDY3YWViZDAzMmI4ZDM0ZjcxOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmYzM0MzE4MjQ3NzlmYjc5MDVhOWU5NGQ0MzE1ZmE0NmJmZWRmZTkwZjU2N2NmOTJiOTUwMTkzMmE0OTM5ZDAifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L68-L79",
+          "resource": "repo://src/rebuild_roms.rs#L72-L83",
           "version": "repo-lines-v1:sha256:1a97840a113f889b20d18d9661a283d03d7bccbec5ca84293552a84ccbca6238:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODJjN2MyNDc2YmE0MzQyNTM1NWJjNTY2YjczOTYxNjY3Y2EzMzIwMmIwMTgzMWE1OTJlOTkwZjAwN2U2ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1NGI2YjczN2E3ZmNkOWQ0MTFmOWY4NzFiYmJlZmEwNjNiOWE4NTJiNzFmMGVkNjA5NTFkZmQwNDc5ODExNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkYjIxYTcxMjVhNTE0ZTBhNzg0Y2YzMjVlNzMxMGNmNjI1ZmMzOTczYjY1MzNiZjUxYmU0NWFiOWE2YjRlOTMifQ"
         }
       ]
@@ -57,11 +57,11 @@
       "statement": "The parent/clone and BIOS graph rebuild relies on is built by DAT import, not by rebuild: create_or_update_games resolves cloneof/romof into games.parent_id and games.bios_id in repeated passes, and create_or_update_roms resolves the Logiqx merge attribute into roms.parent_id by matching size+CRC against the clone's BIOS, its parent, and the parent's BIOS, setting roms.bios when the source is a BIOS rom.",
       "evidence": [
         {
-          "resource": "repo://src/import_dats.rs#L521-L703",
+          "resource": "repo://src/import_dats.rs#L534-L716",
           "version": "repo-lines-v1:sha256:c92c498383398af89019c988d460a25c2d9bb9a6c720355ecddad4fb14a2edcb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMWY2N2E1NmVkODdlYmUyNjM5ZWFlZTVkNzQ1NWUzZGJlYWJmY2RiODc5YmM4NTZkM2ZlYjU0NDBkMDUwNjUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYWMyYmM3NWI3YTFiODdkMGYxZTIyYzBjMjQ1ZmJjOTM2YjZlZGMwMmMyNjY0ODljMTM5YmFjMTYyYTIyMDc3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlY2IwZGU2NDc0ZjQzMDM4YzMwMmFmNDcwODM5MTg3ODNjZmY1MjQ4ODUzOGVkOTI5NTVmYzJlMmQ2MjY2YmRmIn0"
         },
         {
-          "resource": "repo://src/import_dats.rs#L748-L842",
+          "resource": "repo://src/import_dats.rs#L761-L855",
           "version": "repo-lines-v1:sha256:c5fe624c85a2e73fe946085ab612fd0dce81231d69b5bf755046298016e0d53b:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZDVjOTQwZTA0ZTU2ODRmMWVmNTljZWJiMWY3ZWM2NTg2ZTcyNjBlNjY2Y2ZkZDMzNzFjZmNjY2ViODkyNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczOWQ0ODFlYjVkY2IyZGRkZDg4MTljYmIxNjU4N2U2NDg5YjBjZTU1MWI5M2MyYzU1YzA5NjFlZGQ4MTU5MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZTBhM2U2ZTgwYTBiNjBmYjZkZTVmMzA0NTcyYjFhMWRjNGU4NzI3NTJjODc3NTQwMmEzZmU5NDIyMDFkN2EifQ"
         },
         {
@@ -72,19 +72,19 @@
     },
     {
       "id": "claim_b469817742c841a9ae3e69a317fbe05c",
-      "statement": "rebuild-roms only ever operates on arcade systems (prompt_for_systems with arcade_only=true selects find_arcade_systems), resolves the target strategy from -m/--merging or an interactive select, and runs rebuild_system once per selected system; it has no GraphQL mutation, unlike generate-playlists.",
+      "statement": "rebuild-roms only ever operates on arcade systems (prompt_for_systems with arcade_only=true selects find_arcade_systems), warns `No arcade systems found` and stops when there are none, resolves the target strategy from -m/--merging or an interactive select, and runs rebuild_system once per selected system; it has no GraphQL mutation, unlike generate-playlists.",
       "evidence": [
         {
           "resource": "repo://src/mutation.rs#L507-L534",
-          "version": "repo-lines-v1:sha256:4fd5e3071c564dcb074866a471448b2d02b440aa77e501b0893de6d2e24cb1b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMjcwYmUxYTMyZDVhZTA5YWI2MDY4YzJkOGRlZTBmYmI0Y2E0YTdmM2ZmNjBjNGNhZWI3NjJhNjhmZWY3ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ODU4MjU5NDc5YmI1ZmYzY2Y0YjE2MDhjNTA0MzYzNzM5NThhMWQ3NWY2NDZlMDZiNGUyOWQ5MzVkNGMzN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2NzIzZTU5OTU4NDdmYTUyZmRiY2VlZjQ4OTAxODUzNjFlOGUwODA5N2UwMWUzNGExMjViZDI5ZjU1YWQyYWYifQ"
+          "version": "repo-lines-v1:sha256:9ccb04e11bb13de6c3b45ae197aa9c1897e1ca6968ee6eb7dab89bf6c49e085b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMGQ2YjQwZGZlYTQyNmVhNWZiZDE3OWRhNmZlMDBkYjQ3ZjcyYzcxMDczZDU3YzMzYjhlNDA5ODBhOGJhZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMjZhZjdhOGMzM2RlMGUzNGM5NmFkMTdiZDhmODE3MjkxYTdmZDhlMDExNmQwZTgzOGEwZWE4ODBhZDNjMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMjYwYzI2N2ZjYmYzNTNmMDcxMTkwZDJkYjBiOTU5OTQ0ZjdjYmQ4YWY5ZWVhNjJlNDFmMzljN2ZmOGUwNzQifQ"
         },
         {
           "resource": "repo://src/prompt.rs#L9-L46",
           "version": "repo-lines-v1:sha256:fa7d94bf59a0ed9bf003ad0a9d4b2be48a780b9d69681192725c6ff5ad17769c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNTdiYTNjM2JkYmM2OWMwOGFiNjNmZTg2NTY2NjJjMGJjNDhmZWY4ODUzYmNhMWI0YmZjZDU3ZWJhMmU1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZDcwZWRlYWI0ZjYxOTVlZWQwMWY3MDE5MjgzYzNlY2EyYjdhZjhiYTIzNGIxYmY3NGQ5YTQ5ODFlMGZkNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NThhODY2ZjcxZjNkZjFhNTBkNzBkYWUyMzNjZDg1ODNjYTFiOGQ5ZTc0NzMzOWE4MjRhZDkwMmQwODU4MDEifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L60-L95",
-          "version": "repo-lines-v1:sha256:fcad1030f02d33c53483efe918293ead2c2e54516710652f8392c5e85a79ecf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZThkMDg4NzU1YmI5OThmZWNiZDJiODg3MGUyNWU2Nzg0ZGZhN2ZiMGY1MjAzMDYzNWMxNDU2MGNiNjBkNjYifQ"
+          "resource": "repo://src/rebuild_roms.rs#L60-L99",
+          "version": "repo-lines-v1:sha256:cb338a2a410e6936ce04d6993687cf7d26cfbc7096a65a9b0b546e82eb4cb1bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZThkMDg4NzU1YmI5OThmZWNiZDJiODg3MGUyNWU2Nzg0ZGZhN2ZiMGY1MjAzMDYzNWMxNDU2MGNiNjBkNjYifQ"
         }
       ]
     },
@@ -101,7 +101,7 @@
           "version": "repo-lines-v1:sha256:cd755b631e7b576f57db0246fd7c4a8b983042600b7a22d4ccde101ab3fe7de0:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MTBjMzExMGY4M2YzYTY5NjhkYTBlOTk3NDI2ODEzZjU0Yzg5MTQwMjkzNDJlNDNjMmRjYjMwMzI1NmE3YzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMjJmYzliNjA2M2I3YmE3MWQxN2UyY2RlNzAzODdhMTM2MTUxZDk0MzJhM2FlNjZmOTgwZjhhZGE2OTg3ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3YjA3NGEzNzYyYzE1MDU1MzllMDQyM2RkM2VmODZhMzAwMzU4NjhiM2QyNmQ5M2ZmYTAzYThiMWQ2NmRkMTMifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L104-L193",
+          "resource": "repo://src/rebuild_roms.rs#L108-L197",
           "version": "repo-lines-v1:sha256:72abd50f821b6f1e8af3fdd7d7e61203e94da95aa2e374d18258ee484a6ed694:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNjMzNGRmMDE2ZTY0NzQ1ZmRkM2FkNTk5MzlmZGJhMTFjMGNhYTAxYmIyZjc2ZmQ3NDI4YzM1MTIwZWM3OTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MmNkYzUwN2EyNDM2MTNhNzY3MDc4YmMxMDE3NzRiODdmNjFlMzQ2NmNiYWQxODFkMzJhYTUxNmZjOGVkMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTViZDZiNDdlODFjYmI2MmQ2MDhjYWU4NDc3OTgzYmYxZDUwMjlhNTc2NzAyYTVhZWEyOWMyNGM3ZWUyYWQifQ"
         }
       ]
@@ -111,7 +111,7 @@
       "statement": "The rebuild migration direction is chosen by a two-branch test on (stored, target): Split/NonMerged -> NonMerged/FullNonMerged expands, NonMerged/FullNonMerged -> Split/NonMerged trims, any other pair only re-records systems.merging; both branches iterate find_full_games_by_system_id so Partial games are never expanded or trimmed, and --force bypasses the unchanged-strategy early return.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L190-L225",
+          "resource": "repo://src/rebuild_roms.rs#L194-L229",
           "version": "repo-lines-v1:sha256:a246e621c4cbe2ec2f71ca2a00a9ae976bf55c1a339f65ef87165f6cfd5d8050:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjEwN2EyZGZlOGUxZTM5ZDY5MzI5MjAxMzFhNDAzMWFiNDMwNTAwYjJhMTA5OGY5ZjIwYjM0YTI2NTk5OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZGZlMjAzYjA3ZWU5MDljNzM1M2VhNTgxZjEwYzA5NzQ5ZDI1YzJlYjdiZDZhMGMwNDI1NWY2MTJhMzQwM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMTA5YzM0ODQ5Y2VkODI5ZGE3NTllOGI5MWFkNTk3NGJhMzQ3MjcyMDc0NWUxMWMzODQyYzNhZDAzNGRjNmUifQ"
         }
       ]
@@ -125,7 +125,7 @@
           "version": "repo-lines-v1:sha256:4bc24d0bf9ce7833a6e1ecfc4b4770aa93e0c24a06f4b1dffae4cefcff10023d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNTA2OGY5ZThkYzI1NzJlMzdiNTUyNTZhNmUwMjY3MTYxN2I2NWM3MThhMmNhYTg5YzNhMTc1ZDVmM2I0ZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYmQzNjYwNmJlMWZhOWM0MWViNWIwMTgwZGJkMGQ0MDFmM2FjZTIzODQ5NjQxYjQxNGYzOGIwYjA4ZDk0OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNjk4NTRmMzA1MzJmOTZlNWQ4ZTM5MTliNDI3ZGE2MWU1ZTMyMTNjZmNjMzVjOTUzNGNlYmJjOWVlNzc0N2EifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L252-L261",
+          "resource": "repo://src/rebuild_roms.rs#L256-L265",
           "version": "repo-lines-v1:sha256:2cf5fa529193c05ebbb1bad87c49cee69187d593738875bd832e2acd452d5859:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNzVkZmVhZDA2NGUxNzAwMzk4MTI5YjUzMmJlOTFmZGYyZGMwYjE2Y2JhNTc1MDYxZDdkNmM0OGZmOWM1MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMDdmZWI2ZjBjOTIwNTU1NzdkNTk1Y2M2YTYwMTQ0ZTVlMzJiYjBlZWE1MmUxYzQ4NjA0NTYyYjIwNTQ2NDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NGQ3MmMyYTRjZjVlYmUyZDhlODdmMTk0NTcyYzdlN2YyMjVkOGVlMjFmYjg3ZWQyOGFiNWNjMjc1NTE5MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNGE4MTFkYmQxYWFlMzIxMzJlZmZjMmU1ZmY4NDk1MGQyM2E5ZjcwMjVlYzI5MDkzNmUxYmFjZTgzMjFkMDYifQ"
         }
       ]
@@ -139,7 +139,7 @@
           "version": "repo-lines-v1:sha256:1ed0546a0d53a998de85e70ffe6904efa499e406cf1d1d7bbc62b9b953b6ecda:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyOTljZjNlZTIzMzBlMWI2OWNjYWZlZDZiODE1Mzg1OGZjYjFiM2I4OTJiNmY2MjM2M2RiMzFhNjA3N2QwYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ZjBiMjdhNmFhNjFhNDYxZDY2NmIxNDg0OTE2Zjg2ZjEwZTY4YWQ0ZWMyYzk1NWI1ZDUyYmU0MmRkZTRiNzIifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L336-L412",
+          "resource": "repo://src/rebuild_roms.rs#L340-L416",
           "version": "repo-lines-v1:sha256:833de74e60914bf294df1d70cad64c23f4e3ee54ffc1cbdc68bc2ec1be304e4f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNjEzZjZiOTM3YWI0MDc0ZGJkNGY2OTEyMjQ0OGFiNDA1OTU1ZDFmYTg4NjhjMmYxMTMwNzE0MDYzMWU0OGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OTEyY2YzY2JiYTY2YTJlOTZiYWQyMTBiNGIzMGYzNzYyMjMyNjc3NGIzZDg5Nzc3ZWM1ZDgzM2FhZWM2OTgifQ"
         },
         {
@@ -153,7 +153,7 @@
       "statement": "If a merged rom's parent has no file, expand_game prints Missing \"<rom>\" and returns Ok(()) from inside the open transaction without committing, so that game's partial expansion is rolled back while the rebuild continues with the next game rather than failing.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L259-L297",
+          "resource": "repo://src/rebuild_roms.rs#L263-L301",
           "version": "repo-lines-v1:sha256:787febc1eaebf1b356b0774c9fcc66edc657252c73be05cda3c22174f48458b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMjYxNGJkZWY4NmNmNjhhZGIwNzFjYzExYTU5MmFmYjc4MGE2N2RlM2I3ZjFlMzIzZjBlZWRkZThhZTk1ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5NTk1NDA2ZDJmM2QzMWI2NzFmMGE2MzM2OWMyMzUwMTBmNTAyNTI0NGRiM2JhODk3N2M5YWM0MzVlYjM2MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjYTdhY2I5MDgzMDVhZDNlZWU4NDY5NzE5M2ViOGRiOTZhM2FkNGE4ZWMxYmFkYWI0MTdiZDU2OGVkYzcwNzkifQ"
         }
       ]
@@ -171,7 +171,7 @@
           "version": "repo-lines-v1:sha256:757d03fbbb66bd6619395b08d29f3aa293dfa06040725ca0d9232575a057481d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxOTU1MDUyNjg3YTg4ZTMwY2ZkMzNiZTk2Yjk0ZTkyNDU0YjYyNzhlOWI3NGNmODNlN2VjNDlkZmNjYjI4NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYmQzNjYwNmJlMWZhOWM0MWViNWIwMTgwZGJkMGQ0MDFmM2FjZTIzODQ5NjQxYjQxNGYzOGIwYjA4ZDk0OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNjdiZjBmYmExNTg2NDNkYzQ1MDNmMzdjYjEwNTcxMzVlZTM0ZjJmN2Y3MDEyMTk4ZGU5NDVjODc0M2Y2YTQifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L299-L334",
+          "resource": "repo://src/rebuild_roms.rs#L303-L338",
           "version": "repo-lines-v1:sha256:dc0c06e96209cfa5a3ed41d2929be70cdade93f85f1cccad1a2e6b48b647c3bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2OGYwYzk5MTA5NGViODc4MmEyZWI4NjFjZTdjNjM2OGFkYmMwNjEwNTkxZDc0ZDNjMTZjMDI3NmI4NWVhMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4YTljOTU3NjNiNGY4ZmJmNDA4NGJkMTk0YzBjNGQ3NzNkMzUwNzY2NDZmMDgzM2U4OTNjYjQ3MjE5ZTI3MzAifQ"
         }
       ]
@@ -181,7 +181,7 @@
       "statement": "The merging transition matrix is pinned by five in-module tests under src/rebuild_roms (test_nothing_to_do, test_split_to_non_merged, test_split_to_full_non_merged, test_non_merged_to_split, test_full_non_merged_to_non_merged), all driven by the MAME Rebuild fixture through the real subcommand matches.",
       "evidence": [
         {
-          "resource": "repo://src/rebuild_roms.rs#L442-L451",
+          "resource": "repo://src/rebuild_roms.rs#L446-L455",
           "version": "repo-lines-v1:sha256:c0fe03324d2e109b18db7edeb9e580527ad6653a219647f7f923f8cade8a9a3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YjJlM2FhMjJjOWEyZjQ4N2ZlZWNjMTY0NDg2NDdmNjcxYzI5MmIwNGQ0MzQ3YTE1ODcwMGMwODIwNzgyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -207,7 +207,7 @@
           "version": "repo-lines-v1:sha256:106cb5941914cbe967d7c7058e4049806684683199d7cf291818ca1dd7afebb0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZDRjMWQxMmM0Njg3YTVkZDZiZWYxYTdhNzBlYTFhYjgwZWM2NDQyNDhjOWM4MTNjNGNiNzRkYjVmMzc5YjgifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L507-L534",
+          "resource": "repo://src/mutation.rs#L512-L539",
           "version": "repo-lines-v1:sha256:4fd5e3071c564dcb074866a471448b2d02b440aa77e501b0893de6d2e24cb1b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMjcwYmUxYTMyZDVhZTA5YWI2MDY4YzJkOGRlZTBmYmI0Y2E0YTdmM2ZmNjBjNGNhZWI3NjJhNjhmZWY3ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ODU4MjU5NDc5YmI1ZmYzY2Y0YjE2MDhjNTA0MzYzNzM5NThhMWQ3NWY2NDZlMDZiNGUyOWQ5MzVkNGMzN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2NzIzZTU5OTU4NDdmYTUyZmRiY2VlZjQ4OTAxODUzNjFlOGUwODA5N2UwMWUzNGExMjViZDI5ZjU1YWQyYWYifQ"
         }
       ]
@@ -375,7 +375,7 @@
           "version": "repo-lines-v1:sha256:ebc590e230012569e4e486fab1d486347e8545b5df123a5486e98d143d2caf31:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQzM2U3NTg2YjM5YTI5YzZhYTU3NTE2NGYxYTllOTE3YmVhMGZhNDdmMDNjOWI2MjdkMTRhZTRkZjVjZmM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiMzViYTdmZGM5MmQ0ODY0YTZiZDU0OWYxNWFlZGU2MGEzNWRlZDcwOTY4OWU5Yjc2ZTk3M2I5MzhhNDE3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmQ5ZjZjZmRlYWVkMmViMmFkMGYxZmQ1NTAzNWQ2OGU0NWYxYzljZGRkNzg5NzBhMDlmMjJiOWUzNjY3OTc1NSJ9"
         },
         {
-          "resource": "repo://src/sort_roms.rs#L705-L713",
+          "resource": "repo://src/sort_roms.rs#L697-L705",
           "version": "repo-lines-v1:sha256:84d14c33895d382b97605a0ccbd7a7b654a057b0a5fb7fd37a21885ad1b0b58e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI5NDg1ZDg5YWNmYzUxMTBhYjliNDVjOTU0N2MxZWQxYjVkYWJmMmJiNTcxOTUyZDliYmRiZTZiMjA2YWU1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ5YzE0NzY4MTA2YmM5OWIxNDlhNzBlMmQ4YTZiYzljMWM3OGRkNmYzYjJiOTFiMTI3YjA5NTgyZjc2ODhhOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ3YjA4M2I3MzE2NjU0ODU3YjM1YjNkZTEzYTYwZmE0NDljYjMxYWVjOTlhZGEwNjY0NThlMzFlOTU5NDg2NCJ9"
         },
         {
@@ -407,7 +407,7 @@
           "version": "repo-lines-v1:sha256:bc85211f5bc01374016adb8f483874ae85ca0b4303818cedf2cff573af7694d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzk0YTliODRjYTNkZGJiNGRkYTJhZDE1NzY1YzY5NjU0NDk1MjAyZDEzMWI2ZGU5NzZkNDQxZGNhOTNiMzhjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAwZTk4OGE2NTI4NTZmYjhjZGEwOWZmNDFlNDA3OTJhNTZiMGIxYTFkMzBkYmJkODg2MDBjOWM5YjA3ZGU2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDJlMWJmZTdhYjlmNGVlOWJmYzM4MDkyNzZlZWUwMjFhNWQ1NDRjYjIzZTVmODk5NmQ2ODYxMjM5NWM5ZjIzZSJ9"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L236-L251",
+          "resource": "repo://src/rebuild_roms.rs#L240-L255",
           "version": "repo-lines-v1:sha256:f91ded0d079cf12a1ddc7738988198de34401761918e250c2ba38a0d331d8923:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiMGZjZWI2YzJlYTA4MzI5YjRmZDljNzkyZGM0YTRjNDgzNGI3ZTYzZTU5M2JmNjhjZDM1NWQ0ZTRiZjBhYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMjU5MTBiODgxMThkYjRlYTlkN2NiYzA2YTA3YzY0YmNhMTVlODZkNWZkMmFiMmZjOTI2Y2E3OWNlNGViMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0ODhjMGQwM2QyYmRhZjE2NGU3YTMwZDQwMDQ2NzIxMzY5MGY5YTdjY2Q2YjA2MWU3YzEwZmNkMzc2ZDc4MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1MjA3MzJhNWYwMTFjNzRkMTE4Njc5NGFjYzhhNDU5ZjI4MDEwMDQwM2E2YzVhYTE0Mjg5YzdhNDc1NzNiNDAifQ"
         }
       ]
@@ -431,11 +431,11 @@
       "statement": "generate-playlists is not re-run automatically after format conversion: sort-roms relocates playlists with the games, but after convert-roms the command must be run again to reflect new filenames, and a rebuild only touches roms of games that are Full under the currently stored strategy, so incomplete BIOS sets leave clones Partial until a second rebuild.",
       "evidence": [
         {
-          "resource": "repo://README.md#L663-L675",
+          "resource": "repo://README.md#L670-L682",
           "version": "repo-lines-v1:sha256:2726964061b5d2a42471730bb2ffa6aa92e12cefc74abd8ecf8066888d3ede67:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDQ2ZGU2NWU4MTc3NzQyOWU4MmQ5MjExNjkzNTk3MTI3MjRmMzQ3ZjRlNTA2ZjYzNGE1YzMyYzE3MmYwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMzkxMzliMjBhZjdlN2FlZDU3YTY4OTMyMWFkZjNmMTQ3NzY0M2EzMmExNjhjNWVmM2UwYmNlOTE2NmJlNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5MjkwZjBkYmZhNGUxNWViYTBmYmUyYjg5ZDA5ZDg4ZmFhMDM0NmQ0NjQ3ZTc0MjQzMmQ3NTBhMTUzOTU1ZjEifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L195-L225",
+          "resource": "repo://src/rebuild_roms.rs#L199-L229",
           "version": "repo-lines-v1:sha256:d396303db71d0198e28777d99d42b81e5ddf58a3dee36f50c8d43de386b619c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWNkNzBhYTk2YTJmYTBiOWFhZDU0MjZkYmJmNGRlZjcwMGEzYTBhZTZiNmMzMWI0Y2I4Zjg3YTIyY2U3OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNjEzOTdhOWM1ZWZlMjg4ZWNiZjhmYWE0YTAyNDRmNzQ3ZDgwODZhYmVlZWE4NjBmYzgyNDYyZmRkODNlNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMTA5YzM0ODQ5Y2VkODI5ZGE3NTllOGI5MWFkNTk3NGJhMzQ3MjcyMDc0NWUxMWMzODQyYzNhZDAzNGRjNmUifQ"
         }
       ]
@@ -477,10 +477,28 @@
           "version": "repo-lines-v1:sha256:83d947c84cf53a6597e41673703afc2bb3529f2aa1fd03372c03703d594f1e6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkMTBlZTZiOWFlYjNhZTU1ZmYyMWFiZjUzMjIzMDdlNmIzMjUyMDExY2UxYzIxMTAyNTRhNTQ4ZDM1MGNjYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjE4MjNmNzhlMzU4ZWRkYjdkODczNzg0Y2NhMDFmZWM2MTQ4NTE4MDIyOWZiMjFlMTg2ZWU4ZTQyMzE3M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NzM4MDFhOTY4NTQzYjUyYjgwM2Q3M2Q1MDU3MzgyOTU3NzYyZmY0YjdlZWY4Njk1MTJlZDA4Njk1NzdlYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNjY1YmRhNjdkYWEwNDk2N2E4ZmQwZTk2MTJiYzFlZDRjYzNiMTNmNWViNDM3NzllOWM3MmJlZDcyY2VlMzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7cb7f3830d834d96853f1ab595a5b83a",
+      "statement": "A system is arcade when its DAT lists <machine> entries or when import-dats was given -a/--arcade; a DAT that lists <game> entries, such as FBNeo's, imports as a console system without the flag, so rebuild-roms never offers it.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_dats.rs#L104-L111",
+          "version": "repo-lines-v1:sha256:c259cd8aa80602967d0d15ba5a8ac2c177e5118eb6479538a25b12f7231ea2f2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTBhYzJkMTRlYzQ4YjE2NDJiN2NlZTc3MmU1NGVjZTJjYjM3YjQ3M2Q0Y2EwZTk1YzhhNTg2YWI2NGNlMmQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUzZWQzYTBlY2QxMmEwZGVjZjg4M2JiOTFkZDAzZmFkOTJkMjU5YjRmYzk2ZjNkMmRiNGI2NGJhMjYzZmM1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMyOTU5OWI3OWJmYTg5ZmVlYzJkNTMyZWEzNzU4Y2VhY2U3YzExMTQxZmQ2NzY2ZTVkMjUzYjFmNzgwMGM3NiJ9"
+        },
+        {
+          "resource": "repo://src/import_dats.rs#L319-L362",
+          "version": "repo-lines-v1:sha256:05a609700da6c7e4e3299255bab868050557b2adb5843eaf709561bba0924ab0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4OTMwYzI5OWI4ZTEyYzZmMjNjZTE1OGQyMDFkMmU4NGUyMWI1MDJiZWZkOTE3ZDBiNDUxN2VjMzFhY2ZkYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYTNjOGYyNWFlMDAyOTZmMmI0NjY1NDJmMTBiNGVhZDk1OGEzMDViMmRlMjg0OGM5OWZlYTdiNTZlMDA2MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMjJmYzliNjA2M2I3YmE3MWQxN2UyY2RlNzAzODdhMTM2MTUxZDk0MzJhM2FlNjZmOTgwZjhhZGE2OTg3ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NjA2NjU3YTJjNTViZDhmMzA0ZjNkOTJiYmI2YmU5M2U5ZjkxYjg3N2E5Y2I3MGMwY2MzMDhkMjI0M2U2NmEifQ"
+        },
+        {
+          "resource": "repo://src/import_dats/test_dat_arcade.rs#L30-L50",
+          "version": "repo-lines-v1:sha256:9ba523e7264d7b3cb7b48da0312d8ebc13627bc16581e6516c1efd411c57fdb1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YTc5NTljZDg5MmM4OGQ2MmMwZWE1NjI3YjViODIyNjcwZThiOTk3YjQ4OTA0ZDliMmE5M2ZhNTViNmYyOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTMzMDRhNjRkYzI5MGI1MWRkOTYwZjU2NjNlNWFlNDczMjBiYTdjNzEwNWU4ODViMzI0NWMyOTU1NDE0YjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-18T21:36:28.347Z"
   }
 }

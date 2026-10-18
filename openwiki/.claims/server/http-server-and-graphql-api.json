@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:131a0e82fada8855f2dd761a5c5e1bf058cbc8aec42c23924312f3cdda0af280",
+  "pageVersion": "sha256:a8f2bd5f2490fbf68e3413c7f1b7da0010a6393d7040893d326a9432b5097340",
   "claims": [
     {
       "id": "claim_fd03ca433bd84def895a64fd9e443d5f",
@@ -272,7 +272,7 @@
     },
     {
       "id": "claim_bfc2e5edd3374cb6a6d2cb75f414939e",
-      "statement": "All four upload endpoints accept multipart, skip unknown fields with a debug log instead of erroring, and return 202 Accepted as soon as the work is queued — outcome and progress arrive only over SSE. They differ in landing and pre-checks: `/dats` buffers bytes and writes a temp dir inside the task, `/roms` takes `file` or `url` plus `system`/`unattended`, `/patches` and `/irds` stream to a temp dir and resolve the target ROM/system first so a bad id is a 400 rather than a doomed background task.",
+      "statement": "All four upload endpoints accept multipart, skip unknown fields with a debug log instead of erroring, and return 202 Accepted as soon as the work is queued — outcome and progress arrive only over SSE. They differ in landing and pre-checks: `/dats` buffers bytes, takes `update` and `arcade` flags and writes a temp dir inside the task, `/roms` takes `file` or `url` plus `system`/`unattended`, `/patches` and `/irds` stream to a temp dir and resolve the target ROM/system first so a bad id is a 400 rather than a doomed background task.",
       "evidence": [
         {
           "resource": "repo://src/server.rs#L247-L385",
@@ -287,8 +287,8 @@
           "version": "repo-lines-v1:sha256:c4ac1dc408f8185fc62cb4bf97b86cdae3e57a365d1a31614db78f6b588435a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhN2ExNTI1YzAwZDMwZTBiMTUxYWU0YzBlN2JkZDMxZjE1ZGRiNjk1MDYxZjY3MDRkYjFhZmZiYjA0NDNhODdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMTJhZTg4ZTRiZjNkMzAyMzAwZGM3Y2JjYzg0MGE5ZDAzODE5NjA3NzIwZDYzNDg4ODQ4ZjQ2MmUxNTcyMTYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0Y2Q3OTkzZDI0YjdjMmM0N2NlMmZlNmY5NGE3YzY2MGIwYjlhYzk4MjUxZWIyZTM2MTc1MmIxYTVkNDQxYWY1In0"
         },
         {
-          "resource": "repo://src/server.rs#L872-L1046",
-          "version": "repo-lines-v1:sha256:17e357485d7788a07bc1f2c80a446408aef4d51c4a0d39e715356b3254c645de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYWNiZDhkYmRlNmU4NDI3NDJlMjgxMGYwMGU3YWYzNjQwMGFjYTRhMGM0ZDdhMGIxNzE2MTZhOWExZDI2MWEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMTJhZTg4ZTRiZjNkMzAyMzAwZGM3Y2JjYzg0MGE5ZDAzODE5NjA3NzIwZDYzNDg4ODQ4ZjQ2MmUxNTcyMTYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMDc2YTc5ZjliNzk0Y2U0YzYwOTljMzkyNGZhYjNlN2MzNDNiOGE0ZDgyNWVkZGNmZTVjNDdiZDEyN2Y5N2FiIn0"
+          "resource": "repo://src/server.rs#L872-L1052",
+          "version": "repo-lines-v1:sha256:9d4511f4298e0005726592645d928cdd65720a751d59fde7e6bd81dc32da466d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYWNiZDhkYmRlNmU4NDI3NDJlMjgxMGYwMGU3YWYzNjQwMGFjYTRhMGM0ZDdhMGIxNzE2MTZhOWExZDI2MWEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMTJhZTg4ZTRiZjNkMzAyMzAwZGM3Y2JjYzg0MGE5ZDAzODE5NjA3NzIwZDYzNDg4ODQ4ZjQ2MmUxNTcyMTYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMDc2YTc5ZjliNzk0Y2U0YzYwOTljMzkyNGZhYjNlN2MzNDNiOGE0ZDgyNWVkZGNmZTVjNDdiZDEyN2Y5N2FiIn0"
         },
         {
           "resource": "repo://src/server/test_uploads.rs#L85-L117",
@@ -369,7 +369,7 @@
       "statement": "`/events` forwards `SseMessage { event, data }` from the broadcast channel with keep-alives: a lagging subscriber is logged and skipped rather than disconnected, a closed channel or a cancelled token ends the stream, and `sse_send` silently drops messages when there is no subscriber or the channel is full. Progress bars are not bridged — only lifecycle events and their `message` cross SSE.",
       "evidence": [
         {
-          "resource": "repo://src/server.rs#L1066-L1099",
+          "resource": "repo://src/server.rs#L1072-L1105",
           "version": "repo-lines-v1:sha256:cb3d4b89f950d88d58a480c4289f051b7addb68199798e39bf29c6be2689f271:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhOWMxNmFjNTNjOTBjMTc3MTkzZmM0ZWVjY2U4N2QxMDVkZmJjZWM1ZmI4ZWI2NzdkMzk3MjZjYmZiYTljYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMzg0MDQ2Mjg4ZTc3ZDBjMDk2NWU4YTAwY2ExZWIxYmJhOTM4MGVlYzFlNmZiNTAzMDZmMDhjNGExMmQyZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1YTIzMmUwY2Y1NTI2NmIxZGRjMDRlODFkN2U2OTRhMTE3ZTQwZDEzMWRlMTFjMzc4MzA3ZTM1ODBlZmI3MjcifQ"
         },
         {
@@ -541,6 +541,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-18T21:05:05.320Z"
+    "at": "2026-10-18T21:36:28.347Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4d88d51202c08296afb8a116393666fef860d3f3f02af9d5914fc3edd2028c4d",
+  "pageVersion": "sha256:cc03a6b26fb1a7f55dc376202b5e9d9a770da4d31c8e75a722c2e0ad3f327866",
   "claims": [
     {
       "id": "claim_2916724381064a98beaccce1a88c3633",
@@ -361,8 +361,8 @@
       "statement": "Multipart uploads bypass graphql() entirely, POSTing web_sys::FormData to /dats, /roms, /patches and /irds; the response only reports whether the handover succeeded because progress arrives over SSE. On a non-2xx response every dialog keeps itself open with the file still selected for retry, and only a success clears the input and closes. ImportRomModal accepts a server-fetched URL instead of a file and treats the two as mutually exclusive.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/components/import_dat_modal.rs#L22-L57",
-          "version": "repo-lines-v1:sha256:9744ef36ca586f2788db16943b10c5309bcbf8711cceb1518f11a6e066b63185:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGRlZmFlOTIyMzJiMDQxYzJmMmQ1NjcxY2Y4M2U3NWQ3NmM2ODAzYWVhODEwYTE0YTExMmRiNjRjZjFiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNGMzODY1ZTQ2ZDI1NmRhNjQ5ZGE0ZDFhYWJiNDRhNWI5ZWFiNmY5OTM3MDZiMDVlN2VlOThiYzJhNTQwNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNDRjMDg3MTI1YTVlMDNhMmE3NGRkN2JkYjRmZDg5OWY5ZTRkOGYxZDRhZDc4YTZiN2VmYTk4NDExZmEyOTMifQ"
+          "resource": "repo://frontend/src/components/import_dat_modal.rs#L23-L60",
+          "version": "repo-lines-v1:sha256:04e2f4ceb5a9875e64c3eab025b358c7e1a9a770bfde9f90c23e3e1836699574:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MGRlZmFlOTIyMzJiMDQxYzJmMmQ1NjcxY2Y4M2U3NWQ3NmM2ODAzYWVhODEwYTE0YTExMmRiNjRjZjFiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNGMzODY1ZTQ2ZDI1NmRhNjQ5ZGE0ZDFhYWJiNDRhNWI5ZWFiNmY5OTM3MDZiMDVlN2VlOThiYzJhNTQwNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxNDRjMDg3MTI1YTVlMDNhMmE3NGRkN2JkYjRmZDg5OWY5ZTRkOGYxZDRhZDc4YTZiN2VmYTk4NDExZmEyOTMifQ"
         },
         {
           "resource": "repo://frontend/src/components/import_ird_modal.rs#L38-L60",
@@ -663,7 +663,7 @@
       "statement": "Row colours come from a small numeric vocabulary shared with the database: system_color/game_color/rom_color map completion 2/1/0 to complete/incomplete/wanted, sorting == 2 to ignored (overriding completion) and sorting == 1 to the bold row-elected 1G1R pick, while a ROM is judged by romfile presence and its ignored flag. The same four meanings are what the navbar filter toggles and GameFilter::keep implement, with nothing enforcing that they move together.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/components/navbar.rs#L122-L159",
+          "resource": "repo://frontend/src/components/navbar.rs#L117-L154",
           "version": "repo-lines-v1:sha256:c9070ba3cd150b582676d33c3d6f0708ab8cdfda97dea87844c38542cd806f68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOWIyYzIyOTI2NjYwZWVkYmRjNDFlNzdjNmI2ZTdiM2NmM2U2YmM2NTViYThlYTgzMmYxMWIyNTAzNWU4ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiY2UwYTEwODc0MjUxY2ExNzk0MDA5M2M2ZDFjNTk4N2NlMzQwZTY0NGM5MTExNzdhYjliMzg1OGNkY2Q0MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTE0MDc5OTQwNTUxZjFmMzkwNzEzMThhZGFiZmI3OTE1OWE0ZjU3ZmE2YTdmYmExMmEzZDQ0MTRiZTAyZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMjRmZmFiNDk5ZGEyYjk5MTllODUzNGU4ZTU2MGIxY2NjMDQwNWEwZjg4ZjBmNzA1YWY3MTZhNmJjZTAwMDkifQ"
         },
         {
@@ -777,10 +777,24 @@
           "version": "repo-lines-v1:sha256:96ebf4bc036347fb6d3ab34cdf86693aa6e83a77e42d17e6e29370a5196b0a4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NWM3YTg1ZmJkNDQwOWY4NjFiYzY2OTIzNWUxOWFhZjhmNGRlY2NiYjExNDk2MDVmYmYwYTNmMTJjZDBiYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MmFmMWFjMDU1MjU1M2VhOWNlNjhlZmM5MTc3Y2RkZWRlM2E5ZDZkM2IwNTFjODJiYjY2MTc5ZGVmMTUxMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MzQ5YmQwZjY4MjMxZDViMjQxZTczNGYyMThhY2NiNDRmNjM4OTA5OGJmZTIzYzMwODRmZmYzYjNhN2UwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_65873c0f2e584f13b52c57c492a77c32",
+      "statement": "ImportDatModal sends its Update only and Arcade switches with the uploaded file as the `update` and `arcade` multipart fields, which upload_dat reads and passes to process_dat_upload.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/src/components/import_dat_modal.rs#L15-L36",
+          "version": "repo-lines-v1:sha256:0f1dc50e2fad70b52697bdcf931c46eed9b891f78ebd36339eceadf8ad34f16f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljYWY1ZGZjMTk1NWY3MTdhYjU4NDlhMmM3NzMyNWJkMDQ4MTM4N2U2NTQxZDdlYWVlZjkxODRiNGZmYThkOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhM2ZmODhlNWRmZjdlMDUxZjkwODg1YjI3NGNjY2FjM2I0NzczNjU0Y2ZkYWZjNTMxZDJiZmYyZWE0NDgxZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhOTJlZmMyZTRkODc0NGUyNmI3MzgxMGZhMjZlYmEzZjNlMWI0MmU4NmQyMjY3OWY0ZTEwYWJkMGEzMGM2NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNDYyMGZlMmNmY2Y2OTk0YTcwMmUyMzZlODAyYWYyN2Q2ZTE0YmFhNTg2MzJmNmZjZTNmODEzYzc1OTcwYzMifQ"
+        },
+        {
+          "resource": "repo://src/server.rs#L872-L1006",
+          "version": "repo-lines-v1:sha256:b9c11e13903d038c2efc0061e230d8d52a0bacefa7d7f2d5baeff4ae8435cdf2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYWNiZDhkYmRlNmU4NDI3NDJlMjgxMGYwMGU3YWYzNjQwMGFjYTRhMGM0ZDdhMGIxNzE2MTZhOWExZDI2MWEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyZTNkZGFmYWEwOTc1YTcyNjBmZTkzY2UxMzgzYjc1Zjk4Y2EzMjBmYWNhMDA1MGVmNDY5NjI4ZmEyY2RkNjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMTJhZTg4ZTRiZjNkMzAyMzAwZGM3Y2JjYzg0MGE5ZDAzODE5NjA3NzIwZDYzNDg4ODQ4ZjQ2MmUxNTcyMTYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiNzAwMDIzMWQ3Y2Y1YjMwYTc2YzFhMTQ0MTA0YTg4ZTNjMDQxN2NkOTRkZGZiMWFiOTY4ZTYzZDUxMDY3NzUzIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-18T21:36:28.347Z"
   }
 }
