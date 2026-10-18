@@ -64,6 +64,10 @@ pub async fn main(
 ) -> Result<()> {
     let systems =
         prompt_for_systems(connection, None, true, false, matches.get_flag("ALL")).await?;
+    if systems.is_empty() {
+        print_warning(progress_bar, "No arcade systems found");
+        return Ok(());
+    }
 
     let merging = match matches.get_one::<String>("MERGING").map(String::as_str) {
         Some("SPLIT") => Merging::Split,

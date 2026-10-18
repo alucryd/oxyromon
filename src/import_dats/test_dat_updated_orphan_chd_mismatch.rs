@@ -34,6 +34,7 @@ async fn test() {
         None,
         None,
         false,
+        false,
     )
     .await
     .unwrap();
@@ -95,6 +96,7 @@ async fn test() {
         &detector_xml,
         None,
         None,
+        false,
         false,
     )
     .await

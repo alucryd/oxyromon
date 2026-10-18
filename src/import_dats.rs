@@ -100,6 +100,14 @@ pub fn subcommand() -> Command {
                 .num_args(1)
                 .conflicts_with("UPDATE"),
         )
+        .arg(
+            Arg::new("ARCADE")
+                .short('a')
+                .long("arcade")
+                .help("Import as arcade systems, for DATs that list games instead of machines")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
 }
 
 pub async fn main(
@@ -226,6 +234,7 @@ pub async fn main(
                 custom_name,
                 custom_extension,
                 matches.get_flag("FORCE"),
+                matches.get_flag("ARCADE"),
             )
             .await?;
         }
@@ -306,6 +315,7 @@ pub async fn parse_dat<P: AsRef<Path>>(
     Ok((datfile_xml, detector_xml))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn import_dat(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -314,6 +324,7 @@ pub async fn import_dat(
     custom_name: Option<&String>,
     custom_extension: Option<&String>,
     force: bool,
+    arcade: bool,
 ) -> Result<Option<ImportSummary>> {
     print_subheader(progress_bar, "Processing system");
 
@@ -326,18 +337,18 @@ pub async fn import_dat(
     let mut transaction = begin_transaction(connection).await;
 
     // persist system
-    let system_id = match create_or_update_system(
+    let (system_id, arcade) = match create_or_update_system(
         &mut transaction,
         progress_bar,
         &datfile_xml.system,
         custom_name,
         custom_extension,
-        !datfile_xml.machines.is_empty(),
+        arcade || !datfile_xml.machines.is_empty(),
         force,
     )
     .await
     {
-        Some(system_id) => system_id,
+        Some(system) => system,
         None => return Ok(None),
     };
 
@@ -378,7 +389,7 @@ pub async fn import_dat(
                 &datfile_xml.games
             },
             system_id,
-            !datfile_xml.machines.is_empty(),
+            arcade,
             progress_bar,
         )
         .await?,
@@ -458,19 +469,20 @@ async fn create_or_update_system(
     custom_extension: Option<&String>,
     arcade: bool,
     force: bool,
-) -> Option<i64> {
+) -> Option<(i64, bool)> {
     match find_system_by_name(connection, &system_xml.name).await {
         Some(system) => {
             if is_update(progress_bar, &system.version, &system_xml.version) || force {
-                // An update keeps the system's customizations unless new ones are
-                // given; a forced import applies them as given, which reverts them
-                // when none are.
-                let (custom_name, custom_extension) = if force {
-                    (custom_name, custom_extension)
+                // An update keeps the system's customizations, arcade included,
+                // unless new ones are given; a forced import applies them as
+                // given, which reverts them when none are.
+                let (custom_name, custom_extension, arcade) = if force {
+                    (custom_name, custom_extension, arcade)
                 } else {
                     (
                         custom_name.or(system.custom_name.as_ref()),
                         custom_extension.or(system.custom_extension.as_ref()),
+                        arcade || system.arcade,
                     )
                 };
                 update_system_from_xml(
@@ -482,12 +494,12 @@ async fn create_or_update_system(
                     arcade,
                 )
                 .await;
-                Some(system.id)
+                Some((system.id, arcade))
             } else {
                 None
             }
         }
-        None => Some(
+        None => Some((
             create_system_from_xml(
                 connection,
                 system_xml,
@@ -496,7 +508,8 @@ async fn create_or_update_system(
                 arcade,
             )
             .await,
-        ),
+            arcade,
+        )),
     }
 }
 
@@ -958,6 +971,7 @@ pub async fn process_dat_upload(
     progress_bar: &ProgressBar,
     file_path: &PathBuf,
     update: bool,
+    arcade: bool,
 ) -> Vec<Result<ImportDatResult>> {
     let mut results = vec![];
 
@@ -1005,10 +1019,12 @@ pub async fn process_dat_upload(
             .collect();
         dat_paths.sort();
         for dat_path in dat_paths {
-            results.push(process_single_dat(connection, progress_bar, &dat_path, update).await);
+            results.push(
+                process_single_dat(connection, progress_bar, &dat_path, update, arcade).await,
+            );
         }
     } else {
-        results.push(process_single_dat(connection, progress_bar, file_path, update).await);
+        results.push(process_single_dat(connection, progress_bar, file_path, update, arcade).await);
     }
     results.retain(|r| !matches!(r, Ok(ImportDatResult::Skipped)));
 
@@ -1021,6 +1037,7 @@ async fn process_single_dat(
     progress_bar: &ProgressBar,
     dat_path: &PathBuf,
     update: bool,
+    arcade: bool,
 ) -> Result<ImportDatResult> {
     let (datfile_xml, detector_xml) = parse_dat(progress_bar, dat_path, false).await?;
     if update
@@ -1038,6 +1055,7 @@ async fn process_single_dat(
         None,
         None,
         false,
+        arcade,
     )
     .await
     .map(|opt| match opt {
@@ -1048,6 +1066,8 @@ async fn process_single_dat(
 
 #[cfg(test)]
 mod test_dat;
+#[cfg(test)]
+mod test_dat_arcade;
 #[cfg(test)]
 mod test_dat_as_is;
 #[cfg(test)]

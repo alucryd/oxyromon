@@ -3,6 +3,7 @@
 ## Features
 
 - Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
+- Added `-a/--arcade` to `import-dats`, an Arcade switch to the web UI's DAT import and an `arcade` parameter to the MCP `import_dats` tool, importing DATs that list games instead of machines, such as FBNeo's, as arcade systems. An update keeps a system arcade, and `-f` reverts it
 - Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
 - The web server serves the same MCP server over Streamable HTTP at `/mcp`, sharing its pool and its event stream, so most MCP-triggered actions show up in the web UI; ROM imports and setting changes do not yet
 
@@ -28,6 +29,7 @@
 - The desktop app's Debian package no longer depends on `p7zip`
 - Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
 - Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
+- Fixed `rebuild-roms` exiting silently when there are no arcade systems; it now says so
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
 
