@@ -58,10 +58,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # File Type Detection and Extension Constants
@@ -182,7 +182,7 @@ flowchart TD
     AS -- "no" --> D{"extension dispatch"}
     D -- "in ARCHIVE_EXTENSIONS" --> A["import_archive"]
     D -- "chd" --> C["as_chd: magic check then parse with chd-rs"]
-    D -- "cia" --> CIA["ctrtool then import_cia"]
+    D -- "cia" --> CIA["import_cia via cia-rs"]
     D -- "cso or zso" --> X["as_xso re-checks magic"]
     D -- "nsz" --> N["as_nsz checks path extension"]
     D -- "rvz" --> R["as_rvz checks path extension"]

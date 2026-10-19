@@ -46,8 +46,6 @@ sources:
     resource: repo://src/import_dats/test_regions_world.rs
   - id: openwiki-source-30ed0eedcb90a24300e7a1fe
     resource: repo://src/import_dats/test_zip_update_unknown_system.rs
-  - id: openwiki-source-9add64e166d8ef19bd58c5af
-    resource: repo://src/import_roms.rs
   - id: openwiki-source-b23fc7fb5544ff535eae8c43
     resource: repo://src/mcp/prompts.rs
   - id: openwiki-source-f6b27667092492e425164ff8
@@ -74,10 +72,10 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -102,11 +100,10 @@ providers, but `-f/--force` and `-s/--save` are only passed down the Redump bran
 on the No-Intro path clap accepts them and nothing consumes them.
 
 Nothing in the DAT path shells out to an external program: the Redump ZIP is read by
-the in-tree `zip` crate, and the README's *Supported formats* table names a single
-external program, `ctrtool`, which belongs to `import-roms` (CIA extraction) and has no
-part in DAT download or parsing. The format tools oxyromon once launched — `chdman` among them — were
-replaced by the crates under `crates/`; see
-[External Tool Integration](external-tools.md).
+the in-tree `zip` crate, and the README states that every format is handled in-process,
+so oxyROMon needs no external tool. The format tools oxyromon once launched — `chdman`
+and `ctrtool` among them — were replaced by the crates under `crates/`; see
+[External Tools](external-tools.md).
 
 Arcade versus console is not a provider switch but a DAT-shape switch: a DAT whose
 entries are `<machine>` rather than `<game>` sets `systems.arcade = true`

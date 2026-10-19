@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:373082d67af3381abda7ee5d893b41cbc4fd52e1725b9f2fb48ca4fcc8e44271",
+  "pageVersion": "sha256:7eb422b21ac0e7090d8ea23d262e47f5bd58028d70b29aa62e0dd1bf7cd8b903",
   "claims": [
     {
       "id": "claim_8b2514d79d614acba7dc978bdc048ed8",
@@ -26,7 +26,7 @@
         },
         {
           "resource": "repo://.github/workflows/docker.yml#L21-L34",
-          "version": "repo-lines-v1:sha256:103ce9f498ed46dead02b825e180737b948326dc8a734a5404edb77273f964bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNDZiNmU0YWE5YTZlNWVmZmQzNTdiZGE2YTRjNDViYmNiNWJhYzc2MmNkZmQwYmVmM2Q3ZjEzNjEwMjA2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZDE2YzZiNTM5ZjcwNzMzYjZjYzBmNmFiYWJhNDQ3NDAzMzcxODQwZDk2NmE4MmViZjc5YWVhYmZmNzU3YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:c747587f89e6230d2fceaa1420fda27e27a72778ba745b24b5dfd6b49856f790:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNDZiNmU0YWE5YTZlNWVmZmQzNTdiZGE2YTRjNDViYmNiNWJhYzc2MmNkZmQwYmVmM2Q3ZjEzNjEwMjA2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZDE2YzZiNTM5ZjcwNzMzYjZjYzBmNmFiYWJhNDQ3NDAzMzcxODQwZDk2NmE4MmViZjc5YWVhYmZmNzU3YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://.github/workflows/docker.yml#L3-L11",
@@ -54,7 +54,7 @@
     },
     {
       "id": "claim_295896b15a64461098e8ee45a0a99999",
-      "statement": "CI installs trunk by extracting a release tarball pinned by TRUNK_VERSION=0.21.14 rather than building it from source, and both container images download the same pinned version, keeping the bundled UI reproducible across CI and published images.",
+      "statement": "CI installs trunk by extracting a release tarball pinned by TRUNK_VERSION=0.21.14 rather than building it from source, and the Dockerfile downloads the same pinned version, keeping the bundled UI reproducible across CI and the published image.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L14-L14",
@@ -65,12 +65,8 @@
           "version": "repo-lines-v1:sha256:8cf3bfb2ed4795ba195679284f0ebbbc3361ca2de2f789632a8e2bff198465d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliMjkzMTg2ODIxOWE0MTBmZGQzOWQxMjNjMTQxNGE4OGQ2N2IzMzg3YTEwODY4ZGI2OWFhODE1NDJjZTM2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMzMjY5ZjdmNGUzNmYwN2QyZjRlNzgwM2MzOWU1ZjQ5NTU3NzEyZGEzMmVjYjc1Mjg2MWEyM2I0YzA4MmUwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkNzQ4ZWZhYmU0OTFlNjFkNDg3NzNmYzlhZTk4M2U3N2U1OWRlYjlhYjY2MWI1ODA1ODc1NTUxYWU0NWZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3NjMwMmM0ZTc5MDZhY2UzMGE5MDE3OTdiZWI1ZjBjNzc3OGZmYmFmNmUyMjk2OGQ3MDI0YjBjZGU2Y2Y4OCJ9"
         },
         {
-          "resource": "repo://Dockerfile.alpine#L11-L11",
+          "resource": "repo://Dockerfile#L11-L11",
           "version": "repo-lines-v1:sha256:1d4c293abe59ccec0aa30fe1a116548754f876acabd6f7234d8522fe5e5ff2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU4NjQ1ZGE2OTdhMWE2MDRmMDVhMGFhYmMyNGZiZjRkNWQ0ODU1OWMzOWUzZjcwMjY4MDUwZDUyZWI1MTYwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwYTdiNWU3MzQ0ZmZiOTdhYTI3MTljNzNmYzFjYWM3YWMwZjliZGU1MDRlNDkyZjZmM2M1NTQxZDk4ODEzZCJ9"
-        },
-        {
-          "resource": "repo://Dockerfile.archlinux#L9-L9",
-          "version": "repo-lines-v1:sha256:1d4c293abe59ccec0aa30fe1a116548754f876acabd6f7234d8522fe5e5ff2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDJkZTY5YTUyMTA4YTNlM2Q2ODBhMzk1MDUyZDg3Y2Y4OTgzYjEzODYwZmE1YzAxMjYyNGZiNzNiOWViMmE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwYTdiNWU3MzQ0ZmZiOTdhYTI3MTljNzNmYzFjYWM3YWMwZjliZGU1MDRlNDkyZjZmM2M1NTQxZDk4ODEzZCJ9"
         }
       ]
     },
@@ -108,7 +104,7 @@
     },
     {
       "id": "claim_ab14a42d14974a3cb4240d12ce531dbf",
-      "statement": "CI installs mame-tools, xdelta3 and ffmpeg solely as reference implementations for the format crates' tests — chdman for the chd-rs comparisons, xdelta3 for xdelta-rs, ffmpeg for the LaserDisc AVI fixtures — because those suites skip rather than fail when the reference binary is missing (xdelta-rs returns early when `xdelta3 -V` fails; chd-rs/tests/ld.rs skips unless both chdman and ffmpeg are found). ctrtool, maxcso and flips are absent, so CIA import tests and the xso-rs and xps-rs interop suites skip on every CI run and remain a local responsibility.",
+      "statement": "CI installs mame-tools, xdelta3 and ffmpeg solely as reference implementations for the format crates' tests — chdman for the chd-rs comparisons, xdelta3 for xdelta-rs, ffmpeg for the LaserDisc AVI fixtures — because those suites skip rather than fail when the reference binary is missing. ctrtool, maxcso and flips are absent, so the cia-rs, xso-rs and xps-rs interop suites skip on every CI run and remain a local responsibility, while oxyromon's own CIA import test runs in-process with no skip guard.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
@@ -119,8 +115,8 @@
           "version": "repo-lines-v1:sha256:1b18ecbebbb317c9e505d089598e54b006ce956a911bb00f21f5673a3f07bc0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTZhODA5ZDZmOWJlZDI2MDI3OGViMjZkZWM4ZGZkNWM5ZTAwNWEzMDE3MjgyZTViM2UyZmFiNmQ5MGIwZmFhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q4NTEyZWUwN2RhOTAzMjM2NDZkMWJjZmFlMDEyOTcyZmU4OWY1MDgwMjNmNThhY2YzMTUxZGVjNDA5NWNhYSJ9"
         },
         {
-          "resource": "repo://crates/xdelta-rs/tests/interop.rs#L48-L53",
-          "version": "repo-lines-v1:sha256:39134ca57682aa3fd44448157f9927b36720d10716f05d0b22607ae005090987:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjAzYTg0OTc4NjI3NWZlZDI5ZDdhYjA2N2Y4ZTJmNzk1ODI4ODkxYTliZDJjZDdmNWZlMTJhMThiYjlkNjg5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQzMWViMjFjMDM3NDdjZjNmOWIwNWQxMDc2MDE4ZjEzMzA2YmJlMjU2N2E3ZjYzOTliNjljM2VhYWMwODk3ZCJ9"
+          "resource": "repo://crates/cia-rs/tests/interop.rs#L17-L22",
+          "version": "repo-lines-v1:sha256:e5b5558dfabb70c3e9ef1085fe53bff82285c910d96bc2517ff36147a22c640d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRmMWQyM2I4YzlkOTU0ODIwZjFmODgwODU5OGEwYzJjZTBlY2ZlZjczZDNmYWVhODZiNjIyMWE4NjdkNDk4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q1MGViZGIyZGZmYTJlYWQxZTNhNjE2Mzg2ODNlNTZkYmYxYzQzNmFiODk0MjIyYWNkNDI5MzM2MTE5NzFhYSJ9"
         },
         {
           "resource": "repo://crates/xdelta-rs/tests/interop.rs#L8-L10",
@@ -135,8 +131,8 @@
           "version": "repo-lines-v1:sha256:e6e7c23454d8f94ecb9bb1f3ef3cf6e1559de450bbc68aa706d9b97ef1169298:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmN2M5MzlkMjQwOTAwNDUwY2FmODc3OWYwMmMwNDk2OTYwNzBjNjI2NmYyNzE3OTE3ZTAxYWZkMjIwMzUyMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZGU0NzMxNDVjODQzNzU5MWU2ODI0MDcyNWUwNTMwYTE2ODQxZWVhNzM2OTljMWQzN2MzZTg0ZDY4NWY5MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/import_roms/test_cia.rs#L7-L11",
-          "version": "repo-lines-v1:sha256:cceee7912bef2a4e3f5a51feb40bad180a2d76002f08432f20e2099f6684290f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE5NDg0ZWVkZjM2NGZiOGMxMmYxZWI5OGZiZjZhOWI0ZjY1MGY0Mjc4NzRhOGQ3MzU5MDEwYWFkZTQzMWJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA3YmVmZjA2YjU0YTBjYTdmNzU5NDQwZjY4NzZjNzc4YTQ2ODA5Yzc5MjI4Y2Y4ZjFjMTFhODMwODBjNmY4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFmMjNiZDY4MjAwMmI1MzhmNWU3Y2ZkOGFlNjg2NzIzOWNjODhkM2ZmYjc3ZmFhNTAxYjFkZTI4MTE5ZGM1NSJ9"
+          "resource": "repo://src/import_roms/test_cia.rs#L7-L12",
+          "version": "repo-lines-v1:sha256:dddb3297ce31f79404391a574543b1a56dab8687e899796a20281d382aed4d34:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTE5NDg0ZWVkZjM2NGZiOGMxMmYxZWI5OGZiZjZhOWI0ZjY1MGY0Mjc4NzRhOGQ3MzU5MDEwYWFkZTQzMWJjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk0NWU5N2MxMGIxMTlhODM1NTc0OTVlMTk5ZTgyNTM4NjczNzM3ZmYxN2RhNDQ2MmE4ZTVmMTRkNTBlN2M3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjA3YmVmZjA2YjU0YTBjYTdmNzU5NDQwZjY4NzZjNzc4YTQ2ODA5Yzc5MjI4Y2Y4ZjFjMTFhODMwODBjNmY4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDBlMTdlZWVlN2I1YjE4M2I0Y2MwNzUwYjQwNzIyNDJkZWQ2ZTQ2MzBhN2JiM2U4MThhOTBkMjkwNzA3NzBmNCJ9"
         }
       ]
     },
@@ -153,7 +149,7 @@
           "version": "repo-lines-v1:sha256:cb3a687a7361e38034e44e504a7313eb2b64113d82b2486b50fa9d0b2a59ce52:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBlZTkzOGRiZGFiYzRmZWU1N2M2YjhiZWFmMjczYjJjY2IzZWVlNDdkZDY5MmUyNWU1NTBmNWIzNzFjN2UxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg1MjU1NDY5ZDA5ZjNmM2I2OWJkMTk0MzNmNDA2YmZhYzA4ZjFiOThkMTI4NmQyMThhNGNiMWYzMWRiNjE2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQxNWEwY2QxYzMzNjY5N2FjMTVjZDIxMWRkN2U5N2MxNDYzNjE3YzUzMTBiYjlkNDhjM2U5NTdmMjNiNjI4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDc1ZDNjY2U1YTBkODRhZjU0ODQ1YmMwMjczZTU3YTFjZThkYmRlNDU2YTEyZWExNzY5ODE0ZDFlZTYxMTBjOSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L40-L55",
+          "resource": "repo://Cargo.toml#L41-L56",
           "version": "repo-lines-v1:sha256:683da612e77cc27df1aee31f53faea00d75aad1e042fc788054399d195ab69f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZjZjMWM3M2U0Njg1YjZmNTU3OTJhZTUzOTI1NTNmZjc5ZDNjYzA2N2IwYjc0ZTA2ODY5OGY2YjJjNzZiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwNzI4NmU0ODAzOTk4ZjA1MWI0NjNmMTQ5NzNiZGZkMzI1NmI4YzFhNTQ3N2MwZDNhZThjNWU1MDkxN2M3NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZjEyMzRiNjg3ZmJhZWJjY2MxNzg2YzlhNWIyYTc4Y2I1YmYzZTIyODk3NTIzOWExMGFkZTI2YTA4MzcxZjIifQ"
         }
       ]
@@ -203,8 +199,8 @@
           "version": "repo-lines-v1:sha256:31860a9b72ca0e17490185aa7c464aba9e8e5420628454dcd69bfe4e54bf5fb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlkMThkOWI1MjZmMTA4MGEyYjBlMGVkNTM0MDdmY2MzNDdhNTQ4NjQ5Y2NlMzFmNWM0MWJhNTBiZjE3NWU4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYzkzNmMwNzI3NTM4OThlNzBhMDc5Njk2NjI4MzQwNWMxNWRiNzQ2ODRhZTUyMTMyNmNhYzhiYzRiMDk0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L1-L60",
-          "version": "repo-lines-v1:sha256:ae34aacf9f8b0d5ade41d6c2376ad177963db33953ef4dcf153b9c0df680ed19:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNTM2YmY0MTRjODYxNzZkMjU1ZWZhNGEwNjQ1ZWJkMTUwMWVkYWYyZjRkZjk5MTZiODU0MzIwNzdhY2IwYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNjJmZDBhOWZkNDEzMDQyNDMyMmRhNDNhNjJlMWNmMjk1ODY0YjA4YTc5NDM4OTg3ODVkMTZiZDlmYjlhNjMifQ"
+          "resource": "repo://Cargo.toml#L1-L61",
+          "version": "repo-lines-v1:sha256:2ef1627be0eb4c6654d13686f1536282c0ac28944520d9b3d3586c61a9c940b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNTM2YmY0MTRjODYxNzZkMjU1ZWZhNGEwNjQ1ZWJkMTUwMWVkYWYyZjRkZjk5MTZiODU0MzIwNzdhY2IwYTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNjJmZDBhOWZkNDEzMDQyNDMyMmRhNDNhNjJlMWNmMjk1ODY0YjA4YTc5NDM4OTg3ODVkMTZiZDlmYjlhNjMifQ"
         }
       ]
     },
@@ -217,7 +213,7 @@
           "version": "repo-lines-v1:sha256:da6e8a4605d40618b3066d8e57e92418f25628e4668613277fdbf6dcfc2669e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM5NjMzYzM3NjE5NjJlYTJiOWExYzNlZGRjMDFjZjY2YzMxMTY4NzFhOTgzZDg3MGRhNDQ3ZTk3NGE0YTBlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjYjMyYzRiOWIyOWRjOWQ4N2JkYmQ5OTk4ZGFmNTQzYjMwYTdhZTAyMWQ5NGU5N2MxODU3ZWFmOGFiNmQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://.gitignore#L16-L16",
+          "resource": "repo://.gitignore#L17-L17",
           "version": "repo-lines-v1:sha256:277c0b1dd43102d977d139945b7755d2a498cc9e7513ba32ebc2dfcd40fc93f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3YzBiMWRkNDMxMDJkOTc3ZDEzOTk0NWI3NzU1ZDJhNDk4Y2M5ZTc1MTNiYTMyZWJjMmRmY2Q0MGZjOTNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3YzBiMWRkNDMxMDJkOTc3ZDEzOTk0NWI3NzU1ZDJhNDk4Y2M5ZTc1MTNiYTMyZWJjMmRmY2Q0MGZjOTNmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM2MDJiOTY5MzQzZWMyNTkwOTRjMjY4MWNhMmIwZTZlYzE4ZTVkNDgyOTdhMzJlYmVjYzU4MDE0OTlhM2MxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzExOWZlM2E4MWY0MDgxZDhlOWVmMWY0YjMxYmVhMjYwMTFhNjY3MzkyYTc4ZTcyNGI1MjQ3ZDUwMjU1NDE2YSJ9"
         }
       ]
@@ -231,7 +227,7 @@
           "version": "repo-lines-v1:sha256:395603c035ac94e469a1cbc7af6a9ca28c4f27a96ab8c13168c5977b40c4c291:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlmZmUwMGJhYWU2Yjg4Y2Q1MWUzMWIyNTdiNjZhNWIzNzI4NGQxZGVkN2RlMjc4MmZkNDViYWFjZDE2NWFjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM4NWQ5ZDYyZmUxZTM4ZmVkOThjZTgxYjE5OWU1YmZiNWU3YjU3Y2M3NWY2MjJkNzk2OTQxYzY5NzU4YTQwMSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L170-L174",
+          "resource": "repo://Cargo.toml#L172-L176",
           "version": "repo-lines-v1:sha256:58ddcb61d9fc7d1e7f81491970a4a3f2af7f9111ea579f413850b6ae7e07f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxYjk5MGFkOGY0Mjg0YzM1NGNkOGY5YjZiMWIwZDAxNTY1MDJhYmIwOGFiMjlhYjUwODI0OTRkN2EwNzYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUwMTVhOTA3ZDgzNzZiYzNjYzEwM2ZiMmIwZDM4NDVhMTc1MDA4M2E3YmMzMDZkZjQ2ZmQwYjY5YjNmNzhiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTUzYTU5MjlhMzExNTMzZTFlYWY3YzI1YjgyYWU2ZDIyZjQzOTJjNjk5MTJlODZmNzc5YjlmMWE5MGIwMzdiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
@@ -273,7 +269,7 @@
           "version": "repo-lines-v1:sha256:f3d7b30cc973091f0784ec1cec13cf2bcfa81a37862272c65533ad38bdccbf44:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDMzMGEyZDNjY2JlMTU5NGE3NzBiOWQyN2RlMjQ5MDk2MWJhODY2YTFjNzNhZTEzMTFiOWU3OTRlOTNlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDE5YjJiZTE1Yjk2NWVjZDRiMDZjODI1NGYzYWViOTU4ODcxZjA5ODI1OGJlNWY5ODdhZDY2MTM0YTVhNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYWE4ZWVjNjQ4Y2JkNzVmNTBhZGI0NDhiZTU1YmZhZWEwYTVkN2I2ZDQ1ZDI5MGZkM2RkNmFjYmJkZWEyZTgifQ"
         },
         {
-          "resource": "repo://src/util.rs#L28-L36",
+          "resource": "repo://src/util.rs#L26-L34",
           "version": "repo-lines-v1:sha256:931b24619b0ad8eb3d812799d0fc2ebb74a7898a03d69dc859d4efcb5d13413e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZmMzYxOGY4NmJkNjkzZDQ3ODA0OTkwNzg2MGI5ZjQ1NmIwYmI5NTI5MzVlZmMyYzhhNDk0NDYzNjBiNTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzliOWI4YTc3YWU0OGEyMGNhZTBiMGVlOGI0ZDU2ODA0YjUzODg3YzA0Mjc4NDExM2UzYjFmYmE4ZmNjMDM5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIzOGU3MmFiN2RhNGE0MjU1ZTEwZTdmMWRmMjQ2ZDYyZmJlN2ZlMzkxN2U2YTc5NjUzMmE2NmQ4NzQ4M2JlMiJ9"
         }
       ]
@@ -312,7 +308,7 @@
     },
     {
       "id": "claim_7d78e49b74564106a8b5d4151140cd1b",
-      "statement": "No CI step, Dockerfile or cross build sets DATABASE_URL or SQLX_OFFLINE; the sqlx query macros are verified at compile time against the committed .sqlx/ snapshots, so a query or migration change left unprepared by cargo sqlx prepare -- --features server breaks CI, every container build and the release matrix, not only the author's machine.",
+      "statement": "No CI step, Dockerfile or cross build sets DATABASE_URL or SQLX_OFFLINE; the sqlx query macros are verified at compile time against the committed .sqlx/ snapshots, so a query or migration change left unprepared by cargo sqlx prepare -- --features server breaks CI, the container build and the release matrix, not only the author's machine.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
@@ -324,11 +320,11 @@
         },
         {
           "resource": "repo://Cargo.toml#L128-L133",
-          "version": "repo-lines-v1:sha256:cc2ff27c1bd617730ab4e36fcab5485d15ff4f2523bd34311910ed7795b9de84:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmMxYjliZTYwMWIzM2JkNWEzYTFkZjNmNzRhYTY2ZGUxMWU5ZTc4M2U5Y2YxNmE3Y2I0NjUyYWZjMjRhMDU0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E1OTg0YjZkZGNiYmViYzVlZjZkZWJlNzgxNTc5YTQ4NDA3ZmM2YzU2M2M1NzdmNmM5OGVjN2E0ZDYzYmE1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgyMGQ5MjBhMDkwZjYzODY1YWUxNGI2MmVmYjA1YWRhMzAxZjg5ZmI0NjdjOTdlMTQ3OGM0ZTMwZGUxZDkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjgzYTI4MWMwN2E5ZmM5OGRiNjdhMWFiOGQyMTcyMWE3YzIxMmYwMWZmOTZjZDQxMDRhYWMzZTk4YWQ1ZjRjMSJ9"
+          "version": "repo-lines-v1:sha256:b9beeeea8fa51d438367e894925bbdcd8571f728f271de9a5cffdd76e2791151:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUzODcyZTk5YTE5NWJiMjQwYjEwM2I2YzZmYzJiNDVlM2JhMGIxYWJmMzUzMWQ0ZTNiMmFhMzQ3MTk2MDU3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjOWY3OTdkNmFkMjEyMmE2NWNlMjIwNjRhYzdiYTczMGEyMzdmNjYzNWNmODU5ZjZjOGZlNGYzNzEzZWMxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I5MjY2ZjhiMmVkZWYwZTQzNTkzMzFmMDNlN2UzMDM1NzZjMWE1MjIxZjZjYzcwZjVkMDgxYzA3NjhkNGQyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJhZGVjNjZkNTcxNzY2ZmExNGQ5ZDQ3NTU1ZWM3MTFhODkzYmYwNDgxMzE5NmVlMGY2YWJmYTBiNGVlZGJiOCJ9"
         },
         {
-          "resource": "repo://Dockerfile.archlinux#L1-L17",
-          "version": "repo-lines-v1:sha256:b33f4c8f456f708428850bb660d3d893b2b4bf8c0376846f78f5be2c81bd1045:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODJhMDVjZjgxZWNmZTY5NDNlMTRkOTUyNmEzN2JkNTYyOTYwY2ZkZTI4MmI1NDU1ZDYwZjcwMzE5MjM2OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4N2Y2MjUyZWZjMzk2ZWQzNmZlNDk1ZjVhMWFlNTY1NWNiY2U0NzgxOTY1OWVjOTkyYjEzZjU5MzFiYTUyMGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "resource": "repo://Dockerfile#L1-L18",
+          "version": "repo-lines-v1:sha256:fb21a40da2c6b2d4a338980d5fef8858e4cb5384f8af19d43bc7f63d40a7883f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTI0ZmY4YTRiNzMwN2JlZWNkYjliODMwY2NkZDcwMmJhYWUzNWVkMjM3M2FmN2JiMzEzMmJkMGE5OGYyMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -341,7 +337,7 @@
           "version": "repo-lines-v1:sha256:31860a9b72ca0e17490185aa7c464aba9e8e5420628454dcd69bfe4e54bf5fb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlkMThkOWI1MjZmMTA4MGEyYjBlMGVkNTM0MDdmY2MzNDdhNTQ4NjQ5Y2NlMzFmNWM0MWJhNTBiZjE3NWU4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYzkzNmMwNzI3NTM4OThlNzBhMDc5Njk2NjI4MzQwNWMxNWRiNzQ2ODRhZTUyMTMyNmNhYzhiYzRiMDk0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L40-L55",
+          "resource": "repo://Cargo.toml#L41-L56",
           "version": "repo-lines-v1:sha256:683da612e77cc27df1aee31f53faea00d75aad1e042fc788054399d195ab69f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZjZjMWM3M2U0Njg1YjZmNTU3OTJhZTUzOTI1NTNmZjc5ZDNjYzA2N2IwYjc0ZTA2ODY5OGY2YjJjNzZiODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwNzI4NmU0ODAzOTk4ZjA1MWI0NjNmMTQ5NzNiZGZkMzI1NmI4YzFhNTQ3N2MwZDNhZThjNWU1MDkxN2M3NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZjEyMzRiNjg3ZmJhZWJjY2MxNzg2YzlhNWIyYTc4Y2I1YmYzZTIyODk3NTIzOWExMGFkZTI2YTA4MzcxZjIifQ"
         },
         {
@@ -352,29 +348,25 @@
     },
     {
       "id": "claim_6ca7268e1ce74bde94d3e9e0418af486",
-      "statement": "docker.yml builds and pushes only ./Dockerfile.archlinux with tags from docker/metadata-action, so automated pushes never produce the version-pinned tag nor rebuild the Alpine image; those tags exist only when docker.sh is run by hand.",
+      "statement": "docker.yml builds and pushes ./Dockerfile with tags from docker/metadata-action, so automated pushes never produce the version-pinned tag; it exists only when docker.sh, which pushes <version> and latest, is run by hand.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/docker.yml#L21-L34",
-          "version": "repo-lines-v1:sha256:103ce9f498ed46dead02b825e180737b948326dc8a734a5404edb77273f964bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNDZiNmU0YWE5YTZlNWVmZmQzNTdiZGE2YTRjNDViYmNiNWJhYzc2MmNkZmQwYmVmM2Q3ZjEzNjEwMjA2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZDE2YzZiNTM5ZjcwNzMzYjZjYzBmNmFiYWJhNDQ3NDAzMzcxODQwZDk2NmE4MmViZjc5YWVhYmZmNzU3YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:c747587f89e6230d2fceaa1420fda27e27a72778ba745b24b5dfd6b49856f790:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNDZiNmU0YWE5YTZlNWVmZmQzNTdiZGE2YTRjNDViYmNiNWJhYzc2MmNkZmQwYmVmM2Q3ZjEzNjEwMjA2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZDE2YzZiNTM5ZjcwNzMzYjZjYzBmNmFiYWJhNDQ3NDAzMzcxODQwZDk2NmE4MmViZjc5YWVhYmZmNzU3YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://docker.sh#L3-L9",
-          "version": "repo-lines-v1:sha256:1b71d524c2642362e4c2bfc35cf4b3b838fcbdf0e971fdeaff134ca40bf474f9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjhkYmUxMDc0MTNjY2M3NjhhZTNkMzdmOTkwOGVhZTFjYjZmMGY0NzhlMzQ5NWY2ZmI2YjBhY2VhMmQ5N2MyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyM2Q5M2Y1ZjJjOTJlNjhiMTE2NzBkOTc4NjlmZjllOTU1MjUwMTQ0M2Q5YWQ2ZmQ3NTY1MGM3NDk5Yjg5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk2MjJmYWUyYWIwMmZlMzU5ZWQxNTA5NjRhOTI2NTM2OTdiZmIyMzVlMjA5NDdhYTNjM2YzODU0ODRlOTdiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://docker.sh#L3-L6",
+          "version": "repo-lines-v1:sha256:003491a9d75865942c76854f961bafd05591a7d1973abffb711feff77b86461b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjhkYmUxMDc0MTNjY2M3NjhhZTNkMzdmOTkwOGVhZTFjYjZmMGY0NzhlMzQ5NWY2ZmI2YjBhY2VhMmQ5N2MyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTBjOGZmYjUwODM0ZDdmOTgwYjRjNjNkZWQzNTZmMDhiN2Y0YjRhYjU4MDFlMTU0Y2IyMThiMDAxYmRkZjRmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk2MjJmYWUyYWIwMmZlMzU5ZWQxNTA5NjRhOTI2NTM2OTdiZmIyMzVlMjA5NDdhYTNjM2YzODU0ODRlOTdiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
     {
       "id": "claim_7fcb684cde8a4ec8b702b1a68f73d301",
-      "statement": "Both container images fix the runtime paths by environment (OXYROMON_DATA_DIRECTORY=/data, OXYROMON_ROM_DIRECTORY=/roms with matching VOLUMEs) so a container ignores host platform directories, deliberately do not set SKIP_TRUNK so the wasm UI is built inside the image (Alpine adding gcompat for glibc-linked wasm-bindgen/wasm-opt tools), and end in CMD [\"oxyromon\"] with no subcommand, which makes a bare docker run a successful no-op.",
+      "statement": "The single Alpine-based container image fixes the runtime paths by environment (OXYROMON_DATA_DIRECTORY=/data, OXYROMON_ROM_DIRECTORY=/roms with matching VOLUMEs) so a container ignores host platform directories, deliberately does not set SKIP_TRUNK so the wasm UI is built inside the image (adding gcompat for glibc-linked wasm-bindgen/wasm-opt tools), and ends in CMD [\"oxyromon\"] with no subcommand, which makes a bare docker run a successful no-op.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile.alpine#L5-L28",
+          "resource": "repo://Dockerfile#L5-L28",
           "version": "repo-lines-v1:sha256:23769c98c2c1561f0dcfff17b5e9fde61d9d6fba4c7903a0cc4388ffd671fadd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNiN2NhYmY4OTNhOWMyOTM1ODFkODdkZjVjY2IzN2IxZWIwZjFkZjNhMWRjOTIwODUwN2JmNzBiMDM1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        },
-        {
-          "resource": "repo://Dockerfile.archlinux#L5-L27",
-          "version": "repo-lines-v1:sha256:c74ce20d5ca71591090aef8c8807209d168eeac9af71fa4a732e112590c2e0a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYWExZDRmYTViNGJlN2ZlZTI5OGRjNDUxNTdmNGY1MjkwY2I3ZTNhNTgyNDQ3Yzg4MTVjOTE2ZWFmMTgxYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://src/main.rs#L100-L100",
@@ -448,7 +440,7 @@
     },
     {
       "id": "claim_45e6b323bc0c4644892c3df1e09a8916",
-      "statement": "The apt packages are build-and-test-only: the shipped oxyromon binary shells out to none of them, since get_version() in src/chd.rs, src/xdelta.rs, src/xps.rs, src/xso.rs, src/archive.rs, src/nsz.rs and src/rvz.rs returns \"built-in\" and the work runs through the workspace crates. src/ctrtool.rs is the only module still invoking an external tool, and ctrtool is not installed anywhere in CI or the images.",
+      "statement": "The apt packages are build-and-test-only: the shipped oxyromon binary shells out to none of them, since get_version() in src/chd.rs, src/cia.rs, src/xdelta.rs, src/xps.rs, src/xso.rs, src/archive.rs, src/nsz.rs and src/rvz.rs returns \"built-in\" and the work runs through the workspace crates; no module invokes an external tool.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
@@ -459,8 +451,8 @@
           "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYyNDkxMDJhYjhkMDhmYWUyYmJmZjdiYjFhYmM4NjE2OWRhYzA5MTNhN2I2MzhlMTIzYWE3MGMxZmFhZWI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFlYzYyYWE0Y2Q1NzE3ZTUzZGZmN2VjNDI2YTU1NjAyMmIzZmU3ZDhiMGJkZDMzOTEwNGI3NWMzYmU0ZjkxMiJ9"
         },
         {
-          "resource": "repo://src/ctrtool.rs#L13-L34",
-          "version": "repo-lines-v1:sha256:632a024025c64940ccc2421fe4011b539d574bd5b529113a99388e4cb64e08be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0NDY3ODE3NjBlOTc0ZWNiMTBhMTdkNjQ0NjA5NTNlYjYzZWY0Zjg5MjBhYmJlMGQ3NmFmNTRiNjdiMWQ4MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZTE3Mzc2OWU0ZWI4MjI3NTIzOWYyYTQ2NDM2OTc4YWIxMmQxMGM4MGEzOTA2NDY0ZDA0NGY3OTBkOTQ5NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MmMwMDk2ZDk3MjQzMDRiNjMxYjlkMDQ4MzRjZjZmZGI1ZWFhZmNiMWYyMWU4ZGNhZTRkMDczMTY5ODRhZTMifQ"
+          "resource": "repo://src/cia.rs#L20-L22",
+          "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU2YjBmZGI2ZTgxZTdkOTk5YzdlOTcxMzI0NTQ3NzdkNmE3MjQyNmExM2NkYjA2N2Y5N2FjNzk3ODhiNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYyYzAwOTZkOTcyNDMwNGI2MzFiOWQwNDgzNGNmNmZkYjVlYWFmY2IxZjIxZThkY2FlNGQwNzMxNjk4NGFlMyJ9"
         },
         {
           "resource": "repo://src/rvz.rs#L379-L381",
@@ -516,10 +508,10 @@
         },
         {
           "resource": "repo://.github/workflows/docker.yml#L1-L34",
-          "version": "repo-lines-v1:sha256:de18ed1f0bb2e2e1fec3bb860d4b02e88626dc79194e3522756c500521e01ac1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYjVhNGQwOWE3YTU1Y2U1YTgxMDFmM2U5NjNiZmIyMWJiZTBhNjU2YThjYzc2ZTZjZWJhMDBjNzU5NjM1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:7262b6657d4bd10f86df828d7f58e973aca8d9643cc52fd86019bf7c48c0009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYjVhNGQwOWE3YTU1Y2U1YTgxMDFmM2U5NjNiZmIyMWJiZTBhNjU2YThjYzc2ZTZjZWJhMDBjNzU5NjM1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L293-L306",
+          "resource": "repo://AGENTS.md#L291-L304",
           "version": "repo-lines-v1:sha256:6c90a8ee260419ce52c98ce902d593546e4e6c9b455577ea517f64e10c04699c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTgwZjljMTI2OTAzYmNjMzMxYWE5NTQ1NmU0OTQ0NGE3ZDRkMDExZThhMmE4M2Y1ZGM4NzAyMzkxODEyZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTM5NTNiZmI3MmMxMjYyYmJhZTJlYWNhNzJjYWJmMWFmNDk5MjdhMGJiYTExNTdiMmQ1YmRiMjg1YzRiZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZDk3ZWEyMWYwMmY5NWExMmQyYWY4MmQwYTdiM2U3ZTRjNmJhYjE1ZmZlNTNlNTliMDk5OWRlMDU1ZWU0M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODlkZjkzZjhiYTU3YTRkZGJmZDhmMDEzOTYyYzM5NzhjZTRkYjY4MTk5YzRkYTY2NjY0OWIwOTk2Y2VkYTkifQ"
         }
       ]
@@ -527,6 +519,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-15T21:23:38.942Z"
+    "at": "2026-10-19T17:45:26.496Z"
   }
 }

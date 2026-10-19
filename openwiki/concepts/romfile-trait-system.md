@@ -67,7 +67,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Romfile Trait System

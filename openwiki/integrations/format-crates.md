@@ -1,7 +1,7 @@
 ---
 type: integration
 title: Format Crates in crates/
-description: The six in-repo format crates (chd-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs) that replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
+description: The seven in-repo format crates (chd-rs, cia-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs) that replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
 tags: [crates, workspace, chd-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -36,6 +36,10 @@ sources:
     resource: repo://crates/chd-rs/tests/ld.rs
   - id: openwiki-source-dace695e1efd12a88e32dd04
     resource: repo://crates/chd-rs/tests/write.rs
+  - id: openwiki-source-c7fa9c8f75ed83141fe6d91b
+    resource: repo://crates/cia-rs/Cargo.toml
+  - id: openwiki-source-039ef28c41d4fc7a1b163edc
+    resource: repo://crates/cia-rs/tests/common/mod.rs
   - id: openwiki-source-16c849e86b1d340adbc8eca0
     resource: repo://crates/gdi-rs/src/error.rs
   - id: openwiki-source-677cadb1f4a36dab4e6c2937
@@ -96,6 +100,8 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-7a3d5614c68ed1a3729171e7
     resource: repo://src/gdi.rs
   - id: openwiki-source-d3402490d16a663b822e8a00
@@ -106,15 +112,15 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-15T21:23:38.942Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Format Crates in crates/
 
-`crates/` holds the six format crates oxyromon wrote to replace the external
+`crates/` holds the seven format crates oxyromon wrote to replace the external
 programs it used to shell out to. Each began as a port of one upstream tool,
 keeps that tool's license, and stays a standalone library plus its own CLI
 published to crates.io; oxyromon is the workspace root and depends on them as
@@ -125,6 +131,7 @@ real byte-level progress instead of a spinner.
 | Crate | Began as a port of | CLI | License | oxyromon module |
 | --- | --- | --- | --- | --- |
 | `chd-rs` | chdman | `chdrs` | BSD-3-Clause | `chd` |
+| `cia-rs` | ctrtool (`--plain` unpacking) | `ciars` | MIT (upstream shipped none) | `cia` |
 | `gdi-rs` | gdidrop | `gdirs` | BSD-2-Clause | `gdi` |
 | `nsz-rs` | nsz (nicoboss) | `nszrs` | MIT | `nsz` |
 | `xdelta-rs` | xdelta3 | `xdeltars` | Apache-2.0 | `xdelta` |
@@ -134,13 +141,13 @@ real byte-level progress instead of a spinner.
 The crates are workspace members (`members = ["crates/*"]`), so they share one
 lockfile, one CI run and one set of conventions; `frontend/` and `desktop/` are
 deliberately *not* members so their wasm and webview dependencies stay out of
-the native build. CHD joined the set with 0.25: `chdman` is gone as a runtime
-dependency and survives only as a test-time reference binary, which leaves
-`ctrtool` as the one format oxyromon still runs as a child process
-([External Tool Integration](external-tools.md)). CHD's container, codecs,
+the native build. CHD and CIA joined the set with 0.25: `chdman` and `ctrtool`
+are gone as runtime dependencies and survive only as test-time reference
+binaries, so oxyromon runs no child process for any format
+([External Tools](external-tools.md)). CHD's container, codecs,
 media types and `src/chd.rs` adapter have a page of their own —
 [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md) — so
-this page covers only what that crate shares with the other five. The `src/`
+this page covers only what that crate shares with the other six. The `src/`
 adapters that call into these crates are covered in
 [Format Modules and Their Crate Backends](../concepts/format-modules-and-format-crates.md).
 
@@ -265,10 +272,10 @@ same whichever backend produced it:
 
 | Variant | Text | In |
 | --- | --- | --- |
-| `Io` | `io error: …` | all six, `#[from] std::io::Error` |
+| `Io` | `io error: …` | all seven, `#[from] std::io::Error` |
 | `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Unsupported` | `unsupported format: …` | `chd-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Corrupt` | `corrupt data: …` | all six |
+| `Unsupported` | `unsupported format: …` | `chd-rs`, `cia-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
+| `Corrupt` | `corrupt data: …` | all seven |
 | `InvalidOption` | `invalid option: …` | `chd-rs`, `xso-rs`, `gdi-rs`, `xdelta-rs` |
 | `WrongSource` | `wrong source: …` | `xdelta-rs`, `xps-rs` only |
 
@@ -298,10 +305,10 @@ patch. oxyromon prints it as `Patched, but …`.
 
 Each crate's `[[bin]]` is gated on `required-features = ["cli"]` and consists of
 a `main.rs` with a clap builder `cli()` plus one `convert(input, matches,
-outputs)` closure, and a `ui.rs` that is **byte-identical across all six**.
+outputs)` closure, and a `ui.rs` that is **byte-identical across all seven**.
 `tests/crates.rs` reads `crates/xso-rs/src/bin/xsors/ui.rs` and asserts the
-copies in `chdrs`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` equal it, so the
-shared shell must be changed in all six at once.
+copies in `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` equal it, so
+the shared shell must be changed in all seven at once.
 
 ```mermaid
 flowchart TD
@@ -383,14 +390,14 @@ version, since the root pins each dependency by `path` **and** `version`. The
 root's own `0.x` tags are a separate series.
 
 ```sh
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the six CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the seven CLIs
 cargo test -p xso-rs                            # one crate
 cargo test --release -p xso-rs -- --ignored     # its slow tests
 ```
 
-`dist.sh` cross-compiles the six CLIs alongside oxyromon for every target
+`dist.sh` cross-compiles the seven CLIs alongside oxyromon for every target
 (Linux gnu/musl on aarch64 and x86_64, Windows gnullvm, and both Apple targets)
-and packages each binary separately (`chdrs`, `gdirs`, `nszrs`, `xdeltars`,
+and packages each binary separately (`chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`,
 `xpsrs`, `xsors` per target triple, signed on macOS), so a standalone tool is
 installable without the organizer.
 

@@ -1,0 +1,36 @@
+[package]
+name = "cia-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "CIA (CTR Importable Archive) reading and unpacking, interchangeable with ctrtool"
+license = "MIT"
+repository.workspace = true
+keywords = ["cia", "3ds", "nintendo", "ctr", "rom"]
+categories = ["command-line-utilities", "parser-implementations"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "cia_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ciars"
+path = "src/bin/ciars/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+# The SHA-256 that a TMD covers its content index groups with.
+sha2.workspace = true
+thiserror.workspace = true
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+
+[dev-dependencies]
+crc32fast.workspace = true
+tempfile.workspace = true
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:indicatif"]

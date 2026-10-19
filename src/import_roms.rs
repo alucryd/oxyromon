@@ -1,10 +1,10 @@
 use super::archive;
 use super::archive::{ArchiveFile, AsArchive};
 use super::chd::{AsChd, ChdType};
+use super::cia;
 use super::common::*;
 use super::config::*;
 use super::convert_roms::{ConvertOpts, convert_system};
-use super::ctrtool;
 use super::database::*;
 use super::mimetype::*;
 use super::model::*;
@@ -490,10 +490,6 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if CIA_EXTENSION == extension && !as_is {
-        if ctrtool::get_version().await.is_err() {
-            print_error(progress_bar, "Required tool not found: ctrtool");
-            return Ok((system_ids, game_ids));
-        }
         let (new_system_ids, new_game_ids) = import_cia(
             &mut transaction,
             progress_bar,
@@ -1530,14 +1526,14 @@ async fn import_cia(
     unattended_mode: UnattendedMode,
 ) -> Result<(HashSet<i64>, HashSet<i64>)> {
     let tmp_directory = create_tmp_directory(connection).await?;
-    let cia_infos = ctrtool::parse_cia(progress_bar, &romfile.path).await?;
+    let cia_infos = cia::parse_cia(progress_bar, &romfile.path).await?;
 
-    let mut match_results_cia_infos: Vec<(MatchResult, &ctrtool::ArchiveInfo)> = vec![];
+    let mut match_results_cia_infos: Vec<(MatchResult, &cia::ArchiveInfo)> = vec![];
     let mut new_system_ids: HashSet<i64> = HashSet::new();
     let mut new_game_ids: HashSet<i64> = HashSet::new();
 
     let extracted_files =
-        ctrtool::extract_files_from_cia(progress_bar, &romfile.path, &tmp_directory.path()).await?;
+        cia::extract_files_from_cia(progress_bar, &romfile.path, &tmp_directory.path()).await?;
 
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for (cia_info, extracted_path) in cia_infos.iter().zip(extracted_files) {

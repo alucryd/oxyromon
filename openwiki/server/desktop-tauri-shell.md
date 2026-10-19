@@ -36,8 +36,8 @@ sources:
     resource: repo://desktop/tauri.conf.json
   - id: openwiki-source-19a65c75a2d97f6840dee349
     resource: repo://dist.sh
-  - id: openwiki-source-74b8949e6d5862f8f52e4791
-    resource: repo://Dockerfile.archlinux
+  - id: openwiki-source-bb1ebe868e35e9e500714501
+    resource: repo://Dockerfile
   - id: openwiki-source-2d75c6f9d7c9aa4292af3447
     resource: repo://frontend/src/api.rs
   - id: openwiki-source-5d0bfd830d431dc56dd8187c
@@ -52,10 +52,10 @@ sources:
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T12:33:55.258Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Desktop App (Tauri Sidecar)
@@ -285,12 +285,12 @@ the `/mcp` endpoint that the standalone `oxyromon server` does.
 The sidecar is self-sufficient. Every format oxyromon handles is now produced by an
 in-tree crate under `crates/` or a Rust dependency — CHD via chd-rs, CSO/ZSO via
 xso-rs, GDI via gdi-rs, XDELTA via xdelta-rs, BPS/IPS via xps-rs, NSZ via nsz-rs,
-7z/ZIP via sevenz-rust2 and zip, RVZ/WBFS via nod — so the tools oxyromon once
-shelled out to (`chdman`, `xdelta3`, `flips`, `maxcso`, `dolphin-tool`, `wit`,
-7-Zip/p7zip) are gone from the runtime entirely. `src/info.rs` reflects that: its
-dependency list reports `chd-rs`, `nod`, `nsz-rs`, `sevenz-rust2`, `xdelta-rs`,
-`xps-rs` and `xso-rs` as built-in versions, and `ctrtool` is the one remaining
-external binary — optional, and only needed for CIA.
+CIA via cia-rs, 7z/ZIP via sevenz-rust2 and zip, RVZ/WBFS via nod — so the tools
+oxyromon once shelled out to (`chdman`, `ctrtool`, `xdelta3`, `flips`, `maxcso`,
+`dolphin-tool`, `wit`, 7-Zip/p7zip) are gone from the runtime entirely.
+`src/info.rs` reflects that: its dependency list reports `chd-rs`, `cia-rs`, `nod`,
+`nsz-rs`, `sevenz-rust2`, `xdelta-rs`, `xps-rs` and `xso-rs` as built-in versions,
+and no external binary is needed for any format.
 
 That has two packaging consequences:
 
@@ -299,8 +299,9 @@ That has two packaging consequences:
   `.deb` carries only what Tauri derives itself (the webview stack and libraries
   linked at build time). The `p7zip` dependency the desktop package used to carry is
   gone, as recorded in the 0.25.0 changelog.
-- **The container images confirm the same floor.** `Dockerfile.archlinux` installs
-  only `base-devel`, `curl` and `rustup` to build, adds the
+- **The container image confirms the same floor.** The Alpine-based `Dockerfile`
+  installs only `build-base`, `curl`, `gcompat`, `musl-dev` and `rustup` to build,
+  adds the
   `wasm32-unknown-unknown` target and `trunk` for the web UI, then removes the
   toolchain — no codec or archive tools are left in the image that runs
   `oxyromon server`.
@@ -324,10 +325,10 @@ images do not carry and for which no cross toolchain exists, so a Windows or mac
 bundle must be produced on that operating system. `desktop.sh` is the standalone
 equivalent.
 
-The rest of the release matrix is CLI-only, and per target it emits **seven
-binaries**: the server-enabled `oxyromon`, plus the six format-crate CLIs built with
-`cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p
-xso-rs` — `chdrs`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs`, `xsors` — packed as
+The rest of the release matrix is CLI-only, and per target it emits **eight
+binaries**: the server-enabled `oxyromon`, plus the seven format-crate CLIs built with
+`cross build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs
+-p xso-rs` — `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs`, `xsors` — packed as
 `.tar.xz` on Linux and macOS (`7z` archives on `x86_64-pc-windows-gnullvm`), signed
 with `rcodesign` on the Apple targets. `SKIP_TRUNK=true` is exported for the whole
 script, so each target reuses the `trunk build --release` the loop runs first on the
