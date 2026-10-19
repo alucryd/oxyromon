@@ -23,7 +23,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-15T21:23:38.942Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Sorting and the 1G1R Election

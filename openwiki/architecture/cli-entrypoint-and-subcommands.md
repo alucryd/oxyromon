@@ -5,28 +5,26 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
-  - id: openwiki-source-02628a361dd4faa0f62f87a2
-    resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
     resource: repo://src/check_roms/test_check_by_name.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
   - id: openwiki-source-14bdaf940b9be722639ecfcd
     resource: repo://src/config/test_cli.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -55,15 +53,7 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-  - id: openwiki-source-66dda2cecfc81c486446cc8e
-    resource: repo://src/util.rs
-  - id: openwiki-source-1c38b81542bfb683299ad2cd
-    resource: repo://src/xdelta.rs
-  - id: openwiki-source-9b5bca3734529131a5ec0d1b
-    resource: repo://src/xps.rs
-  - id: openwiki-source-196778315263fb8bcc8066e5
-    resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -257,13 +247,13 @@ then finishes it.
 
 The **Dependencies** section is a table assembled from each format module's
 `get_version()`. The entries are collected into a vec and sorted by the name
-reported, so the display order is `chd-rs`, `ctrtool`, `nod`, `nsz-rs`,
+reported, so the display order is `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
 `sevenz-rust2`, `xdelta-rs`, `xps-rs`, `xso-rs` regardless of push order:
 
 | Reported name | Backing module | Value on a working install |
 | --- | --- | --- |
 | `chd-rs` | `src/chd.rs` | `built-in` |
-| `ctrtool` | `src/ctrtool.rs` | version matched by regex from the subprocess |
+| `cia-rs` | `src/cia.rs` | `built-in` |
 | `nod` | `src/rvz.rs` (also backs WBFS) | `built-in` |
 | `nsz-rs` | `src/nsz.rs` | `built-in`, or `built-in, prod.keys not found` |
 | `sevenz-rust2` | `src/archive.rs` | `built-in` |
@@ -271,15 +261,13 @@ reported, so the display order is `chd-rs`, `ctrtool`, `nod`, `nsz-rs`,
 | `xps-rs` | `src/xps.rs` | `built-in` |
 | `xso-rs` | `src/xso.rs` | `built-in` |
 
-The distinction the report encodes is *linked library vs. external tool*. The
-format crates are compiled in, so they have no runtime version to query and
-report the literal `built-in` — the fact worth knowing is that the module is
-present, not which point release it is. `ctrtool` is the one remaining external
-subprocess: its `get_version()` shells out through `util::tool_version`, which
-fails (rather than returning a placeholder) when the binary cannot be spawned,
-so a missing `ctrtool` prints as `↪ ctrtool: not found` through `print_skip`.
-That failure is *reported, not fatal*: `info` always exits successfully, and so
-does any other subcommand whose format path the missing tool would serve.
+Every backend is a linked library now: `ctrtool`, the last external program,
+was replaced by the in-tree `cia-rs` crate, and `util::tool_version` went with
+it. A compiled-in crate has no runtime version to query, so each entry reports
+the literal `built-in` — the fact worth knowing is that the module is present,
+not which point release it is. The `Err` arm still exists in the loop and would
+print a dim `↪ <name>: not found` through `print_skip`, but no `get_version()`
+returns an error any more, so `info` cannot report a missing dependency.
 `nsz-rs` adds a second dimension — it never fails, but reports
 `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, so the
 missing-keys condition is discovered at `info` time instead of mid-compression.

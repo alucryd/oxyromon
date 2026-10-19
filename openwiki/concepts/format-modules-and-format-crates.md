@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Format Modules and Their Crate Backends
-description: The per-format modules in src/ (archive, chd, ctrtool, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates except CIA which shells out to ctrtool, and the archive and disc-image behaviours worth not breaking.
+description: The per-format modules in src/ (archive, chd, cia, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates, and the archive and disc-image behaviours worth not breaking.
 tags: [formats, crates, archive, 7z, zip, chd, chd-rs, rvz, wbfs, nsz, xso, gdi, patches, progress]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
@@ -14,6 +14,8 @@ sources:
     resource: repo://src/archive/test_rewrite.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -22,8 +24,6 @@ sources:
     resource: repo://src/convert_roms.rs
   - id: openwiki-source-94810dc7153d356dfee3df56
     resource: repo://src/crc32.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
     resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
@@ -54,8 +54,6 @@ sources:
     resource: repo://src/rvz.rs
   - id: openwiki-source-4fe52c7cb090ec0387522035
     resource: repo://src/transcode.rs
-  - id: openwiki-source-66dda2cecfc81c486446cc8e
-    resource: repo://src/util.rs
   - id: openwiki-source-856ac41ecb89a38b80d7e895
     resource: repo://src/wbfs.rs
   - id: openwiki-source-1c38b81542bfb683299ad2cd
@@ -66,21 +64,20 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Format Modules and Their Crate Backends
 
 oxyromon keeps one module per format family in `src/`. Each module is a thin,
 opinionated adapter between the [CommonRomfile trait system](romfile-trait-system.md)
-and one backend: an in-process Rust crate, or — in a single remaining case — an
-external executable found on `${PATH}`. The distinction is visible from three
-places — `oxyromon info`, the GraphQL `dependencies` query and the MCP `status`
-tool — and it decides what a user must install, how progress is reported, and
-whether a format works at all when a dependency is missing.
+and one backend, always an in-process Rust crate: no format module spawns a
+process, and oxyromon needs nothing installed on `${PATH}`. The backends are
+listed in three places — `oxyromon info`, the GraphQL `dependencies` query and
+the MCP `status` tool.
 
 ## Module → backend → formats
 
@@ -97,7 +94,7 @@ whether a format works at all when a dependency is missing.
 | `xps` | `xps-rs` (`crates/xps-rs`) | IPS, BPS patches | `"built-in"` |
 | `iso` | in-module Rust, a port of bchunk | CUE/BIN → ISO; vendored ISO 9660 reader | none |
 | `crc32` | `crc32fast` behind `digest` traits | CRC32 hashing primitive | none |
-| `ctrtool` | external `ctrtool` executable | CIA | version parsed from its stderr |
+| `cia` | `cia-rs` (`crates/cia-rs`) | CIA | `"built-in"` |
 
 Every built-in backend returns the literal string `"built-in"` from
 `get_version()` because a linked library has no runtime version to query; the
@@ -108,31 +105,25 @@ so a user does not discover the missing file mid-compression. `gdi`, `iso`,
 `wbfs` and `crc32` export no `get_version()` at all, so they appear in no
 dependency table.
 
-`ctrtool` is the only entry that can actually fail, and the only one whose
-version is real: `util::tool_version` spawns the tool with no arguments, reads
-line 0 of its **stderr**, and takes the first `\d+\.\d+\.\d+` match, falling back
-to the string `unknown` when the tool ran but printed nothing parseable — a
-spawn failure is what propagates as `Err` and makes `info` print
-`ctrtool: not found`, GraphQL and MCP report a null version. CHD used to be a
-second such entry; since `src/chd.rs` drives the in-process `chd-rs` crate,
-`chd::get_version()` returns `"built-in"` like the other crates
-([CHD Format and chd-rs](chd-format-and-chd-rs.md)).
+None of these can fail, so no dependency can be reported missing. CHD and CIA
+used to be the two exceptions, each spawning an external tool (`chdman`,
+`ctrtool`) and scraping its version; `src/chd.rs` now drives the in-process
+`chd-rs` crate and `src/cia.rs` the `cia-rs` crate, so both return
+`"built-in"` like the others ([CHD Format and chd-rs](chd-format-and-chd-rs.md)).
 
 Because every conversion target is now linked in, availability is a static
 question rather than a runtime probe: `convert_roms::format_available` is a
 `matches!` over the eight formats `convert-roms` lists, and `export_roms` accepts
-one longer list, adding `GDI`, `ISO` and `WBFS`. Neither consults a tool version.
-The one runtime availability check left in the format layer is in `import_roms`:
-before importing a `.cia` it calls `ctrtool::get_version()` and, on `Err`, prints
-`Required tool not found: ctrtool` and returns without importing the file.
+one longer list, adding `GDI`, `ISO` and `WBFS`. Neither consults a tool version,
+and `import_roms` dispatches a `.cia` without any probe either.
 
 The version gates that used to guard CHD features are gone with the subprocess.
 There is no `MIN_SPLITBIN_VERSION` (0.265, multi-track CHDs) or
 `MIN_DREAMCAST_VERSION` (0.264, Dreamcast CHD creation) anywhere in `src/`:
 multi-track extraction and GDI-bound Dreamcast conversions are simply features
 of `chd-rs`, so no caller has to skip a game because the installed binary is too
-old. See [External Tool Integration](../integrations/external-tools.md) for the
-shelling-out recipe `ctrtool` still uses.
+old. [External Tools](../integrations/external-tools.md) lists which tool each
+crate replaced and which reference tools the crate tests still use.
 
 ## The shape every module shares
 
@@ -208,11 +199,9 @@ sequenceDiagram
 
 *Caption: how a synchronous format crate runs behind the async progress bar.*
 
-Subprocess-backed modules cannot do this, and only one module still is one:
-`ctrtool` calls `Command::output` directly rather than through a shared helper,
-only so it can exclude one tolerated tool error (below), and reports no
-measurable progress, so the CIA path uses `start_action`/`stop_action` for a
-spinner-plus-message line instead. `nod` sits in between: `rvz.rs` drives it
+No module is subprocess-backed any more; `cia.rs`, the last one, runs
+`cia_rs::Cia::parse` and `cia_rs::unpack` through `run_blocking` like the others.
+`nod` sits in between: `rvz.rs` drives it
 directly on `spawn_blocking` rather than through `run_blocking`, because the
 crate exposes a `Read`er and a writer callback with its own progress semantics
 rather than a bytes-consumed closure. `chd.rs` uses `run_blocking` for both
@@ -397,23 +386,22 @@ workflow layer reads directly). See
 [CHD Format and chd-rs](chd-format-and-chd-rs.md) for what each codec slot and
 hunk size does inside the crate.
 
-## `ctrtool.rs`: CIA is a listing plus a TMD patch-up
+## `cia.rs`: CIA is a parse plus a TMD patch-up
 
-The CIA path is a parse followed by an extract, both shelling to `ctrtool -p -v`.
-`parse_cia` scrapes stdout for `TitleVersion`, `TitleMetaSize` and each
-`ContentId`/`Size` pair, then appends a synthetic entry named `tmd.{version}`
-whose size is the TMD plus the 0x300 TMD cert and the 0x400 CA cert.
-`extract_files_from_cia` re-runs the tool with `--certs`, `--tmd` and
-`--contents`, scrapes *stderr* for the saved content names, and then performs the
-certificate surgery itself: it appends the TMD cert and the CA cert to the
-extracted `tmd` file so the result matches what the size implied.
-
-Both calls tolerate one specific failure — `NcchHeader is corrupted (Bad struct
-magic)` on stdout — because it is the expected result of `-p` on a non-homebrew
-title. Removing that allowance makes retail CIA imports fail. Note that neither
-call goes through a shared runner: `util` offers only `tool_version`, which is
-for version probes, and these two inspect the exit status themselves precisely
-so the tolerated error can be excluded.
+The CIA path is a parse followed by an unpack, both on the `cia-rs` crate, whose
+layout arithmetic and `--plain` extraction reproduce ctrtool's byte for byte so
+extracted contents hash the way DATs recorded them. `parse_cia` runs
+`cia_rs::Cia::parse`, rejects a SimpleCIA (no title metadata) with `Not a retail
+CIA`, and lists each content in file-offset order, named by its content ID as
+eight lowercase hex digits — the spelling ctrtool printed and DATs use — then
+appends a synthetic entry named `tmd.{version}`.
+`extract_files_from_cia` calls `cia_rs::unpack` without the ticket and footer,
+then performs the certificate surgery itself: it reads the CA cert (0x400 bytes
+at offset 0) and the TMD cert (0x300 bytes at 0x700) from the extracted `certs`
+file and appends them, TMD cert first, to the extracted `tmd` file, which is what
+the DAT's `tmd.{version}` entry hashes. A missing or short certificate chain is
+an error naming the file, not a panic. The two lists come back in the same order,
+so `import_cia` zips them.
 
 ## `nsz.rs`: keys as a lazy loader
 

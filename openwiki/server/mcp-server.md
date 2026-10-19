@@ -10,16 +10,14 @@ sources:
     resource: repo://AGENTS.md
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
   - id: openwiki-source-02628a361dd4faa0f62f87a2
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-10fddfccad5d7bf89d675953
     resource: repo://src/convert_roms.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
@@ -58,14 +56,12 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-  - id: openwiki-source-66dda2cecfc81c486446cc8e
-    resource: repo://src/util.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -146,12 +142,12 @@ touch the write lock — `parse_game_name` being the one that needs no connectio
 all. `status` and the `oxyromon://status` resource
 share `build_status`, which reports version, `read_only`, ROM/tmp directories,
 three counts and the same alphabetized dependency list `oxyromon info` prints —
-eight groups (`sevenz-rust2`, `chd-rs`, `ctrtool`, `xps-rs`, `xso-rs`, `nsz-rs`,
-`xdelta-rs`, `nod`). Every one of them except `ctrtool` is a linked crate whose
-`get_version()` returns the literal `"built-in"`, so it can never come back
-missing; `ctrtool` is the only optional external program in the payload and the
-only entry that can report `version: null`, because its probe is a spawn of
-`ctrtool` that fails when it is not on `PATH`. `nsz-rs` is the one codec that
+eight groups (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
+`xdelta-rs`, `nod`). Every one of them is a linked crate whose `get_version()`
+returns the literal `"built-in"`, so none can come back missing or report
+`version: null`; `cia-rs` replaced `ctrtool`, the last optional external program,
+and the tool's description now speaks of format backends rather than external
+tools. `nsz-rs` is the one codec that
 qualifies its answer — `"built-in, prod.keys not found"` when the keys file is
 absent — since only NSZ compression needs keys. Paging is clamped server-side:
 `list_games` defaults to 100 and caps at 1000, `search_games` defaults to 50 and

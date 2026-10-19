@@ -12,6 +12,10 @@ sources:
     resource: repo://Cargo.toml
   - id: openwiki-source-6f5af9e6dfe3a21ba40721b8
     resource: repo://crates/chd-rs/tests/cli.rs
+  - id: openwiki-source-039ef28c41d4fc7a1b163edc
+    resource: repo://crates/cia-rs/tests/common/mod.rs
+  - id: openwiki-source-39b287310cfd4e9fe820875a
+    resource: repo://crates/cia-rs/tests/kat.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-a380817ef07d05704067a359
@@ -102,10 +106,10 @@ sources:
     resource: repo://tests/Test%20System%20(20241228)%20(MAME%20CHD).dat
   - id: openwiki-source-d055e6a57bb9c1c3b426914e
     resource: repo://tests/Test%20System%20(20241230)%20(MAME%20Mixed).dat
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 
@@ -410,19 +414,24 @@ repository *and* the golden report in the crate.
 
 ## `tests/crates.rs`: the shared CLI shell must not drift
 
-`tests/crates.rs` is a workspace-level guard, not a behaviour test. The six
+`tests/crates.rs` is a workspace-level guard, not a behaviour test. The seven
 format crates each ship a CLI whose `ui.rs` — progress bar, `-o DIR`, the
 `✔`/`✖` per-input lines — is a **verbatim copy**. `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the reference and asserts the copies
-in **`chdrs`**, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` are byte-identical
-([tests/crates.rs](../../tests/crates.rs#L1-L17)).
+in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` are byte-identical
+([tests/crates.rs](../../tests/crates.rs#L1-L18)).
 
 It has no feature gate and no fixtures, so it runs on every
 `cargo test --workspace`, including the CI coverage pass. Editing one `ui.rs`
-without the other five turns CI red with `"<path> differs from xsors's ui.rs"`;
-the fix is always to change all six together, which is the convention `AGENTS.md`
+without the other six turns CI red with `"<path> differs from xsors's ui.rs"`;
+the fix is always to change all seven together, which is the convention `AGENTS.md`
 records for the crates
 ([Format Crates](../integrations/format-crates.md)).
+
+One fixture is deliberately duplicated: `crates/cia-rs/tests/data/Test Game (USA,
+Europe).cia` is a byte-identical copy of `tests/Test Game (USA, Europe).cia`, so the
+published `cia-rs` crate carries its own known-answer fixture instead of reaching
+into the root corpus the way `chd-rs`'s tests do.
 
 ## `tests/mcp_stdio.rs`: driving the real binary over JSON-RPC
 

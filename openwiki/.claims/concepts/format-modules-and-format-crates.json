@@ -1,22 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:69e47d523bb2bf660b6c6195c352ddd154b7e12c07e441bc4fba1fc8dcd1939e",
+  "pageVersion": "sha256:a0554e46795013cebec052ac0667538998867c29802c75dc4c5e54758c315fec",
   "claims": [
     {
       "id": "claim_703194daad044e61895c0aaf9bef5779",
-      "statement": "Each src/ format module is a thin adapter between the CommonRomfile trait system and one backend, and only one backend is still a subprocess: archive (sevenz-rust2 + zip), chd (chd-rs), rvz/wbfs (nod), xso (xso-rs), nsz (nsz-rs), gdi (gdi-rs), xdelta (xdelta-rs) and xps (xps-rs) all run in-process, while ctrtool (CIA) shells out to an executable on PATH.",
+      "statement": "Each src/ format module is a thin adapter between the CommonRomfile trait system and one in-process backend: archive (sevenz-rust2 + zip), chd (chd-rs), cia (cia-rs), rvz/wbfs (nod), xso (xso-rs), nsz (nsz-rs), gdi (gdi-rs), xdelta (xdelta-rs) and xps (xps-rs); no backend is a subprocess.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L127-L155",
-          "version": "repo-lines-v1:sha256:b94ec021c5b60ed47f776b04dc04f670587c0fc937b928d3d5f4c7680b586541:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YWIyOWMyNDZhMzRmZGE5Y2Q1NzQ2ZDJhNzA5NWMzZjk3MGU3YzI5NmQ0NDVlZWQwYmYxNTYxOTFkZDllOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkM2JjZWQ3MDdiMGI0OGFiOTIzNTgxOGI4Mzg2NzZkZjUyYjZlMWJjMjlmMjBlYWE2ZDhkNTcyMTRhNmIxNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZGIwNGQyODE0YzQxYTVjNTY2MmQxOTI0NTg4ZDEzMmIwMGU5ZTZmN2Y0NmY4ZTM5MDY1OTQ5OWVhMWYyMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhY2Q3NjY4N2VmMTk1NGZlNTcxNThlNDQxOGExYWM3OGE0ZjNjZjM4YjE4MmViYmZkZmEyNmVlZTRiOWU3Y2IifQ"
-        },
-        {
           "resource": "repo://Cargo.toml#L78-L106",
-          "version": "repo-lines-v1:sha256:e2b43709b28e73b19eebfbef7fe6e76ae7c544e0113dfc3da4be6f1afd17d912:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMTYyNGEyMjZkYzFmMmVmYjE4OTFhZTE4MzkwYzc0ZTIyZjRmMmYwZDhiNDkzNzA1MDRjNGZkMGJkNGRlNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwM2NkZDcyMjg0YjU3YjlhYjY3N2VjMTEyOTM3ZmRmMDMzOTA4MDJmNmYyMjBjYjE2ZmVmYTJlYmNkOWI3NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjYjljNzQ4MDEwYzdmNWUzMDg2NjQ4N2EyNjdhYjNlMDEwNTYzM2EwMjBlMWI0ODJhZTY3MzlkNTRhODFlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMDZmNDNmZDYyNDIzMDJhZTg5OTE2NzI0YmNlYTQ3ZGQzZjhkODY5M2E2MThkMzEwMGMyYTFkM2NlNGNjOTUifQ"
+          "version": "repo-lines-v1:sha256:81ed574ba9f7c06917725b58df9965de83030486aad08c455da74d37a646455f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNTk4NGI2ZGRjYmJlYmM1ZWY2ZGViZTc4MTU3OWE0ODQwN2ZjNmM1NjNjNTc3ZjZjOThlYzdhNGQ2M2JhNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTc1NjViNWY3NWJjMmEzNDNiOWRiODNlMzQwZGI4OGIzNzEwOWM0MDQxOTdjNGVkMzlhNWU0ZTlkODM4YjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5OWIyMzAwYzhjYjE0NzQwZDM0YjYyODdjNmZiYjEwZjI1NjFmMDkzNmU2NTUxM2UyNzFjY2ExMDFiM2YzMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZTZkNzk3NDExNjIxYjAyZTFmZTI4MDdlNGFlYTQ4ZTA0YTVlMjI5MmZjM2U2ODE4MDAwYzk1YTNjMjA2MzgifQ"
         },
         {
-          "resource": "repo://README.md#L202-L226",
-          "version": "repo-lines-v1:sha256:818e6cb609efbc8f1b163a1abc41f53a77eac4b6c19c80be74e85a483e028ad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzVjMDg5Yzc4OTkwZDU5M2Q4N2E2MjNmMWFlMjc4ZjllMjBkNGZhMjliMGIyMmFhN2U5MWExYjhkYmQ1NWMifQ"
+          "resource": "repo://README.md#L202-L216",
+          "version": "repo-lines-v1:sha256:850ec2318649a7696c9be7c88bf1fb3b6fc59452fcbb1d8d3c2d6c62c2c7f07e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwODQxZWM0MjVlZGQ1ZTRlMGQ1MmU2Zjg5ZjdlMGNhMTE3ZTMzY2M5M2UzMGFhMDNmY2I1OTNhYjkxNzA5N2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjNGNlMjk0Y2VmZjU5NzY0NWZhYTJkZjgzYTgzMzEwYWQ1ODdjZGViZGVhNmVjMjJkNDJkYjkzMzU5MjcwYmIifQ"
         },
         {
           "resource": "repo://src/archive.rs#L9-L23",
@@ -27,8 +23,8 @@
           "version": "repo-lines-v1:sha256:67dfc798d5cfa59aa7455471b280ad425d09545de1c7d3e1497c368957307da9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkZTAyYjZmNDE0Y2U5ODM1NGFmYWU3MzJiNTYzMGNjMDNlZThkZmFiMTJhMjkwNTJiMDEzZGY1ZGE2NjAyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiOGVhYzYxM2M2NDBmMDE5NjIzZTI1OGRmZTA1ODE1MmIyZTM5NTJlZjkxNGIxYjkxZWMzZWM2NmNkM2RkZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMDYzYzRkNjMxMTE2NWRhYjVlM2M0OTUzMjRhMWZkNGI4YTliYWIzZGI3OTI3MDVmNWZlYWUzOThhNjlmMzMifQ"
         },
         {
-          "resource": "repo://src/ctrtool.rs#L11-L13",
-          "version": "repo-lines-v1:sha256:e25a4038d6479be8aec44410c68e8e5f91a403d36b1ae2fad0e18517f94574f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5OWE3OWE1NjYzNTg5NDcwN2JjMzgzMjcyY2RiMDcxZWY5MmQ2Yzk1NGM5ODZlZDhiYzNmZDViMzE0MDhjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ0Njc4MTc2MGU5NzRlY2IxMGExN2Q2NDQ2MDk1M2ViNjNlZjRmODkyMGFiYmUwZDc2YWY1NGI2N2IxZDgyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzcyZThiMDg3MDc5ODA1Yjg0NjE2MmQ0ODgyMGU2OGIyNTc2OGFhZDBhNDYwYzZkMDY0N2ZmNmJkM2QxODBlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU5MGEwNmFkOTVlZDg2YzY5ZWNkNzIyNjcxZDg4MjY2ODQ1ZWE2YzE3MmRhMzllOTMyZDYyNWMyMGFmMGI3MyJ9"
+          "resource": "repo://src/cia.rs#L1-L6",
+          "version": "repo-lines-v1:sha256:4cab122500f74105d40fda6b4b69dc30253e3015eb475f61b9c8030489166c8a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA1MTgxNDE2MmIwNjFjZGIyMjI3MTZlYjFjZTUyNWYyMTI1OWNiNmZhNzZhYjE3OGQ5ZDczMGIxMjc3MjY4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODc5MmFkYWJjZWQ3Y2NkYzI3MTI1YjU0ZjFhM2FmZTUwYzc0OTc5NjU0NzFkZDJlZWRkYTIwMDdkNDliMGI1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU5MGEwNmFkOTVlZDg2YzY5ZWNkNzIyNjcxZDg4MjY2ODQ1ZWE2YzE3MmRhMzllOTMyZDYyNWMyMGFmMGI3MyJ9"
         },
         {
           "resource": "repo://src/rvz.rs#L11-L19",
@@ -38,7 +34,7 @@
     },
     {
       "id": "claim_9cd5fe9dabf8489596b8d7edb2ddfd39",
-      "statement": "Built-in backends return the literal string \"built-in\" from get_version() because a linked library has no runtime version to query - chd included now that CHD runs on chd-rs - so ctrtool is the only module whose version is real: util::tool_version spawns it with no arguments, regexes the first x.y.z off line 0 of its stderr, and falls back to the string \"unknown\" when nothing parseable was printed. gdi, iso, wbfs and crc32 export no get_version() at all.",
+      "statement": "Every backend returns the literal string \"built-in\" from get_version() because a linked library has no runtime version to query - chd and cia included now that they run on chd-rs and cia-rs - so no module's version can fail. gdi, iso, wbfs and crc32 export no get_version() at all.",
       "evidence": [
         {
           "resource": "repo://src/archive.rs#L477-L480",
@@ -49,16 +45,12 @@
           "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmYyNDkxMDJhYjhkMDhmYWUyYmJmZjdiYjFhYmM4NjE2OWRhYzA5MTNhN2I2MzhlMTIzYWE3MGMxZmFhZWI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFlYzYyYWE0Y2Q1NzE3ZTUzZGZmN2VjNDI2YTU1NjAyMmIzZmU3ZDhiMGJkZDMzOTEwNGI3NWMzYmU0ZjkxMiJ9"
         },
         {
-          "resource": "repo://src/ctrtool.rs#L22-L34",
-          "version": "repo-lines-v1:sha256:fc91465f1f4bc29f7257de16c236c3434b4de927fc9c2d631aa222ffe93bd164:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiZWQ3MzIwMDZmZTg3MmZhOGE3MDk0MTk1YzJiMTYzYTNjNTYyYmRjNjhkNmNlMWM1MDY2OWVmZWI2ZDJmOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlYjY3ZjZiOTU4YmE4OWQ2YTdkYjYyYmEwZDQzNTJjZjA2YTViZTY3N2I5YjZhOGM2MzU3ZWNmNDZhZWVlYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2MmMwMDk2ZDk3MjQzMDRiNjMxYjlkMDQ4MzRjZjZmZGI1ZWFhZmNiMWYyMWU4ZGNhZTRkMDczMTY5ODRhZTMifQ"
+          "resource": "repo://src/cia.rs#L20-L22",
+          "version": "repo-lines-v1:sha256:13a791b70a5dc95040a73faf7b2aab84b2e8e4949fbd077c7c1deb1cfa8fdbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU2YjBmZGI2ZTgxZTdkOTk5YzdlOTcxMzI0NTQ3NzdkNmE3MjQyNmExM2NkYjA2N2Y5N2FjNzk3ODhiNTViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYyYzAwOTZkOTcyNDMwNGI2MzFiOWQwNDgzNGNmNmZkYjVlYWFmY2IxZjIxZThkY2FlNGQwNzMxNjk4NGFlMyJ9"
         },
         {
           "resource": "repo://src/rvz.rs#L378-L381",
           "version": "repo-lines-v1:sha256:205c24290ac7b2c1bbe934aa9786a024df414121260b2d1568f33935af047efd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I0OGMzOTJiN2VhYjNjYzAyMGNhODIxMjI2ODI5ZjA0NzczN2JkOWM2MTNhZDVjODgyOWFiYzAxY2VhMmFjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjcxODQzM2MxOTNhYTRmMDBiN2ZhYTRkM2NjZWM1M2M5ODcyMmExMjdjMDdmZjIyODIzZmFmMTQxYjQ4M2JkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
-        },
-        {
-          "resource": "repo://src/util.rs#L339-L361",
-          "version": "repo-lines-v1:sha256:5de6d83fd1fc853f5dbc34285200f2cc23e1910e491a19b12f80f78846b0a032:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTA5YzA3NWE3ZjExMTFjNzUzOGEwNmVhNGJlOWE2OTQ2MDlkN2RkOTNhNWI1ZGFkYTEwNmI2NmEwZGE1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0N2NmYWQzODM2YWQ0ZThiNTJmZGFlNzRiYjNmN2RhMjU1YjFiOTI5ODY5NGNmMDE1ZDAxYzExNDg3ZmE1YWYifQ"
         },
         {
           "resource": "repo://src/xso.rs#L195-L199",
@@ -82,7 +74,7 @@
     },
     {
       "id": "claim_6475ee6cf2d741adb47af06bbfd0ce59",
-      "statement": "Conversion and export availability is now a static list rather than a tool probe: convert_roms::format_available is a matches! over the eight formats convert-roms offers and export_roms validates its own longer list adding GDI, ISO and WBFS, neither consulting any tool version. The only runtime availability check in the format layer is import_roms calling ctrtool::get_version() before a .cia and printing \"Required tool not found: ctrtool\" on Err.",
+      "statement": "Conversion and export availability is a static list rather than a tool probe: convert_roms::format_available is a matches! over the eight formats convert-roms offers and export_roms validates its own longer list adding GDI, ISO and WBFS, neither consulting any tool version, and import_roms dispatches a .cia without any tool probe.",
       "evidence": [
         {
           "resource": "repo://src/convert_roms.rs#L27-L42",
@@ -93,8 +85,8 @@
           "version": "repo-lines-v1:sha256:5858ef5a8bbbd0a9b5fec14768ed90a4361275ace0c40920c36cd3461c57453b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGJlZWEwNjg5NDY1OTNkOTM2M2Y4MGM2MjY1ZmM1ZDU5YjkxMzlmODJlMzJjNGE0Zjg5YTljNWZkMWU5MmY4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjkxNDI4MGVkNmY4ZmY1MWQ3YzNkYzIwMDQyOTI5NGU0NWIxN2JlYTM5M2JiY2IwMTAzYjA3MzU1OGVjMDEwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWRiMjFhNzEyNWE1MTRlMGE3ODRjZjMyNWU3MzEwY2Y2MjVmYzM5NzNiNjUzM2JmNTFiZTQ1YWI5YTZiNGU5MyJ9"
         },
         {
-          "resource": "repo://src/import_roms.rs#L492-L496",
-          "version": "repo-lines-v1:sha256:1a353aef04ea3c676461f58e280d0141f61fccc089671418fc63e2b35068b7de:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhNWVkNjk5YTNhNTJmZmM4NWUyYjUwNGU2MDk3OGQxNWIzODhiNTA5MjkwMDM3NDQyZTY5OWM4YTBlYzVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwNDViMDdmNWMxMWFlMGZiOWE2OWM0NGU5ZDEzOTNhOTliMzc1MTg4YmFhMmU2NTViY2RjNjMxOGZiYjIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2FmZDMxOTI5ZDZjNGVmNWFkZTk0ODgwNzQ4NTcwYzg5ZDFkYTk0OTI5YjBlYTEyZWVjYjU0MWIxMGJkMGRjOSJ9"
+          "resource": "repo://src/import_roms.rs#L492-L500",
+          "version": "repo-lines-v1:sha256:1681a86855651c5ba58e0ed68e792265890404a479047efe8c652fc29cb859d5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhNWVkNjk5YTNhNTJmZmM4NWUyYjUwNGU2MDk3OGQxNWIzODhiNTA5MjkwMDM3NDQyZTY5OWM4YTBlYzVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZlN2M3MDFkYTZmNjYyMDVmNzFiMmJmY2ZlYzhiNjI0NWJlYTYzYWQ0Mzc3YjAwYzZlNjViMTg2N2E3MDUwZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwNDViMDdmNWMxMWFlMGZiOWE2OWM0NGU5ZDEzOTNhOTliMzc1MTg4YmFhMmU2NTViY2RjNjMxOGZiYjIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDUwNWNkZThiYWE4ZDk5ZDk0YmVmZGRiMTNhNDQ1ZjQ1MjQ3MzllZWI5M2Q4ZjkwZDdmNWVhMGNhODdjZTc3ZiJ9"
         }
       ]
     },
@@ -219,7 +211,7 @@
       "statement": "ROM-container Zstandard is chosen only in archive.rs: get_archive_compression maps SEVENZIP_/ZIP_COMPRESSION_ALGORITHM plus separate 1-22 zstd level keys (default 19, RomVault's level) and 1-9 levels for the other codecs onto ArchiveCompression. sevenz-rust2 is confined to that module, whereas the zip crate also appears in download_dats.rs and import_dats.rs, where it merely unpacks a downloaded DAT archive and never selects a codec.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L127-L155",
+          "resource": "repo://Cargo.toml#L129-L157",
           "version": "repo-lines-v1:sha256:b94ec021c5b60ed47f776b04dc04f670587c0fc937b928d3d5f4c7680b586541:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1YWIyOWMyNDZhMzRmZGE5Y2Q1NzQ2ZDJhNzA5NWMzZjk3MGU3YzI5NmQ0NDVlZWQwYmYxNTYxOTFkZDllOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkM2JjZWQ3MDdiMGI0OGFiOTIzNTgxOGI4Mzg2NzZkZjUyYjZlMWJjMjlmMjBlYWE2ZDhkNTcyMTRhNmIxNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ZGIwNGQyODE0YzQxYTVjNTY2MmQxOTI0NTg4ZDEzMmIwMGU5ZTZmN2Y0NmY4ZTM5MDY1OTQ5OWVhMWYyMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhY2Q3NjY4N2VmMTk1NGZlNTcxNThlNDQxOGExYWM3OGE0ZjNjZjM4YjE4MmViYmZkZmEyNmVlZTRiOWU3Y2IifQ"
         },
         {
@@ -235,7 +227,7 @@
           "version": "repo-lines-v1:sha256:38c32d472fb8e1fb0e8c455b41fe00c0261b2cb1b55b0d04475defe78f9e42fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhjMzJkNDcyZmI4ZTFmYjBlOGM0NTViNDFmZTAwYzAyNjFiMmNiMWI1NWIwZDA0NDc1ZGVmZTc4ZjllNDJmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhjMzJkNDcyZmI4ZTFmYjBlOGM0NTViNDFmZTAwYzAyNjFiMmNiMWI1NWIwZDA0NDc1ZGVmZTc4ZjllNDJmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTcwMjg0OWZmNWJmOGFiNTdhMmZiZjdiZjg0ZWE5NDlmZTAxNzg2YTdjNzMxNWYwMTJiMWM5NDQ2MDRmOTI2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM5ZjMyNWIzNTJhZTM5YWQyNDE3Zjc4MWYzZjhlNWU3NjY3NGUxZGIzNmIxYTc5MmU2MzNiZjYwMjc5YWRiMiJ9"
         },
         {
-          "resource": "repo://src/import_dats.rs#L121-L124",
+          "resource": "repo://src/import_dats.rs#L129-L132",
           "version": "repo-lines-v1:sha256:2df125e440dbb972aebc7e1c922f74c4eec37f63c2d8281df83b4bb8af2bbea5:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTlhYmVjMGRmMjMwYjQ3NjE3OTI0MDk3MzAwZjgyY2EyYTRjMDlmYzg3NTQ2NDlhYjg1ODJhOWY4MmI0ZmQ4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTg5YmVjNjI0NzcxYzYyOTNlODY4MGRhMzhlMDQ3ZWEzYTViNWRlNjZhOGMwYzcwZGQwN2M3NWJjZTM5ZjJlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWY1ZjVjNDI5ZTM1ZTM3N2ExNzg3YjczZDE2ZjkzYTA5M2NkMGNhNDUzZGZlMjczYzVmMWEzNzdjMGI5YzhmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjU2ZDEzNDlhNGFjZWMwYmMzYjNiODBjNTgxNzM5ZjRlZGExZGNmNTg1NGRmOWEyN2YxOTU2NjA2Njg1OWEzNyJ9"
         }
       ]
@@ -253,7 +245,7 @@
           "version": "repo-lines-v1:sha256:9f0c837c94e16686e2547464b9c56e1419bad8a643eb2e61fd6f88e6a0ee2886:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYTNmMTAzMmVlM2Y3ZWFiZjU4ODJiMTNiNTg5NzkxN2I1NDljZmJkZGU5ZjQ4MGEwOTc2MjAzNjVlNjk2NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNjEzMzdkOTQyMWZhMmE3ZThlMGZhYWViZmVkNTA3M2RkY2FmMTQ2MmRhYTQyNWFlNTVmNzA3OTFlYzI1MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmOGI4MWUyNGY1ZjNiZWM3NzBiYjE1YWQ5YjNlYmIxM2Y5MTZkZWVmMmU2OWFiZmI3NGU4N2U0Njg2NDBlNTUifQ"
         },
         {
-          "resource": "repo://src/rebuild_roms.rs#L351-L364",
+          "resource": "repo://src/rebuild_roms.rs#L355-L368",
           "version": "repo-lines-v1:sha256:f94c0677c9a4c9e9c4c0dbc8c52832c61af9b242516f164e18c04ebde6509119:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhNjZkNGFkZDk1YWZhOWI2ZThiYTE3ODlmZjBhNzdjMDNhNThiZmIyYmY1ZjJhNzY2NjI5NDVkM2Y2NGNiMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhY2FkMTA1MjE0ODgyZjI3NDJlMTZjNGQ2ZDY3NjExZmY0ZGYxZGE4OThjMTc3Yjk2ZDE0NGUxYmU4NjI1NjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxZWVjNDViZDgxMzIwZDk2N2E2ZTk1YTE0NmEwZTQ5NTYwN2MwNjE5MzJmNTlmNzE2ZmQxNDU2OTE1Y2Q2ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0YjhjOWY5NDI0NzFiN2E3MzhjY2Y2OTU0MWJkYjY0ZDBkMjg2NDZjOWQxNDBhZWI4N2M3NGJkMTk3MWNiNTIifQ"
         }
       ]
@@ -424,37 +416,19 @@
     },
     {
       "id": "claim_e6a54608fcda414882e2898d71c9c0ee",
-      "statement": "The CIA path is a ctrtool listing plus certificate surgery in oxyromon: parse_cia scrapes TitleVersion/TitleMetaSize/ContentId+Size and appends a synthetic tmd.{version} entry sized as TMD plus 0x300 TMD cert plus 0x400 CA cert, and extract_files_from_cia appends those certificates to the extracted tmd file itself.",
+      "statement": "The CIA path is a cia-rs parse plus certificate surgery in oxyromon: parse_cia rejects a CIA without title metadata, lists the contents in file-offset order named by their content ID in lowercase hex, and appends a tmd.{version} entry; extract_files_from_cia unpacks without ticket and footer, then appends the 0x300-byte TMD cert and the 0x400-byte CA cert from the extracted certs file to the extracted tmd file.",
       "evidence": [
         {
-          "resource": "repo://src/ctrtool.rs#L101-L161",
-          "version": "repo-lines-v1:sha256:71173ecdd789aad7de154706ed0230f7375b2a0068227553951ce7d9755c41e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMWRlYTliMzVjMDk0NTlhYzMzNWZiNzFmM2YzMWU4M2ZhNzhjNThmNTUyOTZkY2VlZWYzZDcwNWE5YWZjYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0YzAxMmIzNDJlMjU0YWJmMDMwZGM5YmQ4Y2ViZTYyMmQ2ZTE4NjIyMTRkZmM4YjIyMmViNmJmYjRiNzA5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/cia.rs#L24-L63",
+          "version": "repo-lines-v1:sha256:73c1c109ff30db852e04d16ed63519b92dd5610866649b64815d67d1518ed60f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhYTE3YzEyYzIwOWQ1MzNlZTUwNTU5NWY1N2IxYjdlZWI3NmE4MjBkOTFkMjRiNTAzZjk3NGQ5MDcxMDM1MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMmU1YjUwZWI0MDM4MmViYmJhZjQ0Mzk1YWE4NjRiNjBlMTAyM2RiNWRlNjRlNjJlNmU5MDhhYzE2MTc2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMzEyMDdiMTk4OTQyNTcyNmQ0NzNiZTYwNjRkNzZiYWY1ODYwM2RiNzU3ZTVhMDhmMWIzYWNiYzY4MjNmNTEifQ"
         },
         {
-          "resource": "repo://src/ctrtool.rs#L15-L20",
-          "version": "repo-lines-v1:sha256:675b2b31e9b49182e60083ea054aa77facb1b26f14ecbf0e9ff040ae8fa1b60d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBiM2UxZDA1NTNkMjM2ZDM3ZjZhNDdmOThkNzJkZjIyN2ZiYzc2MTM0YmZiMGM2M2Q2OTM2OWIxMzc4NTk3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMxMGQxNDM3MWI4MGNlNGQ4NjhmYThiMTUzNjI1NjA0NDIzNjcyMmU2MjFlYTdjNTc2YWQyZDVmN2Q3OGQ2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVhNmI1OGY1ODRhMDllOTE5MzIwYTk0MjE5YWEzZWE5NGQ3NGJmNTZhOTM3NTQ1ZjVhYmYzOWM0YmE5ODRmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAwYzQwNzU0ODU3YTYxMDU4MTExNWE0NjkwZGFlYzNmNTU2NTI5MGRmYWZiMzYyNGNkNjAwY2NlZGQ5YTgzZSJ9"
+          "resource": "repo://src/cia.rs#L65-L128",
+          "version": "repo-lines-v1:sha256:a15059c358f6516a5416526a21625675a0c450ced4c3a0873a8f1b4b02ffa281:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMWRlYTliMzVjMDk0NTlhYzMzNWZiNzFmM2YzMWU4M2ZhNzhjNThmNTUyOTZkY2VlZWYzZDcwNWE5YWZjYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0YzAxMmIzNDJlMjU0YWJmMDMwZGM5YmQ4Y2ViZTYyMmQ2ZTE4NjIyMTRkZmM4YjIyMmViNmJmYjRiNzA5NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/ctrtool.rs#L36-L99",
-          "version": "repo-lines-v1:sha256:e90f85912b3fd0a9341de04e5b11fe74f36f5e5f7bd532436eb89f23adcf7353:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhYTE3YzEyYzIwOWQ1MzNlZTUwNTU5NWY1N2IxYjdlZWI3NmE4MjBkOTFkMjRiNTAzZjk3NGQ5MDcxMDM1MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMGRmYzcwNjRkMmM2MDQzZmY1ZDA5ZTE5NTEyMzliMGIxOTllNzc2ZjM1ZGI4NTk4NzRkYmUwNDkzMzZhOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMzEyMDdiMTk4OTQyNTcyNmQ0NzNiZTYwNjRkNzZiYWY1ODYwM2RiNzU3ZTVhMDhmMWIzYWNiYzY4MjNmNTEifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_3a15c461f59d444fac8cc150736afd83",
-      "statement": "Both ctrtool entry points deliberately call Command::output themselves - util offers only tool_version, meant for version probes, so there is no shared runner to bypass any more - and tolerate the specific stdout error \"NcchHeader is corrupted (Bad struct magic)\", because that is the expected result of -p on a non-homebrew title; removing the allowance breaks retail CIA imports.",
-      "evidence": [
-        {
-          "resource": "repo://src/ctrtool.rs#L111-L132",
-          "version": "repo-lines-v1:sha256:cb2e47b37208d239e7d5a8f22c747ef0e331c6f84e27e2c4682d2bd2efcd064e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZWEzYTNkN2NjN2UzMWZmZDBjYmJhYTU2YjM4ZDE2NDNkMWYyNTg5Mjk1NWM0NjViMDc5ZTEzZGVhMzFmNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZjMzNzVjZjFjODBkOTIyMWEwYzAyMGE3YzRjNDZhNzk2NGUyZTM0ZWY5OGI1NzEzZTY5NWM4YjdlMzI1YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MjQ0NmNjMmY3Y2QzOTc4OTFiYTRmNjk0MTBlODBkMDEzYWY0YzhhNjY5ZDY4NTc5NGQxNGNlN2E4ZTM0NDYifQ"
-        },
-        {
-          "resource": "repo://src/ctrtool.rs#L42-L57",
-          "version": "repo-lines-v1:sha256:bedb13f4d2bfc151bb6d2f1d666e889c53b742d77fdef3baf6c82325922e24ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZWEzYTNkN2NjN2UzMWZmZDBjYmJhYTU2YjM4ZDE2NDNkMWYyNTg5Mjk1NWM0NjViMDc5ZTEzZGVhMzFmNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwYzlkMjQ5MTRjMWFmNzA5ZDc2OWYwMTUyODk4MjA5YWNiM2E2ZjgwNzJkNTg4YjA5ZjE5MDcxZjRjODQwZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MGZlNmNiYzI3NmU2YWRjZWUxZDE0OTllNTllNWI1ZDM2YjE0MWU4MmJjOTFkMzA4NDhkMzc4NDExOWZhZWIifQ"
-        },
-        {
-          "resource": "repo://src/util.rs#L339-L361",
-          "version": "repo-lines-v1:sha256:5de6d83fd1fc853f5dbc34285200f2cc23e1910e491a19b12f80f78846b0a032:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTA5YzA3NWE3ZjExMTFjNzUzOGEwNmVhNGJlOWE2OTQ2MDlkN2RkOTNhNWI1ZGFkYTEwNmI2NmEwZGE1MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0N2NmYWQzODM2YWQ0ZThiNTJmZGFlNzRiYjNmN2RhMjU1YjFiOTI5ODY5NGNmMDE1ZDAxYzExNDg3ZmE1YWYifQ"
+          "resource": "repo://src/cia.rs#L8-L13",
+          "version": "repo-lines-v1:sha256:675b2b31e9b49182e60083ea054aa77facb1b26f14ecbf0e9ff040ae8fa1b60d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBiM2UxZDA1NTNkMjM2ZDM3ZjZhNDdmOThkNzJkZjIyN2ZiYzc2MTM0YmZiMGM2M2Q2OTM2OWIxMzc4NTk3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMxMGQxNDM3MWI4MGNlNGQ4NjhmYThiMTUzNjI1NjA0NDIzNjcyMmU2MjFlYTdjNTc2YWQyZDVmN2Q3OGQ2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQ4YjgyNzU3NGY0ZmExYmE4ZDJlYzI2MWExNzU4NWRiOGU5NjVkZmE1OTlhY2YxYzgyZDBkOGQ1OTc5OGNkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjc3YWExZmI4MTliMGQ3NmQ4ZjdkMTU0ZWMxNDdiNTdmYzA0ODZkMmIyNzYyZGQzYTE1MzdhYThhN2Q1ZGViZCJ9"
         }
       ]
     },
@@ -562,19 +536,19 @@
     },
     {
       "id": "claim_28353a92daec490688434cd7671421ea",
-      "statement": "The dependency table shown by info, the GraphQL dependencies query and the MCP status payload is the same hard-coded list keyed by backend name (sevenz-rust2, chd-rs, ctrtool, xps-rs, xso-rs, nsz-rs, xdelta-rs, nod), with gdi and iso absent, and a failing get_version rendered as \"not found\" / a null version.",
+      "statement": "The dependency table shown by info, the GraphQL dependencies query and the MCP status payload is the same hard-coded list keyed by backend name (sevenz-rust2, chd-rs, cia-rs, xps-rs, xso-rs, nsz-rs, xdelta-rs, nod), with gdi and iso absent, and a failing get_version would be rendered as \"not found\" / a null version.",
       "evidence": [
         {
-          "resource": "repo://src/info.rs#L26-L43",
-          "version": "repo-lines-v1:sha256:39f37647fdd916758f8c53b4ab11e7ad9222210ad680c0f334f0bf736a4692fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkMDRkZGE3YWIxYWRkNGJlNTQ2MDk3MjBmYWI1MjZkYWE4MjA4M2VlNDhkZTgzNDhhZmJhOTY3YjMzYjNjMmUifQ"
+          "resource": "repo://src/info.rs#L26-L44",
+          "version": "repo-lines-v1:sha256:278e3392450887ba7f2e617ffe8b2bbc7fc654cdd3e8b370242e871149f0ce9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YmVhMjg1OTRjYzc3Y2VmN2U1ZmFmYjc4ZjRiYmM2M2E5ZDdiYWYxYWZkYWI3ODQ1NjEwNmZhNGU1ZmFhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNWU4ODQxNjQxZWNlMmU0M2U0NDI4YWI2Mzk3NjIzYTAyNjNjMDI2ZWQwOTVmMTBkOWVlYTE2NzVmZGM3YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0OWNmY2JiYTNjM2M5N2E5NjA3YjI5ZTUzZjVlZTUxNGI5ZTk5NzU0N2IyNjA1N2FlNTkxZjZmMjllYWU1NjcifQ"
         },
         {
           "resource": "repo://src/mcp/read.rs#L67-L79",
-          "version": "repo-lines-v1:sha256:87c9b4860d62c6ca769e00e7480e1c09db6a58e788435cff459193bd7d86c57a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOTg2NWY3ZjI3MmM0NmZhYjAxYzRiMjM0MTUxNjM1OWQ3YzdiZWQ5NGRmMGI2N2Q0MWM0ZjE3OWQzZmM0MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxM2M1NTI1NDFlNjFhNTUxMzI4YWI0M2E1ZmU1MGFjZmEzYTQxM2FlMjkwMGVhMmZiOTE2YmUwMWE4N2NmNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0MzEwYmU1NTI3NmRkNWRmNWZlZTBkZGUyODkwZDkwYWJiNGIwYTY1ZTY5Njk2NWIxNTY5YTcyYTEwNzMwNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzUzZDFjYzVlNTkzMjRiODQxNjk0NDMzZWEwYzUxZGE3YzVlYmFmZGFlMGQ2YzM2ZTczYWNlMDQ4ODAxYjMifQ"
+          "version": "repo-lines-v1:sha256:34aa5819945b9c0603e2bf0b672e416539054416a52e053f73ae0a5f1e54d315:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmOTg2NWY3ZjI3MmM0NmZhYjAxYzRiMjM0MTUxNjM1OWQ3YzdiZWQ5NGRmMGI2N2Q0MWM0ZjE3OWQzZmM0MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxM2M1NTI1NDFlNjFhNTUxMzI4YWI0M2E1ZmU1MGFjZmEzYTQxM2FlMjkwMGVhMmZiOTE2YmUwMWE4N2NmNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0MzEwYmU1NTI3NmRkNWRmNWZlZTBkZGUyODkwZDkwYWJiNGIwYTY1ZTY5Njk2NWIxNTY5YTcyYTEwNzMwNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkNzUzZDFjYzVlNTkzMjRiODQxNjk0NDMzZWEwYzUxZGE3YzVlYmFmZGFlMGQ2YzM2ZTczYWNlMDQ4ODAxYjMifQ"
         },
         {
           "resource": "repo://src/query.rs#L241-L261",
-          "version": "repo-lines-v1:sha256:ec24e9b4c6b82553e26f570a1d715e6f64eb8043ab4cbf749ce3766b287138a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhOTRkNmNlMGRiZjRhNGU0NTZlYWI1Yzg4NGNiMzQwMzAxYzliMjE4YWYyNTM2ZWYwN2I4MjkyMmUwZWZhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YTg3ZDc4ZjBmMGE2MjljY2ViMzJlMzdkMmI0OTQyMDk0YmIxNzYyNjMwNjU1MTkxMDM3NTgyNjNiYzA5NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ODZkMzBlZDQwMjU3NjE1ODhhYzVmOTJkNTY1MzM2M2Y4ODBiNzUwYzY5ZjBkOTJiNzVlNzMyZjQ0MWNhMDEifQ"
+          "version": "repo-lines-v1:sha256:0962cbfebf221b377a4c02dd0208e30aa09613490a307494a35730758ffc98c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhOTRkNmNlMGRiZjRhNGU0NTZlYWI1Yzg4NGNiMzQwMzAxYzliMjE4YWYyNTM2ZWYwN2I4MjkyMmUwZWZhNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1YTg3ZDc4ZjBmMGE2MjljY2ViMzJlMzdkMmI0OTQyMDk0YmIxNzYyNjMwNjU1MTkxMDM3NTgyNjNiYzA5NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0ODZkMzBlZDQwMjU3NjE1ODhhYzVmOTJkNTY1MzM2M2Y4ODBiNzUwYzY5ZjBkOTJiNzVlNzMyZjQ0MWNhMDEifQ"
         }
       ]
     },
@@ -663,6 +637,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-14T21:01:38.051Z"
+    "at": "2026-10-19T17:45:26.496Z"
   }
 }

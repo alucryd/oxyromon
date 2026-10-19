@@ -20,6 +20,8 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -42,8 +44,6 @@ sources:
     resource: repo://src/convert_roms/test_zip_to_zip_should_do_nothing.rs
   - id: openwiki-source-69865de039e204c039a753a3
     resource: repo://src/convert_roms/test_zip_to_zip.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
@@ -84,10 +84,10 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Format Conversion and Export
@@ -371,13 +371,11 @@ The durable invariants that came with the crate:
   which is what `info`, the GraphQL `query` status and the MCP `status` tool
   print under the `chd-rs` name
   ([src/chd.rs](../../src/chd.rs#L896-L898),
-  [src/info.rs](../../src/info.rs#L26-L44)). `util::tool_version` survives
-  purely as the subprocess version probe and now has exactly one caller,
-  `ctrtool::get_version` — CIA import is the only format that still shells out,
-  and it is the only place that can print `Required tool not found: …`
-  ([src/util.rs](../../src/util.rs#L339-L361),
-  [src/ctrtool.rs](../../src/ctrtool.rs#L32-L34),
-  [src/import_roms.rs](../../src/import_roms.rs#L492-L496)).
+  [src/info.rs](../../src/info.rs#L26-L37)). `util::tool_version` is gone: its
+  last caller was `ctrtool::get_version`, and CIA import now runs on the
+  in-process `cia-rs` crate, so no format shells out and nothing can print a
+  missing-tool error
+  ([src/cia.rs](../../src/cia.rs#L20-L22)).
 
 ## Per-target behaviour worth knowing
 

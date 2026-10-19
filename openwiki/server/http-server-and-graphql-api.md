@@ -1,7 +1,7 @@
 ---
 type: server-surface
 title: HTTP Server, GraphQL API and Uploads
-description: The axum surface built by oxyromon server — one loopback listener serving /graphql, the /events SSE stream, four multipart upload endpoints, /romfiles/{id} downloads, /mcp and the embedded SPA; plus AppState, the DataLoader trio, the read surface (counts, merged per-system settings, the built-in-vs-ctrtool dependency report), pool-failure semantics, the server-fetched URL import and graceful shutdown.
+description: The axum surface built by oxyromon server — one loopback listener serving /graphql, the /events SSE stream, four multipart upload endpoints, /romfiles/{id} downloads, /mcp and the embedded SPA; plus AppState, the DataLoader trio, the read surface (counts, merged per-system settings, the all-built-in dependency report), pool-failure semantics, the server-fetched URL import and graceful shutdown.
 tags: [axum, graphql, async-graphql, dataloader, dependencies, sse, multipart, upload, loopback, shutdown]
 sources:
   - id: openwiki-source-36f054f1f38f2197a6af5bca
@@ -16,16 +16,14 @@ sources:
     resource: repo://README.md
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
     resource: repo://src/download_dats.rs
-  - id: openwiki-source-9add64e166d8ef19bd58c5af
-    resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
@@ -54,14 +52,12 @@ sources:
     resource: repo://src/server/test_server.rs
   - id: openwiki-source-da31a7c38b2966a8a0185145
     resource: repo://src/server/test_uploads.rs
-  - id: openwiki-source-66dda2cecfc81c486446cc8e
-    resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -157,18 +153,14 @@ the game's rows ordered by name with no completion or region filter.
 
 Two of those fields are worth understanding rather than treating as lookups:
 
-- **`dependencies` reports the format engines, and only one of them can be
-  missing.** The eight entries are `sevenz-rust2`, `chd-rs`, `ctrtool`,
+- **`dependencies` reports the format engines, and none of them can be
+  missing.** The eight entries are `sevenz-rust2`, `chd-rs`, `cia-rs`,
   `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` (which backs RVZ and
-  WBFS), sorted by name. All but `ctrtool` are linked-in crates whose
-  `get_version()` returns the literal `built-in` and cannot fail — `nsz-rs` is
-  the one that adds detail, returning `built-in, prod.keys not found` when
-  `~/.switch/prod.keys` is absent. `ctrtool` is the only external binary in the
-  list: it is spawned with no arguments and its first stderr line matched against
-  a `\d+\.\d+\.\d+` regex, so `version` comes back `null` exactly when the binary
-  is not on `PATH` (`unknown` if it is there but says nothing parseable). It is
-  the only dependency whose absence a client can detect here, and CIA import
-  checks `ctrtool` again at import time rather than trusting this report. The
+  WBFS), sorted by name. All are linked-in crates whose `get_version()` returns
+  the literal `built-in` and cannot fail — `nsz-rs` is the one that adds detail,
+  returning `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent.
+  `version` is still nullable in the schema, but no entry produces `null` any
+  more: `cia-rs` replaced `ctrtool`, the last external binary on the list. The
   same eight-entry list backs `oxyromon info` and the MCP read tool, so the three
   surfaces agree.
 - **`systemSettings(systemId)` is the effective configuration, not a row
@@ -449,7 +441,6 @@ be the slow part.
 | `Download exceeds the 100 GiB limit` | `MAX_ROM_DOWNLOAD_SIZE`, enforced while streaming, not from `Content-Length`. |
 | `GET /romfiles/{id}` returns 404 | The `romfiles` row exists but the file does not under `ROM_DIRECTORY`, or cannot be opened. A *nonexistent* id instead panics inside `find_romfile_by_id`, which is a different bug. |
 | API works, `/` and assets do not | The binary was built without a UI: `SKIP_TRUNK=true` against an empty `target/assets`, or from the published crate where `frontend/` is absent. `serve_index` unwraps `index.html`. |
-| `dependencies` reports a `null` version for `ctrtool` | It is the only external binary on that list; every other entry is a linked-in crate reporting `built-in`. CIA imports are refused with `Required tool not found: ctrtool` until it is on `PATH`. |
 | A mutation fails with `Failed to acquire database connection` | Five-connection budget exhausted by long-running spawned actions. The mutation failed cleanly; retry once an action finishes. |
 | A read query fails where a mutation would have errored cleanly | Query resolvers still `unwrap()` on pool acquire — a known asymmetry, not a new bug. |
 | A `PREFER_FORMAT` or directory setting is rejected | `PreferFormatValidator` / `DirectoryValidator` ran before any write; the message lists the valid choices or says `Missing or invalid directory`. |

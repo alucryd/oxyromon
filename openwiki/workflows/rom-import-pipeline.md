@@ -8,6 +8,8 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
@@ -74,10 +76,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # ROM Import Pipeline
@@ -187,7 +189,7 @@ a stray `println!` here would corrupt the protocol stream
 exactly once on the success path
 ([src/import_roms.rs](../../src/import_roms.rs#L401-L594),
 [src/database.rs](../../src/database.rs#L74-L85)). Every early return — empty
-file, already in database, missing external tool — returns `Ok` **without
+file, already in database — returns `Ok` **without
 committing**, so the transaction is dropped and rolled back; only the filesystem
 side effects those branches performed (a delete) survive. Nothing partial ever
 reaches the database.
@@ -207,7 +209,7 @@ flowchart TD
     D --> E{"dispatch on extension"}
     E -->|"7z or zip"| F["import_archive"]
     E -->|"chd"| G["import_chd via chd-rs"]
-    E -->|"cia"| H["ctrtool required, then import_cia"]
+    E -->|"cia"| H["import_cia via cia-rs"]
     E -->|"cso or zso"| I["import_cso / import_zso"]
     E -->|"nsz"| J2["import_nsz"]
     E -->|"rvz"| K["import_rvz"]
@@ -220,7 +222,6 @@ flowchart TD
     J2 --> M
     K --> M
     L --> M
-    E -.->|"ctrtool missing"| N["print error, return without commit"]
     F -.->|"no match"| O["trash with -t, delete with -d"]
     L -.->|"no match"| O
     O --> M
@@ -246,14 +247,18 @@ is additionally gated on `!as_is`: archive, CHD, CIA, CSO, NSZ, RVZ, ZSO, and
 finally `import_other`. `--as-is` therefore does two things at once — it sends
 every file to `import_other` (hash the container as it sits, move it, no
 decompression), and it suppresses the auto-conversion pass below
-([src/import_roms.rs](../../src/import_roms.rs#L448-L593)).
+([src/import_roms.rs](../../src/import_roms.rs#L401-L590)).
 
-Only one external tool is still required on this path: `.cia` needs `ctrtool`, and
-if it cannot report a version `import_rom` prints `Required tool not found`,
-returns `Ok` with the empty id sets and never commits, so the file stays where it
-is ([src/import_roms.rs](../../src/import_roms.rs#L492-L496)). CHDs have no such
-gate — the former `chdman` branch is gone along with the module, and
-`chd::get_version()` reports `built-in`
+No external tool is required on this path. `.cia` dispatches straight into
+`import_cia`, which parses the container and unpacks its contents and TMD with
+the in-process `cia-rs` crate, so there is no probe and no `Required tool not
+found` exit any more ([src/import_roms.rs](../../src/import_roms.rs#L492-L505)).
+A CIA that cannot be parsed — a corrupt TMD, a missing certificate chain, or a
+homebrew SimpleCIA with no title metadata — is an `Err` naming the file. When
+`import-roms` walks a directory it prints that error, says `Continuing` and moves
+to the next file; a single file given directly fails the command. Either way the
+transaction is dropped uncommitted. CHDs have no gate either — the former `chdman`
+branch is gone along with the module, and `chd::get_version()` reports `built-in`
 ([src/chd.rs](../../src/chd.rs#L896-L898)).
 
 ## Matching a file to a catalog rom
@@ -304,7 +309,7 @@ represents exactly one complete game, otherwise take the members out.**
 | Archive = mixed or partial game | each matched member extracted and **copied** to the system directory (arcade and jbfolder games get a `<game>/` subfolder) | 1 romfile per member |
 | CD CHD | unpacked to cue/bin in tmp; only if *every* track matches one game **and** one system is the CHD moved as `<game>.chd` | 1 romfile → 1 rom per track |
 | DVD / HD / LD CHD | hashed by extracting (or reusing the hashes the CHD header publishes), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder | 1 romfile → 1 rom |
-| CIA | parts extracted with `ctrtool` for hashing; whole `.cia` moved as `<game>.cia` | 1 romfile → *n* roms |
+| CIA | contents and the certificate-extended TMD extracted with `cia-rs` for hashing, each named as the DAT names it (content ID in lowercase hex, `tmd.<version>`); whole `.cia` moved as `<game>.cia` | 1 romfile → *n* roms |
 | CSO / ZSO / NSZ / RVZ | container kept, renamed `<rom name>.<ext>` after hashing the decoded image | 1 romfile → 1 rom |
 
 The archive decision is the interesting one
@@ -448,7 +453,7 @@ disk as well as in the database.
 
 | Situation | Behaviour |
 | --- | --- |
-| `ctrtool` missing for a `.cia` | error printed, file untouched, transaction rolled back, run continues |
+| Malformed or homebrew `.cia` during a directory walk | error naming the file printed, file untouched, transaction rolled back, run continues |
 | CHD whose parent sits in the same batch | children import first, so the parent is still there when `as_chd` looks for it |
 | Empty file | deleted immediately, no rows |
 | Path already in `romfiles` | skipped unless `--force` |

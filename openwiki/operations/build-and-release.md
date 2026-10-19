@@ -1,9 +1,11 @@
 ---
 type: build-and-release
 title: Builds, Distribution and Releases
-description: How oxyromon's helper scripts (build.sh, desktop.sh, dist.sh, docker.sh, test.sh) produce the CLI, desktop bundle and container images, which cross-compilation targets and signing steps the release matrix covers, and the ordering and blockers that govern publishing the six format crates and oxyromon itself.
+description: How oxyromon's helper scripts (build.sh, desktop.sh, dist.sh, docker.sh, test.sh) produce the CLI, desktop bundle and container images, which cross-compilation targets and signing steps the release matrix covers, and the ordering and blockers that govern publishing the seven format crates and oxyromon itself.
 tags: [build, release, dist, cross, docker, cargo-publish, changelog, signing]
 sources:
+  - id: openwiki-source-715dace563ef484b6e8bd1e2
+    resource: repo://.dockerignore
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
   - id: openwiki-source-1bc83e59b3e3c64091f68169
@@ -36,36 +38,34 @@ sources:
     resource: repo://dist.sh
   - id: openwiki-source-33ab0e331223101757a2c45d
     resource: repo://docker.sh
-  - id: openwiki-source-819b62175bb3c42d5bb268ab
-    resource: repo://Dockerfile.alpine
-  - id: openwiki-source-74b8949e6d5862f8f52e4791
-    resource: repo://Dockerfile.archlinux
+  - id: openwiki-source-bb1ebe868e35e9e500714501
+    resource: repo://Dockerfile
   - id: openwiki-source-182eb6366058c61b0d4d15e9
     resource: repo://frontend/Cargo.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Builds, Distribution and Releases
 
 One root Cargo package yields five shipped artifact families: a headless CLI, the
 same binary built with `--features server` (web server plus embedded UI and MCP),
-the six standalone format-crate CLIs (`chdrs`, `gdirs`, `nszrs`, `xdeltars`,
-`xpsrs`, `xsors`), a Tauri desktop bundle, and two container images. The mechanics
+the seven standalone format-crate CLIs (`chdrs`, `ciars`, `gdirs`, `nszrs`,
+`xdeltars`, `xpsrs`, `xsors`), a Tauri desktop bundle, and one container image. The mechanics
 are split across five small shell scripts at the repository root, a `Cross.toml`
 for the cross images, and a per-crate publishing convention that has a hard
 ordering constraint. Feature-flag semantics — what `server`, `mcp`, `use-rustls`
@@ -74,12 +74,13 @@ and `use-native-tls` change — live in
 this page covers how those builds are actually produced, packaged, signed and
 released.
 
-Since 0.25.0 the release matrix is a six-crate matrix: CHD support moved from the
-external `chdman` binary to the `chd-rs` crate in `crates/`, and "Its CLI
-(`chdrs`) ships in the release archives too" is how the changelog records each of
-these ports. The same is true of `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`,
-which arrived in 0.24.0 and 0.25.0 as replacements for `gdidrop`, `nsz`, `xdelta3`,
-`flips` and `maxcso`.
+Since 0.25.0 the release matrix is a seven-crate matrix: CHD support moved from
+the external `chdman` binary to the `chd-rs` crate in `crates/`, and CIA support
+from `ctrtool` to `cia-rs`; "Its CLI (`chdrs`) ships in the release archives too"
+is how the changelog records each of these ports. The same is true of `ciars`,
+`gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`, which arrived in 0.24.0 and
+0.25.0 as replacements for `ctrtool`, `gdidrop`, `nsz`, `xdelta3`, `flips` and
+`maxcso`.
 
 ## The helper scripts
 
@@ -89,8 +90,8 @@ All five run from the repository root.
 | --- | --- | --- |
 | `build.sh` | `trunk build --release` in `frontend/`, then `cargo build --release --features server` | trunk plus the `wasm32-unknown-unknown` target on `PATH`; it does **not** set `SKIP_TRUNK`, so whenever `build.rs` runs it repeats that same trunk build |
 | `desktop.sh` | `cargo tauri build` in `desktop/` (the `oxyromon-desktop` binary and its installers) | Tauri CLI and the platform's webview development packages; host triple only; exports `NO_STRIP=true`; `beforeBuildCommand` stages the server sidecar first |
-| `dist.sh` | Everything, for the full release matrix, into `dist/`: `oxyromon` and the six format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
-| `docker.sh` | `alucryd/oxyromon:<version>` + `:latest` from `Dockerfile.archlinux`, and `<version>-alpine` + `:alpine` from `Dockerfile.alpine`, then pushes all four | `docker` usable via `sudo`, `tomlq` to read `.package.version` out of `Cargo.toml`, and push access to Docker Hub |
+| `dist.sh` | Everything, for the full release matrix, into `dist/`: `oxyromon` and the seven format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
+| `docker.sh` | `alucryd/oxyromon:<version>` + `:latest` from the Alpine-based `Dockerfile`, then pushes both | `docker` usable via `sudo`, `tomlq` to read `.package.version` out of `Cargo.toml`, and push access to Docker Hub |
 | `test.sh` | Coverage into `lcov.info` (gitignored) over the whole workspace | `cargo-llvm-cov` with `llvm-tools-preview`; one pass, matching CI |
 
 `test.sh` is now a single line — `cargo llvm-cov --workspace --features
@@ -117,9 +118,9 @@ under `crates/`.
 
 Inside each family, per target, the sequence is the same: build the wasm bundle on
 the host, `cross build --release --target <t> --features server`, package
-`oxyromon`, then `cross build --release --target <t> -p chd-rs -p gdi-rs -p nsz-rs
--p xdelta-rs -p xps-rs -p xso-rs` and package `chdrs`, `gdirs`, `nszrs`,
-`xdeltars`, `xpsrs` and `xsors` as separate archives, then `cargo clean` so the
+`oxyromon`, then `cross build --release --target <t> -p chd-rs -p cia-rs -p gdi-rs
+-p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs` and package `chdrs`, `ciars`, `gdirs`,
+`nszrs`, `xdeltars`, `xpsrs` and `xsors` as separate archives, then `cargo clean` so the
 next target starts from a clean tree. Each crate's binary lives behind a default
 `cli` feature (`required-features = ["cli"]`), so the root's
 `default-features = false` path dependency keeps the CLI out of the oxyromon build
@@ -129,7 +130,7 @@ with the vendor field trimmed (`${target/-unknown/}` for Linux and macOS,
 `oxyromon.aarch64-linux-gnu.tar.xz` and its CHD tool is
 `chdrs.aarch64-linux-gnu.tar.xz`, while a macOS one keeps `aarch64-apple-darwin`
 intact. Linux and macOS ship `.tar.xz`, Windows ships `.7z` (with `.exe`
-suffixes); seven archives per target, landing flat in `dist/`, which is gitignored.
+suffixes); eight archives per target, landing flat in `dist/`, which is gitignored.
 
 ```mermaid
 flowchart TD
@@ -142,7 +143,7 @@ flowchart TD
   T1 --> C1["cross build --release --features server"]
   C1 --> ISMAC{"darwin target"}
   ISMAC -->|"yes"| SIGN["rcodesign sign oxyromon and each CLI"]
-  ISMAC -->|"no"| PACK["collect oxyromon plus the six CLIs"]
+  ISMAC -->|"no"| PACK["collect oxyromon plus the seven CLIs"]
   SIGN --> PACK
   PACK --> ISWIN{"windows target"}
   ISWIN -->|"yes"| Z["7z archives"]
@@ -169,7 +170,7 @@ Three environment decisions make the matrix tractable:
   toolchain for that target.
 
 **Signing** covers only Apple targets: `rcodesign sign` runs on each macOS binary —
-`oxyromon` and each of the six CLIs — after the build and before it is tarred
+`oxyromon` and each of the seven CLIs — after the build and before it is tarred
 (`oxyromon` first, then each CLI inside the packaging loop). Linux and Windows
 artifacts are unsigned. Separately, the root `[profile.release]` (`lto = "thin"`,
 `codegen-units = 1`, `strip = true`, `panic = "abort"`) applies to every `oxyromon`
@@ -203,25 +204,26 @@ recompiling the UI. The generated `desktop/binaries/` directory is gitignored.
 
 ## Container images
 
-`Dockerfile.archlinux` and `Dockerfile.alpine` are self-contained build-and-run
-images: they copy the whole tree, install a Rust toolchain, the
-`wasm32-unknown-unknown` target and trunk 0.21.14, then run
-`cargo install --features server --root /usr --path .`, and finish by deleting the
-toolchain, cargo caches and the source tree. Neither image sets `SKIP_TRUNK`, so
-unlike `dist.sh` the UI is compiled inside the image. Alpine additionally installs
-`gcompat` because trunk downloads prebuilt wasm-bindgen/wasm-opt binaries compiled
-against glibc, which must run under musl; Arch Linux instead disables pacman
-signature checking (`SigLevel = Never`) to keep the build scripted.
+The single `Dockerfile`, based on Alpine, is a self-contained build-and-run
+image: it copies the whole tree, installs a Rust toolchain, the
+`wasm32-unknown-unknown` target and trunk 0.21.14, then runs
+`cargo install --features server --root /usr --path .`, and finishes by deleting
+the toolchain, cargo caches and the source tree. It does not set `SKIP_TRUNK`, so
+unlike `dist.sh` the UI is compiled inside the image. It installs `gcompat`
+because trunk downloads prebuilt wasm-bindgen/wasm-opt binaries compiled against
+glibc, which must run under musl. A `.dockerignore` keeps `.git`, `target/`,
+`tests/`, `desktop/`, the generated `graft/` and `openwiki/` and other non-inputs
+out of the build context.
 
-Neither image installs an external format tool any more. The Alpine package list is
-`build-base curl gcompat musl-dev rustup` and the Arch one is `base-devel curl
-rustup`: no `chdman`/`mame-tools`, no `xdelta3`, no `p7zip`/7-Zip, no `flips`, no
-`maxcso`, no `dolphin-tool`. Those codecs are now Rust crates linked into the
-binary, so the images need only a compiler; the CI runner is the remaining place
-that installs `mame-tools` and `xdelta3`, and it does so purely to run the crates'
-reference-implementation tests.
+The image installs no format tool. Its package list is `build-base curl gcompat
+musl-dev rustup`: no `chdman`/`mame-tools`, no `ctrtool`, no `xdelta3`, no
+`p7zip`/7-Zip, no `flips`, no `maxcso`, no `dolphin-tool`. Every codec is a Rust
+crate linked into the binary, which is what let the Arch Linux image go: with
+nothing left to install alongside oxyromon, one base carries it all. The CI runner
+is the remaining place that installs `mame-tools` and `xdelta3`, and it does so
+purely to run the crates' reference-implementation tests.
 
-Both images end with `OXYROMON_DATA_DIRECTORY=/data`,
+The image ends with `OXYROMON_DATA_DIRECTORY=/data`,
 `OXYROMON_ROM_DIRECTORY=/roms`, `VOLUME [ "/data", "/roms" ]` and `CMD
 ["oxyromon"]`. The data and ROM directories are therefore fixed by environment
 rather than by a user's platform data directory, but the default command carries no
@@ -231,19 +233,17 @@ alucryd/oxyromon` as-is is a no-op; a subcommand such as `server` has to be
 appended.
 
 Tagging is done by hand in `docker.sh`, which derives `<version>` from
-`Cargo.toml` with `tomlq` and pushes four tags. The GitHub workflow
+`Cargo.toml` with `tomlq` and pushes two tags, `<version>` and `latest`; the old
+`-alpine` and `alpine` tags are gone. The GitHub workflow
 `.github/workflows/docker.yml` is a different, narrower path: it triggers on push
-to `develop`, and builds and pushes only `Dockerfile.archlinux` with tags derived
-by `docker/metadata-action` from the git ref. So automated pushes never produce
-the version-pinned `<version>` or `<version>-alpine` tags, and never refresh the
-Alpine image at all; those exist only after someone runs `docker.sh`.
+to `develop`, and builds and pushes `./Dockerfile` with tags derived by
+`docker/metadata-action` from the git ref. So automated pushes never produce the
+version-pinned `<version>` tag; that exists only after someone runs `docker.sh`.
 
-Release archives still do not bundle everything oxyromon can use, but the list has
-shrunk to one entry: `oxyromon info` reports `ctrtool` as the only dependency that
-can come back "not found", alongside the built-in `chd-rs`, `xso-rs`, `xps-rs`,
-`xdelta-rs`, `nsz-rs`, `sevenz-rust2` and `nod` (whose `get_version()` returns the
-literal string `built-in`). The README's supported-formats table likewise names
-only ctrtool as an external backend, for CIA support; see
+Release archives need nothing installed beside them: `oxyromon info` lists
+`chd-rs`, `cia-rs`, `xso-rs`, `xps-rs`, `xdelta-rs`, `nsz-rs`, `sevenz-rust2` and
+`nod`, and every one reports the literal string `built-in`. The README states
+that every format is handled in-process; see
 [External Tools](../integrations/external-tools.md).
 
 ## Publishing order and the remaining git pin
@@ -259,7 +259,7 @@ needs its new version**, because the root declares each dependency with `path`
 resolve. A `cargo publish` of oxyromon against an unpublished crate version fails,
 and the root's `exclude` list keeps `crates/` out of its tarball, so nothing in the
 released package can fill the gap. Current crate versions are `nsz-rs 0.3.0` and
-`chd-rs`, `gdi-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` at `0.1.0`.
+`chd-rs`, `cia-rs`, `gdi-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` at `0.1.0`.
 
 One `ponytail` comment in `Cargo.toml` records the last publishing gate: the
 package cannot be published while this dependency points at git, because crates.io
@@ -289,7 +289,7 @@ flowchart TD
   FC --> PIN["replace the nod git pin with a version requirement"]
   PIN --> PUB["publish oxyromon from the repository root"]
   PUB --> TAG["tag the root version"]
-  TAG --> IMG["docker.sh builds and pushes version, latest and alpine tags"]
+  TAG --> IMG["docker.sh builds and pushes version and latest tags"]
 ```
 
 *Caption: the release sequence, including the two steps that must happen before oxyromon itself can be published.*
@@ -328,13 +328,13 @@ flowchart TD
 ```sh
 ./build.sh                                                        # UI + server CLI for this machine
 ./test.sh                                                         # workspace coverage into lcov.info
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the six CLIs: chdrs, gdirs, nszrs, xdeltars, xpsrs, xsors
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the seven CLIs
 ./desktop.sh                                                      # host desktop bundles
 ./dist.sh                                                         # full release matrix into dist/
-./docker.sh                                                       # push both images, four tags
+./docker.sh                                                       # push the image, two tags
 ```
 
-*Caption: the everyday commands, from the cheapest host build to the full release matrix. Note that `-p` takes the crate names while the produced binaries are `chdrs`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`.*
+*Caption: the everyday commands, from the cheapest host build to the full release matrix. Note that `-p` takes the crate names while the produced binaries are `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`.*
 
 See also [Feature Flags and Build Topology](../architecture/feature-flags-and-build-topology.md),
 [Format Crates](../integrations/format-crates.md),
