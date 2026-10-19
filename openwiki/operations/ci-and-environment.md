@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-19T19:46:38.984Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -168,7 +168,7 @@ Why each step exists:
   manifests is `rust-version = "1.94.0"` in `Cargo.toml`, shared with the format
   crates through `[workspace.package]` and repeated in `AGENTS.md`, and nothing
   in CI enforces it). Trunk is pinned to a specific
-  release by `TRUNK_VERSION` — the same `0.21.14` the Dockerfile downloads — so
+  release by `TRUNK_VERSION` — the same `0.21.14` the Dockerfile downloads (as its musl build) — so
   the bundled UI is reproducible across CI and the published image without
   paying for a source build of trunk, while `cargo-llvm-cov` is installed
   unpinned from crates.io on every run. In practice a new stable release can
@@ -365,8 +365,11 @@ The image is a self-contained, Alpine-based build-and-run image: it installs a
 Rust toolchain, the wasm target and trunk 0.21.14, runs
 `cargo install --features server --root /usr --path .`, then deletes the
 toolchain, caches and source tree. It does not set `SKIP_TRUNK`, so unlike CI it
-compiles the wasm UI inside the image, and it adds `gcompat` because trunk
-fetches glibc-linked `wasm-bindgen`/`wasm-opt` binaries that must run under musl.
+compiles the wasm UI inside the image, using trunk's musl build, whose
+`wasm-bindgen`/`wasm-opt` downloads also run natively under musl. It installs
+`cmake` and GNU `tar` for the build and removes them after: the Ubuntu runner
+ships both, so CI never needed them, while `libflac-sys` (for `chd-rs`) and the
+web UI's `fetch-webawesome.sh` hook fail without them on Alpine.
 It installs no format tool, since every codec is linked in. Because
 `CMD ["oxyromon"]` carries no subcommand, `docker run alucryd/oxyromon` alone is
 a no-op — append `server` (or any other subcommand).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7eb422b21ac0e7090d8ea23d262e47f5bd58028d70b29aa62e0dd1bf7cd8b903",
+  "pageVersion": "sha256:16aa83290c2919ca2c240954f77a6b4db5374be2ecd1e445a3c4e6b0124b80bf",
   "claims": [
     {
       "id": "claim_8b2514d79d614acba7dc978bdc048ed8",
@@ -54,7 +54,7 @@
     },
     {
       "id": "claim_295896b15a64461098e8ee45a0a99999",
-      "statement": "CI installs trunk by extracting a release tarball pinned by TRUNK_VERSION=0.21.14 rather than building it from source, and the Dockerfile downloads the same pinned version, keeping the bundled UI reproducible across CI and the published image.",
+      "statement": "CI installs trunk by extracting a release tarball pinned by TRUNK_VERSION=0.21.14 rather than building it from source, and the Dockerfile downloads the same pinned version as its musl build, keeping the bundled UI reproducible across CI and the published image.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L14-L14",
@@ -65,8 +65,8 @@
           "version": "repo-lines-v1:sha256:8cf3bfb2ed4795ba195679284f0ebbbc3361ca2de2f789632a8e2bff198465d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliMjkzMTg2ODIxOWE0MTBmZGQzOWQxMjNjMTQxNGE4OGQ2N2IzMzg3YTEwODY4ZGI2OWFhODE1NDJjZTM2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMzMjY5ZjdmNGUzNmYwN2QyZjRlNzgwM2MzOWU1ZjQ5NTU3NzEyZGEzMmVjYjc1Mjg2MWEyM2I0YzA4MmUwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkNzQ4ZWZhYmU0OTFlNjFkNDg3NzNmYzlhZTk4M2U3N2U1OWRlYjlhYjY2MWI1ODA1ODc1NTUxYWU0NWZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3NjMwMmM0ZTc5MDZhY2UzMGE5MDE3OTdiZWI1ZjBjNzc3OGZmYmFmNmUyMjk2OGQ3MDI0YjBjZGU2Y2Y4OCJ9"
         },
         {
-          "resource": "repo://Dockerfile#L11-L11",
-          "version": "repo-lines-v1:sha256:1d4c293abe59ccec0aa30fe1a116548754f876acabd6f7234d8522fe5e5ff2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ0YzI5M2FiZTU5Y2NlYzBhYTMwZmUxYTExNjU0ODc1NGY4NzZhY2FiZDZmNzIzNGQ4NTIyZmU1ZTVmZjJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU4NjQ1ZGE2OTdhMWE2MDRmMDVhMGFhYmMyNGZiZjRkNWQ0ODU1OWMzOWUzZjcwMjY4MDUwZDUyZWI1MTYwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwYTdiNWU3MzQ0ZmZiOTdhYTI3MTljNzNmYzFjYWM3YWMwZjliZGU1MDRlNDkyZjZmM2M1NTQxZDk4ODEzZCJ9"
+          "resource": "repo://Dockerfile#L12-L12",
+          "version": "repo-lines-v1:sha256:3ff8bc904eade7ab4a8fc87d2e8ff6ec38fe2cb043ca898b964b358b3f448210:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZmOGJjOTA0ZWFkZTdhYjRhOGZjODdkMmU4ZmY2ZWMzOGZlMmNiMDQzY2E4OThiOTY0YjM1OGIzZjQ0ODIxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZmOGJjOTA0ZWFkZTdhYjRhOGZjODdkMmU4ZmY2ZWMzOGZlMmNiMDQzY2E4OThiOTY0YjM1OGIzZjQ0ODIxMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTFjNDM1MGRmMWQ3NmVmYmQwZjcyNmIyMDRjNGE0ODI4NjE0NjEwZjUwZmY1MWRlNzJiZGM1ZmY1NjcxNmJmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwYTdiNWU3MzQ0ZmZiOTdhYTI3MTljNzNmYzFjYWM3YWMwZjliZGU1MDRlNDkyZjZmM2M1NTQxZDk4ODEzZCJ9"
         }
       ]
     },
@@ -323,8 +323,8 @@
           "version": "repo-lines-v1:sha256:b9beeeea8fa51d438367e894925bbdcd8571f728f271de9a5cffdd76e2791151:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUzODcyZTk5YTE5NWJiMjQwYjEwM2I2YzZmYzJiNDVlM2JhMGIxYWJmMzUzMWQ0ZTNiMmFhMzQ3MTk2MDU3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjOWY3OTdkNmFkMjEyMmE2NWNlMjIwNjRhYzdiYTczMGEyMzdmNjYzNWNmODU5ZjZjOGZlNGYzNzEzZWMxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I5MjY2ZjhiMmVkZWYwZTQzNTkzMzFmMDNlN2UzMDM1NzZjMWE1MjIxZjZjYzcwZjVkMDgxYzA3NjhkNGQyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJhZGVjNjZkNTcxNzY2ZmExNGQ5ZDQ3NTU1ZWM3MTFhODkzYmYwNDgxMzE5NmVlMGY2YWJmYTBiNGVlZGJiOCJ9"
         },
         {
-          "resource": "repo://Dockerfile#L1-L18",
-          "version": "repo-lines-v1:sha256:fb21a40da2c6b2d4a338980d5fef8858e4cb5384f8af19d43bc7f63d40a7883f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTI0ZmY4YTRiNzMwN2JlZWNkYjliODMwY2NkZDcwMmJhYWUzNWVkMjM3M2FmN2JiMzEzMmJkMGE5OGYyMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "resource": "repo://Dockerfile#L1-L19",
+          "version": "repo-lines-v1:sha256:de52235c7bc9ddef558ff75285143d4205d4bc980c3dc4e8646cc4ecf3b19cf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -362,11 +362,11 @@
     },
     {
       "id": "claim_7fcb684cde8a4ec8b702b1a68f73d301",
-      "statement": "The single Alpine-based container image fixes the runtime paths by environment (OXYROMON_DATA_DIRECTORY=/data, OXYROMON_ROM_DIRECTORY=/roms with matching VOLUMEs) so a container ignores host platform directories, deliberately does not set SKIP_TRUNK so the wasm UI is built inside the image (adding gcompat for glibc-linked wasm-bindgen/wasm-opt tools), and ends in CMD [\"oxyromon\"] with no subcommand, which makes a bare docker run a successful no-op.",
+      "statement": "The single Alpine-based container image fixes the runtime paths by environment (OXYROMON_DATA_DIRECTORY=/data, OXYROMON_ROM_DIRECTORY=/roms with matching VOLUMEs) so a container ignores host platform directories, deliberately does not set SKIP_TRUNK so the wasm UI is built inside the image with trunk's musl build (no gcompat), and ends in CMD [\"oxyromon\"] with no subcommand, which makes a bare docker run a successful no-op.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile#L5-L28",
-          "version": "repo-lines-v1:sha256:23769c98c2c1561f0dcfff17b5e9fde61d9d6fba4c7903a0cc4388ffd671fadd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNiN2NhYmY4OTNhOWMyOTM1ODFkODdkZjVjY2IzN2IxZWIwZjFkZjNhMWRjOTIwODUwN2JmNzBiMDM1N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://Dockerfile#L5-L29",
+          "version": "repo-lines-v1:sha256:fbbb02c7f866381563f6e86abe24904ad9af4102c55a44d2bb7f7c37f0c35e0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMzI1YThlZGYyOGQ0MjUxY2NlMGUwOGExMjk5MjBhZGIyNzIzN2JiNmJlMDliNjJhOGQwY2E0ZjYyMzBiNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://src/main.rs#L100-L100",
@@ -519,6 +519,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-19T19:46:38.984Z"
   }
 }

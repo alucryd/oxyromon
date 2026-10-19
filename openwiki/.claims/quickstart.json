@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:31cbbc4352de2463ae179694b68e8d8a20ef48b8d4228e4d427eda92c80020cc",
+  "pageVersion": "sha256:6f5a456933287e2a3b40f18d74e86583ecb0e59b677d693a9d96376a37fca17a",
   "claims": [
     {
       "id": "claim_98400b462b5344caa604fedd009ca2c6",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_d81f45a330864a169cd6c54063a679dd",
-      "statement": "The shortest working path is `cargo build --release` for the CLI, which has no special requirements; adding `--features server` additionally builds the Leptos web UI and therefore requires the Trunk bundler and the wasm32-unknown-unknown target.",
+      "statement": "The shortest working path is `cargo build --release` for the CLI, which needs a C toolchain (for the RVZ backend) and CMake (to build the FLAC codec for the CHD backend); adding `--features server` additionally builds the Leptos web UI and therefore requires the Trunk bundler and the wasm32-unknown-unknown target.",
       "evidence": [
         {
           "resource": "repo://AGENTS.md#L20-L26",
@@ -34,7 +34,11 @@
         },
         {
           "resource": "repo://README.md#L65-L82",
-          "version": "repo-lines-v1:sha256:70245ef26871ceef29434cf4bdb612f06c4547626ddcd13043020c112b8b79f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNDA5Nzk4N2MxM2EzNDQ1YTI5NWIzMzJmNWM4NGVjNTk2MTc0NDQ4Y2E3MzJiYWE2MTA4OTU2MGU0NGQ1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZDQ1MWUzMjA3NDdiMGI3ZjY0ODU3NjkzMGEyZGU4Nzg1NmRlM2Y4MjQxMzU4ODA3YTkzN2U2ODM4NGM1NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MDJjMDY5NzdmMDQxM2VjZWE2MjBiNjM1ZGM4OWJjYjQzMzlkNjEwZDUyNjQ3OWJiYTkyNTE3N2MzMGRhNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiY2YyMDljNTY3YTIwZTJjYjlkNjQ1MGRiMzBhZjU3ZDQ2ODhiMDU1MmQ1MWVhYzY5ZGMzOTk5NTljNDQ4NzgifQ"
+          "version": "repo-lines-v1:sha256:f4dcb9b54c8be6d9349cc3b657a9cf3574474a4ad5819dac915a73d80ea86a22:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNDA5Nzk4N2MxM2EzNDQ1YTI5NWIzMzJmNWM4NGVjNTk2MTc0NDQ4Y2E3MzJiYWE2MTA4OTU2MGU0NGQ1NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwZDQ1MWUzMjA3NDdiMGI3ZjY0ODU3NjkzMGEyZGU4Nzg1NmRlM2Y4MjQxMzU4ODA3YTkzN2U2ODM4NGM1NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiYjFiOThlMTk1MmM4Mjg4ZWI4MGZlZjM3Y2RjYjEwZDBiYTBjNzQ4MGMyZTA3NjYyNGViN2Y4OGQ4YjdhMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiY2YyMDljNTY3YTIwZTJjYjlkNjQ1MGRiMzBhZjU3ZDQ2ODhiMDU1MmQ1MWVhYzY5ZGMzOTk5NTljNDQ4NzgifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/Cargo.toml#L32-L32",
+          "version": "repo-lines-v1:sha256:d216b08cd2d885f388a1b82fc4973ef18bdc6db704f756ae94333a7e510b39eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIxNmIwOGNkMmQ4ODVmMzg4YTFiODJmYzQ5NzNlZjE4YmRjNmRiNzA0Zjc1NmFlOTQzMzNhN2U1MTBiMzllYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIxNmIwOGNkMmQ4ODVmMzg4YTFiODJmYzQ5NzNlZjE4YmRjNmRiNzA0Zjc1NmFlOTQzMzNhN2U1MTBiMzllYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5Yjg0NmM0MTY0MTQ1ODUyZDY2OTdiZjNjNjNiNDk0ODJhMjViYWM4MjIwN2NkZDNiOTY2MzFmODcwMTA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4NzA3YWFmNTcxYTYzNzZkN2E3OWY4YmM2MTlmYmFmNmJiYWVkZDVhMzVhODFhMmNiZDEzZWI4MWQxZGY2OCJ9"
         }
       ]
     },
@@ -395,6 +399,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-19T19:46:38.984Z"
   }
 }

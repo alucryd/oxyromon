@@ -72,10 +72,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-19T19:46:38.984Z
 ---
 
 # Feature Flags and Build Topology
@@ -316,9 +316,12 @@ do not carry and for which no cross toolchain exists. That final step runs with
 
 The container image takes the opposite route and does not set `SKIP_TRUNK`: the
 single Alpine-based `Dockerfile` installs trunk and the wasm target and runs
-`cargo install --features server`. It additionally installs `gcompat`
-because trunk downloads prebuilt wasm-bindgen/wasm-opt binaries compiled against
-glibc.
+`cargo install --features server`. It downloads trunk's musl build, which runs
+natively on Alpine along with the wasm-bindgen and wasm-opt binaries it fetches,
+so no glibc shim is needed. Two more build-only packages fill gaps the CI runner
+covers by default: `cmake`, which `libflac-sys` needs to build the FLAC codec for
+`chd-rs`, and GNU `tar`, because the web UI's `fetch-webawesome.sh` hook extracts
+one directory by name, which BusyBox tar cannot do.
 
 ## Workspace topology and the format crates
 
