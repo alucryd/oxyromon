@@ -12,10 +12,10 @@ sources:
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
     resource: repo://src/check_roms.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-68a9457efd4964d6e3fa17be
     resource: repo://src/download_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
@@ -78,10 +78,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -133,7 +133,7 @@ chars:
 starts a 100 ms steady tick, giving an animated "spinner + what we are doing"
 line for work with no measurable progress. `stop_action(bar)` clears the message
 and disables the tick. Because the tick is state on the shared bar, callers that
-start one are responsible for stopping it — `archive`, `chd`, `ctrtool`, `gdi`,
+start one are responsible for stopping it — `archive`, `chd`, `cia`, `gdi`,
 `iso`, `nsz`, `xso` and `util::compute_system_completion` all pair the two.
 Two modules take the tick without the message: `sort_roms` and `purge_systems`
 call `enable_steady_tick` / `disable_steady_tick` directly around their long
@@ -163,9 +163,10 @@ measurable progress, so the only thing to draw was a spinner. Now
 `src/chd.rs` sizes the bar itself — `chd_rs::cd_input_size(&input)` for a CUE's
 BINs, otherwise `input.metadata()?.len()` on create, and
 `chd.info().logical_size` on extract — and lets `chd-rs` report the input bytes
-it consumes into `bar.inc(n)` ([chd.rs](../../src/chd.rs#L734-L788)). The one
-format module still backed by a subprocess, `ctrtool`, has nothing to report and
-still draws only the spinner pair; `archive` moved in-process too but edits
+it consumes into `bar.inc(n)` ([chd.rs](../../src/chd.rs#L734-L788)). `cia`,
+which ran `ctrtool` and drew only the spinner, now runs `cia-rs` through
+`run_blocking` too, so CIA parsing and unpacking report real byte progress, and
+no subprocess-backed spinner-only path remains. `archive` is in-process too but edits
 archive entries rather than streaming a byte count. `rvz`/`wbfs` drive `nod` on
 `spawn_blocking` directly because that crate exposes a `Read`er and a
 writer callback rather than a bytes-consumed closure.
@@ -224,9 +225,7 @@ to copy.
 Shared helpers take the bar so the categorization stays uniform:
 `util::is_update` expresses version comparison entirely as
 `print_skip`/`print_info`, `config` reports invalid setting values with
-`print_warning` / `print_error`, and `import_roms` reports a missing external
-tool with `print_error("Required tool not found: ctrtool")` and skips the
-feature instead of failing the import.
+`print_warning` / `print_error`.
 
 ## Logs are bridged onto the same renderer
 

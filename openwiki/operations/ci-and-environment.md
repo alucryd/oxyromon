@@ -20,6 +20,8 @@ sources:
     resource: repo://crates/chd-rs/tests/ld.rs
   - id: openwiki-source-dace695e1efd12a88e32dd04
     resource: repo://crates/chd-rs/tests/write.rs
+  - id: openwiki-source-26179893556ff497e6e0bbea
+    resource: repo://crates/cia-rs/tests/interop.rs
   - id: openwiki-source-7c41df92324ca8ddc11ad14b
     resource: repo://crates/xdelta-rs/tests/interop.rs
   - id: openwiki-source-fc949ff54825cd4750b9e1d5
@@ -28,20 +30,18 @@ sources:
     resource: repo://crates/xso-rs/tests/common/mod.rs
   - id: openwiki-source-33ab0e331223101757a2c45d
     resource: repo://docker.sh
-  - id: openwiki-source-819b62175bb3c42d5bb268ab
-    resource: repo://Dockerfile.alpine
-  - id: openwiki-source-74b8949e6d5862f8f52e4791
-    resource: repo://Dockerfile.archlinux
+  - id: openwiki-source-bb1ebe868e35e9e500714501
+    resource: repo://Dockerfile
   - id: openwiki-source-182eb6366058c61b0d4d15e9
     resource: repo://frontend/Cargo.toml
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-b1a773ad2966952330a5f92d
@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-15T21:23:38.942Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -149,13 +149,13 @@ Why each step exists:
   instead of silently reporting a green run.
 - **These are not runtime dependencies.** The oxyromon binary shells out to no
   format tool any more: `get_version()` in `src/chd.rs`, `src/xdelta.rs`,
-  `src/xps.rs`, `src/xso.rs`, `src/archive.rs`, `src/nsz.rs` and `src/rvz.rs`
-  returns `"built-in"`, and the work goes through the workspace crates.
-  `src/ctrtool.rs` is the one remaining module that runs an external tool, and
-  `ctrtool` is deliberately *not* installed, so CIA import tests skip in CI.
-  Neither `maxcso` nor `flips` is installed either, so the `xso-rs` and `xps-rs`
-  interop suites also skip there — those two are a local responsibility
-  (`$MAXCSO`, `flips` on `$PATH`).
+  `src/xps.rs`, `src/xso.rs`, `src/archive.rs`, `src/nsz.rs`, `src/rvz.rs` and
+  `src/cia.rs` returns `"built-in"`, and the work goes through the workspace
+  crates. CIA no longer needs `ctrtool`: `src/import_roms/test_cia.rs` has no
+  skip guard and runs the real import in CI through `cia-rs`. `ctrtool`,
+  `maxcso` and `flips` are not installed, so the `cia-rs`, `xso-rs` and `xps-rs`
+  interop suites skip there — those three are a local responsibility
+  (`$CTRTOOL`, `$MAXCSO`, `flips` on `$PATH`).
 - **`wasm32-unknown-unknown` on the toolchain** is needed by the "Build web UI"
   step: `frontend/` is a standalone crate with its own `[workspace]`, so no
   `cargo` invocation in the job compiles the Leptos app — only `trunk` does, and
@@ -168,8 +168,8 @@ Why each step exists:
   manifests is `rust-version = "1.94.0"` in `Cargo.toml`, shared with the format
   crates through `[workspace.package]` and repeated in `AGENTS.md`, and nothing
   in CI enforces it). Trunk is pinned to a specific
-  release by `TRUNK_VERSION` — the same `0.21.14` both Dockerfiles download — so
-  the bundled UI is reproducible across CI and the published images without
+  release by `TRUNK_VERSION` — the same `0.21.14` the Dockerfile downloads — so
+  the bundled UI is reproducible across CI and the published image without
   paying for a source build of trunk, while `cargo-llvm-cov` is installed
   unpinned from crates.io on every run. In practice a new stable release can
   break CI with no repository change.
@@ -356,18 +356,18 @@ are additive and picking both is the operator's error to make.
 
 `docker.yml` triggers on `push` to `develop`, logs in with
 `secrets.DOCKER_USERNAME`/`DOCKER_PASSWORD`, derives tags and labels with
-`docker/metadata-action@v6` for image `alucryd/oxyromon`, and builds **only
-`./Dockerfile.archlinux`** via `docker/build-push-action@v7`. So automated
-pushes never produce the version-pinned `<version>` tag and never rebuild the
-Alpine image — those four tags exist only when someone runs `docker.sh` by hand.
+`docker/metadata-action@v6` for image `alucryd/oxyromon`, and builds
+`./Dockerfile` via `docker/build-push-action@v7`. So automated pushes never
+produce the version-pinned `<version>` tag — it exists only when someone runs
+`docker.sh` by hand, which pushes `<version>` and `latest`.
 
-The images themselves are self-contained build-and-run images: they install a
-Rust toolchain, the wasm target and trunk 0.21.14, run
-`cargo install --features server --root /usr --path .`, then delete the
-toolchain, caches and source tree. Neither image sets `SKIP_TRUNK`, so unlike CI
-they compile the wasm UI inside the image; Alpine adds `gcompat` because trunk
-fetches glibc-linked `wasm-bindgen`/`wasm-opt` binaries that must run under musl,
-and Arch disables pacman signature checking to keep the build scripted. Because
+The image is a self-contained, Alpine-based build-and-run image: it installs a
+Rust toolchain, the wasm target and trunk 0.21.14, runs
+`cargo install --features server --root /usr --path .`, then deletes the
+toolchain, caches and source tree. It does not set `SKIP_TRUNK`, so unlike CI it
+compiles the wasm UI inside the image, and it adds `gcompat` because trunk
+fetches glibc-linked `wasm-bindgen`/`wasm-opt` binaries that must run under musl.
+It installs no format tool, since every codec is linked in. Because
 `CMD ["oxyromon"]` carries no subcommand, `docker run alucryd/oxyromon` alone is
 a no-op — append `server` (or any other subcommand).
 

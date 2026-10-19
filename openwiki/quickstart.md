@@ -24,12 +24,12 @@ sources:
     resource: repo://src/archive.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-2a737474d86fc75cc9d9694f
     resource: repo://src/config.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
@@ -48,10 +48,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Quickstart & Task Routing
@@ -64,11 +64,11 @@ export. The same binary can also run as a web server (GraphQL API plus an embedd
 and as a Model Context Protocol server — both optional Cargo features, and both thin wrappers
 over the very same subcommand implementations the CLI runs.
 
-Format handling is in-tree: the six crates under `crates/` (`chd-rs`, `gdi-rs`, `nsz-rs`,
-`xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external tools oxyromon used to shell out to,
-so a plain build needs no format toolchain installed. **`ctrtool` is the one runtime external
-program left** (CIA support), and `mame-tools`/`chdman`, `xdelta3` and `ffmpeg` appear only in CI
-as reference binaries for the crates' own tests.
+Format handling is in-tree: the seven crates under `crates/` (`chd-rs`, `cia-rs`, `gdi-rs`,
+`nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external tools oxyromon used to shell
+out to, so **oxyromon needs no external program at runtime** and a plain build needs no format
+toolchain installed. `mame-tools`/`chdman`, `xdelta3` and `ffmpeg` appear only in CI as reference
+binaries for the crates' own tests.
 
 ## Shortest working path
 
@@ -124,7 +124,7 @@ flowchart LR
 | Path        | What it is                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | root        | The `oxyromon` package: the binary, `build.rs`, `migrations/`, `.sqlx/` offline query data.                                                  |
-| `crates/`   | Six format crates (`chd-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently. |
+| `crates/`   | Seven format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently. |
 | `frontend/` | The Leptos SPA. **Not** a workspace member — it declares its own `[workspace]`.                                                              |
 | `desktop/`  | The Tauri shell that spawns `oxyromon server` as a sidecar. Also standalone.                                                                  |
 | `tests/`    | DAT and ROM fixtures plus the two integration targets: `tests/mcp_stdio.rs` and `tests/crates.rs`.                                            |
@@ -151,10 +151,10 @@ standalone CLI with the same capabilities:
 | `xso-rs`    | maxcso             | `xsors`    | CSO/ZSO               |
 
 Archives go through `sevenz-rust2` and `zip`, RVZ and WBFS through `nod` (which builds its
-compression libraries from source, so a C toolchain is required), and CIA through `ctrtool`.
+compression libraries from source, so a C toolchain is required), and CIA through `cia-rs`.
 
 ```sh
-cargo build --release -p chd-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the CLIs
 cargo test -p xso-rs                              # one crate
 cargo test --release -p xso-rs -- --ignored       # its slow tests
 ```
@@ -163,8 +163,7 @@ cargo test --release -p xso-rs -- --ignored       # its slow tests
 release archives.
 
 `oxyromon info` is the dependency check: it probes every backend's `get_version()`, prints
-`<name>: built-in` for the linked crates, reports a genuinely missing external tool
-(`ctrtool`) as `not found` instead of failing, and special-cases NSZ — a missing `prod.keys`
+`<name>: built-in` for every backend, all of which are linked crates, and special-cases NSZ — a missing `prod.keys`
 shows up as `built-in, prod.keys not found`, since only compressing NCAs needs keys.
 
 ## Task routing
@@ -195,7 +194,7 @@ shows up as `built-in, prod.keys not found`, since only compressing NCAs needs k
 | the Tauri sidecar, port reservation, child cleanup                                                        | [Desktop App (Tauri Sidecar)](server/desktop-tauri-shell.md)                   |
 | DAT provider URLs and No-Intro/TOSEC name tokens                                                          | [DAT Providers and Naming Conventions](integrations/dat-providers-no-intro-redump.md) |
 | the `crates/` format crates, their shared CLI shape and release cadence                                   | [Format Crates in crates/](integrations/format-crates.md)                      |
-| ctrtool lookup, version probing, which external tools remain                                              | [External Tool Integration](integrations/external-tools.md)                    |
+| which tool each crate replaced, and the reference tools the crate tests use                              | [External Tools](integrations/external-tools.md)                               |
 | helper scripts, cross-compilation, containers, per-crate publishing                                       | [Builds, Distribution and Releases](operations/build-and-release.md)           |
 | CI jobs, `OXYROMON_*` variables, `DATABASE_URL`, TLS/Windows build notes                                  | [CI Pipelines and Runtime Environment](operations/ci-and-environment.md)       |
 | writing or running tests, the `MUTEX`, temp DB/dirs                                                       | [Test Harness and Conventions](testing/testing-conventions.md)                 |
@@ -245,9 +244,9 @@ can run; those suites skip rather than fail when the tool is absent.
   `async main(connection, matches, progress_bar)` does the work. GraphQL and MCP both synthesize
   argv to reach it, so a new capability added anywhere else is invisible to two of the three
   surfaces.
-- **Format modules do not spawn processes.** `src/chd.rs`, `archive.rs`, `nsz.rs`, `xso.rs`,
-  `xdelta.rs`, `xps.rs`, `rvz.rs` call their crate and return `"built-in"` from `get_version()`;
-  only `src/ctrtool.rs` keeps the shell-out pattern.
+- **Format modules do not spawn processes.** `src/chd.rs`, `cia.rs`, `archive.rs`, `nsz.rs`,
+  `xso.rs`, `xdelta.rs`, `xps.rs`, `rvz.rs` call their crate and return `"built-in"` from
+  `get_version()`; no module keeps a shell-out pattern.
 - **Query changes require regenerating offline sqlx data** (`cargo sqlx prepare -- --features server`).
 - **Validate the way CI does**: `cargo test --workspace --features oxyromon/server`, with the shared
   `MUTEX` held by anything touching global state.

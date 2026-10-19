@@ -13,14 +13,12 @@ use regex::Regex;
 use sqlx::sqlite::SqliteConnection;
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::ffi::OsStr;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use tempfile::TempDir;
 use tokio::fs;
 use tokio::fs::File;
-use tokio::process::Command;
 
 static SYSTEM_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(Non-Redump - |Unofficial - )?([^()]+)( \(.*\))?$").unwrap());
@@ -334,30 +332,6 @@ pub async fn remove_empty_directories(
         directory = dir.parent();
     }
     Ok(())
-}
-
-pub async fn tool_version(
-    command: impl AsRef<OsStr>,
-    name: &str,
-    args: &[&str],
-    stdout: bool,
-    line: usize,
-    regex: Option<&Regex>,
-) -> Result<String> {
-    let output = Command::new(command.as_ref())
-        .args(args)
-        .output()
-        .await
-        .context(format!("Failed to spawn {}", name))?;
-    let text = if stdout {
-        String::from_utf8(output.stdout).unwrap()
-    } else {
-        String::from_utf8(output.stderr).unwrap()
-    };
-    Ok(regex
-        .and_then(|regex| text.lines().nth(line).and_then(|l| regex.find(l)))
-        .map(|version| version.as_str().to_string())
-        .unwrap_or(String::from("unknown")))
 }
 
 pub fn is_update(progress_bar: &ProgressBar, old_version: &str, new_version: &str) -> bool {

@@ -3,9 +3,6 @@ type: concept
 title: CHD Format and the chd-rs Crate
 description: How src/chd.rs maps oxyromon's CHD handling onto the in-tree chd-rs crate — the four media types and how a CHD's type is detected, hashing for import and check, the per-media codec and hunk-size settings and their chdman defaults, parent CHDs for multi-disc games, and the crate's own surface and chdman parity.
 tags: [chd, chd-rs, formats, compression, cd, dvd, laserdisc, hard-disk, parents]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-14T21:01:38.051Z
 sources:
   - id: openwiki-source-f652141db50cb9f0dce8c6fe
     resource: repo://crates/chd-rs/README.md
@@ -24,6 +21,9 @@ sources:
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
 generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # CHD Format and the chd-rs Crate

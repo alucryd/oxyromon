@@ -7,6 +7,7 @@ fn every_cli_shares_one_ui() {
     let ui = read("crates/xso-rs/src/bin/xsors/ui.rs");
     for copy in [
         "crates/chd-rs/src/bin/chdrs/ui.rs",
+        "crates/cia-rs/src/bin/ciars/ui.rs",
         "crates/gdi-rs/src/bin/gdirs/ui.rs",
         "crates/nsz-rs/src/bin/nszrs/ui.rs",
         "crates/xdelta-rs/src/bin/xdeltars/ui.rs",

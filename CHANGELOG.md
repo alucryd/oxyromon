@@ -14,6 +14,8 @@
 - BPS and IPS support now comes from the new xps-rs crate, a port of Flips, instead of the external `flips` tool; its CLI (`xpsrs`) ships in the release archives too
 - XDELTA support now comes from the new xdelta-rs crate, a port of xdelta3, instead of the external `xdelta3` tool; its CLI (`xdeltars`) ships in the release archives too
 - CHD support now comes from the new chd-rs crate, a port of chdman, instead of the external `chdman` tool, for CDs, DVDs, hard disks and LaserDiscs. Its CLI (`chdrs`) ships in the release archives too. CHDs it creates are interchangeable with chdman 0.289's, and byte-identical except for LZMA- and deflate-compressed hunks; it compresses on every core, as chdman does, and decodes faster. The minimum chdman versions for Dreamcast and split-bin support are gone
+- CIA support now comes from the new cia-rs crate, a port of ctrtool, instead of the external `ctrtool` tool: oxyROMon no longer needs any external tool installed. Its CLI (`ciars`) ships in the release archives too. It extracts the same bytes ctrtool's `--plain` mode does, so imported CIAs keep matching the same DATs, and it reads the container families the reference turned away by title type, DSiWare included
+- The Docker images are one image: the Alpine one, now on `latest` and on the version tags. The Arch Linux image is gone, and so are the `-alpine` suffix tags — with nothing left to install alongside it, one base carries it all
 - Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
 - `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty, except for the ROM, system and `Trash` directories
 - `download-dats` keeps going when one Redump system fails, reporting it, and fails the run at the end naming every system that did; an empty ZIP, or one with several DATs, is now such a failure rather than a warning
@@ -32,6 +34,7 @@
 - Fixed `rebuild-roms` exiting silently when there are no arcade systems; it now says so
 - Fixed `sort-roms` ignoring `LANGUAGES` unless `DISCARD_RELEASES` or `DISCARD_FLAGS` was also set
 - Fixed the CHD hard disk and LaserDisc settings refusing to be unset back to auto, and `config -a` sorting the hard disk codecs instead of keeping their order
+- Fixed importing a malformed or homebrew CIA taking oxyROMon down with it: a container with a bad TMD, a missing certificate chain, or no title metadata at all (a SimpleCIA) is now reported, naming what is wrong
 
 # 0.24.0
 

@@ -16,6 +16,8 @@ sources:
     resource: repo://crates/chd-rs/tests/ld.rs
   - id: openwiki-source-dace695e1efd12a88e32dd04
     resource: repo://crates/chd-rs/tests/write.rs
+  - id: openwiki-source-039ef28c41d4fc7a1b163edc
+    resource: repo://crates/cia-rs/tests/common/mod.rs
   - id: openwiki-source-7c41df92324ca8ddc11ad14b
     resource: repo://crates/xdelta-rs/tests/interop.rs
   - id: openwiki-source-fc949ff54825cd4750b9e1d5
@@ -32,6 +34,8 @@ sources:
     resource: repo://src/check_roms.rs
   - id: openwiki-source-f026be5ceac01513e05fa46c
     resource: repo://src/check_roms/test_check_by_name.rs
+  - id: openwiki-source-db15f8427180aeec55b3a076
+    resource: repo://src/cia.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-e507d9e57674a40c667bf90d
@@ -40,8 +44,6 @@ sources:
     resource: repo://src/config.rs
   - id: openwiki-source-14bdaf940b9be722639ecfcd
     resource: repo://src/config/test_cli.rs
-  - id: openwiki-source-63f87054c5f9055be025dd77
-    resource: repo://src/ctrtool.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
   - id: openwiki-source-0e518f793c5021d3e200387b
@@ -98,10 +100,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-18T21:36:28.347Z
+    at: 2026-10-19T17:45:26.496Z
 ---
 
 # Test Harness and Conventions
@@ -280,17 +282,18 @@ early return (`len() <= 1` answers the question already)
 A new prompt call site therefore needs its own bypass, or the suite hangs until CI
 times out.
 
-## Reference binaries: one skip policy in the crates, one probe in the app
+## Reference binaries: one skip policy in the crates, no probe in the app
 
 Two different rules cover two different kinds of external dependency, and mixing
 them up is the usual source of a suite that "should have failed".
 
 **The format crates compare against upstream tools and skip when they are
 absent.** `crates/*/tests/*` locate an oracle binary — `chdman`, `ffmpeg`,
-`maxcso` — through a `$CHDMAN`-style environment variable first, then `$PATH`,
+`ctrtool`, `maxcso` — through a `$CHDMAN`-style environment variable first, then `$PATH`,
 and `return` with an `eprintln!("skipping: …")` when the lookup yields `None`
 ([crates/chd-rs/tests/write.rs](../../crates/chd-rs/tests/write.rs#L1-L22),
 [crates/chd-rs/tests/ld.rs](../../crates/chd-rs/tests/ld.rs#L15-L23),
+[crates/cia-rs/tests/common/mod.rs](../../crates/cia-rs/tests/common/mod.rs#L147-L161),
 [crates/xso-rs/tests/common/mod.rs](../../crates/xso-rs/tests/common/mod.rs#L88-L98)).
 The patch crates use the weaker form of the same policy: a probe that runs
 `xdelta3 -V` / `flips --version` and reports only whether the process could be
@@ -301,28 +304,24 @@ version floor such as a minimum splitbin `chdman` is compared anywhere: an absen
 oracle skips, and the `env` override exists so a developer can point the suite at
 a build outside `PATH`.
 
-**The application has exactly one in-crate tool probe left**, because
-`sevenz-rust2`, `chd-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` are
-now linked libraries whose `get_version()` returns a constant such as
-`"built-in"` ([src/archive.rs](../../src/archive.rs#L477-L480),
-[src/chd.rs](../../src/chd.rs#L896-L898)). Only `ctrtool` still runs a program,
-through `util::tool_version`
-([src/ctrtool.rs](../../src/ctrtool.rs#L32-L34),
-[src/util.rs](../../src/util.rs#L339-L361)). `src/import_roms/test_cia.rs`
-follows the crate convention and puts the probe **before** the mutex, so a machine
-without `ctrtool` costs nothing at all
-([src/import_roms/test_cia.rs](../../src/import_roms/test_cia.rs#L7-L14)). The
-same probe is product behaviour: importing a `.cia` with `ctrtool` missing prints
-"Required tool not found" and returns `Ok` rather than failing the run
-([src/import_roms.rs](../../src/import_roms.rs#L492-L496)).
+**The application has no tool probe left**, because `sevenz-rust2`, `chd-rs`,
+`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` are all linked
+libraries whose `get_version()` returns a constant such as `"built-in"`
+([src/archive.rs](../../src/archive.rs#L477-L480),
+[src/chd.rs](../../src/chd.rs#L896-L898),
+[src/cia.rs](../../src/cia.rs#L20-L22)). `ctrtool`, the last program the
+application ran, was replaced by `cia-rs`, and `util::tool_version` went with it.
+`src/import_roms/test_cia.rs` therefore has no probe and no early return: it takes
+the mutex and runs the real CIA import on every machine, CI included
+([src/import_roms/test_cia.rs](../../src/import_roms/test_cia.rs#L7-L12)).
 
 Those functions are also the application's only notion of "available": the same
 `get_version()` calls build the `info` dependency report, the GraphQL
 `dependencies` field and the MCP `status` payload
-([src/info.rs](../../src/info.rs#L26-L44),
+([src/info.rs](../../src/info.rs#L26-L37),
 [src/query.rs](../../src/query.rs#L241-L261),
 [src/mcp/read.rs](../../src/mcp/read.rs#L71-L83)). So unlike the crates' oracle
-suites, the in-crate suite is essentially never tool-gated — a green run there
+suites, the in-crate suite is never tool-gated — a green run there
 really does mean the code path executed.
 
 CI installs `mame-tools`, `xdelta3` and `ffmpeg` **as test-time oracles only** —
@@ -479,10 +478,10 @@ serialized by the `MUTEX`, so wall-clock time scales with the number of
 
 `tests/crates.rs` is a parity guard, not a behaviour test: `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the canonical copy and asserts that
-the `ui.rs` of `chd-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs` and `xps-rs` is
+the `ui.rs` of `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs` and `xps-rs` is
 byte-identical to it
-([tests/crates.rs](../../tests/crates.rs#L1-L17)). The format CLIs deliberately
-share one shell, so a change to that shell must be made in all six places at once;
+([tests/crates.rs](../../tests/crates.rs#L1-L18)). The format CLIs deliberately
+share one shell, so a change to that shell must be made in all seven places at once;
 editing one turns any `cargo test --workspace` red, on any crate
 ([AGENTS.md](../../AGENTS.md#L146-L155)).
 
@@ -509,7 +508,7 @@ editing one turns any `cargo test --workspace` red, on any crate
 8. **Testing `server`/`mcp` code without `--features oxyromon/server`** — the
    modules are not compiled, so the run is vacuously green.
 9. **Editing one crate's `ui.rs`** — `tests/crates.rs` requires all copies to be
-   byte-identical to `xsors`'s ([tests/crates.rs](../../tests/crates.rs#L1-L17)).
+   byte-identical to `xsors`'s ([tests/crates.rs](../../tests/crates.rs#L1-L18)).
 
 ## Adding tests for a new subcommand
 
