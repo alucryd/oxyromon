@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1d792da99702d0d4432088c8bc7fddf4d7e978bc34833ad91d4823b33fba1e5c",
+  "pageVersion": "sha256:24b4f3811cb404f2b72b8e3ce151122bdb8cccc536d19b4ec302462e83d4eea8",
   "claims": [
     {
       "id": "claim_70ba4573e4dd45f594589f98a495e5af",
@@ -109,7 +109,7 @@
           "version": "repo-lines-v1:sha256:ac189928726659b0aa348314fef3018684ebb35c789fc4229cc1d1982193041e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNDVlYjA4NGI2ZjVkYjQ5OTIyOTlmZjhmYWRiMTNhYzk0YTU0ZTQ1ZGFlZGIyZTIxNzVjZDYwMDg5YzAzNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYmVlODNhNWU2OTNlODQzYjBiM2RmNmUyMzk2OWIwYzZiZmEwYjRiM2VlYTVmYWU1Yjc0MWViOTk2MGMzZDgifQ"
         },
         {
-          "resource": "repo://src/util.rs#L496-L503",
+          "resource": "repo://src/util.rs#L470-L477",
           "version": "repo-lines-v1:sha256:89a561ad3dbb854dd030df9309c39a711588d880027270325935402727ef5806:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzcwZDhiMjc1M2Y3MjkwNGQyZGQxZjAwNjgwZDMzY2QxMDE1ODYxMzAwOGU0YWIwYWYwZDY5ZjlkZjM3NmFlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY5MWI0MDJhNDI3NmI0MjU3YWZkYmQ3NTEyNjJkZDNjZjVlNWQ4Nzg3NzQ4NDhiNmM4M2MyY2EyYWUzZmQzMCJ9"
         }
       ]
@@ -129,11 +129,11 @@
       "statement": "The GraphQL sortRoms mutation synthesizes a sort-roms argv with -s <system> or -a plus -y so the per-system confirmation never waits on a TTY, as the MCP sort_roms tool does with --yes.",
       "evidence": [
         {
-          "resource": "repo://src/mcp/write.rs#L228-L292",
+          "resource": "repo://src/mcp/write.rs#L253-L317",
           "version": "repo-lines-v1:sha256:b31364fa8239095b340afede9c68939ed1446fbd8111fc73edd7a1cb6819203f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxY2EwMzdiNjIxMjI0NGIxMmYzZDFmZDFiZDk1N2VkZjczZjcwMDcxMDBhMWEzNjFjYWJkNDgwZGEyYzQ5ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjY2QyMTNmZDFiOTU1ZDk4ZWZkZjlmZmVkMWEzNDFhMmIxY2Y5ZmM2NDllMDc1MmZhNjc2N2ZiMDkyOWQxYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlNjJiMDliN2NkNjM0MTIwYWI5Y2U2ZDA2OWE0MWRiZGRmNGU3YzQ2NDMyOTE5ZTk5OTMzMDFkZTM4ZDUzZjgifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L397-L450",
+          "resource": "repo://src/mutation.rs#L402-L455",
           "version": "repo-lines-v1:sha256:926c8ab9c1d6af84f0ab7db4acd23cc7f16aa79e4ba1e17216b202e69cb72200:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlYmNmZWY0NzY3MTcwYzM3NDg5MmU2MDkwMDg0YTI3YTBkNDgwNTUzNjkxYzE3YjJjYWRiMmE2Yzg5NzhlM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NGVmZmY1NDNlYjRjMDk5MWM2MDNmN2M0MWI4NjhhNWVhMTIyMzI4YWYzYmQ3MDVmYzIyZjIxYzRkYzM0ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmOTEyZTRmMTZkYTdlOTYyYWE1NmUwYmEyNDM2MzdlOTUwNzdlY2JiNDM0MDQ0NzhiOGQ0MzFmMWFkYzNjYzIifQ"
         }
       ]
@@ -141,6 +141,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-15T21:23:38.942Z"
+    "at": "2026-10-19T17:45:26.496Z"
   }
 }

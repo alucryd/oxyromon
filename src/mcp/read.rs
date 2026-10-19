@@ -68,7 +68,7 @@ pub(crate) async fn build_status(connection: &mut SqliteConnection, read_only: b
     let mut dependencies = vec![
         ("sevenz-rust2", crate::archive::get_version().await),
         ("chd-rs", crate::chd::get_version().await),
-        ("ctrtool", crate::ctrtool::get_version().await),
+        ("cia-rs", crate::cia::get_version().await),
         ("xps-rs", crate::xps::get_version().await),
         ("xso-rs", crate::xso::get_version().await),
         ("nsz-rs", crate::nsz::get_version().await),
@@ -104,7 +104,7 @@ pub(crate) async fn build_status(connection: &mut SqliteConnection, read_only: b
 #[tool_router(router = read_router, vis = "pub(crate)")]
 impl OxyromonMcp {
     #[tool(
-        description = "oxyROMon status: version, ROM and temp directories, library counts, and which codecs and external tools (ctrtool, …) are available.",
+        description = "oxyROMon status: version, ROM and temp directories, library counts, and which codecs and format backends are available.",
         annotations(read_only_hint = true)
     )]
     async fn status(&self) -> Result<CallToolResult, rmcp::ErrorData> {

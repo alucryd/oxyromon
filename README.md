@@ -18,7 +18,7 @@ It is designed with archiving in mind, so it only keeps original and lossless fo
 It can still export to popular lossy formats, leaving your lossless files untouched.
 Console and computer systems use No-Intro or Redump DATs, and arcade systems (work in progress) use MAME or FBNeo DATs.
 
-Every format is handled in-process, so oxyROMon needs no external tool except `ctrtool` for 3DS CIA files.
+Every format is handled in-process, so oxyROMon needs no external tool.
 
 oxyROMon comes in three flavors, all driving the same code and the same database:
 
@@ -59,7 +59,7 @@ From there, `convert-roms` switches formats, `check-roms` verifies integrity, an
 
 - **Binaries** for Linux, macOS and Windows are on the [release page](https://github.com/alucryd/oxyromon/releases), along with the desktop app and the format crates' command-line tools.
 - **Arch Linux** has a package in the [official repositories](https://archlinux.org/packages/extra/x86_64/oxyromon/).
-- **Docker** images are on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon), with `/data` holding the database and `/roms` the library.
+- **Docker** images are on [Docker Hub](https://hub.docker.com/r/alucryd/oxyromon), Alpine-based, with `/data` holding the database and `/roms` the library.
 - **crates.io**: `cargo install oxyromon` builds the command-line tool.
 
 ## Building
@@ -212,12 +212,12 @@ ${ROM_DIRECTORY}
 | WBFS                    |                  |         | ✔      | nod                                                          |
 | GDI                     |                  |         | ✔      | gdi-rs                                                       |
 | ISO (from CUE/BIN)      |                  |         | ✔      |                                                              |
-| CIA                     | ✔                |         |        | [ctrtool](https://github.com/3DSGuy/Project_CTR/releases), in your `PATH` |
+| CIA                     | ✔                |         |        | cia-rs                                                       |
 | JB folders (PS3)        | ✔                |         |        | IRD files                                                    |
 | BPS, IPS, XDELTA patches | ✔               |         |        | xps-rs, xdelta-rs                                            |
 
 The crates without a link are oxyROMon's own, in `crates/`.
-Each began as a port of the tool oxyROMon used to run: chdman, maxcso, nsz, gdidrop, Flips and xdelta3.
+Each began as a port of the tool oxyROMon used to run: chdman, ctrtool, maxcso, nsz, gdidrop, Flips and xdelta3.
 
 Your Switch keys, at `~/.switch/prod.keys`, are only needed to compress NSPs that contain NCAs.
 Importing, checking and decompressing NSZs never need them.
@@ -311,7 +311,6 @@ Options:
 ### info
 
 Prints the version, every format backend and its version, and some library statistics.
-A missing `ctrtool` is reported rather than treated as an error.
 
 ```text
 Usage: oxyromon info

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8582d18b6505f5e120fbf3fd7ab4af2bad0639a007d05d901ac929cdd137bc1a",
+  "pageVersion": "sha256:6c60bd4dd4930a67fc2f6a6eb0c77a65417515b22fda66d497db135f216779c8",
   "claims": [
     {
       "id": "claim_77b116c7739346779859b7ffe4c75f3b",
@@ -83,7 +83,7 @@
           "version": "repo-lines-v1:sha256:8d84ba5eeccc7c202003e4032410c951a8ef5a6b7eb606a17970b459973951d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ4NGJhNWVlY2NjN2MyMDIwMDNlNDAzMjQxMGM5NTFhOGVmNWE2YjdlYjYwNmExNzk3MGI0NTk5NzM5NTFkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ4NGJhNWVlY2NjN2MyMDIwMDNlNDAzMjQxMGM5NTFhOGVmNWE2YjdlYjYwNmExNzk3MGI0NTk5NzM5NTFkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2EwYjYyMzI5MGExYjkwMzNhODUyMTRjNDI5NzI2MmY4ZGZlYjNjMWUzYzYwYmY5ZTgyN2U3NWMwNmYwNzEwYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTExN2I5YzQ3MGJjZDEzNjgxMmExZjU3OWExNGYwZTdkOTA5Yzc5N2UzMzM5Mjc4YzIxNmEzMzgyZjEyODM4ZiJ9"
         },
         {
-          "resource": "repo://src/util.rs#L429-L461",
+          "resource": "repo://src/util.rs#L403-L435",
           "version": "repo-lines-v1:sha256:63670a10e2159aeaf8996bab5dbb9422504c8618919257db9b2b5345f1cb91eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzODM4NWRmYWFlNTdkYTY3NTA3NTBlM2ZlNWNjMjJjZjRiNjk2OTE1OTk2MWVhYTNjNjM3MGVjMjZmYzg4YTIifQ"
         }
       ]
@@ -135,7 +135,7 @@
       "statement": "Every user-facing line goes through nine categorized helpers in src/progress.rs — `print_header` (◆ bold cyan), `print_subheader` (▸ bold), `print_info` (ℹ dim), `print_success` (✔ green), `print_warning` (⚠ yellow), `print_error` (✖ red bold), `print_skip` (↪ dim), `print_action` (→ dim), `print_separator` — each a `ProgressBar::println` with fixed icon and indent. The project rule is never to call `progress_bar.println(...)` directly from a subcommand or format module; the only surviving direct calls outside progress.rs are the two donation-footer lines in `info::main`, immediately followed by `finish_and_clear()`.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L93-L111",
+          "resource": "repo://AGENTS.md#L91-L109",
           "version": "repo-lines-v1:sha256:76b3da0c81714f892058410a7eefccff3462acf68e0b112c87da8a7b5246b2ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlMjlmYzFmYzZlMjRhMTcwNzVmMTg3OWY2MDk0Nzg2NDYzYWZjNmIwZDkzMGIxYjEwZGEwOTdmNWZkYmI1NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YWUyNzRmOGE0NGNkYzJkYzAyNGNjMDA0NmQ0MGYxMzRlM2IyNzBhMDBlZDIxNjU3YjQ1M2UxYjA5MGI5M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjM2ZDQzYTdjZDQ0ZjJlNzM1YTJjYWFkMTdiNjliZjA1MTk3ZmQzZTdiMDlhNDZhMmFhNTQ1OGM3OWVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
         },
         {
@@ -153,7 +153,7 @@
       "statement": "Startup builds an env_logger from `OXYROMON_LOG_LEVEL`, captures its filter level before wrapping, installs `LogWrapper::new(multi, logger).try_init().unwrap()` as the global logger so `log::*` records are drawn through the MultiProgress, then re-applies the captured level with `log::set_max_level(level)` so the env var rather than the bridge decides verbosity. This is what keeps log lines from tearing animating bars apart and keeps server diagnostics on the terminal.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L95-L96",
+          "resource": "repo://Cargo.toml#L97-L98",
           "version": "repo-lines-v1:sha256:df874047c1ae80fe9060e27c52267772c28169fe935b8027416735c338bc606e:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFjY2I4NmMxMDZmN2YyNGIxZTJhYmQ3M2QxOTJkMTJlOGU1ODlmYmNkOGQ0M2ExNjVhNWU3MjBiYjYxODdjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJmNDQzNzAxMTUxOTUyODg0NjgyOWJlZDIwOWQwMjc3NzY4MmE5MWI2YjFlYThhYmE2ZTM0YTJjOTNkN2ExYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWIxNWEwODIyZGRjZWViYjYyYThhNzdlOTdiNGMzODI0YWE4ZjYyMDEyOTc5NjlkYWZhNzY1YmM1NDRkOWUxMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmRkYzBiMmRjNzZhNmM3MDJkNzczMjZhZmU1MGRkNTZiN2IzNjY5NWQwZjY4MDJhODlmMGJiMzViZDdiY2VmNSJ9"
         },
         {
@@ -199,7 +199,7 @@
       "statement": "src/prompt.rs wraps four dialoguer primitives (`FuzzySelect` with the fuzzy feature, `MultiSelect`, `Confirm`, `Editor`) in thin functions: `select_opt` returns `Result<Option<usize>>` where `None` means dismissed rather than unmatched, `select` converts that `None` into `bail!(\"Failed to get user input\")`, `multiselect` returns selected indices, `confirm(default)` renders \"Proceed?\", and `editor` opens an editor (only for `import-patches --name`). Every wrapper attaches the context \"Failed to get user input\", which is what surfaces when there is no TTY.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L81-L81",
+          "resource": "repo://Cargo.toml#L83-L83",
           "version": "repo-lines-v1:sha256:448f159f676e92abf38a0df49389a63a1eaeca26cc3000ea0fd31d0ef4c2c8e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ4ZjE1OWY2NzZlOTJhYmYzOGEwZGY0OTM4OWE2M2ExZWFlY2EyNmNjMzAwMGVhMGZkMzFkMGVmNGMyYzhlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQ4ZjE1OWY2NzZlOTJhYmYzOGEwZGY0OTM4OWE2M2ExZWFlY2EyNmNjMzAwMGVhMGZkMzFkMGVmNGMyYzhlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTFkZDEwNTI2ODcyODUxZTUwYjViNjZjMWU5MDg5Y2YwNGUyYzk2Yjc4ZDBhNDM5YTY1ZTA2YWY3NmFiMzg4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJmNWNiZjliZjRlNmU1MDUzYzVkZDQ5YmM3MjFkYzBiNzk3Zjc0NWM0NmM0YjE3NTI2NDhmZTQwOThkOTE5OSJ9"
         },
         {
@@ -231,11 +231,11 @@
       "statement": "`prompt_for_roms` is the outlier: it inserts a literal \"None\" at index 0 with that index as the default and shifts the chosen index back with `roms.remove(i - 1)`, so it can legitimately return `Ok(None)`. All three of its call sites are in import_roms and each feeds the result into an `unwrap()` (`rom_game_system.unwrap()`, `rom_game.unwrap()`), so answering \"None\" or dismissing the list panics the process instead of skipping one file — any new caller must handle `None` before unwrapping.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L2414-L2469",
+          "resource": "repo://src/import_roms.rs#L2410-L2465",
           "version": "repo-lines-v1:sha256:e86374c344e00f2f84eca8780c22b941196e1c15255cb5ed2911c32cbf705af1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4M2JlYjQ2Y2NhNzQzN2QxNmI0ODAzZWUwNGVkOTk1N2FmYjIzOGMzZTcwZGRlMGMwZGJhNzMxMWQyZTM0MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMTY3YzI3YzJjOGYwNWRhZTJkNDNhM2YyNzc4YmM5MWQ5NjY5ZGYzN2JlNzEyZGE0NjYwOWE1M2ZkZWRjMWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNzlkZjZlZTNlODk5MDE4ODIwOTRhYTU2M2Q1ZDg1MDVjYTE4NzQ1ZGRiMzE4YmY5Yzg5YTA2OGI1NDliMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YmQxMDUwOTgzZGFhZmJiZWNkNzQ0M2RkNTAxZWNmNTJlZmJkNTBhZjk1NTllZTdmMWFkMGYzYTJjNTZkY2MifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L2548-L2577",
+          "resource": "repo://src/import_roms.rs#L2544-L2573",
           "version": "repo-lines-v1:sha256:87d9f58d8a36a8ac67cf6622f41d98574c6892597a80243a0c22420c237d82e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2OTgyNTE3OTI0ZmU4ZDNlMTU2NjcxMTViMWY1YTIwMThlMGQ1NWNlNWEwMDFiMWUyZDVlMzFiOGIyNDEyMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMTY3YzI3YzJjOGYwNWRhZTJkNDNhM2YyNzc4YmM5MWQ5NjY5ZGYzN2JlNzEyZGE0NjYwOWE1M2ZkZWRjMWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzMWYyYTkyNDg1NmQ2N2UwODFiMjBkN2VhZjNlYmUwOWJkNjI5M2M0NDA5MDg4YmJhM2M1ZGQxMWUxNWQ3ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkOGY2ZGRhYzg0MTJiYjFkZmI2MjNmM2JhMDg4NjIzZGQ5MzBlOGJiZDBhYTMzZjE3Y2Q2OWY1OTMwOTE1NzMifQ"
         },
         {
@@ -313,7 +313,7 @@
           "version": "repo-lines-v1:sha256:2dd0ce9d627a319a964347aba802760c006e55ad88656121dd712fd61e11f3b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMTAwOTZlZjI5ODM2YTY5YjAyNWY2MzdiOWMyMDIzMWM4MmNkN2Q4ZDhmMDQ1MGVmZWM3MmVlNjliZDM3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MWNjYWZjMTg1OTQ4ZjBmMjVmYzE5MDFlZjE4MGNkZGI0ZDM4ZTIwYWUzNGI5M2IxYzY2OGNiZjEyZTUwYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMzkwYjNmN2VhYjkzOWFmYmViMjRkZWEzYjQ2ZmJhOWQ5MWQxOWNkNGRmMmIwY2RiZDM4ZWUwNTAxNWZlYmEifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L2383-L2449",
+          "resource": "repo://src/import_roms.rs#L2379-L2445",
           "version": "repo-lines-v1:sha256:a7fdec81afdee2925b66cb9c83fe38044d7f514fd419758b5f333c96de49acaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YjdiMTA4Y2NmZGY5MTA5YjViNDkzYmFiNzIxZjU3MWM2MDIyYzk2MDY0MGYzYzIwODRlNmUyNjFmMWUxMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkMjM0YThmM2MwZTUxZDc0MGEyNDc2ZWVmYjRjYTA3OWYwNzU2ZGI2MjE2OTdkZmY5ZTA1NzMxZDc5ZTc2YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5OWU1MDAzY2M1ODJhMmU5OTY5YmJhOTE3OWM3MTQyNmJlMjU0Yzk5YmU3NjlmNGQzNTJhZjRlYjE2Mzk3YTUifQ"
         },
         {
@@ -321,7 +321,7 @@
           "version": "repo-lines-v1:sha256:fd0be741e912e763075e02423e6fc77f42fd17acda147d6a4146af486b10874a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YTVmZmEzZTA5NWRmMDViNmIzMzMzODcxYWJhMWMxYjNlMjVhYjNkYmYxZDQ5MmYxNTRjMmNjMmIxMjJmNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxYjNlOTg2OTBkOWY2ZDBkYTVlYTY3ODgxNDY4M2UxMWJmMzBkNGMwNjQxZDk3NWZjZTE2MjZjNTJiMDY5OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNTViNzYwNWVmNjA3NDcyMjBlYmE1N2RhNDg5MWRjNTU0OGY4MmI0OTJmZWI4MmY3ZDgwZTJkZDhmZTQ3ODkifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L707-L738",
+          "resource": "repo://src/import_roms.rs#L703-L734",
           "version": "repo-lines-v1:sha256:d106940f98ac9d45a2b90ba80afd2bea898d0d61d55f9e587fcc595ccc21613f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNWI3MTU0ZGVlNGM4MTU4YWJmZWEwMDMzYjM1ZmZjMmFhYmZmYWY5MzQ0MTE5ODFhNWE0NjFkNWY0Nzg3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhMzE3YjIxZTU2OTFiODA0ZjI2ZTM3MWZmNzc3NjRmOTU3MTIzMjRlYTg1MmY0M2JmNDdlZWRmMTJmMWYzOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlM2NhMGY0MGI3YWE2YmU0YzYzYjZjOGY5MTliNGZlMTY4MTQ1OGJiNzc1M2MwNGMxOThmYzk5ZDViODM3M2UifQ"
         },
         {
@@ -387,20 +387,6 @@
       ]
     },
     {
-      "id": "claim_a7fd6b902a2c40c6bb194f11e630b0d7",
-      "statement": "A missing external tool is reported through the helper vocabulary and then skipped rather than failing the run: import_roms probes `ctrtool::get_version()` before a CIA import and prints `Required tool not found: ctrtool` with `print_error`, returning the already-collected ids so the rest of the import continues.",
-      "evidence": [
-        {
-          "resource": "repo://src/ctrtool.rs#L32-L34",
-          "version": "repo-lines-v1:sha256:f6f41867d31595d04ec84580226d040cb8314690b83aad4176736803ef2a6b82:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI3MWI2NmEyMTRiNzVlYzliOGU0ZDAzMTJiZGE1YzlkM2JmZDNmNDlmZGFmODllNGZmYWY5Nzc0NGJmOWVmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYyYzAwOTZkOTcyNDMwNGI2MzFiOWQwNDgzNGNmNmZkYjVlYWFmY2IxZjIxZThkY2FlNGQwNzMxNjk4NGFlMyJ9"
-        },
-        {
-          "resource": "repo://src/import_roms.rs#L492-L496",
-          "version": "repo-lines-v1:sha256:1a353aef04ea3c676461f58e280d0141f61fccc089671418fc63e2b35068b7de:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZhNWVkNjk5YTNhNTJmZmM4NWUyYjUwNGU2MDk3OGQxNWIzODhiNTA5MjkwMDM3NDQyZTY5OWM4YTBlYzVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwNDViMDdmNWMxMWFlMGZiOWE2OWM0NGU5ZDEzOTNhOTliMzc1MTg4YmFhMmU2NTViY2RjNjMxOGZiYjIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2FmZDMxOTI5ZDZjNGVmNWFkZTk0ODgwNzQ4NTcwYzg5ZDFkYTk0OTI5YjBlYTEyZWVjYjU0MWIxMGJkMGRjOSJ9"
-        }
-      ]
-    },
-    {
       "id": "claim_5beefbaf676548838fe714083e4be244",
       "statement": "`import-patches --rom <id>` is the prompt bypass for patch targets: with a ROM id the patch is imported directly against that ROM (an unknown id is an error, not a fallback to asking), while without one the CLI walks prompt_for_system → prompt_for_game → prompt_for_rom. The web server's patch-upload handler calls `import_patch` with a `rom_id` for exactly this reason, so a headless upload never reaches a dialoguer prompt or the `$EDITOR` name prompt.",
       "evidence": [
@@ -417,10 +403,24 @@
           "version": "repo-lines-v1:sha256:e648578cede6f6384ee7603416309b68d8ada34156ef675315fe5a46bfbd9b9e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2OGM4OWMwY2Q0ZDQ2ZDAwNjhiNDI4N2NmMGNiYTAyMGMyN2E4M2ZjMmYzZDRhNWFmYzNhNjllYWM1Y2ZiOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxZjE4ODQ1YWJlMzg2Y2RhYjVkYzBhYzJhMGJlYWNmZDc2ZWM3YThlZTVhZjk3OGM4MDFmM2UyYTliY2IwMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjYTZmOTJmMGM1ZjAwYjE5ZTRmZTBjYWFiODFlOTM3ZjM3NTdlMWY0ZjBkNWU2YjhlMzAwNmI3ZDkyOGE2NWYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fb8e699c70394ad1ad40c6f6834bb0d6",
+      "statement": "The CIA module brackets its work with start_action/stop_action and runs cia_rs::Cia::parse and cia_rs::unpack through run_blocking, so CIA parsing and unpacking report byte progress like the other crate-backed formats.",
+      "evidence": [
+        {
+          "resource": "repo://src/cia.rs#L24-L128",
+          "version": "repo-lines-v1:sha256:219b747b4b18cb472e1bffc82c2fb09134a3579c0a41c57ed727cc3fbad2fd91:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YWExN2MxMmMyMDlkNTMzZWU1MDU1OTVmNTdiMWI3ZWViNzZhODIwZDkxZDI0YjUwM2Y5NzRkOTA3MTAzNTJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MjJlNWI1MGViNDAzODJlYmJiYWY0NDM5NWFhODY0YjYwZTEwMjNkYjVkZTY0ZTYyZTZlOTA4YWMxNjE3NjgyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/progress.rs#L72-L97",
+          "version": "repo-lines-v1:sha256:d698d204244294e8368a1beec4d3d4839f368640bf56b511f7286bbb8b6d76b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NGIxNTA2YzQ4YjcwNmZjYTE5Njk1YzE5M2FkNmFjOWU4NjM4YzE0OGI2MDU2NDU0Mjg3OTM4NjBlMjI4NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NTcyMjA5ZmZjNDIxMjVhMjRlYjdiODNkZDQ4ZjA2NDNiYmVhNWUxNTNlNjhjNzBjNjk4NmUyZjM3ZGNmYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTNlOTkwN2ZjMjQ5YjYxYjdlZGFlZWRmN2UyNDZiMzA4NDQ2MjYzZTNkOTM5MDg3NTE1OGM3NTZmNGNlMDQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-18T21:36:28.347Z"
+    "at": "2026-10-19T17:45:26.496Z"
   }
 }

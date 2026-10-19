@@ -19,6 +19,11 @@
       "path": "*.sh",
       "merge_system_rule": true,
       "rule": "Shell scripts reviewed against Cargo.toml. Check: every cargo feature, package name and binary the script names still exists after the diff; a diff that removes a feature updates every script, workflow and Dockerfile that names it."
+    },
+    {
+      "path": "openwiki/**",
+      "merge_system_rule": true,
+      "rule": "Generated wiki under openwiki/. Check: every repo:// resource path referenced in .claims exists at head, and every claim about external tools, spawned processes or build files still matches the module that implements it; a diff that deletes a source module or drops the last external tool must trigger a wiki refresh."
     }
   ]
 }
