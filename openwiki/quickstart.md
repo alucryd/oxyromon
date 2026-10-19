@@ -12,6 +12,8 @@ sources:
     resource: repo://build.rs
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
+    resource: repo://crates/chd-rs/Cargo.toml
   - id: openwiki-source-92ee3a60a9826201e8ce6fa7
     resource: repo://desktop/Cargo.toml
   - id: openwiki-source-19a65c75a2d97f6840dee349
@@ -48,10 +50,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-19T19:46:38.984Z
 ---
 
 # Quickstart & Task Routing
@@ -73,7 +75,7 @@ binaries for the crates' own tests.
 ## Shortest working path
 
 ```sh
-cargo build --release                       # CLI only, no special requirements
+cargo build --release                       # CLI only: needs a C toolchain and CMake
 cargo build --release --features server     # plus GraphQL + web UI (needs trunk + wasm32 target)
 ```
 
@@ -152,6 +154,7 @@ standalone CLI with the same capabilities:
 
 Archives go through `sevenz-rust2` and `zip`, RVZ and WBFS through `nod` (which builds its
 compression libraries from source, so a C toolchain is required), and CIA through `cia-rs`.
+`chd-rs` builds its FLAC codec through `libflac-sys`, which additionally needs CMake.
 
 ```sh
 cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the CLIs

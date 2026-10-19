@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:57258d00c104ccac451a8eda58b17c31240d7ee5d3365cd2e805c78f768f0999",
+  "pageVersion": "sha256:89246d93d3af32aa178f33a892f343bfdc77883769439957c453f2d55d21fe59",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -318,15 +318,15 @@
     },
     {
       "id": "claim_07becb6ea50948d887c521b3d19ef445",
-      "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Alpine container likewise installs no codec or archive tool to run the server.",
+      "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Alpine container likewise installs no codec or archive tool to run the server, removing its build-only packages after the build.",
       "evidence": [
         {
           "resource": "repo://CHANGELOG.md#L31-L31",
           "version": "repo-lines-v1:sha256:3c63e197a71f59445839c6e3ee8124ff289519fb508447617e02c79296eea7be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhmYWFmNzhlMzQyMDgzOTBkNTljODFkYjQ2ZGQ2ZjkyZWI1ZmYwNGQzYjc3YWZkNzUwY2QwYmY5NWRiOTgyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDkzNTRlYmUxMzhjMmVkY2Y3ZjU1ZGNiYjE3NTRhM2M0Y2MwZTEyOGJjMDE3ZWUwYjMyNzI3ZDg3OTIzMmY3OSJ9"
         },
         {
-          "resource": "repo://Dockerfile#L8-L18",
-          "version": "repo-lines-v1:sha256:329cfb25dc26eea98eb0245bcace8c640082c80ffa9f3ced2df534ef6c32062e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNGJmOTM5MGQ5ZWFmMzljMzgyM2NiMmZlYzZkMGQzZGE0Zjc3OGE5YTI2MzIzYzM3NGI2NDg4OWMwNWZkYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTI0ZmY4YTRiNzMwN2JlZWNkYjliODMwY2NkZDcwMmJhYWUzNWVkMjM3M2FmN2JiMzEzMmJkMGE5OGYyMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwYjhjNjAzZjQyYTIyODc5ZjljYzUyMDE4M2FlNDEyOWQ1Y2Q2OTNlZjhmNWM4OWM1YThjMThkYTU1NTY1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "resource": "repo://Dockerfile#L9-L19",
+          "version": "repo-lines-v1:sha256:a483ff9f3f377dc81866ee760367ee604c1e0ef052b6bdd121e6055165c93683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjk5NzNhMmNmOTUwNTA0ZDYwODY5YzIyMzkxNWZjY2FlMDY0MmJhYTBjMjA0Yzc0NjJkZTYxY2FmYWRmMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         },
         {
           "resource": "repo://desktop/tauri.conf.json#L17-L31",
@@ -377,6 +377,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-19T19:46:38.984Z"
   }
 }
