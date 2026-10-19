@@ -22,7 +22,7 @@ const SECTION_ALIGNMENT: u64 = 64;
 /// ...and contents, relative to the content section, on a 16-byte one.
 const CONTENT_ALIGNMENT: u64 = 16;
 /// The content-present bitarray covers every content index there is.
-const BITARRAY_SIZE: usize = 2048;
+const BITARRAY_SIZE: usize = 0x2000;
 
 /// Which CIA layout a file uses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

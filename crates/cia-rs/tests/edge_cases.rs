@@ -277,6 +277,25 @@ fn a_content_index_the_bitarray_leaves_out() {
 }
 
 #[test]
+fn the_bitarray_covers_every_content_index() {
+    // The last index sits in the bitarray's last byte, at 0x201F.
+    let payload = vec![3u8; 16];
+    let data = cia(
+        0,
+        &[u16::MAX],
+        &Sections {
+            tik: vec![9u8; 256],
+            tmd: tmd(1, 1, &[rec(0xCC, u16::MAX, &payload)]),
+            contents: vec![payload],
+            ..Sections::default()
+        },
+    );
+    let cia = parse(&data).unwrap();
+    assert_eq!(cia.contents().len(), 1);
+    assert_eq!(cia.contents()[0].index, u16::MAX);
+}
+
+#[test]
 fn a_repeated_content_index_keeps_the_last_record() {
     let first = vec![1u8; 16];
     let second = vec![2u8; 16];

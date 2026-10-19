@@ -53,7 +53,7 @@ pub async fn parse_cia<P: AsRef<Path>>(
     let mut cia_infos: Vec<ArchiveInfo> = contents
         .iter()
         .map(|content| ArchiveInfo {
-            path: format!("{:08X}", content.id),
+            path: format!("{:08x}", content.id),
             size: content.size,
         })
         .collect();
