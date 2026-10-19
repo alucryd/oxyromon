@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:284344123b40c09c2dcd471b1e23387617622384a9ce75fe0e727ca047d4d18c",
+  "pageVersion": "sha256:a3f2ed7a7c0745543cbedf69cec7b09b1a9d345087e64feff04fc9acd53058a5",
   "claims": [
     {
       "id": "claim_5763ae02551d4203b1e6af658726e5c1",
@@ -140,11 +140,11 @@
     },
     {
       "id": "claim_73fb8d87f9fc41de95ba07172a23017a",
-      "statement": "The single Alpine-based Dockerfile is a self-contained build-and-run image that compiles the web UI inside the image (it does not set SKIP_TRUNK): it installs build-base, curl, gcompat, musl-dev and rustup, the wasm32-unknown-unknown target and trunk 0.21.14, runs `cargo install --features server --root /usr --path .`, then removes the toolchain, caches and source tree. It installs no external format tool, and gcompat is there because trunk's prebuilt wasm-bindgen/wasm-opt binaries are glibc-linked.",
+      "statement": "The single Alpine-based Dockerfile is a self-contained build-and-run image that compiles the web UI inside the image (it does not set SKIP_TRUNK): it installs build-base, cmake, curl, musl-dev, rustup and tar, the wasm32-unknown-unknown target and trunk 0.21.14's musl build, runs `cargo install --features server --root /usr --path .`, then removes those packages, the toolchain, caches and source tree. It installs no external format tool and no gcompat; cmake is for libflac-sys and GNU tar for the fetch-webawesome.sh hook.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile#L1-L21",
-          "version": "repo-lines-v1:sha256:74a63947f415630a4958ec2b66411daa8e7b3b79c4b18ff4428aef155ad94c01:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YTM2YTFhMzYwOWJjNjg2MTYxNDczNmYwNTAzMDc5ZWU4NTVmYTIzZTg4MjY5ZjM0MmZhMjYwZWRhOWE0NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMmMxOGEwOTc2NzRmMTIzNzNhNGFiNjdiZjRkNDIzMTBmYThkMmZmNDJlMWQ1M2MzZGNkNDVjNWFiYWZjNTYifQ"
+          "resource": "repo://Dockerfile#L1-L22",
+          "version": "repo-lines-v1:sha256:b3be1d91de03db9ac82218100c586f849f4d8230e3f15cffea6a9579dd9caf23:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YTM2YTFhMzYwOWJjNjg2MTYxNDczNmYwNTAzMDc5ZWU4NTVmYTIzZTg4MjY5ZjM0MmZhMjYwZWRhOWE0NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMmMxOGEwOTc2NzRmMTIzNzNhNGFiNjdiZjRkNDIzMTBmYThkMmZmNDJlMWQ1M2MzZGNkNDVjNWFiYWZjNTYifQ"
         }
       ]
     },
@@ -153,7 +153,7 @@
       "statement": "The image pins runtime paths via environment (OXYROMON_DATA_DIRECTORY=/data, OXYROMON_ROM_DIRECTORY=/roms) with matching VOLUME declarations, but CMD is bare `oxyromon`; since main() only performs work inside `if let Some((subcommand, ...)) = matches.subcommand()`, a container started without an appended subcommand does nothing.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile#L23-L28",
+          "resource": "repo://Dockerfile#L24-L29",
           "version": "repo-lines-v1:sha256:65f10bdf29ffd520f4811124e26b519304415d5535d8d2f43e6e6431f8551e0e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODg1NjJmN2U2MDc5Mzk2MjQ0Mjc3Mjk2NjFiNzU5N2RiYjViMjk2M2YzNzJhZmVkYjEzMDUzZTJhZDkyNGM3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q0NTJkMmFmMmMxNTAxNDIyNjdmNTBhMjMxOTlkZTViYTBmOWZmZDcyNjE3MDIzYzg2ZGIxNGU0NGQzZTE1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzhhM2Q2YzdjNTdlNDZiNTFjMmU3YzRmNDg4ZTA3Yzg3Mzk2MjVjZmI1M2Y3OTUyNjA4NDZhZWJkZDYwZDk4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -281,8 +281,8 @@
           "version": "repo-lines-v1:sha256:b9beeeea8fa51d438367e894925bbdcd8571f728f271de9a5cffdd76e2791151:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUzODcyZTk5YTE5NWJiMjQwYjEwM2I2YzZmYzJiNDVlM2JhMGIxYWJmMzUzMWQ0ZTNiMmFhMzQ3MTk2MDU3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjOWY3OTdkNmFkMjEyMmE2NWNlMjIwNjRhYzdiYTczMGEyMzdmNjYzNWNmODU5ZjZjOGZlNGYzNzEzZWMxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I5MjY2ZjhiMmVkZWYwZTQzNTkzMzFmMDNlN2UzMDM1NzZjMWE1MjIxZjZjYzcwZjVkMDgxYzA3NjhkNGQyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJhZGVjNjZkNTcxNzY2ZmExNGQ5ZDQ3NTU1ZWM3MTFhODkzYmYwNDgxMzE5NmVlMGY2YWJmYTBiNGVlZGJiOCJ9"
         },
         {
-          "resource": "repo://Dockerfile#L8-L18",
-          "version": "repo-lines-v1:sha256:329cfb25dc26eea98eb0245bcace8c640082c80ffa9f3ced2df534ef6c32062e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNGJmOTM5MGQ5ZWFmMzljMzgyM2NiMmZlYzZkMGQzZGE0Zjc3OGE5YTI2MzIzYzM3NGI2NDg4OWMwNWZkYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTI0ZmY4YTRiNzMwN2JlZWNkYjliODMwY2NkZDcwMmJhYWUzNWVkMjM3M2FmN2JiMzEzMmJkMGE5OGYyMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwYjhjNjAzZjQyYTIyODc5ZjljYzUyMDE4M2FlNDEyOWQ1Y2Q2OTNlZjhmNWM4OWM1YThjMThkYTU1NTY1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "resource": "repo://Dockerfile#L9-L19",
+          "version": "repo-lines-v1:sha256:a483ff9f3f377dc81866ee760367ee604c1e0ef052b6bdd121e6055165c93683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjk5NzNhMmNmOTUwNTA0ZDYwODY5YzIyMzkxNWZjY2FlMDY0MmJhYTBjMjA0Yzc0NjJkZTYxY2FmYWRmMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -407,6 +407,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-19T19:46:38.984Z"
   }
 }

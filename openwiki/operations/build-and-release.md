@@ -54,10 +54,10 @@ sources:
     resource: repo://src/main.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-19T19:46:38.984Z
 ---
 
 # Builds, Distribution and Releases
@@ -206,17 +206,21 @@ recompiling the UI. The generated `desktop/binaries/` directory is gitignored.
 
 The single `Dockerfile`, based on Alpine, is a self-contained build-and-run
 image: it copies the whole tree, installs a Rust toolchain, the
-`wasm32-unknown-unknown` target and trunk 0.21.14, then runs
+`wasm32-unknown-unknown` target and trunk 0.21.14's musl build, then runs
 `cargo install --features server --root /usr --path .`, and finishes by deleting
 the toolchain, cargo caches and the source tree. It does not set `SKIP_TRUNK`, so
-unlike `dist.sh` the UI is compiled inside the image. It installs `gcompat`
-because trunk downloads prebuilt wasm-bindgen/wasm-opt binaries compiled against
-glibc, which must run under musl. A `.dockerignore` keeps `.git`, `target/`,
+unlike `dist.sh` the UI is compiled inside the image. Trunk's musl build and the
+wasm-bindgen/wasm-opt binaries it downloads run natively on Alpine, so there is
+no glibc shim. A `.dockerignore` keeps `.git`, `target/`,
 `tests/`, `desktop/`, the generated `graft/` and `openwiki/` and other non-inputs
 out of the build context.
 
-The image installs no format tool. Its package list is `build-base curl gcompat
-musl-dev rustup`: no `chdman`/`mame-tools`, no `ctrtool`, no `xdelta3`, no
+The image installs no format tool. Its package list is `build-base cmake curl
+musl-dev rustup tar`, all removed again once the binary is installed: `cmake`
+because `libflac-sys` builds the FLAC codec `chd-rs` uses, and GNU `tar` because
+the web UI's `fetch-webawesome.sh` hook extracts one directory by name, which
+BusyBox tar cannot do. Both gaps went unnoticed in CI, whose Ubuntu runner ships
+`cmake` and GNU tar. There is no `chdman`/`mame-tools`, no `ctrtool`, no `xdelta3`, no
 `p7zip`/7-Zip, no `flips`, no `maxcso`, no `dolphin-tool`. Every codec is a Rust
 crate linked into the binary, which is what let the Arch Linux image go: with
 nothing left to install alongside oxyromon, one base carries it all. The CI runner

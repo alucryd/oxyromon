@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e16cf3612c9a7f48e887454cd9671597d03ca662df80c9f0fb40a9e1c3319740",
+  "pageVersion": "sha256:c30d523ce81c382044615a068dff42aceb53477280c06724ecb8b4cb0c9cee80",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -296,11 +296,11 @@
     },
     {
       "id": "claim_1db127ec794a4bff802e469bcd496cfa",
-      "statement": "The container image does the opposite of CI: the single Alpine-based Dockerfile does not set SKIP_TRUNK; it installs trunk 0.21.14 and the wasm target and runs `cargo install --features server`, adding gcompat because trunk downloads glibc-linked wasm-bindgen/wasm-opt tools.",
+      "statement": "The container image does the opposite of CI: the single Alpine-based Dockerfile does not set SKIP_TRUNK; it installs trunk 0.21.14's musl build and the wasm target and runs `cargo install --features server`, with cmake (for libflac-sys) and GNU tar (for the fetch-webawesome.sh hook) as build-only packages and no gcompat.",
       "evidence": [
         {
-          "resource": "repo://Dockerfile#L1-L18",
-          "version": "repo-lines-v1:sha256:fb21a40da2c6b2d4a338980d5fef8858e4cb5384f8af19d43bc7f63d40a7883f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTI0ZmY4YTRiNzMwN2JlZWNkYjliODMwY2NkZDcwMmJhYWUzNWVkMjM3M2FmN2JiMzEzMmJkMGE5OGYyMWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "resource": "repo://Dockerfile#L1-L19",
+          "version": "repo-lines-v1:sha256:de52235c7bc9ddef558ff75285143d4205d4bc980c3dc4e8646cc4ecf3b19cf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -501,6 +501,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-19T19:46:38.984Z"
   }
 }
