@@ -1,0 +1,15 @@
+# Build inputs, kept: Cargo.toml, Cargo.lock, build.rs, src/, crates/,
+# migrations/, data/, .sqlx and frontend/ (Trunk builds the web UI from it).
+
+# The rest rides along for nothing.
+.git
+.github
+graft/
+openwiki/
+plans/
+port/
+tests/
+desktop/
+target/
+frontend/target/
+frontend/dist/

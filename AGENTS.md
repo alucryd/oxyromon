@@ -59,9 +59,7 @@ stale within days and installs then 404.
   `PossibleValuesParser` values, and the MCP tool descriptions and parameter
   docs must list only values the parser accepts.
 - **Format modules do not spawn processes.** Every format is handled by a crate
-  in-process; `ctrtool.rs` is the only external tool left. Format modules are
-  named after the format (`chd.rs`), or after the tool while one is still run
-  (`ctrtool.rs`).
+  in-process, and modules are named after the format (`chd.rs`, `cia.rs`).
 - **Query changes need the offline sqlx data regenerated** in `.sqlx/`.
 - **The `server` and `mcp` features change the pool**: 5 connections with
   NORMAL locking instead of 1 with EXCLUSIVE. Test with `--features server`.
@@ -126,10 +124,10 @@ global `MultiProgress`.
 
 ## Format Crates
 
-`crates/` holds `chd-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` and
-`xso-rs`, each a port of the tool oxyromon used to run (chdman, gdidrop, nsz,
-xdelta3, Flips, maxcso), published on its own and keeping its upstream's
-license. Every crate follows these, and a new one must too:
+`crates/` holds `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`
+and `xso-rs`, each a port of the tool oxyromon used to run (chdman, ctrtool,
+gdidrop, nsz, xdelta3, Flips, maxcso), published on its own and keeping its
+upstream's license — MIT for `cia-rs`, whose upstream shipped none. Every crate follows these, and a new one must too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
   crate by `path` and `version` with `default-features = false`.

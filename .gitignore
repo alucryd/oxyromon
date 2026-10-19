@@ -5,6 +5,7 @@
 !.env.example
 .idea
 .vscode
+plans/
 port/
 
 # rust

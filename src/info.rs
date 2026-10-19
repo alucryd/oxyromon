@@ -1,6 +1,6 @@
 use super::archive;
 use super::chd;
-use super::ctrtool;
+use super::cia;
 use super::database::*;
 use super::nsz;
 use super::progress::*;
@@ -26,7 +26,7 @@ pub async fn main(connection: &mut SqliteConnection, progress_bar: &ProgressBar)
     let mut deps: Vec<(&str, Result<String, _>)> = vec![
         ("sevenz-rust2", archive::get_version().await),
         ("chd-rs", chd::get_version().await),
-        ("ctrtool", ctrtool::get_version().await),
+        ("cia-rs", cia::get_version().await),
         ("xps-rs", xps::get_version().await),
         ("xso-rs", xso::get_version().await),
         ("nsz-rs", nsz::get_version().await),
