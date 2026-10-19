@@ -331,11 +331,9 @@ pub(crate) fn copy_range(
     output: &mut File,
     progress: &mut dyn FnMut(u64),
 ) -> Result<u64> {
+    file.seek(SeekFrom::Start(at))?;
     if at > cursor {
-        file.seek(SeekFrom::Start(at))?;
         progress(at - cursor);
-    } else {
-        file.seek(SeekFrom::Start(at))?;
     }
     let mut buffer = vec![0u8; 0x10000];
     let mut left = size;

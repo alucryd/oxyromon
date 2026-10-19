@@ -15,9 +15,6 @@ const TMD_CERT_OFFSET: u64 = TICKET_CERT_OFFSET + TICKET_CERT_SIZE as u64;
 #[derive(Debug)]
 pub struct ArchiveInfo {
     pub path: String,
-    // parsed from the listing but not consumed yet
-    #[allow(dead_code)]
-    pub size: u64,
 }
 
 pub async fn get_version() -> Result<String> {
@@ -54,12 +51,10 @@ pub async fn parse_cia<P: AsRef<Path>>(
         .iter()
         .map(|content| ArchiveInfo {
             path: format!("{:08x}", content.id),
-            size: content.size,
         })
         .collect();
     cia_infos.push(ArchiveInfo {
         path: format!("tmd.{}", cia.title_version()),
-        size: u64::from(cia.tmd_meta_size()) + TMD_CERT_SIZE as u64 + CA_CERT_SIZE as u64,
     });
 
     stop_action(progress_bar);
