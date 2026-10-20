@@ -60,6 +60,8 @@ sources:
     resource: repo://src/rebuild_roms/test_full_non_merged_to_non_merged.rs
   - id: openwiki-source-636c9200f8c3a86fd81fc8d6
     resource: repo://src/rebuild_roms/test_nothing_to_do.rs
+  - id: openwiki-source-4545b1784b0c9ee632396db8
+    resource: repo://src/rebuild_roms/test_split_to_merged.rs
   - id: openwiki-source-0bf78c91e0736d89627ed389
     resource: repo://src/rebuild_roms/test_split_to_non_merged.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
@@ -72,10 +74,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -109,29 +111,31 @@ pub enum Merging {
 }
 ```
 
-Only `SPLIT`, `NON_MERGED` and `FULL_NON_MERGED` are ever written —
-`MERGING_STRATEGIES` is the clap value parser for `--merging`, and
+`SPLIT`, `NON_MERGED`, `FULL_NON_MERGED` and `MERGED` can be written —
+`MERGING_STRATEGIES` is the clap value parser for `--merging`, listed in enum
+order because the interactive choice maps its index straight onto `Merging`, and
 `update_system_merging` writes the enum discriminant
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L20-L33),
-[src/database.rs](../../src/database.rs#L192-L206)). `Merged` / `FullMerged` exist
-in the enum (and in the README as struck-through future work) but no code path
-selects them; they are handled defensively wherever a `match` must be exhaustive.
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L20-L34),
+[src/database.rs](../../src/database.rs#L192-L206)). `FullMerged` exists in the
+enum but no code path selects it; it is handled defensively wherever a `match`
+must be exhaustive.
 
 The stored value changes the meaning of two other things:
 
 - **Completion.** `compute_system_completion` picks the SQL that recomputes
-  `games.completion` according to the stored strategy: `Split` ignores every rom
-  that has a `parent_id`, `NonMerged`/`Merged` ignores only roms merged from a
-  *non-BIOS* parent, `FullNonMerged`/`FullMerged` require every rom
-  ([src/util.rs](../../src/util.rs#L429-L462),
-  [src/database.rs](../../src/database.rs#L493-L575)). This is why a clone can be
-  `Full` under `Split` with zero of its own shared files, and `None` the moment
-  you switch to `FullNonMerged`.
+  `games.completion` according to the stored strategy: `Split` and `Merged`
+  ignore every rom that has a `parent_id`, `NonMerged` requires only roms merged
+  from a *non-BIOS* parent, `FullNonMerged`/`FullMerged` require every rom
+  ([src/util.rs](../../src/util.rs#L403-L435),
+  [src/database.rs](../../src/database.rs#L493-L575)). `Merged` shares `Split`'s
+  rules because a merged set links exactly the roms a split one does, only to
+  the parent's ZIP. This is why a clone can be `Full` under `Split` with zero of
+  its own shared files, and `None` the moment you switch to `FullNonMerged`.
 - **What the server reports as "not needed".** The GraphQL `Rom::ignored`
-  resolver returns `true` for any merged rom under `Split`, only BIOS-sourced
-  merged roms under `NonMerged`, and never under `FullNonMerged`, so the same
-  file row is "required" or "ignore it" depending purely on the system's stored
-  strategy ([src/query.rs](../../src/query.rs#L115-L152)).
+  resolver returns `true` for any merged rom under `Split` and `Merged`, only
+  BIOS-sourced merged roms under `NonMerged`, and never under `FullNonMerged`,
+  so the same file row is "required" or "ignore it" depending purely on the
+  system's stored strategy ([src/query.rs](../../src/query.rs#L115-L152)).
 
 ## Where the parent/clone graph comes from
 
@@ -164,7 +168,7 @@ the parent and whose `Test Clone Bios.rom` merges from the BIOS.
 system it warns `No arcade systems found` and stops before asking for a strategy;
 otherwise it resolves the target strategy either from `-m/--merging` or from an
 interactive `select`, and runs `rebuild_system` per system
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L60-L99)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L61-L101)).
 
 A system is arcade when its DAT lists `<machine>` entries, as MAME's do, or when
 it was imported with `import-dats -a/--arcade`. FBNeo's DATs list `<game>`
@@ -179,17 +183,24 @@ flowchart TD
     D --> E["compute_system_completion"]
     E --> F{"system.merging == merging and not --force"}
     F -->|yes| G["skip: Nothing to do"]
-    F -->|no| H{"expand or trim direction"}
+    F -->|no| U{"stored Merged, target not Merged"}
+    U -->|yes| V["unmerge_game per game: stored becomes Split"]
+    U -->|no| H
+    V --> H{"expand or trim direction, MERGED targeting Split"}
     H -->|"Split/NonMerged to NonMerged/FullNonMerged"| I["expand_game per full game"]
     H -->|"NonMerged/FullNonMerged to Split/NonMerged"| J["trim_game per full game"]
     H -->|same tier| K["no file work"]
-    I --> L["update_system_merging"]
-    J --> L
-    K --> L
-    L --> M["compute_system_completion"]
+    I --> W{"target Merged"}
+    J --> W
+    K --> W
+    W -->|yes| X["merge_game per game, warn on skipped clones"]
+    W -->|no| L
+    X --> L["update_system_merging"]
+    L --> M["re-read the system, compute_system_completion"]
 ```
 
-*Figure: `rebuild_system` — repair, short-circuit, migrate, re-record, recompute.*
+*Figure: `rebuild_system` — repair, short-circuit, unmerge, migrate, merge,
+re-record, recompute.*
 
 ### The repair pass runs before the merge check
 
@@ -198,14 +209,14 @@ for every `Partial` game it takes the roms with `romfile_id IS NULL` **and
 `parent_id IS NULL`** (skipping `size == 0` placeholder roms) and searches the
 **same system** for a rom that already has a romfile with the same size and CRC,
 then MD5, then SHA1
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L104-L154),
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L110-L160),
 [src/database.rs](../../src/database.rs#L1298-L1310)). If found, the file is
 extracted from its archive or copied into the tmp directory and handed to
 `import_roms::import_other` with a single-game allow-list
 (`HashSet::from_iter(vec![missing_rom.game_id])`) and
 `UnattendedMode::Skip`
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L155-L187),
-[src/import_roms.rs](../../src/import_roms.rs#L2041-L2138)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L161-L193),
+[src/import_roms.rs](../../src/import_roms.rs#L2073-L2174)).
 
 This is the mechanism that lets a rebuild "grow" a clone without ever knowing the
 strategy yet: the import path is reused verbatim, but constrained so a duplicate
@@ -216,8 +227,13 @@ still heals unlinked roms.
 
 ### Direction decides expand or trim
 
-The migration is chosen by a two-branch test on (stored, target)
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L195-L220)):
+A merged set is a split one with each clone's own files in its parent's ZIP, so
+`MERGED` is reached through `SPLIT` both ways. Leaving `Merged` first runs
+`unmerge_game` on every game and treats the stored strategy as `Split`; a
+`MERGED` target is treated as `Split` for the expand-or-trim test, and
+`merge_game` then runs on every game. The expand-or-trim step itself is a
+two-branch test on (stored, target)
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L201-L239)):
 
 | Stored | Target | Work |
 | --- | --- | --- |
@@ -225,8 +241,14 @@ The migration is chosen by a two-branch test on (stored, target)
 | `NonMerged` / `FullNonMerged` | `Split` / `NonMerged` | `trim_game` for every `Full` game |
 | any other pair | — | only `update_system_merging` (unless `--force`) |
 
-Both branches operate on `find_full_games_by_system_id` — partial games are never
-expanded or trimmed, which is why the repair pass matters. `--force` bypasses the
+With the merged steps around it, `NON_MERGED → MERGED` trims to split then merges,
+and `MERGED → FULL_NON_MERGED` unmerges then expands. Both expand-or-trim
+branches operate on `find_full_games_by_system_id` — partial games are never
+expanded or trimmed, which is why the repair pass matters. The merge and unmerge
+passes walk every game instead, so a partial clone is not left in the other
+layout. After recording the new strategy, `rebuild_system` reads the system row
+again before `compute_system_completion`, so completion follows the new
+strategy rather than the one it rebuilt from. `--force` bypasses the
 early return, so a repeated `expand`/`trim` pass can be used to re-lay out files
 after manual tampering.
 
@@ -234,7 +256,7 @@ after manual tampering.
 
 The target rom set defines the strategy, and the two SQL shapes are the whole
 difference between `NON_MERGED` and `FULL_NON_MERGED`
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L252-L258),
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L291-L298),
 [src/database.rs](../../src/database.rs#L1196-L1239)):
 
 - `NonMerged` → `find_roms_by_game_id_parents_no_parent_bioses`: own roms plus
@@ -249,11 +271,11 @@ destination is decided by `add_rom`. If a parent rom has no file, `expand_game`
 prints `Missing "<rom>"` and returns `Ok(())` from inside the transaction *without
 committing*, so the dropped transaction rolls back the game's partial expansion and
 the walk continues with the next game
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L259-L297)).
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L299-L336)).
 
 `add_rom` handles the four layout combinations, because arcade sets can be stored
 as loose files or as one ZIP per set
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L336-L412)):
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L375-L451)):
 
 1. archive → archive: `archive::copy_files_between_archives` moves the entry with
    `raw_copy_file` / `raw_copy_file_rename`, i.e. recompression-free and renaming
@@ -279,7 +301,7 @@ Trimming selects the roms to *release* — under `Split`, every rom with a
 ([src/database.rs](../../src/database.rs#L1241-L1280)) — deletes each file from the
 set's archive or from disk, sets `romfile_id = NULL`, and finally `update`s the
 archive romfile row so its recorded size matches the shrunken archive
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L299-L334)). `ArchiveFile::delete_file`
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L338-L373)). `ArchiveFile::delete_file`
 also deletes the whole archive once it becomes empty, which is what keeps a
 `Full Non-Merged → Split` run from leaving empty `Test Clone.zip` files behind
 ([src/archive.rs](../../src/archive.rs#L152-L171)).
@@ -288,8 +310,45 @@ Note the asymmetry: expansion *creates* romfiles and rows, trimming only removes
 links and files, and neither ever deletes or mutates the parent's data. The full
 matrix is pinned by five tests: `test_nothing_to_do`, `test_split_to_non_merged`,
 `test_split_to_full_non_merged`, `test_non_merged_to_split`, and
-`test_full_non_merged_to_non_merged`
-([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L442-L451)).
+`test_full_non_merged_to_non_merged`, plus three merged ones below
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L729-L746)).
+
+### merge_game and unmerge_game: the merged layout
+
+In a merged set, the parent's ZIP holds the parent's own files and every clone's
+own files (`parent_id IS NULL`), each stored once, and the clone ZIPs are gone.
+`merge_game` does this for one clone
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L485-L604)):
+
+- It takes the clone's own roms that have a romfile other than the parent's ZIP,
+  skipping `disk` roms, so clone CHDs stay in the clone's directory.
+- Every source must be a ZIP. If one is not, the clone is left as it is and the
+  function returns `false`; `rebuild_system` counts those and ends with a warning
+  to convert them to ZIP first. Loose sets are therefore never merged.
+- For each rom it reads the parent ZIP's entries. An entry with the rom's name
+  and CRC is reused, which is how sibling clones share one copy. An entry with
+  the rom's name but another CRC sends the rom under `<clone>/<name>`, as
+  ClrMamePro does. Otherwise the entry is raw-copied with
+  `copy_files_between_archives`, and the parent's romfile row is created if the
+  ZIP is new.
+- The rom is linked to the parent's ZIP, and `prune_archive` then runs on each
+  source and on the parent: it deletes entries no linked rom resolves to, deletes
+  the archive and its row once no rom is left in it, and records the new size.
+
+`unmerge_game` is the inverse: each clone rom linked to the parent's ZIP is found
+with `rom_entry` (by name, `<clone>/<name>`, then CRC), copied into
+`<clone>.zip` under its own name, and relinked, then the parent ZIP is pruned
+([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L606-L699)). Because pruning
+only drops entries no remaining rom resolves to, a file shared by two clones
+stays in the parent's ZIP until the last of them moves out.
+
+File copies happen outside the database transaction. If a merge fails midway,
+the parent's ZIP keeps copies the database does not know about; running it again
+converges, because an entry with the same name and CRC is reused rather than
+copied. The merged tests build a parent and two clones covering a name clash and
+a shared file from `src/rebuild_roms/merged_set.rs`: `test_split_to_merged`
+(round trip back to split), `test_merged_to_non_merged` and
+`test_non_merged_to_merged`, each also running `check-roms` on the result.
 
 ## generate-playlists: M3U creation for multi-disc games
 
@@ -478,18 +537,25 @@ LaserDisc, `lzma,zlib,huff,flac` for HD).
 - `generate-playlists` does not re-run itself after conversion: as the README
   states, `sort-roms` moves playlists with the games, but after `convert-roms` you
   must run the command again to reflect new filenames
-  ([README.md](../../README.md#L696-L703)).
+  ([README.md](../../README.md#L668-L681)).
 - Arcade games are stored one directory per set when the extension is not an
   archive (`system.arcade && !ARCHIVE_EXTENSIONS`), which is why `expand_game` and
   `trim_game` both compute paths under `<system_directory>/<game_name>/` and look
   up `<game_name>.zip` as the alternative layout
   ([src/common.rs](../../src/common.rs#L444-L449),
-  [src/rebuild_roms.rs](../../src/rebuild_roms.rs#L236-L251)).
+  [src/rebuild_roms.rs](../../src/rebuild_roms.rs#L267-L290)).
 - `rebuild-roms -y/--yes` is declared but never read, unlike `sort-roms` which does
   consume its `YES` flag — rebuilding performs no confirmation prompt, so it does
   not need one, and passing the flag is a no-op
-  ([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L50-L57),
+  ([src/rebuild_roms.rs](../../src/rebuild_roms.rs#L51-L58),
   [src/sort_roms.rs](../../src/sort_roms.rs#L116-L116)).
+- Other commands follow the merged layout: `check-roms` accepts one ZIP entry
+  backing several roms and `<clone>/` entries, `sort-roms` leaves a merged
+  clone's archived files to follow its parent, and `export-roms -f ORIGINAL`
+  writes each rom under its own name in its game's directory. See
+  [Integrity Check and Purge](integrity-check-and-purge.md),
+  [Sorting and 1G1R Election](sorting-and-1g1r-election.md) and
+  [Format Conversion and Export](format-conversion-and-export.md).
 - `rebuild-roms` has no GraphQL mutation today; it is CLI-only, while
   `generate-playlists` has one
   ([src/mutation.rs](../../src/mutation.rs#L507-L534)).
