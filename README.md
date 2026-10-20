@@ -605,14 +605,13 @@ Rebuilds arcade sets with another merging strategy:
 - **Split:** each set holds only its own files.
 - **Non-merged:** each set also holds its parent's files.
 - **Full non-merged:** each set also holds its parent's files and the BIOS files it needs.
-
-Merged sets are not supported yet.
+- **Merged:** a parent's ZIP also holds its clones' files, each stored once. A clone's file whose name the parent already uses with other contents goes under `<clone>/`, as ClrMamePro does. Sets must be ZIPs: convert loose sets with `convert-roms` first.
 
 ```text
 Usage: oxyromon rebuild-roms [OPTIONS]
 
 Options:
-  -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED]
+  -m, --merging <MERGING>  Set the arcade merging strategy [possible values: SPLIT, NON_MERGED, FULL_NON_MERGED, MERGED]
   -f, --force              Force rebuild even if merging strategy is unchanged
   -a, --all                Rebuild all arcade systems
   -y, --yes                Automatically say yes to prompts

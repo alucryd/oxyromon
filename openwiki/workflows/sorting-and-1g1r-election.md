@@ -12,6 +12,8 @@ sources:
     resource: repo://src/mutation.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-1d26c45976bee4bd7a537701
+    resource: repo://src/sort_roms/test_merged.rs
   - id: openwiki-source-9314a022f668e8ef5a081939
     resource: repo://src/sort_roms/test_sort_1g1r_catch_all.rs
   - id: openwiki-source-367e36977d822190bc47723f
@@ -20,10 +22,10 @@ sources:
     resource: repo://src/sort_roms/test_trim_languages_only.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Sorting and the 1G1R Election
@@ -192,6 +194,12 @@ file of the game, its destination with `get_sorted_path`:
 Patches move with their ROM file, keeping their own extension, and a game's
 M3U playlist moves with the game. Only files whose path actually changes are
 planned.
+
+A clone of a system stored as `MERGED` plans no move for its files that are in
+an archive. Those live in the parent's ZIP, which the parent's own sort decides;
+the clone's file names would otherwise send that ZIP to `<clone>.zip`. A merged
+clone's CHDs, which stay outside the ZIP, still sort with the clone
+(`test_merged`).
 
 The plan is sorted, deduplicated and printed as a summary of
 `"file" → "destination"` lines. The user confirms it, or `--yes` skips the

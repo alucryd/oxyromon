@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -289,6 +289,13 @@ central-directory write failure and leave a corrupt archive behind.
 `ArchiveRomfile` also short-circuits hashing: it carries the entry's `size` and
 `crc` as recorded when the archive was parsed, so a CRC check of a file inside a
 container needs no extraction at all.
+
+Finding a ROM's entry goes through `rom_entries`. `parse` always lists every
+entry, and `as_archive(Some(rom))` then keeps those whose path is the ROM's name
+or ends in `/<name>`, the way a merged arcade set files a clone's ROM whose name
+its parent already uses. When several remain, the ones matching the ROM's CRC
+win, and an exact name sorts first. Because every lookup goes through it, the
+`<folder>/<name>` arm applies to any archive, not only merged arcade sets.
 
 ## `rvz.rs` and `wbfs.rs`: one disc pipeline, two containers
 

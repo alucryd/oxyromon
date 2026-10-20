@@ -57,7 +57,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T19:46:38.984Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Builds, Distribution and Releases
