@@ -86,10 +86,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -174,7 +174,7 @@ flowchart TD
     A["check_system(system, games, size flag)"] --> B["find_original_roms_with_romfile_by_game_ids"]
     B --> C["group roms by romfile_id, load romfiles, load system header"]
     C --> D{"romfile extension"}
-    D -->|7z or zip| E["check_archive: entry count must equal rom count"]
+    D -->|7z or zip| E["check_archive: every entry backs a rom, every rom has an entry"]
     D -->|chd| F["romfile_as_chd then ChdRomfile check, in process"]
     D -->|cso or zso| I["decompress to ISO in tmp, check ISO"]
     D -->|nsz| J["extract to NSP in tmp, check NSP"]
@@ -210,10 +210,15 @@ Every format implements the same `Check` trait, and the leaf comparison is alway
 - A size mismatch is only raised when `roms.size > 0`, so DAT entries that
   declare no size cannot fail on size.
 - `ArchiveRomfile::check` extracts the member into a temp directory before
-  hashing, and `check_archive` first bails when the archive holds a different
-  number of files than the game has roms, then matches each member to its rom by
-  name ([src/archive.rs](../../src/archive.rs#L217-L236),
-  [src/check_roms.rs](../../src/check_roms.rs#L251-L276)).
+  hashing. `check_archive` pairs each member with the roms linked to the archive
+  whose name it holds, either exactly or as `<folder>/<name>` (a merged arcade
+  set's `<clone>/` entry). When several match, those with the member's CRC win.
+  The member is checked against one of them and all of them count as present,
+  so one member can back several roms, as sibling clones' shared file does in a
+  merged set. The check fails when a member matches no rom, when same-name roms
+  match it but none by CRC, or when a rom is left without a member
+  ([src/archive.rs](../../src/archive.rs#L217-L236),
+  [src/check_roms.rs](../../src/check_roms.rs#L251-L296)).
 - `RvzRomfile::check` hashes *while decoding*, writing no ISO at all; it falls
   back to the extract-then-check path only if a header is configured
   ([src/rvz.rs](../../src/rvz.rs#L69-L98)).

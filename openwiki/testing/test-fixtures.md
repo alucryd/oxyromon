@@ -76,6 +76,8 @@ sources:
     resource: repo://src/mcp/write.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
+  - id: openwiki-source-f83e6ecb072f882047f3b497
+    resource: repo://src/rebuild_roms/merged_set.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
   - id: openwiki-source-1cf069de5c999c3ff1245ed6
@@ -94,6 +96,8 @@ sources:
     resource: repo://tests/Test%20System%20(20000000).dat
   - id: openwiki-source-792ef1983e45ffb1bb16bee7
     resource: repo://tests/Test%20System%20(20200721).dat
+  - id: openwiki-source-d6a61c8d2ef7ea49f4ff36ba
+    resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Merged).dat
   - id: openwiki-source-73e67b23cdfda6c237fcc93e
     resource: repo://tests/Test%20System%20(20200721)%20(Parent-Clone).dat
   - id: openwiki-source-26fd153a05de7ae5f18590a8
@@ -106,10 +110,10 @@ sources:
     resource: repo://tests/Test%20System%20(20241228)%20(MAME%20CHD).dat
   - id: openwiki-source-d055e6a57bb9c1c3b426914e
     resource: repo://tests/Test%20System%20(20241230)%20(MAME%20Mixed).dat
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 
@@ -315,6 +319,18 @@ the MAME Rebuild DAT. Arcade scenarios exploit that freedom: the `rebuild_roms`
 tests copy a flat fixture to the name the `<machine>` catalog declares
 (`Test Game (USA, Europe).rom` → `Test Parent.rom`) rather than committing a
 duplicate file ([src/rebuild_roms/test_split_to_non_merged.rs](../../src/rebuild_roms/test_split_to_non_merged.rs#L9-L35)).
+
+The merged-layout scenarios go one step further and build their ZIPs at run
+time. `Test System (20200721) (MAME Merged).dat` declares a parent and two
+clones: Clone 1 has its own `Test Program.rom` with other contents than its
+parent's (`Test Game (USA) (Rev 1).rom`, a name clash), and both clones have
+`Test Clones.rom`, which their parent lacks (a file sibling clones share). The
+`src/rebuild_roms/merged_set.rs` helper writes those as split ZIPs with the
+`zip` crate, imports them, and offers `rebuild`, `assert_merged`,
+`entry_names` and `assert_checks` (run `check-roms` and assert nothing moved to
+the trash). The rebuild, sort-roms and export-roms merged tests all start from
+it, and `import_roms/test_none_selected.rs` reuses the DAT for a file that
+matches both clones.
 
 ## Staging failures without corrupting fixtures
 

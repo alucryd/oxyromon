@@ -50,6 +50,8 @@ sources:
     resource: repo://src/export_roms.rs
   - id: openwiki-source-e04cc0a0db8430cf4a93bafe
     resource: repo://src/export_roms/test_iso_chd_to_chd_should_copy.rs
+  - id: openwiki-source-7c3087413ee0312e6fa6a3ca
+    resource: repo://src/export_roms/test_merged_to_original.rs
   - id: openwiki-source-8607c2c477e14dfa7f3be3f5
     resource: repo://src/export_roms/test_multiple_tracks_chd_to_cso_should_do_nothing.rs
   - id: openwiki-source-663f9b435179e27798bc805b
@@ -84,10 +86,10 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Format Conversion and Export
@@ -564,8 +566,13 @@ The export-only targets:
   ([src/export_roms.rs](../../src/export_roms.rs#L218-L243),
   [#L676-L958](../../src/export_roms.rs#L676-L958)).
 - **`to_original`** mirrors the convert-side extractor except that arcade games
-  get a per-game subdirectory named after the game inside the destination
-  ([src/export_roms.rs](../../src/export_roms.rs#L1668-L1702)).
+  get a per-game subdirectory named after the game inside the destination. Each
+  archive's entries are extracted into one temporary directory first and then
+  renamed to `<destination>/<game>/<rom name>`, so an entry a merged arcade set
+  files under `<clone>/` lands under the ROM's own name rather than a doubled
+  clone folder ([src/export_roms.rs](../../src/export_roms.rs#L1668-L1709)).
+  `test_merged_to_original` exports a merged set and checks every game's files
+  by content.
 
 ## Testing conventions
 

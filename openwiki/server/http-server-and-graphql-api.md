@@ -54,10 +54,10 @@ sources:
     resource: repo://src/server/test_uploads.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -217,10 +217,11 @@ games sorting kept for a single region. Both branches are aggregate subqueries
 that would be wasteful to express as loaded rows.
 
 `Rom::ignored(systemId)` mixes both styles: it resolves the system and the game
-through the DataLoaders, short-circuits on `Sorting::Ignored`, and only for an
-arcade system with a parent runs one raw query for the parent game's `bios` flag
-— the answer depends on the system's `Merging` mode, which is why it cannot be a
-plain column.
+through the DataLoaders and short-circuits on `Sorting::Ignored`. For an arcade
+ROM with a parent, the answer depends on the system's `Merging` mode, which is
+why it cannot be a plain column: split and merged sets ignore it, full sets
+never do, and only a non-merged set runs one raw query for the parent game's
+`bios` flag.
 
 Response shape is tuned for payload size too: `Game::description` returns `null`
 when it would only repeat `name` (the raw `description` field is `graphql(skip)`ped

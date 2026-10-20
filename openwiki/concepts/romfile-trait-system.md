@@ -64,10 +64,10 @@ sources:
     resource: repo://src/wbfs.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Romfile Trait System
@@ -275,8 +275,11 @@ implement.
   Trash.
 - `Check for CommonRomfile` verifies `roms[0]` only. Multi-file cases decompose:
   `ChdRomfile::check` extracts CUE/BIN and zips each BIN with its own DAT rom;
-  `check_roms::check_archive` refuses an archive whose entry count differs from the
-  rom count, then checks each entry.
+  `check_roms::check_archive` pairs each entry with the ROMs whose name it holds
+  (exactly or as `<folder>/<name>`, narrowed by CRC), checks it against one of
+  them, and fails when an entry matches no ROM, when same-name ROMs match it but
+  none by CRC, or when a ROM is left without an entry. One entry can back several
+  ROMs, which a merged arcade set relies on when sibling clones share a file.
 
 A nuance worth knowing before optimising: `ArchiveRomfile` short-circuits
 `HashAndSize` with the entry's stored CRC and size, so *import* of a file inside a

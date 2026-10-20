@@ -26,6 +26,8 @@ sources:
     resource: repo://src/import_roms/test_mame_chd.rs
   - id: openwiki-source-29cce0b2b6a22a67a00d0a31
     resource: repo://src/import_roms/test_multiple_tracks_chd.rs
+  - id: openwiki-source-ce909429aa84530845ef3778
+    resource: repo://src/import_roms/test_none_selected.rs
   - id: openwiki-source-c63a2a415ce9850aa169d04a
     resource: repo://src/import_roms/test_original_delete.rs
   - id: openwiki-source-f13ad111e0b94e6baae4cb31
@@ -76,10 +78,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # ROM Import Pipeline
@@ -283,19 +285,26 @@ one question per hash algorithm: *which catalog roms could this be?*
   `count_roms_with_romfile_*` decides between "already imported" (`Duplicate`) and
   "no match" (`Invalid`). That distinction is what feeds Trash subfolder names and
   the `--trash` decision
-  ([src/import_roms.rs](../../src/import_roms.rs#L2327-L2379)).
+  ([src/import_roms.rs](../../src/import_roms.rs#L2363-L2415)).
 - **Ambiguity ladder.** One candidate wins immediately. Otherwise: a candidate
   whose game was already imported *during this run* (the `game_ids` set threaded
   through every handler) wins; then, under `--unattended first`, the closest name
   by `jaro_winkler` against the file name wins; then anything unattended that is
   left returns `Skipped` rather than hanging on a prompt nobody will answer. An
   interactive run always gets a prompt — labelled `rom (game)` when `-s` narrowed
-  the search, `rom (game) [system]` when it did not
-  ([src/import_roms.rs](../../src/import_roms.rs#L2381-L2449)).
+  the search, `rom (game) [system]` when it did not. Its first entry is "None":
+  picking it, or dismissing the list, yields `Skipped` ("No ROM selected,
+  skipping") and leaves the file where it is
+  ([src/import_roms.rs](../../src/import_roms.rs#L2417-L2513)).
+- **A skip is final.** Every handler loops over the hash algorithms and records
+  `Invalid` results to trash the file once the loop ends. A `Skipped` result
+  clears those and breaks out, so the user is not asked again for the next hash
+  and a skipped file is never trashed because an earlier hash matched nothing
+  ([src/import_roms.rs](../../src/import_roms.rs#L1756-L1785)).
 - **Already-linked rom.** If the chosen rom already has a `romfile_id`, the result
   is downgraded to `Duplicate`, which protects one-file-per-rom even when the path
   check at the top of `import_rom` did not catch it
-  ([src/import_roms.rs](../../src/import_roms.rs#L2451-L2466)).
+  ([src/import_roms.rs](../../src/import_roms.rs#L2487-L2502)).
 
 ## Where the file goes
 
@@ -458,6 +467,7 @@ disk as well as in the database.
 | Empty file | deleted immediately, no rows |
 | Path already in `romfiles` | skipped unless `--force` |
 | Ambiguous match, `--unattended skip` | `Skipped`, file left in place |
+| Ambiguous match, "None" picked at the prompt | `Skipped`, file left in place |
 | Ambiguous match, `--unattended first`, no file name to rank | `Skipped` (the `first` heuristic needs a name) |
 | Multi-entry archive with one bad member | bad member stays in the archive, good members extracted |
 | Single-entry archive with no match | trashed or deleted per `-t` / `-d` |

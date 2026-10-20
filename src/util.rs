@@ -413,12 +413,12 @@ pub async fn compute_system_completion(
     if system.arcade {
         let merging = Merging::from_i64(system.merging).unwrap();
         match merging {
-            Merging::Split => {
+            // a merged set files each ROM where a split one does, in its parent's ZIP
+            Merging::Split | Merging::Merged => {
                 update_split_games_completion_by_system_id(connection, system.id).await;
             }
-            Merging::NonMerged | Merging::Merged => {
-                update_non_merged_and_merged_games_completion_by_system_id(connection, system.id)
-                    .await;
+            Merging::NonMerged => {
+                update_non_merged_games_completion_by_system_id(connection, system.id).await;
             }
             Merging::FullNonMerged | Merging::FullMerged => {
                 update_games_completion_by_system_id(connection, system.id).await;

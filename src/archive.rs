@@ -376,7 +376,11 @@ impl AsArchive for CommonRomfile {
     ) -> Result<Vec<(String, u64, String)>> {
         start_action(progress_bar, Some("Parsing archive"));
 
-        let entries = parse(&self.path, rom.map(|rom| rom.name.as_str())).await?;
+        let entries = parse(&self.path).await?;
+        let entries = match rom {
+            Some(rom) => rom_entries(&entries, rom),
+            None => entries,
+        };
 
         stop_action(progress_bar);
 
@@ -488,41 +492,89 @@ fn type_of(path: &Path) -> Result<ArchiveType> {
     ArchiveType::from_str(&extension).context("Not a valid archive")
 }
 
+/// Whether an archive entry holds a ROM of this name: either under the name
+/// itself or, as merged arcade sets file a clone's ROM whose name its parent
+/// already uses, under `<clone>/<name>`. Every archive lookup goes through this,
+/// so in any archive `<folder>/<name>` is a candidate for a ROM named `<name>`;
+/// `rom_entries` and `check-roms` tell same-name candidates apart by CRC.
+pub fn entry_matches(entry: &str, name: &str) -> bool {
+    entry == name
+        || entry
+            .strip_suffix(name)
+            .is_some_and(|prefix| prefix.ends_with('/'))
+}
+
+/// Whether the DAT gives `rom` this CRC.
+pub fn crc_matches(rom: &Rom, crc: &str) -> bool {
+    rom.crc
+        .as_ref()
+        .is_some_and(|rom_crc| rom_crc.eq_ignore_ascii_case(crc))
+}
+
+/// The entries holding `rom`, its exact name first. Several can match in a
+/// merged set, which then tells them apart by CRC.
+pub fn rom_entries(entries: &[(String, u64, String)], rom: &Rom) -> Vec<(String, u64, String)> {
+    let mut entries: Vec<(String, u64, String)> = entries
+        .iter()
+        .filter(|(path, _, _)| entry_matches(path, &rom.name))
+        .cloned()
+        .collect();
+    if entries.len() > 1 && entries.iter().any(|(_, _, crc)| crc_matches(rom, crc)) {
+        entries.retain(|(_, _, crc)| crc_matches(rom, crc));
+    }
+    entries.sort_by_key(|(path, _, _)| path != &rom.name);
+    entries
+}
+
+/// The entry holding `rom`, failing when `archive` has none.
+pub fn rom_entry(
+    entries: &[(String, u64, String)],
+    rom: &Rom,
+    archive: &Path,
+) -> Result<(String, u64, String)> {
+    rom_entries(entries, rom)
+        .into_iter()
+        .next()
+        .with_context(|| {
+            format!(
+                "Failed to find \"{}\" in \"{}\"",
+                rom.name,
+                archive.display()
+            )
+        })
+}
+
 /// List entries as `(path, size, crc)`, the CRC as eight lowercase hex digits.
-async fn parse<P: AsRef<Path>>(path: P, name: Option<&str>) -> Result<Vec<(String, u64, String)>> {
+async fn parse<P: AsRef<Path>>(path: P) -> Result<Vec<(String, u64, String)>> {
     let path = path.as_ref().to_path_buf();
-    let name = name.map(|name| name.to_string());
-    spawn_blocking(move || {
-        let wanted = |entry: &str| name.as_ref().is_none_or(|name| name == entry);
-        match type_of(&path)? {
-            ArchiveType::Sevenzip => Ok(open_sevenzip(&path)?
-                .files
-                .iter()
-                .filter(|entry| !entry.is_directory && wanted(&entry.name))
-                .map(|entry| {
-                    (
-                        entry.name.clone(),
-                        entry.size,
-                        format!("{:08x}", entry.crc as u32),
-                    )
-                })
-                .collect()),
-            ArchiveType::Zip => {
-                let mut archive = open_zip(&path)?;
-                let mut entries = Vec::with_capacity(archive.len());
-                for index in 0..archive.len() {
-                    let entry = archive.by_index(index)?;
-                    if entry.is_dir() || !wanted(entry.name()) {
-                        continue;
-                    }
-                    entries.push((
-                        entry.name().to_string(),
-                        entry.size(),
-                        format!("{:08x}", entry.crc32()),
-                    ));
+    spawn_blocking(move || match type_of(&path)? {
+        ArchiveType::Sevenzip => Ok(open_sevenzip(&path)?
+            .files
+            .iter()
+            .filter(|entry| !entry.is_directory)
+            .map(|entry| {
+                (
+                    entry.name.clone(),
+                    entry.size,
+                    format!("{:08x}", entry.crc as u32),
+                )
+            })
+            .collect()),
+        ArchiveType::Zip => {
+            let mut archive = open_zip(&path)?;
+            let mut entries = Vec::with_capacity(archive.len());
+            for index in 0..archive.len() {
+                let entry = archive.by_index(index)?;
+                if entry.is_dir() {
+                    continue;
                 }
-                Ok(entries)
+                entries.push((
+                    entry.name().to_string(),
+                    entry.size(),
+                    format!("{:08x}", entry.crc32()),
+                ));
             }
+            Ok(entries)
         }
     })
     .await

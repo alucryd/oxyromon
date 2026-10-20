@@ -130,8 +130,8 @@ impl Rom {
 
         let merging = Merging::from_i64(system.merging).unwrap();
         let ignored = match merging {
-            Merging::Split => true,
-            Merging::NonMerged | Merging::Merged => {
+            Merging::Split | Merging::Merged => true,
+            Merging::NonMerged => {
                 let sql = format!(
                     "
                         SELECT g.bios
