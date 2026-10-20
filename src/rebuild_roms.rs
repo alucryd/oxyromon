@@ -17,7 +17,8 @@ use sqlx::sqlite::SqliteConnection;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED"];
+// in `Merging` order, which the interactive choice relies on
+const MERGING_STRATEGIES: &[&str] = &["SPLIT", "NON_MERGED", "FULL_NON_MERGED", "MERGED"];
 
 pub fn subcommand() -> Command {
     Command::new("rebuild-roms")
@@ -73,6 +74,7 @@ pub async fn main(
         Some("SPLIT") => Merging::Split,
         Some("NON_MERGED") => Merging::NonMerged,
         Some("FULL_NON_MERGED") => Merging::FullNonMerged,
+        Some("MERGED") => Merging::Merged,
         Some(&_) | None => FromPrimitive::from_usize(select(
             MERGING_STRATEGIES,
             "Please select a merge strategy",
@@ -198,8 +200,22 @@ async fn rebuild_system(
 
     let games = find_full_games_by_system_id(connection, system.id).await;
 
-    if (system.merging == Merging::Split as i64 || system.merging == Merging::NonMerged as i64)
-        && (merging == Merging::NonMerged || merging == Merging::FullNonMerged)
+    // A merged set is a split one with each clone's files in its parent's ZIP,
+    // so the other strategies are reached through split.
+    let mut current = Merging::from_i64(system.merging).context("Unknown merging strategy")?;
+    if current == Merging::Merged && merging != Merging::Merged {
+        for game in find_games_by_system_id(connection, system.id).await {
+            unmerge_game(connection, progress_bar, system, &game).await?;
+        }
+        current = Merging::Split;
+    }
+    let target = match merging {
+        Merging::Merged => Merging::Split,
+        merging => merging,
+    };
+
+    if (current == Merging::Split || current == Merging::NonMerged)
+        && (target == Merging::NonMerged || target == Merging::FullNonMerged)
     {
         let compression =
             get_archive_compression(connection, &ArchiveType::Zip, Some(system.id)).await;
@@ -209,22 +225,29 @@ async fn rebuild_system(
                 progress_bar,
                 system,
                 &game,
-                merging,
+                target,
                 &compression,
             )
             .await?;
         }
-    } else if (system.merging == Merging::NonMerged as i64
-        || system.merging == Merging::FullNonMerged as i64)
-        && (merging == Merging::Split || merging == Merging::NonMerged)
+    } else if (current == Merging::NonMerged || current == Merging::FullNonMerged)
+        && (target == Merging::Split || target == Merging::NonMerged)
     {
         for game in games {
-            trim_game(connection, progress_bar, system, &game, merging).await?;
+            trim_game(connection, progress_bar, system, &game, target).await?;
+        }
+    }
+
+    if merging == Merging::Merged {
+        for game in find_games_by_system_id(connection, system.id).await {
+            merge_game(connection, progress_bar, system, &game).await?;
         }
     }
 
     update_system_merging(connection, system.id, merging).await;
-    compute_system_completion(connection, progress_bar, system).await?;
+    // completion follows the new strategy, which `system` predates
+    let system = find_system_by_id(connection, system.id).await;
+    compute_system_completion(connection, progress_bar, &system).await?;
 
     Ok(())
 }
@@ -415,6 +438,265 @@ async fn add_rom(
     Ok(())
 }
 
+async fn find_game_archive(
+    connection: &mut SqliteConnection,
+    system: &System,
+    game: &Game,
+) -> Result<(PathBuf, Option<Romfile>)> {
+    let rom_directory = get_rom_directory(connection).await;
+    let path = get_system_directory(connection, system)
+        .await?
+        .join(format!("{}.{}", game.name, ZIP_EXTENSION));
+    let relative_path = path
+        .strip_prefix(&rom_directory)
+        .context("Failed to retrieve relative path")?;
+    let romfile =
+        find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap()).await;
+    Ok((path, romfile))
+}
+
+async fn find_or_create_archive_romfile(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    path: &PathBuf,
+    romfile: &mut Option<Romfile>,
+) -> Result<i64> {
+    if romfile.is_none() {
+        let id = CommonRomfile::from_path(path)?
+            .create(connection, progress_bar, RomfileType::Romfile)
+            .await?;
+        *romfile = Some(find_romfile_by_id(connection, id).await);
+    }
+    Ok(romfile.as_ref().unwrap().id)
+}
+
+/// Moves a clone's own ROMs from its ZIP into its parent's, as a merged set
+/// files them. One its parent's ZIP already holds is not copied again, and one
+/// whose name it holds with other contents goes under `<clone>/`, as
+/// ClrMamePro does.
+async fn merge_game(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    game: &Game,
+) -> Result<()> {
+    let Some(parent_id) = game.parent_id else {
+        return Ok(());
+    };
+    let parent = find_game_by_id(connection, parent_id).await;
+    let (parent_path, mut parent_romfile) = find_game_archive(connection, system, &parent).await?;
+    let parent_romfile_id = parent_romfile.as_ref().map(|romfile| romfile.id);
+    let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, game.id)
+        .await
+        .into_iter()
+        // skip CHDs
+        .filter(|rom| !rom.disk && rom.romfile_id.is_some() && rom.romfile_id != parent_romfile_id)
+        .collect();
+    if roms.is_empty() {
+        return Ok(());
+    }
+    print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
+
+    let mut sources: Vec<(Rom, CommonRomfile)> = vec![];
+    for rom in roms {
+        let source = find_romfile_by_id(connection, rom.romfile_id.unwrap())
+            .await
+            .as_common(connection)
+            .await?;
+        if source
+            .path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            != Some(ZIP_EXTENSION)
+        {
+            print_warning(
+                progress_bar,
+                &format!("\"{}\" is not in a ZIP, convert it first", rom.name),
+            );
+            return Ok(());
+        }
+        sources.push((rom, source));
+    }
+
+    let mut entries: Vec<(String, u64, String)> = if parent_path.is_file() {
+        CommonRomfile::from_path(&parent_path)?
+            .parse_archive(progress_bar, None)
+            .await?
+    } else {
+        vec![]
+    };
+
+    let mut transaction = begin_transaction(connection).await;
+    for (rom, source) in &sources {
+        let (source_name, size, crc) =
+            rom_entries(&source.parse_archive(progress_bar, None).await?, rom)
+                .into_iter()
+                .next()
+                .with_context(|| {
+                    format!(
+                        "Failed to find \"{}\" in \"{}\"",
+                        rom.name,
+                        source.path.display()
+                    )
+                })?;
+        let mut destination_name = rom.name.clone();
+        if entries
+            .iter()
+            .any(|(path, _, entry_crc)| path == &destination_name && entry_crc != &crc)
+        {
+            destination_name = format!("{}/{}", game.name, rom.name);
+        }
+        match entries
+            .iter()
+            .find(|(path, _, _)| path == &destination_name)
+        {
+            Some((_, _, entry_crc)) if entry_crc == &crc => {}
+            Some(_) => bail!(
+                "\"{}\" already holds another \"{}\"",
+                parent_path.display(),
+                destination_name
+            ),
+            None => {
+                copy_files_between_archives(
+                    progress_bar,
+                    &source.path,
+                    &parent_path,
+                    &[&source_name],
+                    &[&destination_name],
+                )
+                .await?;
+                entries.push((destination_name, size, crc));
+            }
+        }
+        let romfile_id = find_or_create_archive_romfile(
+            &mut transaction,
+            progress_bar,
+            &parent_path,
+            &mut parent_romfile,
+        )
+        .await?;
+        update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
+    }
+
+    let mut source_ids: Vec<i64> = sources
+        .iter()
+        .map(|(rom, _)| rom.romfile_id.unwrap())
+        .collect();
+    source_ids.sort_unstable();
+    source_ids.dedup();
+    for source_id in source_ids {
+        prune_archive(&mut transaction, progress_bar, source_id).await?;
+    }
+    prune_archive(&mut transaction, progress_bar, parent_romfile.unwrap().id).await?;
+    commit_transaction(transaction).await;
+    Ok(())
+}
+
+/// Moves a clone's own ROMs out of its parent's ZIP into its own, undoing
+/// `merge_game`.
+async fn unmerge_game(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    game: &Game,
+) -> Result<()> {
+    let Some(parent_id) = game.parent_id else {
+        return Ok(());
+    };
+    let parent = find_game_by_id(connection, parent_id).await;
+    let (parent_path, parent_romfile) = find_game_archive(connection, system, &parent).await?;
+    let Some(parent_romfile) = parent_romfile else {
+        return Ok(());
+    };
+    let roms: Vec<Rom> = find_roms_by_game_id_no_parents(connection, game.id)
+        .await
+        .into_iter()
+        .filter(|rom| rom.romfile_id == Some(parent_romfile.id))
+        .collect();
+    if roms.is_empty() {
+        return Ok(());
+    }
+    print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
+
+    let (game_path, mut game_romfile) = find_game_archive(connection, system, game).await?;
+    let entries = CommonRomfile::from_path(&parent_path)?
+        .parse_archive(progress_bar, None)
+        .await?;
+    let mut transaction = begin_transaction(connection).await;
+    for rom in &roms {
+        let (entry_name, _, _) =
+            rom_entries(&entries, rom)
+                .into_iter()
+                .next()
+                .with_context(|| {
+                    format!(
+                        "Failed to find \"{}\" in \"{}\"",
+                        rom.name,
+                        parent_path.display()
+                    )
+                })?;
+        copy_files_between_archives(
+            progress_bar,
+            &parent_path,
+            &game_path,
+            &[&entry_name],
+            &[&rom.name],
+        )
+        .await?;
+        let romfile_id = find_or_create_archive_romfile(
+            &mut transaction,
+            progress_bar,
+            &game_path,
+            &mut game_romfile,
+        )
+        .await?;
+        update_rom_romfile(&mut transaction, rom.id, Some(romfile_id)).await;
+    }
+    prune_archive(&mut transaction, progress_bar, parent_romfile.id).await?;
+    prune_archive(&mut transaction, progress_bar, game_romfile.unwrap().id).await?;
+    commit_transaction(transaction).await;
+    Ok(())
+}
+
+/// Deletes the entries of an archive no ROM resolves to any more, and the
+/// archive itself once no ROM is left in it, then records its new size.
+async fn prune_archive(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    romfile_id: i64,
+) -> Result<()> {
+    let romfile = find_romfile_by_id(connection, romfile_id).await;
+    let common_romfile = romfile.as_common(connection).await?;
+    let roms = find_roms_by_romfile_id(connection, romfile_id).await;
+    if roms.is_empty() {
+        if common_romfile.path.is_file() {
+            common_romfile.delete(progress_bar, false).await?;
+        }
+        delete_romfile_by_id(connection, romfile_id).await;
+        return Ok(());
+    }
+    let archive_romfiles = common_romfile.as_archive(progress_bar, None).await?;
+    let entries: Vec<(String, u64, String)> = archive_romfiles
+        .iter()
+        .map(|entry| (entry.path.clone(), entry.size, entry.crc.clone()))
+        .collect();
+    let used: HashSet<String> = roms
+        .iter()
+        .filter_map(|rom| rom_entries(&entries, rom).into_iter().next())
+        .map(|(path, _, _)| path)
+        .collect();
+    for archive_romfile in archive_romfiles
+        .iter()
+        .filter(|entry| !used.contains(&entry.path))
+    {
+        archive_romfile.delete_file(progress_bar).await?;
+    }
+    common_romfile
+        .update(connection, progress_bar, romfile_id)
+        .await?;
+    Ok(())
+}
+
 async fn delete_rom(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -444,12 +726,20 @@ async fn delete_rom(
 }
 
 #[cfg(test)]
+pub(crate) mod merged_set;
+#[cfg(test)]
 mod test_full_non_merged_to_non_merged;
+#[cfg(test)]
+mod test_merged_to_non_merged;
+#[cfg(test)]
+mod test_non_merged_to_merged;
 #[cfg(test)]
 mod test_non_merged_to_split;
 #[cfg(test)]
 mod test_nothing_to_do;
 #[cfg(test)]
 mod test_split_to_full_non_merged;
+#[cfg(test)]
+mod test_split_to_merged;
 #[cfg(test)]
 mod test_split_to_non_merged;

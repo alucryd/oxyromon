@@ -1,4 +1,4 @@
-use super::archive::AsArchive;
+use super::archive::{AsArchive, entry_matches};
 use super::common::*;
 use super::database::*;
 use super::mimetype::*;
@@ -14,7 +14,7 @@ use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub fn subcommand() -> Command {
     Command::new("check-roms")
@@ -260,17 +260,37 @@ async fn check_archive(
         .await?
         .as_archive(progress_bar, None)
         .await?;
-    if archive_romfiles.len() != roms.len() {
-        bail!("Archive contains a different number of ROM files");
-    }
+    // In a merged arcade set one entry can back several clones' identical ROMs.
+    let mut unchecked: HashSet<i64> = roms.iter().map(|rom| rom.id).collect();
     for archive_romfile in archive_romfiles {
-        let rom = roms
+        let mut matching: Vec<&Rom> = roms
             .iter()
-            .find(|rom| rom.name == archive_romfile.path)
+            .copied()
+            .filter(|rom| entry_matches(&archive_romfile.path, &rom.name))
+            .collect();
+        if matching.iter().any(|rom| {
+            rom.crc
+                .as_ref()
+                .is_some_and(|crc| crc.eq_ignore_ascii_case(&archive_romfile.crc))
+        }) {
+            matching.retain(|rom| {
+                rom.crc
+                    .as_ref()
+                    .is_some_and(|crc| crc.eq_ignore_ascii_case(&archive_romfile.crc))
+            });
+        }
+        let rom = matching
+            .first()
             .ok_or_else(|| anyhow!("file not found in DB {}", archive_romfile.path))?;
         archive_romfile
             .check(connection, progress_bar, header, &[rom])
             .await?;
+        matching.iter().for_each(|rom| {
+            unchecked.remove(&rom.id);
+        });
+    }
+    if !unchecked.is_empty() {
+        bail!("Archive contains a different number of ROM files");
     }
     Ok(())
 }

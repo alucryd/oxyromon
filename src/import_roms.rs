@@ -2461,7 +2461,17 @@ async fn find_rom_by_size_and_hash(
         });
     }
 
-    let (rom, game, system) = rom_game_system.unwrap();
+    let Some((rom, game, system)) = rom_game_system else {
+        print_skip(progress_bar, "No ROM selected, skipping");
+        return Ok(MatchResult {
+            state: MatchState::Skipped,
+            system: None,
+            game: None,
+            rom: None,
+            hash_algorithm: None,
+            hash: None,
+        });
+    };
     Ok(MatchResult {
         state: MatchState::Valid,
         system: Some(system),
@@ -2569,7 +2579,17 @@ async fn find_sfb_rom_by_md5(
         });
     }
 
-    let (rom, game) = rom_game.unwrap();
+    let Some((rom, game)) = rom_game else {
+        print_skip(progress_bar, "No ROM selected, skipping");
+        return Ok(MatchResult {
+            state: MatchState::Skipped,
+            system: None,
+            game: None,
+            rom: None,
+            hash_algorithm: None,
+            hash: None,
+        });
+    };
     Ok(MatchResult {
         state: MatchState::Valid,
         system: None,

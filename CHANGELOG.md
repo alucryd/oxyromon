@@ -2,6 +2,7 @@
 
 ## Features
 
+- Added the `MERGED` strategy to `rebuild-roms`, storing each clone's files in its parent's ZIP, once, with a clone's file whose name its parent already uses with other contents under `<clone>/`, as ClrMamePro does. `check-roms`, `export-roms` and the other commands find files filed that way, and `sort-roms` moves a merged ZIP with its parent rather than its clones
 - Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
 - Added `-a/--arcade` to `import-dats`, an Arcade switch to the web UI's DAT import and an `arcade` parameter to the MCP `import_dats` tool, importing DATs that list games instead of machines, such as FBNeo's, as arcade systems. An update keeps a system arcade, and `-f` reverts it
 - Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
@@ -23,6 +24,9 @@
 
 ## Fixes
 
+- Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped
+- Fixed `rebuild-roms` computing completion with the strategy it rebuilt from, leaving games partial after a switch until the next completion update
+- Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them
 - Fixed `purge-roms -t` skipping the ROM directory's own `Trash`, where `import-roms -t` puts files that match no system
 - Fixed `import-dats` and `download-dats` dropping a system's custom name and extension when updating it
 - Fixed 7z extraction and rewrites holding entire entries in memory, which could run to gigabytes for a disc image

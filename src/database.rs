@@ -523,7 +523,7 @@ pub async fn update_split_games_completion_by_system_id(
     .unwrap_or_else(|_| panic!("Error while marking games as complete"));
 }
 
-pub async fn update_non_merged_and_merged_games_completion_by_system_id(
+pub async fn update_non_merged_games_completion_by_system_id(
     connection: &mut SqliteConnection,
     system_id: i64,
 ) {
@@ -1351,6 +1351,25 @@ pub async fn find_roms(connection: &mut SqliteConnection) -> Vec<Rom> {
     .fetch_all(connection)
     .await
     .expect("Error while finding roms")
+}
+
+pub async fn find_roms_by_romfile_id(
+    connection: &mut SqliteConnection,
+    romfile_id: i64,
+) -> Vec<Rom> {
+    sqlx::query_as!(
+        Rom,
+        "
+        SELECT *
+        FROM roms
+        WHERE romfile_id = ?
+        ORDER BY name
+        ",
+        romfile_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding roms with romfile id {}", romfile_id))
 }
 
 pub async fn find_roms_with_romfile_by_game_id(
