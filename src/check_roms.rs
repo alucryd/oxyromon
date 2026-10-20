@@ -1,4 +1,4 @@
-use super::archive::{AsArchive, entry_matches};
+use super::archive::{AsArchive, crc_matches, entry_matches};
 use super::common::*;
 use super::database::*;
 use super::mimetype::*;
@@ -268,16 +268,16 @@ async fn check_archive(
             .copied()
             .filter(|rom| entry_matches(&archive_romfile.path, &rom.name))
             .collect();
-        if matching.iter().any(|rom| {
-            rom.crc
-                .as_ref()
-                .is_some_and(|crc| crc.eq_ignore_ascii_case(&archive_romfile.crc))
-        }) {
-            matching.retain(|rom| {
-                rom.crc
-                    .as_ref()
-                    .is_some_and(|crc| crc.eq_ignore_ascii_case(&archive_romfile.crc))
-            });
+        if matching
+            .iter()
+            .any(|rom| crc_matches(rom, &archive_romfile.crc))
+        {
+            matching.retain(|rom| crc_matches(rom, &archive_romfile.crc));
+        } else if matching.len() > 1 {
+            bail!(
+                "\"{}\" matches several ROMs by name and none by CRC",
+                archive_romfile.path
+            );
         }
         let rom = matching
             .first()

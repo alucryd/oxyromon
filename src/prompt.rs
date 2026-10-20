@@ -256,12 +256,29 @@ pub fn select<T: ToString + std::fmt::Display>(
     }
 }
 
+/// Answers `select_opt` gives in tests, in order, instead of prompting; a test
+/// reaching it with none left fails.
+#[cfg(test)]
+pub static SCRIPTED_SELECTIONS: std::sync::Mutex<std::collections::VecDeque<Option<usize>>> =
+    std::sync::Mutex::new(std::collections::VecDeque::new());
+
 pub fn select_opt<T: ToString + std::fmt::Display>(
     items: &[T],
     prompt: &str,
     default: Option<usize>,
     max_length: Option<usize>,
 ) -> Result<Option<usize>> {
+    // without a terminal the prompt would spin rather than fail
+    #[cfg(test)]
+    {
+        let _ = (items, default, max_length);
+        return Ok(SCRIPTED_SELECTIONS
+            .lock()
+            .unwrap()
+            .pop_front()
+            .unwrap_or_else(|| panic!("Unscripted prompt \"{}\"", prompt)));
+    }
+    #[allow(unreachable_code)]
     let mut select = FuzzySelect::new();
     select = select.items(items).with_prompt(prompt);
     if let Some(default) = default {

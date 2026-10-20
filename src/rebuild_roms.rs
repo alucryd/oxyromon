@@ -239,8 +239,20 @@ async fn rebuild_system(
     }
 
     if merging == Merging::Merged {
+        let mut skipped = 0;
         for game in find_games_by_system_id(connection, system.id).await {
-            merge_game(connection, progress_bar, system, &game).await?;
+            if !merge_game(connection, progress_bar, system, &game).await? {
+                skipped += 1;
+            }
+        }
+        if skipped > 0 {
+            print_warning(
+                progress_bar,
+                &format!(
+                    "{} clone(s) left in their own sets: convert them to ZIP first",
+                    skipped
+                ),
+            );
         }
     }
 
@@ -473,15 +485,20 @@ async fn find_or_create_archive_romfile(
 /// Moves a clone's own ROMs from its ZIP into its parent's, as a merged set
 /// files them. One its parent's ZIP already holds is not copied again, and one
 /// whose name it holds with other contents goes under `<clone>/`, as
-/// ClrMamePro does.
+/// ClrMamePro does. Returns false when the clone is left as it is, because one
+/// of its files is not in a ZIP.
+///
+/// Files are copied outside the transaction, so a failure leaves copies in the
+/// parent's ZIP that the database does not know about. Running it again
+/// converges: an entry already holding the same CRC is reused, not copied.
 async fn merge_game(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &System,
     game: &Game,
-) -> Result<()> {
+) -> Result<bool> {
     let Some(parent_id) = game.parent_id else {
-        return Ok(());
+        return Ok(true);
     };
     let parent = find_game_by_id(connection, parent_id).await;
     let (parent_path, mut parent_romfile) = find_game_archive(connection, system, &parent).await?;
@@ -493,7 +510,7 @@ async fn merge_game(
         .filter(|rom| !rom.disk && rom.romfile_id.is_some() && rom.romfile_id != parent_romfile_id)
         .collect();
     if roms.is_empty() {
-        return Ok(());
+        return Ok(true);
     }
     print_subheader(progress_bar, &format!("Processing \"{}\"", game.name));
 
@@ -511,9 +528,9 @@ async fn merge_game(
         {
             print_warning(
                 progress_bar,
-                &format!("\"{}\" is not in a ZIP, convert it first", rom.name),
+                &format!("\"{}\" is not in a ZIP, skipping", rom.name),
             );
-            return Ok(());
+            return Ok(false);
         }
         sources.push((rom, source));
     }
@@ -528,17 +545,11 @@ async fn merge_game(
 
     let mut transaction = begin_transaction(connection).await;
     for (rom, source) in &sources {
-        let (source_name, size, crc) =
-            rom_entries(&source.parse_archive(progress_bar, None).await?, rom)
-                .into_iter()
-                .next()
-                .with_context(|| {
-                    format!(
-                        "Failed to find \"{}\" in \"{}\"",
-                        rom.name,
-                        source.path.display()
-                    )
-                })?;
+        let (source_name, size, crc) = rom_entry(
+            &source.parse_archive(progress_bar, None).await?,
+            rom,
+            &source.path,
+        )?;
         let mut destination_name = rom.name.clone();
         if entries
             .iter()
@@ -589,7 +600,7 @@ async fn merge_game(
     }
     prune_archive(&mut transaction, progress_bar, parent_romfile.unwrap().id).await?;
     commit_transaction(transaction).await;
-    Ok(())
+    Ok(true)
 }
 
 /// Moves a clone's own ROMs out of its parent's ZIP into its own, undoing
@@ -624,17 +635,7 @@ async fn unmerge_game(
         .await?;
     let mut transaction = begin_transaction(connection).await;
     for rom in &roms {
-        let (entry_name, _, _) =
-            rom_entries(&entries, rom)
-                .into_iter()
-                .next()
-                .with_context(|| {
-                    format!(
-                        "Failed to find \"{}\" in \"{}\"",
-                        rom.name,
-                        parent_path.display()
-                    )
-                })?;
+        let (entry_name, _, _) = rom_entry(&entries, rom, &parent_path)?;
         copy_files_between_archives(
             progress_bar,
             &parent_path,

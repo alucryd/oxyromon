@@ -494,12 +494,21 @@ fn type_of(path: &Path) -> Result<ArchiveType> {
 
 /// Whether an archive entry holds a ROM of this name: either under the name
 /// itself or, as merged arcade sets file a clone's ROM whose name its parent
-/// already uses, under `<clone>/<name>`.
+/// already uses, under `<clone>/<name>`. Every archive lookup goes through this,
+/// so in any archive `<folder>/<name>` is a candidate for a ROM named `<name>`;
+/// `rom_entries` and `check-roms` tell same-name candidates apart by CRC.
 pub fn entry_matches(entry: &str, name: &str) -> bool {
     entry == name
         || entry
             .strip_suffix(name)
             .is_some_and(|prefix| prefix.ends_with('/'))
+}
+
+/// Whether the DAT gives `rom` this CRC.
+pub fn crc_matches(rom: &Rom, crc: &str) -> bool {
+    rom.crc
+        .as_ref()
+        .is_some_and(|rom_crc| rom_crc.eq_ignore_ascii_case(crc))
 }
 
 /// The entries holding `rom`, its exact name first. Several can match in a
@@ -510,14 +519,29 @@ pub fn rom_entries(entries: &[(String, u64, String)], rom: &Rom) -> Vec<(String,
         .filter(|(path, _, _)| entry_matches(path, &rom.name))
         .cloned()
         .collect();
-    if entries.len() > 1
-        && let Some(crc) = &rom.crc
-        && entries.iter().any(|(_, _, c)| c.eq_ignore_ascii_case(crc))
-    {
-        entries.retain(|(_, _, c)| c.eq_ignore_ascii_case(crc));
+    if entries.len() > 1 && entries.iter().any(|(_, _, crc)| crc_matches(rom, crc)) {
+        entries.retain(|(_, _, crc)| crc_matches(rom, crc));
     }
     entries.sort_by_key(|(path, _, _)| path != &rom.name);
     entries
+}
+
+/// The entry holding `rom`, failing when `archive` has none.
+pub fn rom_entry(
+    entries: &[(String, u64, String)],
+    rom: &Rom,
+    archive: &Path,
+) -> Result<(String, u64, String)> {
+    rom_entries(entries, rom)
+        .into_iter()
+        .next()
+        .with_context(|| {
+            format!(
+                "Failed to find \"{}\" in \"{}\"",
+                rom.name,
+                archive.display()
+            )
+        })
 }
 
 /// List entries as `(path, size, crc)`, the CRC as eight lowercase hex digits.

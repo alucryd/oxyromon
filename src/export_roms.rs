@@ -1683,6 +1683,8 @@ async fn to_original(
             .iter()
             .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
             .collect();
+        // extracted there first: a merged arcade set can file a ROM under `<clone>/`
+        let tmp_directory = create_tmp_directory(connection).await?;
         for rom in &roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
             let destination_directory = if system.arcade {
@@ -1691,8 +1693,6 @@ async fn to_original(
                 destination_directory.clone()
             };
             create_directory(progress_bar, &destination_directory, true).await?;
-            // a merged arcade set can file the ROM under `<clone>/`
-            let tmp_directory = create_tmp_directory(connection).await?;
             romfile
                 .as_common(connection)
                 .await?

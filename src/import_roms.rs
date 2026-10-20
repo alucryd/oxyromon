@@ -908,7 +908,11 @@ async fn import_archive(
                 MatchState::Invalid => {
                     invalid_match_results.push(match_result);
                 }
-                MatchState::Skipped => {}
+                // the user or the unattended mode already chose to leave the file be
+                MatchState::Skipped => {
+                    invalid_match_results.clear();
+                    break;
+                }
             }
         }
         if invalid_match_results.len() == hash_algorithms.len() && romfiles_count == 1 {
@@ -1091,7 +1095,11 @@ async fn import_chd(
                         MatchState::Invalid => {
                             invalid_match_results.push(match_result);
                         }
-                        MatchState::Skipped => {}
+                        // the user or the unattended mode already chose to leave the file be
+                        MatchState::Skipped => {
+                            invalid_match_results.clear();
+                            break;
+                        }
                     }
                 }
             }
@@ -1254,7 +1262,11 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
-                    MatchState::Skipped => {}
+                    // the user or the unattended mode already chose to leave the file be
+                    MatchState::Skipped => {
+                        invalid_match_results.clear();
+                        break;
+                    }
                 }
             }
             if !invalid_match_results.is_empty() {
@@ -1374,7 +1386,11 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
-                    MatchState::Skipped => {}
+                    // the user or the unattended mode already chose to leave the file be
+                    MatchState::Skipped => {
+                        invalid_match_results.clear();
+                        break;
+                    }
                 }
             }
             if !invalid_match_results.is_empty() {
@@ -1494,7 +1510,11 @@ async fn import_chd(
                     MatchState::Invalid => {
                         invalid_match_results.push(match_result);
                     }
-                    MatchState::Skipped => {}
+                    // the user or the unattended mode already chose to leave the file be
+                    MatchState::Skipped => {
+                        invalid_match_results.clear();
+                        break;
+                    }
                 }
             }
             if !invalid_match_results.is_empty() {
@@ -1737,7 +1757,11 @@ async fn import_cso(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
-            MatchState::Skipped => {}
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
         }
     }
     if !invalid_match_results.is_empty() {
@@ -1830,7 +1854,11 @@ async fn import_nsz(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
-            MatchState::Skipped => {}
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
         }
     }
     if !invalid_match_results.is_empty() {
@@ -1923,7 +1951,11 @@ async fn import_rvz(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
-            MatchState::Skipped => {}
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
         }
     }
     if !invalid_match_results.is_empty() {
@@ -2016,7 +2048,11 @@ async fn import_zso(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
-            MatchState::Skipped => {}
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
         }
     }
     if !invalid_match_results.is_empty() {
@@ -2116,7 +2152,11 @@ pub async fn import_other(
             MatchState::Invalid => {
                 invalid_match_results.push(match_result);
             }
-            MatchState::Skipped => {}
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
         }
     }
     if !invalid_match_results.is_empty() {
@@ -2706,6 +2746,8 @@ mod test_mame_chd;
 mod test_mame_mixed;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
+#[cfg(test)]
+mod test_none_selected;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

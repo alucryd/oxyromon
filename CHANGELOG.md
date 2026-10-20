@@ -24,7 +24,7 @@
 
 ## Fixes
 
-- Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped
+- Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped, without the same prompt coming back once per hash algorithm, or the file going to the trash because an earlier hash matched nothing
 - Fixed `rebuild-roms` computing completion with the strategy it rebuilt from, leaving games partial after a switch until the next completion update
 - Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them
 - Fixed `purge-roms -t` skipping the ROM directory's own `Trash`, where `import-roms -t` puts files that match no system

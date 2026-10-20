@@ -1,6 +1,11 @@
 {
   "rules": [
     {
+      "path": "src/archive.rs",
+      "merge_system_rule": true,
+      "rule": "Archive-entry to ROM matching, on top of the src/*.rs rule. Check: any matcher pairing an archive entry with a ROM by name alone tells same-name candidates apart by CRC before the pairing drives a destructive action (trash, prune, rewrite); falling back to an arbitrary candidate when none matches by CRC is a finding; a change widening or narrowing what an entry matches names, in the matcher's doc comment, the consumers that inherit it (check-roms, export-roms, rebuild-roms pruning). Also apply the src/*.rs rule: README.md and CHANGELOG.md cover user-visible changes under the version in Cargo.toml."
+    },
+    {
       "path": "src/*.rs",
       "merge_system_rule": true,
       "rule": "OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under the version heading that matches Cargo.toml's version for anything user-visible — a new flag, a new default behaviour, a directory the tool now deletes; do not report internal refactors with no user-visible effect. Also check: one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice; per-system DAT download outcomes (imported, up to date, failed) come from the one collector in download_dats.rs, and a GraphQL mutation in mutation.rs that loops over systems itself instead is a finding."
@@ -24,6 +29,11 @@
       "path": "openwiki/**",
       "merge_system_rule": true,
       "rule": "Generated wiki under openwiki/. Check: every repo:// resource path referenced in .claims exists at head, and every claim about external tools, spawned processes or build files still matches the module that implements it; a diff that deletes a source module or drops the last external tool must trigger a wiki refresh."
+    },
+    {
+      "path": "tests/*.dat",
+      "merge_system_rule": true,
+      "rule": "Test DAT fixture. Check: the header <name> is the file name without its date and extension, as in the other fixtures (`Test System (20200721) (MAME).dat` has `<name>Test System (MAME)</name>`), so imported system names stay predictable; every rom's size and hashes match the fixture file the tests feed it, and a rom with a `merge` attribute matches its parent's by CRC."
     }
   ]
 }
