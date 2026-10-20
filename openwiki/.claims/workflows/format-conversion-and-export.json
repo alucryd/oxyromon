@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2a67a16127ab880d3845e6f02f8455daabc6e1a57f14dd432867419ffda82e94",
+  "pageVersion": "sha256:83d93294d32aaab33587d7a3b992ecb51d72b4918f5f5b1758e9448361b6d5b5",
   "claims": [
     {
       "id": "claim_dd3535c42eaa42609888d57fbf035446",
@@ -135,7 +135,7 @@
           "version": "repo-lines-v1:sha256:a11e3a6cd1044d25e521c20b9cb03faf5ba68e2e8588f058e8e3a0c66b22d5d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWViM2Q2YzIzNTU1Y2RlNDBmZThiNDMwODY1OTgwN2QxZWI4YTQ2M2ZjMjU5MGQxODAyZmE5YWY5NTkxNjJjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFhNDJkZTI4ZGI2YTEwMzM0YjFmMTcyMzQ1YWMwNjNhZjI3YzdhOTZjNzY1NzBhNjQ2MzI4NzczYThhODMzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGI0ZDNiMDU3YWZiNGNlM2VmZDgyY2VlNWYwMWRkNTJhYzJlYjU3ODYxOTJiZTkxNTQ1NDg0M2MzY2NmMWRiOCJ9"
         },
         {
-          "resource": "repo://src/database.rs#L1396-L1415",
+          "resource": "repo://src/database.rs#L1415-L1434",
           "version": "repo-lines-v1:sha256:0bdbe9d16d3ffdbf1726e2765d4599868729e2dc957883d3b34ed089ca1e9b11:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3M2Q1NDA2ZGM5MmNlOWM0NmIxZTRkOWY5NjQyZTkzZDgwZmY2MDZmNzViMWQ2OTg0YjFiMTc0NGViNGE2ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0ZTY3ZTY3NjFmZmVkNGNlOWM3NzcxOTg3NDEwM2JhYmFkYzY0MDViMDZmNTJmOGNjNTg5ZjQ1MDk0YWU3OTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5ZGQyYjA4ZGJkNWE1ZDQzZmM4YWRjMThiNWRhNGNkM2E5NzUyNTMwZjE3ZWE0MDVlNjE4YjMzOWU4MWE0NDMifQ"
         },
         {
@@ -167,7 +167,7 @@
       "statement": "The solid flag is threaded through ToArchive and read from SEVENZIP_SOLID_COMPRESSION (ZIP hard-codes false), but the archive writer ignores it because entries are added one call at a time, with a TODO to batch a game's files into one solid block.",
       "evidence": [
         {
-          "resource": "repo://src/archive.rs#L585-L595",
+          "resource": "repo://src/archive.rs#L637-L647",
           "version": "repo-lines-v1:sha256:ccf3361b6a558312e2b0abaa72e704394e0e2edcb45a650b62bf59054ab33a96:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NjY4ODA5MmU3MmQ4ODE1Y2YwZjIyNDU4ZWYxYzM5ODhhMTViZDlhMWM4YWNjNzM0OWI5NDE2MTY4OGE2ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOGQ3YjA5NDU1MzhmNGMxNjQ4N2ViNmFjNDZkMmVjNzg1ZmQxOTJlMzhhODNlZDUxZjM0ZGMzMmQ1NTY4ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNjEzMzdkOTQyMWZhMmE3ZThlMGZhYWViZmVkNTA3M2RkY2FmMTQ2MmRhYTQyNWFlNTVmNzA3OTFlYzI1MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMTU4NmYxOTYwZjZmZDEzNDI4MzMzMzQ3MjZiZjljNThmMzlmOTE4M2ViN2RiODgwYmI2ZTMwYjgyYTg3NzAifQ"
         },
         {
@@ -181,7 +181,7 @@
       "statement": "The minimum-chdman-version gates for Dreamcast CHDs and multi-track (split-bin) CDs are gone: with chd-rs linked in process nothing probes a chdman version, and multi-track CD CHDs are handled unconditionally by extract_cd's per-track '%t' naming.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L16-L16",
+          "resource": "repo://CHANGELOG.md#L17-L17",
           "version": "repo-lines-v1:sha256:d15b239d5507a5ec5df652b3370725638e347f270fa7bdd16e6bc707c96ba527:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzlkZjBkZjYzYmQ2NGQ0YTE5OWIxNzNhMjM2MjQ3YTMzNjRlNjkwZmU1ZWI1N2ViMGY5N2QyNTEzZjk0MTM1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjdiZDhiODM3Y2ZhMGNiMmQ3MjIyODRmMzcyMDhkYmM4ZDVjYmMzNDRhMTU2NTkyMWYwZmEyYWJjNTJiNzliOSJ9"
         },
         {
@@ -665,10 +665,24 @@
           "version": "repo-lines-v1:sha256:d670ed5bc51c90f7885eb9056930c6e3cf5f72895bed0327ab9436e206586c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYTU2ZjhhMWYwYjhhYzMxMDMwMmY2YmVjNWFkMTk4YTZkYjRjMWMwYWI5MTkyYTA2YTg2NGNiNTIxZDk3YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYzM3N2RjNGQ3MTczYjlmNzIzMGRlNDcxMjE4N2FjMzRlN2MyM2U4NDBlODM5M2IwMDc1NGZiYzU2MGI0OTQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e4867283026f48b48cde455f2eb77545",
+      "statement": "export-roms' ORIGINAL path extracts each archive's entries into one temporary directory and renames each into `<destination>/<game>/<rom name>` for arcade systems (`<destination>/<rom name>` otherwise), so a merged set's `<clone>/` entries export under the ROM's own name.",
+      "evidence": [
+        {
+          "resource": "repo://src/export_roms.rs#L1668-L1709",
+          "version": "repo-lines-v1:sha256:f54c75f52ae54d85e3894e16177ff26bc71d491d97c47467ca3f9c585b33b85f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YjRjOTBiZjlkOGJkNTQxYWJhY2Y4OTY0YTE4NjBiZjRhNzIxZmI0ODRiNmY3Y2U1YTZhN2I4MjVmYjE3MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlOGU5MzhmOWJjYzJlMTgzNDY0MjVmODc5Y2JhNDJmYmZhNjQyYTFhYmRjMDkzMDM5ZjUzZTUyMGVkMWQyMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNDc4MTk1MDZiZjBlODQ5MGEyMmQwNTM5ZjJhYjdjMzBlMTA5MzJjYWY0MzUyMzUyZjU0ZDkyMThiYTYwYjkifQ"
+        },
+        {
+          "resource": "repo://src/export_roms/test_merged_to_original.rs",
+          "version": "repo-file-v1:sha256:506bf3d624faeb98a3405cdc463a4b0da49e7a091f6823dd527274650f2b7c25"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-20T21:43:24.013Z"
   }
 }

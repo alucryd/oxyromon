@@ -58,6 +58,8 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-b1a773ad2966952330a5f92d
     resource: repo://src/import_roms/test_cia.rs
+  - id: openwiki-source-ce909429aa84530845ef3778
+    resource: repo://src/import_roms/test_none_selected.rs
   - id: openwiki-source-e39f531dcbca745e3e2e92a4
     resource: repo://src/import_roms/test_original.rs
   - id: openwiki-source-2e0110a5b76b7e42ecbced1f
@@ -84,8 +86,6 @@ sources:
     resource: repo://src/server/test_server.rs
   - id: openwiki-source-da31a7c38b2966a8a0185145
     resource: repo://src/server/test_uploads.rs
-  - id: openwiki-source-0a9271029eb893aacec54c15
-    resource: repo://src/sort_roms.rs
   - id: openwiki-source-b0cb8cd6c9587578828f3269
     resource: repo://src/sort_roms/test_all_regions_from_matches.rs
   - id: openwiki-source-ac4fb8289d5522d8a30dc0b8
@@ -100,10 +100,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Test Harness and Conventions
@@ -255,7 +255,7 @@ server, or relies on the settings bootstrap, it locks.
 ## Prompts must never block
 
 A subcommand that would ask the user something interactively must resolve without
-a TTY under test. Two mechanisms carry this:
+a TTY under test. Three mechanisms carry this:
 
 - **`cfg!(test)` as the "select everything" flag.** `prompt_for_games(games, all)`
   returns the whole list untouched when `all` is true, so the `dialoguer`
@@ -273,14 +273,26 @@ a TTY under test. Two mechanisms carry this:
   When the mode is not `None`, multi-match resolution returns early — `Skip`
   yields `MatchState::Skipped`, `First` takes the first candidate — so
   `prompt_for_roms` is never reached
-  ([src/import_roms.rs](../../src/import_roms.rs#L2530-L2557)).
+  ([src/import_roms.rs](../../src/import_roms.rs#L2436-L2475)).
 
-The `dialoguer` paths themselves are untestable by construction — they read the
-terminal — so `src/prompt/test_prompt_for_games_single_match.rs` covers only the
+- **Scripted selections.** Under `cfg(test)`, `select_opt`, and `select` through
+  it, never builds a `FuzzySelect`. It pops the next answer from
+  `prompt::SCRIPTED_SELECTIONS`, a `Mutex<VecDeque<Option<usize>>>` the test
+  fills beforehand, and panics with `Unscripted prompt "…"` once the queue is
+  empty. `src/import_roms/test_none_selected.rs` uses it to answer "None"
+  (`Some(0)`) at the ROM prompt, then asserts the queue was drained, so the
+  prompt was reached exactly once
+  ([src/prompt.rs](../../src/prompt.rs#L258-L291),
+  [src/import_roms/test_none_selected.rs](../../src/import_roms/test_none_selected.rs)).
+
+The other `dialoguer` paths (`multiselect`, `confirm`, `editor`) still read the
+terminal, so `src/prompt/test_prompt_for_games_single_match.rs` covers only the
 early return (`len() <= 1` answers the question already)
 ([src/prompt/test_prompt_for_games_single_match.rs](../../src/prompt/test_prompt_for_games_single_match.rs#L1-L30)).
-A new prompt call site therefore needs its own bypass, or the suite hangs until CI
-times out.
+Without a terminal `FuzzySelect` spins rather than failing, which is why the
+scripted queue panics instead of falling through: a test reaching an unscripted
+selection fails at once rather than hanging. A new call site of the other prompts
+still needs its own bypass, or the suite hangs until CI times out.
 
 ## Reference binaries: one skip policy in the crates, no probe in the app
 

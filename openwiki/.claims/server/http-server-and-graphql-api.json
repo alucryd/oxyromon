@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7ff7be0eade13149b8383c949824d17bfd36642bd02a4fc72b90e8aab26e8016",
+  "pageVersion": "sha256:bfcea1687a2a947aae83fce467a68634ef9785b477b290bcef5a8c59e81357f5",
   "claims": [
     {
       "id": "claim_fd03ca433bd84def895a64fd9e443d5f",
@@ -118,11 +118,11 @@
     },
     {
       "id": "claim_10b423b547f849e6b11794fe0bb41013",
-      "statement": "The four size aggregates (`totalOriginalSize`, `oneRegionOriginalSize`, `totalActualSize`, `oneRegionActualSize`) all funnel through `system_size`, which builds raw SQL: `actual` sums distinct `romfiles.size` (what is on disk) versus `roms.size` (the catalog figure), and `one_region` splices in `AND g.sorting = 1`. `Rom::ignored(systemId)` similarly mixes DataLoader lookups with one raw parent-`bios` query only for arcade systems that have a parent.",
+      "statement": "The four size aggregates (`totalOriginalSize`, `oneRegionOriginalSize`, `totalActualSize`, `oneRegionActualSize`) all funnel through `system_size`, which builds raw SQL: `actual` sums distinct `romfiles.size` (what is on disk) versus `roms.size` (the catalog figure), and `one_region` splices in `AND g.sorting = 1`. `Rom::ignored(systemId)` similarly mixes DataLoader lookups with one raw parent-`bios` query, run only for an arcade ROM with a parent in a non-merged system; split and merged systems always ignore such a ROM and full ones never do.",
       "evidence": [
         {
           "resource": "repo://src/query.rs#L115-L152",
-          "version": "repo-lines-v1:sha256:c648f9ea5aad590872c80ad88eec163e508b3fe7667c7319d80dfaa7a7627a3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMDRkZGQ3NDZkOTMzZmI0NzMwYmJiZTRhZTc4MDgzZDhmZDgwNzkyOGVjNGZmOTQ2ZDUyZGQzODQxYjYwYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViOWEwOGJjMjlmNmViZWJlOWE1ZjAxOTAzZDk4NDVkYmNiNTg0MmE0NTVmMDdkNWY0MDAyZGFjMzJhNWM2MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzRmYWQxNGEwY2QzOTc0ZDliZWJlZGUxMzNhMzczNjE2NTU5ZGM4Y2NlNjIyY2QzMzliMTU2N2FlZWZlZjkifQ"
+          "version": "repo-lines-v1:sha256:7820b0c2ab95260bb60bc21200302790fc554e9c6458f93df254aea0b5584990:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMDRkZGQ3NDZkOTMzZmI0NzMwYmJiZTRhZTc4MDgzZDhmZDgwNzkyOGVjNGZmOTQ2ZDUyZGQzODQxYjYwYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViOWEwOGJjMjlmNmViZWJlOWE1ZjAxOTAzZDk4NDVkYmNiNTg0MmE0NTVmMDdkNWY0MDAyZGFjMzJhNWM2MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMzRmYWQxNGEwY2QzOTc0ZDliZWJlZGUxMzNhMzczNjE2NTU5ZGM4Y2NlNjIyY2QzMzliMTU2N2FlZWZlZjkifQ"
         },
         {
           "resource": "repo://src/query.rs#L25-L67",
@@ -355,7 +355,7 @@
       "statement": "`download_romfile` reads the `ROM_DIRECTORY` setting, joins the `romfiles.path` row onto it and streams the file out as `application/octet-stream` with an `attachment` disposition; a missing setting or null value is 500, and a file that cannot be opened is 404 — but `find_romfile_by_id` panics for a nonexistent id.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L2958-L2971",
+          "resource": "repo://src/database.rs#L2977-L2990",
           "version": "repo-lines-v1:sha256:7917d2c0e4984d1d9fa3fdcc7cb8f19d9eb42f1b8819398ee4a19562313f0986:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiN2FjY2RjMDk0ZjljMjIzZTc0NjgyODJlMTMzZWYzMmY5NDFkZTYzMjEzMjVjZjgzMmRjMTZhNTEzOTc5ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMzA2OTRlYzMyYzY5YTI0MzU1YTA1YTAzZDNkY2JjODRjMzM0Y2YzNDQxYmNkYTFiZTA0OTg2NTEwYjMxMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0MDczNGE1Y2Q2ZWNhNTBjNjdiZTNmZTJiNWNhYjdiMDNiMzcyYjYyZGQ4M2E3YzdiYmMyZWQ5YmI0N2VjMWYifQ"
         },
         {
@@ -533,6 +533,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-20T21:43:24.013Z"
   }
 }

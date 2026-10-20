@@ -1,6 +1,7 @@
 use super::common::*;
 use super::config::*;
 use super::database::*;
+use super::mimetype::ARCHIVE_EXTENSIONS;
 use super::model::*;
 use super::progress::*;
 use super::prompt::*;
@@ -672,8 +673,18 @@ async fn sort_game<'a>(
         Some(roms) => roms,
         None => return Ok(romfile_moves),
     };
+    // a merged clone's files are in its parent's ZIP, which follows the parent
+    let merged_clone = system.merging == Merging::Merged as i64 && game.parent_id.is_some();
     for rom in roms {
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        if merged_clone
+            && Path::new(&romfile.path)
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| ARCHIVE_EXTENSIONS.contains(&extension))
+        {
+            continue;
+        }
         let new_romfile_path = romfile
             .as_common(connection)
             .await?
@@ -933,6 +944,8 @@ fn sort_games_by_weight(
 mod test_all_regions_from_db;
 #[cfg(test)]
 mod test_all_regions_from_matches;
+#[cfg(test)]
+mod test_merged;
 #[cfg(test)]
 mod test_one_region_from_db;
 #[cfg(test)]

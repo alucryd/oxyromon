@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f9dd34d042498344007196452233d4eb2f5706bd9d0ca0ce06ded2de38dce861",
+  "pageVersion": "sha256:e2355f9e065b3c5d01213c633a7776a9d1fcb6debb9aeeafb9ec3f63aa816abf",
   "claims": [
     {
       "id": "claim_b087aba3f1c046f49eec90868ad7d336",
@@ -63,7 +63,7 @@
       "statement": "Because MAME's CHD DATs carry no size and list the CHD's own SHA-1, import_roms retries a failed SHA-1 match of a CHD with its chd_sha1 and size 0.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L1188-L1211",
+          "resource": "repo://src/import_roms.rs#L1196-L1219",
           "version": "repo-lines-v1:sha256:c6a47812c3e810b207c0d66a46fa18b6c3022299afcef140a884383fb40b31c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YTkyYTYzNTM1NGNmZGFkNjlkNWM4MmNlNjMxMjdiMzhiMDE5NjNlZDdmNDc1OGMxZmJlMGIwYzFkZjg2NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNjVjZjdkMDcwZDg3ODkyNzNkOWRlZWZjZTg5NjgwMjJiMmQ4MjY4Njg4ZTQwZDQ3ZWFkNzQ1OTEzMmE2Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYzU1YjdiOTJlMzVlYWRmOTk3NGQxYjMyZGVmNjFiMDI3YzJhOTU5MDk2YmQ5OWNiZDY3OGNkZjRhMjg2MzAifQ"
         }
       ]
@@ -145,6 +145,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-20T21:43:24.013Z"
   }
 }

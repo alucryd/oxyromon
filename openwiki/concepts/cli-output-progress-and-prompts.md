@@ -78,10 +78,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Progress Bars, Categorized Output and Prompts
@@ -288,6 +288,12 @@ semantics:
 - Every wrapper attaches `"Failed to get user input"`, which is what a user sees
   when there is no TTY at all; `FuzzySelect` takes `max_length` for long game
   lists, which is why the game and ROM prompts pass `Some(10)`.
+- Under `cfg(test)`, `select_opt` never reaches dialoguer: it pops the next
+  answer from `SCRIPTED_SELECTIONS`, a queue a test fills beforehand, and panics
+  with `Unscripted prompt "…"` when the queue is empty. Without a terminal
+  `FuzzySelect` spins instead of failing, so an unexpected prompt would otherwise
+  hang the test run. `select` goes through `select_opt` and is scripted the same
+  way.
 
 On top of these, the domain helpers share one shape: resolve candidates from the
 database, and only ask when there is something to choose.
@@ -307,11 +313,12 @@ database, and only ask when there is something to choose.
 sits under the cursor. `prompt_for_roms` is the odd one out: it inserts the
 literal `None` at index 0 with that index as the default, and shifts the chosen
 index back with `roms.remove(i - 1)`. Its three call sites are all in
-`import_roms`, and none of them handles the `Ok(None)` it can legitimately
-return — each feeds the result into `rom_game_system.unwrap()` /
-`rom_game.unwrap()` — so answering "None" (or dismissing the list) panics the
-process instead of skipping one file. Anything new that reuses this helper must
-check for `None` before unwrapping.
+`import_roms`, and each handles the `Ok(None)` it can legitimately return:
+answering "None" (or dismissing the list) turns into a `Skipped` match, so the
+file is left where it is. The hash-algorithm loops that drive matching stop at a
+skip and forget earlier "no match" results, so the same prompt is not asked
+again for the next hash and the file is not trashed. Anything new that reuses
+this helper must handle `None` the same way.
 
 Selection sits behind a consistent gate in the batch subcommands that can act on
 many systems: if argv names systems, they are resolved by name-glob and deduped

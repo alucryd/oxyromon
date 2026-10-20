@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:09d5e3350a9e4628a8662aa95494cb99800d2a1ee4184d9975ce59cc62d56885",
+  "pageVersion": "sha256:65d0067aa73e45ab6f76ba5ff721630039fb89c80a92a435da866887bec06ed7",
   "claims": [
     {
       "id": "claim_d425cce21bc645aaadc3b688834e2cc5",
@@ -295,8 +295,8 @@
       "statement": "CPU-bound codec work is kept off the async runtime: `run_blocking` runs a synchronous format-crate entry point on `spawn_blocking`, resets the shared bar to a bytes style with the input size as its length, and feeds the crate's `&mut dyn FnMut(u64)` progress callback into it; modules with a different shape (archive listing, nod disc writing, opening a CHD header) call `spawn_blocking` directly. No code path spawns an external process: the CIA module calls cia-rs through run_blocking, and util::tool_version no longer exists.",
       "evidence": [
         {
-          "resource": "repo://src/archive.rs#L491-L500",
-          "version": "repo-lines-v1:sha256:26218837d770b2346710dab585ace9635a1f167b359f93134fd8507b01ca726f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YzNmOTBjZmIwYmMzZGU0YTcyODMwOGZjNTQ3ZDNiZGMxZmUyN2FiYWMzYjY5ZmM3ZDhmNjdiMDg5Y2VmNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ZDc2NTcwZDQ0YTM1Njg2YTMzMWNkNWU5MDg2ZDlmY2RiMThkMjdkODhjYTM1MjA4NzcwY2NjMWQ2NzI0YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiYzA5N2ZiMDQzMjAyYTVmZDE1OGFiNjgyNDY5OGNmYzQ0MjEzYzkzNTU5OWI1YTYzNzY0MDdjMjZlOWYxMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MTNlYWUzYThjYWExYzI1Y2I0NzRmNDkwYTUzMjE4ZTdiODg4OWRhNjk5NzkzM2IyYjQyMDMyMmRjMTIxMTQifQ"
+          "resource": "repo://src/archive.rs#L547-L554",
+          "version": "repo-lines-v1:sha256:c91cb9556c9b99f3bc684c260ab817d1090117b83f4b8d6abe9f65ae17c6302d:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzljM2Y5MGNmYjBiYzNkZTRhNzI4MzA4ZmM1NDdkM2JkYzFmZTI3YWJhYzNiNjlmYzdkOGY2N2IwODljZWY3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhZWE2MDE5NWU1YmJiYmNjMWY0ZGFhNmI0NzE5YjdjMGZmYzA5MzU1MzM2NDM1MDUzZWRkZWQzZWIyMzI2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ2YjU1YzY4NDI4YmQ5ZThkNmI0ZTRjZjBiYmZiYjgyNzgxYTMyNTg2MTBhZTllMDEyMjc3MDQ2MzUwZDA3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWUzNzIzNTk2MTUzNTkyNzY5MDY5YzNmZjdjYWQzYTk5ZDE2Y2Q3ODJkZTFjYzc1NDliZmZjYzQ3ZGJiY2EzNiJ9"
         },
         {
           "resource": "repo://src/chd.rs#L548-L583",
@@ -413,7 +413,7 @@
       "statement": "CHD decoding and creation run in-process through the `chd-rs` crate rather than a chdman subprocess: `chd.rs` reads headers with `Chd::open`/`Chd::open_with_parent` on `spawn_blocking`, and drives `chd_rs::create_cd`/`create_dvd`/`create_hd`/`create_ld` and `extract_cd`/`extract_ld`/`Chd::extract` through `run_blocking`, reproducing chdman's own default codec lists and hunk sizes when the user gives none. With CIA also in-process through cia-rs, no format needs anything installed on `PATH`.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L15-L15",
+          "resource": "repo://CHANGELOG.md#L16-L16",
           "version": "repo-lines-v1:sha256:bf2066e139155726eae0f26d5119a0c096787998daf2f31ae9f64767321b75b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYyMDY2ZTEzOTE1NTcyNmVhZTBmMjZkNTExOWEwYzA5Njc4Nzk5OGRhZjJmMzFhZTlmNjQ3NjczMjFiNzViOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYyMDY2ZTEzOTE1NTcyNmVhZTBmMjZkNTExOWEwYzA5Njc4Nzk5OGRhZjJmMzFhZTlmNjQ3NjczMjFiNzViOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDVlM2RhMDNkODUyMmNhMDRmNWYyYTI4ZjU5OTdlM2EwMjljNjExMTgyZmViN2MwNzZkMWQ4YTM1ZTcyOTk2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTlmOTgzZmNmNWE1NzI5ZDVjZjE5YjlmMjBhZDU5NjQyZTUzYWNmNGJhN2M1NmVlMjc1MTM1MWZiNWM0MWJhOSJ9"
         },
         {
@@ -465,8 +465,8 @@
           "version": "repo-lines-v1:sha256:bf5836b02f50d4378bb3637b6dbb300a39dcda163348b26df0f4fb1aad14cf19:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY1ODM2YjAyZjUwZDQzNzhiYjM2MzdiNmRiYjMwMGEzOWRjZGExNjMzNDhiMjZkZjBmNGZiMWFhZDE0Y2YxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY1ODM2YjAyZjUwZDQzNzhiYjM2MzdiNmRiYjMwMGEzOWRjZGExNjMzNDhiMjZkZjBmNGZiMWFhZDE0Y2YxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWE5NDY2NWVjZGUzODc5MTg3OWZkYzM5MTkyYWE2NjgyZmNhMzI2MTM0ZjM2ZmZhNjI2MWVlYTFmYzBiOGM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWNiMjZkZThmYjVkNGQyOTVlYmFjNWQwYzIzZTIyYjBjMDAwOTdjOWYzYzc5MmFkMmUyMDBiNzQ1YWYxODZmMyJ9"
         },
         {
-          "resource": "repo://src/import_dats.rs#L950-L954",
-          "version": "repo-lines-v1:sha256:43af69f94357f87f16ee2475b13f299b1f548e3d6a4439479d6dad7034bee0d8:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyZDZlZDdlZDdkMDQwN2RhMDdmNzFjZmY5MmUxN2UyYzJmYzcxNTBjY2U0MDdlZTk0OWM1ZjA5YTUwYjk2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JiZGEyYjk1MzY5MjUyMjE1MzZiZTQwODJkMzFkNTExMGI3NmM2ZWRlZDg3ODBhNjdmZDQyN2QwNzJjMDFiMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2IwZjYxMDJmOGFhZGM0NGJiZDcyMjY3OGY5NmUwZTRlYjBhOGVmNWViOTA3MWIzZDg3N2YwOWYwNjEzZDdhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmYzZTM3ZjY3OWNkNjY3MDJiNzFmM2Y5OGQ3YjJiNjJlMDAwYTMzYWRiNDg5MTU0N2M2NmE5MmQ0MTI0YjE3OSJ9"
+          "resource": "repo://src/import_dats.rs#L420-L420",
+          "version": "repo-lines-v1:sha256:6310627f14ee1ac3e5f3964f9e4343e7135689b81d70dc25d5a6f95b3a56c719:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMxMDYyN2YxNGVlMWFjM2U1ZjM5NjRmOWU0MzQzZTcxMzU2ODliODFkNzBkYzI1ZDVhNmY5NWIzYTU2YzcxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMxMDYyN2YxNGVlMWFjM2U1ZjM5NjRmOWU0MzQzZTcxMzU2ODliODFkNzBkYzI1ZDVhNmY5NWIzYTU2YzcxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVmOWFlZmVjOWYzMDZiNzYyMTMwZjRkNzg5MzNlYjkzNDFkNjc1MzM4ODBmZjUxMmUyYTc1MmUzMzA0NzM1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTJiZmYxZjg2NjIwZjdjMmE2NmQxNDBlNTg5NzUxODA5NmE4NGFjYzA5OGM2MmNmY2QyZTZhOTUwNjlkYjc4YyJ9"
         },
         {
           "resource": "repo://src/purge_roms.rs#L87-L106",
@@ -474,17 +474,17 @@
         },
         {
           "resource": "repo://src/util.rs#L288-L335",
-          "version": "repo-lines-v1:sha256:ce2d453c5e559296d3f8c385a272b7758567f925f5c566cdd87a0993961cefb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkN2ZmOTkyMjU3ZWZlNTMzMDM2NWFiMjk2NWVkZDM3ZTQ3ZDAwZjIzYThjODY0NjVjMjZiNGI1OTE1NjRiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDcwYmZiM2FlYzNkOTUzZTc5NDQzYzIwNmY5ZWU2MzkwNzFkNDBkZGZjYmViOWJmYWE2ZjFmZGYzMWUxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5NGIwNGUwYzY5MjUyNmE3NThlMWYxNGZlYmE3MWQ4YTU1N2JhMzQ0ZjQ2OWJiMmJiN2U4ZjBjODQ1ZDVlNzgifQ"
+          "version": "repo-lines-v1:sha256:ce2d453c5e559296d3f8c385a272b7758567f925f5c566cdd87a0993961cefb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkN2ZmOTkyMjU3ZWZlNTMzMDM2NWFiMjk2NWVkZDM3ZTQ3ZDAwZjIzYThjODY0NjVjMjZiNGI1OTE1NjRiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDcwYmZiM2FlYzNkOTUzZTc5NDQzYzIwNmY5ZWU2MzkwNzFkNDBkZGZjYmViOWJmYWE2ZjFmZGYzMWUxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0N2NmYWQzODM2YWQ0ZThiNTJmZGFlNzRiYjNmN2RhMjU1YjFiOTI5ODY5NGNmMDE1ZDAxYzExNDg3ZmE1YWYifQ"
         },
         {
-          "resource": "repo://src/util.rs#L403-L436",
-          "version": "repo-lines-v1:sha256:b080bdd856444fe8ad50ba70df8831e5c98e0c13e9099d1be37039d1d4bc364c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmIxNDMxMDVhNGE3NWZjZjUwMDNkNDIwZWZmZDAxZDg0Mzk4ZGFkMzE4NGMyOWI3YmVhYTdhNjczYjg2YmQifQ"
+          "resource": "repo://src/util.rs#L403-L435",
+          "version": "repo-lines-v1:sha256:d2834ea7ff358faf9bacfe83a3119864482c62f0bc65b7706f4888093ffb2231:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzODM4NWRmYWFlNTdkYTY3NTA3NTBlM2ZlNWNjMjJjZjRiNjk2OTE1OTk2MWVhYTNjNjM3MGVjMjZmYzg4YTIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-20T21:43:24.013Z"
   }
 }

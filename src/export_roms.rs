@@ -15,7 +15,7 @@ use super::transcode::*;
 use super::util::*;
 use super::wbfs::ToWbfs;
 use super::xso::{AsXso, ToXso, XsoType};
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indexmap::map::IndexMap;
@@ -1683,20 +1683,28 @@ async fn to_original(
             .iter()
             .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
             .collect();
+        // extracted there first: a merged arcade set can file a ROM under `<clone>/`
+        let tmp_directory = create_tmp_directory(connection).await?;
         for rom in &roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
-            if system.arcade {
-                let destination_directory = destination_directory.join(&game.name);
-                create_directory(progress_bar, &destination_directory, true).await?;
-            }
+            let destination_directory = if system.arcade {
+                destination_directory.join(&game.name)
+            } else {
+                destination_directory.clone()
+            };
+            create_directory(progress_bar, &destination_directory, true).await?;
             romfile
                 .as_common(connection)
                 .await?
                 .as_archive(progress_bar, Some(rom))
                 .await?
                 .first()
-                .unwrap()
-                .to_common(progress_bar, &destination_directory)
+                .with_context(|| {
+                    format!("Failed to find \"{}\" in \"{}\"", rom.name, romfile.path)
+                })?
+                .to_common(progress_bar, &tmp_directory)
+                .await?
+                .rename(progress_bar, &destination_directory.join(&rom.name), true)
                 .await?;
         }
     }
@@ -1862,6 +1870,8 @@ mod test_iso_to_rvz;
 mod test_iso_to_wbfs;
 #[cfg(test)]
 mod test_iso_to_zso;
+#[cfg(test)]
+mod test_merged_to_original;
 #[cfg(test)]
 mod test_multiple_tracks_chd_to_cso_should_do_nothing;
 #[cfg(test)]

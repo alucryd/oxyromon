@@ -114,10 +114,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-15T21:23:38.942Z" }
+generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-20T21:43:24.013Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -422,9 +422,10 @@ the server turns `None` into a 400 instead of a crash.
 (None/Partial/Full) recomputed in SQL, never set from Rust.
 `compute_system_completion` (in `util.rs`) is the single orchestrator: it first
 creates placeholder empty files for partial games, then picks the game-completion
-statement based on the system's `arcade` flag and `Merging` mode — split sets
-ignore merged parent roms, non-merged/merged sets ignore parent roms whose
-parent game is a BIOS, full sets consider every rom — then runs the jbfolder
+statement based on the system's `arcade` flag and `Merging` mode — split and
+merged sets ignore merged parent roms (a merged set files each clone's own roms
+where a split one does, only inside the parent's ZIP), non-merged sets ignore
+parent roms whose parent game is a BIOS, full sets consider every rom — then runs the jbfolder
 variant for console systems, and finally rolls the game states up into the
 system with a `CASE` in `update_system_completion`. Every mutation-heavy
 subcommand (`import-dats`, `import-roms`, `sort-roms`, `check-roms`, `purge-roms`,
