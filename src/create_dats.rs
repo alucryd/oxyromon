@@ -212,6 +212,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let datfile_xml = DatfileXml {
         system: system_xml,
+        build: None,
         games: games_xml,
         machines: vec![],
     };

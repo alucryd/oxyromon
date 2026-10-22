@@ -367,6 +367,7 @@ Options:
 
 Imports Logiqx DAT files from No-Intro, Redump or MAME, including Parent-Clone DATs.
 ZIP files such as No-Intro's daily packs are read directly, including DATs in nested directories.
+The output of MAME's or HBMAME's `-listxml` is read directly too: having no header, its system is named after the file, which `-n` overrides, and versioned after the build.
 With `-u`, only systems already in the database are updated, which keeps a collection in sync with those packs.
 
 An update keeps a system's custom name and extension unless new ones are given.

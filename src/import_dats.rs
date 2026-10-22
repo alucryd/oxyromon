@@ -5,7 +5,7 @@ use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
 use super::util::*;
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use clap::value_parser;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use console::Style;
@@ -248,8 +248,23 @@ pub async fn parse_dat<P: AsRef<Path>>(
     dat_path: &P,
     skip_header: bool,
 ) -> Result<(DatfileXml, Option<DetectorXml>)> {
-    let datfile_xml: DatfileXml = de::from_reader(&mut get_reader_sync(dat_path)?)
+    let mut datfile_xml: DatfileXml = de::from_reader(&mut get_reader_sync(dat_path)?)
         .context("Failed to deserialize DAT file")?;
+    if datfile_xml.system.name.is_empty() {
+        // MAME's -listxml output has no header: name the system after the file
+        let Some(build) = datfile_xml.build.take() else {
+            bail!("Failed to deserialize DAT file: missing header");
+        };
+        let name = dat_path
+            .as_ref()
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .context("Failed to retrieve DAT file name")?
+            .to_owned();
+        datfile_xml.system.description = name.clone();
+        datfile_xml.system.name = name;
+        datfile_xml.system.version = build;
+    }
 
     // print information
     let label_style = Style::new().dim();
@@ -1092,6 +1107,8 @@ mod test_dat_headered_skipped_header;
 mod test_dat_mame;
 #[cfg(test)]
 mod test_dat_mame_chd;
+#[cfg(test)]
+mod test_dat_mame_listxml;
 #[cfg(test)]
 mod test_dat_mame_mixed;
 #[cfg(test)]
