@@ -64,27 +64,10 @@ pub async fn main(
     };
     for system in systems {
         print_header(progress_bar, &format!("Checking \"{}\"", system.name));
-        let games = match matches.get_many::<String>("GAME") {
-            Some(game_names) => {
-                let mut games: Vec<Game> = vec![];
-                for game_name in game_names {
-                    games.append(
-                        &mut find_full_games_by_name_and_system_id(
-                            connection, game_name, system.id,
-                        )
-                        .await,
-                    );
-                }
-                games.dedup_by_key(|game| game.id);
-                prompt_for_games(games, cfg!(test))?
-            }
-            None => find_full_games_by_system_id(connection, system.id).await,
-        };
+        let games = select_games(connection, matches, system.id).await?;
 
         if games.is_empty() {
-            if matches.index_of("GAME").is_some() {
-                print_warning(progress_bar, "No matching games found");
-            }
+            print_no_matching_games(connection, progress_bar, matches, system.id).await;
             continue;
         }
         check_system(

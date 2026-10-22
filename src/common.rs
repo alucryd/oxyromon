@@ -55,6 +55,35 @@ pub async fn select_games(
     Ok(games)
 }
 
+/// Warns that the games named with `-g` matched nothing, telling apart names
+/// that match no game from ones that only match incomplete games.
+pub async fn print_no_matching_games(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    matches: &ArgMatches,
+    system_id: i64,
+) {
+    let Some(game_names) = matches.get_many::<String>("GAME") else {
+        return;
+    };
+    let mut incomplete = 0;
+    for game_name in game_names {
+        incomplete +=
+            count_incomplete_games_by_name_and_system_id(connection, game_name, system_id).await;
+    }
+    if incomplete > 0 {
+        print_warning(
+            progress_bar,
+            &format!(
+                "No matching complete games found, {} incomplete game(s) match",
+                incomplete
+            ),
+        );
+    } else {
+        print_warning(progress_bar, "No matching games found");
+    }
+}
+
 /// Loads the roms and romfiles of the given games, indexed for the conversion
 /// functions. `original_roms` limits the roms to the original files.
 pub async fn load_rom_data(
