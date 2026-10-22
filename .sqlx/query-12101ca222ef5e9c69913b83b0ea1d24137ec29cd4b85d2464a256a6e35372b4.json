@@ -1,0 +1,21 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT COUNT(id) AS 'count!'\n        FROM games\n        WHERE name LIKE ?\n        AND system_id = ?\n        AND completion != 2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "count!",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "12101ca222ef5e9c69913b83b0ea1d24137ec29cd4b85d2464a256a6e35372b4"
+}

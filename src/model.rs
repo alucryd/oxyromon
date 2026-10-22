@@ -188,15 +188,19 @@ pub struct ProfileXml {
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "datafile")]
 pub struct DatfileXml {
-    #[serde(rename = "header")]
+    /// absent from MAME's -listxml output, which `parse_dat` fills in
+    #[serde(rename = "header", default)]
     pub system: SystemXml,
+    /// only set by MAME's -listxml output, on its `<mame>` root
+    #[serde(rename = "@build", default, skip_serializing)]
+    pub build: Option<String>,
     #[serde(rename = "game", default)]
     pub games: Vec<GameXml>,
     #[serde(rename = "machine", default)]
     pub machines: Vec<GameXml>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(rename = "header")]
 pub struct SystemXml {
     pub name: String,
