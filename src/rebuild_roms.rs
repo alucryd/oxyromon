@@ -297,32 +297,35 @@ async fn expand_game(
     };
     // skip CHDs
     roms.retain(|rom| !rom.disk);
-    let mut transaction = begin_transaction(connection).await;
+    // find every source rom in the parents first, so a missing one leaves no
+    // copied file behind
+    let mut sources: Vec<(&Rom, Rom)> = vec![];
     for rom in roms.iter().filter(|rom| rom.romfile_id.is_none()) {
-        // find source rom in parent
-        let mut source_rom: Option<Rom> = None;
-        if let Some(parent_id) = rom.parent_id {
-            let parent_rom = find_rom_by_id(&mut transaction, parent_id).await;
-            if parent_rom.romfile_id.is_some() {
-                source_rom = Some(parent_rom);
-            }
+        let source_rom = match rom.parent_id {
+            Some(parent_id) => Some(find_rom_by_id(connection, parent_id).await),
+            None => None,
         };
-        if let Some(source_rom) = source_rom {
-            add_rom(
-                &mut transaction,
-                progress_bar,
-                game,
-                rom,
-                &source_rom,
-                &game_directory,
-                &archive_romfile,
-                compression,
-            )
-            .await?;
-        } else {
-            print_warning(progress_bar, &format!("Missing \"{}\"", rom.name));
-            return Ok(());
+        match source_rom {
+            Some(source_rom) if source_rom.romfile_id.is_some() => sources.push((rom, source_rom)),
+            _ => {
+                print_warning(progress_bar, &format!("Missing \"{}\"", rom.name));
+                return Ok(());
+            }
         }
+    }
+    let mut transaction = begin_transaction(connection).await;
+    for (rom, source_rom) in &sources {
+        add_rom(
+            &mut transaction,
+            progress_bar,
+            game,
+            rom,
+            source_rom,
+            &game_directory,
+            &archive_romfile,
+            compression,
+        )
+        .await?;
     }
     if let Some(romfile) = archive_romfile {
         romfile
@@ -744,3 +747,5 @@ mod test_split_to_full_non_merged;
 mod test_split_to_merged;
 #[cfg(test)]
 mod test_split_to_non_merged;
+#[cfg(test)]
+mod test_split_to_non_merged_missing;

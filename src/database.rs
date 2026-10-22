@@ -981,6 +981,28 @@ pub async fn find_full_games_by_name_and_system_id(
     .expect("Error while finding complete games")
 }
 
+pub async fn count_incomplete_games_by_name_and_system_id(
+    connection: &mut SqliteConnection,
+    name: &str,
+    system_id: i64,
+) -> i64 {
+    sqlx::query!(
+        "
+        SELECT COUNT(id) AS 'count!'
+        FROM games
+        WHERE name LIKE ?
+        AND system_id = ?
+        AND completion != 2
+        ",
+        name,
+        system_id,
+    )
+    .fetch_one(connection)
+    .await
+    .expect("Error while counting incomplete games")
+    .count
+}
+
 pub async fn find_first_game_by_playlist_id(
     connection: &mut SqliteConnection,
     playlist_id: i64,

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE mame [
+<!ELEMENT mame (machine+)>
+	<!ATTLIST mame build CDATA #IMPLIED>
+	<!ATTLIST mame debug (yes|no) "no">
+	<!ATTLIST mame mameconfig CDATA #REQUIRED>
+	<!ELEMENT machine (description, year?, manufacturer?, biosset*, rom*, disk*, device_ref*, sample*, chip*, display*, sound?, input?, dipswitch*, configuration*, port*, adjuster*, driver?, feature*, device*, slot*, softwarelist*, ramoption*)>
+		<!ATTLIST machine name CDATA #REQUIRED>
+		<!ATTLIST machine cloneof CDATA #IMPLIED>
+		<!ATTLIST machine romof CDATA #IMPLIED>
+]>
+
+<mame build="0.245.23 (unknown)" debug="no" mameconfig="10">
+	<machine name="testgame" sourcefile="capcom/test.cpp">
+		<description>Test Game (World)</description>
+		<year>1987</year>
+		<manufacturer>Capcom</manufacturer>
+		<rom name="testgame.rom" size="256" crc="cc721e14" sha1="4b3e49f0f22c7ce5f1eb7c30a2bbd6fb4fdc6f3d" region="maincpu" offset="0"/>
+		<rom name="testgame.nod" size="256" region="gfx1" offset="0" status="nodump"/>
+		<device_ref name="z80"/>
+		<chip type="cpu" tag="maincpu" name="Zilog Z80" clock="6000000"/>
+		<display tag="screen" type="raster" rotate="270" width="256" height="224" refresh="60.000000" />
+		<sound channels="1"/>
+		<input players="2" coins="2">
+			<control type="joy" player="1" buttons="2" ways="8"/>
+		</input>
+		<dipswitch name="Coinage" tag="DSW" mask="7">
+			<diplocation name="SW1" number="1"/>
+			<dipvalue name="1C_1C" value="7" default="yes"/>
+		</dipswitch>
+		<driver status="good" emulation="good" savestate="supported"/>
+	</machine>
+	<machine name="z80" sourcefile="src/devices/cpu/z80/z80.cpp" isdevice="yes" runnable="no">
+		<description>Zilog Z80</description>
+	</machine>
+</mame>

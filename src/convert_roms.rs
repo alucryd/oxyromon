@@ -396,9 +396,7 @@ pub async fn main(
         let games = select_games(connection, matches, system.id).await?;
 
         if games.is_empty() {
-            if matches.index_of("GAME").is_some() {
-                print_warning(progress_bar, "No matching games found");
-            }
+            print_no_matching_games(connection, progress_bar, matches, system.id).await;
             continue;
         }
 
