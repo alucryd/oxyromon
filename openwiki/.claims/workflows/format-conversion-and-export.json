@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:83d93294d32aaab33587d7a3b992ecb51d72b4918f5f5b1758e9448361b6d5b5",
+  "pageVersion": "sha256:60dcde98e309bb8f64f60d7ddab51774436f388e523062fbb2aee4933dab2e12",
   "claims": [
     {
       "id": "claim_dd3535c42eaa42609888d57fbf035446",
@@ -181,8 +181,8 @@
       "statement": "The minimum-chdman-version gates for Dreamcast CHDs and multi-track (split-bin) CDs are gone: with chd-rs linked in process nothing probes a chdman version, and multi-track CD CHDs are handled unconditionally by extract_cd's per-track '%t' naming.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L17-L17",
-          "version": "repo-lines-v1:sha256:d15b239d5507a5ec5df652b3370725638e347f270fa7bdd16e6bc707c96ba527:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzlkZjBkZjYzYmQ2NGQ0YTE5OWIxNzNhMjM2MjQ3YTMzNjRlNjkwZmU1ZWI1N2ViMGY5N2QyNTEzZjk0MTM1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjdiZDhiODM3Y2ZhMGNiMmQ3MjIyODRmMzcyMDhkYmM4ZDVjYmMzNDRhMTU2NTkyMWYwZmEyYWJjNTJiNzliOSJ9"
+          "resource": "repo://CHANGELOG.md#L15-L18",
+          "version": "repo-lines-v1:sha256:6fff5bd01215a5a231be26bb0cf80f9c7183fee2a18b9a76dbf548a83a3ac262:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAzYmQwMTE1N2RhZTk0YTlkNjRiYmViM2UxODEzOGY5Mzc3ZTUzZGM5OTY0M2EwMWEyZWRiMzhhNmJmNDJmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyY2ZlYzUzYzU4MzRjNDA2NzY5ZTliNGI3NmZjZmMyMTQ5NDhmNGE0YWI4NGI0Yjg3Y2U5YzNkOTRhYjc4YyJ9"
         },
         {
           "resource": "repo://src/chd.rs#L418-L467",
@@ -683,6 +683,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-20T21:43:24.013Z"
+    "at": "2026-10-24T21:19:09.823Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c30d523ce81c382044615a068dff42aceb53477280c06724ecb8b4cb0c9cee80",
+  "pageVersion": "sha256:9441da867697c6881af0ad667320d2c90da6cf9d1763cf4fc33177453064c934",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -296,11 +296,11 @@
     },
     {
       "id": "claim_1db127ec794a4bff802e469bcd496cfa",
-      "statement": "The container image does the opposite of CI: the single Alpine-based Dockerfile does not set SKIP_TRUNK; it installs trunk 0.21.14's musl build and the wasm target and runs `cargo install --features server`, with cmake (for libflac-sys) and GNU tar (for the fetch-webawesome.sh hook) as build-only packages and no gcompat.",
+      "statement": "The container image does the opposite of CI: the single Alpine-based Dockerfile does not set SKIP_TRUNK; it installs trunk 0.21.14's musl build and the wasm target and runs `cargo install --features server`, with GNU tar (for the fetch-webawesome.sh hook) as the extra build-only package, no cmake and no gcompat.",
       "evidence": [
         {
           "resource": "repo://Dockerfile#L1-L19",
-          "version": "repo-lines-v1:sha256:de52235c7bc9ddef558ff75285143d4205d4bc980c3dc4e8646cc4ecf3b19cf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "version": "repo-lines-v1:sha256:0521d540b1740a03a3e9c643594dcc828bb5784f5dd1fc61384c0d7e8c1bd54f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTIwODNkODg2YTQwMmQ3NzhkM2U5ZTE0OTRkZjU3MmFjZWNlNWUzNjBmYzZkZjdjNWVhYjJiZmI3ZDdhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -367,11 +367,11 @@
       "statement": "Publishing is blocked by a single mandatory git dependency recorded with a `ponytail` comment: nod pinned to git tag v2.0.0-alpha.12 until it publishes past 2.0.0-alpha.9 to crates.io, and it is the only git source left in Cargo.lock. sevenz-rust2, formerly pinned to a fork revision, is back on the registry at 0.24.0 with features [zstd] and no longer blocks a release.",
       "evidence": [
         {
-          "resource": "repo://Cargo.lock#L2650-L2653",
+          "resource": "repo://Cargo.lock#L2646-L2649",
           "version": "repo-lines-v1:sha256:b6f3c531060a342cf999467013a53ed016ed58d9ac82b1acf8775b0697c8aa19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWY3ZTk1NDZmMDk5ZGQ0NmJiNGRmNDc0YjcwYjg4NmQ0YjMzMzIzNGE1ZTBmMWY0NjBkMDU1M2NhNzI3NmZiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUzYjg3ZmY4NTAxZjNkZTMzZjg3YjJkOWY5MDU2YjA0N2I5OTJkMGFiZDgzMjZlNDcwYjY0Y2UwZDJlODAzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVmMTBjNTY1ZGNlZjkzYzExMzVkNWU2ZWFkMTAxZWFkMTBjZmQwYjEzZDQ5MjBjNGM1YmFhOWJjY2IwMjYyMSJ9"
         },
         {
-          "resource": "repo://Cargo.lock#L3873-L3877",
+          "resource": "repo://Cargo.lock#L3877-L3881",
           "version": "repo-lines-v1:sha256:e47c52fa935db8b791f7fad7dc130371d06084466ca2fc602d09ecaa04972819:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE1M2E1MGIxMzFjOGMzMzc2NmY5YTY2NTg2MTBlNjhhZjU1Mzk5ZjhjNmI2OTgxOGYxYjYyY2NkMGE3ZDgwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiYWY3MTgyMTM2ZjZjN2E2OTg5ZDE1YWViN2IwYWMzNGIyNmU4YWM0NzNiYTc3YWI2ZjE5OWI5ZjA5MmNlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGZlNGEyN2M5ZDZjZjAwZTY5Njk0NTI0ODc2YjA2ZWRmYmYwOGEyMTg2ODVhZDQ4ZjdiMWFlYmYyZGVlYzA2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQzOGEwZjgzNDg2MWFjMDZlNzQyM2U1ODIyYWNkNWQ2N2ZmMWY1ODQ3MTRmZGUxNzhmZWEzNDMwNTcwNDkwYiJ9"
         },
         {
@@ -386,19 +386,15 @@
     },
     {
       "id": "claim_52e78f11b585426f99020f8ead587779",
-      "statement": "The Cargo feature set is exactly default = [use-rustls], use-native-tls, mcp and server: the old `nod` and `sevenz` features are gone and no cfg gate for those names survives in src/, because nod, sevenz-rust2, zip and the six crates under crates/ are plain unconditional dependencies. Every build therefore compiles the CHD, RVZ/WBFS, 7z and ZIP code paths, and only mcp/server still add or remove functionality.",
+      "statement": "The Cargo feature set is exactly default = [use-rustls], use-native-tls, mcp and server: the old `nod` and `sevenz` features are gone and no cfg gate for those names survives in src/, because nod, sevenz-rust2, zip and the seven crates under crates/ are plain unconditional dependencies. Every build therefore compiles the CHD, RVZ/WBFS, 7z and ZIP code paths, and only mcp/server still add or remove functionality.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L12-L16",
-          "version": "repo-lines-v1:sha256:633ad94c77172c9bbe0323e5f27d1119fc9ff0243546b31ceb3102030d2c6c30:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3NmUwNjBmNmQwMTQxYjc4YmI5Yjk3MDY1ZDE0MzM4YmM1NGM4Mjc4NWU1MmRlN2IxOGE4YTg2NjdkNjVjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlN2IzZjAwYjRlMjBmOTlhNjI5Y2MzMjVmZWE4ZDNiNzViMGFkNmYwYzBhNWY4OWQ4OWMwYjg1M2NjOWY1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjdiZDhiODM3Y2ZhMGNiMmQ3MjIyODRmMzcyMDhkYmM4ZDVjYmMzNDRhMTU2NTkyMWYwZmEyYWJjNTJiNzliOSJ9"
+          "resource": "repo://CHANGELOG.md#L12-L13",
+          "version": "repo-lines-v1:sha256:c795e6789c88544697305bbaf4c35be68d0390e50b3ffba60004189f8b321205:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3NmUwNjBmNmQwMTQxYjc4YmI5Yjk3MDY1ZDE0MzM4YmM1NGM4Mjc4NWU1MmRlN2IxOGE4YTg2NjdkNjVjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWFkNzg2N2U2ZGEwNDRkMzIwYjQ1ZTNhMGMzZTM5MTQ1MzMxMWU2NWI3N2YyNGJlYTIzZmJjMDRmYTI2OTdhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzlkZjBkZjYzYmQ2NGQ0YTE5OWIxNzNhMjM2MjQ3YTMzNjRlNjkwZmU1ZWI1N2ViMGY5N2QyNTEzZjk0MTM1OCJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L103-L106",
-          "version": "repo-lines-v1:sha256:b631548930461cdbd5ab970523a68758fa4ed12ac06eb54ae1517508762b4296:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE4MzgyYzNlYTUyZjBmZjZiZTM5N2YxNDYzMjgyNjkxMTIwZDkxNDQyMDg0MGMzNzkzZTk0YzYxY2E5MWMyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE5NzU2NWI1Zjc1YmMyYTM0M2I5ZGI4M2UzNDBkYjg4YjM3MTA5YzQwNDE5N2M0ZWQzOWE1ZTRlOWQ4MzhiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDgwZDM4YmYxMDRjY2Q0YzgyYmI2OGM2MTIxOTRiZDZmY2U1ZGQ0OTIyNzczMTUwYjkyYzc1NWRjNTY3OThmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBlNmQ3OTc0MTE2MjFiMDJlMWZlMjgwN2U0YWVhNDhlMDRhNWUyMjkyZmMzZTY4MTgwMDBjOTVhM2MyMDYzOCJ9"
-        },
-        {
-          "resource": "repo://Cargo.toml#L129-L129",
-          "version": "repo-lines-v1:sha256:35ab29c246a34fda9cd5746d2a7095c3f970e7c296d445eed0bf156191dd9e9b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVhYjI5YzI0NmEzNGZkYTljZDU3NDZkMmE3MDk1YzNmOTcwZTdjMjk2ZDQ0NWVlZDBiZjE1NjE5MWRkOWU5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVhYjI5YzI0NmEzNGZkYTljZDU3NDZkMmE3MDk1YzNmOTcwZTdjMjk2ZDQ0NWVlZDBiZjE1NjE5MWRkOWU5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkYjA0ZDI4MTRjNDFhNWM1NjYyZDE5MjQ1ODhkMTMyYjAwZTllNmY3ZjQ2ZjhlMzkwNjU5NDk5ZWExZjIwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWI3ZTU1YzU1NTY5ZDE5ODRhZWIwMmZlNDIzZGFjODdlOTlkODNlZTI2Mzk0NDc0OGJmNWIyYWNhZDk3YjgxZiJ9"
+          "resource": "repo://Cargo.toml#L103-L108",
+          "version": "repo-lines-v1:sha256:bacd486ab77455d6b0189a721130d3ff7c88eb06331f97309f1acbafd2735c3e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE4MzgyYzNlYTUyZjBmZjZiZTM5N2YxNDYzMjgyNjkxMTIwZDkxNDQyMDg0MGMzNzkzZTk0YzYxY2E5MWMyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAzY2RkNzIyODRiNTdiOWFiNjc3ZWMxMTI5MzdmZGYwMzM5MDgwMmY2ZjIyMGNiMTZmZWZhMmViY2Q5Yjc1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDgwZDM4YmYxMDRjY2Q0YzgyYmI2OGM2MTIxOTRiZDZmY2U1ZGQ0OTIyNzczMTUwYjkyYzc1NWRjNTY3OThmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMwNmY0M2ZkNjI0MjMwMmFlODk5MTY3MjRiY2VhNDdkZDNmOGQ4NjkzYTYxOGQzMTAwYzJhMWQzY2U0Y2M5NSJ9"
         },
         {
           "resource": "repo://Cargo.toml#L41-L56",
@@ -412,11 +408,11 @@
     },
     {
       "id": "claim_2acf8ea02e0c4b409133c3b46f6ca233",
-      "statement": "oxyromon depends on each of the six format crates by `path = \"crates/<name>\"` plus a matching `version` requirement with default-features = false (e.g. chd-rs = { path = \"crates/chd-rs\", version = \"0.1.0\", default-features = false }), which pulls in only the library: each crate's default = [\"cli\"] feature — and with it clap, console and indicatif — stays off and its [[bin]] is declared required-features = [\"cli\"], so the CLIs exist only for standalone use and for dist.sh's explicit -p builds. Cargo.lock records those crates with a version but no source or checksum, i.e. as workspace path members rather than crates.io downloads.",
+      "statement": "oxyromon depends on each of the seven format crates by `path = \"crates/<name>\"` plus a matching `version` requirement with default-features = false (e.g. chd-rs = { path = \"crates/chd-rs\", version = \"0.1.0\", default-features = false }), which pulls in only the library: each crate's default = [\"cli\"] feature — and with it clap, console and indicatif — stays off and its [[bin]] is declared required-features = [\"cli\"], so the CLIs exist only for standalone use and for dist.sh's explicit -p builds. Cargo.lock records those crates with a version but no source or checksum, i.e. as workspace path members rather than crates.io downloads.",
       "evidence": [
         {
           "resource": "repo://Cargo.lock#L713-L729",
-          "version": "repo-lines-v1:sha256:fc073f4b840aeec975dbaf79241883fea33f5165df30a9b35a5e78b6c08d51f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTNhNTBiMTMxYzhjMzM3NjZmOWE2NjU4NjEwZTY4YWY1NTM5OWY4YzZiNjk4MThmMWI2MmNjZDBhN2Q4MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWMxODQzOGYyYTUwZDgyM2RkZmNjNjVlNGVlODM4MDA0OTA0YTE4YzViMmJkNDM3MzRmZDNmMjVkNDFlMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwOWI1ODUwMGY2NmJiNjM4YzQwMTNhYTJhOWU3ZDJlZDk4YjQzMmIwYjViNDM1OTdjOWY0MDNkNzY1Zjg3NmIifQ"
+          "version": "repo-lines-v1:sha256:aca1748dbcb15d3ae1a2cd0f2f094cd8d2974fb69b1f2e1680d3bdb6bb5ad396:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTNhNTBiMTMxYzhjMzM3NjZmOWE2NjU4NjEwZTY4YWY1NTM5OWY4YzZiNjk4MThmMWI2MmNjZDBhN2Q4MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMWMxODQzOGYyYTUwZDgyM2RkZmNjNjVlNGVlODM4MDA0OTA0YTE4YzViMmJkNDM3MzRmZDNmMjVkNDFlMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwOWI1ODUwMGY2NmJiNjM4YzQwMTNhYTJhOWU3ZDJlZDk4YjQzMmIwYjViNDM1OTdjOWY0MDNkNzY1Zjg3NmIifQ"
         },
         {
           "resource": "repo://Cargo.toml#L106-L108",
@@ -427,8 +423,8 @@
           "version": "repo-lines-v1:sha256:e90c59c9d661ba27f783ba988bbcf18ca7f94534540ad98b71f8bd5debca965b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkwYzU5YzlkNjYxYmEyN2Y3ODNiYTk4OGJiY2YxOGNhN2Y5NDUzNDU0MGFkOThiNzFmOGJkNWRlYmNhOTY1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkwYzU5YzlkNjYxYmEyN2Y3ODNiYTk4OGJiY2YxOGNhN2Y5NDUzNDU0MGFkOThiNzFmOGJkNWRlYmNhOTY1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjYzNGI3ZWFhYzA2MTQ2MWMxMzY1ZDk5N2IwMDgxZWZjODI4NDJlMDIyZjMwZTMzZTY5NmY1MDRjMGFkODZiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ5NDY1NjM1ZmZiYmMwOWY3OTBhODdkOGZkNGU5NzhiOTk5ZGUwMjgwZjc1MWM2NTc3ZDI5ZTI5MTI0MmU0NSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L79-L79",
-          "version": "repo-lines-v1:sha256:9e1624a226dc1f2efb1891ae18390c74e22f4f2f0d8b49370504c4fd0bd4de4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNiOWM3NDgwMTBjN2Y1ZTMwODY2NDg3YTI2N2FiM2UwMTA1NjMzYTAyMGUxYjQ4MmFlNjczOWQ1NGE4MWU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA0MGEzM2U3OTI1NTBhOWQzZGMwNmQxYzQ2MjE5ZGUyNzE1NTRkN2ZhMTZhMmRlN2ZlMWJkYjQ4Y2UwMGYxMyJ9"
+          "resource": "repo://Cargo.toml#L79-L80",
+          "version": "repo-lines-v1:sha256:bbe0250ff79e33416f4518d5862e0cac86b11793ef17d4d25feee82f3a5bcc31:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ0NzliZDVlYjJkM2U1NTUxYzI0NTNjODkzYjA1NWU1NGYxZDViOWE0ZjkwNmFlOGI2NjJmMTlmNDU0ZjcxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNiOWM3NDgwMTBjN2Y1ZTMwODY2NDg3YTI2N2FiM2UwMTA1NjMzYTAyMGUxYjQ4MmFlNjczOWQ1NGE4MWU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA0MGEzM2U3OTI1NTBhOWQzZGMwNmQxYzQ2MjE5ZGUyNzE1NTRkN2ZhMTZhMmRlN2ZlMWJkYjQ4Y2UwMGYxMyJ9"
         },
         {
           "resource": "repo://Cargo.toml#L91-L91",
@@ -437,10 +433,6 @@
         {
           "resource": "repo://crates/chd-rs/Cargo.toml#L17-L20",
           "version": "repo-lines-v1:sha256:5e8a4e8a671a5f9f2469a0519ce35d66ee313ed4ea4d6f2a5bac29718b16e522:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzcyMTFiNzhlMWFkOWJlNzE0MzEyYmQ4OTJlMGJiOWNjYjJkMTI1MzE2NTgxMmZlOTZkMzMwZTk1YWI1MmJmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ2Y2MzN2UzMmY2NGUyMjRhYjEwYzAyMzJlOWFkZjM2NWViYzEwOTZiMWJiNzBlMTM5MGNhNjk3ZWY3ODhlMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFlYWIzY2RhYmExNDY0NWZkZGEzNGVhYmIwZmYzM2E5ZTY4NDE4YTBiOTkyNWJmZTk3ODE4N2I4NTIyNzIwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ2NWNjODQ5Mjg0MGY0N2IxZjQ4ZDgyNDdjMTdkMTMwZjRiMDI4N2RlZjYyMWI4Njg0MWQyYzQ2YmM2NmZkYiJ9"
-        },
-        {
-          "resource": "repo://crates/chd-rs/Cargo.toml#L38-L40",
-          "version": "repo-lines-v1:sha256:bee9a459a3a7d84a544f126f7b44d6cae70449893e15fbf2f049de69808268a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZmNmMxYzczZTQ2ODViNmY1NTc5MmFlNTM5MjU1M2ZmNzlkM2NjMDY3YjBiNzRlMDY4Njk4ZjZiMmM3NmI4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg5ZmU2ZTNjM2NkNzhhMmIxYjBiMTliMzYzOWM3ZjgwOTc4NGE2ZWQ2OTViYmM4NTk0YWU4N2Y5ZWIyYTEyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyMDVlM2M2MDNhNTViOWQ1ZDM1NDQ3OGFkYmI1MDU5ZDZhMTExOTkyZmRiNTE2OWMwZjJjMmJkNjA1YTQ0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -497,10 +489,42 @@
           "version": "repo-lines-v1:sha256:ec8ce14b0c0f2709513c68cdb9f3198515a9bb611327408407663109669710d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNzNhYjI1NTY1OTM1OTRlZjE1N2IwM2UxOGM5ZmQwNmRmNWI3M2QxODE0YmRmYWZlOTY3M2RkNzI3OGE2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmMTVkMzZlYzQyYTM5MjhkZTk4YmEyYWRiZTVjNjNkZGY1Mzk2NjJiMGZlNDc3MjdmZGNkMWY2NDc0Mzc0YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmOThkN2UyZDUxZTdiODQ2Y2YyNzczN2FhMjhiNmRiZTQ2ZjdlYTAyZGQ5N2FiNTBlNTAxYzgyNTE4YmVmNGYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_0f286aed9db64aa8a2ed2a7122a51172",
+      "statement": "rusty_flac resolves through a root `[patch.crates-io]` entry pinned to a revision of the alucryd/rusty_flac fork (its feat/block-size branch), so a `cargo update` cannot move it, because chd-rs requires `rusty_flac = \"0.2.2\"` but calls `Encoder::set_block_size`, which no crates.io release has yet; a patch does not travel with a published crate, so chd-rs cannot be published until rusty_flac releases the method.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.toml#L178-L182",
+          "version": "repo-lines-v1:sha256:c6c749aad116d395d3a6edbee8fbf336c2ebef4f2d6283bd9f0944751ed25b5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhhNzhiMTdkZWIxYzEyY2U2ZmYyYjY0M2E5M2ZmMzg5YzFlMmU2MTE3ZDZkMDJmNGVmYzM1ZGNhOWU4NGEwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmMzZGU1NzU0ZjZjODk3Y2FmNjE3MzBiMDFjNzg4MWI3YjZmMWRjNWNmY2Y5NWJhOGUwNjkwNGI5YzA1NzBmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkMjM3YmY2ZTlmNzg1YTQ4ODI3YTliMGFmYWJlYTk3M2ViM2Q2ODg3NmE5OGNkZDNmZDZhYjFiNmZlNDEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://crates/chd-rs/Cargo.toml#L32-L34",
+          "version": "repo-lines-v1:sha256:ce35bb8f4df1c48718a717a4a3165c0e5609fce9f33fdec65936690942b6ba51:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZkZDA5YTdmMjAwOTUwZjBiYWFlYzRkNTUyZDZkNTZkNDYxYzJhNDM4NjhlNGE4M2I2MzM4NTA5OWQ5OTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM2YjhmZjNmM2Q2MzZmZjc3MzlhMTRlMTJhYTcxNTg5ZTNjOWRmY2E4ZjBlNTI4ZDNjZDcxOGJmNDU1ZGFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5Yjg0NmM0MTY0MTQ1ODUyZDY2OTdiZjNjNjNiNDk0ODJhMjViYWM4MjIwN2NkZDNiOTY2MzFmODcwMTA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4NzA3YWFmNTcxYTYzNzZkN2E3OWY4YmM2MTlmYmFmNmJiYWVkZDVhMzVhODFhMmNiZDEzZWI4MWQxZGY2OCJ9"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L108-L151",
+          "version": "repo-lines-v1:sha256:aa191e62896c3383fcdfb7eae40bae6d7f2634edc2b5f6e2b6e3f18227e76464:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZWMyMTA1Zjk2YWEwZjc3NzhiMjFlM2U4NzU1MGQ0MjMwY2NlMzdjZjJkMzk2ZjRiYmM5ZGM5ODYyY2E4NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1OWIwOTZmYTJiZTA2NDZkNGU4NTI4NmI3MDY0ZTI3MmE0YjRkYmI0ODM1NjhhMmE1NGFlNTY3ZThjZGMzYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_48aa485782b7461fa6bf960ac0270632",
+      "statement": "The `cmake` crate remains in Cargo.lock as a build dependency of aws-lc-sys, rustls's crypto backend, even though the Docker build no longer installs the cmake binary: no remaining dependency of the shipped build invokes it.",
+      "evidence": [
+        {
+          "resource": "repo://Cargo.lock#L455-L470",
+          "version": "repo-lines-v1:sha256:c0646ff5ca5c3063e8d7c163fbb49b8eaebc51a7d1a5a6e0b4cc6b0d13ee849c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNTNhNTBiMTMxYzhjMzM3NjZmOWE2NjU4NjEwZTY4YWY1NTM5OWY4YzZiNjk4MThmMWI2MmNjZDBhN2Q4MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5M2UyNDBjOWEyMTAwOTI0YzdkMWNlMWFjOWI2MDVhZTQ4NDBlY2I2ZjA0YmNmZjY1MTBhNmQ0N2U4NTNhZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYmJhMjY3MTg0NjE3OGE4NjhiZTFiODg3ZGIyNWRjZGQ4MDU1MzI4YWFkZThhN2EyMGRlZTYwM2M3MzcyYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ZjMwNDUwZjQwNTk3ZGY3Mzk5ZWNmYWIzYjYzYThhNzU2OGQyZTJjMzEzMWVhNzIwOTczNzVjNjgyYWRkNjQifQ"
+        },
+        {
+          "resource": "repo://Dockerfile#L9-L19",
+          "version": "repo-lines-v1:sha256:4d235672ab6d8a1e38e89b45aae59331f45077fab6865ac00c5b364f18a49a49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNDBlM2UxMjE2MjNmMDUzNjMyOGQxOTEyMjcxNDg5MzZjYjVhNGU5NjM1OTc3NThkZGY3NTZhOTYyYWNlOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTIwODNkODg2YTQwMmQ3NzhkM2U5ZTE0OTRkZjU3MmFjZWNlNWUzNjBmYzZkZjdjNWVhYjJiZmI3ZDdhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T19:46:38.984Z"
+    "at": "2026-10-24T21:55:54.894Z"
   }
 }

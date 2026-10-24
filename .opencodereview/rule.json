@@ -11,6 +11,11 @@
       "rule": "OxyRomon subcommand module. Check: every CLI flag, default value, and behaviour the diff introduces or changes is documented in the matching README.md section, including the flag's interaction with existing options; a change to how roms, DATs or CHDs are matched, renamed or deduplicated contradicts the workflow section or the FAQ, so check those too; CHANGELOG.md gets an entry under the version heading that matches Cargo.toml's version for anything user-visible — a new flag, a new default behaviour, a directory the tool now deletes; do not report internal refactors with no user-visible effect. Also check: one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice; per-system DAT download outcomes (imported, up to date, failed) come from the one collector in download_dats.rs, and a GraphQL mutation in mutation.rs that loops over systems itself instead is a finding."
     },
     {
+      "path": "crates/chd-rs/src/**",
+      "merge_system_rule": true,
+      "rule": "chd-rs codec glue, on top of the Rust rule. Check: a constant assumed length or shape of another component's output that the code strips, skips or seeks past (a container header, a magic, a fixed prefix) is validated with a runtime check returning an error, not a debug_assert: release builds skip the assert and silently misalign every record after it."
+    },
+    {
       "path": "src/mcp/**/*.rs",
       "merge_system_rule": true,
       "rule": "MCP tool surface reviewed as the interface the model actually reads. Check: every value list in a tool description or parameter doc comment matches exactly what the validation code and the synthesized clap parser accept, including case; every parameter doc comment states the semantics the handler applies to the value (for example a list value replacing the whole list), not only its type; any boolean whose true value triggers an irreversible action defaults so that omitting it reaches the refusal path; a tool reporting per-system outcomes (imported, up to date, failed) maps the shared collector's result from download_dats.rs rather than looping over systems itself; one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice."
@@ -28,7 +33,7 @@
     {
       "path": "openwiki/**",
       "merge_system_rule": true,
-      "rule": "Generated wiki under openwiki/. Check: every repo:// resource path referenced in .claims exists at head, and every claim about external tools, spawned processes or build files still matches the module that implements it; a diff that deletes a source module or drops the last external tool must trigger a wiki refresh."
+      "rule": "Generated wiki under openwiki/. Check: every repo:// resource path referenced in .claims exists at head, and every claim about external tools, spawned processes or build files still matches the module that implements it; a diff that deletes a source module or drops the last external tool must trigger a wiki refresh. A claim that a build dependency is gone is checked against Cargo.lock at head too, not only the Dockerfile or manifests: a crate can stay in the graph after the binary it wraps is no longer invoked."
     },
     {
       "path": "tests/*.dat",

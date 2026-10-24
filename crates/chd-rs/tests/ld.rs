@@ -1,9 +1,10 @@
 //! LaserDisc agreement with the reference `chdman` (0.289): for AVIs of
-//! every video and audio layout chdman reads, the CHDs `chdrs` creates are
-//! byte-identical to `chdman createld`'s, and the AVIs it extracts to
-//! `chdman extractld`'s. The AVIs are made with `ffmpeg`; the tests skip
-//! rather than fail without it or without a `chdman` binary (`$CHDMAN`,
-//! then `$PATH`).
+//! every video and audio layout chdman reads, the CHDs `chdrs` creates
+//! verify in chdman and carry `chdman createld`'s hashes, and the AVIs it
+//! extracts are byte-identical to `chdman extractld`'s. The CHDs are not the
+//! same bytes: their audio is FLAC-coded by rusty_flac rather than libFLAC.
+//! The AVIs are made with `ffmpeg`; the tests skip rather than fail without
+//! it or without a `chdman` binary (`$CHDMAN`, then `$PATH`).
 
 #![cfg(feature = "cli")]
 
@@ -236,6 +237,21 @@ fn fixtures() -> Vec<(&'static str, Vec<String>)> {
     ]
 }
 
+/// Whether `ours` agrees with chdman's `theirs`: chdman verifies it, and the
+/// raw and overall SHA-1s of the headers are the same.
+fn assert_matches_chdman(chdman: &Path, dir: &Path, ours: &str, theirs: &str, what: &str) {
+    run(chdman, dir, &["verify", "-i", ours]);
+    let (ours, theirs) = (
+        std::fs::read(dir.join(ours)).unwrap(),
+        std::fs::read(dir.join(theirs)).unwrap(),
+    );
+    assert_eq!(
+        ours[64..104],
+        theirs[64..104],
+        "{what}: the hashes differ from chdman's"
+    );
+}
+
 #[test]
 fn laserdiscs_match_chdman() {
     let (Some(chdman), Some(ffmpeg)) = (binary("chdman", "CHDMAN"), binary("ffmpeg", "FFMPEG"))
@@ -260,11 +276,7 @@ fn laserdiscs_match_chdman() {
             &["createld", "-i", "disc.avi", "-o", "theirs.chd"],
         );
         run(&chdrs, dir.path(), &["disc.avi"]);
-        assert!(
-            std::fs::read(dir.path().join("disc.chd")).unwrap()
-                == std::fs::read(dir.path().join("theirs.chd")).unwrap(),
-            "{name}: the CHD differs from chdman's"
-        );
+        assert_matches_chdman(&chdman, dir.path(), "disc.chd", "theirs.chd", name);
 
         run(
             &chdman,
@@ -328,11 +340,7 @@ fn large_laserdiscs_match_chdman() {
         &["createld", "-i", "disc.avi", "-o", "theirs.chd"],
     );
     run(&chdrs, dir.path(), &["disc.avi"]);
-    assert!(
-        std::fs::read(dir.path().join("disc.chd")).unwrap()
-            == std::fs::read(dir.path().join("theirs.chd")).unwrap(),
-        "the CHD differs from chdman's"
-    );
+    assert_matches_chdman(&chdman, dir.path(), "disc.chd", "theirs.chd", "large");
     std::fs::remove_file(dir.path().join("disc.avi")).unwrap();
     run(
         &chdman,

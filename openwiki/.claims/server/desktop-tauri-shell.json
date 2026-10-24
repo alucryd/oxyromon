@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:89246d93d3af32aa178f33a892f343bfdc77883769439957c453f2d55d21fe59",
+  "pageVersion": "sha256:43437f1c5055992fa8efbbb7a12a468deb51cb50fdc72ba87bb6bac4b6779df6",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -321,12 +321,12 @@
       "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Alpine container likewise installs no codec or archive tool to run the server, removing its build-only packages after the build.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L31-L31",
+          "resource": "repo://CHANGELOG.md#L35-L35",
           "version": "repo-lines-v1:sha256:3c63e197a71f59445839c6e3ee8124ff289519fb508447617e02c79296eea7be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhmYWFmNzhlMzQyMDgzOTBkNTljODFkYjQ2ZGQ2ZjkyZWI1ZmYwNGQzYjc3YWZkNzUwY2QwYmY5NWRiOTgyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDkzNTRlYmUxMzhjMmVkY2Y3ZjU1ZGNiYjE3NTRhM2M0Y2MwZTEyOGJjMDE3ZWUwYjMyNzI3ZDg3OTIzMmY3OSJ9"
         },
         {
           "resource": "repo://Dockerfile#L9-L19",
-          "version": "repo-lines-v1:sha256:a483ff9f3f377dc81866ee760367ee604c1e0ef052b6bdd121e6055165c93683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjk5NzNhMmNmOTUwNTA0ZDYwODY5YzIyMzkxNWZjY2FlMDY0MmJhYTBjMjA0Yzc0NjJkZTYxY2FmYWRmMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "version": "repo-lines-v1:sha256:4d235672ab6d8a1e38e89b45aae59331f45077fab6865ac00c5b364f18a49a49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNDBlM2UxMjE2MjNmMDUzNjMyOGQxOTEyMjcxNDg5MzZjYjVhNGU5NjM1OTc3NThkZGY3NTZhOTYyYWNlOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTIwODNkODg2YTQwMmQ3NzhkM2U5ZTE0OTRkZjU3MmFjZWNlNWUzNjBmYzZkZjdjNWVhYjJiZmI3ZDdhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         },
         {
           "resource": "repo://desktop/tauri.conf.json#L17-L31",
@@ -377,6 +377,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T19:46:38.984Z"
+    "at": "2026-10-24T21:19:09.823Z"
   }
 }

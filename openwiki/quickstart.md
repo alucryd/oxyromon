@@ -50,10 +50,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T19:46:38.984Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Quickstart & Task Routing
@@ -75,7 +75,7 @@ binaries for the crates' own tests.
 ## Shortest working path
 
 ```sh
-cargo build --release                       # CLI only: needs a C toolchain and CMake
+cargo build --release                       # CLI only: needs a C toolchain
 cargo build --release --features server     # plus GraphQL + web UI (needs trunk + wasm32 target)
 ```
 
@@ -154,7 +154,7 @@ standalone CLI with the same capabilities:
 
 Archives go through `sevenz-rust2` and `zip`, RVZ and WBFS through `nod` (which builds its
 compression libraries from source, so a C toolchain is required), and CIA through `cia-rs`.
-`chd-rs` builds its FLAC codec through `libflac-sys`, which additionally needs CMake.
+`chd-rs` takes its FLAC codec from the pure-Rust `rusty_flac`, so no CMake is needed.
 
 ```sh
 cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the CLIs
