@@ -24,6 +24,8 @@ sources:
     resource: repo://crates/chd-rs/src/error.rs
   - id: openwiki-source-3a39ba8cc3839b0fbf3be2e6
     resource: repo://crates/chd-rs/src/extract.rs
+  - id: openwiki-source-a057427619dc76389568b31f
+    resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-3b812eb8bded02c6c14a4b23
     resource: repo://crates/chd-rs/src/ld.rs
   - id: openwiki-source-84d75d6d1e1e60c51643c99f
@@ -112,10 +114,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Format Crates in crates/
@@ -151,10 +153,14 @@ this page covers only what that crate shares with the other six. The `src/`
 adapters that call into these crates are covered in
 [Format Modules and Their Crate Backends](../concepts/format-modules-and-format-crates.md).
 
-`chd-rs` is also the crate with the heaviest build: `libflac-sys` (a vendored
-libFLAC, built with CMake, so a CMake toolchain is needed to build the crate),
-`lzma-rust2`, `flate2` with the `zlib-rs` backend, `zstd`, `sha1`, `crc32fast`
-and `rayon`. Its `chdrs` CLI sits behind the same default `cli` feature as the
+`chd-rs` is also the crate with the most codec dependencies: `rusty_flac` (a
+pure-Rust FLAC codec, with its `libm` feature so encoder decisions do not hang on
+the platform libm), `lzma-rust2`, `flate2` with the `zlib-rs` backend, `zstd`,
+`sha1`, `crc32fast` and `rayon`. It needs no CMake: FLAC used to come from
+`libflac-sys`, which built a vendored libFLAC. chd-rs calls
+`Encoder::set_block_size`, which no rusty_flac release has yet, so the root
+`Cargo.toml` patches `rusty_flac` to the `feat/block-size` branch of the
+alucryd/rusty_flac fork until one does. Its `chdrs` CLI sits behind the same default `cli` feature as the
 others, and oxyromon depends on the crate with `default-features = false`, so
 none of the CLI stack is linked into the organizer.
 
@@ -372,9 +378,8 @@ optional extra:
   is declared once with `default-features = false` and the `zlib-rs` backend
   for that reason; while only `chd-rs` opted out, oxyromon's plain
   `flate2.workspace = true` still compiled the default `miniz_oxide` backend
-  alongside it. `chd-rs` is the heaviest consumer of that list and
-  the only crate that pulls in a C build: its `libflac-sys` dependency builds a
-  vendored libFLAC with CMake, so building the crate needs a CMake toolchain.
+  alongside it. `chd-rs` is the heaviest consumer of that list; its one
+  dependency outside it is `rusty_flac`, pure Rust like the rest.
 - No crate declares `[profile]`: only the root's applies, and the root sets
   `opt-level = 3` for dependencies in dev builds precisely because these codecs
   are unreadable at opt-level 0.
@@ -461,9 +466,12 @@ that each reads the other's output, and that our CSO is byte-identical to
 verdicts on repository CHD fixtures, `write.rs` checks that each tool verifies
 and extracts the other's CHDs — plain and clone — byte-identically, `cd.rs`
 compares CHDs built from CUE, GDI and ISO inputs, and `ld.rs` builds its AVIs
-with `ffmpeg`. Where the bytes depend on the compression library rather than on
-the port (LZMA, deflate, zstd) the suites compare the header hashes instead, and
-only demand byte parity under `CHDRS_STRICT_PARITY=1`.
+with `ffmpeg`. Where the bytes depend on the compression library (deflate,
+zstd) the suites compare the header hashes and only demand byte parity under
+`CHDRS_STRICT_PARITY=1`. Where chd-rs uses an encoder other than chdman's —
+LZMA through lzma-rust2, FLAC through rusty_flac, which covers every
+LaserDisc's audio — they never expect the same bytes: chdman must verify our
+CHD and the header hashes must match.
 Those tests **skip rather than fail** when the tool is absent; CI installs
 `mame-tools`, `xdelta3` and `ffmpeg` — all only for the crates' tests — so the
 chd-rs and xdelta-rs comparisons run, and slow cases are `#[ignore]`d. `nsz-rs`

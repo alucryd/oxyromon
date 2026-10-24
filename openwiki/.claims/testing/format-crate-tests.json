@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d6508c5db78797921d9dd27461beb72cf5ebbf4f7dbf24becb288bc186572d2f",
+  "pageVersion": "sha256:4c9c8ca16133c1b97a9afdf90230eb6796ea1a895703a56d6c52aeeb2756d9d1",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -45,7 +45,7 @@
           "version": "repo-lines-v1:sha256:2c825322174c815dc253e8959a90221f34193cc48c82292b0737e1a5b8e38e87:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2VmY2UwODIxZTNjYjg5ZjEyYzg5ZjAxMWM4YWU5MjUyYzlhMmNhMGZkYThjNzJmNWZlNTJjZmZmMzgxOTlkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg5OGFkYWI4OGIyNGZlYTYxZjEyMjUwMmMyMjQ0MTIzNzRmMTBlMTdhMzJiMWJkODY1OGM2MGZjYTVlODNkOCJ9"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L15-L23",
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L16-L24",
           "version": "repo-lines-v1:sha256:4fe0215ff78818532d01d8efcce598c3004a1948900437c53fd81346b8bae72b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3NDBlMWY5YjgwN2Q4ODljMjM2YmIxNTE4M2NlNzFlMTllMTE4NzdhZWI3YzU1OWViODZiZWY4NjAxMmNhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRjNjE4NWNiNWZmMjMxNGE2NDY2NjM2M2M4ZTA3YzU0NWI5Nzc3YjhiMTU0ZGY1NzI1N2E0OWM0MWU1NTMyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzFkYjhiOWYzMWQ4YTllYTNkNTAxNTI3ZWQ5OTkzMDk4ODk4OTk4MzJhMGNhN2RhNGU0ZjNiNjM0YTI2OTJkMCJ9"
         },
         {
@@ -251,11 +251,11 @@
       "statement": "The progress contract is asserted per crate: xps_rs::apply and xdelta_rs::decode callbacks must sum to the patch size, xso_rs::compress to the ISO and xso_rs::decompress to the packed file, gdi_rs::convert to the BIN total matching gdi_rs::input_size including dropped pregaps, chd_rs::create_cd to chd_rs::cd_input_size and to the fixture's exact frame bytes while chd_rs::extract_cd and extract_ld sum to the CHD's logical_size, and nsz-rs adds progress_follows_compression_not_read_ahead, which runs a BKTR update NSP on a one-thread pool and requires every callback to stay under a quarter of the total so the BKTR read-ahead cannot make the bar jump.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/cd.rs#L360-L378",
+          "resource": "repo://crates/chd-rs/tests/cd.rs#L361-L379",
           "version": "repo-lines-v1:sha256:ebf0d7c57fd55d44a5d30a1325196920cb932568ec209f0d83deae450f1cf75f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MzUyNGZhN2IyYWM2MjUyMzM5YTZkNTBmNWVjODM3NTkyOWU3MDEyOTExYzM2NWE1OGEzOGIxMDMzN2JiNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGY0ODRmMTQxMGIwZTk0ZGUxMzZiMjBhOTlkOTEyOTc1ODNjN2VjZGIyMmQwNjYyYjhkOGRjNmUwMzA2NmEifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L274-L278",
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L286-L290",
           "version": "repo-lines-v1:sha256:dae935fff41259b3822dda7376a0f745e7416cdcfff3e30f7eab82834301aa42:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRlMGYyOGQ4MzBkNzZlOGZhNzNhYjViZTcwOWY2Y2JkZDRiNWQwMmZhZWY2OTY2MTVmY2RiZjRmYjExNGUwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFmZTcyNzI0OGU1YWU1MjY2YTRmY2RjOTM1OGZhMmZjYmIxZTBjMjRhNWU2MTQ5NDEwMmZiNmE4NDEyNWJlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzdmMzUwN2ZkYWY3YWJlMzIxNDkwODNhMDcwYzE1NzMzZGNmYzY5MTk4MWE3ZjBjZGYwNzY2ZjJiYmUxNmEyMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTZlMGQ2YWQ4NGNjNWQ0MDQ5ZTAwNzhkMzBlOTdiZDZmNGVmMWM1N2M3YTgyMzZhODljYTlhYmE5NDI5MDVjMCJ9"
         },
         {
@@ -285,7 +285,7 @@
       "statement": "Every crate tests the .part contract in the form its format allows: xso-rs and nsz-rs truncate a packed file so the decode fails mid-write and assert the pre-existing output still reads 'keep me', that no <output>.part survives, and that a later complete run does replace it; xdelta-rs and xps-rs use a one-bit-flipped source (WrongSource) and prove nothing was left behind by counting directory entries; gdi-rs blocks a track's .part with a directory to show a half-written set is neither committed nor over-cleaned; chd-rs shows a CUE naming a missing BIN errors with that name in the message leaving neither disc.chd nor disc.chd.part.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/cd.rs#L335-L358",
+          "resource": "repo://crates/chd-rs/tests/cd.rs#L336-L359",
           "version": "repo-lines-v1:sha256:148f2bd3e626ae73a20d59ea155456bb5a0e61aa8738ef4422b1d807825630e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYTZkMWVhMmMwZWU3NWE2ZDk0ZjVjOTMxNjI5ZGYwMmIzYmVkMmZkOGViNDk5OTFmOWZlZGJmMDc5YjEyMDAifQ"
         },
         {
@@ -325,8 +325,8 @@
       "statement": "Two tests in the crates are ignored: xso-rs/tests/interop.rs's index_shift_round_trips builds a sparse ~2 GiB image, asserts probe reports index_shift 1, round-trips it through xso_rs (and maxcso when available), works in tempdir_in(env!(\"CARGO_TARGET_TMPDIR\")) and compares a MiB at a time; chd-rs/tests/ld.rs's large_laserdiscs_match_chdman handles a >2 GiB OpenDML capture that extracts to a RIFF AVIX split (some 7 GiB of disk), also in CARGO_TARGET_TMPDIR, deleting the source AVI before extracting.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L286-L349",
-          "version": "repo-lines-v1:sha256:f374079ab42bf86d1aa0f54929ac7e5a63d531d0826cb40b79203141c711aa6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YzY1NTYwZjdkODJlYzVhZjAxNmEzOTc3MjNhOThmNmY1OGU2ODFhYmZmZWNlYTRlZDg3MmE2YmFmZGZjMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L298-L357",
+          "version": "repo-lines-v1:sha256:072e4a15876534caf740b7e648c61fc393038cc20d7ace919301cb584bbe3157:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YzY1NTYwZjdkODJlYzVhZjAxNmEzOTc3MjNhOThmNmY1OGU2ODFhYmZmZWNlYTRlZDg3MmE2YmFmZGZjMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://crates/xso-rs/tests/interop.rs#L183-L235",
@@ -343,7 +343,7 @@
           "version": "repo-lines-v1:sha256:6415a0cd1c336697ac15cd211dd7e97c1463617c5310bb9d48c3e957f23b6280:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyZTYyYjA2NzBlZWM4NDk4MTFkYzNiYWM5NDk2MDgwM2NhY2VjZGM0MzNmMmFkYzUwMjcxYTdjNGI3N2RiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDljOGEzNGNlNDM3ZTJmZDNhOTBjOTEzNmRjYWQ4NmMzY2MyOGMzYjRjYzNlYzExYzVkOTg4YWU3YjJiY2NhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc1ZGEwMzc4ZmVkMzZhM2QwNTE0NDY2NjkwMjMzZmNlZjBiMTBiZmI3M2Q3MDk1NTA3MDNlZDRhMDA5MGIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ1YWRjZmU4MmQwZDc4MjBmOGE5ZDA4OWUwMWEyNzU3ZjU3OTdjMGRhZWVkMGU0YmNhMzEwOGMxNmE1NmZiMyJ9"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L286-L291",
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L298-L303",
           "version": "repo-lines-v1:sha256:df821b4a147abe6874ec82dca76be6e173977d83f6adac12e999d77ac9d7a469:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjNjU1NjBmN2Q4MmVjNWFmMDE2YTM5NzcyM2E5OGY2ZjU4ZTY4MWFiZmZlY2VhNGVkODcyYTZiYWZkZmMzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ4YTBhM2JkZDQ5ZmI1MmEzOTRhZGZiYWIzMTc1NTI3YWMzMzE2ZTc5MjQ4MThmNDI3MDhlYjVmOGU5ZmVmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVlNTk5MzM2YTZiMjFhYzhiNGEzYjlhMDA0YjEzMzJhYjBjMTBlNTUzODAxMzUzM2I0NTM2MWY2YTMzZjEzYSJ9"
         },
         {
@@ -409,7 +409,7 @@
           "version": "repo-lines-v1:sha256:f5e0a70763caade568bcb3c3c4d66a5516de7bef7efba4363772c5403c2ec140:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVlMGE3MDc2M2NhYWRlNTY4YmNiM2MzYzRkNjZhNTUxNmRlN2JlZjdlZmJhNDM2Mzc3MmM1NDAzYzJlYzE0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVlMGE3MDc2M2NhYWRlNTY4YmNiM2MzYzRkNjZhNTUxNmRlN2JlZjdlZmJhNDM2Mzc3MmM1NDAzYzJlYzE0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTcxYmExMzYzOTJiOTBhZTNlNDQyNjA2NTdmMDI5ZmJjNjM1MzM1MDlhOWY4M2Y0YzZlNDZjYjIwMDg4ZTIyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmViNDc4ZDJmODUwYjMzM2RkYThjYWU1MWY5NzA2NGZkOGQ5MTUxZmI0NThkNmYzOTdlZTQyN2FjMzgxZDk4NyJ9"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L8-L8",
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L9-L9",
           "version": "repo-lines-v1:sha256:f5e0a70763caade568bcb3c3c4d66a5516de7bef7efba4363772c5403c2ec140:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVlMGE3MDc2M2NhYWRlNTY4YmNiM2MzYzRkNjZhNTUxNmRlN2JlZjdlZmJhNDM2Mzc3MmM1NDAzYzJlYzE0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVlMGE3MDc2M2NhYWRlNTY4YmNiM2MzYzRkNjZhNTUxNmRlN2JlZjdlZmJhNDM2Mzc3MmM1NDAzYzJlYzE0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzliY2ZkNWYwZjA1ZmJiOWRhNTZkMGIxYmM4NTcxNDMwYjFiZWFjOWZjMWM5NjYxNzdlMWIwOTk0NjI5OTliZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmViNDc4ZDJmODUwYjMzM2RkYThjYWU1MWY5NzA2NGZkOGQ5MTUxZmI0NThkNmYzOTdlZTQyN2FjMzgxZDk4NyJ9"
         },
         {
@@ -420,19 +420,19 @@
     },
     {
       "id": "claim_c6b63c1a464f418fae80565d7854a09a",
-      "statement": "chd-rs's parity rule splits codecs by whose library decides the bytes: `none` CHDs are compared to chdman's byte for byte, while the codecs chd-rs encodes with different libraries - LZMA (lzma-rust2), deflate (flate2's zlib-rs, a zlib-ng port) and Zstandard (the zstd crate's bundled 1.5.7) - are compared by the header's raw and data SHA-1s at bytes 64..104 with chdman additionally verifying our CHD, and CHDRS_STRICT_PARITY=1 tightens only the deflate/zstd cases to byte-for-byte, never LZMA.",
+      "statement": "chd-rs's parity rule splits codecs by what decides the bytes: `none` CHDs are compared to chdman's byte for byte, while the codecs whose bytes depend on the linked library - deflate (flate2's zlib-rs, a zlib-ng port) and Zstandard (the zstd crate's bundled 1.5.7) - and those chd-rs encodes with a different encoder - LZMA (lzma-rust2) and FLAC (rusty_flac) - are compared by the header's raw and data SHA-1s at bytes 64..104 with chdman additionally verifying our CHD; CHDRS_STRICT_PARITY=1 tightens only the deflate/zstd cases to byte-for-byte, never LZMA or FLAC.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/README.md#L72-L90",
-          "version": "repo-lines-v1:sha256:88924db36852febdbf7b3bc2bac3c204641893c777dbd29ca2a0307b5d48d3a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMGMzZWIwNjU3ODZlMjcxNjZmYmZmNGU0YmM1Mjc3YzkwNjI4YzcwYzk2MThkNTM1NjE5NWM2MDc3NjE4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWYyYjExNjRmMGRiOWNmNjE2MDZhYWRiNDIwMjI0YTA2NTQxYmE2OTM0ZWQ5Mjg0NDJmYTMxOTE0OGY4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MmNlYjM3ODFmYTk3MTcxM2Y3ODBiZjM2ZDNhMmRiNDkwYzY0NDIxNTU5N2Q3OWI2OTA2ODJiYWFiNDcwZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NTY2OGExNmM1ODkwZWQ0YzVmZTU4MDQyNDQyMmIzODEzZjFjMjFhN2MwMDU0OTQzMDUzNDEwMTljNTI0ODEifQ"
+          "resource": "repo://crates/chd-rs/README.md#L62-L95",
+          "version": "repo-lines-v1:sha256:63deb33a60bf709821531a4e3e4b437d3f37c52b9a83462afa7a671802654d3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlN2Y1NWI3ODVmMTIwYjExNmY5MmNmNDE5YWRjMjk5YWQ3ZjRlMzg5ZDNlM2NmMjYwNDNlMzA5OGVlYTllNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWYyYjExNjRmMGRiOWNmNjE2MDZhYWRiNDIwMjI0YTA2NTQxYmE2OTM0ZWQ5Mjg0NDJmYTMxOTE0OGY4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjBmZDIwYzE3OTMwOWM2MGZiMzM1ZDUzOTgxMGYwODhkYWY4YjFlZGQ2M2JhMGU3Y2Q0NzVlY2NiYmY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYjllNGY4MWI1ZWE5YjZlMDcyNzIwZTMwOTBkOWFkZDBiM2YxNjM2Y2E4MjYwMjJkMjc3Mzc0NzdjYjQ4NTcifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/cd.rs#L258-L331",
-          "version": "repo-lines-v1:sha256:0fa9727bcf297060770d5ab0c1aa573efc7e714d5b3271828ea4fd0719f82d04:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNmZjYTkxNTFkZWExN2NiMmJlYTkzYjJhZjJkOGRhZTg4YmFjMjBmNGU2YjZmMDAxN2IxMDVmNDUzMmUyNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTgwOWQ2ZjliZWQyNjAyNzhlYjI2ZGVjOGRmZDVjOWUwMDVhMzAxNzI4MmU1YjNlMmZhYjZkOTBiMGZhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
+          "resource": "repo://crates/chd-rs/tests/cd.rs#L258-L332",
+          "version": "repo-lines-v1:sha256:51039e4d7ff0777351b5180834707895b8269c1528c5791007192e73461010ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNmZjYTkxNTFkZWExN2NiMmJlYTkzYjJhZjJkOGRhZTg4YmFjMjBmNGU2YjZmMDAxN2IxMDVmNDUzMmUyNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTgwOWQ2ZjliZWQyNjAyNzhlYjI2ZGVjOGRmZDVjOWUwMDVhMzAxNzI4MmU1YjNlMmZhYjZkOTBiMGZhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L71-L105",
-          "version": "repo-lines-v1:sha256:018e7f2f579ab4e206fdac4f29b02d6a9ed43e81df6409118e757eeab2428ad9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3YTRjNTQyNTA1ODg3YmU4Yjc2OGJlZGQ0ZmYzN2E0MTliYWE1NjgwOTFjNWM2NGY3MzExYzIzZjljYzc3ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MWU4YzBhYzVlODZmNGU2OWQ5Mzg4NzRjMTFlOGVlNDZjYzAwMjQxMmM0MTJkNjYwMDUwOGE0N2E0MzU1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWVmMzc0OWMzYmM4YzVlYzkxZjQwNzczZDYxYjRhMmUyNmZkYzI1YWI0N2ZhN2RjNmU0ZWY2ZTM1ZjcyYTAifQ"
+          "resource": "repo://crates/chd-rs/tests/write.rs#L71-L106",
+          "version": "repo-lines-v1:sha256:5de2e44ac0cbdd407c6ec710e044f1a1a187f47d235e79aa84cc672b8c3e5b4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZWQ2OTVmNjgyMDZlMzhmODU0NmE2MmMwYTlkOTc1Y2NjOWVmY2JiMzFkYjg1YjhkZTBlMDJmZjBhMjA2NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MWU4YzBhYzVlODZmNGU2OWQ5Mzg4NzRjMTFlOGVlNDZjYzAwMjQxMmM0MTJkNjYwMDUwOGE0N2E0MzU1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWVmMzc0OWMzYmM4YzVlYzkxZjQwNzczZDYxYjRhMmUyNmZkYzI1YWI0N2ZhN2RjNmU0ZWY2ZTM1ZjcyYTAifQ"
         }
       ]
     },
@@ -441,7 +441,7 @@
       "statement": "cd.rs covers eleven CD parser paths (shared and split BINs with pregaps/postgap, RW/RW_RAW subcode, a WAV track, a disc longer than chdman's work buffer ending mid-hunk, a bare ISO, a GD-ROM GDI, the Redump two-density CUE, and both multisession shapes) for both createcd and extractcd; extraction must reproduce chdman's CUE/GDI/TOC and every BIN byte for byte while progress sums to the CHD's logical size.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/cd.rs#L396-L451",
+          "resource": "repo://crates/chd-rs/tests/cd.rs#L397-L452",
           "version": "repo-lines-v1:sha256:7cd841b829b15f2dd0722ce3862efd15ecb7b1f80695a5162578b9379617d307:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MDA0MjU1OTVhOTdmMTI3NWYxOTkxYmFhNTM4MGFlNjY2NWU1ZmM5ZDliYjU3NWFlNDExODA3ZWI3NDJmY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -455,34 +455,34 @@
       "statement": "write.rs proves write-path interchangeability for hard disks, DVDs and parent-relative clones - chdman reads what chdrs wrote (verify plus extracthd back to the original image, with -ip for clones) and chdrs reads what chdman wrote - and pins chdman's never-cleared 256-hunk work buffer, whose stale bytes land in a partly filled last hunk (or the parent's, when cloning).",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L107-L206",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L108-L207",
           "version": "repo-lines-v1:sha256:1eaf27009c8f4a9420f4bd00c94426fd6b6ac66a4b74bbf893efa7eb2c9d7d12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNmI2N2Y1YTUzMDdlODMxNzIxM2EyZDZlNmFiZDFkY2YxMmQ0M2Y1MGYxNDU3MmRjYmYzZWFkNzEwNzRkNDAxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYWVhZTNkMmI4NTQ3ZGFmNzU2ZjFhMTdiMWYxYzZlNGFkNTM1OWI5NGNmODAxZDdhYzQzMGUwY2VlMjBmZjAxIn0"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L249-L327",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L250-L328",
           "version": "repo-lines-v1:sha256:bbc946a72ff26582598556487411abef81b730c9df64de03b5ae14f0f4573bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYmEzZDBkZWViMjU4NzE1M2MyOWJiNDNmZThkZDNhNTBiYzIzNWY3YzAxMTYyMzA0ZmIwNGQwNzkzMDc3OGIifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L357-L440",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L358-L441",
           "version": "repo-lines-v1:sha256:343f0dda61234a245aaa13b66421c2ce60eee0f28f724a1b7c0117c3e6ec2424:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MzM3OTQzZDIyMGFiMjE4YTYzMzNlYmVhNGI2YWE2N2M2MTQyNGU5Nzg2MjNmMDllMzI5MzlkNzhhZjZkNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_38fb2d32353c4d69853a6dcf0184dd55",
-      "statement": "ld.rs generates LaserDisc AVIs with ffmpeg across every layout chdman reads (interlaced NTSC, PAL, 60 fps progressive mono, 8-bit audio, UYVY, left-predicted HuffYUV, plus raw YUV frames carrying hand-built 24-bit Manchester VBI codes on lines 16-18 whose picture numbers sometimes disagree) and requires chdrs's CHDs to equal chdman createld's byte for byte and chd_rs::extract_ld's AVI to equal chdman extractld's.",
+      "statement": "ld.rs generates LaserDisc AVIs with ffmpeg across every layout chdman reads (interlaced NTSC, PAL, 60 fps progressive mono, 8-bit audio, UYVY, left-predicted HuffYUV, plus raw YUV frames carrying hand-built 24-bit Manchester VBI codes on lines 16-18 whose picture numbers sometimes disagree); because their audio is FLAC-coded by rusty_flac, it requires chdman to verify chdrs's CHDs and their header hashes to equal chdman createld's rather than the same bytes, while chd_rs::extract_ld's AVI must still equal chdman extractld's byte for byte.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L1-L6",
-          "version": "repo-lines-v1:sha256:30962f74d17108f1b5994442334bc7e03c872ff418f2e8287386d90b46f6ae87:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVkZTM4NWNjMzVjNzgzZjhmM2JjMjk2OWE1OTY0MjEzOTMxZDg5MjcxOGE1NTRjNWFhNjkyM2U2ZmJiYjM1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTNlODA0ZTJhYWZlOWE4Zjk0NzU2OWQyMmY2M2QxOGQxNzQxZTM0ZjQxZTNkZDUwYTliZjgxNDIzZTUxYWJjNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ1NGU3MzE2OWIzMGVkNzA1OTNmMDFmZTBmMjEwYTY3NGY0OGE5ZThlODNjODYwZDIzZjMyMTlkZGNhODg3YyJ9"
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L1-L7",
+          "version": "repo-lines-v1:sha256:e98429f072dbfc5b1bdb4d13bef49ca40b3e364451d899f7ebbcfd59bbe7a293:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVkZTM4NWNjMzVjNzgzZjhmM2JjMjk2OWE1OTY0MjEzOTMxZDg5MjcxOGE1NTRjNWFhNjkyM2U2ZmJiYjM1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJmMzk4ODBhNDIxNjQwYzBkOTc0YTQwYTUzMTQ0Y2NjYTkyZjBkZjg3NzA3NGM1YTZhNDNlYjc3ZmUyNjI0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ1NGU3MzE2OWIzMGVkNzA1OTNmMDFmZTBmMjEwYTY3NGY0OGE5ZThlODNjODYwZDIzZjMyMTlkZGNhODg3YyJ9"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L122-L237",
-          "version": "repo-lines-v1:sha256:768060627f4c921607fe860e9d0796b6a7aad4ed91a3c621bcbcdbaa0430aeb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MTYyYjEwNzU1Nzg0MTM5Mjk5NmRmYWYzZTJhMWY3NTRjY2E4ZWUyYzRkMjZiNjM2MGNkYzIyODNkMDBkM2QwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyZjhiMmEwMjBkOTk2NzEyYTQwOTA0YjAzNzE5NTg5MTVhNTU5OTcxMjI0YmM5NDNjMDM3ZDUzM2MyOGFlODNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ODUyMGI3MzJjMTdmY2VmYzAxNzIxNDA0MjQzNmFkMjNiZDYyZjU0M2U5OGE5NGI3ZDc5OGFjZDBmZDE5ZjVjIn0"
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L123-L238",
+          "version": "repo-lines-v1:sha256:768060627f4c921607fe860e9d0796b6a7aad4ed91a3c621bcbcdbaa0430aeb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MTYyYjEwNzU1Nzg0MTM5Mjk5NmRmYWYzZTJhMWY3NTRjY2E4ZWUyYzRkMjZiNjM2MGNkYzIyODNkMDBkM2QwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyZjhiMmEwMjBkOTk2NzEyYTQwOTA0YjAzNzE5NTg5MTVhNTU5OTcxMjI0YmM5NDNjMDM3ZDUzM2MyOGFlODNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOTNkYzkzZDg1Mzk4ZGU2MmUwMGFhYmJiZDM3MGYzOTBjZmE1NGZhNjFhNmZmYjJjNzliYWU5YjQ0MjBhYjNhIn0"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/ld.rs#L239-L284",
-          "version": "repo-lines-v1:sha256:0b198073f3e536188ca9b9e7c5b1eb318b0db577f592fa99c73f804450f3a423:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTgwOWQ2ZjliZWQyNjAyNzhlYjI2ZGVjOGRmZDVjOWUwMDVhMzAxNzI4MmU1YjNlMmZhYjZkOTBiMGZhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMWQ5YzBmOTdiZDQzMmViNjExOGYwZjQ4ZDNmODVkZjEzODcyMTk2YzNjM2ZhNjUwOTk0YTkwMGZiYzc4YTUifQ"
+          "resource": "repo://crates/chd-rs/tests/ld.rs#L240-L296",
+          "version": "repo-lines-v1:sha256:b96bb88275fad07a08b88bf14a430cd319bda686a30ad566406cc50f9947d528:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYTQzNzg4Mzg4NGQ5ZWIwNmQ5NGIxMThlMzQyYzdjOTQ2ZDRlNWFhNDdmYjczMzQ2M2FiMDMyY2FlMGZmNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTgwOWQ2ZjliZWQyNjAyNzhlYjI2ZGVjOGRmZDVjOWUwMDVhMzAxNzI4MmU1YjNlMmZhYjZkOTBiMGZhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjMWQ5YzBmOTdiZDQzMmViNjExOGYwZjQ4ZDNmODVkZjEzODcyMTk2YzNjM2ZhNjUwOTk0YTkwMGZiYzc4YTUifQ"
         }
       ]
     },
@@ -505,7 +505,7 @@
       "statement": "On a corrupt header chdrs diverges from the reference on purpose and the suite pins it: flipping the first byte of the header's raw SHA-1 makes `chdrs verify` exit non-zero and print the header value then the computed value to stderr, where chdman exits successfully.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/README.md#L118-L122",
+          "resource": "repo://crates/chd-rs/README.md#L120-L124",
           "version": "repo-lines-v1:sha256:b31882e82ee0f8033a2643c76ec0258f0e6c93f7018e23b6108575b32e933f17:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI5OTljY2FlM2I5OWEyOGMxNjYyZWQ1ZWE2MzM0OTI4NzIxNGU1Yzg5MDEyZTM3ZGI1Njk0Y2VhNDhlMGQ3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM3NzZjMTBjYTc1YzI0ZGRlYTBkZGU5ZDM5OWMwMWJlMjViMTc2NjEzNjY5NGE0YjY0MDFjOWY1MWNhODljYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmExMzNjYWE5OTY3MzgyYzdmNTY3ODk0MWI0MTMwMzc2MTRkYTY0MzYxMjMxNWEyODcyNTdlYWZiZjU4ZWM0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhmMWE4ZWVmNjlhODExN2M0ZDI5Y2RlNTZhN2I4YjMxNmMzZmUxOWRkOTI5OGViNDdjZjc2M2FmYzEyOGJlYyJ9"
         },
         {
@@ -549,6 +549,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-24T21:19:09.823Z"
   }
 }

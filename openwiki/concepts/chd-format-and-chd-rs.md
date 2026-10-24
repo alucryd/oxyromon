@@ -6,6 +6,8 @@ tags: [chd, chd-rs, formats, compression, cd, dvd, laserdisc, hard-disk, parents
 sources:
   - id: openwiki-source-f652141db50cb9f0dce8c6fe
     resource: repo://crates/chd-rs/README.md
+  - id: openwiki-source-a057427619dc76389568b31f
+    resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-9e7b31d1c4f2e7701a37b802
     resource: repo://crates/chd-rs/src/lib.rs
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
@@ -20,10 +22,10 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # CHD Format and the chd-rs Crate
@@ -190,8 +192,13 @@ The `chdrs` CLI, behind the default `cli` feature, wraps the same calls with
 the shared format-crate shell. Reading covers CHD v3 to v5; writing emits v5.
 Compatibility targets chdman 0.289: CUE and GDI parsing, the CD frame layout
 and metadata, and extraction follow that version. Most codec bitstreams match
-chdman's by construction, while LZMA goes through `lzma-rust2` and produces
-different, equally decodable bytes. The crate's tests compare against chdman
+chdman's by construction. Two do not: LZMA goes through `lzma-rust2`, and FLAC
+(the `flac` and `cdfl` codecs, and the audio of `avhu`) through the pure-Rust
+`rusty_flac` at the block size MAME derives per hunk and level 8. Both produce
+different, equally decodable bytes, and the CHD's data hashes are unchanged.
+chd-rs's FLAC module decodes a hunk's headerless frames against the fixed
+STREAMINFO MAME synthesizes, and strips the 42-byte container the encoder
+writes before them. The crate's tests compare against chdman
 when it is installed and skip otherwise; see
 [Format Crate Test Strategy](../testing/format-crate-tests.md).
 

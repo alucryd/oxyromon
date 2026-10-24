@@ -1,7 +1,7 @@
 ---
 type: test strategy
 title: Format Crate Test Strategy
-description: How the seven crates under crates/ prove correctness against their upstream references - chd-rs's byte-for-byte parity suites against the reference chdman binary (with LZMA and, by default, deflate/Zstandard hunks compared by header hash instead), round-trip suites that exercise a crate alone, interop suites that run chdman, ctrtool, maxcso, xdelta3 or Flips and skip rather than fail when a tool is absent, cross-language known-answer vectors for nsz-rs crypto, byte-sweep malformed-input suites, the repeated progress and .part invariants, and the two ignored slow tests.
+description: How the seven crates under crates/ prove correctness against their upstream references - chd-rs's byte-for-byte parity suites against the reference chdman binary (with LZMA, FLAC and, by default, deflate/Zstandard hunks compared by header hash instead), round-trip suites that exercise a crate alone, interop suites that run chdman, ctrtool, maxcso, xdelta3 or Flips and skip rather than fail when a tool is absent, cross-language known-answer vectors for nsz-rs crypto, byte-sweep malformed-input suites, the repeated progress and .part invariants, and the two ignored slow tests.
 tags: [testing, crates, interop, parity, chdman, known-answer-vectors, roundtrip, ignore, fixtures, ci]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -66,10 +66,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Format Crate Test Strategy
@@ -236,8 +236,10 @@ readability — they compare our output to chdman's byte for byte.
   — interlaced NTSC, PAL, 60 fps progressive mono, 8-bit audio, UYVY, left
   predicted HuffYUV — plus one fixture whose raw YUV frames carry hand-built VBI
   Manchester codes on lines 16–18, including picture numbers that disagree.
-  Those CHDs must be byte-identical to `chdman createld`'s, and the AVI
-  `chd_rs::extract_ld` writes must be byte-identical to `chdman extractld`'s.
+  Their audio is FLAC, so those CHDs are not chdman's bytes: chdman must
+  `verify` ours and the header hashes must equal `chdman createld`'s. The AVI
+  `chd_rs::extract_ld` writes from chdman's CHD must still be byte-identical to
+  `chdman extractld`'s.
 - **`tests/cli.rs`** compares `chdrs info` and `chdrs verify` to chdman over the
   three repository CHD fixtures (the `(RDSK)` LaserDisc one is left out because
   the `avhu` codec is not ported), stripping chdman's banner and carriage-return
@@ -252,26 +254,28 @@ flowchart TD
   C --> D
   D -- "none" --> E["byte-for-byte compare"]
   D -- "deflate or zstd with CHDRS_STRICT_PARITY" --> E
-  D -- "LZMA always, zstd otherwise" --> F["chdman verify ours.chd"]
+  D -- "LZMA and FLAC always, deflate or zstd otherwise" --> F["chdman verify ours.chd"]
   F --> G["compare header bytes 64 to 104, the raw and data SHA1s"]
 ```
 
-*Caption: the parity rule — library-independent codecs must match chdman's bytes exactly; codecs whose bytes depend on the linked library must match its header hashes and survive its own verify.*
+*Caption: the parity rule — library-independent codecs must match chdman's bytes exactly; codecs whose bytes depend on the linked library or on a different encoder must match its header hashes and survive its own verify.*
 
 The exception is not slack, it is a property of the encoders. `tests/cd.rs` sorts
 the codec lists into `IDENTICAL` (`none`), `LIBRARY` (`cdzs`, `zstd`, `cdzl`,
-`cdfl`, `zlib`) and `LZMA` (`cdlz`, `cdlz,cdzl,cdfl`, `lzma`); `tests/write.rs`
-applies the same rule from the codec string. Deflate goes through `flate2`'s
+`zlib`) and `OWN_ENCODERS` (`cdlz,cdzl,cdfl`, `cdlz`, `lzma`, `cdfl`);
+`tests/write.rs` applies the same rule from the codec string, and `tests/ld.rs`
+always uses it. Deflate goes through `flate2`'s
 `zlib-rs` backend — a port of zlib-ng, so it matches a chdman linked against
 zlib-ng, not one linked against classic zlib — and Zstandard through the `zstd`
 crate, which bundles 1.5.7, as Arch's chdman does, rather than the 1.5.5 MAME
 bundles, as Debian's and Ubuntu's do. LZMA goes through `lzma-rust2` rather than
-MAME's LZMA SDK encoder. For those, byte identity is not achievable against an
+MAME's LZMA SDK encoder, and FLAC through the pure-Rust `rusty_flac` rather than
+libFLAC. For those, byte identity is not achievable against an
 arbitrary chdman build, so the suites compare the header's raw and data SHA-1s
 (`ours[64..104]`), which cover the data and the metadata, and additionally make
 chdman `verify` our CHD. Setting `CHDRS_STRICT_PARITY=1` tightens the deflate and
 Zstandard cases to byte-for-byte — valid only against a chdman linking zlib-ng and
-zstd 1.5.7; LZMA never tightens.
+zstd 1.5.7; LZMA and FLAC never tighten.
 
 Parity here also extends to behaviour the reference gets wrong on purpose.
 

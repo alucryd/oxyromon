@@ -174,3 +174,8 @@ lto = "thin"
 strip = true
 codegen-units = 1
 panic = "abort"
+
+# ponytail: Encoder::set_block_size is not released yet; drop once rusty_flac
+# publishes it and chd-rs bumps its version
+[patch.crates-io]
+rusty_flac = { git = "https://github.com/alucryd/rusty_flac", branch = "feat/block-size" }

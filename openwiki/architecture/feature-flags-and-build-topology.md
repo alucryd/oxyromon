@@ -20,6 +20,8 @@ sources:
     resource: repo://CHANGELOG.md
   - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
     resource: repo://crates/chd-rs/Cargo.toml
+  - id: openwiki-source-a057427619dc76389568b31f
+    resource: repo://crates/chd-rs/src/flac.rs
   - id: openwiki-source-0bc9c609aef896964e961315
     resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
@@ -72,10 +74,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T19:46:38.984Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Feature Flags and Build Topology
@@ -318,10 +320,11 @@ The container image takes the opposite route and does not set `SKIP_TRUNK`: the
 single Alpine-based `Dockerfile` installs trunk and the wasm target and runs
 `cargo install --features server`. It downloads trunk's musl build, which runs
 natively on Alpine along with the wasm-bindgen and wasm-opt binaries it fetches,
-so no glibc shim is needed. Two more build-only packages fill gaps the CI runner
-covers by default: `cmake`, which `libflac-sys` needs to build the FLAC codec for
-`chd-rs`, and GNU `tar`, because the web UI's `fetch-webawesome.sh` hook extracts
-one directory by name, which BusyBox tar cannot do.
+so no glibc shim is needed. One more build-only package fills a gap the CI runner
+covers by default: GNU `tar`, because the web UI's `fetch-webawesome.sh` hook
+extracts one directory by name, which BusyBox tar cannot do. CMake is no longer
+installed: `chd-rs` takes its FLAC codec from the pure-Rust `rusty_flac` rather
+than `libflac-sys`, and nothing else in the build graph enables the `cmake` crate.
 
 ## Workspace topology and the format crates
 
@@ -416,8 +419,13 @@ published as-is, because crates.io rejects git dependencies:
 
 - `nod = { git = "https://github.com/encounter/nod", tag = "v2.0.0-alpha.12" }` —
   pinned to a git tag until `nod` publishes past 2.0.0-alpha.9 to crates.io. It
-  is the only remaining git source in `Cargo.lock`, and it must return to a plain
-  version requirement before a release.
+  must return to a plain version requirement before a release.
+- `[patch.crates-io] rusty_flac = { git = "https://github.com/alucryd/rusty_flac",
+  branch = "feat/block-size" }` — `chd-rs` asks for `rusty_flac = "0.2.2"`, but
+  it calls `Encoder::set_block_size`, which only that fork branch has so far. A
+  patch does not travel with a published crate, so `chd-rs` cannot be published
+  until a rusty_flac release carries the method and `chd-rs` requires that
+  version; the patch is then dropped.
 
 `sevenz-rust2`, which an earlier release pinned to a fork revision, is back on the
 registry (`0.24.0`, `features = ["zstd"]`) and no longer blocks anything. Both
