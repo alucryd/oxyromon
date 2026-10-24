@@ -8,7 +8,6 @@ use anyhow::Result;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::path::Path;
 use std::time::Duration;
 
 pub fn subcommand() -> Command {
@@ -60,13 +59,11 @@ pub async fn purge_system(
     print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
-    let trash_directory = get_trash_directory(connection, Some(system)).await?;
 
     for romfile in romfiles {
-        let new_path = trash_directory.join(Path::new(&romfile.path).file_name().unwrap());
-        romfile
-            .as_common(connection)
-            .await?
+        let common_romfile = romfile.as_common(connection).await?;
+        let new_path = get_trash_path(connection, Some(system), &common_romfile.path).await?;
+        common_romfile
             .rename(progress_bar, &new_path, false)
             .await?
             .update(connection, progress_bar, romfile.id)

@@ -954,9 +954,7 @@ pub async fn reimport_orphan_romfiles(
             )
             .await?;
             if game_ids.is_empty() {
-                let new_path = get_trash_directory(connection, Some(&system))
-                    .await?
-                    .join(romfile.path.file_name().unwrap().to_str().unwrap());
+                let new_path = get_trash_path(connection, Some(&system), &romfile.path).await?;
                 romfile
                     .rename(progress_bar, &new_path, false)
                     .await?
