@@ -69,7 +69,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-24T21:55:54.894Z
 ---
 
 # Format Crate Test Strategy

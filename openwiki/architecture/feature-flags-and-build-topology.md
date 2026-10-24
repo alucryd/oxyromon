@@ -74,10 +74,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-24T21:55:54.894Z
 ---
 
 # Feature Flags and Build Topology
@@ -324,7 +324,11 @@ so no glibc shim is needed. One more build-only package fills a gap the CI runne
 covers by default: GNU `tar`, because the web UI's `fetch-webawesome.sh` hook
 extracts one directory by name, which BusyBox tar cannot do. CMake is no longer
 installed: `chd-rs` takes its FLAC codec from the pure-Rust `rusty_flac` rather
-than `libflac-sys`, and nothing else in the build graph enables the `cmake` crate.
+than `libflac-sys`, and nothing else invokes the `cmake` binary. The `cmake` crate
+does stay in `Cargo.lock`, as a build dependency of `aws-lc-sys` (rustls's crypto
+backend, through `reqwest`), but `aws-lc-sys` builds with its `cc` builder and
+reaches for CMake only in configurations the Alpine build does not use, such as
+FIPS or `AWS_LC_SYS_CMAKE_BUILDER`.
 
 ## Workspace topology and the format crates
 
@@ -421,8 +425,10 @@ published as-is, because crates.io rejects git dependencies:
   pinned to a git tag until `nod` publishes past 2.0.0-alpha.9 to crates.io. It
   must return to a plain version requirement before a release.
 - `[patch.crates-io] rusty_flac = { git = "https://github.com/alucryd/rusty_flac",
-  branch = "feat/block-size" }` — `chd-rs` asks for `rusty_flac = "0.2.2"`, but
-  it calls `Encoder::set_block_size`, which only that fork branch has so far. A
+  rev = "563068c…" }` — `chd-rs` asks for `rusty_flac = "0.2.2"`, but it calls
+  `Encoder::set_block_size`, which only the fork's `feat/block-size` branch has
+  so far. The patch names a revision rather than the branch, so a `cargo update`
+  cannot move it when the branch moves. A
   patch does not travel with a published crate, so `chd-rs` cannot be published
   until a rusty_flac release carries the method and `chd-rs` requires that
   version; the patch is then dropped.

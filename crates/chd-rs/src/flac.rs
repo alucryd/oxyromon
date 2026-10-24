@@ -19,8 +19,10 @@ const CD_CHANNELS: u32 = 2;
 const CD_SAMPLE_RATE: u32 = 44_100;
 
 /// The container rusty_flac writes before the frames: the `fLaC` magic, then
-/// its one metadata block, STREAMINFO, as a 4-byte header and 34-byte body.
-const CONTAINER_SIZE: usize = 4 + 4 + 34;
+/// its one metadata block, STREAMINFO, as a 4-byte header (last block, type 0,
+/// 34 bytes long) and its 34-byte body.
+const CONTAINER_HEADER: &[u8; 8] = b"fLaC\x80\x00\x00\x22";
+const CONTAINER_SIZE: usize = CONTAINER_HEADER.len() + 34;
 
 /// Decodes a headerless FLAC `payload` of 44.1 kHz stereo into `out`, where
 /// `block_size` is the block size the encoder used and the samples are
@@ -137,7 +139,13 @@ pub(crate) fn flac_encode_with(
         .collect();
     encoder.push_interleaved(&samples).map_err(compression)?;
     let mut stream = encoder.finish();
-    debug_assert!(stream.starts_with(b"fLaC") && stream[4] == 0x80);
+    // the frames are cut at a fixed offset, so a container of another shape
+    // would misalign every hunk: refuse it in release builds too
+    if stream.len() < CONTAINER_SIZE || !stream.starts_with(CONTAINER_HEADER) {
+        return Err(Error::Compression(
+            "unexpected FLAC container: not fLaC and a single STREAMINFO".to_string(),
+        ));
+    }
     stream.drain(..CONTAINER_SIZE);
     Ok(stream)
 }

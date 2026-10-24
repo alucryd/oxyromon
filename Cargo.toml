@@ -176,6 +176,7 @@ codegen-units = 1
 panic = "abort"
 
 # ponytail: Encoder::set_block_size is not released yet; drop once rusty_flac
-# publishes it and chd-rs bumps its version
+# publishes it and chd-rs bumps its version. Pinned to a revision so a
+# `cargo update` cannot move it with the fork's branch
 [patch.crates-io]
-rusty_flac = { git = "https://github.com/alucryd/rusty_flac", branch = "feat/block-size" }
+rusty_flac = { git = "https://github.com/alucryd/rusty_flac", rev = "563068c861ed352b9096a8cb958293418d2e6fe4" }

@@ -114,10 +114,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-24T21:55:54.894Z
 ---
 
 # Format Crates in crates/
@@ -159,8 +159,9 @@ the platform libm), `lzma-rust2`, `flate2` with the `zlib-rs` backend, `zstd`,
 `sha1`, `crc32fast` and `rayon`. It needs no CMake: FLAC used to come from
 `libflac-sys`, which built a vendored libFLAC. chd-rs calls
 `Encoder::set_block_size`, which no rusty_flac release has yet, so the root
-`Cargo.toml` patches `rusty_flac` to the `feat/block-size` branch of the
-alucryd/rusty_flac fork until one does. Its `chdrs` CLI sits behind the same default `cli` feature as the
+`Cargo.toml` patches `rusty_flac` to a revision of the alucryd/rusty_flac fork's
+`feat/block-size` branch until one does. It names the revision, not the branch,
+so a `cargo update` cannot move it. Its `chdrs` CLI sits behind the same default `cli` feature as the
 others, and oxyromon depends on the crate with `default-features = false`, so
 none of the CLI stack is linked into the organizer.
 

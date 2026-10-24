@@ -22,10 +22,10 @@ sources:
     resource: repo://src/import_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-24T21:55:54.894Z
 ---
 
 # CHD Format and the chd-rs Crate
@@ -198,7 +198,11 @@ chdman's by construction. Two do not: LZMA goes through `lzma-rust2`, and FLAC
 different, equally decodable bytes, and the CHD's data hashes are unchanged.
 chd-rs's FLAC module decodes a hunk's headerless frames against the fixed
 STREAMINFO MAME synthesizes, and strips the 42-byte container the encoder
-writes before them. The crate's tests compare against chdman
+writes before them. Since the frames are cut at that fixed offset, it first
+checks, in release builds too, that the stream starts with `fLaC` and a single
+34-byte STREAMINFO block, and fails the hunk with a compression error if not,
+rather than misaligning every hunk should a later rusty_flac change its
+container. The crate's tests compare against chdman
 when it is installed and skip otherwise; see
 [Format Crate Test Strategy](../testing/format-crate-tests.md).
 

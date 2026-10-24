@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4c9c8ca16133c1b97a9afdf90230eb6796ea1a895703a56d6c52aeeb2756d9d1",
+  "pageVersion": "sha256:38a574c4df498e769e34a3e2008bc4e4c16aed1d173723b73a45eb1c63fb9d40",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -423,16 +423,16 @@
       "statement": "chd-rs's parity rule splits codecs by what decides the bytes: `none` CHDs are compared to chdman's byte for byte, while the codecs whose bytes depend on the linked library - deflate (flate2's zlib-rs, a zlib-ng port) and Zstandard (the zstd crate's bundled 1.5.7) - and those chd-rs encodes with a different encoder - LZMA (lzma-rust2) and FLAC (rusty_flac) - are compared by the header's raw and data SHA-1s at bytes 64..104 with chdman additionally verifying our CHD; CHDRS_STRICT_PARITY=1 tightens only the deflate/zstd cases to byte-for-byte, never LZMA or FLAC.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/README.md#L62-L95",
-          "version": "repo-lines-v1:sha256:63deb33a60bf709821531a4e3e4b437d3f37c52b9a83462afa7a671802654d3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlN2Y1NWI3ODVmMTIwYjExNmY5MmNmNDE5YWRjMjk5YWQ3ZjRlMzg5ZDNlM2NmMjYwNDNlMzA5OGVlYTllNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWYyYjExNjRmMGRiOWNmNjE2MDZhYWRiNDIwMjI0YTA2NTQxYmE2OTM0ZWQ5Mjg0NDJmYTMxOTE0OGY4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjBmZDIwYzE3OTMwOWM2MGZiMzM1ZDUzOTgxMGYwODhkYWY4YjFlZGQ2M2JhMGU3Y2Q0NzVlY2NiYmY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYjllNGY4MWI1ZWE5YjZlMDcyNzIwZTMwOTBkOWFkZDBiM2YxNjM2Y2E4MjYwMjJkMjc3Mzc0NzdjYjQ4NTcifQ"
+          "resource": "repo://crates/chd-rs/README.md#L62-L94",
+          "version": "repo-lines-v1:sha256:7d5105d0ededbfe001ebed016e0e314f284b5e403e781213bb3d3e7410b69385:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlN2Y1NWI3ODVmMTIwYjExNmY5MmNmNDE5YWRjMjk5YWQ3ZjRlMzg5ZDNlM2NmMjYwNDNlMzA5OGVlYTllNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWYyYjExNjRmMGRiOWNmNjE2MDZhYWRiNDIwMjI0YTA2NTQxYmE2OTM0ZWQ5Mjg0NDJmYTMxOTE0OGY4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjBmZDIwYzE3OTMwOWM2MGZiMzM1ZDUzOTgxMGYwODhkYWY4YjFlZGQ2M2JhMGU3Y2Q0NzVlY2NiYmY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYjllNGY4MWI1ZWE5YjZlMDcyNzIwZTMwOTBkOWFkZDBiM2YxNjM2Y2E4MjYwMjJkMjc3Mzc0NzdjYjQ4NTcifQ"
         },
         {
           "resource": "repo://crates/chd-rs/tests/cd.rs#L258-L332",
           "version": "repo-lines-v1:sha256:51039e4d7ff0777351b5180834707895b8269c1528c5791007192e73461010ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNmZjYTkxNTFkZWExN2NiMmJlYTkzYjJhZjJkOGRhZTg4YmFjMjBmNGU2YjZmMDAxN2IxMDVmNDUzMmUyNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTgwOWQ2ZjliZWQyNjAyNzhlYjI2ZGVjOGRmZDVjOWUwMDVhMzAxNzI4MmU1YjNlMmZhYjZkOTBiMGZhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L71-L106",
-          "version": "repo-lines-v1:sha256:5de2e44ac0cbdd407c6ec710e044f1a1a187f47d235e79aa84cc672b8c3e5b4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZWQ2OTVmNjgyMDZlMzhmODU0NmE2MmMwYTlkOTc1Y2NjOWVmY2JiMzFkYjg1YjhkZTBlMDJmZjBhMjA2NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MWU4YzBhYzVlODZmNGU2OWQ5Mzg4NzRjMTFlOGVlNDZjYzAwMjQxMmM0MTJkNjYwMDUwOGE0N2E0MzU1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWVmMzc0OWMzYmM4YzVlYzkxZjQwNzczZDYxYjRhMmUyNmZkYzI1YWI0N2ZhN2RjNmU0ZWY2ZTM1ZjcyYTAifQ"
+          "resource": "repo://crates/chd-rs/tests/write.rs#L71-L105",
+          "version": "repo-lines-v1:sha256:3f5989180a3f14a726005088cb3689ca534a0adcb3e1723a7c15b7056bc87951:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZWQ2OTVmNjgyMDZlMzhmODU0NmE2MmMwYTlkOTc1Y2NjOWVmY2JiMzFkYjg1YjhkZTBlMDJmZjBhMjA2NzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2MWU4YzBhYzVlODZmNGU2OWQ5Mzg4NzRjMTFlOGVlNDZjYzAwMjQxMmM0MTJkNjYwMDUwOGE0N2E0MzU1OWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWVmMzc0OWMzYmM4YzVlYzkxZjQwNzczZDYxYjRhMmUyNmZkYzI1YWI0N2ZhN2RjNmU0ZWY2ZTM1ZjcyYTAifQ"
         }
       ]
     },
@@ -455,15 +455,15 @@
       "statement": "write.rs proves write-path interchangeability for hard disks, DVDs and parent-relative clones - chdman reads what chdrs wrote (verify plus extracthd back to the original image, with -ip for clones) and chdrs reads what chdman wrote - and pins chdman's never-cleared 256-hunk work buffer, whose stale bytes land in a partly filled last hunk (or the parent's, when cloning).",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L108-L207",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L107-L206",
           "version": "repo-lines-v1:sha256:1eaf27009c8f4a9420f4bd00c94426fd6b6ac66a4b74bbf893efa7eb2c9d7d12:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNmI2N2Y1YTUzMDdlODMxNzIxM2EyZDZlNmFiZDFkY2YxMmQ0M2Y1MGYxNDU3MmRjYmYzZWFkNzEwNzRkNDAxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYWVhZTNkMmI4NTQ3ZGFmNzU2ZjFhMTdiMWYxYzZlNGFkNTM1OWI5NGNmODAxZDdhYzQzMGUwY2VlMjBmZjAxIn0"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L250-L328",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L249-L327",
           "version": "repo-lines-v1:sha256:bbc946a72ff26582598556487411abef81b730c9df64de03b5ae14f0f4573bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliYmEzZDBkZWViMjU4NzE1M2MyOWJiNDNmZThkZDNhNTBiYzIzNWY3YzAxMTYyMzA0ZmIwNGQwNzkzMDc3OGIifQ"
         },
         {
-          "resource": "repo://crates/chd-rs/tests/write.rs#L358-L441",
+          "resource": "repo://crates/chd-rs/tests/write.rs#L357-L440",
           "version": "repo-lines-v1:sha256:343f0dda61234a245aaa13b66421c2ce60eee0f28f724a1b7c0117c3e6ec2424:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3MzM3OTQzZDIyMGFiMjE4YTYzMzNlYmVhNGI2YWE2N2M2MTQyNGU5Nzg2MjNmMDllMzI5MzlkNzhhZjZkNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -505,7 +505,7 @@
       "statement": "On a corrupt header chdrs diverges from the reference on purpose and the suite pins it: flipping the first byte of the header's raw SHA-1 makes `chdrs verify` exit non-zero and print the header value then the computed value to stderr, where chdman exits successfully.",
       "evidence": [
         {
-          "resource": "repo://crates/chd-rs/README.md#L120-L124",
+          "resource": "repo://crates/chd-rs/README.md#L119-L123",
           "version": "repo-lines-v1:sha256:b31882e82ee0f8033a2643c76ec0258f0e6c93f7018e23b6108575b32e933f17:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI5OTljY2FlM2I5OWEyOGMxNjYyZWQ1ZWE2MzM0OTI4NzIxNGU1Yzg5MDEyZTM3ZGI1Njk0Y2VhNDhlMGQ3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM3NzZjMTBjYTc1YzI0ZGRlYTBkZGU5ZDM5OWMwMWJlMjViMTc2NjEzNjY5NGE0YjY0MDFjOWY1MWNhODljYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmExMzNjYWE5OTY3MzgyYzdmNTY3ODk0MWI0MTMwMzc2MTRkYTY0MzYxMjMxNWEyODcyNTdlYWZiZjU4ZWM0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDhmMWE4ZWVmNjlhODExN2M0ZDI5Y2RlNTZhN2I4YjMxNmMzZmUxOWRkOTI5OGViNDdjZjc2M2FmYzEyOGJlYyJ9"
         },
         {
@@ -549,6 +549,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T21:19:09.823Z"
+    "at": "2026-10-24T21:55:54.894Z"
   }
 }

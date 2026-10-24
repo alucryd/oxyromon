@@ -3681,7 +3681,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 [[package]]
 name = "rusty_flac"
 version = "0.2.2"
-source = "git+https://github.com/alucryd/rusty_flac?branch=feat%2Fblock-size#563068c861ed352b9096a8cb958293418d2e6fe4"
+source = "git+https://github.com/alucryd/rusty_flac?rev=563068c861ed352b9096a8cb958293418d2e6fe4#563068c861ed352b9096a8cb958293418d2e6fe4"
 dependencies = [
  "libm",
 ]
