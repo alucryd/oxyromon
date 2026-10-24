@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e2355f9e065b3c5d01213c633a7776a9d1fcb6debb9aeeafb9ec3f63aa816abf",
+  "pageVersion": "sha256:8e5621c9d96ef91bf9a467a36ea9483c1a3bd537e73dce31b60b95891c1d03da",
   "claims": [
     {
       "id": "claim_b087aba3f1c046f49eec90868ad7d336",
@@ -141,10 +141,56 @@
           "version": "repo-lines-v1:sha256:545c7a60925a9f8e74c3ff9632063e356076b3157b845075c815ef16a73048c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0Nzk0ZmZjNDJjODEzNWMxZWM2ZWZiNmM3MDgyNWU0MjUxMDZmNjIyNmNhNTMwNDA4ZTdhZjJiYjVjNDExY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTcyNmFjNTI1YWY4ZDA2MjJkMjI5YzJiNTk2NDg5NzA5OTMxMDRmNjUxMzZlYzFhN2Q2YWVlNzk2MTAyMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0OTg4OGQxMjBhMmE4ZDZmYjRmZDhhZGE1Y2M0MjgyODQzMTc5NTcwZTQ5MzNhNjlmZTc2ZGM3NmU5ODlmMjgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_22017c033dc84f2da2d0f9d727182c5b",
+      "statement": "chd-rs codes FLAC (the flac and cdfl codecs and avhu's audio) with the pure-Rust rusty_flac at MAME's per-hunk block size and level 8, so those hunks are not chdman's bytes but decode in chdman and leave the CHD's data hashes unchanged, as with lzma-rust2 for LZMA.",
+      "evidence": [
+        {
+          "resource": "repo://crates/chd-rs/README.md#L62-L94",
+          "version": "repo-lines-v1:sha256:7d5105d0ededbfe001ebed016e0e314f284b5e403e781213bb3d3e7410b69385:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlN2Y1NWI3ODVmMTIwYjExNmY5MmNmNDE5YWRjMjk5YWQ3ZjRlMzg5ZDNlM2NmMjYwNDNlMzA5OGVlYTllNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWYyYjExNjRmMGRiOWNmNjE2MDZhYWRiNDIwMjI0YTA2NTQxYmE2OTM0ZWQ5Mjg0NDJmYTMxOTE0OGY4YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZjBmZDIwYzE3OTMwOWM2MGZiMzM1ZDUzOTgxMGYwODhkYWY4YjFlZGQ2M2JhMGU3Y2Q0NzVlY2NiYmY5YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYjllNGY4MWI1ZWE5YjZlMDcyNzIwZTMwOTBkOWFkZDBiM2YxNjM2Y2E4MjYwMjJkMjc3Mzc0NzdjYjQ4NTcifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L108-L151",
+          "version": "repo-lines-v1:sha256:aa191e62896c3383fcdfb7eae40bae6d7f2634edc2b5f6e2b6e3f18227e76464:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZWMyMTA1Zjk2YWEwZjc3NzhiMjFlM2U4NzU1MGQ0MjMwY2NlMzdjZjJkMzk2ZjRiYmM5ZGM5ODYyY2E4NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1OWIwOTZmYTJiZTA2NDZkNGU4NTI4NmI3MDY0ZTI3MmE0YjRkYmI0ODM1NjhhMmE1NGFlNTY3ZThjZGMzYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_63fb893b60df42bda3414df10c0ddf9d",
+      "statement": "A CHD FLAC chunk carries only frames: chd-rs decodes them with rusty_flac's FrameDecoder against a synthesized 16-bit, fixed-block-size STREAMINFO, returning the bytes consumed so the cdfl codec can find the deflated subcode after them, and strips the fLaC magic and STREAMINFO the encoder writes in front.",
+      "evidence": [
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L1-L25",
+          "version": "repo-lines-v1:sha256:3d60c35bc261ad6403a1a7f86b395cec9bc3f0b7c47bb7a69492a85415de69eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzA5MjBkYWZlYjIyMDlmYTRjNDVkODM1YjNmNTNlODA2M2YyNTAxZjM2MTk4Nzg2NzNmODY0NjI3YmQ1MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViMTE3YWVjM2Q1MzM4YTg1NjFiZWQ5NjkxNDMyMWZjN2JhMzg5MzA1MWI1YjY2NTYyZGI2ODc3NjA0NzU3MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyY2VjZTYxYjhlMDQ1ZTYwYzBkM2QwY2E1MGMxMWI1NTk1YzVhZjU3ZjMyNjc1ZWEzMWNmMDg2MzI2OWQzOWIifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L141-L151",
+          "version": "repo-lines-v1:sha256:35646e922e643c18548eb3ad9476cf47b1c587d81f2112b4fcc64d0aa3bbc2b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNzE1NzM5YzdlZjRmODE1YjNhOWMwNWI3M2RiZGQ4MTU1YTA5YjI5MWI0Mjg0NmM5NzRkY2Q0YzMxNDMxZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlMzlhNjUwZTI0MjE4Nzk0M2UyOWJmNjAxMzBjMzhlMzA0NDQ4NDFiNjQ4NDVhOTlmODNhNjdjZmE1M2M3ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L50-L95",
+          "version": "repo-lines-v1:sha256:4d82b4d969f57301869d8d0e803871dd77be7a62cbdf1d1a3751b2f188e5d9e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlOGFmMzhhNzZlNGNlOTUzZGJhNTU3MzEyMTFjZTBmNGZiZWFjZDhkOTkzOTA3YjYyYjM5YThmNzk0YmRjMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5OWJmM2M0ZDBiMDRhOThiYmJhNTdjMTA4MzU5YjE5Y2Q3MGE0MWE4ZjJjMjQ3ZmYxMjU3ZGE5MDgwNmJhMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2ZDNjMWE1ZTdlNDEwNGVjNWQ2ZjI2ZjU0ZDU2MDI5MTNmNzJiZTY5MmUwNzk0ZTMzZTg5ZWY3MDA4ZWU3MmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e7d92f075c394ebbb2f15841869dcdb0",
+      "statement": "Before stripping the encoder's container at its fixed 42-byte offset, chd-rs checks at runtime that the stream starts with fLaC and a single last, 34-byte STREAMINFO block, and returns a compression error otherwise instead of misaligning the hunk.",
+      "evidence": [
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L141-L151",
+          "version": "repo-lines-v1:sha256:35646e922e643c18548eb3ad9476cf47b1c587d81f2112b4fcc64d0aa3bbc2b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNzE1NzM5YzdlZjRmODE1YjNhOWMwNWI3M2RiZGQ4MTU1YTA5YjI5MWI0Mjg0NmM5NzRkY2Q0YzMxNDMxZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlMzlhNjUwZTI0MjE4Nzk0M2UyOWJmNjAxMzBjMzhlMzA0NDQ4NDFiNjQ4NDVhOTlmODNhNjdjZmE1M2M3ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiYzk4ZDZiMGRjNDkyYzUwMTZkZjEwODA1YTNhNTRlYjljMTg0YTVhNjEzN2U3ZjRiZWNmYTBjMjIwNTUwZDAifQ"
+        },
+        {
+          "resource": "repo://crates/chd-rs/src/flac.rs#L21-L25",
+          "version": "repo-lines-v1:sha256:d80d2bad6452a22afc0408db8f0de349efa3979d36c68d8933e3b6fa1ade144c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA4MjkxNGExMDdhZTBjNjBiOTdiNDBhNzEzOGYzNzM0ZmZlOTc3NjlmY2RiZjZiMmY1Y2Q3OTg4NDljOWIxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxMTdhZWMzZDUzMzhhODU2MWJlZDk2OTE0MzIxZmM3YmEzODkzMDUxYjViNjY1NjJkYjY4Nzc2MDQ3NTcxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGViNmYwM2I3Y2Y5ZTUzNmU5MTU0YmZiYjM1OWUzNGYzNmZmZDRhYTM2OWY3N2Y2YjdkYWM5NGQ0NmE2NGNhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJjZWNlNjFiOGUwNDVlNjBjMGQzZDBjYTUwYzExYjU1OTVjNWFmNTdmMzI2NzVlYTMxY2YwODYzMjY5ZDM5YiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-20T21:43:24.013Z"
+    "at": "2026-10-24T21:55:54.894Z"
   }
 }

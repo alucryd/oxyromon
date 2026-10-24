@@ -54,10 +54,10 @@ sources:
     resource: repo://src/main.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Builds, Distribution and Releases
@@ -215,12 +215,13 @@ no glibc shim. A `.dockerignore` keeps `.git`, `target/`,
 `tests/`, `desktop/`, the generated `graft/` and `openwiki/` and other non-inputs
 out of the build context.
 
-The image installs no format tool. Its package list is `build-base cmake curl
-musl-dev rustup tar`, all removed again once the binary is installed: `cmake`
-because `libflac-sys` builds the FLAC codec `chd-rs` uses, and GNU `tar` because
-the web UI's `fetch-webawesome.sh` hook extracts one directory by name, which
-BusyBox tar cannot do. Both gaps went unnoticed in CI, whose Ubuntu runner ships
-`cmake` and GNU tar. There is no `chdman`/`mame-tools`, no `ctrtool`, no `xdelta3`, no
+The image installs no format tool. Its package list is `build-base curl
+musl-dev rustup tar`, all removed again once the binary is installed. GNU `tar`
+is there because the web UI's `fetch-webawesome.sh` hook extracts one directory
+by name, which BusyBox tar cannot do, a gap that went unnoticed in CI, whose
+Ubuntu runner ships GNU tar. `cmake` used to be on the list for `libflac-sys`;
+`chd-rs` now takes FLAC from the pure-Rust `rusty_flac`, so the build has no
+CMake step left. There is no `chdman`/`mame-tools`, no `ctrtool`, no `xdelta3`, no
 `p7zip`/7-Zip, no `flips`, no `maxcso`, no `dolphin-tool`. Every codec is a Rust
 crate linked into the binary, which is what let the Arch Linux image go: with
 nothing left to install alongside oxyromon, one base carries it all. The CI runner

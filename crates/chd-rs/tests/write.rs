@@ -68,11 +68,11 @@ fn write_image(path: &Path, kind: &str) -> Vec<u8> {
     image
 }
 
-/// Whether our CHD agrees with chdman's: byte for byte, except with LZMA,
-/// whose encoder is lzma-rust2's rather than MAME's LZMA SDK one, and with
-/// zstd, whose bytes hang on the zstd chdman links (see `tests/cd.rs`)
-/// unless `CHDRS_STRICT_PARITY` is set, where the header's hashes must agree
-/// and chdman must verify ours. A clone is verified against its `parent`.
+/// Whether our CHD agrees with chdman's: byte for byte, except with LZMA and
+/// FLAC, whose encoders are lzma-rust2's and rusty_flac's rather than MAME's
+/// LZMA SDK and libFLAC, and with zstd, whose bytes hang on the zstd chdman
+/// links (see `tests/cd.rs`) unless `CHDRS_STRICT_PARITY` is set. There the
+/// header's hashes must agree and chdman must verify ours. A clone is verified against its `parent`.
 fn assert_matches_chdman(
     chdman: &Path,
     ours: &Path,
@@ -83,7 +83,7 @@ fn assert_matches_chdman(
 ) {
     let (ours_bytes, theirs_bytes) = (std::fs::read(ours).unwrap(), std::fs::read(theirs).unwrap());
     let strict = std::env::var_os("CHDRS_STRICT_PARITY").is_some();
-    if codecs.contains("lzma") || (codecs.contains("zstd") && !strict) {
+    if codecs.contains("lzma") || codecs.contains("flac") || (codecs.contains("zstd") && !strict) {
         let ours = ours.to_string_lossy();
         let mut verify = vec!["verify", "-i", &ours];
         let parent = parent.map(Path::to_string_lossy);

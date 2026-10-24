@@ -12,7 +12,7 @@
   image or against a parent to store only what changed, each hunk encoded
   with the shortest of the codecs offered
 - Added the `none`, `flac`, `huff`, `lzma`, `zlib` and `zstd` codecs, through
-  `flate2` (`zlib-rs`), `zstd`, `lzma-rust2`, `libflac-sys` and a built-in
+  `flate2` (`zlib-rs`), `zstd`, `lzma-rust2`, `rusty_flac` and a built-in
   Huffman coder, so the files are interchangeable with `chdman`'s, which the
   interop tests check; most are byte-identical too
 - Hunks are compressed on every core, as `chdman` does

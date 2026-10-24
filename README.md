@@ -64,7 +64,7 @@ From there, `convert-roms` switches formats, `check-roms` verifies integrity, an
 
 ## Building
 
-The command-line tool has no special requirement beyond a C toolchain, which the RVZ backend needs, and CMake, which builds the FLAC codec for the CHD backend:
+The command-line tool has no special requirement beyond a C toolchain, which the RVZ backend needs:
 
 ```sh
 cargo build --release

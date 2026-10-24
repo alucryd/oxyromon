@@ -6,7 +6,7 @@ COPY . .
 # tools it downloads run without gcompat. GNU `tar` is needed by the web UI's
 # fetch-webawesome.sh hook, which extracts one directory by name, something
 # BusyBox tar cannot do.
-RUN apk add --no-cache build-base cmake curl musl-dev rustup tar && \
+RUN apk add --no-cache build-base curl musl-dev rustup tar && \
     rustup-init -y --target wasm32-unknown-unknown && \
     source /root/.cargo/env && \
     curl -fsSL https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-musl.tar.gz | tar -xzf- -C /usr/local/bin && \
@@ -16,7 +16,7 @@ RUN apk add --no-cache build-base cmake curl musl-dev rustup tar && \
     --path . && \
     cargo clean && \
     rm -rf /root/.cargo /root/.rustup /root/.cache /usr/local/bin/trunk /tmp/* && \
-    apk del --no-cache build-base cmake curl musl-dev rustup tar
+    apk del --no-cache build-base curl musl-dev rustup tar
 
 WORKDIR /
 RUN rm -rf /usr/src/oxyromon
