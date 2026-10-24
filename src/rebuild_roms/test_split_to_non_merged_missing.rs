@@ -101,7 +101,9 @@ async fn test() {
             .await
             .unwrap();
     assert_eq!(clone_common_rom.romfile_id, None);
-    let mut entries = fs::read_dir(system_directory.join("Test Clone")).await.unwrap();
+    let mut entries = fs::read_dir(system_directory.join("Test Clone"))
+        .await
+        .unwrap();
     let mut names = vec![];
     while let Some(entry) = entries.next_entry().await.unwrap() {
         names.push(entry.file_name().into_string().unwrap());

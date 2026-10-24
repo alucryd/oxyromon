@@ -35,6 +35,7 @@
 - The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
 - Fixed `create-dats` reading each file three times, once per checksum; it now reads it once
 - Fixed `create-dats` sometimes writing a DAT cut short, and `import-roms` sometimes hashing a CIA's TMD before its certificates were written to it
+- Fixed `purge-systems`, `check-roms` and `import-dats` panicking when two games own a file of the same name, such as an arcade parent and clone in their own directories, after moving one onto the other in `Trash`. A trashed file whose name is taken in `Trash` now keeps its path under the system directory there, and is numbered when that is taken too
 - Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped, without the same prompt coming back once per hash algorithm, or the file going to the trash because an earlier hash matched nothing
 - Fixed `rebuild-roms` computing completion with the strategy it rebuilt from, leaving games partial after a switch until the next completion update
 - Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them

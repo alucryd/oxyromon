@@ -311,17 +311,9 @@ async fn move_to_trash(
     system: &System,
     romfile: &Romfile,
 ) -> Result<()> {
-    let new_path = get_trash_directory(connection, Some(system)).await?.join(
-        romfile
-            .as_common(connection)
-            .await?
-            .path
-            .file_name()
-            .unwrap(),
-    );
-    romfile
-        .as_common(connection)
-        .await?
+    let common_romfile = romfile.as_common(connection).await?;
+    let new_path = get_trash_path(connection, Some(system), &common_romfile.path).await?;
+    common_romfile
         .rename(progress_bar, &new_path, false)
         .await?
         .update(connection, progress_bar, romfile.id)
