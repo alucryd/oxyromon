@@ -286,6 +286,46 @@ pub async fn get_trash_directory(
     Ok(trash_directory)
 }
 
+/// Where `path` goes in `system`'s trash, or the ROM directory's without one:
+/// under its file name, or when that is taken, as when an arcade parent and
+/// clone own a file of the same name in their own directories, at its path
+/// under the system directory, numbered if that is taken too. A file already
+/// in the trash stays where it is.
+pub async fn get_trash_path(
+    connection: &mut SqliteConnection,
+    system: Option<&System>,
+    path: &Path,
+) -> Result<PathBuf> {
+    let trash_directory = get_trash_directory(connection, system).await?;
+    if path.starts_with(&trash_directory) {
+        return Ok(path.to_path_buf());
+    }
+    let file_name = PathBuf::from(path.file_name().unwrap());
+    if !trash_directory.join(&file_name).exists() {
+        return Ok(trash_directory.join(file_name));
+    }
+    let base_directory = match system {
+        Some(system) => get_system_directory(connection, system).await?,
+        None => get_rom_directory(connection).await,
+    };
+    let relative_path = match path.strip_prefix(&base_directory) {
+        Ok(relative_path) => relative_path.to_path_buf(),
+        Err(_) => file_name,
+    };
+    let mut trash_path = trash_directory.join(&relative_path);
+    let mut index = 2;
+    while trash_path.exists() {
+        let stem = relative_path.file_stem().unwrap().to_string_lossy();
+        let name = match relative_path.extension() {
+            Some(extension) => format!("{} ({}).{}", stem, index, extension.to_string_lossy()),
+            None => format!("{} ({})", stem, index),
+        };
+        trash_path = trash_directory.join(relative_path.with_file_name(name));
+        index += 1;
+    }
+    Ok(trash_path)
+}
+
 /// The directories never removed when a purge or an import empties them: the ROM
 /// directory, every system directory and every trash directory.
 pub async fn get_kept_directories(connection: &mut SqliteConnection) -> Result<HashSet<PathBuf>> {
@@ -488,3 +528,5 @@ mod test_system_directory_group_non_redump;
 mod test_system_directory_group_subsystems;
 #[cfg(test)]
 mod test_system_directory_no_group_subsystems;
+#[cfg(test)]
+mod test_trash_path;
