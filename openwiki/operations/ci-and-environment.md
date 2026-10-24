@@ -16,6 +16,8 @@ sources:
     resource: repo://build.rs
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-1519e62b0bf12b3d41c2e1b8
+    resource: repo://crates/chd-rs/Cargo.toml
   - id: openwiki-source-38b8a6db58a8dd7d870046a0
     resource: repo://crates/chd-rs/tests/ld.rs
   - id: openwiki-source-dace695e1efd12a88e32dd04
@@ -64,10 +66,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T19:46:38.984Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -367,9 +369,10 @@ Rust toolchain, the wasm target and trunk 0.21.14, runs
 toolchain, caches and source tree. It does not set `SKIP_TRUNK`, so unlike CI it
 compiles the wasm UI inside the image, using trunk's musl build, whose
 `wasm-bindgen`/`wasm-opt` downloads also run natively under musl. It installs
-`cmake` and GNU `tar` for the build and removes them after: the Ubuntu runner
-ships both, so CI never needed them, while `libflac-sys` (for `chd-rs`) and the
-web UI's `fetch-webawesome.sh` hook fail without them on Alpine.
+GNU `tar` for the build and removes it after: the Ubuntu runner ships it, so CI
+never needed it, while the web UI's `fetch-webawesome.sh` hook fails without it
+on Alpine. It no longer installs `cmake`, which only `libflac-sys` needed before
+`chd-rs` moved to the pure-Rust `rusty_flac`.
 It installs no format tool, since every codec is linked in. Because
 `CMD ["oxyromon"]` carries no subcommand, `docker run alucryd/oxyromon` alone is
 a no-op — append `server` (or any other subcommand).

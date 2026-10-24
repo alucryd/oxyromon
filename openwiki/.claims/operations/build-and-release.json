@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:33d7c5ec12009c598d43ac44594ad643dedd36b0830e41d6a5e1295661b4374e",
+  "pageVersion": "sha256:7c62573f8fe1cb87bd1a5564eba7f57f2f2b1b8f8b12570577e78a3057f9fa5c",
   "claims": [
     {
       "id": "claim_5763ae02551d4203b1e6af658726e5c1",
@@ -140,11 +140,11 @@
     },
     {
       "id": "claim_73fb8d87f9fc41de95ba07172a23017a",
-      "statement": "The single Alpine-based Dockerfile is a self-contained build-and-run image that compiles the web UI inside the image (it does not set SKIP_TRUNK): it installs build-base, cmake, curl, musl-dev, rustup and tar, the wasm32-unknown-unknown target and trunk 0.21.14's musl build, runs `cargo install --features server --root /usr --path .`, then removes those packages, the toolchain, caches and source tree. It installs no external format tool and no gcompat; cmake is for libflac-sys and GNU tar for the fetch-webawesome.sh hook.",
+      "statement": "The single Alpine-based Dockerfile is a self-contained build-and-run image that compiles the web UI inside the image (it does not set SKIP_TRUNK): it installs build-base, curl, musl-dev, rustup and tar, the wasm32-unknown-unknown target and trunk 0.21.14's musl build, runs `cargo install --features server --root /usr --path .`, then removes those packages, the toolchain, caches and source tree. It installs no external format tool, no gcompat and no cmake; GNU tar is for the fetch-webawesome.sh hook.",
       "evidence": [
         {
           "resource": "repo://Dockerfile#L1-L22",
-          "version": "repo-lines-v1:sha256:b3be1d91de03db9ac82218100c586f849f4d8230e3f15cffea6a9579dd9caf23:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YTM2YTFhMzYwOWJjNjg2MTYxNDczNmYwNTAzMDc5ZWU4NTVmYTIzZTg4MjY5ZjM0MmZhMjYwZWRhOWE0NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMmMxOGEwOTc2NzRmMTIzNzNhNGFiNjdiZjRkNDIzMTBmYThkMmZmNDJlMWQ1M2MzZGNkNDVjNWFiYWZjNTYifQ"
+          "version": "repo-lines-v1:sha256:a0a014bf4a6aab711bb503454a1d41ab0717448e2987aa4342ea4cef9710028c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNGJlYTQ5MGQ0NWU3YWU2OWQ1NDI4NDY1MTFlN2M5MGViNjgzZGVhYTFlMGRmMTllOWZjYTRkMjI3MjY1YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YTM2YTFhMzYwOWJjNjg2MTYxNDczNmYwNTAzMDc5ZWU4NTVmYTIzZTg4MjY5ZjM0MmZhMjYwZWRhOWE0NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMmMxOGEwOTc2NzRmMTIzNzNhNGFiNjdiZjRkNDIzMTBmYThkMmZmNDJlMWQ1M2MzZGNkNDVjNWFiYWZjNTYifQ"
         }
       ]
     },
@@ -282,7 +282,7 @@
         },
         {
           "resource": "repo://Dockerfile#L9-L19",
-          "version": "repo-lines-v1:sha256:a483ff9f3f377dc81866ee760367ee604c1e0ef052b6bdd121e6055165c93683:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMjk5NzNhMmNmOTUwNTA0ZDYwODY5YzIyMzkxNWZjY2FlMDY0MmJhYTBjMjA0Yzc0NjJkZTYxY2FmYWRmMjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzdlNDExZTdhNjkyNjM0OGI0NTA2ZWI4MDJmZTFhYmJkMGM2NzJmNGE3ZjM1MTY4ZTAwOWUzMTgyMjhjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
+          "version": "repo-lines-v1:sha256:4d235672ab6d8a1e38e89b45aae59331f45077fab6865ac00c5b364f18a49a49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNDBlM2UxMjE2MjNmMDUzNjMyOGQxOTEyMjcxNDg5MzZjYjVhNGU5NjM1OTc3NThkZGY3NTZhOTYyYWNlOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOTIwODNkODg2YTQwMmQ3NzhkM2U5ZTE0OTRkZjU3MmFjZWNlNWUzNjBmYzZkZjdjNWVhYjJiZmI3ZDdhNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTU1YzlmZTAyMWY5ODVkMzI3YTU2MGZiMzhjNmZiNGZlZTMwODJkNGRkODcxM2RjYzA4ZGQ5YzY5Zjk2MWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmZmFhNzcyZjllMGQ0NzI5MTc0NWU5Nzk3MDcyYWQ1NmE4MTAxYmI2NWE2NmU3OThlNGRkMmJjZDkwZDQwMWQifQ"
         }
       ]
     },
@@ -371,7 +371,7 @@
           "version": "repo-lines-v1:sha256:d6960391efd60db1e30b7ac43538eb9c882494bac78f3c7be116abf9387c3d83:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzcyMTFiNzhlMWFkOWJlNzE0MzEyYmQ4OTJlMGJiOWNjYjJkMTI1MzE2NTgxMmZlOTZkMzMwZTk1YWI1MmJmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmFlYWIzY2RhYmExNDY0NWZkZGEzNGVhYmIwZmYzM2E5ZTY4NDE4YTBiOTkyNWJmZTk3ODE4N2I4NTIyNzIwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg4ZDExNzRmZTU4YTI1NTM0OTFmODlhN2EyNTlkYWM4MGU4MTQ4ZGRmYjc0MjdkNTg1ODM0MDI1ZTQyNzdlMyJ9"
         },
         {
-          "resource": "repo://crates/chd-rs/Cargo.toml#L38-L40",
+          "resource": "repo://crates/chd-rs/Cargo.toml#L40-L42",
           "version": "repo-lines-v1:sha256:bee9a459a3a7d84a544f126f7b44d6cae70449893e15fbf2f049de69808268a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjZmNmMxYzczZTQ2ODViNmY1NTc5MmFlNTM5MjU1M2ZmNzlkM2NjMDY3YjBiNzRlMDY4Njk4ZjZiMmM3NmI4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzg5ZmU2ZTNjM2NkNzhhMmIxYjBiMTliMzYzOWM3ZjgwOTc4NGE2ZWQ2OTViYmM4NTk0YWU4N2Y5ZWIyYTEyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyMDVlM2M2MDNhNTViOWQ1ZDM1NDQ3OGFkYmI1MDU5ZDZhMTExOTkyZmRiNTE2OWMwZjJjMmJkNjA1YTQ0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
@@ -385,8 +385,8 @@
           "version": "repo-lines-v1:sha256:f77cbeb58676b612d5500be09fca9820ed07ff6c1cacd1d89bb6a8c55087d581:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjFmZDg0Zjc5MTA3MDQ0M2U2NTY3YzI4NTAxMzExMmY2MjgxNWI5MzYxOTcwYzVhMjU2YzVjZmFiNzNhOTI0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA5NmVkYmYwMjFmMjRkOWZlMzUxODNmZjliODNiZjRjNGY4YzA5YzIzMTdlODRjM2JiNzA5NDUxZDA4YWI0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzk4YzdiYTZhYmUzYmU3YzQ5MDUyNWI4NmQ5ZjUwYjQwMTQ1ZmNlOTg0NzA4ZmYzZjNjMDNiZGE3MjJiNGM5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGUzZDNlNDM1Mjc3NGQyYjY0ODNkMmUzNzU1ZDhkMzk3OThiNjFiNTBjZmY3MzFhMTU2ZWVhM2U2NzAyMWE2ZCJ9"
         },
         {
-          "resource": "repo://CHANGELOG.md#L15-L17",
-          "version": "repo-lines-v1:sha256:0ebf2892ace389f350d9071310995af7f7a2b7d28228f4b6e175c9e3c273a11c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE1YjIzOWQ1NTA3YTVlYzVkZjY1MmIzMzcwNzI1NjM4ZTM0N2YyNzBmYTdiZGQxNmU2YmM3MDdjOTZiYTUyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjdiZDhiODM3Y2ZhMGNiMmQ3MjIyODRmMzcyMDhkYmM4ZDVjYmMzNDRhMTU2NTkyMWYwZmEyYWJjNTJiNzliOSJ9"
+          "resource": "repo://CHANGELOG.md#L15-L18",
+          "version": "repo-lines-v1:sha256:6fff5bd01215a5a231be26bb0cf80f9c7183fee2a18b9a76dbf548a83a3ac262:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAzYmQwMTE1N2RhZTk0YTlkNjRiYmViM2UxODEzOGY5Mzc3ZTUzZGM5OTY0M2EwMWEyZWRiMzhhNmJmNDJmZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyY2ZlYzUzYzU4MzRjNDA2NzY5ZTliNGI3NmZjZmMyMTQ5NDhmNGE0YWI4NGI0Yjg3Y2U5YzNkOTRhYjc4YyJ9"
         },
         {
           "resource": "repo://crates/chd-rs/Cargo.toml#L1-L11",
@@ -407,6 +407,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-20T21:43:24.013Z"
+    "at": "2026-10-24T21:19:09.823Z"
   }
 }

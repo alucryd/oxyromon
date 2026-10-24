@@ -719,9 +719,9 @@ dependencies = [
  "crc32fast",
  "flate2",
  "indicatif",
- "libflac-sys",
  "lzma-rust2",
  "rayon",
+ "rusty_flac",
  "sha1 0.11.0",
  "tempfile",
  "thiserror 2.0.20",
@@ -2378,16 +2378,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
-name = "libflac-sys"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fc5cbb957a914952ee9b8667e82b984c6dc280087df01497fc5b4776d303582"
-dependencies = [
- "cmake",
- "libc",
-]
-
-[[package]]
 name = "libflate"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2421,6 +2411,12 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
+
+[[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
 name = "libredox"
@@ -3681,6 +3677,14 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+
+[[package]]
+name = "rusty_flac"
+version = "0.2.2"
+source = "git+https://github.com/alucryd/rusty_flac?rev=563068c861ed352b9096a8cb958293418d2e6fe4#563068c861ed352b9096a8cb958293418d2e6fe4"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "ryu"

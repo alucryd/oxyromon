@@ -66,12 +66,12 @@ shortest output kept, storing the hunk raw when none of them saves space, as
 | `zstd` / `cdzs`              | `zstd`              | `zstd`, level 22     |
 | `lzma` / `cdlz`              | `lzma-rust2`        | `lzma-rust2`         |
 | `huff`                       | built-in            | built-in             |
-| `flac` / `cdfl`              | `libflac-sys`       | `libflac-sys`        |
-| `avhu`                       | built-in, `libflac-sys` | built-in, `libflac-sys` |
+| `flac` / `cdfl`              | `rusty_flac`        | `rusty_flac`, level 8 |
+| `avhu`                       | built-in, `rusty_flac` | built-in, `rusty_flac` |
 
 Hunks are compressed on every core, then laid out in order, so the CHD is
 the same whatever the thread count. Most encoders are those `chdman` uses,
-so most bitstreams match `chdman`'s by construction. Three may not:
+so most bitstreams match `chdman`'s by construction. Four may not:
 
 - **LZMA** goes through `lzma-rust2`, set the way MAME sets its LZMA SDK
   encoder (level 8: normal mode, BT4 matches, nice length 64), which is also
@@ -85,12 +85,13 @@ so most bitstreams match `chdman`'s by construction. Three may not:
   its output is that of a `chdman` linking zstd 1.5.7, as Arch Linux's does,
   not of one built on the zstd 1.5.5 MAME bundles, as Debian's and Ubuntu's
   are: theirs come out a byte shorter per CD hunk.
+- **FLAC** goes through `rusty_flac`, a pure-Rust encoder, at the block
+  sizes MAME derives per hunk and level 8, as MAME sets libFLAC. Its streams
+  decode in MAME and `chdman`, and come out about the same size, but they
+  are not the same bytes.
 
 Either way the data, and the hashes in the header that cover it, are the
 same.
-
-`libflac-sys` builds its vendored libFLAC with CMake, so a CMake toolchain is
-needed to build chd-rs.
 
 ## CLI
 

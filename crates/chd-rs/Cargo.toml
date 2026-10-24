@@ -29,7 +29,9 @@ sha1.workspace = true
 flate2.workspace = true
 zstd.workspace = true
 crc32fast.workspace = true
-libflac-sys = { version = "0.3.4", default-features = false, features = ["build-flac"] }
+# libm: encoder decisions that do not depend on the platform libm, so a
+# CHD comes out the same bytes on every host
+rusty_flac = { version = "0.2.2", default-features = false, features = ["std", "libm"] }
 lzma-rust2 = { workspace = true, features = ["encoder", "optimization"] }
 
 [dev-dependencies]

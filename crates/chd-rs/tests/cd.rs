@@ -260,12 +260,13 @@ fn fixtures() -> Vec<Fixture> {
 /// (deflate where chdman links zlib-ng, whose output zlib-rs reproduces;
 /// zstd where it links the zstd zstd-sys bundles, 1.5.7, as Arch's does,
 /// not MAME's bundled 1.5.5, as Debian's and Ubuntu's do); and those built
-/// on LZMA, whose encoder is lzma-rust2's rather than MAME's LZMA SDK one.
+/// on an encoder other than chdman's: LZMA, lzma-rust2's rather than MAME's
+/// LZMA SDK one, and FLAC, rusty_flac's rather than libFLAC.
 /// The last two are checked by the header's hashes, which cover the data
 /// and the metadata, and by chdman verifying them.
 const IDENTICAL: &[&str] = &["none"];
-const LIBRARY: &[&str] = &["cdzs", "zstd", "cdzl", "cdfl", "zlib"];
-const LZMA: &[&str] = &["cdlz,cdzl,cdfl", "cdlz", "lzma"];
+const LIBRARY: &[&str] = &["cdzs", "zstd", "cdzl", "zlib"];
+const OWN_ENCODERS: &[&str] = &["cdlz,cdzl,cdfl", "cdlz", "lzma", "cdfl"];
 
 /// `chd_rs::create_cd` with chdman's default hunk and the `-c` codecs.
 fn create_cd(toc: &Path, output: &Path, codecs: &str) {
@@ -299,7 +300,7 @@ fn cd_chds_match_chdman() {
         let ours = dir.path().join(Path::new(toc).with_extension("chd"));
         let theirs = dir.path().join("theirs.chd");
         let strict = std::env::var_os("CHDRS_STRICT_PARITY").is_some();
-        for codecs in IDENTICAL.iter().chain(LIBRARY).chain(LZMA) {
+        for codecs in IDENTICAL.iter().chain(LIBRARY).chain(OWN_ENCODERS) {
             let _ = std::fs::remove_file(&ours);
             let _ = std::fs::remove_file(&theirs);
             run(

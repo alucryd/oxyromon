@@ -52,10 +52,10 @@ sources:
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
-generated: { by: "claude-code", at: "2026-10-19T19:46:38.984Z" }
+generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T19:46:38.984Z
+    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Desktop App (Tauri Sidecar)
@@ -300,7 +300,7 @@ That has two packaging consequences:
   linked at build time). The `p7zip` dependency the desktop package used to carry is
   gone, as recorded in the 0.25.0 changelog.
 - **The container image confirms the same floor.** The Alpine-based `Dockerfile`
-  installs only `build-base`, `cmake`, `curl`, `musl-dev`, `rustup` and `tar` to build,
+  installs only `build-base`, `curl`, `musl-dev`, `rustup` and `tar` to build,
   adds the
   `wasm32-unknown-unknown` target and `trunk` for the web UI, then removes the
   toolchain — no codec or archive tools are left in the image that runs
