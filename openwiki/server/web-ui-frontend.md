@@ -32,6 +32,8 @@ sources:
     resource: repo://frontend/src/app.rs
   - id: openwiki-source-4e4ca01b05daf70eccd6900f
     resource: repo://frontend/src/components/about_modal.rs
+  - id: openwiki-source-ae122ae34af5f05a484ef1ed
+    resource: repo://frontend/src/components/convert_rom_modal.rs
   - id: openwiki-source-9594fdc8eb7c8cc0ab2dd040
     resource: repo://frontend/src/components/download_dat_modal.rs
   - id: openwiki-source-4b0cb4e149d9eb63422a9f03
@@ -66,13 +68,18 @@ sources:
     resource: repo://frontend/styles.css
   - id: openwiki-source-c6e18f6fc03eca8f5fb94b75
     resource: repo://frontend/Trunk.toml
+  - id: openwiki-source-10fddfccad5d7bf89d675953
+    resource: repo://src/convert_roms.rs
   - id: openwiki-source-cc76cc07825d7eb399a2b402
     resource: repo://src/model.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-18T21:36:28.347Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -433,6 +440,13 @@ for the current `system_id` are reloaded, so the server stays the source of trut
 for what was stored. Note `set_directory` ignores an empty value and
 `SelectField`'s "No conversion" option routes to `unset_prefer_format` rather than
 writing an empty string.
+
+The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES` in
+`frontend/src/state.rs` feeds the settings `SelectField`, and `FORMATS` in
+`ConvertRomModal` feeds the convert dialog. Both hold the nine `convert-roms` formats,
+`WUX` included, and nothing checks them against `convert_roms::ALL_FORMATS`, so a new
+format must be added to both by hand. The UI offers no export, so the export-only
+Wii U targets `WUA` and `NUS` never appear in it.
 
 Dialog placement in the tree matters. The per-system `SettingsModal` and
 `DeleteModal` sit **outside** the `.page` flex column on purpose: a `wa-dialog`

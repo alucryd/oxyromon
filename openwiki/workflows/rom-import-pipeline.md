@@ -78,7 +78,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # ROM Import Pipeline
@@ -167,9 +170,12 @@ which is then walked as if it had been the input
 are imported as containers. `test_zip_single_file_extract` is the fixture for this
 path: a `.rom.zip` becomes a `.rom` in the system directory.
 
-Directories are walked with `WalkDir`. Two things differ between directory mode
+Directories are walked with `WalkDir`. Three things differ between directory mode
 and the single-file mode:
 
+- A directory holding a Wii U NUS title's TMD is a **title folder** and goes whole
+  to `import_nus` (see below). The walk applies the same test to each
+  subdirectory and skips the folders it hands over.
 - A directory containing `PS3_DISC.SFB` is treated as a **jukebox folder** and
   handed to `import_jbfolder` instead of being walked (see below).
 - In directory mode an `Err` from `import_rom` is printed and the walk continues;
@@ -195,7 +201,9 @@ reaches the database.
 
 ```mermaid
 flowchart TD
-    S["main: per input path, per selected system"] --> JB{"directory contains PS3_DISC.SFB"}
+    S["main: per input path, per selected system"] --> NU{"directory holds a NUS TMD"}
+    NU -->|"yes"| NF["import_nus: TMD first, then the folder's files"]
+    NU -->|"no"| JB{"directory contains PS3_DISC.SFB"}
     JB -->|"yes"| JF["import_jbfolder (needs a system)"]
     JB -->|"no"| W["walk files, call import_rom per file"]
 
@@ -212,6 +220,7 @@ flowchart TD
     E -->|"cso or zso"| I["import_cso / import_zso"]
     E -->|"nsz"| J2["import_nsz"]
     E -->|"rvz"| K["import_rvz"]
+    E -->|"wux"| WX["import_wux"]
     E -->|"other, or anything with --as-is"| L["import_other"]
 
     F --> M["commit transaction"]
@@ -220,6 +229,7 @@ flowchart TD
     I --> M
     J2 --> M
     K --> M
+    WX --> M
     L --> M
     F -.->|"no match"| O["trash with -t, delete with -d"]
     L -.->|"no match"| O
@@ -242,11 +252,11 @@ Magic wins, which is why a mis-named file still takes the right branch — and w
 future RVZ version that the matcher does not recognise degrades to the extension.
 
 The dispatch is an ordered `if`/`else if` chain in which every specialised branch
-is additionally gated on `!as_is`: archive, CHD, CIA, CSO, NSZ, RVZ, ZSO, and
-finally `import_other`. `--as-is` therefore does two things at once — it sends
+is additionally gated on `!as_is`: archive, CHD, CIA, CSO, NSZ, RVZ, WUX, ZSO,
+and finally `import_other`. `--as-is` therefore does two things at once — it sends
 every file to `import_other` (hash the container as it sits, move it, no
 decompression), and it suppresses the auto-conversion pass below
-([src/import_roms.rs](../../src/import_roms.rs#L401-L590)).
+([src/import_roms.rs](../../src/import_roms.rs#L451-L660)).
 
 No external tool is required on this path. `.cia` dispatches straight into
 `import_cia`, which parses the container and unpacks its contents and TMD with
@@ -317,6 +327,8 @@ represents exactly one complete game, otherwise take the members out.**
 | DVD / HD / LD CHD | hashed by extracting (or reusing the hashes the CHD header publishes), moved as `<rom>.chd`; the HD and LD branches put arcade CHDs under a `<game>/` subfolder | 1 romfile → 1 rom |
 | CIA | contents and the certificate-extended TMD extracted with `cia-rs` for hashing, each named as the DAT names it (content ID in lowercase hex, `tmd.<version>`); whole `.cia` moved as `<game>.cia` | 1 romfile → *n* roms |
 | CSO / ZSO / NSZ / RVZ | container kept, renamed `<rom name>.<ext>` after hashing the decoded image | 1 romfile → 1 rom |
+| WUX | hashed as it decompresses and matched against the DAT's `.wud` row, then moved to the system directory as the rom name with a `.wux` extension | 1 romfile → 1 rom |
+| NUS title folder | each file the DAT lists moved into `<system directory>/<game name>/`; unlisted files such as `title.cert` stay | 1 romfile per file |
 
 The archive decision is the interesting one
 ([src/import_roms.rs](../../src/import_roms.rs#L931-L1029)): the archive is kept
@@ -405,10 +417,28 @@ it; the caller that leaves emptied source directories behind does, and does so o
 best-effort basis — a directory that cannot be deleted is a warning, never a rolled
 back import ([src/import_dats.rs](../../src/import_dats.rs#L896-L945)).
 
+## Wii U title folders
+
+An update or DLC arrives as a NUS folder: a TMD, a ticket, and one file per
+content. `import_nus` handles it outside `import_rom` with a transaction of its own
+([src/import_roms.rs](../../src/import_roms.rs#L658-L780)).
+
+- **The TMD finds the game.** A TMD names one title at one version, so it is hashed
+  and matched first, in the given system or any. A `Duplicate` prints `Already
+  imported`, and no match prints a warning.
+- **The other files match within that game only**, since a game and its update can
+  hold identical files. Size and hash must agree, and among identical candidates the
+  ROM named like the file (ignoring `.app`) wins.
+- Placement goes through `get_sorted_path`, which gives a NUS title its own folder
+  because every title names its contents alike.
+- It needs no `--system` and no Wii U keys. Keys only matter for exports.
+
+See [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
+
 ## Jukebox folders
 
 A directory containing `PS3_DISC.SFB` is a PS3 JB folder and never reaches
-`import_rom` ([src/import_roms.rs](../../src/import_roms.rs#L596-L786)). The rules
+`import_rom` ([src/import_roms.rs](../../src/import_roms.rs#L779-L969)). The rules
 that make it different:
 
 - It **requires a system**. The folder names no system of its own, so without `-s`

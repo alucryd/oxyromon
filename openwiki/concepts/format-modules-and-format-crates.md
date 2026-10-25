@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Format Modules and Their Crate Backends
-description: The per-format modules in src/ (archive, chd, cia, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates, and the archive and disc-image behaviours worth not breaking.
+description: The per-format modules in src/ (archive, chd, cia, rvz, wbfs, iso, gdi, nsz, xso, xdelta, xps, wux, crc32), the wrapper-plus-As*/To* pattern they share, that all run in-process on their format crates, and the archive and disc-image behaviours worth not breaking.
 tags: [formats, crates, archive, 7z, zip, chd, chd-rs, rvz, wbfs, nsz, xso, gdi, patches, progress]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
@@ -34,8 +34,6 @@ sources:
     resource: repo://src/import_dats.rs
   - id: openwiki-source-d079c81879111b8d75173838
     resource: repo://src/import_irds.rs
-  - id: openwiki-source-9add64e166d8ef19bd58c5af
-    resource: repo://src/import_roms.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
   - id: openwiki-source-3a747acc24019bf2bf34f312
@@ -56,6 +54,8 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-856ac41ecb89a38b80d7e895
     resource: repo://src/wbfs.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-1c38b81542bfb683299ad2cd
     resource: repo://src/xdelta.rs
   - id: openwiki-source-9b5bca3734529131a5ec0d1b
@@ -64,7 +64,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -92,13 +95,16 @@ the MCP `status` tool.
 | `iso` | in-module Rust, a port of bchunk | CUE/BIN → ISO; vendored ISO 9660 reader | none |
 | `crc32` | `crc32fast` behind `digest` traits | CRC32 hashing primitive | none |
 | `cia` | `cia-rs` (`crates/cia-rs`) | CIA | `"built-in"` |
+| `wux` | `wux-rs` (`crates/wux-rs`) | WUD, WUX; exports WUA and NUS folders | `"built-in"`, or `"built-in, no Wii U keys imported"` |
 
 Every built-in backend returns the literal string `"built-in"` from
 `get_version()` because a linked library has no runtime version to query; the
 function exists only so the dependency table has one uniform shape. `nsz` is the
 exception with content: it appends `prod.keys not found`, since keys are needed
 only when compressing an NSP whose members include NCAs, and the warning exists
-so a user does not discover the missing file mid-compression. `gdi`, `iso`,
+so a user does not discover the missing file mid-compression. `wux` does the same
+for Wii U keys: only WUA and NUS exports need them, so it reports
+`no Wii U keys imported` when `import-keys` has not stored a `keys.txt` yet. `gdi`, `iso`,
 `wbfs` and `crc32` export no `get_version()` at all, so they appear in no
 dependency table.
 
@@ -110,8 +116,8 @@ used to be the two exceptions, each spawning an external tool (`chdman`,
 
 Because every conversion target is now linked in, availability is a static
 question rather than a runtime probe: `convert_roms::format_available` is a
-`matches!` over the eight formats `convert-roms` lists, and `export_roms` accepts
-one longer list, adding `GDI`, `ISO` and `WBFS`. Neither consults a tool version,
+`matches!` over the nine formats `convert-roms` lists, `WUX` among them, and
+`export_roms` accepts one longer list, adding `GDI`, `ISO`, `NUS`, `WBFS` and `WUA`. Neither consults a tool version,
 and `import_roms` dispatches a `.cia` without any probe either.
 
 The version gates that used to guard CHD features are gone with the subprocess.
@@ -172,7 +178,9 @@ its `progress: &mut dyn FnMut(u64)` callback reports incrementally — and maps 
 Callers supply `length` as `input.metadata()?.len()`, as `gdi_rs::input_size(&cue)`
 where the input is a CUE and its BINs, or as `chd_rs::cd_input_size(&input)` for a
 CD CHD, where the bar must track the sheet and its tracks rather than the
-container. It is used by `chd`, `gdi`, `nsz`, `xdelta`, `xps` and `xso`.
+container. It is used by `chd`, `gdi`, `nsz`, `wux`, `xdelta`, `xps` and `xso`. For a WUA
+export, `wux` passes the summed size of the disc and of every update and DLC
+folder it bundles.
 
 ```mermaid
 sequenceDiagram
@@ -406,6 +414,30 @@ file and appends them, TMD cert first, to the extracted `tmd` file, which is wha
 the DAT's `tmd.{version}` entry hashes. A missing or short certificate chain is
 an error naming the file, not a panic. The two lists come back in the same order,
 so `import_cia` zips them.
+
+## `wux.rs`: Wii U discs, keys and bundled titles
+
+`src/wux.rs` wraps `wux-rs` with two romfile types, `WudRomfile` and
+`WuxRomfile`, both guarded by a case-insensitive extension test.
+`WuxRomfile` hashes without a temp file: `get_hash_and_size` opens a
+`wux_rs::Image`, which decompresses on read, and streams it through
+`common::hash_reader`, because a WUD is 25 GB. `Check` takes the same route
+unless the DAT declares a header, in which case it extracts a WUD first.
+
+`ToWux` and `ToWud` call `wux_rs::compress` and `wux_rs::decompress`. Two
+export-only traits need keys: `ToWua` writes Cemu's ZArchive of the decrypted
+files, and `ToNus` writes the disc's title as a NUS folder. Both load the
+`keys.txt` that `import-keys` stored in the data directory, and bail with
+`No Wii U keys imported` when it is missing. In tests the keys come from
+`tests/Test Game (USA).keys.txt` instead.
+
+`ToWua` also bundles the newest update and DLC from the library. It reads the
+disc's title ID, scans every romfile that is a TMD, and keeps titles whose ID
+shares the disc's low half and whose type is `0005000E` (update) or
+`0005000C` (DLC). A title without a ticket is skipped with a warning, since
+No-Intro lists DLC without one. See
+[Wii U Formats and wux-rs](wii-u-formats-and-wux-rs.md) for the formats
+themselves.
 
 ## `nsz.rs`: keys as a lazy loader
 

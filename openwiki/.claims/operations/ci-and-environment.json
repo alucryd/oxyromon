@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9f759bf4ca1db4862b48981866cfd9719a3d4f089bf1ff84ad9a6a836881b32f",
+  "pageVersion": "sha256:17bd5110448270b6c3f40966514e584f859797ce69ff3911490bdaeb5dec5bd8",
   "claims": [
     {
       "id": "claim_8b2514d79d614acba7dc978bdc048ed8",
@@ -227,22 +227,26 @@
           "version": "repo-lines-v1:sha256:395603c035ac94e469a1cbc7af6a9ca28c4f27a96ab8c13168c5977b40c4c291:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlmZmUwMGJhYWU2Yjg4Y2Q1MWUzMWIyNTdiNjZhNWIzNzI4NGQxZGVkN2RlMjc4MmZkNDViYWFjZDE2NWFjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM4NWQ5ZDYyZmUxZTM4ZmVkOThjZTgxYjE5OWU1YmZiNWU3YjU3Y2M3NWY2MjJkNzk2OTQxYzY5NzU4YTQwMSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L172-L176",
+          "resource": "repo://Cargo.toml#L173-L177",
           "version": "repo-lines-v1:sha256:58ddcb61d9fc7d1e7f81491970a4a3f2af7f9111ea579f413850b6ae7e07f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxYjk5MGFkOGY0Mjg0YzM1NGNkOGY5YjZiMWIwZDAxNTY1MDJhYmIwOGFiMjlhYjUwODI0OTRkN2EwNzYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUwMTVhOTA3ZDgzNzZiYzNjYzEwM2ZiMmIwZDM4NDVhMTc1MDA4M2E3YmMzMDZkZjQ2ZmQwYjY5YjNmNzhiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTUzYTU5MjlhMzExNTMzZTFlYWY3YzI1YjgyYWU2ZDIyZjQzOTJjNjk5MTJlODZmNzc5YjlmMWE5MGIwMzdiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
     {
       "id": "claim_7dab68ca47e24529ac48a00bfd32e7e4",
-      "statement": "OXYROMON_DATA_DIRECTORY is re-read on every run and never persisted: main.rs uses it as the directory for oxyromon.db, creating the directory and file if absent, then opens the pool, whose establish_connection runs the embedded sqlx::migrate!() migrator — so a failing migration breaks every subcommand at startup.",
+      "statement": "OXYROMON_DATA_DIRECTORY is re-read on every run and never persisted: config::get_data_directory returns it, or dirs::data_dir()/oxyromon, failing when neither exists; main.rs uses that directory for oxyromon.db, creating the directory and file if absent, then opens the pool, whose establish_connection runs the embedded sqlx::migrate!() migrator — so a failing migration breaks every subcommand at startup.",
       "evidence": [
+        {
+          "resource": "repo://src/config.rs#L611-L618",
+          "version": "repo-lines-v1:sha256:77a822bf5b4ccce3f8dcf52ccbe0308beb550297fd610558fd61b435774a1a71:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE5ODUzYzYwMjRmYWE2M2IwOTc5MDYyODNhZTFjNWU5MDkxNzE0Y2ZjZmE5ZmIzN2MyMmIyOTQzZjJiZTk3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA0NGQ5NmRlOGNkNzg1MTYxNGM3YTliNTA0NGVhYjllOWY1ZmRmMzZjMTgxZjM4MmQwNWZlZDRkZmE1MDE5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E3MzVmOGY5NzJjN2E3MzFmNTZkMDUyOWZlYjZlMzJlNTVlNTNhZmFmMzk5YWIzMjdkZjhiZjBmMjA4ZDQ3ZCJ9"
+        },
         {
           "resource": "repo://src/database.rs#L11-L72",
           "version": "repo-lines-v1:sha256:26eb8aba28178a4ef5cb8b2a1ec1948831926737e3ea372131cc4c06599a7d44:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljYzkwZDUyOWU2MjlmOTBjNDkyODJkOGU3MjQ0MGM4MTAzYWZjNjZlOTg3MTgzODc5Njc2OWRkNWJiYWE2YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNzEzNGFlMDIyZjBjZTViOWI3ZWQxMGRhOGI1MDc4NTU1ZjJiNjFjMjMzNjQ5MjM4M2ZiODBlMmUyNzUyOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwYTE0Mjc4ZmFlZjY2YTViZmExZDgzNDkyNTg0OGFmNzcyNDgyODI0ZmQ0MGQ1YzQ0YzhiZTNiNzZmNzA1MGQifQ"
         },
         {
-          "resource": "repo://src/main.rs#L118-L132",
-          "version": "repo-lines-v1:sha256:73435a97d7a8ae6542ca93a3a4cfe652bcf06d141559f98cdb2e75878e737596:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZDkzM2RiNDUwMTM1ZTZmODYzMGExZTk3NTU3NzcwMTZjZmRiZDY2YmEwOWFkN2M1YWY3NmQ3ZTQxYTE2ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjZjE5ZjEyNjBiZDhhZjkzNjUwMDJkZmIyYzFmMDhiZTgzMzM0Yjc1NzAwNGNlYzI2YTM0Y2U4YTBmZDg4ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MTYxOGQxYTBiNzBkZjAwZDcwM2E3MzkzYmI4OWU4ZjdlNTQ2MTIwYzkzYmYzMDZkNGRlZjE4YWJiZjI4NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzZDJkODA4MzIyYjIxMGIzZmQ3ZDM3ODE4MjJlMjkwZDY3OTc3ZWUxOGZlMTU5OWZlNmYzMmU5MjgxNzc5ZjgifQ"
+          "resource": "repo://src/main.rs#L120-L127",
+          "version": "repo-lines-v1:sha256:fb09b63b701dbe037aa69dccde353a4752f1c3b26977c5fa226a9c0131f5fa18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZlMjU0NjA0NDFmYzI4ZTRjM2IxNGVlZmI4ZDc5MjkzNmQ5Njk1MmEwMDdkNjkzNGQzZTMzOTQwYmJlYmMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE5OWQ4NWU4NTA5N2RjNThkMzA2YWFjMWEwNDc5NzRjYTZhMzE2Y2UzMmQ4OTY5OGJhNjk0MDdhNjQ4MTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQxNjE4ZDFhMGI3MGRmMDBkNzAzYTczOTNiYjg5ZThmN2U1NDYxMjBjOTNiZjMwNmQ0ZGVmMThhYmJmMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViODc3ZjY3Mzg3ZmNjMTM2MDEzNGQyMzg5NjJjOWY1Y2M0MDMyYWM1NWM3MDU5ZDdlYTc1NjkxYzI3OWU1NSJ9"
         }
       ]
     },
@@ -251,11 +255,11 @@
       "statement": "OXYROMON_ROM_DIRECTORY and OXYROMON_TMP_DIRECTORY are bootstrap-only: they are consulted inside get_rom_directory/get_tmp_directory only when no ROM_DIRECTORY/TMP_DIRECTORY settings row exists, and the chosen value is immediately written to the database, so on any existing database the row wins and changing the environment variable has no effect; moving a library requires oxyromon config.",
       "evidence": [
         {
-          "resource": "repo://src/config.rs#L609-L635",
+          "resource": "repo://src/config.rs#L620-L646",
           "version": "repo-lines-v1:sha256:7c310d5f111244b7f89e14968f60891b3fdbd802f747cd986754fd49b0659672:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZmYyOWVjODRkYTEzZDFjZDE2OGViMDc0NWQ2OTBlMDExNDIwMzJiZmExZWI4OGExZjMyNDZiNzE0Zjk2ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlY2UyNTU4YzNkNjRhNmNjZWIzYjcxNjcxNjgzMzA3MWEzMjdhNzI1ZGFkMTI4M2QxY2U0NDQ1ZjI3ZWEzNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTEwYzlmZWI5NjQ2NjFhYWJmYTg2NTQ0NDYxMTk5ZWRmYmRjNTY0MmM5NzU2Nzc5Y2RiN2MyYjUwMWViMGIifQ"
         },
         {
-          "resource": "repo://src/main.rs#L130-L132",
+          "resource": "repo://src/main.rs#L129-L131",
           "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
         }
       ]
@@ -279,7 +283,7 @@
       "statement": "OXYROMON_LOG_LEVEL is consumed by env_logger's Builder::from_env inside the subcommand guard, its filter pushed into log::set_max_level and its logger wrapped in indicatif_log_bridge's LogWrapper over the process-wide MultiProgress; because this init sits inside if let Some((subcommand, ...)), a run with no subcommand loads no .env, installs no logger, opens no database, and exits successfully.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L100-L107",
+          "resource": "repo://src/main.rs#L102-L109",
           "version": "repo-lines-v1:sha256:22c539646f02e2eff9ee8bbc09ba93f6d63693bffe72d6af22a57a4cd055bca8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFmOTc2Y2M1MTMwNjU4NWQ5NjhmNzY2NDIzNTY3NDFiZTRiYjZkN2ZhNjdjZDc5OGNkMTM4ZTQyYzA2ZGMxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTlkNjFlMWViOGEwZTM4N2E2ZDNlNDlkNjg1MjNlMjhlYjRhN2JkZmEwZGIzOGZlZTRiMmY2YWUwMDk4N2Q5MSJ9"
         },
         {
@@ -301,7 +305,7 @@
           "version": "repo-lines-v1:sha256:bfc70df0a5a52d08512cb68fedf1fbe721908981af7e965f13f9000b8465c576:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlhYTczY2Y1YmMzMzc3YTdkOTdmMmU4ZDJiYjc3MzE5NTgxNWVmZTIyNWFmN2YxYmU2ZjViOTMwNmJiZTE0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MxZDJlMzE4MDc2ZmM5YTBjMGUyNzY2YTc2YTQxMGI0YWYwMGFhNmFkYTYzYzE5YzlkMjY2MDc1ZTM1MzMzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjRjNGM5ZTk0ZDZiYTNmNzViOWY2ODc4YWQ0ODgwZDQ1NDIzY2FlYjliNWM5YmZiYTZlZjhjZDVjNmZiMWYzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTNiNDE0YzVmMTcxOTFhY2UyZTI1MmJkYjRmMzhmM2U4MjQwNDNiZTRhNDUxMjUxMTcwY2VjY2IzOWM0YTBmZSJ9"
         },
         {
-          "resource": "repo://src/main.rs#L100-L103",
+          "resource": "repo://src/main.rs#L102-L105",
           "version": "repo-lines-v1:sha256:2108e6264fe4f6cce8c0b6f8faf05a3aaa57254b4228078a4ab33e5b16cda989:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjAwN2ZjNDYwMzg0NjY5MDc5MzgzNWEwY2RiNjI5ZmEyNjEyMDRmYzM5YzhmYzUyMWNmMDRkOTQwMWJjNTFjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JlYjJkOTY4ZTI4N2JkNzlkN2ZhMDcxYjdiYjZiN2Y3NjZlMDVjMWQ3YjdmNzNhMGZhNDg3ODY1ZjIyYzk5YyJ9"
         }
       ]
@@ -319,7 +323,7 @@
           "version": "repo-lines-v1:sha256:1e01271b03a39ee561af57d1608b56eb301bcfa4307eb4bf2d9b2cc30570f66e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWUwMTI3MWIwM2EzOWVlNTYxYWY1N2QxNjA4YjU2ZWIzMDFiY2ZhNDMwN2ViNGJmMmQ5YjJjYzMwNTcwZjY2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWUwMTI3MWIwM2EzOWVlNTYxYWY1N2QxNjA4YjU2ZWIzMDFiY2ZhNDMwN2ViNGJmMmQ5YjJjYzMwNTcwZjY2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ1YWRjZmU4MmQwZDc4MjBmOGE5ZDA4OWUwMWEyNzU3ZjU3OTdjMGRhZWVkMGU0YmNhMzEwOGMxNmE1NmZiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzk5YTMyNTFkNTM4ZmVkMjMyMjM5NThjM2I4OTQ5YzJhNGEyMzgwOGVhYzBlZjAzYzc2ZDc5MzU4ZDIzMGNiMyJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L128-L133",
+          "resource": "repo://Cargo.toml#L129-L134",
           "version": "repo-lines-v1:sha256:b9beeeea8fa51d438367e894925bbdcd8571f728f271de9a5cffdd76e2791151:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmUzODcyZTk5YTE5NWJiMjQwYjEwM2I2YzZmYzJiNDVlM2JhMGIxYWJmMzUzMWQ0ZTNiMmFhMzQ3MTk2MDU3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjOWY3OTdkNmFkMjEyMmE2NWNlMjIwNjRhYzdiYTczMGEyMzdmNjYzNWNmODU5ZjZjOGZlNGYzNzEzZWMxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I5MjY2ZjhiMmVkZWYwZTQzNTkzMzFmMDNlN2UzMDM1NzZjMWE1MjIxZjZjYzcwZjVkMDgxYzA3NjhkNGQyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJhZGVjNjZkNTcxNzY2ZmExNGQ5ZDQ3NTU1ZWM3MTFhODkzYmYwNDgxMzE5NmVlMGY2YWJmYTBiNGVlZGJiOCJ9"
         },
         {
@@ -369,7 +373,7 @@
           "version": "repo-lines-v1:sha256:d5bbbeadff5621b875688477cd9fd16d919cc69c09457506d304780dee2fb1eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMzI1YThlZGYyOGQ0MjUxY2NlMGUwOGExMjk5MjBhZGIyNzIzN2JiNmJlMDliNjJhOGQwY2E0ZjYyMzBiNzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDUyZDJhZjJjMTUwMTQyMjY3ZjUwYTIzMTk5ZGU1YmEwZjlmZmQ3MjYxNzAyM2M4NmRiMTRlNDRkM2UxNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmM2IyMTZlOGE2MmRiNTc2MmQxODcxMzM4ODBjNjQwMWE1NjZhNDhhMjk1Yjk5NDE4NWY1YWM4YWYyNGFjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://src/main.rs#L100-L100",
+          "resource": "repo://src/main.rs#L102-L102",
           "version": "repo-lines-v1:sha256:4b23131393d540824739a075bb605b2299e9a7b1e7847d634a23f3703c06f9e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGIyMzEzMTM5M2Q1NDA4MjQ3MzlhMDc1YmI2MDViMjI5OWU5YTdiMWU3ODQ3ZDYzNGEyM2YzNzAzYzA2ZjllMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM0MzY5YjcxYTI0MzVkOGZmNDNmNjdlNjkyMzIwZDBkNWM0OTAyNmJmYWEwOTUxZTFiYzBjNmM4NzA2MTgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzUxMjZkY2U5NjlmMTQ0ZDQ2ODQzNjkwN2VjODc1MjljYmM1NzQwYTQ3ZGQ1YTI1N2Y0ZmU0ZTlkMmU0MTZlNiJ9"
         }
       ]
@@ -429,8 +433,8 @@
       "statement": "The env-var surface is what makes the MCP stdio test hermetic: tests/mcp_stdio.rs spawns the built binary with OXYROMON_DATA_DIRECTORY pointed at a TempDir and OXYROMON_LOG_LEVEL=off, so migrations and catalog writes land in a throwaway database and log output cannot corrupt the JSON-RPC framing read from stdout.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L100-L128",
-          "version": "repo-lines-v1:sha256:3e210f645a9452b1e00b514b4636f3ed3db70c69f832e415c26bab40921f4f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExOTlkODVlODUwOTdkYzU4ZDMwNmFhYzFhMDQ3OTc0Y2E2YTMxNmNlMzJkODk2OThiYTY5NDA3YTY0ODE3MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1Yjg3N2Y2NzM4N2ZjYzEzNjAxMzRkMjM4OTYyYzlmNWNjNDAzMmFjNTVjNzA1OWQ3ZWE3NTY5MWMyNzllNTUifQ"
+          "resource": "repo://src/main.rs#L102-L127",
+          "version": "repo-lines-v1:sha256:9a256062b45d979f446af6bf768e9d5a71ab7bacf0e0ea707383548e7a005b81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjMxMzEzOTNkNTQwODI0NzM5YTA3NWJiNjA1YjIyOTllOWE3YjFlNzg0N2Q2MzRhMjNmMzcwM2MwNmY5ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExOTlkODVlODUwOTdkYzU4ZDMwNmFhYzFhMDQ3OTc0Y2E2YTMxNmNlMzJkODk2OThiYTY5NDA3YTY0ODE3MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzNDM2OWI3MWEyNDM1ZDhmZjQzZjY3ZTY5MjMyMGQwZDVjNDkwMjZiZmFhMDk1MWUxYmMwYzZjODcwNjE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1Yjg3N2Y2NzM4N2ZjYzEzNjAxMzRkMjM4OTYyYzlmNWNjNDAzMmFjNTVjNzA1OWQ3ZWE3NTY5MWMyNzllNTUifQ"
         },
         {
           "resource": "repo://tests/mcp_stdio.rs#L20-L43",
@@ -511,7 +515,7 @@
           "version": "repo-lines-v1:sha256:7262b6657d4bd10f86df828d7f58e973aca8d9643cc52fd86019bf7c48c0009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYjVhNGQwOWE3YTU1Y2U1YTgxMDFmM2U5NjNiZmIyMWJiZTBhNjU2YThjYzc2ZTZjZWJhMDBjNzU5NjM1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L291-L304",
+          "resource": "repo://AGENTS.md#L292-L305",
           "version": "repo-lines-v1:sha256:6c90a8ee260419ce52c98ce902d593546e4e6c9b455577ea517f64e10c04699c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTgwZjljMTI2OTAzYmNjMzMxYWE5NTQ1NmU0OTQ0NGE3ZDRkMDExZThhMmE4M2Y1ZGM4NzAyMzkxODEyZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTM5NTNiZmI3MmMxMjYyYmJhZTJlYWNhNzJjYWJmMWFmNDk5MjdhMGJiYTExNTdiMmQ1YmRiMjg1YzRiZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmZDk3ZWEyMWYwMmY5NWExMmQyYWY4MmQwYTdiM2U3ZTRjNmJhYjE1ZmZlNTNlNTliMDk5OWRlMDU1ZWU0M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODlkZjkzZjhiYTU3YTRkZGJmZDhmMDEzOTYyYzM5NzhjZTRkYjY4MTk5YzRkYTY2NjY0OWIwOTk2Y2VkYTkifQ"
         }
       ]
@@ -529,10 +533,24 @@
           "version": "repo-lines-v1:sha256:ce35bb8f4df1c48718a717a4a3165c0e5609fce9f33fdec65936690942b6ba51:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZkZDA5YTdmMjAwOTUwZjBiYWFlYzRkNTUyZDZkNTZkNDYxYzJhNDM4NjhlNGE4M2I2MzM4NTA5OWQ5OTA2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjM2YjhmZjNmM2Q2MzZmZjc3MzlhMTRlMTJhYTcxNTg5ZTNjOWRmY2E4ZjBlNTI4ZDNjZDcxOGJmNDU1ZGFlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5Yjg0NmM0MTY0MTQ1ODUyZDY2OTdiZjNjNjNiNDk0ODJhMjViYWM4MjIwN2NkZDNiOTY2MzFmODcwMTA0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjg4NzA3YWFmNTcxYTYzNzZkN2E3OWY4YmM2MTlmYmFmNmJiYWVkZDVhMzVhODFhMmNiZDEzZWI4MWQxZGY2OCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_07cc519390b14c689ce1858aa98b5658",
+      "statement": "The data directory also holds wiiu_keys.txt, written by import-keys and read by the Wii U WUA and NUS exports, both resolving it through config::get_data_directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_keys.rs#L15-L40",
+          "version": "repo-lines-v1:sha256:9311b4821695d5ca549fafd334c6c597f47da149b8e2c4d5341e92d818ca6aa1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYmUwM2ZjMjI2NjY4N2NhNzg5OTdjZGY1ZWQwNjJhNmIwMmFkNTIzZjk4MGQ5MTU1MDljZTUzMGNlODM5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNGRhOWRjNzFmYmRiZGUzZTFkMDFmNmJmZTVkNjM3NmM4MGY5MDIyMzA0ODJlMzE1MDZkZDMwZjY0ODA5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmVmM2M0ZGY3ZjA1N2NkNzdlMmU2NmJlZDlhNDE2ZWE4MzA5MmVmOTFiZDdjMjczNjY5ZmZjNGJmZDdkMzAifQ"
+        },
+        {
+          "resource": "repo://src/wux.rs#L24-L31",
+          "version": "repo-lines-v1:sha256:a3798c9775048495c46f4f8b3613b8bf5fb91b63eb9a7053bbcb3e424b2d2ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UwNzc0N2YwOTY2N2E4OTMxM2ExMjZkZjc3ZTMwMDhhYmI5MGM0YmE2YjM5MjgyODIyYjE0MzI3OWQ2NzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU5ZmM5YzYzNWJlMGE0MjE3NzdhMjJjYWRmY2Q3ZDJlMzIwN2E2YmRlYTY3ZDAxNzA0MThmMzZlMmY2ODUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RmYWE2ZjdmMjk3ZjQ3OWM1OTRmZmEzOGYwOWMwM2JmYjQwODExMGEzNTNmODIzYzc3YzlmMGFjOWIxNDRiNiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T21:19:09.823Z"
+    "at": "2026-10-25T14:55:31.619Z"
   }
 }

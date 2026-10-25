@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:38a574c4df498e769e34a3e2008bc4e4c16aed1d173723b73a45eb1c63fb9d40",
+  "pageVersion": "sha256:38f479cf0db4583fa9cff735ea0115634085f04b84e27a9cd177a57098e83481",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
       "statement": "The standard of proof for every crate under crates/ is agreement with the upstream reference implementation rather than self-consistency, and the suites are split accordingly: roundtrip.rs / apply.rs / decode.rs / convert.rs exercise the crate alone, interop.rs runs the upstream binary as a child process, and where a reference cannot be run a pinned reference-made artifact or a generated vector file stands in for it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L154-L156",
+          "resource": "repo://AGENTS.md#L155-L157",
           "version": "repo-lines-v1:sha256:f53ac784aec7eabbbd4a6614f73e43a10fdc1a1f395e2203037f7222ced4513d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU3MDRhNzlmNzdhNTBjYzg3ZDdlMjJmODUxZTEzMmQwOGY5YjhiNTdjYTJlZDcwMDNlNzdjNWVkZGIxOGYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzODU2YjUyMTA2MDkzZGQ4MzJjNzZlMmEzZThhZTkyM2VkYzBjODlhYWQzZDVkODhhNTIwMmFhYzk3YmRlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwNGMwMjkxZjI5ZWM4NTFlZDg3YTYxNDc0MDQzNjFlMTgxZTBlMTZkYTM5ZDNlZTZjMjcwODk4MjMzNThmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJhZmQyOTM3ZGU3NTllNzU1NDQ1NGVkYjM5OGM5NmFjMTA5NTlmOWU5ZjkyNmZkOGMxOWQ1NTE1Zjc5ZmFiZiJ9"
         },
         {
@@ -354,7 +354,7 @@
     },
     {
       "id": "claim_ef6e8d3366964afea14bc46ad1e239e1",
-      "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the six copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, xdeltars, xpsrs) to be byte-identical to xso-rs's.",
+      "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the seven copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs) to be byte-identical to xso-rs's.",
       "evidence": [
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L51-L62",
@@ -365,8 +365,8 @@
           "version": "repo-lines-v1:sha256:2703166abc49dfec1db2d6604e612bc623327067bedc5f7e2f880346250e796c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTgwNzZkM2QyOGQyMWUwMjAxMmIyMGVhZjdkYmY3NTQwOWE2Mjc3MTM0NDM5MDI1ZjI4MmUzNjhlMzMwNWFiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU4ZWJiMmQ2N2M5NWY5YjAzZjY0YTEwMDczN2I2OTg4YjdkN2JjMGY2MTJkODBjYTYxYmY1YjM2YmYwZTJlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://tests/crates.rs#L1-L18",
-          "version": "repo-lines-v1:sha256:6f3be4bf2011cc9437a1ede9ff27f96eaf5fe3cd956eda1ccba627d2eeefd9d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://tests/crates.rs#L1-L19",
+          "version": "repo-lines-v1:sha256:fb405f23097fb316aef70ab5ad213f96b4de7b4a723b8ff36a0352feccf8bf41:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YTY2MDgwMzhhM2M4N2U1YWU2YjQ0Mjg1MDQwNDk2YWM5NmQ5ODRmNzgwMDQ1YzVjYjY3ZDY3MDhlYTRmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -545,10 +545,52 @@
           "version": "repo-lines-v1:sha256:cb81d306b41472fda235cb7b75d1debb62e3aa7f5bc6aff6676b4ba34037b834:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNTg5OTFmMDQ1MWFhYTFhZGE2ZTdkYzdkNWJkMTMyM2YxNDRmZDZjOTFmODY5NmU3YTY2YmJmZTAxZjRiOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOGZmMDE0M2RiZTc1ZTY0YTAyOGRjYTg2NWQ1Y2FmNTI5YzYxMzMwMWFiZWU1NmQ0NTBjNTQzMDM2N2VkNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_8dc1b62908974e29b20c98bf49c227dc",
+      "statement": "wux-rs's tests run against a synthetic Wii U disc that tests/common/mod.rs builds and encrypts with made-up disc, common and title keys, plus an update as a NUS folder; tests/wua.rs reads the WUAs back with the independent zarust ZArchive reader and pins refusals for missing keys, a damaged hashed block, a non-disc file and a duplicated title.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/Cargo.toml#L33-L41",
+          "version": "repo-lines-v1:sha256:4f41f225f1237fb38c11872f2422e53f4679d8dbec066c396140cada67125a29:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0ZWNlMDgxZTQ4YmM2N2Q2MzJmYzVkNGFiZjJmMWRhMjEwZjI1NGI3ZDRjMWZkOGM3ODk5M2M1MTE1MzdlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0ZjhmNmJiN2U1YzBkOGJiY2I0ZGUxZDQyNzVkMDlmODYxY2Y4NzAwMzQyNDk2OTY2MzY2YWM2YzA5YzdmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ4NTE3OTRlZmVmY2Y5YTEwZjI4ZjZhMjY4YjM0MjY5OTA5MjlhMWYxYTI4ODFiOGYyODAwZWUxZWJjNDBhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQyOTJkODA2YmQ2YWVkMTg5MzZlODg2ZGVhNzQyMjM0ZTc4YmFiY2I3Y2Q5MmQ0MGRlYjQ5ZGJhOGFiNDBiYyJ9"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/common/mod.rs#L1-L20",
+          "version": "repo-lines-v1:sha256:e735aa9d22866dde68edd797770cd5e6aee99c069230d8fafe2ce036f246a760:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MmY0YzA4NTZjMmY3YjdiMDI0MDE4ODc1NjE4NThjNGU5MWJjOTc3ZDUxOTgzNmVhNTNhMTNiYjQ0OGFmMDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOGU5NjMxMzJhZDY0ZTI3NmRhYTcyZmU2NGE2ZjE2MDFmZDRmYmRlM2FjZTczMTMxMzM3MmZkNmExYWFjNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYmM0OTBiNTQxMzVkZmQzMjkyNGNmMmJhNjYxYTQ2MGRjYjk1M2JmNDI3Nzc1YWRjYTFjMjI0MDI4ZDVmMGMifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/wua.rs#L1-L191",
+          "version": "repo-lines-v1:sha256:484e17a43a7ce1e5cdf193cc0f31768dae016fe981ccd6356ee579bf2385c6ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZDVkYzI1Y2NhZTFlODdiNDcxNzdlOTM4ZDg4NzA2ZGYyZGUwODRlYjI3ZTI3NzMwOWIwZDIwNDhmY2VkNTRjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec67b114dd0f4a7095a10cbf0c22eeb3",
+      "statement": "tests/revert.rs checks that a WUA of the disc and its update reverts to NUS folders byte for byte and that a WUA without revert data refuses to revert, and tests/nus.rs checks a disc's conversion to an installable folder and that a damaged content fails its TMD hash.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/tests/nus.rs#L1-L92",
+          "version": "repo-lines-v1:sha256:151f622ab7d5a8a547f1ff1330c1bf241b0e9d4cde93f8994cbe4f422cdb77b4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNTk2NWQ1MGIyMDI4NDZmMGVlZDU3OGI0MDgzZTY4ZGZhZDZjYmM4ZGQ4NjQ2MTg5Mjc5MjE4YjBjOGM0NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/revert.rs#L1-L83",
+          "version": "repo-lines-v1:sha256:5028ec766b59ceb657e88d60861a25aad35b7ce83ff6a47ba191855975c213e6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYzI0MDZhM2M0ZGUwODU5ZTA4ZWYwNTQ4N2M3N2ExYmM4NTc3MTA3NTE2YTc4NjI4MDY1ZmUyZGI0ZjMwM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6cd34ea87e5a4c88a698a534d5e46d6c",
+      "statement": "crates/wux-rs/tests/real.rs holds four #[ignore]d tests that skip unless WUXRS_DISC names a real WUD or WUX, taking keys from WUXRS_KEYS or Cemu's keys.txt and comparing with a Cemu-made WUA in WUXRS_WUA and an update in WUXRS_ADD when set.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/tests/real.rs#L1-L185",
+          "version": "repo-lines-v1:sha256:112c3720f57cf27fb4d6eea0a47b39fd4a666175f679821aefa62240884c0009:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1ZmMzYTA2Mjc2YjE5M2Y0ODE3YjFiNzZhYjYwYzJhZjI5ZjhjN2YzMzhkNjAwMGQzNjJhMjI0ODQ1ZGVjNWExIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-24T21:55:54.894Z"
+    "at": "2026-10-25T14:55:31.619Z"
   }
 }

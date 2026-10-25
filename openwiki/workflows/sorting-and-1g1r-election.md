@@ -22,7 +22,12 @@ sources:
     resource: repo://src/sort_roms/test_trim_languages_only.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Sorting and the 1G1R Election
@@ -185,8 +190,9 @@ file of the game, its destination with `get_sorted_path`:
   scheme was passed on the command line, the scheme comes from
   `REGIONS_ALL_SUBFOLDERS` or `REGIONS_ONE_SUBFOLDERS` for the game's sorting;
   trashed games never get subfolders.
-- Arcade games that are not archives, and PS3 JB folders, get a directory
-  named after the game.
+- Arcade games that are not archives, PS3 JB folders, and Wii U NUS titles
+  (updates and DLC) that are not archives get a directory named after the game.
+  A NUS title needs one because every title names its contents alike.
 
 Patches move with their ROM file, keeping their own extension, and a game's
 M3U playlist moves with the game. Only files whose path actually changes are

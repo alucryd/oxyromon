@@ -56,9 +56,14 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -139,14 +144,17 @@ touch the write lock — `parse_game_name` being the one that needs no connectio
 all. `status` and the `oxyromon://status` resource
 share `build_status`, which reports version, `read_only`, ROM/tmp directories,
 three counts and the same alphabetized dependency list `oxyromon info` prints —
-eight groups (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
-`xdelta-rs`, `nod`). Every one of them is a linked crate whose `get_version()`
+nine groups (`sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`,
+`xdelta-rs`, `wux-rs`, `nod`). Every one of them is a linked crate whose `get_version()`
 returns the literal `"built-in"`, so none can come back missing or report
 `version: null`; `cia-rs` replaced `ctrtool`, the last optional external program,
 and the tool's description now speaks of format backends rather than external
-tools. `nsz-rs` is the one codec that
-qualifies its answer — `"built-in, prod.keys not found"` when the keys file is
-absent — since only NSZ compression needs keys. Paging is clamped server-side:
+tools. Two codecs qualify their answer about keys. `nsz-rs` reports
+`"built-in, prod.keys not found"` when the Switch keys file is absent, since only
+NSZ compression needs it. `wux-rs` reports `"built-in, no Wii U keys imported"`
+until `import-keys` has run, since only WUA and NUS exports need Wii U keys.
+Neither `import-keys` nor `export-roms` has an MCP tool, so an agent can see the
+missing keys but cannot import them. Paging is clamped server-side:
 `list_games` defaults to 100 and caps at 1000, `search_games` defaults to 50 and
 caps at 500. `parse_game_name` is pure `shiratsu-naming` parsing with no
 connection at all.
@@ -185,10 +193,10 @@ list games instead of machines, such as FBNeo's, as arcade systems.
 
 `convert_roms` upper-cases `params.format` before the check, because
 `convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`,
-`RVZ`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes) and the validated
+`RVZ`, `WUX`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes) and the validated
 value is what goes into the argv, where clap's `PossibleValuesParser` compares it
 case-sensitively. The tool description and the `format` parameter doc list
-exactly those eight values. `tests/mcp_stdio.rs` pins both sides: `"zip"` is
+exactly those nine values. `tests/mcp_stdio.rs` pins both sides: `"zip"` is
 accepted and `"nkit"` is refused with "unknown format".
 
 JSON Schema for every tool comes from the parameter structs in

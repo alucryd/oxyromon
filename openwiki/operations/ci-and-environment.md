@@ -46,6 +46,8 @@ sources:
     resource: repo://src/config.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-f7509e92ca643a1db54a74c4
+    resource: repo://src/import_keys.rs
   - id: openwiki-source-b1a773ad2966952330a5f92d
     resource: repo://src/import_roms/test_cia.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
@@ -58,6 +60,8 @@ sources:
     resource: repo://src/rvz.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-1c38b81542bfb683299ad2cd
     resource: repo://src/xdelta.rs
   - id: openwiki-source-9b5bca3734529131a5ec0d1b
@@ -66,7 +70,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -251,7 +258,7 @@ not a CI check.
 
 | Variable | Read at | Effect | Default |
 | --- | --- | --- | --- |
-| `OXYROMON_DATA_DIRECTORY` | `src/main.rs`, every run | Directory that holds `oxyromon.db`; created if missing | `dirs::data_dir()/oxyromon` |
+| `OXYROMON_DATA_DIRECTORY` | `config::get_data_directory`, from `src/main.rs` every run, and from `import-keys` and the Wii U exports | Directory that holds `oxyromon.db` and the imported `wiiu_keys.txt`; created if missing | `dirs::data_dir()/oxyromon` |
 | `OXYROMON_ROM_DIRECTORY` | `config::get_rom_directory` | Seeds `ROM_DIRECTORY` **only when no setting row exists**, then persisted | `dirs::home_dir()/Emulation` |
 | `OXYROMON_TMP_DIRECTORY` | `config::get_tmp_directory` | Seeds `TMP_DIRECTORY` under the same first-run rule | `std::env::temp_dir()` |
 | `OXYROMON_LOG_LEVEL` | `src/main.rs`, logger construction | `env_logger` filter (`off`, `debug`, `module=trace`, …) | unset, i.e. env_logger's own default filter |
@@ -270,14 +277,17 @@ probe the bare command name on `$PATH` and have no override variable.)
 Two lifetime distinctions matter more than the paths themselves:
 
 **`OXYROMON_DATA_DIRECTORY` is re-read every run and never persisted.** It
-selects the SQLite file location, and `main.rs` creates the directory
+selects the SQLite file location through `config::get_data_directory`, which fails
+with `No data directory to keep oxyromon's database in` when the variable is unset
+and the platform has no data directory. `main.rs` creates the directory
 (`create_dir_all`, quiet), creates `oxyromon.db` if absent, and opens the pool —
 which runs the embedded `sqlx::migrate!()` migrator — before any subcommand
 runs. A failing migration therefore breaks every subcommand at startup, not just
 migrations. The Docker images exploit this: both set
 `OXYROMON_DATA_DIRECTORY=/data` and `OXYROMON_ROM_DIRECTORY=/roms` and declare
 `VOLUME [ "/data", "/roms" ]`, so a container ignores the host's platform data
-directory entirely.
+directory entirely. The same directory holds the Wii U keys that `import-keys`
+stores, so a container keeps them on its `/data` volume.
 
 **`OXYROMON_ROM_DIRECTORY` and `OXYROMON_TMP_DIRECTORY` are bootstrap-only.**
 `main.rs` calls `get_rom_directory` and `get_tmp_directory` at startup purely for

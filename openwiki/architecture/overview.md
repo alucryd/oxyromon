@@ -78,7 +78,9 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
     at: 2026-10-25T14:55:31.619Z

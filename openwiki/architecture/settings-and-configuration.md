@@ -96,7 +96,7 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
     at: 2026-10-25T14:55:31.619Z

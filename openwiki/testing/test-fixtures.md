@@ -30,6 +30,8 @@ sources:
     resource: repo://src/download_dats/test_nointro.rs
   - id: openwiki-source-904cc3411b962b115194d55e
     resource: repo://src/download_dats/test_redump.rs
+  - id: openwiki-source-0f48e709a294c84643eef7ef
+    resource: repo://src/export_roms/test_wux_with_ticketless_update_to_wua.rs
   - id: openwiki-source-6f95130cb448e88dd97ab560
     resource: repo://src/import_dats.rs
   - id: openwiki-source-8485a3ae73bdd8c6923a0bf4
@@ -80,6 +82,8 @@ sources:
     resource: repo://src/rebuild_roms/merged_set.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-1cf069de5c999c3ff1245ed6
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-790aa1ecc03c536bf0e060a6
@@ -92,6 +96,8 @@ sources:
     resource: repo://tests/mcp_stdio.rs
   - id: openwiki-source-0cc1fa6981e9c7b322a64061
     resource: repo://tests/profile.xml
+  - id: openwiki-source-fe6c4f3a2a4bbacd8c8e105a
+    resource: repo://tests/Test%20Game%20(USA).keys.txt
   - id: openwiki-source-a3a96d35ac80c8ccafbd677c
     resource: repo://tests/Test%20System%20(20000000).dat
   - id: openwiki-source-792ef1983e45ffb1bb16bee7
@@ -110,7 +116,14 @@ sources:
     resource: repo://tests/Test%20System%20(20241228)%20(MAME%20CHD).dat
   - id: openwiki-source-d055e6a57bb9c1c3b426914e
     resource: repo://tests/Test%20System%20(20241230)%20(MAME%20Mixed).dat
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+  - id: openwiki-source-cc9a39413c8a670060b6243d
+    resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
+  - id: openwiki-source-706217a392bda126ca145591
+    resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 
@@ -414,6 +427,25 @@ oracle there
 a fixture's bytes is therefore a two-sided change: the DAT rows in this
 repository *and* the golden report in the crate.
 
+## The synthetic Wii U fixtures
+
+No real Wii U disc or key can ship, so the Wii U fixtures are synthetic, built with
+the same layout wux-rs's own tests use
+([Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md)).
+
+| File | Role |
+| --- | --- |
+| `Test Game (USA).wud` | A 704 KiB encrypted disc, declared by `Test System (20261025) (WUD).dat` |
+| `Test Game (USA).wux` | The same disc as a WUX, which imports and checks against the WUD's row |
+| `Test Game (USA).keys.txt` | Made-up keys in Cemu's format: the disc key, then a stand-in common key. `src/wux.rs` reads it in place of the data directory's keys under `cfg(test)` |
+| `Test Game (USA) (Update)/` | An update as a NUS folder under No-Intro's CDN names: `tmd.48`, `cetk.48`, contents `00000010` to `00000012` and `00000012.h3`. Declared by `Test System (20261025) (CDN).dat` |
+
+These drive `import_roms/test_wux.rs` and `test_nus.rs`, `check_roms/test_wux.rs`,
+the WUD and WUX cases under `convert_roms/` and `export_roms/`, and
+`create_dats/test_wux_and_nus.rs`. The export tests that bundle an update import
+both DATs, so `ToWua` finds the update by title ID; the ticketless case removes
+the `cetk` and checks that the update is left out of the WUA.
+
 ## Non-DAT fixtures
 
 | File | Role |
@@ -427,17 +459,17 @@ repository *and* the golden report in the crate.
 
 ## `tests/crates.rs`: the shared CLI shell must not drift
 
-`tests/crates.rs` is a workspace-level guard, not a behaviour test. The seven
+`tests/crates.rs` is a workspace-level guard, not a behaviour test. The eight
 format crates each ship a CLI whose `ui.rs` — progress bar, `-o DIR`, the
 `✔`/`✖` per-input lines — is a **verbatim copy**. `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the reference and asserts the copies
-in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` are byte-identical
-([tests/crates.rs](../../tests/crates.rs#L1-L18)).
+in **`chdrs`**, `ciars`, `gdirs`, `nszrs`, `wuxrs`, `xdeltars` and `xpsrs` are
+byte-identical ([tests/crates.rs](../../tests/crates.rs#L1-L19)).
 
 It has no feature gate and no fixtures, so it runs on every
 `cargo test --workspace`, including the CI coverage pass. Editing one `ui.rs`
-without the other six turns CI red with `"<path> differs from xsors's ui.rs"`;
-the fix is always to change all seven together, which is the convention `AGENTS.md`
+without the other seven turns CI red with `"<path> differs from xsors's ui.rs"`;
+the fix is always to change all eight together, which is the convention `AGENTS.md`
 records for the crates
 ([Format Crates](../integrations/format-crates.md)).
 

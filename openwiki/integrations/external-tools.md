@@ -13,6 +13,8 @@ sources:
     resource: repo://crates/chd-rs/tests/write.rs
   - id: openwiki-source-039ef28c41d4fc7a1b163edc
     resource: repo://crates/cia-rs/tests/common/mod.rs
+  - id: openwiki-source-1877f90a07c967103e553a55
+    resource: repo://crates/wux-rs/README.md
   - id: openwiki-source-7c41df92324ca8ddc11ad14b
     resource: repo://crates/xdelta-rs/tests/interop.rs
   - id: openwiki-source-0c6adbcf77da61d03e900821
@@ -37,14 +39,19 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 
 # External Tools
 
 oxyromon needs no external program at runtime. The README says so directly:
-every format is handled in-process ([README.md](../../README.md#L21)). The last
+every format is handled in-process ([README.md](../../README.md#L20)). The last
 subprocess, `ctrtool` for CIA, was replaced by the `cia-rs` crate, and with it
 went `src/ctrtool.rs`, the `util::tool_version` probe and the
 `Required tool not found` path in `import-roms`. AGENTS.md now states the rule
@@ -65,6 +72,10 @@ crate in-process.
 | 7-Zip | `sevenz-rust2` + `zip` | 7Z, ZIP |
 | `dolphin-tool`, `wit` | `nod` | RVZ, WBFS |
 
+`wux-rs` has no row: oxyromon never ran a tool for the Wii U, so the crate follows
+wudd and Cemu rather than replacing a subprocess. Its tests use a synthetic disc and
+the independent `zarust` ZArchive reader, not an upstream binary.
+
 The crates under `crates/` are oxyromon's own ports, each published on its own
 and shipping a standalone CLI; see [Format Crates in crates/](format-crates.md).
 `sevenz-rust2`, `zip` and `nod` are ordinary crates.io dependencies.
@@ -80,8 +91,10 @@ and shipping a standalone CLI; see [Format Crates in crates/](format-crates.md).
   the file instead of a panic.
 - **Nothing can be missing.** `info`, the GraphQL `dependencies` query and the MCP
   `status` payload list `sevenz-rust2`, `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
-  `xdelta-rs`, `xps-rs` and `xso-rs`, and every one reports `built-in`. `nsz-rs`
-  alone adds `prod.keys not found` when the Switch key file is absent.
+  `wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs`, and every one reports `built-in`.
+  Two add a note about keys: `nsz-rs` appends `prod.keys not found` when the Switch
+  key file is absent, and `wux-rs` appends `no Wii U keys imported` until
+  `import-keys` has run.
 - **Temp space still matters.** Intermediate files, CIA unpacks included, go to a
   `TempDir` from `util::create_tmp_directory`, created inside the `TMP_DIRECTORY`
   setting rather than the OS default. The caller holds it for the whole

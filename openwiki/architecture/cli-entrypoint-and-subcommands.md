@@ -27,6 +27,8 @@ sources:
     resource: repo://src/config/test_cli.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-f7509e92ca643a1db54a74c4
+    resource: repo://src/import_keys.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
@@ -53,7 +55,9 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract

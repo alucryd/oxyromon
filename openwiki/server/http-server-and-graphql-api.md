@@ -54,7 +54,12 @@ sources:
     resource: repo://src/server/test_uploads.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -151,14 +156,15 @@ the game's rows ordered by name with no completion or region filter.
 Two of those fields are worth understanding rather than treating as lookups:
 
 - **`dependencies` reports the format engines, and none of them can be
-  missing.** The eight entries are `sevenz-rust2`, `chd-rs`, `cia-rs`,
-  `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` (which backs RVZ and
-  WBFS), sorted by name. All are linked-in crates whose `get_version()` returns
-  the literal `built-in` and cannot fail — `nsz-rs` is the one that adds detail,
-  returning `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent.
+  missing.** The nine entries are `sevenz-rust2`, `chd-rs`, `cia-rs`,
+  `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs` and `nod` (which backs RVZ
+  and WBFS), sorted by name. All are linked-in crates whose `get_version()`
+  returns `built-in` and cannot fail. Two add detail about keys: `nsz-rs` returns
+  `built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, and
+  `wux-rs` returns `built-in, no Wii U keys imported` until `import-keys` has run.
   `version` is still nullable in the schema, but no entry produces `null` any
   more: `cia-rs` replaced `ctrtool`, the last external binary on the list. The
-  same eight-entry list backs `oxyromon info` and the MCP read tool, so the three
+  same nine-entry list backs `oxyromon info` and the MCP read tool, so the three
   surfaces agree.
 - **`systemSettings(systemId)` is the effective configuration, not a row
   lookup.** It loads the global settings and the system's overrides and merges

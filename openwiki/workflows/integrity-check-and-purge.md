@@ -84,9 +84,14 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -164,7 +169,7 @@ than failing the run
 For each system, `check_system` loads only `original = true` roms that have a
 `romfile_id`, groups them by `romfile_id`, and dispatches on the romfile's
 extension. The whole pass runs inside one transaction that is committed at the
-end of the system ([src/check_roms.rs](../../src/check_roms.rs#L102-L249)).
+end of the system ([src/check_roms.rs](../../src/check_roms.rs#L103-L257)).
 
 ```mermaid
 flowchart TD
@@ -176,12 +181,14 @@ flowchart TD
     D -->|cso or zso| I["decompress to ISO in tmp, check ISO"]
     D -->|nsz| J["extract to NSP in tmp, check NSP"]
     D -->|rvz| K["hash while decoding, no ISO written"]
+    D -->|wux| W["hash while decompressing, no WUD written"]
     D -->|other| L["CommonRomfile check"]
     E --> M{"check returned Ok"}
     F --> M
     I --> M
     J --> M
     K --> M
+    W --> M
     L --> M
     M -->|Err| N["move_to_trash: rename into system Trash, update row"]
     M -->|"Ok and --size"| O["Persist::update recomputes romfiles.size"]
@@ -219,6 +226,12 @@ Every format implements the same `Check` trait, and the leaf comparison is alway
 - `RvzRomfile::check` hashes *while decoding*, writing no ISO at all; it falls
   back to the extract-then-check path only if a header is configured
   ([src/rvz.rs](../../src/rvz.rs#L69-L98)).
+- `WuxRomfile::check` does the same for a Wii U WUX: it streams the
+  decompressing `wux_rs::Image` through the hasher and compares against the
+  DAT's `.wud` row, writing no 25 GB WUD. It extracts a WUD to the temp
+  directory only if a header is configured, which no Wii U DAT declares
+  ([src/wux.rs](../../src/wux.rs#L87-L112)). A loose `.wud` takes the plain
+  `CommonRomfile` path. Neither needs Wii U keys.
 
 Headers are handled inside hashing, not after: when the system has a `headers`
 row, `get_file_and_header_size` peeks at the configured bytes and, only if every
@@ -509,8 +522,8 @@ The bundled `audit_system` prompt encodes the intended operator sequence:
 - **`roms.original` decides what `check-roms` will even look at.**
   `find_original_roms_with_romfile_by_game_ids` filters `original = true`, and
   DAT import sets that flag from whether the declared rom name carries a
-  non-original extension (`chd`, `cso`, `nsz`, `rvz`, `zso`, `7z`, `zip`)
-  ([src/mimetype.rs](../../src/mimetype.rs#L37-L45),
+  non-original extension (`chd`, `cso`, `nsz`, `rvz`, `wux`, `zso`, `7z`, `zip`)
+  ([src/mimetype.rs](../../src/mimetype.rs#L40-L49),
   [src/import_dats.rs](../../src/import_dats.rs#L786-L827)). IRD child roms are
   written with `original = false`, which is part of why IRD games are retired by
   `purge-irds` rather than by re-hashing

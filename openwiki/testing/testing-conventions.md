@@ -94,13 +94,18 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-fc509b708992c488b446093a
     resource: repo://src/util/test_compute_alpha_subfolder.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Test Harness and Conventions
@@ -314,12 +319,18 @@ oracle skips, and the `env` override exists so a developer can point the suite a
 a build outside `PATH`.
 
 **The application has no tool probe left**, because `sevenz-rust2`, `chd-rs`,
-`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs` and `nod` are all linked
+`cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `wux-rs` and `nod` are all linked
 libraries whose `get_version()` returns a constant such as `"built-in"`
 ([src/archive.rs](../../src/archive.rs#L477-L480),
 [src/chd.rs](../../src/chd.rs#L896-L898),
 [src/cia.rs](../../src/cia.rs#L20-L22)). `ctrtool`, the last program the
 application ran, was replaced by `cia-rs`, and `util::tool_version` went with it.
+
+Keys are the one external input a test cannot fetch. `src/wux.rs` switches its
+keys path on `cfg!(test)`: tests read the made-up keys in
+`tests/Test Game (USA).keys.txt` instead of `wiiu_keys.txt` in the data
+directory, so the WUA and NUS export tests need no `import-keys` run and never
+touch a real key.
 `src/import_roms/test_cia.rs` therefore has no probe and no early return: it takes
 the mutex and runs the real CIA import on every machine, CI included
 ([src/import_roms/test_cia.rs](../../src/import_roms/test_cia.rs#L7-L12)).
@@ -487,10 +498,10 @@ serialized by the `MUTEX`, so wall-clock time scales with the number of
 
 `tests/crates.rs` is a parity guard, not a behaviour test: `every_cli_shares_one_ui`
 reads `crates/xso-rs/src/bin/xsors/ui.rs` as the canonical copy and asserts that
-the `ui.rs` of `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs` and `xps-rs` is
-byte-identical to it
-([tests/crates.rs](../../tests/crates.rs#L1-L18)). The format CLIs deliberately
-share one shell, so a change to that shell must be made in all seven places at once;
+the `ui.rs` of `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs` and
+`xps-rs` is byte-identical to it
+([tests/crates.rs](../../tests/crates.rs#L1-L19)). The format CLIs deliberately
+share one shell, so a change to that shell must be made in all eight places at once;
 editing one turns any `cargo test --workspace` red, on any crate
 ([AGENTS.md](../../AGENTS.md#L146-L155)).
 

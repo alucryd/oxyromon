@@ -22,6 +22,8 @@ sources:
     resource: repo://crates/chd-rs/Cargo.toml
   - id: openwiki-source-a057427619dc76389568b31f
     resource: repo://crates/chd-rs/src/flac.rs
+  - id: openwiki-source-ce853e79f786a28d42f8717a
+    resource: repo://crates/wux-rs/Cargo.toml
   - id: openwiki-source-0bc9c609aef896964e961315
     resource: repo://Cross.toml
   - id: openwiki-source-b5a80c315c8a39d6bc68be22
@@ -74,7 +76,7 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
     at: 2026-10-25T14:55:31.619Z

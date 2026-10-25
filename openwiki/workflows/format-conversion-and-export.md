@@ -1,7 +1,7 @@
 ---
 type: workflow
 title: Format Conversion and Export
-description: convert-roms and export-roms over the ORIGINAL/7Z/ZIP/CHD/CSO/ZSO/RVZ/NSZ/ISO/GDI/WBFS matrix — the ConvertOpts entry shared with import-roms auto-conversion, arcade gating and PREFER_FORMAT/--save, the transcode decode ladder, chd-rs driven CHD creation with chdman-compatible codec and hunk defaults, and why GDI, ISO and WBFS only exist as export targets.
+description: convert-roms and export-roms over the ORIGINAL/7Z/ZIP/CHD/CSO/ZSO/RVZ/NSZ/WUX/ISO/GDI/WBFS/WUA/NUS matrix — the ConvertOpts entry shared with import-roms auto-conversion, arcade gating and PREFER_FORMAT/--save, the transcode decode ladder, chd-rs driven CHD creation with chdman-compatible codec and hunk defaults, Wii U WUX conversion and WUA/NUS export with update and DLC bundling, and why GDI, ISO, WBFS, WUA and NUS only exist as export targets.
 tags: [convert-roms, export-roms, conversion, chd, chd-rs, rvz, wbfs, gdi, iso, 7z, zip, cso, zso, nsz, recompress, check, chd-parents, prefer-format]
 sources:
   - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
@@ -84,9 +84,14 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-856ac41ecb89a38b80d7e895
     resource: repo://src/wbfs.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Format Conversion and Export
@@ -117,21 +122,25 @@ connection ([src/main.rs](../../src/main.rs#L153-L156)).
 | `CSO` / `ZSO` | ✔ | ✔ | ISO, DVD CHD, the opposite XSO type |
 | `RVZ` | ✔ | ✔ | ISO, RVZ (`--recompress`) |
 | `NSZ` | ✔ | ✔ | NSP |
+| `WUX` | ✔ | ✔ | WUD (loose or in a single-file archive), WUX (export copies it) |
 | `ISO` | ✖ | ✔ | ISO (copy), CUE/BIN, CD/DVD CHD |
 | `GDI` | ✖ | ✔ | CUE/BIN (loose or archived), GDI (copy), CD CHD |
 | `WBFS` | ✖ | ✔ | ISO, RVZ |
+| `WUA` | ✖ | ✔ | WUD, WUX, single-WUD archive; plus the library's updates and DLC |
+| `NUS` | ✖ | ✔ | WUD, WUX, single-WUD archive |
 
 `convert_roms::ALL_FORMATS` is
-`ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP, ZSO`; `export_roms` keeps its own
-private list that adds `GDI`, `ISO` and `WBFS`
-([src/convert_roms.rs](../../src/convert_roms.rs#L27-L28),
-[src/export_roms.rs](../../src/export_roms.rs#L30-L33)). Those three are
+`ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUX, ZIP, ZSO`; `export_roms` keeps its own
+private list that adds `GDI`, `ISO`, `NUS`, `WBFS` and `WUA`
+([src/convert_roms.rs](../../src/convert_roms.rs#L28-L30),
+[src/export_roms.rs](../../src/export_roms.rs#L31-L34)). Those five are
 **export-only** because they are one-way: `ISO` throws away every track but the
 first (a bchunk port for Open PS2 Loader, [src/iso.rs](../../src/iso.rs#L1-L12)),
-`GDI` is a Dreamcast-only encoding, and `WBFS` has no decoder path in this code
-base. Since `config`'s choice list for `PREFER_FORMAT` is literally
+`GDI` is a Dreamcast-only encoding, `WBFS` has no decoder path in this code
+base, `WUA` drops the disc's encryption and layout, and a `NUS` folder carries the
+disc's TMD rather than the CDN's. Since `config`'s choice list for `PREFER_FORMAT` is literally
 `convert_roms::ALL_FORMATS` ([src/config.rs](../../src/config.rs#L72-L84)),
-`ISO`, `GDI` and `WBFS` can never become an auto-conversion target, and the
+none of the five can become an auto-conversion target, and the
 GraphQL `PreferFormatValidator` rejects them too
 ([src/validator.rs](../../src/validator.rs#L33-L53)).
 
@@ -142,15 +151,15 @@ loose files or a single ZIP and nothing else.
 
 Since CHD moved in-process to the `chd-rs` crate there is **no external-tool
 probe anywhere in this pipeline**. `convert_roms::format_available` is a pure
-string test over the eight built-in formats and returns false only for a format
+string test over the nine built-in formats and returns false only for a format
 outside that list; the caller treats a false as a **soft stop** — `main` returns
 `Ok(())` before touching a system
-([src/convert_roms.rs](../../src/convert_roms.rs#L36-L42),
-[src/convert_roms.rs](../../src/convert_roms.rs#L363-L365)). In practice clap's
+([src/convert_roms.rs](../../src/convert_roms.rs#L39-L45),
+[src/convert_roms.rs](../../src/convert_roms.rs#L377-L379)). In practice clap's
 `PossibleValuesParser` rejects an unknown `--format` before `main` ever runs, so
 this gate exists for programmatic callers. `export_roms::main` repeats the same
 inline table and `bail!("Not supported")` on an unknown format
-([src/export_roms.rs](../../src/export_roms.rs#L109-L114)).
+([src/export_roms.rs](../../src/export_roms.rs#L110-L128)).
 
 `format_available` is called twice on the CLI path: once in `main` before the
 system loop and again inside `convert_system`. The second call is what protects
@@ -239,7 +248,8 @@ global row ([Settings and Configuration](../architecture/settings-and-configurat
 | `ZIP` | `ZIP_COMPRESSION_ALGORITHM`, `ZIP_COMPRESSION_LEVEL` / `ZIP_ZSTD_COMPRESSION_LEVEL` (solid is hard-coded `false`) |
 | `CHD` | `CHD_CD/DVD/HD/LD_COMPRESSION_ALGORITHMS`, `CHD_CD/DVD/HD/LD_HUNK_SIZE`, `CHD_PARENTS` |
 | `RVZ` | `RVZ_COMPRESSION_ALGORITHM`, `RVZ_COMPRESSION_LEVEL`, `RVZ_BLOCK_SIZE`, plus `RVZ_SCRUB` in `export_roms` only |
-| `CSO`, `ZSO`, `NSZ`, `ORIGINAL` | none |
+| `CSO`, `ZSO`, `NSZ`, `WUX`, `ORIGINAL` | none |
+| `WUA`, `NUS` (export only) | none; they read the Wii U keys `import-keys` stored instead |
 
 `archive::get_archive_compression` maps an archive type onto its
 (algorithm, zstd-level, level) key triple and returns an `ArchiveCompression`
@@ -381,7 +391,7 @@ The durable invariants that came with the crate:
 ### `to_archive` (7Z and ZIP)
 
 Partitions the loaded games by extension in a fixed order — CHD, CSO, NSZ, RVZ,
-ZSO, archive, then everything else — and each partition is handled by its own
+WUX, ZSO, archive, then everything else — and each partition is handled by its own
 loop; the leftover loop is what packs plain loose files
 ([src/convert_roms.rs](../../src/convert_roms.rs#L403-L440),
 [src/common.rs](../../src/common.rs#L98-L129)). Details:
@@ -471,6 +481,12 @@ These accept only a narrow source set and silently ignore the rest by
   `recompress`. `convert_roms` always passes `scrub = false` and never reads
   `RVZ_SCRUB`
   ([src/convert_roms.rs](../../src/convert_roms.rs#L2293-L2437)).
+- `to_wux`: loose WUDs, and archives holding a single ROM whose name ends in
+  `wud`. A WUX has no settings, so recompressing one would change nothing:
+  existing WUXs fall into `others` and are dropped, even under `recompress`
+  ([src/convert_roms.rs](../../src/convert_roms.rs#L2366-L2460)). In `to_archive`
+  a WUX is decompressed to a WUD in the temp directory and archived under the
+  game's name; `to_original` decompresses it in place next to the WUX.
 
 ### `to_original`
 
@@ -478,8 +494,8 @@ The only target whose signature takes nothing but `check` — `recompress` and
 `diff` never reach it, and no branch prints a diff
 ([src/convert_roms.rs](../../src/convert_roms.rs#L2439-L2446),
 [convert_roms.rs](../../src/convert_roms.rs#L2782-L2861)). It extracts archive
-entries, unpacks CHDs according to `ChdType`, decodes CSO/ZSO→ISO, NSZ→NSP and
-RVZ→ISO. Two behaviours stand out:
+entries, unpacks CHDs according to `ChdType`, decodes CSO/ZSO→ISO, NSZ→NSP,
+RVZ→ISO and WUX→WUD. Two behaviours stand out:
 
 - Arcade systems get a directory: an extracted archive expands into a new
   directory named after the archive stem rather than into the parent directory
@@ -519,6 +535,8 @@ export-side analogue of the `recompress` rule:
 | CSO/ZSO → CSO/ZSO | `copy_file`, either subtype to either target |
 | RVZ → RVZ | copy; re-encode through a temp ISO only when `scrub` is on |
 | ISO → ISO | `copy_file` |
+| WUX → WUX | `copy_file`; a WUX has no settings to re-encode with |
+| NUS title → ORIGINAL | its files copied into a folder named after the game |
 | GDI set → GDI | GDI file plus every track file copied |
 | multi-track CD CHD → CSO/ZSO | **no file written** |
 
@@ -556,6 +574,21 @@ The export-only targets:
   is skipped with `No CUE file found`
   ([src/export_roms.rs](../../src/export_roms.rs#L1050-L1221),
   [src/gdi.rs](../../src/gdi.rs#L64-L80)).
+- **`to_wua`** writes Cemu's WUA from a WUD, a WUX read as it is, or a
+  single-WUD archive extracted to the temp directory. `ToWua` also bundles the
+  newest update and DLC in the library, from any system: it reads the disc's
+  title ID, scans every romfile that is a TMD, and keeps titles sharing the
+  disc's low 32 bits whose type is `0005000E` (update) or `0005000C` (DLC). A
+  title without a ticket is skipped with a warning, since No-Intro lists DLC
+  without one ([src/export_roms.rs](../../src/export_roms.rs#L1591-L1655),
+  [src/wux.rs](../../src/wux.rs#L197-L305)).
+- **`to_nus`** writes the disc's title as a NUS folder for WUP Installer GX2,
+  named after the source's stem. Updates and DLC are NUS folders already, so they
+  export as `ORIGINAL`
+  ([src/export_roms.rs](../../src/export_roms.rs#L1523-L1589)).
+- Both need the Wii U keys and fail with `No Wii U keys imported` until
+  `import-keys` has run. See
+  [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 - **`to_chd`** still consults parents — via `find_parent_chd_romfile_by_game`
   only, since export has no prompt flag — so exported clones can stay slim, but
   it has no notion of `recompress`, and export reads only the CD and DVD CHD

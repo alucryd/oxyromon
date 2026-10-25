@@ -54,7 +54,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # PS3 IRD Files and JB Folders
@@ -380,12 +383,20 @@ A directory containing `PS3_DISC.SFB` is recognised as a JB folder and routed to
 MD5 identify the game, every other file is hashed **with MD5 forced** (the only
 algorithm IRDs provide) and matched against roms sharing the SFB rom's parent, then
 moved to `<system directory>/<game name>/<rom name>`
-([src/config.rs](../../src/config.rs#L150),
-[src/import_roms.rs](../../src/import_roms.rs#L246-L290),
-[src/import_roms.rs](../../src/import_roms.rs#L602-L792)). A jukebox folder names
+([src/config.rs](../../src/config.rs#L156),
+[src/import_roms.rs](../../src/import_roms.rs#L266-L309),
+[src/import_roms.rs](../../src/import_roms.rs#L779-L969)). A jukebox folder names
 no system of its own, so unattended mode without `--system` warns
 `PlayStation 3 folder needs a system, skipping` — which is why the web dialog tells
 you to import the system's DAT first.
+
+A Wii U NUS folder is the other directory `import-roms` imports whole, and the two
+are easy to confuse. The NUS test runs first: a folder holding a TMD goes to
+`import_nus`, which finds its game by the TMD's own hash in any system, so it needs
+no `--system`. The walk also applies the NUS test to every subdirectory, while the
+`PS3_DISC.SFB` test applies only to the path given on the command line. A NUS title
+gets its per-game folder from `wux::is_nus_title` rather than from
+`games.jbfolder`. See [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 
 PSN-style companions travel a different route from IRD games. `pkg`, `pup` and
 `rap` are grouped as `PS3_EXTENSIONS`, and an archive whose single rom carries one
