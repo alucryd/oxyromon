@@ -81,7 +81,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # System Architecture Overview
@@ -110,7 +110,7 @@ flowchart TD
 
   SUB --> SHARED["Shared layers: database.rs, model.rs, common.rs, config.rs, util.rs, mimetype.rs, progress.rs, prompt.rs, transcode.rs"]
   SHARED --> FMT["Format modules: archive, chd, cia, rvz, wbfs, iso, xso, nsz, gdi, xdelta, xps, crc32"]
-  FMT --> CRATES["In-process engines: crates chd-rs cia-rs gdi-rs nsz-rs xdelta-rs xps-rs xso-rs, plus sevenz-rust2, zip, nod"]
+  FMT --> CRATES["In-process engines: crates chd-rs cia-rs gdi-rs nsz-rs wux-rs xdelta-rs xps-rs xso-rs, plus sevenz-rust2, zip, nod"]
   SHARED --> SQLITE[("oxyromon.db, SQLite via sqlx")]
   SHARED --> DISK[("ROM directory on the filesystem")]
   SUB --> PROG["progress.rs output on stderr"]
@@ -167,13 +167,14 @@ the type itself.
 engine: `chd.rs` drives `chd-rs` (a port of chdman, for CDs, DVDs, hard disks and
 LaserDiscs), `xso.rs`/`nsz.rs`/`gdi.rs`/`xdelta.rs`/`xps.rs` drive the matching
 `crates/*` member, `cia.rs` drives `cia-rs` (a port of ctrtool's `--plain`
-unpacking), `archive.rs` uses sevenz-rust2 and zip, and `rvz.rs`/`wbfs.rs`
-use `nod`. Each runs its crate's synchronous entry point on the blocking pool —
+unpacking), `wux.rs` drives `wux-rs` (Wii U WUD/WUX, and WUA and NUS export),
+`archive.rs` uses sevenz-rust2 and zip, and `rvz.rs`/`wbfs.rs` use `nod`. Each runs its crate's synchronous entry point on the blocking pool —
 `run_blocking` for the crate codecs that report byte progress, `spawn_blocking`
 directly in `archive.rs`, `rvz.rs` and for the CHD header read — so the runtime is
 never blocked by a compress or a hash. These modules report `"built-in"` from
-`get_version()`; `nsz.rs` adds when `prod.keys` is missing so that is not first
-discovered mid-compression. **No format module spawns a process any more**: the
+`get_version()`; `nsz.rs` and `wux.rs` add a note when their keys file
+(`prod.keys`, or the Wii U keys `import-keys` stores) is missing, so that is not
+first discovered mid-conversion. **No format module spawns a process any more**: the
 last one, `ctrtool.rs`, was replaced by `cia.rs`, whose `parse_cia` and
 `extract_files_from_cia` call `cia_rs::Cia::parse` and `cia_rs::unpack` through
 `run_blocking`, so nothing needs to be installed on `PATH`. Details in
@@ -273,7 +274,8 @@ spawns the same binary as a Tauri sidecar running `server --address 127.0.0.1
 
 The repository is a Cargo workspace whose members are the root `oxyromon` package
 plus `crates/*` — the format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`,
-`xdelta-rs`, `xps-rs`, `xso-rs`) that replaced the external tools oxyromon used to shell out to.
+`wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), all but `wux-rs` replacing an external
+tool oxyromon used to shell out to.
 They share one lockfile and CI but are versioned and published independently, and
 oxyromon depends on them by `path` + `version` with `default-features = false`.
 
@@ -310,9 +312,9 @@ on the `model.rs` types is what turns the same structs into GraphQL
 - **Availability is reported, not guessed.** `info`, the GraphQL `dependencies`
   query and the MCP `status` payload all walk the same `get_version()` set —
   `sevenz-rust2`, `chd-rs`, `cia-rs`, `xps-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`,
-  and `nod` for RVZ/WBFS. Every entry is an in-process engine that succeeds with
-  `built-in`, so none can come back missing; `nsz-rs` alone adds a note when
-  `prod.keys` is absent.
+  `wux-rs`, and `nod` for RVZ/WBFS. Every entry is an in-process engine that
+  succeeds with `built-in`, so none can come back missing; `nsz-rs` and `wux-rs`
+  add a note when their keys are absent.
 - **Shutdown is housekeeping.** `optimize_database` (incremental vacuum, optimize,
   WAL checkpoint truncate) runs after the CLI batch finishes, and
   `server.rs`'s `shutdown_signal` runs it before cancelling in-flight work, so a

@@ -25,7 +25,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:55:54.894Z
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # CHD Format and the chd-rs Crate

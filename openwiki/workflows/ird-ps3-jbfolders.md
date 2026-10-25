@@ -55,9 +55,6 @@ sources:
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
 generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
 ---
 
 # PS3 IRD Files and JB Folders

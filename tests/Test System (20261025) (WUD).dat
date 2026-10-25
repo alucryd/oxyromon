@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (WUD)</name>
+		<description>Test System (WUD)</description>
+		<version>20261025</version>
+		<date>20261025</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA)">
+		<description>Test Game (USA)</description>
+		<release name="Test Game (USA)" region="USA" />
+		<rom name="Test Game (USA).wud" size="720896" crc="0274c8e0"
+			md5="d31c6a655ad789717f43e497f71f7630" sha1="39e947c319b9070a05e736e0d827bacdbce3f072" />
+	</game>
+</datafile>

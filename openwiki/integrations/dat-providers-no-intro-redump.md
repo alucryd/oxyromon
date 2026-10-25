@@ -73,9 +73,6 @@ sources:
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
 generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
 ---
 
 # DAT Providers and Naming Conventions

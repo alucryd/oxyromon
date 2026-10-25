@@ -59,9 +59,6 @@ sources:
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
 generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
 ---
 
 # File Type Detection and Extension Constants

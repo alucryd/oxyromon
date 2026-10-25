@@ -59,9 +59,6 @@ sources:
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
 generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
 ---
 
 # MCP Server: Tools, Resources and Prompts

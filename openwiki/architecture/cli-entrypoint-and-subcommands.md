@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-25T14:55:31.619Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -95,9 +95,12 @@ Inside the guard, in order:
    created and used to print the version banner. This same bar object is handed
    to the subcommand, which is free to restyle it, set its length, and tick it —
    the entrypoint never touches it again.
-4. The data directory: `OXYROMON_DATA_DIRECTORY`, else `dirs::data_dir()/oxyromon`,
-   created with `create_directory`. `oxyromon.db` is created there if absent,
-   and `establish_connection` is called with that path.
+4. The data directory, from `config::get_data_directory()`:
+   `OXYROMON_DATA_DIRECTORY`, else `dirs::data_dir()/oxyromon`, created with
+   `create_directory`. `oxyromon.db` is created there if absent, and
+   `establish_connection` is called with that path. The same function locates
+   `wiiu_keys.txt`, the keys `import-keys` stores next to the database, so the
+   two never disagree about where the data directory is.
 5. `establish_connection` configures the pool's SQLite pragmas (`foreign_keys`,
    `locking_mode`, WAL journal, `synchronous`, `temp_store`, `mmap_size`,
    `cache_size`, `auto_vacuum = INCREMENTAL`) and runs the embedded migrations.
@@ -210,13 +213,16 @@ only `(connection, progress_bar)`. The server pair breaks the shape
 deliberately: `mcp::main(pool, matches)` and `server::main(pool, matches)` take
 a `SqlitePool` because they must multiplex requests.
 
-The dispatch table in `src/main.rs` covers, in vec order: `info`, `config`,
-`create-dats`, `import-dats`, `download-dats`, `import-irds`, `purge-irds`,
-`import-patches`, `import-roms`, `sort-roms`, `convert-roms`, `export-roms`,
-`rebuild-roms`, `check-roms`, `purge-roms`, `purge-systems`,
-`generate-playlists`, and `benchmark`, plus the feature-gated `mcp`
-(`--read-only` exposes non-mutating tools only) and `server`
-(`--address`/`--port`).
+The dispatch table in `src/main.rs` covers nineteen always-available
+subcommands, in vec order: `info`, `config`, `create-dats`, `import-dats`,
+`download-dats`, `import-irds`, `import-patches`, `import-keys`, `import-roms`,
+`purge-irds`, `sort-roms`, `convert-roms`, `export-roms`, `rebuild-roms`,
+`check-roms`, `purge-roms`, `purge-systems`, `generate-playlists`, and
+`benchmark`, plus the feature-gated `mcp` (`--read-only` exposes non-mutating
+tools only) and `server` (`--address`/`--port`). `import-keys` is the one
+subcommand that ignores its connection: it merges Wii U keys files into
+`wiiu_keys.txt` in the data directory, outside the database, so neither GraphQL
+nor MCP can ever return them.
 
 Selection of work follows a consistent pattern across the batch subcommands:
 
@@ -248,7 +254,8 @@ then finishes it.
 The **Dependencies** section is a table assembled from each format module's
 `get_version()`. The entries are collected into a vec and sorted by the name
 reported, so the display order is `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
-`sevenz-rust2`, `xdelta-rs`, `xps-rs`, `xso-rs` regardless of push order:
+`sevenz-rust2`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` regardless of push
+order:
 
 | Reported name | Backing module | Value on a working install |
 | --- | --- | --- |
@@ -257,6 +264,7 @@ reported, so the display order is `chd-rs`, `cia-rs`, `nod`, `nsz-rs`,
 | `nod` | `src/rvz.rs` (also backs WBFS) | `built-in` |
 | `nsz-rs` | `src/nsz.rs` | `built-in`, or `built-in, prod.keys not found` |
 | `sevenz-rust2` | `src/archive.rs` | `built-in` |
+| `wux-rs` | `src/wux.rs` | `built-in`, or `built-in, no Wii U keys imported` |
 | `xdelta-rs` | `src/xdelta.rs` | `built-in` |
 | `xps-rs` | `src/xps.rs` | `built-in` |
 | `xso-rs` | `src/xso.rs` | `built-in` |
@@ -268,9 +276,11 @@ the literal `built-in` — the fact worth knowing is that the module is present,
 not which point release it is. The `Err` arm still exists in the loop and would
 print a dim `↪ <name>: not found` through `print_skip`, but no `get_version()`
 returns an error any more, so `info` cannot report a missing dependency.
-`nsz-rs` adds a second dimension — it never fails, but reports
-`built-in, prod.keys not found` when `~/.switch/prod.keys` is absent, so the
-missing-keys condition is discovered at `info` time instead of mid-compression.
+`nsz-rs` and `wux-rs` add a second dimension — they never fail, but report a
+missing keys file: `built-in, prod.keys not found` when `~/.switch/prod.keys` is
+absent, and `built-in, no Wii U keys imported` when `wiiu_keys.txt` is not in
+the data directory. The missing-keys condition is discovered at `info` time
+instead of mid-compression or mid-export.
 
 The **Statistics** section is three counts against the connected database
 (`count_systems`, `count_games`, `count_roms`), followed by the project's

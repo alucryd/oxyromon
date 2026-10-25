@@ -104,6 +104,7 @@ md-5 = "0.11.0"
 # blocks publishing oxyromon; back to a version requirement before a release.
 nod = { git = "https://github.com/encounter/nod", tag = "v2.0.0-alpha.12" }
 nsz-rs = { path = "crates/nsz-rs", version = "0.3.0", default-features = false }
+wux-rs = { path = "crates/wux-rs", version = "0.1.0", default-features = false }
 xdelta-rs = { path = "crates/xdelta-rs", version = "0.1.0", default-features = false }
 xps-rs = { path = "crates/xps-rs", version = "0.1.0", default-features = false }
 num-derive = "0.5.1"

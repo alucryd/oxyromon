@@ -38,9 +38,6 @@ sources:
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
 generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
 ---
 
 

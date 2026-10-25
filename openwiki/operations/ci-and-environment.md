@@ -67,9 +67,6 @@ sources:
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
 generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
 ---
 
 # CI Pipelines and Runtime Environment

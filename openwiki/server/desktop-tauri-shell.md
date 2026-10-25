@@ -53,9 +53,6 @@ sources:
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
 generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Desktop App (Tauri Sidecar)

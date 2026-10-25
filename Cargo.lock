@@ -2862,6 +2862,7 @@ dependencies = [
  "vec-drain-where",
  "walkdir",
  "wiremock",
+ "wux-rs",
  "xdelta-rs",
  "xps-rs",
  "xso-rs",
@@ -5286,6 +5287,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
 
 [[package]]
+name = "wux-rs"
+version = "0.1.0"
+dependencies = [
+ "aes 0.9.2",
+ "clap",
+ "console",
+ "dirs",
+ "indicatif",
+ "rayon",
+ "sha1 0.11.0",
+ "sha2 0.11.0",
+ "tempfile",
+ "thiserror 2.0.20",
+ "zarust",
+ "zstd 0.14.0",
+]
+
+[[package]]
 name = "xdelta-rs"
 version = "0.1.0"
 dependencies = [
@@ -5350,6 +5369,17 @@ dependencies = [
  "quote",
  "syn 2.0.119",
  "synstructure",
+]
+
+[[package]]
+name = "zarust"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24a42fa667da97ff9c8270876d893fc55d57dee1fc94bd59b750d46a7d2eb8bd"
+dependencies = [
+ "rayon",
+ "sha2 0.10.9",
+ "zstd 0.13.3",
 ]
 
 [[package]]

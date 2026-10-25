@@ -111,9 +111,6 @@ sources:
   - id: openwiki-source-d055e6a57bb9c1c3b426914e
     resource: repo://tests/Test%20System%20(20241230)%20(MAME%20Mixed).dat
 generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
 ---
 
 

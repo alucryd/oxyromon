@@ -380,7 +380,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP). Long jobs.",
+        description = "Convert one system's ROM files to a target format: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUX, ZIP or ZSO (the PREFER_FORMAT values; arcade systems take only ORIGINAL or ZIP). Long jobs.",
         annotations(read_only_hint = false)
     )]
     async fn convert_roms(

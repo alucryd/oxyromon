@@ -13,6 +13,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
 use super::util::*;
+use super::wux::AsWux;
 use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
@@ -242,7 +243,27 @@ pub async fn main(
                 None => None,
             };
             if path.is_dir() {
-                if path.join(PS3_DISC_SFB).is_file() {
+                if wux_rs::tmd_path(&path).is_some() {
+                    print_subheader(
+                        progress_bar,
+                        &format!(
+                            "Processing \"{}\"",
+                            path.file_name().unwrap().to_str().unwrap()
+                        ),
+                    );
+                    if let Some([system_id, game_id]) = import_nus(
+                        connection,
+                        progress_bar,
+                        &system.as_ref(),
+                        &path,
+                        unattended_mode,
+                    )
+                    .await?
+                    {
+                        system_ids.insert(system_id);
+                        game_ids.insert(game_id);
+                    }
+                } else if path.join(PS3_DISC_SFB).is_file() {
                     print_subheader(
                         progress_bar,
                         &format!(
@@ -286,8 +307,37 @@ pub async fn main(
                         }
                     }
                 } else {
-                    let walker = WalkDir::new(&path).into_iter();
-                    for entry in walker.filter_map(|e| e.ok()) {
+                    let mut walker = WalkDir::new(&path).into_iter();
+                    while let Some(entry) = walker.next() {
+                        let Ok(entry) = entry else { continue };
+                        // a NUS title's folder is imported whole
+                        if entry.path().is_dir() && wux_rs::tmd_path(entry.path()).is_some() {
+                            walker.skip_current_dir();
+                            print_subheader(
+                                progress_bar,
+                                &format!("Processing \"{}\"", entry.file_name().to_str().unwrap()),
+                            );
+                            match import_nus(
+                                connection,
+                                progress_bar,
+                                &system.as_ref(),
+                                &entry.path(),
+                                unattended_mode,
+                            )
+                            .await
+                            {
+                                Ok(Some([system_id, game_id])) => {
+                                    system_ids.insert(system_id);
+                                    game_ids.insert(game_id);
+                                }
+                                Ok(None) => {}
+                                Err(e) => {
+                                    print_error(progress_bar, &format!("{e:#}"));
+                                    print_info(progress_bar, "Continuing");
+                                }
+                            }
+                            continue;
+                        }
                         if entry.path().is_file() {
                             let result = import_rom(
                                 connection,
@@ -551,6 +601,22 @@ pub async fn import_rom<P: AsRef<Path>>(
             system_ids.insert(ids[0]);
             game_ids.insert(ids[1]);
         };
+    } else if WUX_EXTENSION == extension && !as_is {
+        if let Some(ids) = import_wux(
+            &mut transaction,
+            progress_bar,
+            system,
+            &game_ids,
+            romfile,
+            trash,
+            delete,
+            unattended_mode,
+        )
+        .await?
+        {
+            system_ids.insert(ids[0]);
+            game_ids.insert(ids[1]);
+        };
     } else if ZSO_EXTENSION == extension && !as_is {
         if let Some(ids) = import_zso(
             &mut transaction,
@@ -587,6 +653,127 @@ pub async fn import_rom<P: AsRef<Path>>(
     commit_transaction(transaction).await;
 
     Ok((system_ids, game_ids))
+}
+
+/// Import a NUS title's folder: an update or DLC as Nintendo's servers deliver
+/// it. Its TMD, which names one title at one version, finds the game; the
+/// other files are then matched within that game only, since a game and its
+/// update can hold identical files. Files the game does not list, such as the
+/// `title.cert` downloaders add, are left where they are.
+async fn import_nus<P: AsRef<Path>>(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    path: &P,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<[i64; 2]>> {
+    let tmd_path = wux_rs::tmd_path(path.as_ref()).unwrap();
+    let tmd_romfile = CommonRomfile::from_path(&tmd_path)?;
+
+    let mut transaction = begin_transaction(connection).await;
+
+    // find the game by its TMD
+    let mut found = None;
+    for hash_algorithm in HashAlgorithm::iter() {
+        let (hash, size) = tmd_romfile
+            .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &hash_algorithm)
+            .await?;
+        let match_result = find_rom_by_size_and_hash(
+            &mut transaction,
+            progress_bar,
+            size,
+            &hash,
+            system,
+            &HashSet::new(),
+            &[],
+            None,
+            &hash_algorithm,
+            unattended_mode,
+        )
+        .await?;
+        match match_result.state {
+            MatchState::Valid => {
+                found = Some((
+                    match_result.system.unwrap(),
+                    match_result.game.unwrap(),
+                    hash_algorithm,
+                ));
+                break;
+            }
+            MatchState::Duplicate => {
+                print_skip(progress_bar, "Already imported");
+                return Ok(None);
+            }
+            MatchState::Skipped => break,
+            MatchState::Invalid => {}
+        }
+    }
+    let Some((system, game, hash_algorithm)) = found else {
+        print_warning(progress_bar, "No match");
+        return Ok(None);
+    };
+
+    // then its files, within that game
+    let mut roms: Vec<Rom> = find_roms_by_game_id_no_parents(&mut transaction, game.id)
+        .await
+        .into_iter()
+        .filter(|rom| rom.romfile_id.is_none())
+        .collect();
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(path.as_ref())?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| path.is_file())
+        .collect();
+    paths.sort();
+    for file_path in paths {
+        let file_name = file_path.file_name().unwrap().to_str().unwrap().to_string();
+        print_action(progress_bar, &format!("Processing \"{}\"", file_name));
+        let romfile = CommonRomfile::from_path(&file_path)?;
+        let (hash, size) = romfile
+            .get_hash_and_size(&mut transaction, progress_bar, 1, 1, &hash_algorithm)
+            .await?;
+        let rom_hash = |rom: &Rom| match hash_algorithm {
+            HashAlgorithm::Crc => rom.crc.clone(),
+            HashAlgorithm::Md5 => rom.md5.clone(),
+            HashAlgorithm::Sha1 => rom.sha1.clone(),
+        };
+        let matches: Vec<usize> = (0..roms.len())
+            .filter(|&i| {
+                roms[i].size as u64 == size
+                    && rom_hash(&roms[i]).is_some_and(|h| h.eq_ignore_ascii_case(&hash))
+            })
+            .collect();
+        // identical files in one title: take the one named alike
+        let index = matches
+            .iter()
+            .copied()
+            .find(|&i| file_name.trim_end_matches(".app") == roms[i].name)
+            .or_else(|| matches.first().copied());
+        let Some(index) = index else {
+            print_warning(progress_bar, &format!("No match for \"{}\"", file_name));
+            continue;
+        };
+        let rom = roms.remove(index);
+        print_success(progress_bar, &format!("Matches \"{}\"", rom.name));
+        let new_path = romfile
+            .get_sorted_path(&mut transaction, &system, &game, &rom, &None, &None)
+            .await?;
+        romfile.rename(progress_bar, &new_path, false).await?;
+        create_or_update_romfile(
+            &mut transaction,
+            progress_bar,
+            &new_path,
+            &[&rom],
+            Some(system.id),
+        )
+        .await?;
+    }
+    if path.as_ref().read_dir()?.next().is_none() {
+        remove_directory(progress_bar, &path, false).await?;
+    }
+
+    commit_transaction(transaction).await;
+
+    Ok(Some([system.id, game.id]))
 }
 
 async fn import_jbfolder<P: AsRef<Path>>(
@@ -1973,6 +2160,103 @@ async fn import_rvz(
 }
 
 #[allow(clippy::too_many_arguments)]
+async fn import_wux(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &Option<&System>,
+    game_ids: &HashSet<i64>,
+    romfile: CommonRomfile,
+    trash: bool,
+    delete: bool,
+    unattended_mode: UnattendedMode,
+) -> Result<Option<[i64; 2]>> {
+    let wux_romfile = romfile.as_wux()?;
+    let mut invalid_match_results: Vec<MatchResult> = vec![];
+    for hash_algorithm in HashAlgorithm::iter() {
+        let (hash, size) = wux_romfile
+            .get_hash_and_size(connection, progress_bar, 1, 1, &hash_algorithm)
+            .await?;
+        let match_result = find_rom_by_size_and_hash(
+            connection,
+            progress_bar,
+            size,
+            &hash,
+            system,
+            game_ids,
+            &[wux_romfile
+                .romfile
+                .path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()],
+            wux_romfile.romfile.path.file_name().unwrap().to_str(),
+            &hash_algorithm,
+            unattended_mode,
+        )
+        .await?;
+        match match_result.state {
+            MatchState::Valid => {
+                let system = match_result.system.unwrap();
+                let game = match_result.game.unwrap();
+                let rom = match_result.rom.unwrap();
+                let system_directory = get_system_directory(connection, &system).await?;
+                let new_wux_path = system_directory
+                    .join(&rom.name)
+                    .with_extension(WUX_EXTENSION);
+                // move WUX if needed
+                wux_romfile
+                    .romfile
+                    .rename(progress_bar, &new_wux_path, false)
+                    .await?;
+                // persist in database
+                create_or_update_romfile(
+                    connection,
+                    progress_bar,
+                    &new_wux_path,
+                    &[&rom],
+                    Some(system.id),
+                )
+                .await?;
+                return Ok(Some([system.id, game.id]));
+            }
+            MatchState::Duplicate => {
+                trash_or_delete_romfile(
+                    connection,
+                    progress_bar,
+                    &wux_romfile.romfile,
+                    trash,
+                    delete,
+                    &match_result,
+                )
+                .await?;
+                return Ok(None);
+            }
+            MatchState::Invalid => {
+                invalid_match_results.push(match_result);
+            }
+            // the user or the unattended mode already chose to leave the file be
+            MatchState::Skipped => {
+                invalid_match_results.clear();
+                break;
+            }
+        }
+    }
+    if !invalid_match_results.is_empty() {
+        trash_or_delete_romfile(
+            connection,
+            progress_bar,
+            &wux_romfile.romfile,
+            trash,
+            delete,
+            invalid_match_results.first().unwrap(),
+        )
+        .await?;
+    }
+    Ok(None)
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn import_zso(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -2749,6 +3033,8 @@ mod test_multiple_tracks_chd;
 #[cfg(test)]
 mod test_none_selected;
 #[cfg(test)]
+mod test_nus;
+#[cfg(test)]
 mod test_original;
 #[cfg(test)]
 mod test_original_delete;
@@ -2780,6 +3066,8 @@ mod test_sevenzip_single_file;
 mod test_sevenzip_single_file_headered;
 #[cfg(test)]
 mod test_single_track_chd;
+#[cfg(test)]
+mod test_wux;
 #[cfg(test)]
 mod test_zip_single_file;
 #[cfg(test)]

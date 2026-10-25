@@ -1,0 +1,5 @@
+# Made-up keys for the synthetic Wii U disc in "Test Game (USA).wud": its
+# disc key, then the stand-in for the common key its title key is encrypted
+# with. Neither is a real key.
+11111111111111111111111111111111
+22222222222222222222222222222222

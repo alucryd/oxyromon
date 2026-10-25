@@ -1,7 +1,7 @@
 ---
 type: build-topology
 title: Feature Flags and Build Topology
-description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the seven format CLIs, the embedded web UI and the Tauri desktop artifact.
+description: How the mcp, server, use-rustls and use-native-tls cargo features gate modules, the SQLite pool shape and the served transports; how the root workspace plus crates/* (chd-rs and friends as path dependencies with their CLIs behind a `cli` feature), build.rs, Trunk, rust-embed and SKIP_TRUNK compose the CLI, the eight format CLIs, the embedded web UI and the Tauri desktop artifact.
 tags: [cargo-features, cargo-workspace, path-dependencies, build-rs, trunk, rust-embed, skip-trunk, tauri, ci, publishing]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -77,7 +77,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:55:54.894Z
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Feature Flags and Build Topology
@@ -182,7 +182,7 @@ which is what both the embedded SPA and the desktop webview rely on.
 Finally, these four are the whole set. The `nod` and `sevenz` features older
 releases carried are gone, and with them every gate around the tools they used to
 guard: no `#[cfg(feature = "nod")]` or `#[cfg(feature = "sevenz")]` survives in
-`src/`, because nod, sevenz-rust2, zip and the seven crates under `crates/` are now
+`src/`, because nod, sevenz-rust2, zip and the eight crates under `crates/` are now
 plain unconditional dependencies. `cargo build` always compiles the CHD, RVZ/WBFS,
 7z and ZIP code paths — `src/chd.rs` has no feature gate at all — so only `mcp`
 and `server` still add or remove functionality.
@@ -304,9 +304,10 @@ equivalent of the release build (`trunk build --release`, then
 build --release)` on the host first — the wasm bundle is target-independent, so
 it is built once per loop iteration outside the container — then
 `cross build --release --target <t> --features server`. Then a second
-`cross build` with `-p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs
--p xso-rs` builds all seven format-crate CLIs, and each of `chdrs`, `ciars`, `gdirs`, `nszrs`,
-`xdeltars`, `xpsrs` and `xsors` is archived next to `oxyromon` — `tar -cJf` for
+`cross build` with `-p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p wux-rs -p xdelta-rs
+-p xps-rs -p xso-rs` builds all eight format-crate CLIs, and each of `chdrs`, `ciars`,
+`gdirs`, `nszrs`, `wuxrs`, `xdeltars`, `xpsrs` and `xsors` is archived next to
+`oxyromon` — `tar -cJf` for
 the four Linux and two macOS targets, `7z a` for
 `x86_64-pc-windows-gnullvm` — before `cargo clean` resets `target/` for the next
 iteration. The Apple targets additionally run every binary through `rcodesign
@@ -347,10 +348,11 @@ selves — while the frontend and desktop profiles both use `opt-level = "z"` to
 shrink a wasm payload and a bundled shell. The format crates carry no
 `[profile]` at all: only the root workspace's applies to them.
 
-`crates/` holds seven format crates — `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`,
-`xdelta-rs`, `xps-rs` and `xso-rs` — each a port of an external tool oxyromon used to shell
-out to, each published to crates.io on its own schedule and under its upstream's
-license (MIT for `cia-rs`, whose upstream shipped none), and each taking `edition`, `rust-version`, `repository` and shared
+`crates/` holds eight format crates — `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`,
+`wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs` — seven of them ports of an external tool
+oxyromon used to shell out to, and `wux-rs` a Wii U crate following wudd and Cemu
+(GPL-3.0+, shipping no key). Each is published to crates.io on its own schedule
+and under its upstream's license (MIT for `cia-rs`, whose upstream shipped none), and each taking `edition`, `rust-version`, `repository` and shared
 dependency versions from `[workspace.package]` / `[workspace.dependencies]`. The
 dependency contract is uniform and load-bearing: oxyromon depends on every crate
 by `path = "crates/<name>"` **and** a `version` requirement matching that crate
@@ -403,7 +405,7 @@ flowchart LR
     CRATES["crates format crates"]
   end
   PKG -->|"path plus version, default-features off"| CRATES
-  CRATES -->|"cli feature on, dist.sh -p"| CLI["chdrs, ciars, gdirs, nszrs, xdeltars, xpsrs, xsors"]
+  CRATES -->|"cli feature on, dist.sh -p"| CLI["chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs, xsors"]
   PKG --> BR["build.rs"]
   BR -->|server and not SKIP_TRUNK| TRUNK["trunk build in frontend"]
   TRUNK --> ASSETS["target/assets"]
@@ -414,7 +416,7 @@ flowchart LR
   SIDECAR --> DESK["desktop crate, own workspace"]
 ```
 
-*Caption: how one package plus seven path dependencies and two standalone crates compose the shipped artifacts.*
+*Caption: how one package plus eight path dependencies and two standalone crates compose the shipped artifacts.*
 
 ## What blocks publishing
 

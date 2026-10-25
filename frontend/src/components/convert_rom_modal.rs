@@ -8,7 +8,9 @@ use crate::state::AppState;
 use crate::ui::{Modal, control_value};
 
 /// The destination formats the server accepts, mirroring the CLI's.
-const FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
+const FORMATS: &[&str] = &[
+    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUX", "ZIP", "ZSO",
+];
 
 #[component]
 pub fn ConvertRomModal() -> impl IntoView {

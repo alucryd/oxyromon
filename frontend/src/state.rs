@@ -39,8 +39,8 @@ pub const ALL_REGIONS_SUBFOLDERS_KEY: &str = "REGIONS_ALL_SUBFOLDERS";
 
 pub const PREFER_REGIONS_CHOICES: [&str; 3] = ["none", "broad", "narrow"];
 pub const PREFER_VERSIONS_CHOICES: [&str; 3] = ["none", "new", "old"];
-pub const PREFER_FORMAT_CHOICES: [&str; 8] =
-    ["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
+pub const PREFER_FORMAT_CHOICES: [&str; 9] =
+    ["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUX", "ZIP", "ZSO"];
 pub const SUBFOLDER_SCHEMES_CHOICES: [&str; 2] = ["none", "alpha"];
 
 /// Height of one row, in pixels. The games list is virtualized, so this has to

@@ -55,9 +55,6 @@ sources:
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
 generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
 ---
 
 # HTTP Server, GraphQL API and Uploads

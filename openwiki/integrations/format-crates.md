@@ -115,9 +115,6 @@ sources:
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
 generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-24T21:55:54.894Z
 ---
 
 # Format Crates in crates/

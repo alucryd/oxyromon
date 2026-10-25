@@ -55,9 +55,6 @@ sources:
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
 generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
 ---
 
 # Builds, Distribution and Releases
