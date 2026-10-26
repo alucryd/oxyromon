@@ -73,6 +73,7 @@ pub(crate) async fn build_status(connection: &mut SqliteConnection, read_only: b
         ("xso-rs", crate::xso::get_version().await),
         ("nsz-rs", crate::nsz::get_version().await),
         ("xdelta-rs", crate::xdelta::get_version().await),
+        ("wux-rs", crate::wux::get_version().await),
         // RVZ and WBFS both come from nod
         ("nod", crate::rvz::get_version().await),
     ];

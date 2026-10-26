@@ -1,8 +1,8 @@
 ---
 type: integration
 title: Format Crates in crates/
-description: The seven in-repo format crates (chd-rs, cia-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs) that replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
-tags: [crates, workspace, chd-rs, gdi-rs, nsz-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
+description: The eight in-repo format crates (chd-rs, cia-rs, gdi-rs, nsz-rs, wux-rs, xdelta-rs, xps-rs, xso-rs), seven of which replaced oxyromon's external tools — their shared synchronous path-in/path-out entry-point contract with a progress callback, the identical CLI shell enforced by tests/crates.rs, the .part output discipline, error conventions, library-first manifests and per-crate release flow.
+tags: [crates, workspace, chd-rs, gdi-rs, nsz-rs, wux-rs, xdelta-rs, xps-rs, xso-rs, cli, progress, error-handling, releases]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
     resource: repo://.github/workflows/continuous_integration.yml
@@ -60,6 +60,24 @@ sources:
     resource: repo://crates/nsz-rs/src/pipeline.rs
   - id: openwiki-source-95961593538c6afbde4e76cc
     resource: repo://crates/nsz-rs/tests/malformed.rs
+  - id: openwiki-source-ce853e79f786a28d42f8717a
+    resource: repo://crates/wux-rs/Cargo.toml
+  - id: openwiki-source-35760035950e3f037cce37d1
+    resource: repo://crates/wux-rs/src/bin/wuxrs/main.rs
+  - id: openwiki-source-b50a26200a8a4e4e83f9eac1
+    resource: repo://crates/wux-rs/src/error.rs
+  - id: openwiki-source-bb63ebff30207378358552a3
+    resource: repo://crates/wux-rs/src/io.rs
+  - id: openwiki-source-fb3fc971ccda3173fb55c35e
+    resource: repo://crates/wux-rs/src/lib.rs
+  - id: openwiki-source-8b154e92f317de1d79a56d61
+    resource: repo://crates/wux-rs/src/rebuild.rs
+  - id: openwiki-source-a7055168e07a2f5ab1abc26e
+    resource: repo://crates/wux-rs/src/wua.rs
+  - id: openwiki-source-459bee48f81e7fcc3cd4f278
+    resource: repo://crates/wux-rs/tests/nus.rs
+  - id: openwiki-source-9c665d9fab5f86f2cc31d823
+    resource: repo://crates/wux-rs/tests/revert.rs
   - id: openwiki-source-3177d2bf46b3b23d873f6783
     resource: repo://crates/xdelta-rs/src/bin/xdeltars/main.rs
   - id: openwiki-source-b284ee56f1a8ed8eeb895333
@@ -114,17 +132,19 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-24T21:55:54.894Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:55:54.894Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Format Crates in crates/
 
-`crates/` holds the seven format crates oxyromon wrote to replace the external
-programs it used to shell out to. Each began as a port of one upstream tool,
-keeps that tool's license, and stays a standalone library plus its own CLI
+`crates/` holds eight format crates. Seven were written to replace the external
+programs oxyromon used to shell out to. Each of those began as a port of one
+upstream tool and keeps that tool's license. The eighth, `wux-rs`, replaced no
+tool: oxyromon never ran one for the Wii U, so it follows wudd and Cemu and takes
+wudd's GPL-3.0-or-later. Every crate and stays a standalone library plus its own CLI
 published to crates.io; oxyromon is the workspace root and depends on them as
 path dependencies. The result is that the formats in this table have no runtime
 dependency to install, report `"built-in"` from `get_version()`, and can report
@@ -139,6 +159,7 @@ real byte-level progress instead of a spinner.
 | `xdelta-rs` | xdelta3 | `xdeltars` | Apache-2.0 | `xdelta` |
 | `xps-rs` | Flips | `xpsrs` | GPL-3.0-or-later | `xps` |
 | `xso-rs` | maxcso | `xsors` | ISC | `xso` |
+| `wux-rs` | none; follows wudd and Cemu | `wuxrs` | GPL-3.0-or-later | `wux` |
 
 The crates are workspace members (`members = ["crates/*"]`), so they share one
 lockfile, one CI run and one set of conventions; `frontend/` and `desktop/` are
@@ -149,7 +170,8 @@ binaries, so oxyromon runs no child process for any format
 ([External Tools](external-tools.md)). CHD's container, codecs,
 media types and `src/chd.rs` adapter have a page of their own —
 [CHD Format and the chd-rs Crate](../concepts/chd-format-and-chd-rs.md) — so
-this page covers only what that crate shares with the other six. The `src/`
+this page covers only what that crate shares with the others. The same holds
+for wux-rs and [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md). The `src/`
 adapters that call into these crates are covered in
 [Format Modules and Their Crate Backends](../concepts/format-modules-and-format-crates.md).
 
@@ -191,6 +213,10 @@ thing whose bytes dominate the work:
 - `gdi_rs::convert`: the BINs behind the CUE, which is why the crate also
   exports `input_size(cue)` — a caller cannot know that total from the CUE's own
   size, and `gdi_rs` counts a track's dropped pregap as consumed too.
+- `wux_rs::compress` / `decompress` / `to_nus` / `wua_to_wux` / `wua_to_wud`:
+  oxyromon passes the input file's size, and the rebuilds scale the disc's
+  written sectors to it. `wux_rs::to_wua` takes several inputs, a disc and NUS folders, and
+  oxyromon passes the sum of their sizes.
 - `nsz_rs::pipeline::compress_nsp` / `decompress_nsz`: the container being read;
   an internal `member_progress` adapter converts per-member positions into
   deltas so each byte is reported exactly once even when a member is read out of
@@ -218,8 +244,8 @@ pub async fn run_blocking<T, E>(
 ```
 
 The same signature is what makes a new backend drop-in: `src/chd.rs`,
-`src/xso.rs`, `src/nsz.rs`, `src/gdi.rs`, `src/xdelta.rs` and `src/xps.rs`
-differ only in the settings they build and the length they pass.
+`src/xso.rs`, `src/nsz.rs`, `src/gdi.rs`, `src/wux.rs`, `src/xdelta.rs` and
+`src/xps.rs` differ only in the settings they build and the length they pass.
 
 ## `.part` output discipline
 
@@ -248,11 +274,12 @@ stateDiagram-v2
 *Caption: the write lifecycle every format crate shares; nothing at the destination path changes until the whole output is complete.*
 
 The halves are literally the same code, duplicated per crate:
-`xso-rs` factors it into `crate::io::{part, finish}`, while `chd-rs`
+`xso-rs` and `wux-rs` factor it into `crate::io::{part, finish}`, plus
+`finish_dir` in `wux-rs` for folder outputs, while `chd-rs`
 (`writer::part_path` plus a rename-or-remove arm shared by `write_part`,
 `Chd::extract`, `extract_cd` and `extract_ld`), `nsz-rs`,
 `xdelta-rs`, `xps-rs` and `gdi-rs` each carry a private `part`/`finish` pair.
-Three crate-specific variations matter:
+Four crate-specific variations matter:
 
 - **`gdi-rs` stages a whole set.** A GDI is one descriptor plus one file per
   track, so it writes every `.part` first and renames them all only after the
@@ -267,6 +294,11 @@ Three crate-specific variations matter:
   past the reserved PFS0 header, lets the caller stream members, then rewinds
   and writes the header from the recorded `(name, offset, size)` layout. It
   drops the `File` before renaming or removing, which Windows requires.
+- **`wux-rs` writes folders.** `to_nus` and `wua_to_nus` stage a whole folder
+  as `<output>.part` and move it into place with `io::finish_dir`. An existing
+  folder there is replaced only when every file in it, recursively, is one the
+  new folder holds too, an earlier output of the same. Otherwise the write fails
+  with an `AlreadyExists` I/O error and leaves the folder alone.
 
 `nsz-rs` additionally `create_dir_all`s the output's parent before opening the
 `.part` — the only crate that creates directories for you.
@@ -279,10 +311,10 @@ same whichever backend produced it:
 
 | Variant | Text | In |
 | --- | --- | --- |
-| `Io` | `io error: …` | all seven, `#[from] std::io::Error` |
-| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Unsupported` | `unsupported format: …` | `chd-rs`, `cia-rs`, `xso-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs` |
-| `Corrupt` | `corrupt data: …` | all seven |
+| `Io` | `io error: …` | all eight, `#[from] std::io::Error` |
+| `BadMagic { expected, found }` | `bad magic: expected …, found …` | `chd-rs`, `xso-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` |
+| `Unsupported` | `unsupported format: …` | `chd-rs`, `cia-rs`, `xso-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs`, `xps-rs` |
+| `Corrupt` | `corrupt data: …` | all eight |
 | `InvalidOption` | `invalid option: …` | `chd-rs`, `xso-rs`, `gdi-rs`, `xdelta-rs` |
 | `WrongSource` | `wrong source: …` | `xdelta-rs`, `xps-rs` only |
 
@@ -292,7 +324,8 @@ checking the patch's own CRC, then the source's size and CRC — with a distinct
 message when the "source" is actually the patch's output already — and xdelta
 raises it when a window's Adler-32 does not match what it rebuilt. Crates add
 only what their format needs: `nsz-rs` has `MissingKey`, `InvalidKey`,
-`Verification`, `Compression` and `Hex`; `chd-rs` has only `Compression`
+`Verification`, `Compression` and `Hex`; `wux-rs` adds only `MissingKey`, for a
+disc no candidate key opens; `chd-rs` has only `Compression`
 alongside the shared five; `xso-rs` has nothing beyond them.
 
 Errors are the *only* failure channel — no panics on malformed input. Crafted
@@ -312,10 +345,10 @@ patch. oxyromon prints it as `Patched, but …`.
 
 Each crate's `[[bin]]` is gated on `required-features = ["cli"]` and consists of
 a `main.rs` with a clap builder `cli()` plus one `convert(input, matches,
-outputs)` closure, and a `ui.rs` that is **byte-identical across all seven**.
+outputs)` closure, and a `ui.rs` that is **byte-identical across all eight**.
 `tests/crates.rs` reads `crates/xso-rs/src/bin/xsors/ui.rs` and asserts the
-copies in `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars` and `xpsrs` equal it, so
-the shared shell must be changed in all seven at once.
+copies in `chdrs`, `ciars`, `gdirs`, `nszrs`, `wuxrs`, `xdeltars` and `xpsrs`
+equal it, so the shared shell must be changed in all eight at once.
 
 ```mermaid
 flowchart TD
@@ -353,6 +386,13 @@ rejects anything not a power of two in 16384..=4294967296; `chdrs` uses it for
 the hunk size, 16..=1048576, and refuses one that differs from the parent CHD's),
 and `-s FILE` for the patch crates' source — with lowercase short forms reserved
 for common options. `--`-only long flags carry no short alias.
+
+`wuxrs` departs from "the extension implies the direction" in one way: `-f`
+picks the target (`wud`, `wux`, `wua` or `nus`), `--add DIR` adds an update or
+DLC folder to a WUA, `--updates DIR` names the store of update partitions WUAs
+share (the `.update-partitions` folder next to each WUA by default), and
+`--keys FILE` overrides Cemu's `keys.txt`. A `.wua` input goes back to its WUX
+by default, or to NUS folders with `-f nus`.
 
 `chdrs` is the one tool whose `main` does not hand argv straight to `ui::run`:
 it intercepts `info` and `verify` as subcommands that read a CHD and report to
@@ -396,15 +436,15 @@ version, since the root pins each dependency by `path` **and** `version`. The
 root's own `0.x` tags are a separate series.
 
 ```sh
-cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs  # the seven CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs  # the eight CLIs
 cargo test -p xso-rs                            # one crate
 cargo test --release -p xso-rs -- --ignored     # its slow tests
 ```
 
-`dist.sh` cross-compiles the seven CLIs alongside oxyromon for every target
+`dist.sh` cross-compiles the eight CLIs alongside oxyromon for every target
 (Linux gnu/musl on aarch64 and x86_64, Windows gnullvm, and both Apple targets)
-and packages each binary separately (`chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`,
-`xpsrs`, `xsors` per target triple, signed on macOS), so a standalone tool is
+and packages each binary separately (`chdrs`, `ciars`, `gdirs`, `nszrs`, `wuxrs`,
+`xdeltars`, `xpsrs`, `xsors` per target triple, signed on macOS), so a standalone tool is
 installable without the organizer.
 
 ## Per-crate entry points worth knowing
@@ -431,13 +471,24 @@ installable without the organizer.
 - **`xps_rs::identify(patch) -> Format`** and `apply(source, patch, output, progress)
   -> Option<Warning>`. `identify` reads five bytes of magic to choose IPS or BPS,
   and the CLIs call it before opening a progress bar.
+- **`wux_rs::compress` / `decompress`, `to_wua(inputs, output, keys, store,
+  progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
+  `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
+  `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
+  stream and `load_keys` for Cemu's `keys.txt`. `cemu_keys_path`, and the
+  `dirs` dependency it needs, exist only with the `cli` feature. `STORE_DIR` names the
+  `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
+  [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).
 - **`xso_rs::compress` / `decompress` / `probe`**, with `Stats { input_size,
   output_size }` back for reporting a ratio. `probe` reads only the 24-byte
   header.
 
 ## nsz-rs and `prod.keys`
 
-`nsz-rs` is the only crate that needs user secrets, and only in one narrow case.
+`nsz-rs` and `wux-rs` are the two crates that need user secrets. `wux-rs` needs
+Wii U keys for WUA and NUS, rebuilding a disc from a WUA included, as its own
+page explains. `nsz-rs` needs
+them in one narrow case.
 `nszrs` defaults to `~/.switch/prod.keys` (overridable with `-k`), and
 oxyromon uses the same path via `dirs::home_dir()`. Keys are CRC32-verified
 against the checksums of the legitimate sources and master keys — the same
@@ -477,7 +528,10 @@ Those tests **skip rather than fail** when the tool is absent; CI installs
 `mame-tools`, `xdelta3` and `ffmpeg` — all only for the crates' tests — so the
 chd-rs and xdelta-rs comparisons run, and slow cases are `#[ignore]`d. `nsz-rs`
 leans on generated known-answer vectors (`tests/vectors.rs`, produced by
-`scripts/gen_vectors.py`) plus round-trip and malformed-input suites.
+`scripts/gen_vectors.py`) plus round-trip and malformed-input suites. `wux-rs`
+has no reference binary to run: its tests build a synthetic encrypted disc and
+read the WUAs back with the independent `zarust` crate, and `tests/disc.rs`
+rebuilds that disc from its WUA byte for byte.
 
 Two suites specifically pin the `.part` contract: `xso-rs/tests/roundtrip.rs`
 truncates a CSO so decompression fails mid-write and asserts the pre-existing

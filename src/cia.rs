@@ -114,6 +114,8 @@ pub async fn extract_files_from_cia<P: AsRef<Path>, Q: AsRef<Path>>(
     let mut tmd = File::options().append(true).open(&tmd_path).await?;
     tmd.write_all(&tmd_cert).await?;
     tmd.write_all(&ca_cert).await?;
+    // tokio writes in the background: wait for it before the TMD is hashed
+    tmd.flush().await?;
 
     let mut extracted_paths: Vec<PathBuf> = written
         .iter()

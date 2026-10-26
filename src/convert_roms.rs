@@ -12,6 +12,7 @@ use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
+use super::wux::{AsWua, AsWud, AsWux, ToWua, ToWux, disc_to_wud, has_extension, store_directory};
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -24,7 +25,9 @@ use std::collections::HashMap;
 use std::mem::drop;
 use std::str::FromStr;
 
-pub const ALL_FORMATS: &[&str] = &["ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "ZIP", "ZSO"];
+pub const ALL_FORMATS: &[&str] = &[
+    "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUA", "WUX", "ZIP", "ZSO",
+];
 pub const ARCADE_FORMATS: &[&str] = &["ORIGINAL", "ZIP"];
 
 /// Whether `format` can be used for `system` at all, regardless of installed
@@ -37,7 +40,7 @@ pub fn format_supported_for_system(system: &System, format: &str) -> bool {
 fn format_available(format: &str) -> bool {
     matches!(
         format,
-        "7Z" | "CHD" | "CSO" | "NSZ" | "ORIGINAL" | "RVZ" | "ZIP" | "ZSO"
+        "7Z" | "CHD" | "CSO" | "NSZ" | "ORIGINAL" | "RVZ" | "WUA" | "WUX" | "ZIP" | "ZSO"
     )
 }
 
@@ -315,6 +318,29 @@ pub async fn convert_system(
             )
             .await?
         }
+        "WUA" => {
+            to_wua(
+                connection,
+                progress_bar,
+                &system,
+                roms_by_game_id,
+                romfiles_by_id,
+                diff,
+                check,
+            )
+            .await?
+        }
+        "WUX" => {
+            to_wux(
+                connection,
+                progress_bar,
+                roms_by_game_id,
+                romfiles_by_id,
+                diff,
+                check,
+            )
+            .await?
+        }
         "ZSO" => {
             to_xso(
                 connection,
@@ -426,6 +452,13 @@ async fn to_archive(
     // partition RVZs
     let (rvzs, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[RVZ_EXTENSION]);
+
+    // partition WUXs and WUAs
+    let (wuxs, roms_by_game_id) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[WUX_EXTENSION, WUA_EXTENSION],
+    );
 
     // partition ZSOs
     let (zsos, roms_by_game_id) =
@@ -825,6 +858,64 @@ async fn to_archive(
         }
 
         nsz_romfile.romfile.delete(progress_bar, false).await?;
+
+        commit_transaction(transaction).await;
+    }
+
+    // convert WUXs and WUAs
+    for roms in wuxs.values() {
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let game = games_by_id.get(&rom.game_id).unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let source = romfile.as_common(&mut transaction).await?;
+        let archive_romfile = disc_to_wud(
+            progress_bar,
+            source.clone(),
+            &tmp_directory.path().join(&rom.name),
+        )
+        .await?
+        .romfile
+        .to_archive(
+            progress_bar,
+            &tmp_directory.path(),
+            &source.path.parent().unwrap(),
+            &game.name,
+            &archive_type,
+            compression,
+            solid,
+        )
+        .await?;
+
+        if check
+            && archive_romfile
+                .check(&mut transaction, progress_bar, &None, &[rom])
+                .await
+                .is_err()
+        {
+            print_error(progress_bar, "Integrity check failed, reverting conversion");
+            archive_romfile.romfile.delete(progress_bar, false).await?;
+            continue;
+        };
+
+        archive_romfile
+            .romfile
+            .update(&mut transaction, progress_bar, romfile.id)
+            .await?;
+
+        if diff {
+            print_diff(
+                &mut transaction,
+                progress_bar,
+                &roms.iter().collect::<Vec<&Rom>>(),
+                &[&source],
+                &[&archive_romfile.romfile],
+            )
+            .await?;
+        }
+
+        source.delete(progress_bar, false).await?;
 
         commit_transaction(transaction).await;
     }
@@ -2290,6 +2381,236 @@ async fn to_nsz(
     Ok(())
 }
 
+/// The Wii U disc formats a disc converts between, besides archives: a WUD,
+/// as `.wud` or Redump's `.iso`, a WUX, and a lossless WUA.
+const WUD_EXTENSIONS: &[&str] = &[WUD_EXTENSION, ISO_EXTENSION];
+
+/// Whether an archive holds a single WUD, by its rom's name.
+fn holds_one_wud(roms: &[Rom]) -> bool {
+    roms.len() == 1
+        && WUD_EXTENSIONS.iter().any(|extension| {
+            roms[0]
+                .name
+                .to_lowercase()
+                .ends_with(&format!(".{extension}"))
+        })
+}
+
+/// WUD or lossless WUA to WUX. A WUX has no settings, so recompressing one
+/// would change nothing.
+async fn to_wux(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+    diff: bool,
+    check: bool,
+) -> Result<()> {
+    // partition archives
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
+
+    // partition WUDs
+    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, WUD_EXTENSIONS);
+
+    // partition WUAs
+    let (wuas, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUA_EXTENSION]);
+
+    // drop others
+    drop(others);
+
+    // convert archives
+    for roms in archives.values() {
+        if !holds_one_wud(roms) {
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded =
+            archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory).await?;
+        let Ok(wud_romfile) = decoded.inner.as_wud() else {
+            continue;
+        };
+        let wux_romfile = wud_romfile
+            .to_wux(progress_bar, &decoded.source.path.parent().unwrap())
+            .await?;
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &wux_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert WUDs and WUAs
+    for roms in wuds.values().chain(wuas.values()) {
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let source = romfile.as_common(&mut transaction).await?;
+        let directory = source.path.parent().unwrap().to_path_buf();
+        let wux_romfile = match has_extension(&source.path, WUA_EXTENSION) {
+            true => {
+                source
+                    .clone()
+                    .as_wua()?
+                    .to_wux(progress_bar, &directory)
+                    .await?
+            }
+            false => match source.clone().as_wud() {
+                Ok(wud_romfile) => wud_romfile.to_wux(progress_bar, &directory).await?,
+                Err(_) => continue,
+            },
+        };
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &source,
+            &wux_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    Ok(())
+}
+
+/// WUD or WUX to WUA, lossless: it keeps what rebuilds the disc, its update
+/// partition in the system's store. A WUA has no settings, so recompressing
+/// one would change nothing.
+#[allow(clippy::too_many_arguments)]
+async fn to_wua(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system: &System,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: HashMap<i64, Romfile>,
+    diff: bool,
+    check: bool,
+) -> Result<()> {
+    let store = store_directory(connection, system).await?;
+
+    // partition archives
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
+
+    // partition WUDs
+    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, WUD_EXTENSIONS);
+
+    // partition WUXs
+    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
+
+    // drop others
+    drop(others);
+
+    // convert archives
+    for roms in archives.values() {
+        if !holds_one_wud(roms) {
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let decoded =
+            archive_to_common(&mut transaction, progress_bar, rom, romfile, &tmp_directory).await?;
+        let Ok(wud_romfile) = decoded.inner.as_wud() else {
+            continue;
+        };
+        let wua_romfile = wud_romfile
+            .to_wua(
+                &mut transaction,
+                progress_bar,
+                &decoded.source.path.parent().unwrap(),
+                &store,
+                false,
+            )
+            .await?;
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &decoded.source,
+            &wua_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    // convert WUDs and WUXs
+    for roms in wuds.values().chain(wuxs.values()) {
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let source = romfile.as_common(&mut transaction).await?;
+        let directory = source.path.parent().unwrap().to_path_buf();
+        let wua_romfile = match has_extension(&source.path, WUX_EXTENSION) {
+            true => {
+                source
+                    .clone()
+                    .as_wux()?
+                    .to_wua(&mut transaction, progress_bar, &directory, &store, false)
+                    .await?
+            }
+            false => match source.clone().as_wud() {
+                Ok(wud_romfile) => {
+                    wud_romfile
+                        .to_wua(&mut transaction, progress_bar, &directory, &store, false)
+                        .await?
+                }
+                Err(_) => continue,
+            },
+        };
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &source,
+            &wua_romfile,
+            romfile.id,
+            check,
+            diff,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn to_rvz(
     connection: &mut SqliteConnection,
@@ -2474,6 +2795,10 @@ async fn to_original(
 
     // partition RVZs
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
+
+    // partition WUXs and WUAs
+    let (wuxs, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION, WUA_EXTENSION]);
 
     // partition ZSOs
     let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
@@ -2857,6 +3182,31 @@ async fn to_original(
         }
     }
 
+    // convert WUXs and WUAs, to the WUD named as the DAT names it
+    for roms in wuxs.values() {
+        let mut transaction = begin_transaction(connection).await;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let source = romfile.as_common(&mut transaction).await?;
+        let path = source.path.parent().unwrap().join(&rom.name);
+        let wud_romfile = disc_to_wud(progress_bar, source.clone(), &path).await?;
+        if check_and_persist(
+            &mut transaction,
+            progress_bar,
+            &[rom],
+            &source,
+            &wud_romfile.romfile,
+            romfile.id,
+            check,
+            false,
+            false,
+        )
+        .await?
+        {
+            commit_transaction(transaction).await;
+        }
+    }
+
     Ok(())
 }
 
@@ -2972,6 +3322,18 @@ mod test_sevenzip_to_sevenzip;
 mod test_sevenzip_to_zip;
 #[cfg(test)]
 mod test_sevenzip_to_zip_multiple_files;
+#[cfg(test)]
+mod test_wua_to_original;
+#[cfg(test)]
+mod test_wua_to_wux;
+#[cfg(test)]
+mod test_wud_to_wux;
+#[cfg(test)]
+mod test_wux_to_sevenzip_wud;
+#[cfg(test)]
+mod test_wux_to_wua;
+#[cfg(test)]
+mod test_wux_to_wud;
 #[cfg(test)]
 mod test_zip_to_original;
 #[cfg(test)]

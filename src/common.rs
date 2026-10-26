@@ -8,6 +8,7 @@ use super::model::*;
 use super::progress::*;
 use super::prompt::prompt_for_games;
 use super::util::*;
+use super::wux::is_nus_title;
 use anyhow::{Context, Result, bail};
 use clap::ArgMatches;
 use core::fmt;
@@ -26,7 +27,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::{fs::File, str::FromStr};
 
-fn to_hex(bytes: &[u8]) -> String {
+pub(crate) fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
@@ -441,9 +442,11 @@ impl CommonFile for CommonRomfile {
             sorted_path.push(compute_alpha_subfolder(&game.name));
         }
 
-        // arcade and jbfolder in subdirectories unless they are archives
-        if (system.arcade && !extension.is_some_and(|ext| ARCHIVE_EXTENSIONS.contains(&ext)))
+        // arcade, jbfolder and NUS titles in subdirectories unless they are archives
+        let is_archive = extension.is_some_and(|ext| ARCHIVE_EXTENSIONS.contains(&ext));
+        if (system.arcade && !is_archive)
             || game.jbfolder
+            || (!is_archive && is_nus_title(connection, game).await)
         {
             sorted_path.push(&game.name);
         }

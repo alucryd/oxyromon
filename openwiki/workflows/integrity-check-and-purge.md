@@ -28,6 +28,8 @@ sources:
     resource: repo://src/check_roms/test_original_crc_mismatch.rs
   - id: openwiki-source-ac8824e0da82b44765db720c
     resource: repo://src/check_roms/test_original_size_mismatch.rs
+  - id: openwiki-source-0bb97cd443b513a8b5447c98
+    resource: repo://src/check_roms/test_wua_without_its_update.rs
   - id: openwiki-source-c307f8b7435bf1eb8e07109f
     resource: repo://src/common.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -62,6 +64,8 @@ sources:
     resource: repo://src/purge_irds/test_ird.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
+  - id: openwiki-source-0f30444a2cbc21370988fd60
+    resource: repo://src/purge_roms/test_foreign_store_unreadable_wua.rs
   - id: openwiki-source-efeca90dcd77f2dabe1eaf26
     resource: repo://src/purge_roms/test_foreign_subfolder.rs
   - id: openwiki-source-2697b8bba4712f76c229dc3c
@@ -84,12 +88,14 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -167,7 +173,7 @@ than failing the run
 For each system, `check_system` loads only `original = true` roms that have a
 `romfile_id`, groups them by `romfile_id`, and dispatches on the romfile's
 extension. The whole pass runs inside one transaction that is committed at the
-end of the system ([src/check_roms.rs](../../src/check_roms.rs#L102-L249)).
+end of the system ([src/check_roms.rs](../../src/check_roms.rs#L103-L257)).
 
 ```mermaid
 flowchart TD
@@ -179,12 +185,15 @@ flowchart TD
     D -->|cso or zso| I["decompress to ISO in tmp, check ISO"]
     D -->|nsz| J["extract to NSP in tmp, check NSP"]
     D -->|rvz| K["hash while decoding, no ISO written"]
+    D -->|wux| W["hash while decompressing, no WUD written"]
+    D -->|wua| WA["compare disc info, rebuild WUX in tmp"]
     D -->|other| L["CommonRomfile check"]
     E --> M{"check returned Ok"}
     F --> M
     I --> M
     J --> M
     K --> M
+    W --> M
     L --> M
     M -->|Err| N["move_to_trash: rename into system Trash, update row"]
     M -->|"Ok and --size"| O["Persist::update recomputes romfiles.size"]
@@ -222,6 +231,20 @@ Every format implements the same `Check` trait, and the leaf comparison is alway
 - `RvzRomfile::check` hashes *while decoding*, writing no ISO at all; it falls
   back to the extract-then-check path only if a header is configured
   ([src/rvz.rs](../../src/rvz.rs#L69-L98)).
+- `WuxRomfile::check` does the same for a Wii U WUX: it streams the
+  decompressing `wux_rs::Image` through the hasher and compares against the
+  DAT's `.wud` row, writing no 25 GB WUD. It extracts a WUD to the temp
+  directory only if a header is configured, which no Wii U DAT declares
+  ([src/wux.rs](../../src/wux.rs#L155-L180)). A loose `.wud` takes the plain
+  `CommonRomfile` path. Neither needs Wii U keys.
+- `WuaRomfile::check` compares the disc info a lossless WUA keeps with the DAT's
+  row, then rebuilds a WUX into the temp directory, which wux-rs checks against
+  the disc's SHA-1. That needs the Wii U keys and the WUA's update partitions in
+  its system's `.update-partitions` store, so a WUA whose store entry is gone
+  fails and goes to Trash. A `.wua` that `as_wua` rejects, one Cemu wrote, is
+  checked as a plain file instead
+  ([src/check_roms.rs](../../src/check_roms.rs#L185-L199),
+  [src/wux.rs](../../src/wux.rs#L247-L278)).
 
 Headers are handled inside hashing, not after: when the system has a `headers`
 row, `get_file_and_header_size` peeks at the configured bytes and, only if every
@@ -334,9 +357,17 @@ Key behaviours:
 - **`--foreign` is a filesystem-to-database scan.** Every file under the ROM
   directory is converted to a relative path and looked up with
   `find_romfile_by_path`; no row means the file is unknown and offered for
-  deletion. This is the only purge that can delete a file oxyromon never knew
+  deletion. One kind of unknown file is spared: an update partition in a
+  `.update-partitions` store that a WUA known to the library still lists in its
+  `wux_rs::store_entries`. The scan first collects every file and the known
+  ones, gathers the store entries of the known WUAs, and only then decides, so
+  update partitions no WUA needs any more are deleted like any foreign file.
+  The pass fails closed: when a known WUA's store entries can't be read, it may
+  need any update partition, so every store file is kept and a warning names
+  the WUA.
+  This is the only purge that can delete a file oxyromon never knew
   about, so it is the one category where a mistaken `ROM_DIRECTORY` setting is
-  most dangerous ([src/purge_roms.rs](../../src/purge_roms.rs#L166-L218)).
+  most dangerous ([src/purge_roms.rs](../../src/purge_roms.rs#L168-L267)).
 - **`--foreign` confirms per file.** It asks before each individual deletion, so
   answering "no" leaves that one file and moves on, unlike the batched trash and
   orphan passes.
@@ -512,8 +543,8 @@ The bundled `audit_system` prompt encodes the intended operator sequence:
 - **`roms.original` decides what `check-roms` will even look at.**
   `find_original_roms_with_romfile_by_game_ids` filters `original = true`, and
   DAT import sets that flag from whether the declared rom name carries a
-  non-original extension (`chd`, `cso`, `nsz`, `rvz`, `zso`, `7z`, `zip`)
-  ([src/mimetype.rs](../../src/mimetype.rs#L37-L45),
+  non-original extension (`chd`, `cso`, `nsz`, `rvz`, `wua`, `wux`, `zso`, `7z`, `zip`)
+  ([src/mimetype.rs](../../src/mimetype.rs#L40-L49),
   [src/import_dats.rs](../../src/import_dats.rs#L786-L827)). IRD child roms are
   written with `original = false`, which is part of why IRD games are retired by
   `purge-irds` rather than by re-hashing
@@ -531,7 +562,9 @@ without being moved
 `test_missing_subfolder` and `test_orphans_subfolder` assert the emptied alpha
 subfolder is gone while the system directory remains;
 `test_foreign_subfolder` asserts that deleting the last foreign file removes
-`Test System` but never the ROM directory; `test_trashed` asserts the system
+`Test System` but never the ROM directory; `test_foreign_store` asserts that a
+WUA's store entry survives while a stray file in the store is deleted, and
+`test_foreign_store_unreadable_wua` that both survive when the WUA is cut short; `test_trashed` asserts the system
 `Trash` directory itself is left in place, empty; and
 `test_trashed_rom_directory` asserts the same for the **ROM directory's** `Trash`
 holding an `import-roms` reject ([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),

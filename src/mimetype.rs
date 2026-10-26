@@ -27,6 +27,9 @@ pub const RIFF_EXTENSION: &str = "riff";
 pub const RVZ_EXTENSION: &str = "rvz";
 pub const SEVENZIP_EXTENSION: &str = "7z";
 pub const WBFS_EXTENSION: &str = "wbfs";
+pub const WUA_EXTENSION: &str = "wua";
+pub const WUD_EXTENSION: &str = "wud";
+pub const WUX_EXTENSION: &str = "wux";
 pub const XDELTA_EXTENSION: &str = "xdelta";
 pub const ZIP_EXTENSION: &str = "zip";
 pub const ZSO_EXTENSION: &str = "zso";
@@ -39,6 +42,8 @@ pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[
     CSO_EXTENSION,
     NSZ_EXTENSION,
     RVZ_EXTENSION,
+    WUA_EXTENSION,
+    WUX_EXTENSION,
     ZSO_EXTENSION,
     SEVENZIP_EXTENSION,
     ZIP_EXTENSION,

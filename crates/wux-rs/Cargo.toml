@@ -1,0 +1,47 @@
+[package]
+name = "wux-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Wii U disc images: WUD to WUX compression and back, and WUD/WUX to Cemu's WUA archives"
+license = "GPL-3.0-or-later"
+repository.workspace = true
+keywords = ["wud", "wux", "wua", "wiiu", "compression"]
+categories = ["compression", "command-line-utilities"]
+include = ["src/**/*", "tests/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[lib]
+name = "wux_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "wuxrs"
+path = "src/bin/wuxrs/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+aes = "0.9"
+crc32fast.workspace = true
+md-5.workspace = true
+rayon.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+zstd = { workspace = true, features = ["zstdmt"] }
+clap = { workspace = true, optional = true }
+console = { workspace = true, optional = true }
+indicatif = { workspace = true, optional = true }
+# Where Cemu keeps its keys.txt, which only the CLI looks for.
+dirs = { version = "7.0.0", optional = true }
+
+[dev-dependencies]
+# To build a synthetic disc.
+aes = "0.9"
+sha1.workspace = true
+tempfile.workspace = true
+# An independent ZArchive reader, to check the WUAs written here.
+zarust = "0.2.1"
+
+[features]
+default = ["cli"]
+cli = ["dep:clap", "dep:console", "dep:dirs", "dep:indicatif"]

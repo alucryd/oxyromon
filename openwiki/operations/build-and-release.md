@@ -1,7 +1,7 @@
 ---
 type: build-and-release
 title: Builds, Distribution and Releases
-description: How oxyromon's helper scripts (build.sh, desktop.sh, dist.sh, docker.sh, test.sh) produce the CLI, desktop bundle and container images, which cross-compilation targets and signing steps the release matrix covers, and the ordering and blockers that govern publishing the seven format crates and oxyromon itself.
+description: How oxyromon's helper scripts (build.sh, desktop.sh, dist.sh, docker.sh, test.sh) produce the CLI, desktop bundle and container images, which cross-compilation targets and signing steps the release matrix covers, and the ordering and blockers that govern publishing the eight format crates and oxyromon itself.
 tags: [build, release, dist, cross, docker, cargo-publish, changelog, signing]
 sources:
   - id: openwiki-source-715dace563ef484b6e8bd1e2
@@ -52,20 +52,22 @@ sources:
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Builds, Distribution and Releases
 
 One root Cargo package yields five shipped artifact families: a headless CLI, the
 same binary built with `--features server` (web server plus embedded UI and MCP),
-the seven standalone format-crate CLIs (`chdrs`, `ciars`, `gdirs`, `nszrs`,
-`xdeltars`, `xpsrs`, `xsors`), a Tauri desktop bundle, and one container image. The mechanics
+the eight standalone format-crate CLIs (`chdrs`, `ciars`, `gdirs`, `nszrs`,
+`wuxrs`, `xdeltars`, `xpsrs`, `xsors`), a Tauri desktop bundle, and one container image. The mechanics
 are split across five small shell scripts at the repository root, a `Cross.toml`
 for the cross images, and a per-crate publishing convention that has a hard
 ordering constraint. Feature-flag semantics — what `server`, `mcp`, `use-rustls`
@@ -74,13 +76,13 @@ and `use-native-tls` change — live in
 this page covers how those builds are actually produced, packaged, signed and
 released.
 
-Since 0.25.0 the release matrix is a seven-crate matrix: CHD support moved from
+Since 0.25.0 the release matrix has covered every format crate: CHD support moved from
 the external `chdman` binary to the `chd-rs` crate in `crates/`, and CIA support
 from `ctrtool` to `cia-rs`; "Its CLI (`chdrs`) ships in the release archives too"
 is how the changelog records each of these ports. The same is true of `ciars`,
 `gdirs`, `nszrs`, `xdeltars`, `xpsrs` and `xsors`, which arrived in 0.24.0 and
 0.25.0 as replacements for `ctrtool`, `gdidrop`, `nsz`, `xdelta3`, `flips` and
-`maxcso`.
+`maxcso`. The eighth, `wuxrs`, came with Wii U support and replaces no tool.
 
 ## The helper scripts
 
@@ -90,7 +92,7 @@ All five run from the repository root.
 | --- | --- | --- |
 | `build.sh` | `trunk build --release` in `frontend/`, then `cargo build --release --features server` | trunk plus the `wasm32-unknown-unknown` target on `PATH`; it does **not** set `SKIP_TRUNK`, so whenever `build.rs` runs it repeats that same trunk build |
 | `desktop.sh` | `cargo tauri build` in `desktop/` (the `oxyromon-desktop` binary and its installers) | Tauri CLI and the platform's webview development packages; host triple only; exports `NO_STRIP=true`; `beforeBuildCommand` stages the server sidecar first |
-| `dist.sh` | Everything, for the full release matrix, into `dist/`: `oxyromon` and the seven format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
+| `dist.sh` | Everything, for the full release matrix, into `dist/`: `oxyromon` and the eight format CLIs for seven targets, then the host's desktop bundles | `cross` with `CROSS_CONTAINER_ENGINE=podman`, trunk, `rcodesign` on the host, `7z`, `tar`/`xz`, `llvm-mingw` at `/opt/llvm-mingw/llvm-mingw-ucrt/bin`, plus a full desktop toolchain for the host |
 | `docker.sh` | `alucryd/oxyromon:<version>` + `:latest` from the Alpine-based `Dockerfile`, then pushes both | `docker` usable via `sudo`, `tomlq` to read `.package.version` out of `Cargo.toml`, and push access to Docker Hub |
 | `test.sh` | Coverage into `lcov.info` (gitignored) over the whole workspace | `cargo-llvm-cov` with `llvm-tools-preview`; one pass, matching CI |
 
@@ -119,8 +121,8 @@ under `crates/`.
 Inside each family, per target, the sequence is the same: build the wasm bundle on
 the host, `cross build --release --target <t> --features server`, package
 `oxyromon`, then `cross build --release --target <t> -p chd-rs -p cia-rs -p gdi-rs
--p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs` and package `chdrs`, `ciars`, `gdirs`,
-`nszrs`, `xdeltars`, `xpsrs` and `xsors` as separate archives, then `cargo clean` so the
+-p nsz-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs` and package `chdrs`, `ciars`,
+`gdirs`, `nszrs`, `wuxrs`, `xdeltars`, `xpsrs` and `xsors` as separate archives, then `cargo clean` so the
 next target starts from a clean tree. Each crate's binary lives behind a default
 `cli` feature (`required-features = ["cli"]`), so the root's
 `default-features = false` path dependency keeps the CLI out of the oxyromon build
@@ -130,7 +132,7 @@ with the vendor field trimmed (`${target/-unknown/}` for Linux and macOS,
 `oxyromon.aarch64-linux-gnu.tar.xz` and its CHD tool is
 `chdrs.aarch64-linux-gnu.tar.xz`, while a macOS one keeps `aarch64-apple-darwin`
 intact. Linux and macOS ship `.tar.xz`, Windows ships `.7z` (with `.exe`
-suffixes); eight archives per target, landing flat in `dist/`, which is gitignored.
+suffixes); nine archives per target, landing flat in `dist/`, which is gitignored.
 
 ```mermaid
 flowchart TD
@@ -143,7 +145,7 @@ flowchart TD
   T1 --> C1["cross build --release --features server"]
   C1 --> ISMAC{"darwin target"}
   ISMAC -->|"yes"| SIGN["rcodesign sign oxyromon and each CLI"]
-  ISMAC -->|"no"| PACK["collect oxyromon plus the seven CLIs"]
+  ISMAC -->|"no"| PACK["collect oxyromon plus the eight CLIs"]
   SIGN --> PACK
   PACK --> ISWIN{"windows target"}
   ISWIN -->|"yes"| Z["7z archives"]
@@ -170,7 +172,7 @@ Three environment decisions make the matrix tractable:
   toolchain for that target.
 
 **Signing** covers only Apple targets: `rcodesign sign` runs on each macOS binary —
-`oxyromon` and each of the seven CLIs — after the build and before it is tarred
+`oxyromon` and each of the eight CLIs — after the build and before it is tarred
 (`oxyromon` first, then each CLI inside the packaging loop). Linux and Windows
 artifacts are unsigned. Separately, the root `[profile.release]` (`lto = "thin"`,
 `codegen-units = 1`, `strip = true`, `panic = "abort"`) applies to every `oxyromon`
@@ -246,8 +248,10 @@ to `develop`, and builds and pushes `./Dockerfile` with tags derived by
 version-pinned `<version>` tag; that exists only after someone runs `docker.sh`.
 
 Release archives need nothing installed beside them: `oxyromon info` lists
-`chd-rs`, `cia-rs`, `xso-rs`, `xps-rs`, `xdelta-rs`, `nsz-rs`, `sevenz-rust2` and
-`nod`, and every one reports the literal string `built-in`. The README states
+`chd-rs`, `cia-rs`, `xso-rs`, `xps-rs`, `xdelta-rs`, `nsz-rs`, `wux-rs`,
+`sevenz-rust2` and `nod`, and every one reports the literal string `built-in`.
+Keys are the only thing a user may need to supply: Switch keys for some NSZ
+compression and Wii U keys, through `import-keys`, for WUA and NUS exports. The README states
 that every format is handled in-process; see
 [External Tools](../integrations/external-tools.md).
 
@@ -264,7 +268,7 @@ needs its new version**, because the root declares each dependency with `path`
 resolve. A `cargo publish` of oxyromon against an unpublished crate version fails,
 and the root's `exclude` list keeps `crates/` out of its tarball, so nothing in the
 released package can fill the gap. Current crate versions are `nsz-rs 0.3.0` and
-`chd-rs`, `cia-rs`, `gdi-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` at `0.1.0`.
+`chd-rs`, `cia-rs`, `gdi-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs` at `0.1.0`.
 
 One `ponytail` comment in `Cargo.toml` records the last publishing gate: the
 package cannot be published while this dependency points at git, because crates.io
@@ -333,7 +337,7 @@ flowchart TD
 ```sh
 ./build.sh                                                        # UI + server CLI for this machine
 ./test.sh                                                         # workspace coverage into lcov.info
-cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the seven CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs   # the eight CLIs
 ./desktop.sh                                                      # host desktop bundles
 ./dist.sh                                                         # full release matrix into dist/
 ./docker.sh                                                       # push the image, two tags

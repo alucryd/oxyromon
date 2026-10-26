@@ -96,10 +96,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-14T21:01:38.051Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Settings and Configuration Model
@@ -243,7 +243,9 @@ the `SubfolderScheme`, `PreferredRegion` and `PreferredVersion` strum enums
 declared in `config.rs` itself. Value casing follows those enums
 (`serialize_all = "lowercase"`, so `none`/`broad`/`narrow`), except
 `PREFER_FORMAT`, whose choices are the uppercase format names `ORIGINAL`, `7Z`,
-`CHD`, `CSO`, `NSZ`, `RVZ`, `ZIP`, `ZSO`. `config.rs` also still exports
+`CHD`, `CSO`, `NSZ`, `RVZ`, `WUA`, `WUX`, `ZIP`, `ZSO`. Keys oxyromon needs but does not
+ship are not settings: `import-keys` stores the Wii U ones in `wiiu_keys.txt` in
+the data directory, outside the database the settings surfaces read. `config.rs` also still exports
 `HashAlgorithm`, which is no longer a setting — its row was deleted by
 `20241227212749_drop_hash_algorithm_setting.sql` — but remains the hash-selection
 enum threaded through `get_hash_and_size` by import and DAT creation.

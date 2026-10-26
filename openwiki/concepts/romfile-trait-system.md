@@ -62,12 +62,14 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-856ac41ecb89a38b80d7e895
     resource: repo://src/wbfs.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Romfile Trait System
@@ -231,10 +233,13 @@ to be moved, copied or deleted is first reduced to its inner file (via
 - `get_sorted_path` computes where a file *should* live: 1G1R vs system vs Trash
   directory by `Game.sorting`, an optional alpha subfolder from
   `REGIONS_ONE_SUBFOLDERS` / `REGIONS_ALL_SUBFOLDERS`, a per-game directory for
-  jbfolders and for arcade titles whose extension is not an archive, and finally
-  the filename. The extension override
+  jbfolders, for arcade titles whose extension is not an archive, and for Wii U
+  NUS titles (games whose ROMs include a TMD, per `wux::is_nus_title`), again
+  unless the extension is an archive, and finally the filename. NUS titles need
+  the folder because every update and DLC names its contents alike, `00000000`
+  and on. The extension override
   argument matters: for extensions in `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz,
-  rvz, zso, 7z, zip) the file is named after the *game*, not the DAT rom, because
+  rvz, wua, wux, zso, 7z, zip) the file is named after the *game*, not the DAT rom, because
   those containers are derived files; otherwise `System.custom_extension` wins over
   `rom.name`. `sort-roms` diffs this against the current path, and the
   `src/common/test_path_*.rs` suite pins it.
@@ -432,8 +437,9 @@ workflows about it — nothing in `common.rs` changes:
 5. Registration in the workflow layers: an extension branch in
    `check_roms::check_system`, source partitioning plus a target function in
    `convert_roms`/`export_roms`, and an import branch in `import_roms`
-   ([src/check_roms.rs](../../src/check_roms.rs#L148-L198),
-   [src/import_roms.rs](../../src/import_roms.rs#L476-L491)).
+   ([src/check_roms.rs](../../src/check_roms.rs#L149-L221),
+   [src/import_roms.rs](../../src/import_roms.rs#L518-L682)). The Wii U module
+   `src/wux.rs` is the newest example of the full set.
    See [Format Conversion and Export](../workflows/format-conversion-and-export.md)
    and [Integrity Check and Purge](../workflows/integrity-check-and-purge.md).
 

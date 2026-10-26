@@ -127,7 +127,8 @@ global `MultiProgress`.
 `crates/` holds `chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`
 and `xso-rs`, each a port of the tool oxyromon used to run (chdman, ctrtool,
 gdidrop, nsz, xdelta3, Flips, maxcso), published on its own and keeping its
-upstream's license — MIT for `cia-rs`, whose upstream shipped none. Every crate follows these, and a new one must too:
+upstream's license — MIT for `cia-rs`, whose upstream shipped none. `wux-rs`
+follows wudd and Cemu instead, under wudd's GPL-3.0+, and ships no key. Every crate follows these, and a new one must too:
 
 - **Library first, CLI behind a default `cli` feature.** oxyromon depends on a
   crate by `path` and `version` with `default-features = false`.

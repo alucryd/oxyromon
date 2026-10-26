@@ -56,21 +56,24 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-20T21:43:24.013Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # File Type Detection and Extension Constants
 
-[`src/mimetype.rs`](../../src/mimetype.rs) is 143 lines, but it is the vocabulary
+[`src/mimetype.rs`](../../src/mimetype.rs) is under 150 lines, but it is the vocabulary
 every other module speaks. It owns three things and nothing else:
 
 1. **Extension constants** — one `pub const` per format, always lowercase, always
    without the dot (`ISO_EXTENSION`, `RVZ_EXTENSION`, `SEVENZIP_EXTENSION = "7z"`, …).
+   The Wii U adds three: `WUD_EXTENSION`, `WUX_EXTENSION` and `WUA_EXTENSION`.
 2. **Content detection** — a single lazily built `infer::Infer` matcher extended
    with ten ROM-specific magic-byte matchers, exposed as `get_mimetype(path)`.
 3. **Extension groups** — `ARCHIVE_EXTENSIONS`, `PS3_EXTENSIONS` and
@@ -78,7 +81,7 @@ every other module speaks. It owns three things and nothing else:
    membership against.
 
 Every consumer pulls all of it in with `use super::mimetype::*;` — twenty modules,
-from `import_roms` and `convert_roms` down to `wbfs` and `xso` — so there is exactly
+from `import_roms` and `convert_roms` down to `wbfs`, `wux` and `xso` — so there is exactly
 one place where `"rvz"` is spelled. There is no registry, no trait and no config
 entry: adding a format means editing these lists.
 
@@ -105,6 +108,11 @@ is available too) and layers ten custom matchers on top:
 | `rvz_matcher` | `52 56 5A 01` `"RVZ"` + `0x01` | `application/x-rvz` → `rvz` | version byte pinned to 1 |
 | `xdelta_matcher` | `D6 C3 C4` | `application/x-xdelta` → `xdelta` | 3 bytes |
 | `zso_matcher` | `5A 49 53 4F` `"ZISO"` | `application/x-zso` → `zso` | note the magic is `ZISO`, not `ZSO` |
+
+The Wii U formats have no matcher: a WUD is a raw disc dump with no magic of its
+own at offset 0, a WUX is typed by its name like NSZ and NSP, and a WUA's magic
+sits at its end, after zstd blocks (see
+[Format-entry guards](#format-entry-guards-are-not-uniform)).
 
 Each matcher is a pure `&[u8] -> bool` that checks the buffer length before indexing,
 so a truncated header returns `false` rather than panicking. `RVZ` pins the fourth
@@ -137,8 +145,8 @@ load-bearing: `import_irds::parse_ird` accepts a gzipped IRD precisely because
 pub static ARCHIVE_EXTENSIONS: [&str; 2] = [SEVENZIP_EXTENSION, ZIP_EXTENSION];
 pub static PS3_EXTENSIONS: [&str; 3] = [PKG_EXTENSION, PUP_EXTENSION, RAP_EXTENSION];
 pub static NON_ORIGINAL_EXTENSIONS: &[&str] = &[
-    CHD_EXTENSION, CSO_EXTENSION, NSZ_EXTENSION, RVZ_EXTENSION, ZSO_EXTENSION,
-    SEVENZIP_EXTENSION, ZIP_EXTENSION,
+    CHD_EXTENSION, CSO_EXTENSION, NSZ_EXTENSION, RVZ_EXTENSION, WUA_EXTENSION,
+    WUX_EXTENSION, ZSO_EXTENSION, SEVENZIP_EXTENSION, ZIP_EXTENSION,
 ];
 ```
 
@@ -146,7 +154,7 @@ These are not documentation; they are the predicates that decide real behavior.
 
 | Group | Read by | What membership changes |
 | --- | --- | --- |
-| `ARCHIVE_EXTENSIONS` | `import_roms::main` (`--extract`), `import_rom`, `rebuild_roms`, `check_roms`, `CommonRomfile::get_sorted_path` | the file is unpacked and its entries matched individually instead of being hashed as one file; arcade games stop getting a per-game subfolder |
+| `ARCHIVE_EXTENSIONS` | `import_roms::main` (`--extract`), `import_rom`, `rebuild_roms`, `check_roms`, `CommonRomfile::get_sorted_path` | the file is unpacked and its entries matched individually instead of being hashed as one file; arcade games and NUS titles stop getting a per-game subfolder |
 | `PS3_EXTENSIONS` | `import_roms::import_archive` | a single-file archive whose inner ROM is `pkg`/`pup`/`rap` is renamed `{game.name}.{archive ext}` rather than `{rom name}.{archive ext}` |
 | `NON_ORIGINAL_EXTENSIONS` | `import_dats`, `CommonRomfile::get_sorted_path` | a DAT ROM with such an extension is stored with `roms.original = false`; sorted paths name the file after the *game* instead of the DAT rom name |
 
@@ -155,7 +163,9 @@ recompression of it". `import_dats` sets `original = !NON_ORIGINAL_EXTENSIONS.co
 and `convert-roms` then loads its work through `load_rom_data(connection, games, true)`,
 which filters on `original = true` (`export-roms` passes `false` and takes everything).
 Drop a format out of this list and conversion starts treating its compressed containers
-as catalog originals. Note the corollary for MAME: its DATs list CHDs as `<disk name="game">`
+as catalog originals. The Wii U formats show the split: Redump lists a disc as an `.iso` (a `.wud` in
+older DATs), which stays an original, while `.wux` and a lossless `.wua` are
+recompressions of it and sit in the list. Note the corollary for MAME: its DATs list CHDs as `<disk name="game">`
 with **no extension at all**, so those rows are non-original because no extension is
 present, not because the list matched — `original` is computed with `is_some_and`, and a
 missing extension is itself a "not an original" answer.
@@ -164,7 +174,9 @@ missing extension is itself a "not an original" answer.
 as `None`, falling back to the file's own extension, and then applies the same group:
 a non-original extension yields `{game.name}.{ext}` (or `{rom.name}.{ext}` for arcade
 non-archives), while an original keeps `rom.name` unless the system defines a
-`custom_extension`.
+`custom_extension`. The per-game subfolder goes to arcade games, PS3 JB folders, and
+NUS titles, which `wux::is_nus_title` recognises as a game whose ROMs include a TMD;
+the archive extension suppresses it for arcade games and NUS titles alike.
 
 ## Two dispatch styles, and why they differ
 
@@ -186,6 +198,8 @@ flowchart TD
     D -- "cso or zso" --> X["as_xso re-checks magic"]
     D -- "nsz" --> N["as_nsz checks path extension"]
     D -- "rvz" --> R["as_rvz checks path extension"]
+    D -- "wux" --> W["as_wux checks path extension"]
+    D -- "wua" --> WA["as_wua reads the WUA's disc info"]
     D -- "anything else" --> O
 ```
 
@@ -194,8 +208,10 @@ name, then pick the per-format handler unless `--as-is` bypasses it.
 
 *Import resolves one unknown file, so it prefers content.* `import_rom` computes
 `get_mimetype(&romfile.path)` and uses `mimetype.extension()` when a matcher fired,
-falling back to `path.extension()` lowercased when it did not — that single resolved
-string then drives the archive / CHD / CIA / CSO / NSZ / RVZ / ZSO / plain cascade in
+falling back to `path.extension()` lowercased when it did not. A `.wua` name wins
+over any matcher, because a WUA starts with a zstd block and keeps its magic at its
+end. That single resolved
+string then drives the archive / CHD / CIA / CSO / NSZ / RVZ / WUX / WUA / ZSO / plain cascade in
 [`import_roms.rs`](../../src/import_roms.rs). Everything in that cascade
 is also gated on `!as_is`, so `--as-is` routes any container straight to
 `import_other` regardless of what it contains. `import_roms::main` uses the same
@@ -203,6 +219,16 @@ detection twice more: to give CHDs that declare a parent import priority over th
 parents — a priority computed by parsing each candidate with `parse_chd`, not by
 looking at the name — and to unpack top-level archives under `--extract` before
 walking them.
+
+Directories get one content test before the walk. A folder holding a NUS title's TMD,
+as `wux_rs::tmd_path` finds it, is a Wii U update or DLC and goes whole to
+`import_nus`, which matches the TMD first and then the folder's files within that one
+game. The walk applies the same test to every subdirectory and skips the folders it
+claims, and it skips `.update-partitions` stores, which WUAs bring along themselves.
+A top-level folder with a `PS3_DISC.SFB` instead goes to the JB-folder import. A WUD
+has no branch of its own and is hashed as a plain file by `import_other`. Only a
+lossless WUA, one `as_wua` accepts, takes the WUA branch; any other `.wua` falls
+through to `import_other`.
 
 *Conversion and export partition thousands of known DB rows,* so they never touch the
 filesystem for type information: `partition_games_by_extensions` and
@@ -275,22 +301,31 @@ different ways, and the difference is visible from the outside:
   patch file is simply reported as `"Unsupported patch format"`.
 - **Extension-gated:** `as_iso`, `as_cue_bin`, `as_rvz`, `as_nsz` and `as_nsp` compare
   `path.extension()` lowercased to the constant, and `AsArchive::as_archive` maps the
-  extension through `ArchiveType::from_str`.
+  extension through `ArchiveType::from_str`. `as_wux` in `src/wux.rs` compares the
+  extension case-insensitively and bails with `"Not a valid wux"` otherwise.
+- **Both:** `as_wud` accepts a `.wud` or `.iso` only when the image has no WUX
+  header and carries the Wii U disc magic `CC 54 9E B9` at `0x10000`, which tells a
+  Wii U ISO from any other. `as_wua` needs the `.wua` extension and then
+  `wux_rs::disc_info` to find the disc info a lossless WUA keeps, bailing with
+  "Not a lossless wua" for WUAs Cemu wrote.
 
 `rvz` therefore has a magic-byte matcher that its own entry guard never consults — the
-matcher exists for the batch partitioning and for content-first callers — while `nsz`
-and `nsp` have no matcher at all and are typed by name alone. A mislabeled `.rvz` is
+matcher exists for the batch partitioning and for content-first callers — while `nsz`,
+`nsp` and `wux` have no matcher at all and are typed by name alone. A mislabeled `.rvz` is
 accepted by `as_rvz` and fails later inside the format library, while a mislabeled
 `.chd` is rejected at the guard.
 
 That distinction has a cost in `check_roms`, which is the one dispatcher that does not
 tolerate a failed format entry. `check_system` dispatches the resolved path's extension
-to archive / CHD / CSO / NSZ / RVZ / ZSO / plain checks **without lowercasing it**, so
+to archive / CHD / CSO / NSZ / RVZ / WUA / WUX / ZSO / plain checks **without lowercasing it**, so
 `game.CHD` never reaches the CHD branch; and inside the CHD, CSO and ZSO branches the
-guard calls use `?` (`romfile_as_chd`, `as_xso`, and likewise `as_nsz` / `as_rvz`), so a
+guard calls use `?` (`romfile_as_chd`, `as_xso`, and likewise `as_nsz` / `as_rvz` /
+`as_wux`), so a
 container that fails to open or whose bytes are not `CISO`/`ZISO` aborts the whole
 system's check rather than being reported as one failed file and moved to Trash. Only
-errors returned from a completed `check()` call take the report-and-trash path.
+errors returned from a completed `check()` call take the report-and-trash path. The WUA
+branch is the exception: a `.wua` that `as_wua` rejects is checked as a plain file
+rather than aborting.
 
 ## Checklist for adding a new format
 
