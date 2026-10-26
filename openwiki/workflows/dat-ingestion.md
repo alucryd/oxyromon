@@ -93,7 +93,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T22:40:03.236Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads

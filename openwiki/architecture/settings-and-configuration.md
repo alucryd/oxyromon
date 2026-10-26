@@ -96,10 +96,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-17ea50e0748f5cbf91688f22
     resource: repo://src/validator.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Settings and Configuration Model
@@ -567,7 +567,7 @@ Concretely:
 2. **Default.** Add a `migrations/<timestamp>_add_<name>_setting.sql` with
    `INSERT OR REPLACE INTO settings ("key", value) VALUES (…)`. Omitting this
    step is how a `get_bool` unwrap later panics. `cargo sqlx prepare --
-   --features server` afterwards, per the migration workflow.
+   --all-targets --features server` afterwards, per the migration workflow.
 3. **Consume.** Read it with the typed accessor, threading the `system_id` you
    already have so the override/fallback path is exercised; consumers pass
    `Some(system.id)` even for keys that are conceptually global.

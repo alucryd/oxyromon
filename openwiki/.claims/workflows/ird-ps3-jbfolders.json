@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5790db07525a1a8bd7b17c176dd5f4031f197521f73e3edcd785b4969d7b10a9",
+  "pageVersion": "sha256:e7c2398d4a05de6d1efd3486829ffd0a6c21bfa2638309f2b7227a16ef0db0d0",
   "claims": [
     {
       "id": "claim_be7e331717cf488b9632566ef15e50ac",
       "statement": "import-irds and purge-irds are clap subcommands registered in src/main.rs; import-irds takes <IRDS>... plus -i/--info, -f/--force and --system, and accepts IRD version 9 only — any other version prints 'IRD version unsupported' after the metadata block and continues with the next file rather than failing the run.",
       "evidence": [
         {
-          "resource": "repo://README.md#L430-L451",
+          "resource": "repo://README.md#L432-L453",
           "version": "repo-lines-v1:sha256:5bf594472286df1645cbdd26935561188df5d3fa6f8f6fc4d032216e082cd645:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmYTcwODMzOGYzNmFhYjhhMjFiZjJkMzg0NjM3OTAwZWYyZmQzNjE4ZjI1MjgzN2JjY2JiMDY3YTc1Y2M1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NDkwOGYyMDdmNTkzNmYyM2Y5YmU3OGMxYThlZTk2N2EwZTM0YmZjNjEyZGI5YWIzMjg3MGFmYjM2ZDRjZjYifQ"
         },
         {
@@ -47,7 +47,7 @@
       "statement": "An IRD decorates an existing DAT game: candidates come from find_wanted_games_by_system_id (sorting != Ignored). With --system the run is headless — an empty system bails 'import its DAT first' and unattended_game accepts exactly one game whose title_key matches, erroring on zero or several — while interactive mode sorts candidates by jaro_winkler and prompts. A game already flagged jbfolder is skipped unless -f.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L701-L719",
+          "resource": "repo://src/database.rs#L744-L762",
           "version": "repo-lines-v1:sha256:6b057c76738ced08c327968d7a5aff5a46dc526b71a235d9065bb43ff0e8d257:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwZDM3MmZhY2RkY2M2ZGViNTM5NjU3NDU2N2ViYjc4N2RkYTZmYTBhMTZlOTIyNTdjNDc3Y2UwZmFhODU5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjVhM2MzMWVlZWI4N2M1OWJmMWVlNWVjNjg4OTQ3ZmIyYjEzMjEzZDNiMzU0YzAyMmYxMzNhNmQ2OGViNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlNTU0NzZmZjA5YzA1OWE2NjVjMzZhMTljYzY5MzBjZmI1MDJjYzU4YjgyZjA2ZDI4OWQzYTI4MzZjNWU2NjUifQ"
         },
         {
@@ -69,7 +69,7 @@
       "statement": "import_ird enumerates the embedded ISO tree in one scope before any await (Iso9660Filesystem is not Send), bails if the walked file count differs from the IRD's files_count, then upserts one roms row per disc path keyed by name within the game with the summed extent size, the MD5 looked up under the first extent's LBA, parent_id set to the chosen disc ROM and original = false.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L981-L1006",
+          "resource": "repo://src/database.rs#L1024-L1049",
           "version": "repo-lines-v1:sha256:e0ec8b26efb09a3ffdf9481651faf520ee59eb0f21817e99692653c9f4d58fe2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4Y2EzNWE4ZTRmODFiMzUxYTM5NGFkNDU0NWE1N2Q5ZDE4MmViMjg5NGRhYzA5MTJkYWJhZTEwYzdkMWIwYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYWI3MTBkZGY3ODU5ZTU3NTc2NGE5MTNhMDAyYzc0NTg1ZmZhNzAwMTUxMGNiODgxMWRhODNkMmNmNzRiMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxZTMzMGQ1ZTViY2MzOGQ4ZTYxYjBmZjQ4ODNkM2ZjZmE3NTM0MzgzOThhODM3ZTBkNjI3YWNhZjY1NWJkN2EifQ"
         },
         {
@@ -95,14 +95,14 @@
           "version": "repo-lines-v1:sha256:405eb1d038776405c8913314da58b647e3b42faefe19fe337d9b500d4e515bb7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjljYjdlZTk4NDhkMTAzNTdjNDI1YmYxNTQwMGEwMzE5NGU2ZGI2ZTJjOTAyZmYxMzIxZTQwODI1N2I4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZTk4NDRiYmYwZDhlN2U5YWZlYWVhNjBkNjk4NWZjY2M0ZTYwNjU4NTFmNzA5OTk5YzYzOGRkNjA0MmMyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MjQzZWVmN2FjMzdjYjdiNjIyNzE0ZjY5ZDI5YzljNzU4M2M1MzZiNDMzZGM2NmQyY2EwNTI4ZDNjNjZkZTMifQ"
         },
         {
-          "resource": "repo://src/util.rs#L288-L335",
+          "resource": "repo://src/util.rs#L289-L336",
           "version": "repo-lines-v1:sha256:ce2d453c5e559296d3f8c385a272b7758567f925f5c566cdd87a0993961cefb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkN2ZmOTkyMjU3ZWZlNTMzMDM2NWFiMjk2NWVkZDM3ZTQ3ZDAwZjIzYThjODY0NjVjMjZiNGI1OTE1NjRiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZDcwYmZiM2FlYzNkOTUzZTc5NDQzYzIwNmY5ZWU2MzkwNzFkNDBkZGZjYmViOWJmYWE2ZjFmZGYzMWUxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZmEwZjhjNmRmNTA0NWY1OTRlNGM2NzQ5NTg2ZDY0ZDhiZmI3ZjI5ZjM3ZGY2MWFmYzE1MmQ4YTU2NjhmZDMifQ"
         }
       ]
     },
     {
       "id": "claim_8ae1132e45c84eb6a1ca698dbe536f9d",
-      "statement": "Completion for jbfolder games uses update_jbfolder_games_completion_by_system_id, which ignores parent roms and any child under PS3_CONTENT/, PS3_EXTRA/ or PS3_UPDATE/, so a JB-folder game counts as complete without those add-on directories; the ordinary completion SQL explicitly filters jbfolder = false, and compute_system_completion only applies the jbfolder SQL on its non-arcade branch.",
+      "statement": "Completion for jbfolder games uses update_jbfolder_games_completion_by_system_id, which ignores parent roms and any child under PS3_CONTENT/, PS3_EXTRA/ or PS3_UPDATE/, so a JB-folder game counts as complete without those add-on directories; the ordinary completion SQL explicitly filters jbfolder = false, and compute_system_completion only applies the jbfolder SQL on its non-arcade branch, followed by the Wii U multi-version pass.",
       "evidence": [
         {
           "resource": "repo://src/database.rs#L461-L491",
@@ -110,11 +110,11 @@
         },
         {
           "resource": "repo://src/database.rs#L577-L611",
-          "version": "repo-lines-v1:sha256:1c6bf8fae68fb1ce455c21e0b14c7159371f008bd09ae45a7deb21681066ee14:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzBiZTZjMTRlMGFhMmNmNTEwY2M2MTdmZGMwYTU2YWRkMTRlYmUxNWY4NWEyZmVkZjNmYzE2NzVhOTY1YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YmVkOTc5YmZhMmEwOWZiY2IxMjdkOGJmOWNiZWExMmE0ODAyM2E5MDQyOWY1YTk5Y2ZjMGM3ODVkNDNjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNjA1NmU4YzZkYjFlMGZhNjU1ZWRiZTBkYTM2ODlkNjJmMjE3MzYxNjA3NmIzOWI4ODgzZjFlZTVlNDAxODEifQ"
+          "version": "repo-lines-v1:sha256:1c6bf8fae68fb1ce455c21e0b14c7159371f008bd09ae45a7deb21681066ee14:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NzBiZTZjMTRlMGFhMmNmNTEwY2M2MTdmZGMwYTU2YWRkMTRlYmUxNWY4NWEyZmVkZjNmYzE2NzVhOTY1YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YmVkOTc5YmZhMmEwOWZiY2IxMjdkOGJmOWNiZWExMmE0ODAyM2E5MDQyOWY1YTk5Y2ZjMGM3ODVkNDNjZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMzcyZDE2YmQ3Zjc1ZWJmOWQzMzIwNDMzZjJhMWQ3Zjg2YzRjMDZjOGQzMmJlZDczMTc5OTA1MmFmMjk1ZTAifQ"
         },
         {
-          "resource": "repo://src/util.rs#L403-L435",
-          "version": "repo-lines-v1:sha256:d2834ea7ff358faf9bacfe83a3119864482c62f0bc65b7706f4888093ffb2231:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzODM4NWRmYWFlNTdkYTY3NTA3NTBlM2ZlNWNjMjJjZjRiNjk2OTE1OTk2MWVhYTNjNjM3MGVjMjZmYzg4YTIifQ"
+          "resource": "repo://src/util.rs#L404-L438",
+          "version": "repo-lines-v1:sha256:4cdd8d4aeee142609fc7843d1137730e0c1a37edee51328dccd34fc01647a61c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmIxNDMxMDVhNGE3NWZjZjUwMDNkNDIwZWZmZDAxZDg0Mzk4ZGFkMzE4NGMyOWI3YmVhYTdhNjczYjg2YmQifQ"
         }
       ]
     },
@@ -263,7 +263,7 @@
       "statement": "The IRD/PS3 path has only four focused tests (import_irds/test_ird.rs asserting 208 roms, test_ird_orphan_subfolder.rs asserting Trash plus emptied-subfolder cleanup, purge_irds/test_ird.rs, mimetype/test_ird_matcher.rs); src/iso/iso9660.rs has no unit tests of its own, and the README TODO still asks for tests for IRD and PS3 in general and for PS3 ISO rebuilding, which is unimplemented.",
       "evidence": [
         {
-          "resource": "repo://README.md#L767-L774",
+          "resource": "repo://README.md#L769-L776",
           "version": "repo-lines-v1:sha256:79b5cb9ad94e111179bfd2345cbde503f0a6062721a9fe07306e0b3e57ed349e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIzMGEyMmNiN2M3MjYxMDU0YjRkZDY1N2I1ZGIxNDY4MThjM2JkZGNkMTRmOWQyZTBkZmI0ZmQ3ZDliNWNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjN2JhYmEwYjdlZTIwZTA3OTc3ZmUzMTQ5YjU1YmQyYjNmMTRkZmNmODdjMDlhMTE0NjBjMGMzOWQ4NWYzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQyYzcwMjA0YjQ2ZmJmODkwMWRhOGZkMjM5ODliNzIwZGNkMTg5NzQ0MTI1MzUxOWQ5MDViZTU3YjY1OWQ5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU5MTJiMDQxNTBjZDVjMmJhZTliYTRhNmEwNTZkNmQ2N2U4MGJkMTE1YWIyM2U0N2ZhZWQ3ZWIzMGNlMTY1YSJ9"
         },
         {
@@ -297,6 +297,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }

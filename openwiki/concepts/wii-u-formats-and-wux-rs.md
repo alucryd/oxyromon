@@ -3,7 +3,7 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 sources:
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
@@ -17,6 +17,8 @@ sources:
     resource: repo://crates/wux-rs/src/io.rs
   - id: openwiki-source-1eccc54b012309dc15e12f9a
     resource: repo://crates/wux-rs/src/keys.rs
+  - id: openwiki-source-fb3fc971ccda3173fb55c35e
+    resource: repo://crates/wux-rs/src/lib.rs
   - id: openwiki-source-0d7f3750c3990980bf2fe743
     resource: repo://crates/wux-rs/src/lossless.rs
   - id: openwiki-source-8b154e92f317de1d79a56d61
@@ -35,6 +37,8 @@ sources:
     resource: repo://src/convert_roms.rs
   - id: openwiki-source-b6706f0791a5270c40cccdb6
     resource: repo://src/create_dats.rs
+  - id: openwiki-source-b94e49e3da43d66b03ed7c7e
+    resource: repo://src/database.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
   - id: openwiki-source-a44e692a5f3268aa48d01296
@@ -43,15 +47,23 @@ sources:
     resource: repo://src/import_keys.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
+  - id: openwiki-source-7f143595ec1df3c8cd4b8489
+    resource: repo://src/import_roms/test_nus_multi_version_missing.rs
+  - id: openwiki-source-b114aadc915534d21194e6ea
+    resource: repo://src/import_roms/test_nus_multi_version.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-0f30444a2cbc21370988fd60
     resource: repo://src/purge_roms/test_foreign_store_unreadable_wua.rs
+  - id: openwiki-source-66dda2cecfc81c486446cc8e
+    resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
+  - id: openwiki-source-b48fbff067570f4605920bcc
+    resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -242,6 +254,25 @@ Every NUS title names its contents alike, `00000000` and on. So
 TMD among its ROMs, and the ORIGINAL export copies such a game into a folder
 named after it. `is_tmd_name` accepts `title.tmd`, `tmd` and `tmd.<digits>`.
 
+**Completion across versions.** No-Intro lists a title once, with every version
+it went through: each version's `tmd.<version>`, and every content any version
+used. Nintendo's servers deliver only the newest version, whose TMD lists only
+the contents it uses. Hyrule Warriors' European update, for instance, lists 13
+TMDs and 145 contents, of which the newest TMD uses 52. Graded on every ROM, a
+fresh download would stay partial forever. So `compute_system_completion` runs
+`update_nus_games_completion` for console systems, after the JB folder
+statement, as JB folders ignore `PS3_UPDATE`. For each game listing more than
+one `tmd.<version>`, it reads the newest one's file with wux-rs's `parse_tmd`.
+The newest TMD, the contents it lists with their `.h3`, and every other ROM,
+the ticket included, are required. Older TMDs and contents only older versions
+use are ignored. When the newest TMD is not in the library, or cannot be read,
+the title keeps the completion the SQL statement gave it. The ROM list of the
+web UI still shows the ignored files as missing; only completion changes.
+
+`import_nus` stops with "Already imported" as soon as a folder's TMD is in the
+library, so a title imported with a content missing is not completed by
+importing its folder again.
+
 **Check.** `check-roms` has a WUX branch and a WUA branch. The WUX branch
 hashes the decompressed stream directly, or extracts a WUD first when the DAT
 declares a header, though no Wii U DAT does. The WUA branch compares the disc
@@ -314,7 +345,11 @@ In oxyromon, `tests/Test Game (USA).wud`, its `.wux`, the update folder
 `tests/Test Game (USA) (Update)/` and the WUD and CDN DATs drive the
 `test_wux*`, `test_wud*`, `test_wua*` and `test_nus*` cases under
 `import_roms`, `check_roms`, `convert_roms`, `export_roms` and `create_dats`,
-plus `purge_roms/test_foreign_store.rs`. `check_roms/test_wua_without_its_update.rs`
+plus `purge_roms/test_foreign_store.rs`. The CDN History DAT adds an older TMD and a
+content only it used to the same update: `import_roms/test_nus_multi_version.rs`
+checks the newest version alone is complete, and
+`test_nus_multi_version_missing.rs` that one of its own contents missing leaves
+it partial. `check_roms/test_wua_without_its_update.rs`
 checks that a WUA whose store entry is gone fails its check. See
 [Format Crate Tests](../testing/format-crate-tests.md) and
 [Test Fixtures](../testing/test-fixtures.md).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1bb5cecb9b27b0c3c1cae1802f7e96a256b963d20a7d3c9cca6b2a40037d12dc",
+  "pageVersion": "sha256:33dd35ae44e8e43447bb33a82423c285573f40812a6e1bf4f225fa37327f3532",
   "claims": [
     {
       "id": "claim_77b116c7739346779859b7ffe4c75f3b",
@@ -79,8 +79,8 @@
           "version": "repo-lines-v1:sha256:8b8d7b0945538f4c16487eb6ac46d2ec785fd192e38a83ed51f34dc32d5568d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI4ZDdiMDk0NTUzOGY0YzE2NDg3ZWI2YWM0NmQyZWM3ODVmZDE5MmUzOGE4M2VkNTFmMzRkYzMyZDU1NjhkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGI4ZDdiMDk0NTUzOGY0YzE2NDg3ZWI2YWM0NmQyZWM3ODVmZDE5MmUzOGE4M2VkNTFmMzRkYzMyZDU1NjhkMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTI4MzIzZDhkNzNhNDY1MjBmYWFmYjU1ZGQ4NWI1OWRjYzZhYjdhZDYxNTE1NjAyZDdhMjMwNDNlOTVmNDQ0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmM5NDUwNzdiYTFiNjgyMWIzODVkM2QxMjE4NDZjYjIzYTJmOGE5YTA5YTc2OWQ5YmMzMTgxYjgyOWQzNTVhNSJ9"
         },
         {
-          "resource": "repo://src/util.rs#L403-L435",
-          "version": "repo-lines-v1:sha256:d2834ea7ff358faf9bacfe83a3119864482c62f0bc65b7706f4888093ffb2231:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OTc3MWZlMWI2NjI4ODc1YWEyM2U3ZGJlNGFhNzE0NjFkMDBjZGZiNjZkZGYxMWI5ZDgyMGFjNTg5N2ZkZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzODM4NWRmYWFlNTdkYTY3NTA3NTBlM2ZlNWNjMjJjZjRiNjk2OTE1OTk2MWVhYTNjNjM3MGVjMjZmYzg4YTIifQ"
+          "resource": "repo://src/util.rs#L404-L438",
+          "version": "repo-lines-v1:sha256:4cdd8d4aeee142609fc7843d1137730e0c1a37edee51328dccd34fc01647a61c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmIxNDMxMDVhNGE3NWZjZjUwMDNkNDIwZWZmZDAxZDg0Mzk4ZGFkMzE4NGMyOWI3YmVhYTdhNjczYjg2YmQifQ"
         }
       ]
     },
@@ -245,7 +245,7 @@
       "statement": "Batch subcommands gate selection on argv: when `--system` is present the targets are resolved by name-glob and deduped (`resolve_systems_by_name_like` in sort-roms, check-roms, convert-roms, purge-systems; inline find-and-dedup in export-roms) with no prompt, and only its absence falls through to `prompt_for_systems`. Other decisions prompt independently of that gate: rebuild-roms asks arcade-only systems, warning and stopping when there are none, plus a merge strategy when `--merging` is absent, convert-roms/export-roms `select` a format when `--format` is absent, download-dats `multiselect`s Redump systems unless `--all`, import-irds/purge-irds resolve `%PlayStation 3%` without `--system`, config resolves named systems, and import-patches walks system → game → ROM.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L289-L299",
+          "resource": "repo://src/download_dats.rs#L345-L355",
           "version": "repo-lines-v1:sha256:e71f76903da179eae0291a76f20f5944cb25579bc3ae727b3efec9f7244c4f6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNjIxNDZjYjY2YjhiM2E4YjYwYjkwZTVjYjZhNWNmYTZiNzgwMTczODk5NGJkM2U3MzYzOTc0MWI2YWIwYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNTFkN2YxYzJhM2NjZDFiZmIyZTRlNjg4MjI0M2IyMGRkYjZkMDBjMDE1NTM1MjNlNTQ4MTZlNjM3YWM0MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiYzVhMjkzYmI4OGM5MzkyMWIzMjJkOTgwNmNlMmQzZmNlM2JhZDEwNzczOTEzMzQ0MGY2NmQyMDIzOWY2YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NzViNzg1MGQ1YzAyZWMxNzZhYzEwMDE2NTJiNzA3ZWU2YzY5YTFlNjIwYTc5MWVjODExYjBhMzMwZjdiYTkifQ"
         },
         {
@@ -433,6 +433,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }

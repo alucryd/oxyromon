@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T22:40:03.236Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Quickstart & Task Routing
@@ -258,6 +258,6 @@ can run; those suites skip rather than fail when the tool is absent.
 - **Format modules do not spawn processes.** `src/chd.rs`, `cia.rs`, `archive.rs`, `nsz.rs`,
   `xso.rs`, `xdelta.rs`, `xps.rs`, `rvz.rs` call their crate and return `"built-in"` from
   `get_version()`; no module keeps a shell-out pattern.
-- **Query changes require regenerating offline sqlx data** (`cargo sqlx prepare -- --features server`).
+- **Query changes require regenerating offline sqlx data** (`cargo sqlx prepare -- --all-targets --features server`).
 - **Validate the way CI does**: `cargo test --workspace --features oxyromon/server`, with the shared
   `MUTEX` held by anything touching global state.
