@@ -74,4 +74,15 @@ async fn test() {
         wua[wua.len() - 8..],
         [0x61, 0xbf, 0x3a, 0x01, 0x16, 0x9f, 0x52, 0xd6]
     );
+    // lossless, its update partition in the store the destination's WUAs share
+    let wua = destination_directory.join("Test Game (USA).wua");
+    assert!(wux_rs::disc_info(&wua).unwrap().is_some());
+    for entry in wux_rs::store_entries(&wua).unwrap() {
+        assert!(
+            destination_directory
+                .join(wux_rs::STORE_DIR)
+                .join(entry)
+                .is_file()
+        );
+    }
 }

@@ -211,7 +211,7 @@ ${ROM_DIRECTORY}
 | RVZ                     | ✔                | ✔       | ✔      | [nod](https://crates.io/crates/nod)                          |
 | WBFS                    |                  |         | ✔      | nod                                                          |
 | WUX (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
-| WUA (Wii U)             |                  |         | ✔      | wux-rs                                                       |
+| WUA (Wii U)             | ✔                | ✔       | ✔      | wux-rs                                                       |
 | NUS folder (Wii U)      |                  |         | ✔      | wux-rs                                                       |
 | GDI                     |                  |         | ✔      | gdi-rs                                                       |
 | ISO (from CUE/BIN)      |                  |         | ✔      |                                                              |
@@ -228,10 +228,16 @@ Importing, checking and decompressing NSZs never need them.
 
 RVZ files are interchangeable with Dolphin's in both directions.
 
-Wii U discs are WUDs, which WUX compresses losslessly, as wudd dumps it and Cemu reads it.
-WUA is Cemu's archive of a disc's decrypted game files, so a WUA is export-only: there is no way back to the disc.
-A WUA oxyROMon writes keeps revert data, which Cemu ignores, under 0.1% of its size: `wuxrs` turns it back into a NUS folder per title, whose contents are byte for byte the disc's and its update's, checked against their TMDs.
-Exporting to WUA needs the disc's key and the Wii U common key, neither of which ships with oxyROMon.
+Wii U discs are WUDs, which Redump lists as ISOs, so that is what converting back to the original gives; a `.wud` found in the wild is matched and renamed all the same.
+WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
+
+WUA is Cemu's archive of a disc's decrypted game files, and a WUA oxyROMon writes is lossless too: it also keeps, where Cemu doesn't look, what rebuilds the disc byte for byte, its partitions' layout and headers and the data a WUA otherwise drops, so it converts back to WUX or to the original ISO, checked against the disc's SHA-1.
+Every Wii U disc carries a system update, about 1.3 GB, which the many discs carrying the same one share: a WUA keeps it in a hidden `.update-partitions` folder in its system's directory, once for every WUA there, decrypted and compressed to about 600 MB, as NKit keeps its recovery partitions.
+Mario Tennis: Ultra Smash, a 2.1 GB WUX, becomes an 0.8 GB WUA, with 0.6 GB of update partition shared with the other discs carrying its update.
+`purge-roms -f` deletes the update partitions no WUA needs any more, and importing a WUA brings the ones it needs from the `.update-partitions` folder next to it.
+WUAs Cemu writes, or oxyROMon did before, can't rebuild their disc and are not lossless.
+A WUA oxyROMon writes also keeps revert data for each title it holds: `wuxrs` turns it back into a NUS folder per title, whose contents are byte for byte the disc's and its update's, checked against their TMDs.
+WUA and NUS need the disc's key and the Wii U common key, neither of which ships with oxyROMon.
 `import-keys` stores them in oxyROMon's data directory, so a headless server needs no emulator.
 It reads files in the format of Cemu's `keys.txt`, one key per line, where the common key can sit alongside the disc keys.
 
@@ -525,7 +531,7 @@ Files are moved as they are, except archives holding several games, which are ex
 When the system has a `PREFER_FORMAT`, imported ROMs are then converted to it, unless you pass `--as-is`.
 Files needing a choice, such as JB folders or ambiguous matches, prompt by default, and `-u` skips them or picks the first match instead.
 
-Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, RVZ, WUX, ZSO, JB folders and Wii U title folders.
+Consoles accept every No-Intro and Redump format, 7Z, ZIP, CHD, CIA, CSO, NSZ, RVZ, WUA, WUX, ZSO, JB folders and Wii U title folders.
 A Wii U title folder, an update or DLC as Nintendo's servers deliver it, is found by its TMD, and either a downloader's names (`title.tmd`, `00000000.app`) or No-Intro's (`tmd.32`, `00000000`) will do.
 Arcade systems accept uncompressed files, ZIP and CHD.
 
@@ -597,6 +603,7 @@ Converts ROM files between lossless formats and back to their originals:
 - CUE/BIN and ISO to and from CHD, with CHDs restored to their original split CUE/BIN.
 - ISO to and from CSO, ZSO and RVZ.
 - NSP to and from NSZ.
+- Wii U discs between ISO, WUX and lossless WUA.
 
 Games and systems are selected by case-insensitive name, with SQL wildcards, and both flags can be repeated.
 `--save` also stores the format as each processed system's `PREFER_FORMAT`, so future imports follow it.
@@ -605,7 +612,7 @@ Games and systems are selected by case-insensitive name, with SQL wildcards, and
 Usage: oxyromon convert-roms [OPTIONS]
 
 Options:
-  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUX, ZIP, ZSO]
+  -f, --format <FORMAT>  Set the destination format [possible values: ORIGINAL, 7Z, CHD, CSO, NSZ, RVZ, WUA, WUX, ZIP, ZSO]
   -g, --game <GAME>      Select games by name
   -s, --system <SYSTEM>  Select systems by name
   -a, --all              Convert all systems/games

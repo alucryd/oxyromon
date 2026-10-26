@@ -13,7 +13,7 @@ use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
 use super::util::*;
-use super::wux::AsWux;
+use super::wux::{AsWua, AsWux, STORE_DIR, copy_store_entries, find_store, store_directory};
 use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
@@ -310,6 +310,11 @@ pub async fn main(
                     let mut walker = WalkDir::new(&path).into_iter();
                     while let Some(entry) = walker.next() {
                         let Ok(entry) = entry else { continue };
+                        // the update partitions WUAs share, which they bring along
+                        if entry.path().is_dir() && entry.file_name() == STORE_DIR {
+                            walker.skip_current_dir();
+                            continue;
+                        }
                         // a NUS title's folder is imported whole
                         if entry.path().is_dir() && wux_rs::tmd_path(entry.path()).is_some() {
                             walker.skip_current_dir();
@@ -496,15 +501,18 @@ pub async fn import_rom<P: AsRef<Path>>(
     }
 
     let mimetype = get_mimetype(&romfile.path).await?;
+    let path_extension = romfile
+        .path
+        .extension()
+        .unwrap_or(&OsString::new())
+        .to_str()
+        .unwrap()
+        .to_lowercase();
     let extension = match mimetype {
+        // A WUA's magic is at its end; it starts with a zstd block.
+        _ if path_extension == WUA_EXTENSION => path_extension,
         Some(mimetype) => mimetype.extension().to_string(),
-        None => romfile
-            .path
-            .extension()
-            .unwrap_or(&OsString::new())
-            .to_str()
-            .unwrap()
-            .to_lowercase(),
+        None => path_extension,
     };
 
     if ARCHIVE_EXTENSIONS.contains(&extension.as_str()) && !as_is {
@@ -602,12 +610,34 @@ pub async fn import_rom<P: AsRef<Path>>(
             game_ids.insert(ids[1]);
         };
     } else if WUX_EXTENSION == extension && !as_is {
-        if let Some(ids) = import_wux(
+        if let Some(ids) = import_wiiu_disc(
             &mut transaction,
             progress_bar,
             system,
             &game_ids,
-            romfile,
+            romfile.as_wux()?,
+            WUX_EXTENSION,
+            trash,
+            delete,
+            unattended_mode,
+        )
+        .await?
+        {
+            system_ids.insert(ids[0]);
+            game_ids.insert(ids[1]);
+        };
+    } else if let Some(wua_romfile) = (WUA_EXTENSION == extension && !as_is)
+        .then(|| romfile.clone().as_wua().ok())
+        .flatten()
+    {
+        // only a lossless WUA, which knows the disc it holds
+        if let Some(ids) = import_wiiu_disc(
+            &mut transaction,
+            progress_bar,
+            system,
+            &game_ids,
+            wua_romfile,
+            WUA_EXTENSION,
             trash,
             delete,
             unattended_mode,
@@ -2159,18 +2189,20 @@ async fn import_rvz(
     Ok(None)
 }
 
+/// Import a Wii U disc kept compressed: a WUX, or a lossless WUA, matched by
+/// the WUD it holds and named after it, its extension its own.
 #[allow(clippy::too_many_arguments)]
-async fn import_wux(
+async fn import_wiiu_disc<T: HashAndSize + GetRomfile>(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     system: &Option<&System>,
     game_ids: &HashSet<i64>,
-    romfile: CommonRomfile,
+    wux_romfile: T,
+    extension: &str,
     trash: bool,
     delete: bool,
     unattended_mode: UnattendedMode,
 ) -> Result<Option<[i64; 2]>> {
-    let wux_romfile = romfile.as_wux()?;
     let mut invalid_match_results: Vec<MatchResult> = vec![];
     for hash_algorithm in HashAlgorithm::iter() {
         let (hash, size) = wux_romfile
@@ -2184,13 +2216,13 @@ async fn import_wux(
             system,
             game_ids,
             &[wux_romfile
-                .romfile
+                .romfile()
                 .path
                 .file_stem()
                 .unwrap()
                 .to_str()
                 .unwrap()],
-            wux_romfile.romfile.path.file_name().unwrap().to_str(),
+            wux_romfile.romfile().path.file_name().unwrap().to_str(),
             &hash_algorithm,
             unattended_mode,
         )
@@ -2201,12 +2233,30 @@ async fn import_wux(
                 let game = match_result.game.unwrap();
                 let rom = match_result.rom.unwrap();
                 let system_directory = get_system_directory(connection, &system).await?;
-                let new_wux_path = system_directory
-                    .join(&rom.name)
-                    .with_extension(WUX_EXTENSION);
-                // move WUX if needed
+                let new_wux_path = system_directory.join(&rom.name).with_extension(extension);
+                // a WUA's update partition, into the system's store
+                if extension == WUA_EXTENSION {
+                    let source = &wux_romfile.romfile().path;
+                    let store = store_directory(connection, &system).await?;
+                    let missing = copy_store_entries(
+                        progress_bar,
+                        source,
+                        find_store(source).as_deref(),
+                        &store,
+                    )
+                    .await?;
+                    for name in missing {
+                        print_warning(
+                            progress_bar,
+                            &format!(
+                                "Update partition {name} not found, the disc can't be rebuilt"
+                            ),
+                        );
+                    }
+                }
+                // move it if needed
                 wux_romfile
-                    .romfile
+                    .romfile()
                     .rename(progress_bar, &new_wux_path, false)
                     .await?;
                 // persist in database
@@ -2224,7 +2274,7 @@ async fn import_wux(
                 trash_or_delete_romfile(
                     connection,
                     progress_bar,
-                    &wux_romfile.romfile,
+                    wux_romfile.romfile(),
                     trash,
                     delete,
                     &match_result,
@@ -2246,7 +2296,7 @@ async fn import_wux(
         trash_or_delete_romfile(
             connection,
             progress_bar,
-            &wux_romfile.romfile,
+            wux_romfile.romfile(),
             trash,
             delete,
             invalid_match_results.first().unwrap(),
@@ -3066,6 +3116,8 @@ mod test_sevenzip_single_file;
 mod test_sevenzip_single_file_headered;
 #[cfg(test)]
 mod test_single_track_chd;
+#[cfg(test)]
+mod test_wua;
 #[cfg(test)]
 mod test_wux;
 #[cfg(test)]

@@ -1,10 +1,16 @@
-//! Wii U discs: WUD, the raw dump, and WUX, its lossless compression, both
-//! handled by the wux-rs crate, which also exports either to Cemu's WUA.
+//! Wii U discs: WUD, the raw dump, which Redump lists as an ISO; WUX, its
+//! lossless compression; and WUA, Cemu's archive of a disc's files, lossless
+//! too when wux-rs writes it, as it then keeps what rebuilds the disc byte
+//! for byte. All are handled by the wux-rs crate.
 //!
-//! WUA needs the disc's key and the Wii U common key. Neither ships with
-//! oxyromon: `import-keys` stores them in its data directory, from files in
-//! the format of Cemu's `keys.txt`, where the common key can sit alongside the
-//! disc keys. Like Cemu, wux-rs tries each key.
+//! A disc's update partition, the same on every disc carrying that update,
+//! is kept once for every WUA of a system, in a store: a hidden folder in the
+//! system's directory. A WUA finds it in the nearest folder up from its own.
+//!
+//! WUA and NUS need the disc's key and the Wii U common key. Neither ships
+//! with oxyromon: `import-keys` stores them in its data directory, from files
+//! in the format of Cemu's `keys.txt`, where the common key can sit alongside
+//! the disc keys. Like Cemu, wux-rs tries each key.
 
 use super::common::*;
 use super::config::*;
@@ -21,6 +27,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tokio::task::spawn_blocking;
 
+pub use wux_rs::STORE_DIR;
+
 /// The keys `import-keys` stored; in tests, the made-up keys of the synthetic
 /// disc.
 fn keys_path() -> Result<PathBuf> {
@@ -30,6 +38,52 @@ fn keys_path() -> Result<PathBuf> {
     Ok(get_data_directory()?.join(WIIU_KEYS_FILE))
 }
 
+/// The store a system's WUAs share their update partitions in.
+pub async fn store_directory(
+    connection: &mut SqliteConnection,
+    system: &System,
+) -> Result<PathBuf> {
+    Ok(get_system_directory(connection, system)
+        .await?
+        .join(STORE_DIR))
+}
+
+/// The store of the WUA at `path`: the nearest one up from its folder.
+pub fn find_store(path: &Path) -> Option<PathBuf> {
+    path.ancestors()
+        .skip(1)
+        .map(|dir| dir.join(STORE_DIR))
+        .find(|store| store.is_dir())
+}
+
+/// Copy the store entries the WUA at `wua` needs from `from` to `to`, those
+/// `to` lacks. Returns the names of those `from` lacks too.
+pub async fn copy_store_entries(
+    progress_bar: &ProgressBar,
+    wua: &Path,
+    from: Option<&Path>,
+    to: &Path,
+) -> Result<Vec<String>> {
+    let mut missing = Vec::new();
+    for name in wux_rs::store_entries(wua)? {
+        let target = to.join(&name);
+        if target.is_file() {
+            continue;
+        }
+        match from
+            .map(|from| from.join(&name))
+            .filter(|path| path.is_file())
+        {
+            Some(source) => {
+                create_directory(progress_bar, &to, true).await?;
+                copy_file(progress_bar, &source, &target, false).await?;
+            }
+            None => missing.push(name),
+        }
+    }
+    Ok(missing)
+}
+
 pub struct WudRomfile {
     pub romfile: CommonRomfile,
 }
@@ -37,6 +91,20 @@ pub struct WudRomfile {
 impl GetRomfile for WudRomfile {
     fn romfile(&self) -> &CommonRomfile {
         &self.romfile
+    }
+}
+
+impl Check for WudRomfile {
+    async fn check(
+        &self,
+        connection: &mut SqliteConnection,
+        progress_bar: &ProgressBar,
+        header: &Option<Header>,
+        roms: &[&Rom],
+    ) -> Result<()> {
+        self.romfile
+            .check(connection, progress_bar, header, roms)
+            .await
     }
 }
 
@@ -103,7 +171,9 @@ impl Check for WuxRomfile {
             return compare_hash_and_size(rom, &hash, size, &hash_algorithm);
         }
         let tmp_directory = create_tmp_directory(connection).await?;
-        let wud_romfile = self.to_wud(progress_bar, &tmp_directory.path()).await?;
+        let wud_romfile = self
+            .to_wud(progress_bar, &tmp_directory.path().join(&roms[0].name))
+            .await?;
         wud_romfile
             .romfile
             .check(connection, progress_bar, header, roms)
@@ -111,22 +181,102 @@ impl Check for WuxRomfile {
     }
 }
 
-pub trait ToWud {
-    async fn to_wud<P: AsRef<Path>>(
+/// A WUA wux-rs wrote with what rebuilds its disc.
+pub struct WuaRomfile {
+    pub romfile: CommonRomfile,
+    pub info: wux_rs::DiscInfo,
+}
+
+impl GetRomfile for WuaRomfile {
+    fn romfile(&self) -> &CommonRomfile {
+        &self.romfile
+    }
+}
+
+impl WuaRomfile {
+    fn store(&self) -> Option<PathBuf> {
+        find_store(&self.romfile.path)
+    }
+
+    /// The disc's hash, as a DAT lists it.
+    fn hash(&self, hash_algorithm: &HashAlgorithm) -> String {
+        let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect();
+        match hash_algorithm {
+            HashAlgorithm::Crc => format!("{:08x}", self.info.crc32),
+            HashAlgorithm::Md5 => hex(&self.info.md5),
+            HashAlgorithm::Sha1 => hex(&self.info.sha1),
+        }
+    }
+
+    /// Rebuild the disc into `path`, as a WUX if `wux`, a WUD otherwise.
+    async fn rebuild(&self, progress_bar: &ProgressBar, path: &Path, wux: bool) -> Result<()> {
+        let keys = load_wiiu_keys()?;
+        let (input, output, store) = (self.romfile.path.clone(), path.to_path_buf(), self.store());
+        run_blocking(
+            progress_bar,
+            input.metadata()?.len(),
+            move |progress| match wux {
+                true => wux_rs::wua_to_wux(&input, &output, store.as_deref(), &keys, progress),
+                false => wux_rs::wua_to_wud(&input, &output, store.as_deref(), &keys, progress),
+            },
+        )
+        .await
+        .with_context(|| format!("Failed to rebuild \"{}\"", self.romfile.path.display()))?;
+        Ok(())
+    }
+}
+
+impl HashAndSize for WuaRomfile {
+    /// What the WUA says of its disc: it is checked against it when rebuilt.
+    async fn get_hash_and_size(
         &self,
+        _connection: &mut SqliteConnection,
+        _progress_bar: &ProgressBar,
+        _position: usize,
+        _total: usize,
+        hash_algorithm: &HashAlgorithm,
+    ) -> Result<(String, u64)> {
+        Ok((self.hash(hash_algorithm), self.info.size))
+    }
+}
+
+impl Check for WuaRomfile {
+    /// The disc the WUA rebuilds, as the DAT lists it, and rebuilt, which
+    /// checks it against the SHA-1 the WUA keeps.
+    async fn check(
+        &self,
+        connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
-        destination_directory: &P,
-    ) -> Result<WudRomfile>;
+        _header: &Option<Header>,
+        roms: &[&Rom],
+    ) -> Result<()> {
+        print_action(progress_bar, &format!("Checking \"{}\"", self.romfile));
+        let rom = roms[0];
+        let hash_algorithm = get_hash_algorithm(rom)?;
+        compare_hash_and_size(
+            rom,
+            &self.hash(&hash_algorithm),
+            self.info.size,
+            &hash_algorithm,
+        )?;
+        let tmp_directory = create_tmp_directory(connection).await?;
+        start_action(progress_bar, Some("Rebuilding wux"));
+        let result = self
+            .rebuild(progress_bar, &tmp_directory.path().join("check.wux"), true)
+            .await;
+        stop_action(progress_bar);
+        result
+    }
+}
+
+pub trait ToWud {
+    /// The disc as a WUD at `path`, named as its DAT names it.
+    async fn to_wud(&self, progress_bar: &ProgressBar, path: &Path) -> Result<WudRomfile>;
 }
 
 impl ToWud for WuxRomfile {
-    async fn to_wud<P: AsRef<Path>>(
-        &self,
-        progress_bar: &ProgressBar,
-        destination_directory: &P,
-    ) -> Result<WudRomfile> {
+    async fn to_wud(&self, progress_bar: &ProgressBar, path: &Path) -> Result<WudRomfile> {
         start_action(progress_bar, Some("Extracting wux"));
-
         print_action(
             progress_bar,
             &format!(
@@ -134,21 +284,46 @@ impl ToWud for WuxRomfile {
                 self.romfile.path.file_name().unwrap().to_str().unwrap()
             ),
         );
-
-        let path = destination_directory
-            .as_ref()
-            .join(self.romfile.path.file_name().unwrap())
-            .with_extension(WUD_EXTENSION);
-        let (input, output) = (self.romfile.path.clone(), path.clone());
+        let (input, output) = (self.romfile.path.clone(), path.to_path_buf());
         run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
             wux_rs::decompress(&input, &output, progress)
         })
         .await
         .with_context(|| format!("Failed to extract \"{}\"", self.romfile.path.display()))?;
-
         stop_action(progress_bar);
+        Ok(WudRomfile {
+            romfile: CommonRomfile::from_path(&path)?,
+        })
+    }
+}
 
-        CommonRomfile::from_path(&path)?.as_wud()
+impl ToWud for WuaRomfile {
+    async fn to_wud(&self, progress_bar: &ProgressBar, path: &Path) -> Result<WudRomfile> {
+        start_action(progress_bar, Some("Rebuilding wud"));
+        print_action(
+            progress_bar,
+            &format!(
+                "Rebuilding \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+        self.rebuild(progress_bar, path, false).await?;
+        stop_action(progress_bar);
+        Ok(WudRomfile {
+            romfile: CommonRomfile::from_path(&path)?,
+        })
+    }
+}
+
+/// A WUX, or a lossless WUA, as the WUD at `path`.
+pub async fn disc_to_wud(
+    progress_bar: &ProgressBar,
+    romfile: CommonRomfile,
+    path: &Path,
+) -> Result<WudRomfile> {
+    match has_extension(&romfile.path, WUA_EXTENSION) {
+        true => romfile.as_wua()?.to_wud(progress_bar, path).await,
+        false => romfile.as_wux()?.to_wud(progress_bar, path).await,
     }
 }
 
@@ -160,6 +335,14 @@ pub trait ToWux {
     ) -> Result<WuxRomfile>;
 }
 
+/// Where a disc goes in `directory` as `extension`, named after `path`.
+fn output_path<P: AsRef<Path>>(directory: &P, path: &Path, extension: &str) -> PathBuf {
+    directory
+        .as_ref()
+        .join(path.file_name().unwrap())
+        .with_extension(extension)
+}
+
 impl ToWux for WudRomfile {
     async fn to_wux<P: AsRef<Path>>(
         &self,
@@ -167,12 +350,7 @@ impl ToWux for WudRomfile {
         destination_directory: &P,
     ) -> Result<WuxRomfile> {
         start_action(progress_bar, Some("Creating wux"));
-
-        let path = destination_directory
-            .as_ref()
-            .join(self.romfile.path.file_name().unwrap())
-            .with_extension(WUX_EXTENSION);
-
+        let path = output_path(destination_directory, &self.romfile.path, WUX_EXTENSION);
         print_action(
             progress_bar,
             &format!(
@@ -180,39 +358,54 @@ impl ToWux for WudRomfile {
                 path.file_name().unwrap().to_str().unwrap()
             ),
         );
-
         let (input, output) = (self.romfile.path.clone(), path.clone());
         run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
             wux_rs::compress(&input, &output, progress)
         })
         .await
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
-
         stop_action(progress_bar);
-
         CommonRomfile::from_path(&path)?.as_wux()
     }
 }
 
-/// Export to WUA, which drops the disc's encryption and layout: there is no
-/// way back, so a WUA is never imported or converted from.
+impl ToWux for WuaRomfile {
+    async fn to_wux<P: AsRef<Path>>(
+        &self,
+        progress_bar: &ProgressBar,
+        destination_directory: &P,
+    ) -> Result<WuxRomfile> {
+        start_action(progress_bar, Some("Rebuilding wux"));
+        let path = output_path(destination_directory, &self.romfile.path, WUX_EXTENSION);
+        print_action(
+            progress_bar,
+            &format!(
+                "Rebuilding \"{}\"",
+                path.file_name().unwrap().to_str().unwrap()
+            ),
+        );
+        self.rebuild(progress_bar, &path, true).await?;
+        stop_action(progress_bar);
+        CommonRomfile::from_path(&path)?.as_wux()
+    }
+}
+
+/// Convert to WUA, which keeps what rebuilds the disc: its update partition
+/// goes to `store`, shared by the WUAs beside it.
 pub trait ToWua: GetRomfile {
-    /// The WUA holds the game and, as Cemu bundles them, the newest update and
-    /// DLC found in the library, in any system, matched by title ID.
+    /// With `bundle`, the WUA holds, as Cemu bundles them, the newest update
+    /// and DLC found in the library, in any system, matched by title ID.
     async fn to_wua<P: AsRef<Path>>(
         &self,
         connection: &mut SqliteConnection,
         progress_bar: &ProgressBar,
         destination_directory: &P,
-    ) -> Result<CommonRomfile> {
+        store: &Path,
+        bundle: bool,
+    ) -> Result<WuaRomfile> {
         start_action(progress_bar, Some("Creating wua"));
-
         let input = self.romfile().path.clone();
-        let path = destination_directory
-            .as_ref()
-            .join(input.file_name().unwrap())
-            .with_extension(WUA_EXTENSION);
-
+        let path = output_path(destination_directory, &input, WUA_EXTENSION);
         print_action(
             progress_bar,
             &format!(
@@ -220,10 +413,11 @@ pub trait ToWua: GetRomfile {
                 path.file_name().unwrap().to_str().unwrap()
             ),
         );
-
         let keys = load_wiiu_keys()?;
         let mut inputs = vec![input.clone()];
-        inputs.extend(find_update_and_dlc(connection, progress_bar, &input, &keys).await?);
+        if bundle {
+            inputs.extend(find_update_and_dlc(connection, progress_bar, &input, &keys).await?);
+        }
         let mut length = 0;
         for input in &inputs {
             length += match input.is_dir() {
@@ -231,19 +425,21 @@ pub trait ToWua: GetRomfile {
                 false => input.metadata()?.len(),
             };
         }
-        let output = path.clone();
+        let (output, store) = (path.clone(), store.to_path_buf());
         run_blocking(progress_bar, length, move |progress| {
             let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
-            wux_rs::to_wua(&inputs, &output, &keys, progress)
+            wux_rs::to_wua(&inputs, &output, &keys, Some(&store), progress)
         })
         .await
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
-
         stop_action(progress_bar);
-
-        CommonRomfile::from_path(&path)
+        CommonRomfile::from_path(&path)?.as_wua()
     }
 }
+
+impl ToWua for WudRomfile {}
+
+impl ToWua for WuxRomfile {}
 
 /// The folders of the newest update and DLC in the library for the game on
 /// the disc at `disc`: titles whose ID shares the game's low half, typed
@@ -326,12 +522,10 @@ pub trait ToNus: GetRomfile {
         destination_directory: &P,
     ) -> Result<PathBuf> {
         start_action(progress_bar, Some("Creating nus"));
-
         let input = self.romfile().path.clone();
         let path = destination_directory
             .as_ref()
             .join(input.file_stem().unwrap());
-
         print_action(
             progress_bar,
             &format!(
@@ -339,24 +533,59 @@ pub trait ToNus: GetRomfile {
                 path.file_name().unwrap().to_str().unwrap()
             ),
         );
-
         let keys = load_wiiu_keys()?;
         let output = path.clone();
-        run_blocking(progress_bar, input.metadata()?.len(), move |progress| {
-            wux_rs::to_nus(&input, &output, &keys, progress)
-        })
+        let is_wua = has_extension(&input, WUA_EXTENSION);
+        run_blocking(
+            progress_bar,
+            input.metadata()?.len(),
+            move |progress| match is_wua {
+                true => wua_to_disc_nus(&input, &output, &keys, progress),
+                false => wux_rs::to_nus(&input, &output, &keys, progress),
+            },
+        )
         .await
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
-
         stop_action(progress_bar);
-
         Ok(path)
     }
+}
+
+/// A lossless WUA's disc as a NUS folder at `output`: its revert data
+/// rebuilds the game's title as converting the disc gives it.
+fn wua_to_disc_nus(
+    input: &Path,
+    output: &Path,
+    keys: &[wux_rs::Key],
+    progress: &mut dyn FnMut(u64),
+) -> wux_rs::Result<wux_rs::Stats> {
+    let titles = output.with_extension("titles");
+    let stats = wux_rs::wua_to_nus(input, &titles, keys, progress)?;
+    let result = (|| {
+        // The game's folder: the title a disc holds is a game, 00050000.
+        let game = std::fs::read_dir(&titles)?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .find(|path| {
+                path.file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("00050000"))
+            })
+            .ok_or_else(|| wux_rs::Error::Corrupt("the WUA holds no game".into()))?;
+        if output.exists() {
+            std::fs::remove_dir_all(output)?;
+        }
+        std::fs::rename(game, output)?;
+        Ok(stats)
+    })();
+    let _ = std::fs::remove_dir_all(&titles);
+    result
 }
 
 impl ToNus for WudRomfile {}
 
 impl ToNus for WuxRomfile {}
+
+impl ToNus for WuaRomfile {}
 
 /// The keys `import-keys` stored.
 fn load_wiiu_keys() -> Result<Vec<wux_rs::Key>> {
@@ -368,21 +597,30 @@ fn load_wiiu_keys() -> Result<Vec<wux_rs::Key>> {
         .with_context(|| format!("Failed to read \"{}\"", keys_path.display()))
 }
 
-impl ToWua for WudRomfile {}
-
-impl ToWua for WuxRomfile {}
-
 pub trait AsWud {
     fn as_wud(self) -> Result<WudRomfile>;
 }
 
 impl AsWud for CommonRomfile {
+    /// A WUD, as `.wud` or as Redump's `.iso`: told from other ISOs by the
+    /// disc's magic.
     fn as_wud(self) -> Result<WudRomfile> {
-        if !has_extension(&self.path, WUD_EXTENSION) {
+        if !is_wud(&self.path) {
             bail!("Not a valid wud");
         }
         Ok(WudRomfile { romfile: self })
     }
+}
+
+/// Whether `path` is a Wii U disc's WUD, named `.wud` or `.iso`.
+pub fn is_wud(path: &Path) -> bool {
+    (has_extension(path, WUD_EXTENSION) || has_extension(path, ISO_EXTENSION))
+        && wux_rs::Image::open(path).is_ok_and(|image| {
+            let mut magic = [0; 4];
+            image.header().is_none()
+                && image.read_exact_at(&mut magic, 0x10000).is_ok()
+                && magic == [0xCC, 0x54, 0x9E, 0xB9]
+        })
 }
 
 pub trait AsWux {
@@ -398,7 +636,30 @@ impl AsWux for CommonRomfile {
     }
 }
 
-fn has_extension(path: &Path, extension: &str) -> bool {
+pub trait AsWua {
+    fn as_wua(self) -> Result<WuaRomfile>;
+}
+
+impl AsWua for CommonRomfile {
+    /// A WUA that rebuilds its disc: those Cemu writes, or wux-rs did before,
+    /// can't, and are not lossless.
+    fn as_wua(self) -> Result<WuaRomfile> {
+        if !has_extension(&self.path, WUA_EXTENSION) {
+            bail!("Not a valid wua");
+        }
+        let info = wux_rs::disc_info(&self.path)
+            .with_context(|| format!("Failed to read \"{}\"", self.path.display()))?;
+        match info {
+            Some(info) => Ok(WuaRomfile {
+                romfile: self,
+                info,
+            }),
+            None => bail!("Not a lossless wua: it can't rebuild its disc"),
+        }
+    }
+}
+
+pub fn has_extension(path: &Path, extension: &str) -> bool {
     path.extension()
         .is_some_and(|e| e.to_string_lossy().eq_ignore_ascii_case(extension))
 }

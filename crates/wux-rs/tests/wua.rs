@@ -7,42 +7,14 @@ use std::path::Path;
 
 use common::{COMMON_KEY, DISC_KEY, FOLDER};
 use wux_rs::{Error, Key};
-use zarust::{ArchiveReader, ROOT_NODE};
 
-/// Every file in the archive at `path`, with its contents.
+/// Every file of the archive at `path` but the revert data and what
+/// rebuilds the disc, which are checked on their own.
 fn files(path: &Path) -> Vec<(String, Vec<u8>)> {
-    let mut reader = ArchiveReader::open(path).unwrap();
-    assert!(reader.verify_integrity().unwrap());
-    let mut files = Vec::new();
-    let mut dirs = vec![(String::new(), ROOT_NODE)];
-    while let Some((prefix, handle)) = dirs.pop() {
-        let entries: Vec<_> = reader
-            .directory_entries(handle)
-            .unwrap()
-            .iter()
-            .map(|e| {
-                (
-                    String::from_utf8(e.name.to_vec()).unwrap(),
-                    e.is_file(),
-                    e.handle,
-                )
-            })
-            .collect();
-        for (name, is_file, handle) in entries {
-            let path = format!("{prefix}{name}");
-            // the revert data, checked on its own
-            if path == ".nus" {
-                continue;
-            }
-            if is_file {
-                files.push((path, reader.read_file_to_end(handle).unwrap()));
-            } else {
-                dirs.push((format!("{path}/"), handle));
-            }
-        }
-    }
-    files.sort();
-    files
+    common::archive_files(path)
+        .into_iter()
+        .filter(|(path, _)| !path.starts_with(".nus/") && !path.starts_with(".wud/"))
+        .collect()
 }
 
 fn setup() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
@@ -67,7 +39,7 @@ fn a_disc_converts_to_the_files_of_its_game() {
     for input in [&wud, &wux] {
         let output = dir.path().join("g.wua");
         let mut read = 0;
-        let stats = wux_rs::to_wua(&[input], &output, &keys(), &mut |n| read += n).unwrap();
+        let stats = wux_rs::to_wua(&[input], &output, &keys(), None, &mut |n| read += n).unwrap();
         assert_eq!(read, std::fs::metadata(input).unwrap().len());
         assert_eq!(stats.output_size, std::fs::metadata(&output).unwrap().len());
         let files = files(&output);
@@ -83,12 +55,12 @@ fn a_disc_converts_to_the_files_of_its_game() {
 fn a_disc_without_its_keys_does_not_convert() {
     let (dir, wud, _) = setup();
     let output = dir.path().join("g.wua");
-    let no_disc_key = wux_rs::to_wua(&[&wud], &output, &[COMMON_KEY], &mut |_| {});
+    let no_disc_key = wux_rs::to_wua(&[&wud], &output, &[COMMON_KEY], None, &mut |_| {});
     assert!(
         matches!(no_disc_key, Err(Error::MissingKey(_))),
         "{no_disc_key:?}"
     );
-    let no_common_key = wux_rs::to_wua(&[&wud], &output, &[DISC_KEY], &mut |_| {});
+    let no_common_key = wux_rs::to_wua(&[&wud], &output, &[DISC_KEY], None, &mut |_| {});
     assert!(
         matches!(no_common_key, Err(Error::MissingKey(_))),
         "{no_common_key:?}"
@@ -100,13 +72,12 @@ fn a_disc_without_its_keys_does_not_convert() {
 #[test]
 fn a_damaged_hashed_block_fails_its_hash_check() {
     let (dir, wud, _) = setup();
-    let mut disc = std::fs::read(&wud).unwrap();
-    // The last data sector before the trailing zeros is in the hashed cluster.
-    let at = disc.len() - 4 * common::SECTOR - 0x100;
-    disc[at] ^= 1;
+    // A byte of data in the hashed cluster's first block.
+    let (mut disc, hashed) = common::wud_and_hashed(&DISC_KEY);
+    disc[hashed + 0x500] ^= 1;
     std::fs::write(&wud, disc).unwrap();
     let output = dir.path().join("g.wua");
-    let result = wux_rs::to_wua(&[&wud], &output, &keys(), &mut |_| {});
+    let result = wux_rs::to_wua(&[&wud], &output, &keys(), None, &mut |_| {});
     assert!(matches!(result, Err(Error::Corrupt(_))), "{result:?}");
     assert!(!output.exists());
 }
@@ -116,7 +87,13 @@ fn a_file_that_is_not_a_disc_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     let input = dir.path().join("x.wud");
     std::fs::write(&input, vec![0; 4 * common::SECTOR]).unwrap();
-    let result = wux_rs::to_wua(&[&input], &dir.path().join("x.wua"), &keys(), &mut |_| {});
+    let result = wux_rs::to_wua(
+        &[&input],
+        &dir.path().join("x.wua"),
+        &keys(),
+        None,
+        &mut |_| {},
+    );
     assert!(matches!(result, Err(Error::BadMagic { .. })), "{result:?}");
 }
 
@@ -130,7 +107,7 @@ fn a_game_and_its_update_make_one_wua() {
     expected.sort();
     let output = dir.path().join("g.wua");
     let mut read = 0;
-    wux_rs::to_wua(&[&wux, &update], &output, &keys(), &mut |n| read += n).unwrap();
+    wux_rs::to_wua(&[&wux, &update], &output, &keys(), None, &mut |n| read += n).unwrap();
     let update_size: u64 = std::fs::read_dir(&update)
         .unwrap()
         .map(|e| e.unwrap().metadata().unwrap().len())
@@ -140,7 +117,7 @@ fn a_game_and_its_update_make_one_wua() {
 
     // An update alone makes a WUA of its own.
     let alone = dir.path().join("u.wua");
-    wux_rs::to_wua(&[&update], &alone, &keys(), &mut |_| {}).unwrap();
+    wux_rs::to_wua(&[&update], &alone, &keys(), None, &mut |_| {}).unwrap();
     assert!(
         files(&alone)
             .iter()
@@ -152,7 +129,7 @@ fn a_game_and_its_update_make_one_wua() {
 fn a_title_given_twice_is_refused() {
     let (dir, wud, wux) = setup();
     let output = dir.path().join("g.wua");
-    let result = wux_rs::to_wua(&[&wud, &wux], &output, &keys(), &mut |_| {});
+    let result = wux_rs::to_wua(&[&wud, &wux], &output, &keys(), None, &mut |_| {});
     assert!(matches!(result, Err(Error::Unsupported(_))), "{result:?}");
     assert!(!output.exists());
 }
@@ -176,7 +153,7 @@ fn an_update_named_as_no_intro_names_it_converts_the_same() {
         std::fs::rename(&path, update.join(cdn)).unwrap();
     }
     let output = dir.path().join("u.wua");
-    wux_rs::to_wua(&[&update], &output, &keys(), &mut |_| {}).unwrap();
+    wux_rs::to_wua(&[&update], &output, &keys(), None, &mut |_| {}).unwrap();
     assert_eq!(files(&output), expected);
 
     // A title's ID needs no key in a NUS folder, and the disc's keys on a disc.

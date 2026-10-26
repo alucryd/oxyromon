@@ -1,7 +1,9 @@
 //! The layout of a Wii U disc, as Cemu reads it: a partition table encrypted
 //! with the disc key, then partitions, each with a file system table (FST)
 //! whose files are split across clusters, each cluster either one raw AES-CBC
-//! stream or a run of hashed 64 KiB blocks.
+//! stream or a run of 64 KiB blocks: hashed ones in a hashed partition, and
+//! in an unhashed one, such as the update partition, blocks each encrypted
+//! on their own.
 
 use std::rc::Rc;
 
@@ -49,6 +51,12 @@ pub fn check_magic(image: &Image) -> Result<()> {
 pub fn find_disc_key(image: &Image, keys: &[Key]) -> Result<Key> {
     let mut bytes = [0; 48];
     image.read_exact_at(&mut bytes, 3 * SECTOR + 0x100)?;
+    disc_key_of(&bytes, keys)
+}
+
+/// The key among `keys` that turns `bytes`, 48 bytes from 0x100 into the
+/// partition table, into an IV and zeros.
+pub fn disc_key_of(bytes: &[u8; 48], keys: &[Key]) -> Result<Key> {
     let iv: [u8; 16] = bytes[..16].try_into().unwrap();
     keys.iter()
         .find(|key| {
@@ -104,10 +112,21 @@ pub fn partitions(image: &Image, disc_key: &Key) -> Result<Vec<Partition>> {
         .collect()
 }
 
-/// Where a partition's FST is, from the partition's header, which is not
-/// encrypted: its offset on the disc and its size.
-pub fn fst_location(image: &Image, partition: &Partition) -> Result<(u64, u32)> {
-    let mut header = [0; 0x20];
+/// What a partition's header, which is not encrypted, says.
+pub struct PartitionHeader {
+    /// The sectors before the FST, which the header takes up.
+    pub sectors: u64,
+    /// The FST's offset on the disc, and its size.
+    pub fst: (u64, u32),
+    /// Whether its clusters are made of hashed blocks.
+    pub hashed: bool,
+    /// Whether it is encrypted with the disc key, rather than a title key.
+    pub disc_key: bool,
+}
+
+/// Read and check a partition's header.
+pub fn partition_header(image: &Image, partition: &Partition) -> Result<PartitionHeader> {
+    let mut header = [0; 0x28];
     image.read_exact_at(&mut header, partition.offset)?;
     if u32_at(&header, 0) != PARTITION_MAGIC {
         return Err(corrupt(format!(
@@ -115,9 +134,18 @@ pub fn fst_location(image: &Image, partition: &Partition) -> Result<(u64, u32)> 
             partition.name
         )));
     }
-    let size = u32_at(&header, 0x14);
-    let offset = partition.offset + u64::from(u32_at(&header, 0x18)) * SECTOR;
-    Ok((offset, size))
+    let sectors = u64::from(u32_at(&header, 0x18));
+    Ok(PartitionHeader {
+        sectors,
+        fst: (partition.offset + sectors * SECTOR, u32_at(&header, 0x14)),
+        hashed: header[0x24] != 0,
+        disc_key: header[0x25] == 1,
+    })
+}
+
+/// Where a partition's FST is: its offset on the disc and its size.
+pub fn fst_location(image: &Image, partition: &Partition) -> Result<(u64, u32)> {
+    Ok(partition_header(image, partition)?.fst)
 }
 
 /// Read an FST's encrypted bytes, padded to the AES block size.
@@ -156,10 +184,35 @@ impl Source for PartitionSource {
     }
 }
 
+/// How a cluster is encrypted.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Mode {
+    /// One CBC stream, whose IV is the cluster's index.
+    Raw,
+    /// Hashed 64 KiB blocks: 0x400 bytes of hashes, then data whose IV is
+    /// its own hash.
+    Hashed,
+    /// 64 KiB blocks each its own CBC stream: the first's IV is the
+    /// cluster's index, as a raw cluster's, the others' their block number.
+    Blocks,
+}
+
+/// The IV of block `block` of cluster `index` in [`Mode::Blocks`].
+pub fn block_iv(index: u16, block: u64) -> [u8; 16] {
+    let mut iv = [0; 16];
+    match block {
+        0 => iv[..2].copy_from_slice(&index.to_be_bytes()),
+        _ => iv[8..].copy_from_slice(&block.to_be_bytes()),
+    }
+    iv
+}
+
 struct Cluster {
     /// Where it starts in its partition; NUS titles keep each in a file.
     offset: u64,
-    hashed: bool,
+    /// Its size in sectors, as the FST gives it.
+    sectors: u64,
+    mode: Mode,
 }
 
 /// An FST entry.
@@ -206,7 +259,19 @@ pub struct Fst {
 
 impl Fst {
     /// Decrypt and check the FST of `name`, a partition or a title.
-    pub fn open(name: &str, mut bytes: Vec<u8>, size: u32, key: Key) -> Result<Fst> {
+    pub fn open(name: &str, bytes: Vec<u8>, size: u32, key: Key) -> Result<Fst> {
+        Fst::open_in(name, bytes, size, key, true)
+    }
+
+    /// [`Fst::open`], in a partition whose header says whether it is
+    /// `hashed`: in one that is not, block clusters are not hashed either.
+    pub fn open_in(
+        name: &str,
+        mut bytes: Vec<u8>,
+        size: u32,
+        key: Key,
+        hashed: bool,
+    ) -> Result<Fst> {
         cbc_decrypt(&key, &mut [0; 16], &mut bytes);
         bytes.truncate(size as usize);
         if bytes.len() < 0x20 || u32_at(&bytes, 0) != FST_MAGIC {
@@ -227,7 +292,12 @@ impl Fst {
             .iter()
             .map(|c| Cluster {
                 offset: u64::from(u32_at(c, 0)) * SECTOR,
-                hashed: c[0x14] == 2,
+                sectors: u64::from(u32_at(c, 4)),
+                mode: match (c[0x14], hashed) {
+                    (2, true) => Mode::Hashed,
+                    (2, false) => Mode::Blocks,
+                    _ => Mode::Raw,
+                },
             })
             .collect();
         let count = u32_at(
@@ -313,6 +383,12 @@ impl Fst {
             .map(|cluster| cluster.offset)
     }
 
+    /// Each cluster: where it starts in its partition, its size in sectors,
+    /// and how it is encrypted.
+    pub fn clusters(&self) -> impl Iterator<Item = (u64, u64, Mode)> + '_ {
+        self.clusters.iter().map(|c| (c.offset, c.sectors, c.mode))
+    }
+
     /// Entry `index`'s name.
     pub fn name(&self, index: usize) -> Result<&[u8]> {
         let start = self.entries[index].name as usize;
@@ -380,11 +456,45 @@ impl Fst {
         let entry = &self.entries[index];
         let cluster = &self.clusters[entry.cluster as usize];
         let start = u64::from(entry.offset) * self.offset_factor;
-        if cluster.hashed {
-            self.read_hashed(source, entry.cluster, cluster, start, entry.size(), sink)
-        } else {
-            self.read_raw(source, entry.cluster, cluster, start, entry.size(), sink)
+        match cluster.mode {
+            Mode::Hashed => {
+                self.read_hashed(source, entry.cluster, cluster, start, entry.size(), sink)
+            }
+            Mode::Raw => self.read_raw(source, entry.cluster, cluster, start, entry.size(), sink),
+            Mode::Blocks => {
+                self.read_blocks(source, entry.cluster, cluster, start, entry.size(), sink)
+            }
         }
+    }
+
+    /// Blocks each a CBC stream of their own.
+    fn read_blocks(
+        &self,
+        source: &dyn Source,
+        index: u16,
+        cluster: &Cluster,
+        start: u64,
+        size: u64,
+        sink: &mut dyn FnMut(&[u8]) -> Result<()>,
+    ) -> Result<()> {
+        let mut block_index = start / HASHED_BLOCK;
+        let (mut skip, mut left) = ((start % HASHED_BLOCK) as usize, size);
+        let mut block = vec![0; HASHED_BLOCK as usize];
+        while left > 0 {
+            source.read_cluster(
+                index,
+                cluster.offset,
+                block_index * HASHED_BLOCK,
+                &mut block,
+            )?;
+            cbc_decrypt(&self.key, &mut block_iv(index, block_index), &mut block);
+            let take = ((block.len() - skip) as u64).min(left) as usize;
+            sink(&block[skip..skip + take])?;
+            left -= take as u64;
+            block_index += 1;
+            skip = 0;
+        }
+        Ok(())
     }
 
     /// A raw cluster is one CBC stream, whose IV is the cluster's index.

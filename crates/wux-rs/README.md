@@ -3,8 +3,9 @@
 Wii U disc images in Rust. Part of [oxyROMon](https://github.com/alucryd/oxyromon),
 as a library and the `wuxrs` CLI. It compresses WUDs to WUX and back,
 losslessly, and converts either to WUA, the archive
-[Cemu](https://github.com/cemu-project/Cemu) plays, or to a NUS folder, which
-WUP Installer GX2 installs on a console. Its WUXs are those
+[Cemu](https://github.com/cemu-project/Cemu) plays, lossless too, as it
+rebuilds the disc byte for byte, or to a NUS folder, which WUP Installer GX2
+installs on a console. Its WUXs are those
 [wudd](https://github.com/wiiu-env/wudd) dumps and Cemu reads (see
 [Credits](#credits)).
 
@@ -17,9 +18,13 @@ wux_rs::decompress(wux, Path::new("out.wud"), &mut |_| {}).unwrap();
 
 // Cemu's keys.txt must hold the disc key and the Wii U common key.
 let keys = wux_rs::load_keys(&wux_rs::cemu_keys_path().unwrap()).unwrap();
-// A game and its update, from a NUS folder, make one WUA.
-let update = Path::new("update/");
-wux_rs::to_wua(&[wux, update], Path::new("game.wua"), &keys, &mut |_| {}).unwrap();
+// A game and its update, from a NUS folder, make one WUA, the disc's update
+// partition in a store the WUAs beside it share.
+let (update, store) = (Path::new("update/"), Path::new(wux_rs::STORE_DIR));
+let wua = Path::new("game.wua");
+wux_rs::to_wua(&[wux, update], wua, &keys, Some(store), &mut |_| {}).unwrap();
+// And back to the disc, byte for byte.
+wux_rs::wua_to_wux(wua, Path::new("back.wux"), Some(store), &keys, &mut |_| {}).unwrap();
 ```
 
 ## The formats
@@ -50,8 +55,9 @@ of one or more titles, each in a `<title id>_v<version>` folder, cut into
 64 KiB blocks compressed with zstd. Like Cemu, a game, its update and its DLC
 go in one WUA: the game from its disc, the others from NUS folders, the form
 Nintendo's servers deliver them in, a signed `title.tmd`, a `title.tik` and
-one encrypted `.app` per content. Getting there drops the disc's encryption and layout,
-so a WUA can't be turned back into the disc it came from.
+one encrypted `.app` per content. Getting there drops the disc's encryption
+and layout, so a WUA Cemu writes can't be turned back into the disc it came
+from. One this crate writes can: see [Lossless WUA](#lossless-wua).
 
 A WUA this crate writes keeps revert data in a `.nus` folder, which Cemu
 ignores: per title, its TMD, ticket and certificates, its encrypted FST, and
@@ -62,6 +68,35 @@ recomputed. Raw contents are zeros between files; hashed ones are too but for
 NUS folder per title, whose contents are byte for byte those it was made
 from, checked against the TMD. WUAs written without it, by Cemu or before,
 can't be.
+
+### Lossless WUA
+
+A WUA this crate writes from a disc also keeps, in a `.wud` folder Cemu
+ignores, what rebuilds the disc byte for byte, checked against its SHA-1.
+Every sector of a Wii U disc is one of:
+
+- the disc header, before the first partition;
+- a partition's header, before its FST;
+- one of its regions: its FST, and the clusters or contents the FST lists;
+- or a repeat of the region before it, period that region's length, up to
+  the next region or the partition's end: that is how mastering fills free
+  space, which is most of a disc.
+
+So the disc comes back from its headers, its regions and that rule. The game
+partition's contents come from the WUA's game and its revert data. Every
+other partition's regions come from a stream of their bytes, decrypted when
+the disc key encrypts them, and within it, the titles of the update and game
+update partitions are decrypted with their own title keys, which is what
+lets them compress. The rule is checked on every sector as the disc is read,
+and a sector it gets wrong is kept whole, so the rebuild is exact either way.
+That is a few hundred KB besides the partitions' streams.
+
+A disc's update partition, a 1.3 GB system update, is the same on every disc
+carrying that update once the disc key's encryption is off. Given a store,
+`to_wua` keeps it there once, under its SHA-1, compressed with a large zstd
+window to about 600 MB, as NKit keeps its recovery partitions; otherwise it
+goes into the WUA. On seven European discs, five of them sharing two updates,
+every disc came back byte for byte, matching Redump.
 
 **NUS** is the form Nintendo's servers deliver a title in: a folder holding
 its signed TMD, its ticket, its certificates, and each content as an
@@ -96,15 +131,18 @@ Cemu ignores it.
   out. Updates and DLC come from their NUS folders.
 - **No merging.** An update stays a folder of its own next to its game's, as
   Cemu lays them out, rather than overwriting the files it replaces.
-- **A WUA reverts to NUS folders only.** The disc's layout and its console
-  update partition are gone, so it can't become a disc image again.
+- **Only a WUA of one disc rebuilds it.** A WUA holds a disc at most, plus
+  NUS titles, and only one this crate wrote from that disc can become it
+  again; a WUA Cemu wrote reverts to nothing.
 - **No split dumps.** wudd splits dumps to FAT32 into 2 GiB parts; join them
   first.
 
 ## CLI
 
-`wuxrs` compresses WUDs, decompresses WUXs and reverts WUAs, telling which
-from each file's contents and extension, and writes next to each one unless told otherwise:
+`wuxrs` compresses WUDs, decompresses WUXs and turns WUAs back into their
+disc, telling which from each file's contents and extension, and writes next
+to each one unless told otherwise. A WUA's update partition goes to, and comes
+from, the `.update-partitions` folder next to it:
 
 ```
 cargo build --release -p wux-rs
@@ -113,7 +151,8 @@ wuxrs game.wux                 # back to game.wud
 wuxrs -f wua -o out/ *.wux     # to WUAs, in out/
 wuxrs -f wua --add update/ game.wux   # the game and its update, in one WUA
 wuxrs -f nus game.wux          # to the folder game/, for WUP Installer GX2
-wuxrs game.wua                 # back to game/<title id>_v<version>/, per title
+wuxrs game.wua                 # back to game.wux, byte for byte
+wuxrs -f nus game.wua          # to game/<title id>_v<version>/, per title
 ```
 
 | Flag           | Meaning                                                    |
@@ -121,6 +160,7 @@ wuxrs game.wua                 # back to game/<title id>_v<version>/, per title
 | `-o DIR`       | output directory (default: next to each input)             |
 | `-f FORMAT`    | what to convert to, `wud`, `wux`, `wua` or `nus`           |
 | `--add DIR`    | NUS folder of an update or DLC to add to the WUA, repeatable, with a single input |
+| `--updates DIR` | the update partitions WUAs share (default: `.update-partitions` next to each WUA) |
 | `--keys FILE`  | keys for WUA and NUS (default: Cemu's `keys.txt`)          |
 
 Like every oxyROMon tool, `wuxrs` draws oxyROMon's progress bar, reports each
@@ -143,6 +183,13 @@ implementation. `tests/wux.rs` round-trips generated images through WUX.
 folders, and checks them against the disc's own conversion and the update,
 byte for byte, its hidden files, which only the residue keeps, included.
 
+`tests/disc.rs` rebuilds a disc from its WUA byte for byte, as a WUD and as a
+WUX, on a disc whose update partition holds a system title with a raw and a
+hashed content: two discs with the same update under different disc keys
+share one store entry, which holds the title decrypted; without a store the
+update stays in the WUA; a missing or damaged entry fails the rebuild; and a
+sector off the layout is kept whole.
+
 `tests/real.rs` runs on a real disc when given one, and is otherwise skipped:
 
 ```sh
@@ -150,8 +197,8 @@ WUXRS_DISC=game.wux WUXRS_WUA=game.wua cargo test --release -p wux-rs -- --ignor
 ```
 
 It round-trips the disc through WUX, converts it to WUA, with the update in
-`WUXRS_ADD` when set, and compares every file with a WUA Cemu made of the same
-game.
+`WUXRS_ADD` when set, compares every file with a WUA Cemu made of the same
+game, and rebuilds the disc from its WUA.
 
 ## Credits
 

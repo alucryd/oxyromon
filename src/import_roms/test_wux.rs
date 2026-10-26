@@ -42,12 +42,16 @@ async fn test() {
         .unwrap();
 
     // when
-    import_wux(
+    import_wiiu_disc(
         &mut connection,
         &progress_bar,
         &Some(&system),
         &HashSet::new(),
-        CommonRomfile::from_path(&romfile_path).unwrap(),
+        CommonRomfile::from_path(&romfile_path)
+            .unwrap()
+            .as_wux()
+            .unwrap(),
+        WUX_EXTENSION,
         true,
         false,
         UnattendedMode::Skip,
@@ -75,7 +79,7 @@ async fn test() {
     assert_eq!(game.system_id, system.id);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA).wud");
+    assert_eq!(rom.name, "Test Game (USA).iso");
     assert_eq!(rom.game_id, game.id);
 
     let romfile = romfiles.first().unwrap();

@@ -13,7 +13,8 @@ fn cli() -> Command {
         .version(env!("CARGO_PKG_VERSION"))
         .about("Wii U disc images: WUDs are compressed to WUX, WUXs decompressed to WUD")
         .after_help(format!(
-            "WUA is Cemu's archive; NUS is a folder WUP Installer GX2 installs. A WUA wuxrs wrote reverts to NUS folders, one per title, its contents byte for byte those it came from. Both need the disc key and the Wii U common key among the keys; wuxrs ships none.\n\n{}",
+            "WUA is Cemu's archive; NUS is a folder WUP Installer GX2 installs. A WUA wuxrs wrote is lossless: it converts back to the disc it came from, byte for byte, or to NUS folders, one per title. Its update partition is kept in a store shared by every WUA, a hidden {} folder next to them unless --updates says otherwise. WUA and NUS need the disc key and the Wii U common key among the keys; wuxrs ships none.\n\n{}",
+            wux_rs::STORE_DIR,
             ui::AFTER_HELP
         ))
         .arg(
@@ -34,7 +35,7 @@ fn cli() -> Command {
             Arg::new("format")
                 .short('f')
                 .long("format")
-                .help("What to convert to [default: WUX for WUDs, WUD for WUXs, NUS for WUAs]")
+                .help("What to convert to [default: WUX for WUDs, WUD for WUXs, WUX for WUAs, or NUS for WUAs without their disc]")
                 .value_parser(["wud", "wux", "wua", "nus"]),
         )
         .arg(
@@ -42,6 +43,12 @@ fn cli() -> Command {
                 .long("add")
                 .help("NUS folder of an update or DLC to add to the WUA, with a single input")
                 .action(ArgAction::Append)
+                .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            Arg::new("updates")
+                .long("updates")
+                .help("Folder of the update partitions WUAs share [default: next to each WUA]")
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
@@ -73,12 +80,17 @@ fn convert(
             None => "wud",
         },
     };
+    let lossless = from == "wua"
+        && wux_rs::disc_info(input)
+            .map_err(|e| e.to_string())?
+            .is_some();
     let to = match matches.get_one::<String>("format").map(String::as_str) {
         Some(to) if to == from => return Err(format!("already a {}", to.to_uppercase())),
-        Some(to) if from == "wua" && to != "nus" => {
-            return Err("a WUA only converts back to NUS".into());
+        Some("wud" | "wux") if from == "wua" && !lossless => {
+            return Err("this WUA does not hold what rebuilds its disc".into());
         }
         Some(to) => to,
+        None if from == "wua" && lossless => "wux",
         None if from == "wua" => "nus",
         None if from == "wux" => "wud",
         None => "wux",
@@ -97,7 +109,7 @@ fn convert(
             return Err("--add takes a single input".into());
         }
     }
-    let keys = if matches!(to, "wua" | "nus") {
+    let keys = if matches!(to, "wua" | "nus") || from == "wua" {
         let path = match matches.get_one::<PathBuf>("keys") {
             Some(path) => path.clone(),
             None => {
@@ -116,6 +128,19 @@ fn convert(
         _ => ui::output_path(&dir, input, to),
     };
     let output = outputs.claim(output)?;
+    // The update partitions next to the WUA, written or read.
+    let wua = if from == "wua" {
+        input
+    } else {
+        output.as_path()
+    };
+    let store = match matches.get_one::<PathBuf>("updates") {
+        Some(store) => store.clone(),
+        None => wua
+            .parent()
+            .unwrap_or(Path::new("."))
+            .join(wux_rs::STORE_DIR),
+    };
     let verb = match to {
         "wux" => "Compressing",
         "wud" => "Decompressing",
@@ -137,6 +162,12 @@ fn convert(
     let bar = ui::progress_bar(size, verb, input);
     let mut progress = |n| bar.inc(n);
     let result = match to {
+        "wux" if from == "wua" => {
+            wux_rs::wua_to_wux(input, &output, Some(&store), &keys, &mut progress)
+        }
+        "wud" if from == "wua" => {
+            wux_rs::wua_to_wud(input, &output, Some(&store), &keys, &mut progress)
+        }
         "wux" => wux_rs::compress(input, &output, &mut progress),
         "wud" => wux_rs::decompress(input, &output, &mut progress),
         "nus" if from == "wua" => wux_rs::wua_to_nus(input, &output, &keys, &mut progress),
@@ -145,6 +176,7 @@ fn convert(
             &[&[input], &added[..]].concat(),
             &output,
             &keys,
+            Some(&store),
             &mut progress,
         ),
     };

@@ -1,10 +1,12 @@
 use super::common::*;
 use super::config::*;
 use super::database::*;
+use super::mimetype::WUA_EXTENSION;
 use super::model::Romfile;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
+use super::wux::STORE_DIR;
 use anyhow::{Context, Result};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -170,10 +172,12 @@ async fn purge_foreign_romfiles(
 ) -> Result<()> {
     print_subheader(progress_bar, "Processing foreign ROM files");
     let rom_directory = get_rom_directory(connection).await;
-    let walker = WalkDir::new(&rom_directory).into_iter();
-    let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
-    let mut count = 0;
-    for entry in walker.filter_map(|e| e.ok()) {
+    let mut files = Vec::new();
+    let mut known = HashSet::new();
+    for entry in WalkDir::new(&rom_directory)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if entry.path().is_file() {
             let relative_path = entry
                 .path()
@@ -181,7 +185,38 @@ async fn purge_foreign_romfiles(
                 .context("Failed to retrieve relative path")?;
             if find_romfile_by_path(connection, relative_path.as_os_str().to_str().unwrap())
                 .await
-                .is_none()
+                .is_some()
+            {
+                known.insert(entry.path().to_path_buf());
+            }
+            files.push(entry.path().to_path_buf());
+        }
+    }
+    // The update partitions the library's WUAs keep in their stores.
+    let referenced: HashSet<String> = known
+        .iter()
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case(WUA_EXTENSION))
+        })
+        .flat_map(|path| wux_rs::store_entries(path).unwrap_or_default())
+        .collect();
+    let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
+    let mut count = 0;
+    for path in files {
+        let in_store = path
+            .parent()
+            .and_then(|p| p.file_name())
+            .is_some_and(|name| name == STORE_DIR);
+        let referenced = in_store
+            && path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| referenced.contains(name));
+        if !known.contains(&path) && !referenced {
+            let relative_path = path
+                .strip_prefix(&rom_directory)
+                .context("Failed to retrieve relative path")?;
             {
                 print_action(
                     progress_bar,
@@ -191,8 +226,8 @@ async fn purge_foreign_romfiles(
                     ),
                 );
                 if answer_yes || confirm(true)? {
-                    remove_file(progress_bar, &entry.path(), false).await?;
-                    if let Some(directory) = entry.path().parent() {
+                    remove_file(progress_bar, &path, false).await?;
+                    if let Some(directory) = path.parent() {
                         emptied_directories.insert(directory.to_path_buf());
                     }
                     count += 1;
@@ -219,6 +254,8 @@ async fn purge_foreign_romfiles(
 
 #[cfg(test)]
 mod test_foreign;
+#[cfg(test)]
+mod test_foreign_store;
 #[cfg(test)]
 mod test_foreign_subfolder;
 #[cfg(test)]

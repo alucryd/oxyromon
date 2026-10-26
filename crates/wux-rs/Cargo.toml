@@ -23,11 +23,13 @@ required-features = ["cli"]
 aes = "0.9"
 # Where Cemu keeps its keys.txt.
 dirs = "7.0.0"
+crc32fast.workspace = true
+md-5.workspace = true
 rayon.workspace = true
 sha1.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
-zstd.workspace = true
+zstd = { workspace = true, features = ["zstdmt"] }
 clap = { workspace = true, optional = true }
 console = { workspace = true, optional = true }
 indicatif = { workspace = true, optional = true }

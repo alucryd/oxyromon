@@ -137,8 +137,8 @@ pub(crate) struct CheckRomsParams {
 pub(crate) struct ConvertRomsParams {
     /// Convert this system's ROM files.
     pub system_id: i64,
-    /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUX",
-    /// "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
+    /// Target format: "ORIGINAL", "7Z", "CHD", "CSO", "NSZ", "RVZ", "WUA",
+    /// "WUX", "ZIP" or "ZSO" — the same values as PREFER_FORMAT.
     pub format: String,
 }
 

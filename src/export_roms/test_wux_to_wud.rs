@@ -70,5 +70,5 @@ async fn test() {
     .unwrap();
 
     // then
-    assert!(destination_directory.join("Test Game (USA).wud").is_file());
+    assert!(destination_directory.join("Test Game (USA).iso").is_file());
 }

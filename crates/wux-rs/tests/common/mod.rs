@@ -102,7 +102,8 @@ pub fn game_files() -> (Vec<Node>, Vec<(String, Vec<u8>)>) {
 }
 
 /// An FST and its clusters, encrypted: `hashed` says which clusters are
-/// hashed; cluster 0 is the FST's own. Cluster offsets are laid out as in a
+/// hashed, or in an unhashed partition, if `blocks`, in 64 KiB blocks each
+/// encrypted on its own; cluster 0 is the FST's own. Cluster offsets are laid out as in a
 /// partition, which a NUS title ignores.
 struct Built {
     fst: Vec<u8>,
@@ -114,7 +115,7 @@ struct Built {
     hashed: Vec<bool>,
 }
 
-fn build(tree: &[Node], key: &[u8; 16], hashed: &[bool]) -> Built {
+fn build(tree: &[Node], key: &[u8; 16], hashed: &[bool], blocks: bool) -> Built {
     // Lay the files out in their clusters.
     let mut streams: Vec<Vec<u8>> = vec![Vec::new(); hashed.len()];
     let mut entries: Vec<[u8; 16]> = Vec::new();
@@ -171,7 +172,20 @@ fn build(tree: &[Node], key: &[u8; 16], hashed: &[bool]) -> Built {
         .iter()
         .enumerate()
         .map(|(index, stream)| {
-            if hashed[index] {
+            if hashed[index] && blocks {
+                let mut data = stream.clone();
+                data.resize(data.len().next_multiple_of(SECTOR).max(SECTOR), 0);
+                plain.push(data.clone());
+                for (block, chunk) in data.chunks_mut(0x10000).enumerate() {
+                    let mut iv = [0; 16];
+                    match block {
+                        0 => iv[..2].copy_from_slice(&(index as u16).to_be_bytes()),
+                        _ => iv[8..].copy_from_slice(&(block as u64).to_be_bytes()),
+                    }
+                    cbc_encrypt(key, &iv, chunk);
+                }
+                data
+            } else if hashed[index] {
                 plain.push(Vec::new());
                 hashed_cluster(stream, key)
             } else {
@@ -199,6 +213,9 @@ fn build(tree: &[Node], key: &[u8; 16], hashed: &[bool]) -> Built {
         let mut entry = [0u8; 0x20];
         let offset = if index == 0 { 1 } else { sector };
         entry[..4].copy_from_slice(&(offset as u32).to_be_bytes());
+        if index > 0 {
+            entry[4..8].copy_from_slice(&((cluster.len() / SECTOR) as u32).to_be_bytes());
+        }
         entry[0x14] = if hashed[index] { 2 } else { 0 };
         fst.extend(entry);
         if index > 0 {
@@ -234,6 +251,37 @@ pub struct Content {
 struct Partition {
     bytes: Vec<u8>,
     contents: Vec<Content>,
+    /// Where its first hashed cluster starts, if it has one.
+    hashed_at: Option<usize>,
+}
+
+impl Partition {
+    /// Pad it to `sectors`, each free sector repeating the one as many
+    /// sectors back as its last region is long, as a disc's are.
+    fn fill(mut self, sectors: usize) -> Vec<u8> {
+        let last = self
+            .contents
+            .last()
+            .map_or(1, |c| (c.size as usize).div_ceil(SECTOR));
+        assert!(
+            self.bytes.len() <= sectors * SECTOR,
+            "the partition is too small"
+        );
+        while self.bytes.len() < sectors * SECTOR {
+            let at = self.bytes.len() - last * SECTOR;
+            let sector = self.bytes[at..at + SECTOR].to_vec();
+            self.bytes.extend(sector);
+        }
+        self.bytes
+    }
+}
+
+/// What encrypts a partition: a title key, the game partitions', or the
+/// disc key, the others', whose clusters are not hashed.
+#[derive(Clone, Copy, PartialEq)]
+enum Encryption {
+    TitleKey,
+    DiscKey,
 }
 
 /// The H3 hashes of a hashed cluster: one per group of 4096 blocks, of the
@@ -266,8 +314,8 @@ fn tmd(title_id: u64, version: u16, first_id: u32, contents: &[Content]) -> Vec<
 }
 
 /// A partition: plaintext header, FST in its second sector, then clusters.
-fn partition(tree: &[Node], key: &[u8; 16], hashed: &[bool]) -> Partition {
-    let built = build(tree, key, hashed);
+fn partition(tree: &[Node], key: &[u8; 16], hashed: &[bool], encryption: Encryption) -> Partition {
+    let built = build(tree, key, hashed, encryption == Encryption::DiscKey);
     let (fst_len, clusters) = (built.fst_len, &built.clusters);
     let fst_sectors = fst_len.div_ceil(SECTOR);
     // The FST's sectors, encrypted whole, as content 0 is.
@@ -296,15 +344,24 @@ fn partition(tree: &[Node], key: &[u8; 16], hashed: &[bool]) -> Partition {
     header[4..8].copy_from_slice(&(SECTOR as u32).to_be_bytes());
     header[0x14..0x18].copy_from_slice(&(fst_len as u32).to_be_bytes());
     header[0x18..0x1C].copy_from_slice(&1u32.to_be_bytes());
+    (header[0x24], header[0x25]) = match encryption {
+        Encryption::TitleKey => (1, 2),
+        Encryption::DiscKey => (0, 1),
+    };
 
     let mut out = header;
     out.extend(encrypted);
-    for cluster in &clusters[1..] {
+    let mut hashed_at = None;
+    for (index, cluster) in clusters.iter().enumerate().skip(1) {
+        if built.hashed[index] && hashed_at.is_none() {
+            hashed_at = Some(out.len());
+        }
         out.extend(cluster);
     }
     Partition {
         bytes: out,
         contents,
+        hashed_at,
     }
 }
 
@@ -377,7 +434,7 @@ pub fn nus(dir: &std::path::Path) -> Vec<(String, Vec<u8>)> {
         ),
         Dir("content", vec![File("data.bin", 2, data.clone(), false)]),
     ];
-    let built = build(&tree, &UPDATE_KEY, &[false, false, true]);
+    let built = build(&tree, &UPDATE_KEY, &[false, false, true], false);
     // Content 0, the FST, padded to the AES block size, as the CDN's are.
     let mut fst_plain = built.fst_plain.clone();
     fst_plain.resize(fst_plain.len().next_multiple_of(16), 0);
@@ -418,26 +475,171 @@ pub fn nus(dir: &std::path::Path) -> Vec<(String, Vec<u8>)> {
     .collect()
 }
 
+/// The system title the update partition carries, and its key.
+pub const SYSTEM_ID: u64 = 0x0005_0010_1000_1234;
+const SYSTEM_KEY: [u8; 16] = [0x55; 16];
+/// What a system title's contents hold, so a test can tell they were
+/// stored decrypted.
+pub const SYSTEM_PLAINTEXT: &[u8] = b"the plaintext of a system title";
+/// A made-up vWii common key, and the vWii system title it opens, which an
+/// update partition carries too.
+pub const VWII_KEY: [u8; 16] = [0x99; 16];
+const VWII_ID: u64 = 0x0000_0007_0000_0002;
+const VWII_TITLE_KEY: [u8; 16] = [0xAA; 16];
+pub const VWII_PLAINTEXT: &[u8] = b"the plaintext of a vWii title";
+/// A second disc key, for another disc with the same update.
+pub const DISC_KEY_2: [u8; 16] = [0x66; 16];
+const SMALL_ID: u64 = 0x0005_0010_1006_0000;
+const SMALL_KEY: [u8; 16] = [0x77; 16];
+/// The partitions' sizes, in sectors, past what they use.
+const FREE: usize = 6;
+
+/// The update partition: a system update, its titles as NUS folders, one
+/// with a raw and a hashed content.
+fn update_partition(disc_key: &[u8; 16]) -> Vec<u8> {
+    let mut raw = SYSTEM_PLAINTEXT.to_vec();
+    raw.extend(noise(0x8000 - SYSTEM_PLAINTEXT.len(), 20));
+    let mut raw_encrypted = raw.clone();
+    cbc_encrypt(&SYSTEM_KEY, &[0; 16], &mut raw_encrypted);
+    let mut data = SYSTEM_PLAINTEXT.to_vec();
+    data.extend(noise(0xFC00 * 3, 21));
+    let hashed = hashed_cluster(&data, &SYSTEM_KEY);
+    let mut hashed_iv = [0; 16];
+    hashed_iv[..2].copy_from_slice(&1u16.to_be_bytes());
+    let contents = [
+        Content {
+            size: raw.len() as u64,
+            hashed: false,
+            hash: Sha1::digest(&raw).into(),
+        },
+        Content {
+            size: hashed.len() as u64,
+            hashed: true,
+            hash: Sha1::digest(h3(hashed.len())).into(),
+        },
+    ];
+    let title = Dir(
+        "0005001010001234",
+        vec![
+            File("00000000.app", 1, raw_encrypted, false),
+            File("00000001.app", 1, hashed, false),
+            File("title.cert", 1, CERT.to_vec(), false),
+            File("title.tik", 1, ticket(SYSTEM_ID, &SYSTEM_KEY), false),
+            File("title.tmd", 1, tmd(SYSTEM_ID, 1, 0, &contents), false),
+        ],
+    );
+    // A vWii title: a Wii TMD and a ticket naming the vWii common key, its
+    // content as long as the TMD says, the file padded to a whole block.
+    let mut vwii = VWII_PLAINTEXT.to_vec();
+    vwii.extend(noise(0x1000 + 5 - VWII_PLAINTEXT.len(), 22));
+    let mut vwii_encrypted = vwii.clone();
+    vwii_encrypted.resize(vwii.len().next_multiple_of(16), 0);
+    cbc_encrypt(&VWII_TITLE_KEY, &[0; 16], &mut vwii_encrypted);
+    let mut wii_tmd = vec![0u8; 0x1E4 + 36];
+    wii_tmd[..4].copy_from_slice(&0x0001_0001u32.to_be_bytes());
+    wii_tmd[0x18C..0x194].copy_from_slice(&VWII_ID.to_be_bytes());
+    wii_tmd[0x1DE..0x1E0].copy_from_slice(&1u16.to_be_bytes());
+    wii_tmd[0x1E4 + 6..0x1E4 + 8].copy_from_slice(&1u16.to_be_bytes());
+    wii_tmd[0x1E4 + 8..0x1E4 + 16].copy_from_slice(&(vwii.len() as u64).to_be_bytes());
+    wii_tmd[0x1E4 + 16..0x1E4 + 36].copy_from_slice(&Sha1::digest(&vwii));
+    let mut vwii_ticket = vec![0u8; 0x2A4];
+    let mut encrypted_key = VWII_TITLE_KEY;
+    let mut iv = [0; 16];
+    iv[..8].copy_from_slice(&VWII_ID.to_be_bytes());
+    cbc_encrypt(&VWII_KEY, &iv, &mut encrypted_key);
+    vwii_ticket[0x1BF..0x1CF].copy_from_slice(&encrypted_key);
+    vwii_ticket[0x1DC..0x1E4].copy_from_slice(&VWII_ID.to_be_bytes());
+    vwii_ticket[0x1F1] = 2;
+    let vwii_title = Dir(
+        "0000000700000002",
+        vec![
+            File("00000000.app", 1, vwii_encrypted, false),
+            File("title.tik", 1, vwii_ticket, false),
+            File("title.tmd", 1, wii_tmd, false),
+        ],
+    );
+    let tree = vec![Dir(
+        "update",
+        vec![
+            Dir("000000", vec![title, vwii_title]),
+            File(
+                "app.xml",
+                1,
+                b"<?xml version=\"1.0\"?><app/>".to_vec(),
+                false,
+            ),
+        ],
+    )];
+    let up = partition(&tree, disc_key, &[false, true], Encryption::DiscKey);
+    let sectors = up.bytes.len() / SECTOR + FREE;
+    up.fill(sectors)
+}
+
 /// The whole disc: a WUD.
 pub fn wud() -> Vec<u8> {
-    // The game partition, and its TMD, ticket and certificates in the SI
-    // partition, which comes first, at index 0, so they are under 01/.
-    let gm = partition(&game_files().0, &TITLE_KEY, &[false, false, true]);
-    let si = partition(
+    wud_with(&DISC_KEY)
+}
+
+/// The whole disc, encrypted with `disc_key`: its SI partition, an update
+/// partition, the game partition, and a second, small game partition, as
+/// real discs have, each holding more sectors than it uses.
+pub fn wud_with(disc_key: &[u8; 16]) -> Vec<u8> {
+    wud_and_hashed(disc_key).0
+}
+
+/// The whole disc, and where the game's hashed cluster starts in it.
+pub fn wud_and_hashed(disc_key: &[u8; 16]) -> (Vec<u8>, usize) {
+    // The game partitions are third and fourth, so the SI partition holds
+    // their TMDs, tickets and certificates under 02/ and 03/.
+    let gm = partition(
+        &game_files().0,
+        &TITLE_KEY,
+        &[false, false, true],
+        Encryption::TitleKey,
+    );
+    let small = partition(
         &[Dir(
-            "01",
-            vec![
-                File("title.cert", 1, CERT.to_vec(), false),
-                File("title.tik", 1, ticket(TITLE_ID, &TITLE_KEY), false),
-                File("title.tmd", 1, tmd(TITLE_ID, 32, 0, &gm.contents), false),
-            ],
+            "code",
+            vec![File("app.xml", 1, b"<app/>".to_vec(), false)],
         )],
-        &DISC_KEY,
+        &SMALL_KEY,
         &[false, false],
-    )
-    .bytes;
-    let gm = gm.bytes;
-    let gm_sector = 4 + si.len() / SECTOR;
+        Encryption::TitleKey,
+    );
+    let si = partition(
+        &[
+            Dir(
+                "02",
+                vec![
+                    File("title.cert", 1, CERT.to_vec(), false),
+                    File("title.tik", 1, ticket(TITLE_ID, &TITLE_KEY), false),
+                    File("title.tmd", 1, tmd(TITLE_ID, 32, 0, &gm.contents), false),
+                ],
+            ),
+            Dir(
+                "03",
+                vec![
+                    File("title.cert", 1, CERT.to_vec(), false),
+                    File("title.tik", 1, ticket(SMALL_ID, &SMALL_KEY), false),
+                    File("title.tmd", 1, tmd(SMALL_ID, 0, 0, &small.contents), false),
+                ],
+            ),
+        ],
+        disc_key,
+        &[false, false],
+        Encryption::DiscKey,
+    );
+    let fill = |partition: Partition| {
+        let sectors = partition.bytes.len() / SECTOR + FREE;
+        partition.fill(sectors)
+    };
+    let gm_hashed = gm.hashed_at.unwrap();
+    let partitions = [
+        ("SI", fill(si)),
+        ("UP0005001010046200000000001000", update_partition(disc_key)),
+        ("GM0005000010101010", fill(gm)),
+        ("GM0005001010060000", fill(small)),
+    ];
 
     let mut disc = vec![0u8; 4 * SECTOR];
     disc[..10].copy_from_slice(b"WUP-P-TEST");
@@ -445,21 +647,57 @@ pub fn wud() -> Vec<u8> {
     let mut table = vec![0u8; SECTOR];
     table[..4].copy_from_slice(&0xCCA6_E67Bu32.to_be_bytes());
     table[4..8].copy_from_slice(&(SECTOR as u32).to_be_bytes());
-    table[0x1C..0x20].copy_from_slice(&2u32.to_be_bytes());
-    for (i, (name, sector)) in [("SI", 4), ("GM0005000010101010", gm_sector)]
-        .iter()
-        .enumerate()
-    {
+    table[0x1C..0x20].copy_from_slice(&(partitions.len() as u32).to_be_bytes());
+    let mut sector = 4;
+    let mut hashed = 0;
+    for (i, (name, bytes)) in partitions.iter().enumerate() {
+        if name.starts_with("GM0005000010101010") {
+            hashed = sector * SECTOR + gm_hashed;
+        }
         let entry = &mut table[0x800 + i * 0x80..];
         entry[..name.len()].copy_from_slice(name.as_bytes());
         entry[31] = 1;
-        entry[0x20..0x24].copy_from_slice(&(*sector as u32).to_be_bytes());
+        entry[0x20..0x24].copy_from_slice(&(sector as u32).to_be_bytes());
+        sector += bytes.len() / SECTOR;
     }
-    cbc_encrypt(&DISC_KEY, &[0; 16], &mut table);
+    cbc_encrypt(disc_key, &[0; 16], &mut table);
     disc[3 * SECTOR..].copy_from_slice(&table);
-    disc.extend(si);
-    disc.extend(gm);
-    // Trailing zero sectors, as a real disc has, for WUX to deduplicate.
-    disc.resize(disc.len() + 4 * SECTOR, 0);
-    disc
+    for (_, bytes) in partitions {
+        disc.extend(bytes);
+    }
+    (disc, hashed)
+}
+
+/// Every file in the ZArchive at `path`, with its contents, read with an
+/// independent reader, sorted by path.
+pub fn archive_files(path: &std::path::Path) -> Vec<(String, Vec<u8>)> {
+    use zarust::{ArchiveReader, ROOT_NODE};
+    let mut reader = ArchiveReader::open(path).unwrap();
+    assert!(reader.verify_integrity().unwrap());
+    let mut files = Vec::new();
+    let mut dirs = vec![(String::new(), ROOT_NODE)];
+    while let Some((prefix, handle)) = dirs.pop() {
+        let entries: Vec<_> = reader
+            .directory_entries(handle)
+            .unwrap()
+            .iter()
+            .map(|e| {
+                (
+                    String::from_utf8(e.name.to_vec()).unwrap(),
+                    e.is_file(),
+                    e.handle,
+                )
+            })
+            .collect();
+        for (name, is_file, handle) in entries {
+            let path = format!("{prefix}{name}");
+            if is_file {
+                files.push((path, reader.read_file_to_end(handle).unwrap()));
+            } else {
+                dirs.push((format!("{path}/"), handle));
+            }
+        }
+    }
+    files.sort();
+    files
 }

@@ -461,83 +461,150 @@ fn rebuild(
     output: &Path,
     report: &mut dyn FnMut(u64),
 ) -> Result<()> {
-    let file = |reader: &mut Reader, name: &str| -> Result<Option<Vec<u8>>> {
-        reader
-            .lookup(node, name)
-            .map(|file| reader.read_file(file))
-            .transpose()
-    };
-    let missing = |name: &str| corrupt(format!("the revert data of {folder} has no {name}"));
-    let tmd = nus::parse_tmd(tmd_bytes)?;
-    let ticket = file(reader, "title.tik")?.ok_or_else(|| missing("ticket"))?;
-    let cert = file(reader, "title.cert")?;
-    let residues = parse_residue(&file(reader, "residue")?.ok_or_else(|| missing("residue"))?)?;
-    let fst_content = tmd
-        .contents
-        .iter()
-        .find(|c| c.index == 0)
-        .ok_or_else(|| corrupt(format!("the TMD of {folder} lists no FST")))?;
-    let fst_name = format!("{:08x}.app", fst_content.id);
-    let content0 = file(reader, &fst_name)?.ok_or_else(|| missing("FST"))?;
-
-    let (title_id, encrypted_key) = parse_ticket(&ticket)?;
-    let key = title_key(&content0, title_id, &encrypted_key, keys)?;
-    let size = u32::try_from(fst_content.size)
-        .map_err(|_| corrupt(format!("the FST is {} bytes", fst_content.size)))?;
-    let fst = Fst::open(folder, content0.clone(), size, key)?;
-
-    // Each file's place in the WUA, by the path the FST gives it.
-    let tree = tree(&fst);
-    let title = reader
-        .lookup(0, folder)
-        .ok_or_else(|| corrupt(format!("the WUA has no {folder}")))?;
-    let mut paths = vec![String::new(); fst.entries.len()];
-    let mut streams = Vec::new();
-    for item in &tree {
-        let name = String::from_utf8_lossy(fst.name(item.entry)?).into_owned();
-        paths[item.entry] = match item.parent {
-            0 => name,
-            parent => format!("{}/{name}", paths[parent]),
-        };
-        if !item.is_dir {
-            let (stream, size) = reader
-                .lookup(title, &paths[item.entry])
-                .and_then(|file| reader.file(file))
-                .ok_or_else(|| corrupt(format!("the WUA has no {folder}/{}", paths[item.entry])))?;
-            if size != fst.extent(item.entry).2 {
-                return Err(corrupt(format!(
-                    "{folder}/{} is not the size the FST says",
-                    paths[item.entry]
-                )));
-            }
-            streams.push(stream);
-        }
-    }
-    let extents = extents(&fst, &tree, &streams);
-
+    let title = Contents::open(reader, folder, node, tmd_bytes, keys)?;
     std::fs::create_dir_all(output)?;
     std::fs::write(output.join("title.tmd"), tmd_bytes)?;
-    std::fs::write(output.join("title.tik"), &ticket)?;
-    if let Some(cert) = &cert {
+    std::fs::write(output.join("title.tik"), &title.ticket)?;
+    if let Some(cert) = &title.cert {
         std::fs::write(output.join("title.cert"), cert)?;
     }
-    let mut buf = vec![0; CHUNK as usize];
-    let none_extents = Vec::new();
-    let none_residue = Residue::default();
-    for content in &tmd.contents {
-        let path = output.join(format!("{:08x}.app", content.id));
-        if content.index == 0 {
-            std::fs::write(&path, &content0)?;
-            report(content.size);
-            continue;
+    for content in &title.tmd.contents {
+        let mut out = BufWriter::new(File::create(
+            output.join(format!("{:08x}.app", content.id)),
+        )?);
+        let h3 = title.write(
+            reader,
+            content,
+            &mut |chunk| Ok(out.write_all(chunk)?),
+            report,
+        )?;
+        out.flush()?;
+        if content.flags & HASHED != 0 {
+            std::fs::write(output.join(format!("{:08x}.h3", content.id)), &h3)?;
         }
-        let extents = extents.get(content.index as usize).unwrap_or(&none_extents);
-        let residue = residues
+    }
+    Ok(())
+}
+
+/// A title's contents, as its revert data and its files in a WUA rebuild
+/// them, one at a time.
+pub(crate) struct Contents {
+    folder: String,
+    pub tmd: nus::Tmd,
+    pub ticket: Vec<u8>,
+    pub cert: Option<Vec<u8>>,
+    /// Content 0, the encrypted FST, kept whole.
+    content0: Vec<u8>,
+    key: Key,
+    extents: Vec<Vec<Extent>>,
+    residues: Vec<Residue>,
+}
+
+impl Contents {
+    /// The title whose revert data is at `node`, and whose files are in the
+    /// WUA's `folder`.
+    pub fn open(
+        reader: &mut Reader,
+        folder: &str,
+        node: usize,
+        tmd_bytes: &[u8],
+        keys: &[Key],
+    ) -> Result<Contents> {
+        let file = |reader: &mut Reader, name: &str| -> Result<Option<Vec<u8>>> {
+            reader
+                .lookup(node, name)
+                .map(|file| reader.read_file(file))
+                .transpose()
+        };
+        let missing = |name: &str| corrupt(format!("the revert data of {folder} has no {name}"));
+        let tmd = nus::parse_tmd(tmd_bytes)?;
+        let ticket = file(reader, "title.tik")?.ok_or_else(|| missing("ticket"))?;
+        let cert = file(reader, "title.cert")?;
+        let residues = parse_residue(&file(reader, "residue")?.ok_or_else(|| missing("residue"))?)?;
+        let fst_content = tmd
+            .contents
+            .iter()
+            .find(|c| c.index == 0)
+            .ok_or_else(|| corrupt(format!("the TMD of {folder} lists no FST")))?;
+        let fst_name = format!("{:08x}.app", fst_content.id);
+        let content0 = file(reader, &fst_name)?.ok_or_else(|| missing("FST"))?;
+
+        let (title_id, encrypted_key) = parse_ticket(&ticket)?;
+        let key = title_key(&content0, title_id, &encrypted_key, keys)?;
+        let size = u32::try_from(fst_content.size)
+            .map_err(|_| corrupt(format!("the FST is {} bytes", fst_content.size)))?;
+        let fst = Fst::open(folder, content0.clone(), size, key)?;
+
+        // Each file's place in the WUA, by the path the FST gives it.
+        let tree = tree(&fst);
+        let title = reader
+            .lookup(0, folder)
+            .ok_or_else(|| corrupt(format!("the WUA has no {folder}")))?;
+        let mut paths = vec![String::new(); fst.entries.len()];
+        let mut streams = Vec::new();
+        for item in &tree {
+            let name = String::from_utf8_lossy(fst.name(item.entry)?).into_owned();
+            paths[item.entry] = match item.parent {
+                0 => name,
+                parent => format!("{}/{name}", paths[parent]),
+            };
+            if !item.is_dir {
+                let (stream, size) = reader
+                    .lookup(title, &paths[item.entry])
+                    .and_then(|file| reader.file(file))
+                    .ok_or_else(|| {
+                        corrupt(format!("the WUA has no {folder}/{}", paths[item.entry]))
+                    })?;
+                if size != fst.extent(item.entry).2 {
+                    return Err(corrupt(format!(
+                        "{folder}/{} is not the size the FST says",
+                        paths[item.entry]
+                    )));
+                }
+                streams.push(stream);
+            }
+        }
+        let extents = extents(&fst, &tree, &streams);
+        Ok(Contents {
+            folder: folder.to_string(),
+            tmd,
+            ticket,
+            cert,
+            content0,
+            key,
+            extents,
+            residues,
+        })
+    }
+
+    /// Hand `content`, encrypted, to `out` a piece at a time, checking it
+    /// against the TMD, and return its H3 hashes if it is hashed.
+    pub fn write(
+        &self,
+        reader: &mut Reader,
+        content: &Content,
+        out: &mut dyn FnMut(&[u8]) -> Result<()>,
+        report: &mut dyn FnMut(u64),
+    ) -> Result<Vec<u8>> {
+        if content.index == 0 {
+            out(&self.content0)?;
+            report(content.size);
+            return Ok(Vec::new());
+        }
+        let none_extents = Vec::new();
+        let none_residue = Residue::default();
+        let extents = self
+            .extents
+            .get(content.index as usize)
+            .unwrap_or(&none_extents);
+        let residue = self
+            .residues
             .get(content.index as usize)
             .unwrap_or(&none_residue);
-        let mut out = BufWriter::new(File::create(&path)?);
+        let key = &self.key;
         let (mut sha1, mut sha256) = (Sha1::new(), Sha256::new());
         if content.flags & HASHED == 0 {
+            let mut buf = vec![0; CHUNK as usize];
             let mut iv = [0; 16];
             iv[..2].copy_from_slice(&content.index.to_be_bytes());
             let mut offset = 0;
@@ -547,18 +614,18 @@ fn rebuild(
                 fill(reader, extents, residue, offset, chunk)?;
                 sha1.update(&*chunk);
                 sha256.update(&*chunk);
-                encrypt(&key, &mut iv, chunk);
-                out.write_all(chunk)?;
+                encrypt(key, &mut iv, chunk);
+                out(chunk)?;
                 offset += len as u64;
                 report(len as u64);
             }
-            out.flush()?;
             check(content, sha1, sha256)?;
-            continue;
+            return Ok(Vec::new());
         }
         let blocks = content.size / BLOCK;
         let mut h3 = Vec::new();
         let mut data = vec![0; DATA as usize];
+        let mut block = vec![0; BLOCK as usize];
         for group in (0..blocks).step_by(GROUP as usize) {
             let count = (blocks - group).min(GROUP);
             // The hash areas need the whole group's data first.
@@ -576,29 +643,28 @@ fn rebuild(
             h3.extend(Sha1::digest(&areas[0][0x280..0x3C0]));
             for (i, area) in areas.iter().enumerate() {
                 let b = group + i as u64;
-                fill(reader, extents, residue, b * DATA, &mut data)?;
+                let (encrypted_area, encrypted_data) = block.split_at_mut(HASHES);
+                fill(reader, extents, residue, b * DATA, encrypted_data)?;
                 let iv: [u8; 16] = area[(b % 16) as usize * 20..][..16].try_into().unwrap();
-                let mut encrypted_area = *area;
-                encrypt(&key, &mut [0; 16], &mut encrypted_area);
-                encrypt(&key, &mut iv.clone(), &mut data);
-                out.write_all(&encrypted_area)?;
-                out.write_all(&data)?;
+                encrypted_area.copy_from_slice(area);
+                encrypt(key, &mut [0; 16], encrypted_area);
+                encrypt(key, &mut iv.clone(), encrypted_data);
+                out(&block)?;
                 report(BLOCK);
             }
         }
-        out.flush()?;
-        std::fs::write(output.join(format!("{:08x}.h3", content.id)), &h3)?;
         check(
             content,
             Sha1::new_with_prefix(&h3),
             Sha256::new_with_prefix(&h3),
-        )?;
+        )
+        .map_err(|e| corrupt(format!("{}: {e}", self.folder)))?;
+        Ok(h3)
     }
-    Ok(())
 }
 
 /// Encrypt `buf` in place with AES-128-CBC, continuing the chain from `iv`.
-fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
+pub(crate) fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
     use aes::Aes128;
     use aes::cipher::{BlockCipherEncrypt, KeyInit};
     let cipher = Aes128::new(key.into());

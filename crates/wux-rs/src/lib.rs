@@ -17,7 +17,7 @@
 //! let keys = wux_rs::load_keys(&wux_rs::cemu_keys_path().unwrap()).unwrap();
 //! // A game and its update, from a NUS folder, make one WUA.
 //! let update = Path::new("update/");
-//! wux_rs::to_wua(&[wux, update], Path::new("game.wua"), &keys, &mut |_| {}).unwrap();
+//! wux_rs::to_wua(&[wux, update], Path::new("game.wua"), &keys, None, &mut |_| {}).unwrap();
 //! ```
 //!
 //! [wudd]: https://github.com/wiiu-env/wudd
@@ -30,7 +30,9 @@ mod image;
 mod install;
 mod io;
 mod keys;
+mod lossless;
 mod nus;
+mod rebuild;
 mod revert;
 mod wua;
 mod wux;
@@ -41,7 +43,9 @@ pub use error::{Error, Result};
 pub use image::Image;
 pub use install::to_nus;
 pub use keys::{cemu_keys_path, load_keys, parse_keys};
+pub use lossless::{DISC_DIR, DiscInfo, STORE_DIR, disc_info, store_entries};
 pub use nus::{ticket_path, tmd_path};
+pub use rebuild::{wua_to_wud, wua_to_wux};
 pub use revert::wua_to_nus;
 pub use wua::{title_id, to_wua};
 pub use wux::{HEADER_SIZE, Header, MAGIC, SECTOR_SIZE, compress, decompress};

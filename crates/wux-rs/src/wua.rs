@@ -23,9 +23,13 @@ use crate::zarchive::{self, Writer};
 ///
 /// `keys` are candidates, as in Cemu's `keys.txt`: among them must be each
 /// disc's key and the Wii U common key, which this crate does not ship.
-/// `progress` is called with input bytes, scaled from the file data converted.
+/// `progress` is called with input bytes, scaled from the bytes read.
 ///
-/// Like Cemu, only a disc's first game (GM) partition is converted.
+/// Like Cemu, only a disc's first game (GM) partition is converted, but the
+/// WUA keeps what rebuilds the whole disc, byte for byte: see
+/// [`crate::wua_to_wux`]. Its update partition, the same on every disc that
+/// carries that update, goes to `store` when given, where it is written
+/// once, and into the WUA otherwise. A WUA holds at most one disc.
 // ponytail: first GM partition only, as Cemu does; loop over every GM
 // partition, each with its own ticket in the SI partition, if discs bundling
 // updates or DLC turn up.
@@ -33,6 +37,7 @@ pub fn to_wua(
     inputs: &[&Path],
     output: &Path,
     keys: &[Key],
+    store: Option<&Path>,
     progress: &mut dyn FnMut(u64),
 ) -> Result<Stats> {
     let mut titles = Vec::with_capacity(inputs.len());
@@ -49,6 +54,12 @@ pub fn to_wua(
         }
         titles.push(title);
     }
+    let discs: Vec<&Title> = titles.iter().filter(|t| t.disc).collect();
+    if discs.len() > 1 {
+        return Err(Error::Unsupported("a WUA of more than one disc".into()));
+    }
+    let disc = discs.first().map(|t| t.folder());
+    let disc_input = inputs.iter().find(|input| !input.is_dir());
     let input_size: u64 = titles.iter().map(|t| t.input_size).sum();
     let trees: Vec<Vec<Item>> = titles.iter().map(|t| tree(&t.fst)).collect();
     // The files written, then every content read for the revert data.
@@ -67,6 +78,10 @@ pub fn to_wua(
             .iter()
             .map(|c| c.size)
             .sum::<u64>();
+    }
+    // The disc read through, then its partitions' streams.
+    if let Some(disc_input) = disc_input {
+        total += 2 * Image::open(disc_input)?.size();
     }
 
     let part = part(output);
@@ -117,7 +132,10 @@ pub fn to_wua(
                 writer.append(&bytes)?;
             }
         }
-        progress(input_size - reported);
+        if let (Some(folder), Some(disc_input)) = (&disc, disc_input) {
+            crate::lossless::write(&mut writer, disc_input, folder, keys, store, &mut report)?;
+        }
+        progress(input_size.saturating_sub(reported));
         let file = writer.finish()?.into_inner().map_err(|e| e.into_error())?;
         file.sync_all()?;
         Ok(Stats {
@@ -137,6 +155,8 @@ struct Title {
     title_id: u64,
     version: u16,
     input_size: u64,
+    /// Whether it comes from a disc.
+    disc: bool,
 }
 
 impl Title {
@@ -189,12 +209,13 @@ impl DiscGame {
         };
         let (si, gm) = (find("SI")?, find("GM")?);
 
-        let location = disc::fst_location(&image, &partitions[si])?;
-        let si_fst = Fst::open(
+        let header = disc::partition_header(&image, &partitions[si])?;
+        let si_fst = Fst::open_in(
             "the SI partition",
-            disc::read_fst(&image, location)?,
-            location.1,
+            disc::read_fst(&image, header.fst)?,
+            header.fst.1,
             disc_key,
+            header.hashed,
         )?;
         let si_source = PartitionSource {
             image: image.clone(),
@@ -258,6 +279,7 @@ fn open_disc(input: &Path, keys: &[Key]) -> Result<Title> {
         title_id,
         version: version as u16,
         input_size: std::fs::metadata(input)?.len(),
+        disc: true,
     })
 }
 
@@ -317,6 +339,7 @@ fn open_nus(dir: &Path, keys: &[Key]) -> Result<Title> {
         title_id,
         version: tmd.version,
         input_size,
+        disc: false,
     })
 }
 
@@ -340,12 +363,30 @@ pub(crate) fn title_key(
     encrypted_key: &[u8; 16],
     keys: &[Key],
 ) -> Result<Key> {
+    let common = common_key(fst, title_id, encrypted_key, keys)?;
+    Ok(decrypt_block(&common, &ticket_iv(title_id), encrypted_key))
+}
+
+/// Which of `keys` is the Wii U common key: the one whose title key, from
+/// the ticket, decrypts the title's FST.
+pub(crate) fn common_key(
+    fst: &[u8],
+    title_id: u64,
+    encrypted_key: &[u8; 16],
+    keys: &[Key],
+) -> Result<Key> {
+    let iv = ticket_iv(title_id);
+    keys.iter()
+        .find(|common| disc::opens_fst(fst, &decrypt_block(common, &iv, encrypted_key)))
+        .copied()
+        .ok_or_else(|| Error::MissingKey("none of the keys is the Wii U common key".into()))
+}
+
+/// The IV a title key is encrypted with: the title ID.
+pub(crate) fn ticket_iv(title_id: u64) -> [u8; 16] {
     let mut iv = [0; 16];
     iv[..8].copy_from_slice(&title_id.to_be_bytes());
-    keys.iter()
-        .map(|common| decrypt_block(common, &iv, encrypted_key))
-        .find(|title_key| disc::opens_fst(fst, title_key))
-        .ok_or_else(|| Error::MissingKey("none of the keys is the Wii U common key".into()))
+    iv
 }
 
 /// The hex value of `<tag ...>value</tag>` in an app.xml.

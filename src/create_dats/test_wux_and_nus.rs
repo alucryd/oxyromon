@@ -49,7 +49,7 @@ async fn test() {
     // then the WUX is listed as the WUD it holds, as in the WUD DAT
     let dat = std::fs::read_to_string(dat_directory.join("Test System (42).dat")).unwrap();
     assert!(dat.contains(
-        r#"<rom name="Test Game (USA).wud" size="720896" crc="0274c8e0" md5="d31c6a655ad789717f43e497f71f7630" sha1="39e947c319b9070a05e736e0d827bacdbce3f072"/>"#
+        r#"<rom name="Test Game (USA).iso" size="1867776" crc="d2066103" md5="286d9857c9a92545a989267065423ed6" sha1="1adab7c09cc400e9f07a31abed691a0965ff66df"/>"#
     ), "{dat}");
     // and the update's folder is one game, its files its ROMs, as in the CDN DAT
     assert_eq!(dat.matches("<game ").count(), 2);

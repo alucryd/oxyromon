@@ -55,7 +55,7 @@ impl Header {
         Ok(header)
     }
 
-    fn to_bytes(self) -> [u8; HEADER_SIZE as usize] {
+    pub(crate) fn to_bytes(self) -> [u8; HEADER_SIZE as usize] {
         let mut bytes = [0; HEADER_SIZE as usize];
         bytes[..8].copy_from_slice(&MAGIC);
         bytes[8..12].copy_from_slice(&self.sector_size.to_le_bytes());

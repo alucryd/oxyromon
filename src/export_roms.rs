@@ -14,7 +14,9 @@ use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
 use super::wbfs::ToWbfs;
-use super::wux::{AsWud, AsWux, ToNus, ToWua, ToWud, ToWux, is_nus_title};
+use super::wux::{
+    AsWua, AsWud, AsWux, STORE_DIR, ToNus, ToWua, ToWux, disc_to_wud, has_extension, is_nus_title,
+};
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Context, Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -27,6 +29,7 @@ use std::collections::HashMap;
 use std::mem::drop;
 use std::path::PathBuf;
 use std::str::FromStr;
+use tempfile::TempDir;
 
 const ALL_FORMATS: &[&str] = &[
     "ORIGINAL", "7Z", "CHD", "CSO", "GDI", "ISO", "NSZ", "NUS", "RVZ", "WBFS", "WUA", "WUX", "ZIP",
@@ -404,9 +407,12 @@ async fn to_archive(
     let (rvzs, roms_by_game_id) =
         partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[RVZ_EXTENSION]);
 
-    // partition WUXs
-    let (wuxs, roms_by_game_id) =
-        partition_games_by_extensions(roms_by_game_id, &romfiles_by_id, &[WUX_EXTENSION]);
+    // partition WUXs and WUAs
+    let (wuxs, roms_by_game_id) = partition_games_by_extensions(
+        roms_by_game_id,
+        &romfiles_by_id,
+        &[WUX_EXTENSION, WUA_EXTENSION],
+    );
 
     // partition ZSOs
     let (zsos, roms_by_game_id) =
@@ -575,17 +581,14 @@ async fn to_archive(
             .await?;
     }
 
-    // export WUXs
+    // export WUXs and WUAs
     for roms in wuxs.values() {
         let tmp_directory = create_tmp_directory(connection).await?;
         let rom = roms.first().unwrap();
         let game = games_by_id.get(&rom.game_id).unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wux()?
-            .to_wud(progress_bar, &tmp_directory.path())
+        let source = romfile.as_common(connection).await?;
+        disc_to_wud(progress_bar, source, &tmp_directory.path().join(&rom.name))
             .await?
             .romfile
             .to_archive(
@@ -1520,6 +1523,59 @@ async fn to_wbfs(
     Ok(())
 }
 
+/// A Wii U disc in the library, in whichever form it is kept: a WUD, as
+/// `.wud` or Redump's `.iso`, alone or alone in an archive, a WUX, or a
+/// lossless WUA. Returns each with the temp directory an archive's WUD is
+/// extracted to.
+async fn wiiu_discs(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    roms_by_game_id: IndexMap<i64, Vec<Rom>>,
+    romfiles_by_id: &HashMap<i64, Romfile>,
+) -> Result<Vec<(CommonRomfile, Option<TempDir>)>> {
+    let (archives, others) = partition_games_by_extensions(
+        roms_by_game_id,
+        romfiles_by_id,
+        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
+    );
+    let mut discs = Vec::new();
+    for roms in archives.values() {
+        let holds_one_wud = roms.len() == 1 && {
+            let name = roms[0].name.to_lowercase();
+            name.ends_with(".wud") || name.ends_with(".iso")
+        };
+        if !holds_one_wud {
+            continue;
+        }
+        let tmp_directory = create_tmp_directory(connection).await?;
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let wud = archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
+            .await?
+            .inner;
+        if wud.clone().as_wud().is_ok() {
+            discs.push((wud, Some(tmp_directory)));
+        }
+    }
+    let (discs_in_library, _) = partition_games_by_extensions(
+        others,
+        romfiles_by_id,
+        &[WUD_EXTENSION, ISO_EXTENSION, WUX_EXTENSION, WUA_EXTENSION],
+    );
+    for roms in discs_in_library.values() {
+        let rom = roms.first().unwrap();
+        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
+        let disc = romfile.as_common(connection).await?;
+        let is_disc = has_extension(&disc.path, WUX_EXTENSION)
+            || has_extension(&disc.path, WUA_EXTENSION)
+            || disc.clone().as_wud().is_ok();
+        if is_disc {
+            discs.push((disc, None));
+        }
+    }
+    Ok(discs)
+}
+
 /// A disc as a NUS folder. Updates and DLC are NUS folders already: export
 /// them as ORIGINAL.
 async fn to_nus(
@@ -1529,65 +1585,29 @@ async fn to_nus(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> Result<()> {
-    // partition archives
-    let (archives, others) = partition_games_by_extensions(
-        roms_by_game_id,
-        &romfiles_by_id,
-        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
-    );
-
-    // partition WUDs
-    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUD_EXTENSION]);
-
-    // partition WUXs
-    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
-
-    // drop others
-    drop(others);
-
-    // export archives
-    for roms in archives.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(WUD_EXTENSION) {
-            continue;
+    for (disc, _tmp) in
+        wiiu_discs(connection, progress_bar, roms_by_game_id, &romfiles_by_id).await?
+    {
+        if has_extension(&disc.path, WUA_EXTENSION) {
+            disc.as_wua()?
+                .to_nus(progress_bar, destination_directory)
+                .await?;
+        } else if has_extension(&disc.path, WUX_EXTENSION) {
+            disc.as_wux()?
+                .to_nus(progress_bar, destination_directory)
+                .await?;
+        } else {
+            disc.as_wud()?
+                .to_nus(progress_bar, destination_directory)
+                .await?;
         }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
-            .await?
-            .inner
-            .as_wud()?
-            .to_nus(progress_bar, destination_directory)
-            .await?;
     }
-
-    // export WUDs
-    for roms in wuds.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wud()?
-            .to_nus(progress_bar, destination_directory)
-            .await?;
-    }
-
-    // export WUXs, read as they are
-    for roms in wuxs.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wux()?
-            .to_nus(progress_bar, destination_directory)
-            .await?;
-    }
-
     Ok(())
 }
 
+/// A disc as a WUA, lossless, with the newest update and DLC in the library,
+/// as Cemu bundles them. Its update partition goes to the store in the
+/// destination, which the WUAs exported there share.
 async fn to_wua(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1595,65 +1615,50 @@ async fn to_wua(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> Result<()> {
-    // partition archives
-    let (archives, others) = partition_games_by_extensions(
-        roms_by_game_id,
-        &romfiles_by_id,
-        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
-    );
-
-    // partition WUDs
-    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUD_EXTENSION]);
-
-    // partition WUXs
-    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
-
-    // drop others
-    drop(others);
-
-    // export archives
-    for roms in archives.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(WUD_EXTENSION) {
-            continue;
+    let store = destination_directory.join(STORE_DIR);
+    for (disc, _tmp) in
+        wiiu_discs(connection, progress_bar, roms_by_game_id, &romfiles_by_id).await?
+    {
+        if has_extension(&disc.path, WUA_EXTENSION) {
+            // Its disc first, to bundle what the library has since added.
+            let tmp_directory = create_tmp_directory(connection).await?;
+            disc.as_wua()?
+                .to_wux(progress_bar, &tmp_directory.path())
+                .await?
+                .to_wua(
+                    connection,
+                    progress_bar,
+                    destination_directory,
+                    &store,
+                    true,
+                )
+                .await?;
+        } else if has_extension(&disc.path, WUX_EXTENSION) {
+            disc.as_wux()?
+                .to_wua(
+                    connection,
+                    progress_bar,
+                    destination_directory,
+                    &store,
+                    true,
+                )
+                .await?;
+        } else {
+            disc.as_wud()?
+                .to_wua(
+                    connection,
+                    progress_bar,
+                    destination_directory,
+                    &store,
+                    true,
+                )
+                .await?;
         }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
-            .await?
-            .inner
-            .as_wud()?
-            .to_wua(connection, progress_bar, destination_directory)
-            .await?;
     }
-
-    // export WUDs
-    for roms in wuds.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wud()?
-            .to_wua(connection, progress_bar, destination_directory)
-            .await?;
-    }
-
-    // export WUXs, read as they are
-    for roms in wuxs.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wux()?
-            .to_wua(connection, progress_bar, destination_directory)
-            .await?;
-    }
-
     Ok(())
 }
 
+/// A disc as a WUX. A WUX has no settings, so one is copied as it is.
 async fn to_wux(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -1661,68 +1666,27 @@ async fn to_wux(
     roms_by_game_id: IndexMap<i64, Vec<Rom>>,
     romfiles_by_id: HashMap<i64, Romfile>,
 ) -> Result<()> {
-    // partition archives
-    let (archives, others) = partition_games_by_extensions(
-        roms_by_game_id,
-        &romfiles_by_id,
-        &[ZIP_EXTENSION, SEVENZIP_EXTENSION],
-    );
-
-    // partition WUDs
-    let (wuds, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUD_EXTENSION]);
-
-    // partition WUXs
-    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
-
-    // drop others
-    drop(others);
-
-    // export archives
-    for roms in archives.values() {
-        if roms.len() > 1 || !roms.first().unwrap().name.ends_with(WUD_EXTENSION) {
-            continue;
+    for (disc, _tmp) in
+        wiiu_discs(connection, progress_bar, roms_by_game_id, &romfiles_by_id).await?
+    {
+        if has_extension(&disc.path, WUA_EXTENSION) {
+            disc.as_wua()?
+                .to_wux(progress_bar, destination_directory)
+                .await?;
+        } else if has_extension(&disc.path, WUX_EXTENSION) {
+            copy_file(
+                progress_bar,
+                &disc.path,
+                &destination_directory.join(disc.path.file_name().unwrap()),
+                false,
+            )
+            .await?;
+        } else {
+            disc.as_wud()?
+                .to_wux(progress_bar, destination_directory)
+                .await?;
         }
-        let tmp_directory = create_tmp_directory(connection).await?;
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        archive_to_common(connection, progress_bar, rom, romfile, &tmp_directory)
-            .await?
-            .inner
-            .as_wud()?
-            .to_wux(progress_bar, destination_directory)
-            .await?;
     }
-
-    // export WUDs
-    for roms in wuds.values() {
-        let rom = roms.first().unwrap();
-        let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wud()?
-            .to_wux(progress_bar, destination_directory)
-            .await?;
-    }
-
-    // export WUXs: a WUX has no settings, so it is copied as is
-    for roms in wuxs.values() {
-        let rom = roms.first().unwrap();
-        let path = romfiles_by_id
-            .get(&rom.romfile_id.unwrap())
-            .unwrap()
-            .as_common(connection)
-            .await?
-            .path;
-        copy_file(
-            progress_bar,
-            &path,
-            &destination_directory.join(path.file_name().unwrap()),
-            false,
-        )
-        .await?;
-    }
-
     Ok(())
 }
 
@@ -1942,7 +1906,8 @@ async fn to_original(
     let (rvzs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[RVZ_EXTENSION]);
 
     // partition WUXs
-    let (wuxs, others) = partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION]);
+    let (wuxs, others) =
+        partition_games_by_extensions(others, &romfiles_by_id, &[WUX_EXTENSION, WUA_EXTENSION]);
 
     // partition ZSOs
     let (zsos, others) = partition_games_by_extensions(others, &romfiles_by_id, &[ZSO_EXTENSION]);
@@ -2087,16 +2052,12 @@ async fn to_original(
             .await?;
     }
 
-    // export WUXs
+    // export WUXs and WUAs, to the WUD named as the DAT names it
     for roms in wuxs.values() {
         let rom = roms.first().unwrap();
         let romfile = romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap();
-        romfile
-            .as_common(connection)
-            .await?
-            .as_wux()?
-            .to_wud(progress_bar, destination_directory)
-            .await?;
+        let source = romfile.as_common(connection).await?;
+        disc_to_wud(progress_bar, source, &destination_directory.join(&rom.name)).await?;
     }
 
     // export ZSOs
@@ -2226,6 +2187,8 @@ mod test_sevenzip_to_zip;
 mod test_single_track_chd_to_iso;
 #[cfg(test)]
 mod test_single_track_cue_bin_to_iso;
+#[cfg(test)]
+mod test_wua_to_wux;
 #[cfg(test)]
 mod test_wud_to_wua;
 #[cfg(test)]

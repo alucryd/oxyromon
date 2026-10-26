@@ -8,6 +8,7 @@
 - Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
 - The web server serves the same MCP server over Streamable HTTP at `/mcp`, sharing its pool and its event stream, so most MCP-triggered actions show up in the web UI; ROM imports and setting changes do not yet
 - Added Wii U support, from the new wux-rs crate: WUX, the lossless compression of a WUD disc image, can be imported, checked, converted to and from, and exported; WUDs and WUXs can be exported to WUA, Cemu's archive of a disc's game files. Exporting to WUA needs the disc key and the Wii U common key, which oxyROMon does not ship: the new `import-keys` subcommand stores them in its data directory, from files in the format of Cemu's `keys.txt`, so a headless server needs no emulator. `create-dats` lists a WUX as the WUD it holds and a Wii U title's folder as one game. Wii U updates and DLC import as games, as No-Intro's CDN DAT lists them, from their title folders under a downloader's names or No-Intro's, each kept in a folder of its own; exporting a disc to WUA adds its newest update and DLC from the library, matched by title ID, as Cemu bundles them. Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console, its contents matching No-Intro's CDN DAT byte for byte. WUAs keep revert data, which Cemu ignores, so `wuxrs` can turn them back into those NUS folders. Its CLI (`wuxrs`) ships in the release archives too
+- WUA is a lossless format: a WUA oxyROMon writes keeps what rebuilds its disc byte for byte, so it can be imported, checked, converted to and from, and set as `PREFER_FORMAT`, and converts back to WUX or to the original ISO, checked against the disc's SHA-1. A disc's update partition goes to a hidden `.update-partitions` folder in its system's directory, decrypted and compressed, once for every disc carrying that update, as NKit keeps its recovery partitions. Importing a WUA brings the update partitions it needs from the folder beside it, and `purge-roms -f` deletes those no WUA needs. Converting a Wii U disc back to its original gives the ISO Redump lists, rather than a `.wud`
 
 ## Changes
 
@@ -26,6 +27,7 @@
 ## Fixes
 
 - Fixed `create-dats` reading each file three times, once per checksum; it now reads it once
+- Fixed `create-dats` sometimes writing a DAT cut short, and `import-roms` sometimes hashing a CIA's TMD before its certificates were written to it
 - Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped, without the same prompt coming back once per hash algorithm, or the file going to the trash because an earlier hash matched nothing
 - Fixed `rebuild-roms` computing completion with the strategy it rebuilt from, leaving games partial after a switch until the next completion update
 - Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them

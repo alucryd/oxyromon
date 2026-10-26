@@ -80,7 +80,7 @@ async fn test() {
     assert_eq!(romfiles.len(), 1);
 
     let rom = roms.first().unwrap();
-    assert_eq!(rom.name, "Test Game (USA).wud");
+    assert_eq!(rom.name, "Test Game (USA).iso");
 
     let romfile = romfiles.first().unwrap();
     assert_eq!(

@@ -64,6 +64,38 @@ pub fn parse_tmd(bytes: &[u8]) -> Result<Tmd> {
     })
 }
 
+/// Parse a Wii TMD, as a vWii title's is: its records are 36 bytes, from
+/// 0x1E4, their hash the SHA-1 of the decrypted content. No Wii content is
+/// hashed, as [`HASHED`] means it.
+pub fn parse_wii_tmd(bytes: &[u8]) -> Result<Tmd> {
+    const RECORDS: usize = 0x1E4;
+    if bytes.len() < RECORDS {
+        return Err(corrupt("the TMD is cut short"));
+    }
+    let count = u16::from_be_bytes([bytes[0x1DE], bytes[0x1DF]]) as usize;
+    let records = bytes
+        .get(RECORDS..RECORDS + count * 36)
+        .ok_or_else(|| corrupt("the TMD is cut short"))?;
+    Ok(Tmd {
+        title_id: u64::from_be_bytes(bytes[0x18C..0x194].try_into().unwrap()),
+        version: u16::from_be_bytes([bytes[0x1DC], bytes[0x1DD]]),
+        contents: records
+            .chunks_exact(36)
+            .map(|r| {
+                let mut hash = [0; 32];
+                hash[..20].copy_from_slice(&r[16..36]);
+                Content {
+                    id: u32::from_be_bytes(r[..4].try_into().unwrap()),
+                    index: u16::from_be_bytes([r[4], r[5]]),
+                    flags: u16::from_be_bytes([r[6], r[7]]) & !HASHED,
+                    size: u64::from_be_bytes(r[8..16].try_into().unwrap()),
+                    hash,
+                }
+            })
+            .collect(),
+    })
+}
+
 /// A NUS title's clusters: each is the `.app` of the content of its index.
 pub struct NusSource {
     files: Vec<Option<File>>,

@@ -1,5 +1,5 @@
 use super::crc32::Crc32;
-use super::mimetype::{WUD_EXTENSION, WUX_EXTENSION};
+use super::mimetype::{ISO_EXTENSION, WUA_EXTENSION, WUX_EXTENSION};
 use super::model::*;
 use super::progress::*;
 use super::util::*;
@@ -154,14 +154,20 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         clrmamepros: vec![],
     };
 
-    // One game per file, except that a WUX is listed as the WUD it holds, and a
-    // NUS title's folder, an update or DLC as Nintendo's servers deliver it, as
-    // one game whose ROMs are its files, as No-Intro lists them.
+    // One game per file, except that a WUX or a lossless WUA is listed as the
+    // disc it holds, an ISO as Redump lists it, and a NUS title's folder, an
+    // update or DLC as Nintendo's servers deliver it, as one game whose ROMs
+    // are its files, as No-Intro lists them.
     let mut games_xml: Vec<GameXml> = vec![];
     let mut walker = WalkDir::new(&input_directory).into_iter();
     while let Some(entry) = walker.next() {
         let Ok(entry) = entry else { continue };
         let path = entry.path();
+        // the update partitions lossless WUAs share, not games of their own
+        if path.is_dir() && entry.file_name() == wux_rs::STORE_DIR {
+            walker.skip_current_dir();
+            continue;
+        }
         if path.is_dir() && entry.depth() > 0 && wux_rs::tmd_path(path).is_some() {
             walker.skip_current_dir();
             let game_name = path.file_name().unwrap().to_str().unwrap().to_string();
@@ -181,17 +187,23 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
             print_subheader(progress_bar, &format!("Processing \"{}\"", file_name));
             let game_name = path.file_stem().unwrap().to_str().unwrap().to_string();
-            let is_wux = path
-                .extension()
-                .is_some_and(|e| e.eq_ignore_ascii_case(WUX_EXTENSION));
-            let rom_name = match is_wux {
-                true => format!("{game_name}.{WUD_EXTENSION}"),
-                false => file_name,
+            let is = |extension: &str| {
+                path.extension()
+                    .is_some_and(|e| e.eq_ignore_ascii_case(extension))
             };
-            games_xml.push(game_xml(
-                game_name,
-                vec![rom_xml(progress_bar, path, rom_name)?],
-            ));
+            let disc_name = format!("{game_name}.{ISO_EXTENSION}");
+            // What a lossless WUA keeps of its disc needs no reading.
+            let wua = match is(WUA_EXTENSION) {
+                true => wux_rs::disc_info(path)
+                    .with_context(|| format!("Failed to read \"{}\"", path.display()))?,
+                false => None,
+            };
+            let rom = match wua {
+                Some(info) => disc_rom_xml(disc_name, &info),
+                None if is(WUX_EXTENSION) => rom_xml(progress_bar, path, disc_name)?,
+                None => rom_xml(progress_bar, path, file_name)?,
+            };
+            games_xml.push(game_xml(game_name, vec![rom]));
         }
     }
 
@@ -235,6 +247,8 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         .write_all(buffer.as_bytes())
         .await
         .context("Failed to write DAT file")?;
+    // tokio writes in the background: wait for it, or the DAT may be cut short
+    dat_file.flush().await.context("Failed to write DAT file")?;
 
     Ok(())
 }
@@ -250,6 +264,20 @@ fn game_xml(name: String, roms: Vec<RomXml>) -> GameXml {
         cloneof: None,
         romof: None,
         comment: None,
+    }
+}
+
+/// A lossless WUA's disc as a ROM named `name`, from what the WUA keeps.
+fn disc_rom_xml(name: String, info: &wux_rs::DiscInfo) -> RomXml {
+    let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+    RomXml {
+        name,
+        size: info.size as i64,
+        crc: Some(format!("{:08x}", info.crc32)),
+        md5: Some(hex(&info.md5)),
+        sha1: Some(hex(&info.sha1)),
+        merge: None,
+        status: None,
     }
 }
 
@@ -300,5 +328,7 @@ fn rom_xml(progress_bar: &ProgressBar, path: &Path, name: String) -> Result<RomX
 
 #[cfg(test)]
 mod test_dat;
+#[cfg(test)]
+mod test_wua;
 #[cfg(test)]
 mod test_wux_and_nus;

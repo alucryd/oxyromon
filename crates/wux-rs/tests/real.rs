@@ -3,8 +3,9 @@
 //! common key (Cemu's by default). Set `WUXRS_WUA` to a WUA Cemu made of the
 //! same game to compare the game's files with it, and `WUXRS_ADD` to the NUS
 //! folder of its update to convert that too. It also converts the disc to a
-//! NUS folder, checking every content against its TMD, and reverts its WUA to
-//! NUS folders, comparing them with the disc's and the update's.
+//! NUS folder, checking every content against its TMD, reverts its WUA to
+//! NUS folders, comparing them with the disc's and the update's, and rebuilds
+//! the disc from its WUA, byte for byte, its update partition in a store.
 //!
 //! ```sh
 //! WUXRS_DISC=game.wux WUXRS_WUA=game.wua cargo test --release -p wux-rs -- --ignored
@@ -73,7 +74,7 @@ fn a_real_disc_converts_to_what_cemu_makes() {
     let add = std::env::var_os("WUXRS_ADD").map(PathBuf::from);
     let mut inputs = vec![disc.as_path()];
     inputs.extend(add.as_deref());
-    wux_rs::to_wua(&inputs, &output, &keys, &mut |_| {}).unwrap();
+    wux_rs::to_wua(&inputs, &output, &keys, None, &mut |_| {}).unwrap();
     let mut ours = ArchiveReader::open(&output).unwrap();
     assert!(ours.verify_integrity().unwrap());
 
@@ -147,7 +148,7 @@ fn a_real_disc_reverts_from_its_wua() {
     let mut inputs = vec![disc.as_path()];
     inputs.extend(add.as_deref());
     let wua = dir.path().join("disc.wua");
-    wux_rs::to_wua(&inputs, &wua, &keys, &mut |_| {}).unwrap();
+    wux_rs::to_wua(&inputs, &wua, &keys, None, &mut |_| {}).unwrap();
     let reverted = dir.path().join("reverted");
     wux_rs::wua_to_nus(&wua, &reverted, &keys, &mut |_| {}).unwrap();
 
@@ -182,4 +183,27 @@ fn a_real_disc_reverts_from_its_wua() {
             );
         }
     }
+}
+
+#[test]
+#[ignore]
+fn a_real_disc_rebuilds_from_its_wua() {
+    let Some(disc) = disc() else { return };
+    let keys = std::env::var_os("WUXRS_KEYS")
+        .map(PathBuf::from)
+        .or_else(wux_rs::cemu_keys_path)
+        .unwrap();
+    let keys = wux_rs::load_keys(&keys).unwrap();
+    let dir = tempfile::tempdir_in(disc.parent().unwrap()).unwrap();
+    let (wua, store) = (dir.path().join("disc.wua"), dir.path().join("store"));
+    wux_rs::to_wua(&[&disc], &wua, &keys, Some(&store), &mut |_| {}).unwrap();
+
+    // The disc as it was, which rebuilding checks against its SHA-1 too.
+    let original = wux_rs::Image::open(&disc).unwrap();
+    let info = wux_rs::disc_info(&wua).unwrap().unwrap();
+    assert_eq!(info.size, original.size());
+    assert_eq!(info.sha1, sha1(original));
+    let back = dir.path().join("back.wux");
+    wux_rs::wua_to_wux(&wua, &back, Some(&store), &keys, &mut |_| {}).unwrap();
+    assert_eq!(info.sha1, sha1(wux_rs::Image::open(&back).unwrap()));
 }

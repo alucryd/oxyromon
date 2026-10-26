@@ -38,7 +38,7 @@ fn a_wua_reverts_to_the_titles_it_was_made_from() {
     std::fs::create_dir(&update).unwrap();
     common::nus(&update);
     let wua = dir.path().join("g.wua");
-    wux_rs::to_wua(&[&wux, &update], &wua, &keys(), &mut |_| {}).unwrap();
+    wux_rs::to_wua(&[&wux, &update], &wua, &keys(), None, &mut |_| {}).unwrap();
 
     // when
     let output = dir.path().join("reverted");
