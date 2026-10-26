@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:86de7bc2311f2704bb1e153027f52d7e3dc7d2b6ba40c4aa25b47a14b5f4ea23",
+  "pageVersion": "sha256:a8146728e98f42908c59bc91a08a39804e41b40cefaa6902069215aae75cb5b1",
   "claims": [
     {
       "id": "claim_cb1540e6994f491db3adbd31fdb7589f",
@@ -234,7 +234,7 @@
         },
         {
           "resource": "repo://src/mcp/write.rs#L107-L111",
-          "version": "repo-lines-v1:sha256:24abd8066c219af1bef0dbbf824906e2c5910c60ada77adbd955d34c7de6b390:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIyYjBiMDlhOTYzNWRlM2U3Y2VkOTJiZjE3N2U1YmUzMzczNGIxODI0ZmYwOTE3ZjQxNzRiNjhjZTFjODVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZjMTUzYTAzNTQxMDA2ZGVkNjdmMzNmZTZmNjY3NzE1MzYyNWUyZTNhZTM5MWIyYjRmMDk4MWI4ZTlmMzJjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFmMTNiYWZlNTgyMmNmMjBhMTcxZjhjNGU4YWI0ODcxZWFlZWJiOTNiZTY1YTBmZWNiMDNkMTFjYzA5MjIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwYzcwOTZkMDUzZGJiOWEzMjI4YjU3YzRhMGZjMWZmN2RjYTNiNmM4N2MxMjYyMDY0MTdkMDBiOWE2OWQ1NCJ9"
+          "version": "repo-lines-v1:sha256:d136e2d809f8dd4cab1cfdba72aba44a68fdb2aecf84a9c9a599e19497030a2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIyYjBiMDlhOTYzNWRlM2U3Y2VkOTJiZjE3N2U1YmUzMzczNGIxODI0ZmYwOTE3ZjQxNzRiNjhjZTFjODVhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZjMTUzYTAzNTQxMDA2ZGVkNjdmMzNmZTZmNjY3NzE1MzYyNWUyZTNhZTM5MWIyYjRmMDk4MWI4ZTlmMzJjMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFmMTNiYWZlNTgyMmNmMjBhMTcxZjhjNGU4YWI0ODcxZWFlZWJiOTNiZTY1YTBmZWNiMDNkMTFjYzA5MjIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2QwYzcwOTZkMDUzZGJiOWEzMjI4YjU3YzRhMGZjMWZmN2RjYTNiNmM4N2MxMjYyMDY0MTdkMDBiOWE2OWQ1NCJ9"
         },
         {
           "resource": "repo://src/mcp/write.rs#L604-L608",
@@ -447,7 +447,7 @@
           "version": "repo-lines-v1:sha256:ec1bd854c05159451f5d803ae47c67b66c0d6311a895e32ce357886bdee58771:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZTdkMmU1YzEyNWU2Y2QyNzUxNGIzYjFhMTEyYmJkOTcyOGEzODhkMTU2Y2FmOGMxNDA0MGZlOTdkZTVkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjA4ODhlOTVhMTA5YTZkMjBhYmIzMWE0ZDU2NmM1ZDNkNDM3MjRhYmI1ZTUzMTkxYmU4NjkwYTg1OGM1OTFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQxYzkxOTE4ZDE0Y2Y0ZWUxYjlmMTgzMmQ4Mjk2NzQ1MTllMTAwMTNkZWM5ZjBjNDA1OTVlNzNjMGE2NjdhMyJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L689-L696",
+          "resource": "repo://src/wux.rs#L718-L725",
           "version": "repo-lines-v1:sha256:cee9816effbdb2f1610f6fa4b558e40972e50ef173c5afdb631ac39568dab742:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhkZjVkNTU5Mjk4ZTllYmFmOWNhYzc2Y2NmOTYyOGUzN2JmNzA1NjEyNTBiOTdkZjJjNzE5NmE0YWM4MzhjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUyMDM4NmU1OTQyNGEzYzVlY2JhNDkzOGEzOTk0NjAxYTg5NjYxYWEwNjBiZWY0NTlmNDllMmQwMjIxNzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
@@ -479,7 +479,7 @@
       "statement": "MCP download_dats downloads and imports each named Redump system, continues past a failed one, and returns DownloadDatsOut listing every system under imported, up_to_date or failed with its error, mapped from the DatOutcomes that the shared download_redump_systems collector returns; it is a tool error only when every system failed and notifies resource changes only when something was imported.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L360-L403",
+          "resource": "repo://src/download_dats.rs#L416-L459",
           "version": "repo-lines-v1:sha256:b116adcfe80938aa887278caec17f462ed2669a9b756495f71e8ff8c1da57f01:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1YWI3YjZkOWI2ZTE5NTY1M2ZjOGI1NWY2M2YzNjQ2MDY4NTVjNDU0ZmM1NjU4NTFmMzFhMmYwOTQ1ZGE3NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MjcyYjdiNGY0YzA4ZmZmYzdjNzViNzJiZDJkNjIzYjNlYmU3YTQwYjBkYzVmZjkwZDJiNDEwMTFjYWE4NDAifQ"
         },
         {
@@ -516,13 +516,13 @@
       "evidence": [
         {
           "resource": "repo://src/mcp/write.rs#L61-L720",
-          "version": "repo-lines-v1:sha256:f0abf684b75c570b0ff3497c8f3a4c9c9db5fdb768ecc7f60d272fe40df58d81:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMTc2MzA0MTU5YTRiODhkMTEzMWE1NzJiMTk3MTJlYWE3ZThiNzIyZmFkN2YxMzU1MjM4Zjc4NGZiYmYxZWI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjNWNkZWY4MDg1YWU3NGFiNjM2ZDY0NTlmNWM2ZDVmYmZiMGRiMjY0ZjFiMGQ3NWJhYzUxOWM5YjNmNjcxN2FjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMzhlMTljNzk4ZGE0NjQzYjM2YTQ5OWZjMzQxNDZjYzQ0M2Q4MjdlYmZlNDE0ODBmNDQ2YmY3NjBiNGE5ZjA1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWFlZThlYTQyM2VkYWE3NmE1MjY3MzYwYjc5YmVkMjFhZDlhYTFlZTJhMjM1ZTRkZDgzMmIwNGVmNzJlNWI4In0"
+          "version": "repo-lines-v1:sha256:33abca4fcf0b5741d8784b5c3889ac07bcd9dbc8e9c52e2bb74a1122bf9ad322:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMTc2MzA0MTU5YTRiODhkMTEzMWE1NzJiMTk3MTJlYWE3ZThiNzIyZmFkN2YxMzU1MjM4Zjc4NGZiYmYxZWI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjNWNkZWY4MDg1YWU3NGFiNjM2ZDY0NTlmNWM2ZDVmYmZiMGRiMjY0ZjFiMGQ3NWJhYzUxOWM5YjNmNjcxN2FjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMzhlMTljNzk4ZGE0NjQzYjM2YTQ5OWZjMzQxNDZjYzQ0M2Q4MjdlYmZlNDE0ODBmNDQ2YmY3NjBiNGE5ZjA1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OWFlZThlYTQyM2VkYWE3NmE1MjY3MzYwYjc5YmVkMjFhZDlhYTFlZTJhMjM1ZTRkZDgzMmIwNGVmNzJlNWI4In0"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T22:40:03.236Z"
   }
 }

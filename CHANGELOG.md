@@ -22,6 +22,7 @@
 - Renaming, deleting or adding an entry in a 7z copies the rest of the archive as it is encoded rather than going to 7-Zip or re-encoding it; only deleting from a solid block re-encodes the entries left in it
 - `purge-roms`, and updates by `import-dats`, `download-dats` and `import-irds`, now delete the directories they leave empty, except for the ROM, system and `Trash` directories
 - `download-dats` keeps going when one Redump system fails, reporting it, and fails the run at the end naming every system that did; an empty ZIP, or one with several DATs, is now such a failure rather than a warning
+- `download-dats` fetches Redump DATs from its new home, redump.info, and offers its new systems: PlayStation 4 and 5, Xbox One and Series X, Wii U, Polymega, more arcade boards, and video and audio discs among them. Systems already imported from redump.org move to redump.info, and those Redump renamed take their new name, keeping their directory through a custom name
 - The web UI's Upload and Download menus are one Import menu, where fetching Redump DATs is "DATs from Redump…": a Download menu read as saving files to the browser
 
 ## Fixes

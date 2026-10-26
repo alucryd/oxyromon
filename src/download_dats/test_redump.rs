@@ -36,7 +36,7 @@ async fn test() {
 
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
-        .and(path_regex(r"^/datfile/[a-z0-9-]+/$"))
+        .and(path_regex(r"^/datfile/[A-Z0-9-]+$"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(zip_data))
         .mount(&mock_server)
         .await;

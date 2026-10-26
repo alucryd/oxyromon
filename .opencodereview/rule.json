@@ -46,6 +46,11 @@
       "rule": "Generated wiki under openwiki/. Check: every repo:// resource path referenced in .claims exists at head, and every claim about external tools, spawned processes or build files still matches the module that implements it; a diff that deletes a source module or drops the last external tool must trigger a wiki refresh. A claim that a build dependency is gone is checked against Cargo.lock at head too, not only the Dockerfile or manifests: a crate can stay in the graph after the binary it wraps is no longer invoked."
     },
     {
+      "path": "migrations/**.sql",
+      "merge_system_rule": true,
+      "rule": "SQLite migration, run at startup by sqlx::migrate!(). Check: a data migration that renames or rewrites rows guards every column it writes against the UNIQUE constraints on it, both column constraints and CREATE UNIQUE INDEX statements in other migration files (systems.name, systems.custom_name); an aborted migration is an application that will not open. Before accepting a rename as safe, reproduce its constraint set on a scratch sqlite3. A row whose rename is skipped must not be left half-migrated by a later statement in the same file."
+    },
+    {
       "path": "tests/*.dat",
       "merge_system_rule": true,
       "rule": "Test DAT fixture. Check: the header <name> is the file name without its date and extension, as in the other fixtures (`Test System (20200721) (MAME).dat` has `<name>Test System (MAME)</name>`), so imported system names stay predictable; every rom's size and hashes match the fixture file the tests feed it, and a rom with a `merge` attribute matches its parent's by CRC."
