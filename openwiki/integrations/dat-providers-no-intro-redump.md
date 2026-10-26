@@ -12,6 +12,8 @@ sources:
     resource: repo://data/No-Intro_NES.xml
   - id: openwiki-source-9594fdc8eb7c8cc0ab2dd040
     resource: repo://frontend/src/components/download_dat_modal.rs
+  - id: openwiki-source-720480293ae71568113cbf54
+    resource: repo://migrations/20261026000001_move_redump_to_redump_info.sql
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -80,10 +82,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T22:40:03.236Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -94,14 +96,14 @@ families feed it, and only one of them can be reached over the network.
 | Provider | Contents | How it enters oxyromon |
 | --- | --- | --- |
 | No-Intro (dat-o-matic) | cartridge consoles, older computers | `import-dats` with a hand-downloaded DAT; `download-dats -n -u` can **only check for updates** |
-| Redump | CD/DVD optical systems | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs |
+| Redump (redump.info) | CD/DVD/BD optical systems | `import-dats`, or `download-dats -r` which **fetches and imports** brand-new and refresh DATs |
 | MAME / FBNeo | arcade | `import-dats` only (Progetto-Snaps for MAME, the libretro FBNeo repo for FBNeo, with `-a` for FBNeo); never fetched |
 
 The asymmetry is documented in the README (where "Find a way to automatically download
 No-Intro DAT files" is still an open TODO) and encoded in `download_dats::main`:
 No-Intro publishes a summary (`profile.xml`) but no direct DAT links, so the No-Intro
 branch prints `Not supported` unless `-u` is passed; Redump publishes direct
-`/datfile/<code>/` ZIPs but no summary, so it can both download and update. The
+`/datfile/<CODE>` ZIPs but no summary, so it can both download and update. The
 `-n/--nointro` and `-r/--redump` flags conflict with each other and one of them is
 required (`required_unless_present`). Of the remaining flags, `-u` and `-a` reach both
 providers, but `-f/--force` and `-s/--save` are only passed down the Redump branches —
@@ -135,11 +137,11 @@ regions.
 
 Two constants define provider provenance and they are written into `systems.url`
 verbatim from the DAT header (`<url>` of a No-Intro DAT is `www.no-intro.org`, of a
-Redump DAT `http://redump.org/`):
+Redump DAT `https://redump.info/`):
 
 ```rust
 pub const NOINTRO_SYSTEM_URL: &str = "www.no-intro.org";
-pub const REDUMP_SYSTEM_URL: &str = "http://redump.org/";
+pub const REDUMP_SYSTEM_URL: &str = "https://redump.info/";
 ```
 
 `find_systems_by_url` is then the only way the code asks "which of my systems came
@@ -150,29 +152,40 @@ there. Provenance therefore depends on the DAT header being truthful, not on how
 DAT was obtained — a Redump DAT imported by hand is just as "Redump" as one fetched
 by `download-dats`.
 
+Redump moved from `http://redump.org` to `https://redump.info`, and the new DAT
+headers carry the new URL. Because provenance is an exact string match, the
+`move_redump_to_redump_info` migration rewrites existing systems' `url` so they stay
+in the Redump lists, and gives the twelve systems Redump renamed their new names,
+keeping the old name as `custom_name` so their directories do not move. A rename
+that would collide with an existing name or custom name is skipped, and that row
+stays on the old URL. See
+[Data Model, SQLite Usage and Migrations](../architecture/data-model-and-migrations.md).
+
 ## The Redump system-code catalogue
 
 `REDUMP_SYSTEMS_CODES` is a compile-time `phf_map!` of the exact Redump system name
-to the Redump system code used in the datfile URL (`Nintendo - GameCube` => `gc`,
-`Sony - PlayStation` => `psx`, `Arcade - Sega - Naomi 2` => `naomi2`, …). It is the
+to the uppercase Redump system code used in the datfile URL (`Nintendo - GameCube` =>
+`GC`, `Sony - PlayStation` => `PSX`, `Arcade - Sega - Naomi 2` => `NAOMI2`, …). The
+names are the DAT headers' `<name>`, not the labels on redump.info's downloads page,
+which differ (`Sony PlayStation` on the page, `Sony - PlayStation` in the DAT). It is the
 whole set of systems oxyromon can fetch, and it is wrapped in `cfg_if!`:
 
 ```rust
 cfg_if! {
     if #[cfg(test)] {
         static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! {
-            "Test System" => "ts"
+            "Test System" => "TS"
         };
     } else {
-        static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! { /* ~52 systems */ };
+        static REDUMP_SYSTEMS_CODES: phf::Map<&str, &str> = phf_map! { /* 111 systems */ };
     }
 }
 ```
 
-Under `cfg(test)` the catalogue collapses to a single `Test System` => `ts` entry.
+Under `cfg(test)` the catalogue collapses to a single `Test System` => `TS` entry.
 That is what keeps the download tests offline and deterministic: a `download_redump_dats`
 run with `-a` iterates exactly one system and therefore fetches exactly one URL, and the
-failure tests can hard-code that URL as `/datfile/ts/`. No production code path differs —
+failure tests can hard-code that URL as `/datfile/TS`. No production code path differs —
 only the data. Adding a Redump system means adding one line to the production half of
 this map; nothing else needs to change.
 
@@ -188,7 +201,7 @@ Both consumer lists are drawn **from the catalogue**, intersected with the datab
 Because a name is only ever offered if the catalogue holds its code, a system
 imported from a hand-downloaded Redump DAT under a name the catalogue does not know
 is never offered for a download. Note the asymmetry: the *update* list
-(`update_redump_dats`) is built from the database via `prompt_for_systems(..., Some(REDUMP_SYSTEM_URL), ...)`, not from the catalogue, so every name it yields must have a catalogue code — `fetch_redump_dat` looks it up with `REDUMP_SYSTEMS_CODES.get(system_name).unwrap()`. A Redump system whose DAT header name has drifted out of the catalogue is a panic, not a skip.
+(`update_redump_dats`) is built from the database via `prompt_for_systems(..., Some(REDUMP_SYSTEM_URL), ...)`, not from the catalogue, so it can yield a name with no catalogue code, such as a system whose rename the migration skipped. `fetch_redump_dat` then fails that one system with `Unknown Redump system`, and the batch fails at the end naming it.
 
 ## Fetch control flow
 
@@ -210,7 +223,7 @@ flowchart TD
     SEL --> BATCH["download_redump_batch"]
     BATCH --> COL["collect_redump_dats"]
     COL --> DL["download_redump_dat per system"]
-    DL --> GET["GET base/datfile/CODE/, HTTP errors included"]
+    DL --> GET["GET base/datfile/CODE, HTTP errors included"]
     GET -->|"fails"| ERR["error for this system"]
     GET --> Z{"ZIP entry count"}
     Z -->|"zero or several"| ERR
@@ -230,7 +243,7 @@ flowchart TD
 ```
 
 Per-system fetch is `download_redump_dat`, which wraps `fetch_redump_dat`:
-`GET {base}/datfile/{code}/` into memory, rejecting an HTTP error status,
+`GET {base}/datfile/{code}` into memory, rejecting an HTTP error status,
 `ZipArchive::new` over the bytes, extraction into a `TempDir` under
 `TMP_DIRECTORY`, then `parse_dat(..., skip_header = true)` and
 `import_dat(..., None, None, force)`. It returns a `DatOutcome`: `Imported` when
@@ -388,7 +401,7 @@ declarations and uses `wiremock` so no request leaves the machine:
 
 | Test | What it pins |
 | --- | --- |
-| `src/download_dats/test_redump.rs` | mocks `^/datfile/[a-z0-9-]+/$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs imported and the `-s` copy written |
+| `src/download_dats/test_redump.rs` | mocks `^/datfile/[A-Z0-9-]+$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs imported and the `-s` copy written |
 | `src/download_dats/test_redump_failures.rs` | an empty ZIP, a two-entry ZIP and a 404 each return `Err` and leave the database empty |
 | `src/download_dats/test_nointro_failures.rs` | an HTTP error status and an unreachable host on the No-Intro profile each return `Err` |
 | `src/download_dats/test_nointro.rs` | mocks `/profile.xml` with `tests/profile.xml` and runs the update check against a DAT-imported system |

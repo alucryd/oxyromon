@@ -90,10 +90,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-26T22:40:03.236Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -365,7 +365,7 @@ the moves happen as late as they do.
 ## download-dats: fetch straight into the same importer
 
 `download_redump_dat` is a thin transport wrapper over the two primitives above:
-`GET {base}/datfile/{code}/` into memory, `ZipArchive` over the bytes, extraction
+`GET {base}/datfile/{code}` (base `https://redump.info`) into memory, `ZipArchive` over the bytes, extraction
 into a `TempDir` under `TMP_DIRECTORY`, `parse_dat(..., skip_header = true)`,
 `import_dat(..., None, None, force)`
 ([src/download_dats.rs](../../src/download_dats.rs#L414-L500)). It returns
