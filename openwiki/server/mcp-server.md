@@ -60,10 +60,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T22:40:03.236Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -163,7 +163,7 @@ Write tools (`import_dats`, `download_dats`, `import_roms`, `sort_roms`,
 `check_roms`, `convert_roms`, `set_setting`, `purge_roms`, `purge_systems`,
 `purge_irds`) run to completion inside the call — MCP has no job queue. Most
 also carry an annotation hint: `idempotent_hint = true` on the safe-repeat
-actions, `open_world_hint = true` on `download_dats` (it reaches redump.org), and
+actions, `open_world_hint = true` on `download_dats` (it reaches redump.info), and
 `destructive_hint = true` on the three purges, so clients can decide how eagerly
 to auto-invoke each. `convert_roms` is annotated only as non-read-only.
 

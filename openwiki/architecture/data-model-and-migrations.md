@@ -48,6 +48,8 @@ sources:
     resource: repo://migrations/20230106190403_add_playlist_id_to_games.sql
   - id: openwiki-source-18a298e115dabea0e367ca81
     resource: repo://migrations/20230528135145_use_pipe_as_separator_in_settings.sql
+  - id: openwiki-source-b640177eb50004fab2bb2291
+    resource: repo://migrations/20240314193153_add_custom_name_to_system.sql
   - id: openwiki-source-b39c9617d4d43cd58bcd101d
     resource: repo://migrations/20240401202426_add_parent_id_to_romfiles.sql
   - id: openwiki-source-4a81f4ec2f943035f4a23d76
@@ -68,6 +70,8 @@ sources:
     resource: repo://migrations/20260810000001_add_archive_compression_algorithms.sql
   - id: openwiki-source-543688cbca9cffab391f2283
     resource: repo://migrations/20260811000001_add_prefer_format_setting.sql
+  - id: openwiki-source-720480293ae71568113cbf54
+    resource: repo://migrations/20261026000001_move_redump_to_redump_info.sql
   - id: openwiki-source-c3dbd15c40e250cdf06fed8d
     resource: repo://src/chd.rs
   - id: openwiki-source-f1234afbb261ce7190a87845
@@ -114,10 +118,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
+generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-26T22:40:03.236Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -558,3 +562,16 @@ Index creation is its own migration genre: `(size, crc)`, `(size, md5)` and
 columns get explicit indexes because SQLite does not create them, and the
 partial unique index on `games(external_id, system_id)` keeps IRD/DAT external ids
 unique only where they exist.
+
+Data migrations that rewrite rows must respect every unique constraint on the
+columns they write, because a failing migration panics at startup and the app
+will not open. `move_redump_to_redump_info` is the worked example: when Redump
+moved to redump.info and renamed twelve systems, each rename sets
+`custom_name = COALESCE(custom_name, name)` so the system directory, which
+`get_system_directory` derives from the custom name when one is set, stays put.
+Both `systems.name` (declared `UNIQUE` in `create_systems`) and
+`systems.custom_name` (the `systems_custom_name` unique index added later in
+`add_custom_name_to_system`) are guarded with `NOT EXISTS` subqueries, so a
+collision skips that rename instead of aborting the file. The closing statement
+moves every remaining `http://redump.org/` row to `https://redump.info/` except
+the old names whose rename was skipped, so no row is left half-migrated.
