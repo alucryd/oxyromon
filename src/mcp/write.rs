@@ -105,7 +105,7 @@ impl OxyromonMcp {
     }
 
     #[tool(
-        description = "Download the DAT files of Redump systems from redump.org and import them — the systems listed by downloadable_systems. A DAT no newer than the imported one changes nothing; the result lists each system as imported, up_to_date or failed.",
+        description = "Download the DAT files of Redump systems from redump.info and import them — the systems listed by downloadable_systems. A DAT no newer than the imported one changes nothing; the result lists each system as imported, up_to_date or failed.",
         annotations(read_only_hint = false, idempotent_hint = true, open_world_hint = true)
     )]
     async fn download_dats(

@@ -41,7 +41,7 @@ async fn test() {
     // an empty ZIP is an error, and nothing is imported
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
-        .and(path("/datfile/ts/"))
+        .and(path("/datfile/TS"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(zip_with(&[])))
         .mount(&mock_server)
         .await;
@@ -62,7 +62,7 @@ async fn test() {
     // so is a ZIP with more than one entry
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
-        .and(path("/datfile/ts/"))
+        .and(path("/datfile/TS"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(zip_with(&[
             ("a.dat", b"<xml/>" as &[u8]),
             ("b.dat", b"<xml/>" as &[u8]),
@@ -86,7 +86,7 @@ async fn test() {
     // and an HTTP error status
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
-        .and(path("/datfile/ts/"))
+        .and(path("/datfile/TS"))
         .respond_with(ResponseTemplate::new(404).set_body_string("not a zip"))
         .mount(&mock_server)
         .await;
