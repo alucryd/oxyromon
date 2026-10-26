@@ -2767,6 +2767,26 @@ pub async fn find_romfiles(connection: &mut SqliteConnection) -> Vec<Romfile> {
     .expect("Error while finding romfiles")
 }
 
+/// The files holding a NUS title's TMD, under either naming: one per update
+/// or DLC in the library, in any system.
+pub async fn find_romfiles_of_tmds(connection: &mut SqliteConnection) -> Vec<Romfile> {
+    sqlx::query_as!(
+        Romfile,
+        "
+        SELECT DISTINCT romfiles.*
+        FROM romfiles
+        JOIN roms ON roms.romfile_id = romfiles.id
+        WHERE roms.name = 'title.tmd'
+        OR roms.name = 'tmd'
+        OR roms.name LIKE 'tmd.%'
+        ORDER BY romfiles.path
+        ",
+    )
+    .fetch_all(connection)
+    .await
+    .expect("Error while finding the romfiles of TMDs")
+}
+
 pub async fn find_romfiles_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Romfile> {
     let sql = format!(
         "
