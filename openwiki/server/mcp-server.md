@@ -60,10 +60,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -193,7 +193,7 @@ list games instead of machines, such as FBNeo's, as arcade systems.
 
 `convert_roms` upper-cases `params.format` before the check, because
 `convert_roms::ALL_FORMATS` is uppercase (`ORIGINAL`, `7Z`, `CHD`, `CSO`, `NSZ`,
-`RVZ`, `WUX`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes) and the validated
+`RVZ`, `WUA`, `WUX`, `ZIP`, `ZSO` — the same values `PREFER_FORMAT` takes) and the validated
 value is what goes into the argv, where clap's `PossibleValuesParser` compares it
 case-sensitively. The tool description and the `format` parameter doc list
 exactly those nine values. `tests/mcp_stdio.rs` pins both sides: `"zip"` is

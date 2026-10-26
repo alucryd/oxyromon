@@ -120,10 +120,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 
@@ -435,14 +435,17 @@ the same layout wux-rs's own tests use
 
 | File | Role |
 | --- | --- |
-| `Test Game (USA).wud` | A 704 KiB encrypted disc, declared by `Test System (20261025) (WUD).dat` |
+| `Test Game (USA).wud` | A 1.8 MiB encrypted disc with an update partition, declared by `Test System (20261025) (WUD).dat` under Redump's name, `Test Game (USA).iso` |
 | `Test Game (USA).wux` | The same disc as a WUX, which imports and checks against the WUD's row |
 | `Test Game (USA).keys.txt` | Made-up keys in Cemu's format: the disc key, then a stand-in common key. `src/wux.rs` reads it in place of the data directory's keys under `cfg(test)` |
 | `Test Game (USA) (Update)/` | An update as a NUS folder under No-Intro's CDN names: `tmd.48`, `cetk.48`, contents `00000010` to `00000012` and `00000012.h3`. Declared by `Test System (20261025) (CDN).dat` |
 
 These drive `import_roms/test_wux.rs` and `test_nus.rs`, `check_roms/test_wux.rs`,
-the WUD and WUX cases under `convert_roms/` and `export_roms/`, and
-`create_dats/test_wux_and_nus.rs`. The export tests that bundle an update import
+the WUD, WUX and WUA cases under `convert_roms/` and `export_roms/`,
+`import_roms/test_wua.rs`, `check_roms/test_wua.rs` and
+`test_wua_without_its_update.rs`, `purge_roms/test_foreign_store.rs`, and
+`create_dats/test_wux_and_nus.rs` and `test_wua.rs`. No WUA ships as a fixture:
+the WUA tests write one from the WUD first, its update partition in a store. The export tests that bundle an update import
 both DATs, so `ToWua` finds the update by title ID; the ticketless case removes
 the `cetk` and checks that the update is left out of the WUA.
 

@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -443,10 +443,10 @@ writing an empty string.
 
 The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES` in
 `frontend/src/state.rs` feeds the settings `SelectField`, and `FORMATS` in
-`ConvertRomModal` feeds the convert dialog. Both hold the nine `convert-roms` formats,
-`WUX` included, and nothing checks them against `convert_roms::ALL_FORMATS`, so a new
-format must be added to both by hand. The UI offers no export, so the export-only
-Wii U targets `WUA` and `NUS` never appear in it.
+`ConvertRomModal` feeds the convert dialog. Both hold the ten `convert-roms` formats,
+`WUA` and `WUX` included, and nothing checks them against `convert_roms::ALL_FORMATS`,
+so a new format must be added to both by hand. The UI offers no export, so the
+export-only Wii U target `NUS` never appears in it.
 
 Dialog placement in the tree matters. The per-system `SettingsModal` and
 `DeleteModal` sit **outside** the `.page` flex column on purpose: a `wa-dialog`

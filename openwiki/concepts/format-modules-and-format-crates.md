@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -95,7 +95,7 @@ the MCP `status` tool.
 | `iso` | in-module Rust, a port of bchunk | CUE/BIN → ISO; vendored ISO 9660 reader | none |
 | `crc32` | `crc32fast` behind `digest` traits | CRC32 hashing primitive | none |
 | `cia` | `cia-rs` (`crates/cia-rs`) | CIA | `"built-in"` |
-| `wux` | `wux-rs` (`crates/wux-rs`) | WUD, WUX; exports WUA and NUS folders | `"built-in"`, or `"built-in, no Wii U keys imported"` |
+| `wux` | `wux-rs` (`crates/wux-rs`) | WUD (as `.wud` or `.iso`), WUX, lossless WUA; exports WUA and NUS folders | `"built-in"`, or `"built-in, no Wii U keys imported"` |
 
 Every built-in backend returns the literal string `"built-in"` from
 `get_version()` because a linked library has no runtime version to query; the
@@ -103,7 +103,7 @@ function exists only so the dependency table has one uniform shape. `nsz` is the
 exception with content: it appends `prod.keys not found`, since keys are needed
 only when compressing an NSP whose members include NCAs, and the warning exists
 so a user does not discover the missing file mid-compression. `wux` does the same
-for Wii U keys: only WUA and NUS exports need them, so it reports
+for Wii U keys: only WUA and NUS conversions need them, so it reports
 `no Wii U keys imported` when `import-keys` has not stored a `keys.txt` yet. `gdi`, `iso`,
 `wbfs` and `crc32` export no `get_version()` at all, so they appear in no
 dependency table.
@@ -116,8 +116,8 @@ used to be the two exceptions, each spawning an external tool (`chdman`,
 
 Because every conversion target is now linked in, availability is a static
 question rather than a runtime probe: `convert_roms::format_available` is a
-`matches!` over the nine formats `convert-roms` lists, `WUX` among them, and
-`export_roms` accepts one longer list, adding `GDI`, `ISO`, `NUS`, `WBFS` and `WUA`. Neither consults a tool version,
+`matches!` over the ten formats `convert-roms` lists, `WUA` and `WUX` among them, and
+`export_roms` accepts one longer list, adding `GDI`, `ISO`, `NUS` and `WBFS`. Neither consults a tool version,
 and `import_roms` dispatches a `.cia` without any probe either.
 
 The version gates that used to guard CHD features are gone with the subprocess.
@@ -417,21 +417,32 @@ so `import_cia` zips them.
 
 ## `wux.rs`: Wii U discs, keys and bundled titles
 
-`src/wux.rs` wraps `wux-rs` with two romfile types, `WudRomfile` and
-`WuxRomfile`, both guarded by a case-insensitive extension test.
+`src/wux.rs` wraps `wux-rs` with three romfile types. `WuxRomfile` is guarded
+by a case-insensitive extension test. `WudRomfile` accepts a `.wud` or Redump's
+`.iso` only when the image carries the Wii U disc magic. `WuaRomfile` is a WUA
+wux-rs wrote losslessly, and carries the `wux_rs::DiscInfo` it keeps.
 `WuxRomfile` hashes without a temp file: `get_hash_and_size` opens a
 `wux_rs::Image`, which decompresses on read, and streams it through
 `common::hash_reader`, because a WUD is 25 GB. `Check` takes the same route
 unless the DAT declares a header, in which case it extracts a WUD first.
+`WuaRomfile` answers `get_hash_and_size` from its disc info without reading the
+disc, and its `Check` compares that info with the DAT, then rebuilds a WUX in a
+temp directory, which wux-rs checks against the disc's SHA-1.
 
-`ToWux` and `ToWud` call `wux_rs::compress` and `wux_rs::decompress`. Two
-export-only traits need keys: `ToWua` writes Cemu's ZArchive of the decrypted
-files, and `ToNus` writes the disc's title as a NUS folder. Both load the
+`ToWux` and `ToWud` call `wux_rs::compress` and `wux_rs::decompress` for a WUD or
+WUX, and `wux_rs::wua_to_wux` and `wua_to_wud` for a WUA, which find its update
+partitions in the nearest `.update-partitions` store up from its folder
+(`find_store`). Two traits need keys: `ToWua` writes Cemu's ZArchive of the
+decrypted files plus what rebuilds the disc, its update partition going to the
+store it is given, and `ToNus` writes the disc's title as a NUS folder. A WUA
+also goes to NUS, through its revert data. Keys are needed for the WUA rebuild
+too. Both load the
 `keys.txt` that `import-keys` stored in the data directory, and bail with
 `No Wii U keys imported` when it is missing. In tests the keys come from
 `tests/Test Game (USA).keys.txt` instead.
 
-`ToWua` also bundles the newest update and DLC from the library. It reads the
+With `bundle`, which export sets and conversion does not, `ToWua` also bundles
+the newest update and DLC from the library. It reads the
 disc's title ID, scans every romfile that is a TMD, and keeps titles whose ID
 shares the disc's low half and whose type is `0005000E` (update) or
 `0005000C` (DLC). A title without a ticket is skipped with a warning, since

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7de222a74b17918bb0682447acce2c872ee40858d3c989ff1a4ee7dcb8b77911",
+  "pageVersion": "sha256:be0b009d07e5493cf11d171a6e7151660c2d49af3c8c13fc24317943101e80e2",
   "claims": [
     {
       "id": "claim_caa17141f634409dbccb9366097931e2",
@@ -265,11 +265,11 @@
           "version": "repo-lines-v1:sha256:f5353e9b6ce2bad7e6e694f4828ac261fd60559d45db1ae53316d65f5dcd8bd2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VjNDE4MWYzOGIwMjUyNmNkMWM5ZjdkODUwMGY4MTU3Zjk1MTRjY2FlNmZkM2JlOTU1NWUwYjM2MTAxNjIzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDZmOWJmOWZlZTQ1YjBiNDgzM2I1NmY2YzU2ZmY3ZTg4ZjZjNDU1ZjZkZTNkOWZkMDdhNDdjYjlhMWQxZTQ2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjUzYWM3ODRhZWM3ZWFiYmJkNGE2NjE0ZjczZTQzYTEwZmRjMWExZjM5NWUyMjAzMDM3ZjcyMjJjZWQ0NTEzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRlOTRiOTkyNmRkZDM3NmQzMTg2NmJjZTdmOWE5OTYxZWZjMTZmMjAwMGY5NzdmM2IwMjBkZjRjYTE1ZmVmOSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L167-L171",
+          "resource": "repo://Cargo.toml#L168-L172",
           "version": "repo-lines-v1:sha256:7edb4c494679308e76e58c3528a0e9a8ccbd761e90ef1b25fc996ddc45b052ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg1NjNlNmRiYmVhNmVmZDMyOTJjOGUzYTg4MDVhODQyNjQxYjVkYmM0YWRjNjhiMTQxZjg5MzJhNThlYTc3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUwYjE1NmZkZWIyZjc3NjRmZTI4M2YwZDQ0YzJmZjgzNTBiM2EyYzA2Mzc2ZDkwNGQ0Y2Q4YWQxM2FiYzMyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JlZmE3MjZlNGQxYjFhMGU0MGQzYTVjZmY3OGFlMzI2YjNhZGVkN2Y1Y2ZmOWQ1ZWE1ZDQzZGJhZDcyNTdhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM2NDg4NDIxYzE5OWExM2Y1NmZlZmU0NzIyMWM4YjI4MmNjYWQyNjk3MTViNjU0OGYwMWFhNTk5NmUyYTc2NSJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L79-L79",
+          "resource": "repo://Cargo.toml#L80-L80",
           "version": "repo-lines-v1:sha256:9e1624a226dc1f2efb1891ae18390c74e22f4f2f0d8b49370504c4fd0bd4de4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNiOWM3NDgwMTBjN2Y1ZTMwODY2NDg3YTI2N2FiM2UwMTA1NjMzYTAyMGUxYjQ4MmFlNjczOWQ1NGE4MWU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA0MGEzM2U3OTI1NTBhOWQzZGMwNmQxYzQ2MjE5ZGUyNzE1NTRkN2ZhMTZhMmRlN2ZlMWJkYjQ4Y2UwMGYxMyJ9"
         },
         {
@@ -441,12 +441,12 @@
       "statement": "CHD and CIA stopped being child-process dependencies in oxyromon 0.25: chd-rs replaced chdman and cia-rs replaced ctrtool, both modules' get_version() return the literal \"built-in\", and chdman and ctrtool survive only as $CHDMAN/$CTRTOOL/$PATH reference binaries for the crates' tests. The README's supported-formats table names cia-rs as the CIA backend.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L16-L18",
+          "resource": "repo://CHANGELOG.md#L17-L19",
           "version": "repo-lines-v1:sha256:74e91bfda0ebc101ec5fda0bea1f51a396c7b033398336621ec5b28b07016348:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM1NDg0NGQwNzExNGYzOTFiNWQ5NmU2ZjAzZTJjZTkzYjNlYjVlZjg0YjJkMDU1ZDRmYmYyZWQ0NGIzNzI0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZjYmIxZDJmYjU5ZGQ1YTc5N2E2Yjc2YjYzY2EyYjM0MTZmOTRkNjUxMjAwMDI5ZTM1ZTJmZTAxZDNhNjYxMSJ9"
         },
         {
           "resource": "repo://README.md#L202-L224",
-          "version": "repo-lines-v1:sha256:19eabef93bf7f645a5d3b0ffc066cc2eee2318d4cf6d665d9fbca68ecbcb7317:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxOGJiMDNmMWQzYjY4YWExYjkwZjJiNmYzN2JkMjdiY2M4ZDZiYzY2OWRmMTk5ODgwZTI4ZWUzOGViMTA4OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzOTAzYmM1NDZjMWI1YjA4MWZiOTA2OWFjNWZjZTEzZWU1MDE3Mjc0Yjk1MjFiOWI4YjkwZmYwZjc2ZTFiNGYifQ"
+          "version": "repo-lines-v1:sha256:0cc82a06e9adb9103793d8d224ba4eda9c3a2e62e94e5c7d32fc06da4b3b8f7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTVkODQyOTNlYjQ1NDk1ZTA5ZDhjMzEyN2U5NDZjYWI4Yzc2YWEzNzUxMzNkZWE1OGIzZDBmZDllOTZhMWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxOGJiMDNmMWQzYjY4YWExYjkwZjJiNmYzN2JkMjdiY2M4ZDZiYzY2OWRmMTk5ODgwZTI4ZWUzOGViMTA4OWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNGMyMTlmY2JkMjAyOTE5NTEyNTdiMWRjODY3ODkxYmRmMDk0NGYxMTIxZTI0Njc0OWZlZTNhMTIwZjc2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzOTAzYmM1NDZjMWI1YjA4MWZiOTA2OWFjNWZjZTEzZWU1MDE3Mjc0Yjk1MjFiOWI4YjkwZmYwZjc2ZTFiNGYifQ"
         },
         {
           "resource": "repo://crates/chd-rs/tests/cd.rs#L17-L25",
@@ -471,7 +471,7 @@
       "statement": "chd-rs takes its FLAC codec from the pure-Rust rusty_flac (with the libm feature, so encoder decisions do not depend on the platform libm) instead of libflac-sys, so building it needs no CMake; it is otherwise the largest consumer of the workspace codec set — flate2 with the zlib-rs backend, zstd, lzma-rust2 (encoder + optimization), sha1, crc32fast and rayon.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L31-L31",
+          "resource": "repo://Cargo.toml#L32-L32",
           "version": "repo-lines-v1:sha256:a294e7b7433a9d2178e33262334843eaf17e55d76819d055b424fa3881d40c6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5NGU3Yjc0MzNhOWQyMTc4ZTMzMjYyMzM0ODQzZWFmMTdlNTVkNzY4MTlkMDU1YjQyNGZhMzg4MWQ0MGM2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5NGU3Yjc0MzNhOWQyMTc4ZTMzMjYyMzM0ODQzZWFmMTdlNTVkNzY4MTlkMDU1YjQyNGZhMzg4MWQ0MGM2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZmYzZjMWM5OTdmZmFjZmEyYWYzNWYxNWNiMTFkYTcwYTk5MzAyOGY3OTBjYTZjZmNiMmNhZGVhZTIxMDEzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGJkZDUwOTA3NDk2NjI3ZWM1ODI0NGQzNzMzMWE1OWRjNDg3OTE3MTQ4NmJmNjEwOWRmNDJhOTJkZTFmZjUxOCJ9"
         },
         {
@@ -489,11 +489,11 @@
       "statement": "flate2's backend is chosen once in [workspace.dependencies] (default-features = false, features = [\"zlib-rs\"]) and inherited plainly by chd-rs and oxyromon, so the workspace compiles only the zlib-rs backend; Cargo's feature unification would otherwise add the default miniz_oxide backend whenever any member inherits flate2 with defaults.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L31-L31",
+          "resource": "repo://Cargo.toml#L32-L32",
           "version": "repo-lines-v1:sha256:a294e7b7433a9d2178e33262334843eaf17e55d76819d055b424fa3881d40c6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5NGU3Yjc0MzNhOWQyMTc4ZTMzMjYyMzM0ODQzZWFmMTdlNTVkNzY4MTlkMDU1YjQyNGZhMzg4MWQ0MGM2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTI5NGU3Yjc0MzNhOWQyMTc4ZTMzMjYyMzM0ODQzZWFmMTdlNTVkNzY4MTlkMDU1YjQyNGZhMzg4MWQ0MGM2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZmYzZjMWM5OTdmZmFjZmEyYWYzNWYxNWNiMTFkYTcwYTk5MzAyOGY3OTBjYTZjZmNiMmNhZGVhZTIxMDEzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGJkZDUwOTA3NDk2NjI3ZWM1ODI0NGQzNzMzMWE1OWRjNDg3OTE3MTQ4NmJmNjEwOWRmNDJhOTJkZTFmZjUxOCJ9"
         },
         {
-          "resource": "repo://Cargo.toml#L89-L89",
+          "resource": "repo://Cargo.toml#L90-L90",
           "version": "repo-lines-v1:sha256:b972f97380729fcfb4e40bf679724b2aabffe18c459620e9178fe08b0a696865:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk3MmY5NzM4MDcyOWZjZmI0ZTQwYmY2Nzk3MjRiMmFhYmZmZTE4YzQ1OTYyMGU5MTc4ZmUwOGIwYTY5Njg2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk3MmY5NzM4MDcyOWZjZmI0ZTQwYmY2Nzk3MjRiMmFhYmZmZTE4YzQ1OTYyMGU5MTc4ZmUwOGIwYTY5Njg2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQzMTE0OGJhZmRjNjY4NGVmOTE4NTE3NTVlZWNkM2Q4MjQ2YWEyMTJmMGZjOGVkYjkzYWUwYWFiNjdlYjk1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmM2YzAxOGU3OWU2NDg1N2I5ZTNiMWI4MzdlZmJjN2MzN2ZkNzFlY2E1M2ZjNjk1NzFlYzY3OGM3YmE0OTc3MSJ9"
         },
         {
@@ -507,7 +507,7 @@
       "statement": "Until rusty_flac publishes Encoder::set_block_size, which chd-rs needs to encode at MAME's per-hunk block sizes, the root Cargo.toml patches rusty_flac to a pinned revision of the alucryd/rusty_flac fork's feat/block-size branch, so a cargo update cannot move it.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L179-L183",
+          "resource": "repo://Cargo.toml#L180-L184",
           "version": "repo-lines-v1:sha256:c6c749aad116d395d3a6edbee8fbf336c2ebef4f2d6283bd9f0944751ed25b5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhhNzhiMTdkZWIxYzEyY2U2ZmYyYjY0M2E5M2ZmMzg5YzFlMmU2MTE3ZDZkMDJmNGVmYzM1ZGNhOWU4NGEwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmMzZGU1NzU0ZjZjODk3Y2FmNjE3MzBiMDFjNzg4MWI3YjZmMWRjNWNmY2Y5NWJhOGUwNjkwNGI5YzA1NzBmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkMjM3YmY2ZTlmNzg1YTQ4ODI3YTliMGFmYWJlYTk3M2ViM2Q2ODg3NmE5OGNkZDNmZDZhYjFiNmZlNDEyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -521,7 +521,7 @@
       "statement": "wux-rs is the one crate in crates/ that ports no tool oxyromon ran: it follows wudd for WUX and Cemu for the disc and WUA layout, is licensed GPL-3.0-or-later like wudd, ships the wuxrs CLI behind the default cli feature, and is depended on by oxyromon with default-features = false.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L107-L107",
+          "resource": "repo://Cargo.toml#L108-L108",
           "version": "repo-lines-v1:sha256:eb9322b652770330d38f1a67cdbbda7362a73b530792a75c56cf932d7145d601:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI5MzIyYjY1Mjc3MDMzMGQzOGYxYTY3Y2RiYmRhNzM2MmE3M2I1MzA3OTJhNzVjNTZjZjkzMmQ3MTQ1ZDYwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI5MzIyYjY1Mjc3MDMzMGQzOGYxYTY3Y2RiYmRhNzM2MmE3M2I1MzA3OTJhNzVjNTZjZjkzMmQ3MTQ1ZDYwMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNhMTYxNTlmYWMwZGQ1ZDY1ZTUzYWY1ZDNlMTYwMDQ3YjE2MGIxMWIyNTliNjM0OTI1YTdiZGUyOGVlZTUwNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBlNmQ3OTc0MTE2MjFiMDJlMWZlMjgwN2U0YWVhNDhlMDRhNWUyMjkyZmMzZTY4MTgwMDBjOTVhM2MyMDYzOCJ9"
         },
         {
@@ -529,8 +529,8 @@
           "version": "repo-lines-v1:sha256:1db42ff62dd879845f159fbc32a46359a10400dfee7524a5cfa652cbc6f9222d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTA3ZjIzNTkxYjI2MTViYTAxNTI1NzdiZjQ0OGMyZTNmNzQ1NWIwYTQwYjg0MzJkYmM0NmM4NDEyNjFjOWI2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjE4YmIwM2YxZDNiNjhhYTFiOTBmMmI2ZjM3YmQyN2JjYzhkNmJjNjY5ZGYxOTk4ODBlMjhlZTM4ZWIxMDg5YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWMzYWUyMDI3NDI0NDMxMDZjNzNlM2VlYzdlZDliMDZmMzE5NWIzZTZiMDExZTQzM2Q4ZjE1MmQyNDQwYjUzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTM5MDNiYzU0NmMxYjViMDgxZmI5MDY5YWM1ZmNlMTNlZTUwMTcyNzRiOTUyMWI5YjhiOTBmZjBmNzZlMWI0ZiJ9"
         },
         {
-          "resource": "repo://crates/wux-rs/Cargo.toml#L1-L45",
-          "version": "repo-lines-v1:sha256:9a312b1f2ffa4599e4898f5b2bb55e3efde9d02e891a0c9adaf2f4d282b43057:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OWZlNmUzYzNjZDc4YTJiMWIwYjE5YjM2MzljN2Y4MDk3ODRhNmVkNjk1YmJjODU5NGFlODdmOWViMmExMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://crates/wux-rs/Cargo.toml#L1-L47",
+          "version": "repo-lines-v1:sha256:3d257627851f37bf2abf9d2d1bee756cef4d6839e1a2a809002df8f920b23ad9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OWZlNmUzYzNjZDc4YTJiMWIwYjE5YjM2MzljN2Y4MDk3ODRhNmVkNjk1YmJjODU5NGFlODdmOWViMmExMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -543,10 +543,42 @@
           "version": "repo-lines-v1:sha256:0e8333ac42662f57dc7e81aedb1f48bcb4e44c587e210ef7919d6157595908fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYTUzYWYxYTY3NThjNWZmZTRmMzI0NTdlMGI5NmU2YTVlODQ2YzFiM2JiN2I4NjlhZmM1MzNlODZhZTJiOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cabb4d35b52043de9adb50c3638d21de",
+      "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/src/lib.rs#L30-L52",
+          "version": "repo-lines-v1:sha256:37e52863756e1f52d757ffeb4954601f6909129b043e4154485537cdff85c9e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODU3NWFlNjFhZThiYmU1OWU3Yzg2MzRkMDMzNzU1MTIwN2NiOWI5ZmUwNzhhOTlmN2VjZTZmZTc2Mjg3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZjZiMmE3NDFjYmJmYmI0YTg0ZDc1YmNjYzYxZWMxM2M5MzM5OGU5NzIzNWVmOTUzNmE0Y2ZhM2NiNzM5MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYzRlZWFhMzQ0NTVhMzNkYTRhZWE3NmE4ODA4NTk4NWZhMzk1MjNlZjFmYzZhYmY3N2IwZWVkZWQxMmU5ZDkifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/src/rebuild.rs#L28-L66",
+          "version": "repo-lines-v1:sha256:a17ad96aaba98df5c9ff965de65b1ee468551b5365d7495f2c82d7359c6a6d2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMTBlNDVmYzg4MzQ1OGU1OWM2NzA1NjJiYWQ0NGVmZDI0YmU1MWI4NTkxZjAzMjBhYjQ2ODRlYzUyNzlhMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMThhOTY0NjI2NzY5YTQzM2Y1NmU1Y2ZjYWY4ZTMxMTQ5ZmEyODA5N2I4ZjU5YmE2ZGY5M2FlMGUxYmJhYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MWY5NDkyZGM0NzRiZTY0MDYyZTJiNWNmZmZiZTcxOWVjZDg1NjUyYzM1M2U1ODFkMzdmYzdjOTRmNDI4NTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MWRlOWJlY2Y3ZTFlNGI5ZjYzZjRhN2NiYmZhNGIyNDJmOGU5Mjg5Y2NhYjcwNmYxM2JhOGU5YjgzYjdiZmEifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/src/wua.rs#L36-L42",
+          "version": "repo-lines-v1:sha256:aa1aed7edddc5714dea3b11302ffa62f4574d3cda9b706e8b0b8043bd81b81aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM4ZDEyMDliZjZhYjRjMmE3MzViODM0MmExNTJmNWU0NzUzNDVhYmEwYTE1ZmQzZDljNzE2YTQ1Yzc2ZjU4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdkMjljMGU5ZGVkM2E4MjA3ZTUxYjE5ODE5ZjJkMDE5ZmM4ZThjZDg5NzBkNjRkMmRiZWY0MzY0NzE4ZjExMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNjY2YwOGM3NmQ4NzAwOTI1NGE5MDFkY2I5ZGY4MDFkYzNmYjVkN2U4NWI1YTkxYzVjM2YxNWRmODRlY2I4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmRlZGRlNzFjNzRjYjIxYzE3ODliY2U0Y2ViYzA0OGY5NWZmZjRlOTc2YmQzMWJmOTczOTg4NTQ3NzA4ZWYwNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_74ae8b2ba43f460cb7b2cd254f7f342c",
+      "statement": "The wuxrs CLI's --updates flag names the store of update partitions WUAs share, defaulting to the .update-partitions folder next to each WUA, and a .wua input is rebuilt to its WUX unless -f nus asks for NUS folders.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/src/bin/wuxrs/main.rs#L130-L175",
+          "version": "repo-lines-v1:sha256:3d7975b81cb1f3a6bb796cbe07145d56e4bf48ed667ff3017c099ea789d46174:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZmVhMGQ3NmVjZGQ3OGU4NmQwN2EzNzQyNjA1NzNkNjczMzgzZGY5ZDRiZTc5OGU3M2Q5MDY4ZGUzNDI5NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ZTk2YzcwODM0YTRhNDY0NjFjMTdmYTNhYWU4ODVjODFjYjYyYjFhYWUyN2NjOTI3YTc1MzkxYTBkYjQ2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0YWM1OTBlNjcxYjJhNjAzYjNhZDY5OTZmMTllN2M5ZWI5MzFhM2IwNWU0YmU2NjVlMmYxZDkxMjczNzVhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NDM4YTgyYzU1OWQ2MzJmOWZiODc1MTU1YTU2ZmFmOTViMjgxMDAwNThmNjFhNGVkNWE2NmFiZGM5MjE5ZTYifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/src/bin/wuxrs/main.rs#L40-L60",
+          "version": "repo-lines-v1:sha256:7ebeb94b2cb1e0cc90a224796021cc54a67b21273309fba83f99f1497ae78fe6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWVlZjJiMTk1NDBlYzZlNzE1MjYyOThkZDVhMGViMTE0NDZlNTRhYjZmNTA4YmVlNWZjZDY1Yjc0N2Y3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWI5NzVhMDg0NzlmYmRjNDc3ZmQ5NjViZGVlNjljYTk1OWEwZGU5NGY1YWNiODYxOTBjYzU0NGU3ZGNmYzEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-25T14:55:31.619Z"
+    "at": "2026-10-26T20:09:06.498Z"
   }
 }

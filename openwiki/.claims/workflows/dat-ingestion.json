@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:34739055948cb3fafbd0ef0d44041d13ca6043ae9ba782979de74cf0b4a38533",
+  "pageVersion": "sha256:4a645fb6486cd86f1a087bbf3e0d593f13c44122c64c1238fcc544128d9aebd6",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -268,7 +268,7 @@
     },
     {
       "id": "claim_fe1adb69066640858fb4179ff073e42f",
-      "statement": "During rom upsert, roms with status=\"nodump\" are skipped entirely and roms.original is set false when the DAT file name carries an extension listed in NON_ORIGINAL_EXTENSIONS (chd, cso, nsz, rvz, wux, zso, 7z, zip).",
+      "statement": "During rom upsert, roms with status=\"nodump\" are skipped entirely and roms.original is set false when the DAT file name carries an extension listed in NON_ORIGINAL_EXTENSIONS (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip).",
       "evidence": [
         {
           "resource": "repo://src/import_dats.rs#L761-L855",
@@ -279,8 +279,8 @@
           "version": "repo-lines-v1:sha256:8088b997968d452e38988d931fc5af8fcb5c6a709c5f3e575d082be6c3fb5810:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NzQ5YmM4MzNjOTE5NTdhYzM4MGY4NTJmZjhiYzc2ZDg0ZmRlMjAxMTQ1MmU5NTE3ZmIxZjY0ZjFjZjE4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwM2Q1MGIzYmQ4ODc1NDkxZWU3NGRjZDAyOGMyNGI0ZmY3MTBjN2IwNTlmZDIxMzI0YzllZTEzNThkMGI0ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://src/mimetype.rs#L40-L49",
-          "version": "repo-lines-v1:sha256:90a35c9d6c4d800e5d95ed7c3ef5d952f219814852692f589998a3be75524efb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Yjg1YTJjNTU2MTJlNWViNDY0NzYxOTFhMTJhZGIwMTQ1Nzk3MWI0ZTU4MjA4YWM0Mzk1YWEzMDI5MTVmZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjZkN2E1OGNhMzg5M2U3NDIxN2VlMGIxY2FkMGVjNjFhZWNjNzllNTY5OTI1MmViMDNjYzgxOWU4ZjMyNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MjdkMTI3M2VlZjE4Mjc3NjU4NmUzNjBiOGZjMWE4NTkyNDQ1NmEyMWE1MDlmODczOTk0YjY2NGQ3NDkxYzcifQ"
+          "resource": "repo://src/mimetype.rs#L39-L49",
+          "version": "repo-lines-v1:sha256:8c67d0162f8206d53b514d8da4e755124168015075da1829ee7c48371b194023:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MTdmODBhODhhZGNjOTIwMDFlMjc3NzU1ZGJhODdlMDE2YWI0OWMwZDczMDFiNTZjMjhjYzE3NWU2NTgyZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2ViYTNmN2NjMTk4ZjNkODgzNDFiNmU5Y2JkYjY1Y2UyYjQ3ZmYyMmZlMGE4MzI4YTJhMTYzNzNmZWE3YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NzA1NDkwN2I1YjkwZGQwMjM5MDYxZGQ1OTMxZTAyZjQ1OGEyZjYwNDM5ZjBhM2MxMzJkZjdmMTk1NWM5MDYifQ"
         }
       ]
     },
@@ -392,19 +392,23 @@
     },
     {
       "id": "claim_3fe619ff60a1425b8534e4b230ffa245",
-      "statement": "create-dats emits one <game> per file with size, CRC32, MD5 and SHA1 computed in a single read, except that a WUX is listed as the WUD it holds and a subdirectory holding a NUS title's TMD becomes one game whose ROMs are its files; it writes the Logiqx DOCTYPE, and defaults the DAT version to the creation timestamp YYYYMMDD-HHMMSS so a regenerated self-made catalog passes the lexicographic version gate instead of being skipped as older.",
+      "statement": "create-dats emits one <game> per file with size, CRC32, MD5 and SHA1 computed in a single read, except that a WUX is listed as the .iso it holds, a lossless WUA as its .iso from the disc info it keeps without reading it, .update-partitions stores are skipped, and a subdirectory holding a NUS title's TMD becomes one game whose ROMs are its files; it writes the Logiqx DOCTYPE, flushes the file before returning, and defaults the DAT version to the creation timestamp YYYYMMDD-HHMMSS so a regenerated self-made catalog passes the lexicographic version gate instead of being skipped as older.",
       "evidence": [
         {
-          "resource": "repo://src/create_dats.rs#L121-L304",
-          "version": "repo-lines-v1:sha256:9d2d5503cf3478e7942924b60d11bf9fd5a264fc529f2135af6a39e4d2176209:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkODk3NzFmZTFiNjYyODg3NWFhMjNlN2RiZTRhYTcxNDYxZDAwY2RmYjY2ZGRmMTFiOWQ4MjBhYzU4OTdmZGY2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ZjIzNjg5ZGVjNWM0NmU0ZGJjMDc5YTc4MDI3NDY4OGEzZGM2ZTk4M2ZkMWU2YWE1N2ViZGJlZGI4YTI1Mzc3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZWM5ODI3Nzk0MmEyYjYxZjgyZThkZDdiY2UzZWJmZWIxOWVlM2FiYjVjZjE0YWJlMjcwZTFhNzk4NGM3YjEzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://src/create_dats.rs#L121-L330",
+          "version": "repo-lines-v1:sha256:43d95b14a7c9681d20a127907bc25991a2ea8565801aed862ddd9d3a996c2fac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkODk3NzFmZTFiNjYyODg3NWFhMjNlN2RiZTRhYTcxNDYxZDAwY2RmYjY2ZGRmMTFiOWQ4MjBhYzU4OTdmZGY2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYzJjYzc1N2VhYzNhNjJjNjE2YTc2ZDIwNDk0NGE4ZjUzNzdiYzA2YWM4ZDZjMWMzMDdiYjExZjMxZTYwYTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZWM5ODI3Nzk0MmEyYjYxZjgyZThkZDdiY2UzZWJmZWIxOWVlM2FiYjVjZjE0YWJlMjcwZTFhNzk4NGM3YjEzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOGYxM2IzODYwNjgzMmViNjE0ZmJhZGY5YTQxNWNhMzFjZmEzMWU0NTNhOWNlYzQzY2Q3OTBlZmJiMzM3NzdhIn0"
         },
         {
           "resource": "repo://src/create_dats/test_dat.rs#L37-L69",
           "version": "repo-lines-v1:sha256:7af9c878568a8fa795715e0f3b065fcb5bf3c836c83a59f1258d305bb4989c8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlOTU0NjEzZmFlMGUzZjY5NTZmZDA0ZWRjYzBmZGY1MmY1ZjM4ODIwMDg5ODM5ZDNhODEyYjE5ODZhNjJjYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhZWQ1NWQ1Yzk2MDQxYjZkY2E2MmMzYjZmNTJkYjQ0MGFmMjVhMjYwNDkwYmRmMmJjMTU5N2E4MDQwNDY3YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MjQ0MWM0YjNlZTg0NDQ3MDA3ZDdkMDc3MWY3NDFlMjRlYWI5YjJiOWRhYjY2NmI4M2EwNDVjODRmMjU2ZWUifQ"
         },
         {
+          "resource": "repo://src/create_dats/test_wua.rs",
+          "version": "repo-file-v1:sha256:6473b2e65994c43ea3560ec6aa46331b1bbee77227955625bb49ddc2586f040c"
+        },
+        {
           "resource": "repo://src/create_dats/test_wux_and_nus.rs#L1-L62",
-          "version": "repo-lines-v1:sha256:27d55cdba80b621d905d043dfa4d78c2542a7598fcd70cb0b8b2e4617123ed6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMzczMTQxZTVjOGJmOWI4NzYxMzFjN2NhYzA5MzBmMTJlYmUxMDg3MDg1M2MxMjE3ZThjZjNkNjM2ZDIxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:4d6f0e87f0f5303ff47c48c17373cf3c3482f9bf3a8dec4be3763de1359a7ec0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMzczMTQxZTVjOGJmOWI4NzYxMzFjN2NhYzA5MzBmMTJlYmUxMDg3MDg1M2MxMjE3ZThjZjNkNjM2ZDIxZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -471,7 +475,7 @@
           "version": "repo-lines-v1:sha256:81293ef5227ab6c08079e5d015fd5efaec75e6417f43ae36307f65a16c0b21dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZDM0NjRlZmM3NWVhZDE1ZGU5ODM0ODE4ZjhhN2IyOTdiMmZiZGJkYWU0ZjUzYjc3YzQ3NGQ4ZWYyNjRlMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YzIyNjdmNjcyMmIwM2FmMmM3NWZiMTU5YTQxZTNhZWM2MTdiZDc4ZGQzNWRiZWI1ZGFlNzcyZmIwOTJiMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYzQ0ZmRmYzY3N2I2YTBmODA5YTQ4YWE5MzBiNmUyMDZmMTFiOGY3ZjIzN2JlYmM4ZThkN2JmZGM5NmYwYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNWE3ZjFkN2VlOTgyYjU0MjNhZmU0Njk0Njg3OWFmZTM4NTFiODNmODgxMjViNWU0MmFhOTcyMTI2MGM5NjcifQ"
         },
         {
-          "resource": "repo://src/mimetype.rs#L51-L119",
+          "resource": "repo://src/mimetype.rs#L52-L120",
           "version": "repo-lines-v1:sha256:f4c2e40f7e5acb9797abe964b130b7e7b4be2ee901698cbe39a7261cbf9f56f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkOWI5ZTM1YmRiODVmZTk2MzI3Mzk0ZjE2ZjM2NDEzZGI2NzhmOGM0NTc4ODM0NWViNjg3ZWNiNjZmNzMzZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZWE0ZWVjZWU1ZThjMTcyYjc1MzNmYmZmODRlMWM3NGY0NjkzYzBkMTkwNjM3MDYwMTBjN2QxNjVjM2E2ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZWZkZGVkM2FmYmY4YzY5YmQ0YmRkYWQ3OTdjMzZjYjQ2NzIwM2Y2NmRlYzM0MzBkNDZkMGIyYjQ4NTMyNWIifQ"
         }
       ]
@@ -577,6 +581,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-25T14:55:31.619Z"
+    "at": "2026-10-26T20:09:06.498Z"
   }
 }

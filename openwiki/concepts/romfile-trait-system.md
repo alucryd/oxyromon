@@ -66,10 +66,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Romfile Trait System
@@ -239,7 +239,7 @@ to be moved, copied or deleted is first reduced to its inner file (via
   the folder because every update and DLC names its contents alike, `00000000`
   and on. The extension override
   argument matters: for extensions in `NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz,
-  rvz, wux, zso, 7z, zip) the file is named after the *game*, not the DAT rom, because
+  rvz, wua, wux, zso, 7z, zip) the file is named after the *game*, not the DAT rom, because
   those containers are derived files; otherwise `System.custom_extension` wins over
   `rom.name`. `sort-roms` diffs this against the current path, and the
   `src/common/test_path_*.rs` suite pins it.
@@ -437,8 +437,8 @@ workflows about it — nothing in `common.rs` changes:
 5. Registration in the workflow layers: an extension branch in
    `check_roms::check_system`, source partitioning plus a target function in
    `convert_roms`/`export_roms`, and an import branch in `import_roms`
-   ([src/check_roms.rs](../../src/check_roms.rs#L149-L210),
-   [src/import_roms.rs](../../src/import_roms.rs#L510-L652)). The Wii U module
+   ([src/check_roms.rs](../../src/check_roms.rs#L149-L221),
+   [src/import_roms.rs](../../src/import_roms.rs#L518-L682)). The Wii U module
    `src/wux.rs` is the newest example of the full set.
    See [Format Conversion and Export](../workflows/format-conversion-and-export.md)
    and [Integrity Check and Purge](../workflows/integrity-check-and-purge.md).

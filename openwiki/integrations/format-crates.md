@@ -62,8 +62,16 @@ sources:
     resource: repo://crates/nsz-rs/tests/malformed.rs
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
+  - id: openwiki-source-35760035950e3f037cce37d1
+    resource: repo://crates/wux-rs/src/bin/wuxrs/main.rs
   - id: openwiki-source-b50a26200a8a4e4e83f9eac1
     resource: repo://crates/wux-rs/src/error.rs
+  - id: openwiki-source-fb3fc971ccda3173fb55c35e
+    resource: repo://crates/wux-rs/src/lib.rs
+  - id: openwiki-source-8b154e92f317de1d79a56d61
+    resource: repo://crates/wux-rs/src/rebuild.rs
+  - id: openwiki-source-a7055168e07a2f5ab1abc26e
+    resource: repo://crates/wux-rs/src/wua.rs
   - id: openwiki-source-3177d2bf46b3b23d873f6783
     resource: repo://crates/xdelta-rs/src/bin/xdeltars/main.rs
   - id: openwiki-source-b284ee56f1a8ed8eeb895333
@@ -118,10 +126,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Format Crates in crates/
@@ -199,8 +207,9 @@ thing whose bytes dominate the work:
 - `gdi_rs::convert`: the BINs behind the CUE, which is why the crate also
   exports `input_size(cue)` — a caller cannot know that total from the CUE's own
   size, and `gdi_rs` counts a track's dropped pregap as consumed too.
-- `wux_rs::compress` / `decompress` / `to_nus`: oxyromon passes the input file's
-  size. `wux_rs::to_wua` takes several inputs, a disc and NUS folders, and
+- `wux_rs::compress` / `decompress` / `to_nus` / `wua_to_wux` / `wua_to_wud`:
+  oxyromon passes the input file's size, and the rebuilds scale the disc's
+  written sectors to it. `wux_rs::to_wua` takes several inputs, a disc and NUS folders, and
   oxyromon passes the sum of their sizes.
 - `nsz_rs::pipeline::compress_nsp` / `decompress_nsz`: the container being read;
   an internal `member_progress` adapter converts per-member positions into
@@ -368,7 +377,10 @@ for common options. `--`-only long flags carry no short alias.
 
 `wuxrs` departs from "the extension implies the direction" in one way: `-f`
 picks the target (`wud`, `wux`, `wua` or `nus`), `--add DIR` adds an update or
-DLC folder to a WUA, and `--keys FILE` overrides Cemu's `keys.txt`.
+DLC folder to a WUA, `--updates DIR` names the store of update partitions WUAs
+share (the `.update-partitions` folder next to each WUA by default), and
+`--keys FILE` overrides Cemu's `keys.txt`. A `.wua` input goes back to its WUX
+by default, or to NUS folders with `-f nus`.
 
 `chdrs` is the one tool whose `main` does not hand argv straight to `ui::run`:
 it intercepts `info` and `verify` as subcommands that read a CHD and report to
@@ -447,10 +459,12 @@ installable without the organizer.
 - **`xps_rs::identify(patch) -> Format`** and `apply(source, patch, output, progress)
   -> Option<Warning>`. `identify` reads five bytes of magic to choose IPS or BPS,
   and the CLIs call it before opening a progress bar.
-- **`wux_rs::compress` / `decompress`, `to_wua(inputs, output, keys, progress)`,
-  `to_nus(input, output, keys, progress)`, `wua_to_nus` and `title_id`**, plus
-  `Image` to read a WUD or WUX as one stream and `load_keys` for Cemu's
-  `keys.txt`. Internal:
+- **`wux_rs::compress` / `decompress`, `to_wua(inputs, output, keys, store,
+  progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
+  `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
+  `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
+  stream and `load_keys` for Cemu's `keys.txt`. `STORE_DIR` names the
+  `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
   [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).
 - **`xso_rs::compress` / `decompress` / `probe`**, with `Stats { input_size,
   output_size }` back for reporting a ratio. `probe` reads only the 24-byte
@@ -459,7 +473,8 @@ installable without the organizer.
 ## nsz-rs and `prod.keys`
 
 `nsz-rs` and `wux-rs` are the two crates that need user secrets. `wux-rs` needs
-Wii U keys only for WUA and NUS output, as its own page explains. `nsz-rs` needs
+Wii U keys for WUA and NUS, rebuilding a disc from a WUA included, as its own
+page explains. `nsz-rs` needs
 them in one narrow case.
 `nszrs` defaults to `~/.switch/prod.keys` (overridable with `-k`), and
 oxyromon uses the same path via `dirs::home_dir()`. Keys are CRC32-verified
@@ -502,7 +517,8 @@ chd-rs and xdelta-rs comparisons run, and slow cases are `#[ignore]`d. `nsz-rs`
 leans on generated known-answer vectors (`tests/vectors.rs`, produced by
 `scripts/gen_vectors.py`) plus round-trip and malformed-input suites. `wux-rs`
 has no reference binary to run: its tests build a synthetic encrypted disc and
-read the WUAs back with the independent `zarust` crate.
+read the WUAs back with the independent `zarust` crate, and `tests/disc.rs`
+rebuilds that disc from its WUA byte for byte.
 
 Two suites specifically pin the `.part` contract: `xso-rs/tests/roundtrip.rs`
 truncates a CSO so decompression fails mid-write and asserts the pre-existing

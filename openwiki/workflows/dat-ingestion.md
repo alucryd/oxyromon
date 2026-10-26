@@ -18,6 +18,8 @@ sources:
     resource: repo://src/create_dats.rs
   - id: openwiki-source-e63dc39617de81f020aed3b8
     resource: repo://src/create_dats/test_dat.rs
+  - id: openwiki-source-a4acf932ee04d603492c2fde
+    resource: repo://src/create_dats/test_wua.rs
   - id: openwiki-source-6d32f94730242dc4e34879f9
     resource: repo://src/create_dats/test_wux_and_nus.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
@@ -88,10 +90,10 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Catalog Ingestion: DATs, Headers and Downloads
@@ -301,7 +303,7 @@ rom; a miss prints `please fix your DAT file` and imports the rom as exclusive
 ([src/import_dats.rs](../../src/import_dats.rs#L746-L831)). Two adjacent details
 shape later behaviour: roms with `status="nodump"` are skipped entirely, and
 `roms.original` is false when the DAT's file name carries an extension in
-`NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, wux, zso, 7z, zip)
+`NON_ORIGINAL_EXTENSIONS` (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip)
 ([src/mimetype.rs](../../src/mimetype.rs#L40-L49),
 [`test_dat_as_is.rs`](../../src/import_dats/test_dat_as_is.rs)). Hashes are
 lower-cased on write so a provider's upper-case CRC still matches a computed one.
@@ -387,13 +389,18 @@ follow from that shape:
 one `<game>` per file with size, CRC32, MD5 and SHA1, writes the Logiqx DOCTYPE
 header, and names the output `<directory> (<version>).dat` with the version
 defaulting to the creation timestamp `YYYYMMDD-HHMMSS`
-([src/create_dats.rs](../../src/create_dats.rs#L121-L304)). `rom_xml` reads each
-file once and feeds the three digests together. Two Wii U shapes are exceptions to
-"one game per file". A `.wux` is listed as the `.wud` it holds, hashed as
-`wux_rs::Image` decompresses it, so the DAT matches the disc in either format. A
+([src/create_dats.rs](../../src/create_dats.rs#L121-L253)). `rom_xml` reads each
+file once and feeds the three digests together. The Wii U shapes are exceptions to
+"one game per file". A `.wux` is listed as the `.iso` it holds, as Redump names a
+disc, hashed as `wux_rs::Image` decompresses it. A lossless `.wua` is listed as its
+`.iso` too, from the size and hashes its disc info keeps, so nothing is read. The
+DAT therefore matches the disc in every format. A
 subdirectory holding a NUS title's TMD becomes one game named after the folder,
 whose ROMs are its files, the way No-Intro's CDN DAT lists updates and DLC; the
-walk then skips that folder. `create_dats/test_wux_and_nus.rs` covers both. The timestamp default is
+walk then skips that folder, and it skips `.update-partitions` stores altogether.
+`create_dats/test_wux_and_nus.rs` and `create_dats/test_wua.rs` cover these. The
+DAT file is flushed before `create_dat` returns, which fixed DATs sometimes being
+cut short. The timestamp default is
 what makes a self-made catalog pass the lexicographic gate on the next regeneration
 rather than being skipped as older; the round trip (create then import) is exercised
 by [`create_dats/test_dat.rs`](../../src/create_dats/test_dat.rs).

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2c5187ed11c372f0ad930ead7ae6108ba67da302d8367613136e8091a11667ca",
+  "pageVersion": "sha256:49fb7f3b6c16c09e3d39f190657349d1b5f75be2f1ac042e0804efa3c94454b1",
   "claims": [
     {
       "id": "claim_8c1d5e38cb434501948072b26c6f8998",
       "statement": "Trashing is a filesystem path convention rather than a database state: get_trash_directory returns <system directory>/Trash (or <ROM directory>/Trash when no system is given), a trashed file keeps its romfiles row via rename + Persist::update, and find_romfiles_in_trash enumerates those rows with WHERE path LIKE '%/Trash/%' OR path LIKE 'Trash/%'. The second pattern is what makes purge-roms -t reach the ROM directory's own Trash, where import-roms -t files a ROM that matches no system; because both matches are substring/prefix, rejects import-roms filed deeper at Trash/<Valid|Duplicate|Invalid|Skipped>/<name [algo:hash].ext> are swept by the same pass.",
       "evidence": [
         {
-          "resource": "repo://src/check_roms.rs#L306-L328",
+          "resource": "repo://src/check_roms.rs#L321-L343",
           "version": "repo-lines-v1:sha256:a8da360e958406634b9924ed44fc4532d32c916fb04f9f073b8ab9d02c9bf82e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNGVhYWNmNmYyN2JlMGJkZWZjM2M0Y2QxN2NjZmM5MWRhMDFkNTdiNjQ2YWI1NTM5NzhkODU4NzQzMjllNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5OWUwZTVlODJlMGY2YTA5NDBhM2Q2MmY1NWZiMWRkNzVmOGY0MTc4MzBjMGI4ZmIwNTA3NzkwNmI1NzU2OWMifQ"
         },
         {
@@ -15,7 +15,7 @@
           "version": "repo-lines-v1:sha256:62289916eadfd824ac665394d3e479dab9a7388d08badb71dd07bd659a631256:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhOWQ1M2QyYTUwYTlkMzJlMmJkNjI0Y2E2NTcxYWI4YjE5YzQxMTdlN2ZmNmYyZDYyMGY4MmRlOWVmMWM5MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwM2Y2YjYzMThlYzEwZWQ3NzBiNjFkODI5N2YxYWFkOGFjNDZiYzM4MTRiNGRmNjNlNzlkNWEzOTAxMjIyZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZjcxZjljMWQ3OTg5ZWViMjUxN2EwYjE1NjM2MzQ1MTQzZTllM2ZhMDM5MTY2OTQ5YWE1Nzg1MGY0YTFmNTAifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L2960-L3017",
+          "resource": "repo://src/import_roms.rs#L3010-L3067",
           "version": "repo-lines-v1:sha256:4ba32617fdd99c7083d3def5851e3ccb14b3b2cda7ee6bd5ea3f074e16ec8259:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OTU4ZTAzMGZkNjIyZGM2ODg0MmM2NDQ1M2E0NTgzOTkwNTQ1MmIwMDk3MjYxM2ZkZGU0MmQ4ODY4NzAxMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYjM2YTQwZTJmYmE5NDNkZmFiNDU4MWVhZjk4MGRhYjQ0MmJlMzhjNGE3NmRjN2M2MzcyNzE5ZDZhMjBkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjN2VlN2U3Mzk1M2MyYjExYTI1OTQyMzQzZDZkNzJkOGM0NGUwNWY2ZmIyOGRiNzMzZjk1OTdmOWFhNzBjNjQifQ"
         },
         {
@@ -54,19 +54,19 @@
     },
     {
       "id": "claim_3c71720e0d4a4f26a4bb2263158cf703",
-      "statement": "check_system dispatches integrity verification on the romfile extension: archives go through check_archive (which pairs each member with the same-name roms, exactly or under `<folder>/`, narrowed by CRC, and fails on an unmatched member, an ambiguous same-name match, or a rom left without a member), chd through romfile_as_chd + ChdRomfile::check, cso and zso through XsoRomfile, nsz through NszRomfile, rvz through RvzRomfile, wux through WuxRomfile, and everything else through CommonRomfile::check. There is no external-tool branch any more: src/chdman.rs is gone and a missing chdman is no longer a failure mode of the command.",
+      "statement": "check_system dispatches integrity verification on the romfile extension: archives go through check_archive (which pairs each member with the same-name roms, exactly or under `<folder>/`, narrowed by CRC, and fails on an unmatched member, an ambiguous same-name match, or a rom left without a member), chd through romfile_as_chd + ChdRomfile::check, cso and zso through XsoRomfile, nsz through NszRomfile, rvz through RvzRomfile, wux through WuxRomfile, wua through WuaRomfile when lossless and CommonRomfile otherwise, and everything else through CommonRomfile::check. There is no external-tool branch any more: src/chdman.rs is gone and a missing chdman is no longer a failure mode of the command.",
       "evidence": [
         {
           "resource": "repo://src/archive.rs#L217-L236",
           "version": "repo-lines-v1:sha256:3534a0851d51794c3b0346ea3f777bdd53ca914ae9681691bb077b3e67514ab1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNjIzMGY1MTc2NTRjMjlmMTRkMGRhYTc4NWQwMTQzODllNmRlNzhiODM1N2E1ODY2YzM4ODk4NzFiYWExNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2NjI3YzgxODc5MjNhM2EwNjViOGViM2ZhNDA0YmMyYzYyMDYyZTFjZTk4MjYzMmQxMzk4MWI5ZWU1ZDM4MGYifQ"
         },
         {
-          "resource": "repo://src/check_roms.rs#L136-L234",
-          "version": "repo-lines-v1:sha256:d4abd12bdcacfe12528bec60edfe207ac6b726e1e8cf0d3c6c70b66b27179e02:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MjllNTRjOGU3YzNiYTVmZTc0YTgxOGQ5ZWQ0MDY5Y2M5NTYxNDliMDQxMjg4NmQxOGQ3MTEzNTRkNTJjMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4MzJhZGVhODc4ZWQyOTk1YzAxYTBjYWFhMDQyMmIyNzMxYjkzN2Q3OThiOTZlNmVjMmY3NjgyMjc3OGUxZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNzZlZmM3OGFiOTQ1OTZlNTJkMGRkOTliYjI4YWZiY2U4N2E2MWU5YTM1NzkxNTQ4MTViOWQ4MDZiNWE2NmIifQ"
+          "resource": "repo://src/check_roms.rs#L136-L250",
+          "version": "repo-lines-v1:sha256:5536d8beb45b947c947b510fa7c6d35c390d6711a1b712c7e43a8a701f5b862c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOTI5ZTU0YzhlN2MzYmE1ZmU3NGE4MThkOWVkNDA2OWNjOTU2MTQ5YjA0MTI4ODZkMThkNzExMzU0ZDUyYzAzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2ODMyYWRlYTg3OGVkMjk5NWMwMWEwY2FhYTA0MjJiMjczMWI5MzdkNzk4Yjk2ZTZlYzJmNzY4MjI3NzhlMWRjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZWQ4NjhkNDM0MDI1Yjg5MmNiYzI0Nzg2NjI4NmQ5ODEyYjZhMGJjNDBlNWIxMjIzOWMzODAzYzEyNjJjZWJmIn0"
         },
         {
-          "resource": "repo://src/check_roms.rs#L259-L304",
-          "version": "repo-lines-v1:sha256:0849c39ad7c3cf0f7819efd82535c5beb222427f8fb1d051bce59f62eb6749b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YmJmOWZjNWU5NGU0ZTVlOGVlOTliZTI4OTA0NTg1NmRkODRjNzUzNzhkYWYzZGExNGQ4Yjk4NjQ1NmM5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjOGUxYjY2YzBiZTQ5OTgwMzM0NGFmZjg3OGEzMTg1M2U2ZWU3YzFhNWIwNjkxMDY5ODQ4NTRkNWVhNThlYWUifQ"
+          "resource": "repo://src/check_roms.rs#L274-L320",
+          "version": "repo-lines-v1:sha256:170e5ea669bc389c7de8bd90a04eef4045a0cb19e0b0ddf2488cb154451e8d60:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YmJmOWZjNWU5NGU0ZTVlOGVlOTliZTI4OTA0NTg1NmRkODRjNzUzNzhkYWYzZGExNGQ4Yjk4NjQ1NmM5NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkZjk3ZmFlNGEyODQyMjIyOWFjODNlMjA3NTVlZGU2NzVkNTAwODNiMWM3MzkwZmRiZDQ2YjM5MzJkYjNjNDUifQ"
         },
         {
           "resource": "repo://src/nsz.rs#L96-L113",
@@ -77,8 +77,8 @@
           "version": "repo-lines-v1:sha256:9dcda466e394ac5311cb3239223826254d15e977c434e1e7f393d271e8fc44c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZGQ1NzUyNWRkNWE3MjFkNWRjMTQxNTk2Mzk1ZjBiNjBkYTFjZWIzZWRmNTE2ZjU2MDJlMmJhNGIxYTA2MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2OWNmYzkzODgyNzJiNzgyZmZiZDIyNTYxOGUyNWRiY2EzNzc3YmMxYjJmMzRjZDE1MDU5ZWE3ZDYzMWJmNWYifQ"
         },
         {
-          "resource": "repo://src/wux.rs#L87-L112",
-          "version": "repo-lines-v1:sha256:e0332ea0ce70e0850315523e692f637377df76582d2133afdec5298871c5b88d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwYjM4MWFlYWZjOTViODQxZWI1NzVmYjQzMTA1OTU2NWZiNDg2YjMwN2MxZDEyNTBlMDNmODI5NDdmNGUxYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYTE1OTdiZmZhNGQyYzMwYmQ3MjJjZjJiNWM1ZjY3MGJkZWVlYmI5Mjg4YjA4OGY4NTAxN2I5NDZmZDAyYzYifQ"
+          "resource": "repo://src/wux.rs#L155-L278",
+          "version": "repo-lines-v1:sha256:e666e130cec08cf02971ff846f9111116573297cdc5569d3ba98f7486fa16c3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMGIzODFhZWFmYzk1Yjg0MWViNTc1ZmI0MzEwNTk1NjVmYjQ4NmIzMDdjMWQxMjUwZTAzZjgyOTQ3ZjRlMWI4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NzljYmQ3ODliMDU1YWJiNmVmYmFlMWJmNWE5NmFlZDMyMzZhMjVlYWRiZjVjYTdjZjZiNDA2NjEyYjEyMTVjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxOWU3NjM1NWNmMTE5OTQ4MGMzZjk5ODM2YjE0ODZjODQxZDg5MWZhYWQ5MDRjNjA4ZTA5MzAyMmQzNzU3YWVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMzZiNjNhN2NhOTQ3ZDg2MDUyMDQ5MmZjMTE5ZWVkOTA1NWI4ZjRkOWQ4Zjg2YzJmYjU5MTRiYmFmN2E5OWM0In0"
         },
         {
           "resource": "repo://src/xso.rs#L72-L89",
@@ -91,11 +91,11 @@
       "statement": "A failed integrity check is quarantined rather than deleted, and its aftermath is scoped: the file is renamed into the system's Trash and its row updated inside the system's transaction; the run continues to the next romfile, and compute_system_completion is invoked only when at least one file failed.",
       "evidence": [
         {
-          "resource": "repo://src/check_roms.rs#L208-L257",
+          "resource": "repo://src/check_roms.rs#L223-L272",
           "version": "repo-lines-v1:sha256:1bcb61e3188e46b40d36a19b2b8388f97b3801f22a6236ebc2bd83e990ad8756:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMjgzYmIwZmFkYWNkN2IzZTdkZDZlNWZlNzA3MTBhM2YxOTg3ZjQzYWVkNDJkNjhiN2VkMzIyZGU2MTRjZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliNDY4ZWY5NDg2Mjg3NWMwOTFmZjUxOWMxZjRkODAxZWE3ZDBiZjg2NzgxODkyYmIwNjZhY2M2N2Q3MTc5MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMzMzMWFlOTU1NWIxZjQ3YjhkMzc0ZmE0ODJjYmY2ZmU1NzBkZDQxN2Y4NjNkN2RlOWJjZDg5Mjg2MGRjNmIifQ"
         },
         {
-          "resource": "repo://src/check_roms.rs#L306-L328",
+          "resource": "repo://src/check_roms.rs#L321-L343",
           "version": "repo-lines-v1:sha256:a8da360e958406634b9924ed44fc4532d32c916fb04f9f073b8ab9d02c9bf82e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNGVhYWNmNmYyN2JlMGJkZWZjM2M0Y2QxN2NjZmM5MWRhMDFkNTdiNjQ2YWI1NTM5NzhkODU4NzQzMjllNmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5OWUwZTVlODJlMGY2YTA5NDBhM2Q2MmY1NWZiMWRkNzVmOGY0MTc4MzBjMGI4ZmIwNTA3NzkwNmI1NzU2OWMifQ"
         }
       ]
@@ -105,7 +105,7 @@
       "statement": "check-roms --size is the non-destructive repair mode: for each file that passes, Persist::update re-derives the relative path and size from the file and writes both back to the romfiles row, leaving the file itself untouched.",
       "evidence": [
         {
-          "resource": "repo://src/check_roms.rs#L218-L233",
+          "resource": "repo://src/check_roms.rs#L233-L248",
           "version": "repo-lines-v1:sha256:9b7d236297442fbc2ae721203b37ce2508592394b3bd008dd0415ba0bfbd55b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2OTgyNTE3OTI0ZmU4ZDNlMTU2NjcxMTViMWY1YTIwMThlMGQ1NWNlNWEwMDFiMWUyZDVlMzFiOGIyNDEyMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0MjJjNTY0MmZkMWI1YjczNmY3MjgyMjUxNjhkMDE1NDZkYzA1NjA2ZTA1YTExYzYzNDc1ODE2MGY2NzA1ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwMjc3ODJjODcwYjY1YWYwMjBiMTBjNjdhNWJhMmM3Y2FjMjg4MWU5MGEyZjkxN2ZmNDZlY2RkNzQwNjY2ZGQifQ"
         },
         {
@@ -119,7 +119,7 @@
       "statement": "purge-roms treats its four category flags as independent passes executed in the fixed order missing, trash, orphan, foreign, then unconditionally recomputes completion for every system in the database, regardless of which flags were given or whether anything was removed.",
       "evidence": [
         {
-          "resource": "repo://src/purge_roms.rs#L61-L85",
+          "resource": "repo://src/purge_roms.rs#L63-L87",
           "version": "repo-lines-v1:sha256:f696f226118a49ff040ee76246a123996577c73086c7173a310f561dd10e0400:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0M2U4Y2RlMGQ1ZTEzZmQyODdiOGZlNTgyZWU2MTE4MDFkNDM5NDA3OGY4ZDA5MjhhYTkxZDEzNzQyZmQ5YWQifQ"
         }
       ]
@@ -129,7 +129,7 @@
       "statement": "purge-roms --missing never deletes a file: it enumerates every romfiles row, and for each whose absolute path is not is_file() it deletes the row and then climbs out of the emptied parent with remove_empty_directories.",
       "evidence": [
         {
-          "resource": "repo://src/purge_roms.rs#L87-L116",
+          "resource": "repo://src/purge_roms.rs#L89-L118",
           "version": "repo-lines-v1:sha256:503e5dfd4fbdcae3b932787d487f2544fb6d5f35e1d732d86c8fb2c8d67110d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NmVjMjUxMmFjNjJjOTliNGQ5ZTRhYjQyMzljZDMzYjM0ZTRmN2UzYzQyODM0ZjJiYmVkMzgxOGQ4ZmQ2ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0YmE2ZGVhNzdmZjA1MzhmN2FkZWU5OWEzYWJkMDFlNTY3MGNhZmE2NGUxZmQ4OWFmYjM0ZmQ1Y2IyOTA5NmYifQ"
         }
       ]
@@ -143,7 +143,7 @@
           "version": "repo-lines-v1:sha256:d332f048c7d5ef669179a92754b821e64ce5673c4a04f24e244889d46d289dea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YTU0ZWYyZWQ4MWQwNTY4YmU5ODJhMTQ2ZjNiNzQxNDA5NzEzNmZiZjU4OTYyZjc2NTU1MDNkY2Y0NDc4YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MTEzMmE3MGVmNmU3NzMyZjJhODc5ZTY0MGE0NzFhZDAwODE0YjI5YzhhMmY1YTk1YzA2NzQ4ZWRiNTc4OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiZjcxZjljMWQ3OTg5ZWViMjUxN2EwYjE1NjM2MzQ1MTQzZTllM2ZhMDM5MTY2OTQ5YWE1Nzg1MGY0YTFmNTAifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L118-L164",
+          "resource": "repo://src/purge_roms.rs#L120-L166",
           "version": "repo-lines-v1:sha256:019929acfb13b73f1287125b56de4155cd5e48c31d720aad0ca57b26858e294f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzOWI0YTY0N2E4YTZmZDI5NGUzMzZkZTkyNWFiYTJmNGRlNmU1ZDk2MzVkMzRlN2EyYTI4MjE2ZGU0OGJiMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZmRmZGI0ZjI1N2Q5OTEwNjg2ZDk4NTkxYjQwYWE2MmQ0YTIyNmEzMDMwZTM1MTY4MmZhYWNkNzA3NDE1N2UifQ"
         }
       ]
@@ -157,22 +157,22 @@
           "version": "repo-lines-v1:sha256:e71ae82debf17c3fe99783c257ce84b1abc35d15cabfbcc93559bce81830e208:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YTU0ZWYyZWQ4MWQwNTY4YmU5ODJhMTQ2ZjNiNzQxNDA5NzEzNmZiZjU4OTYyZjc2NTU1MDNkY2Y0NDc4YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MTEzMmE3MGVmNmU3NzMyZjJhODc5ZTY0MGE0NzFhZDAwODE0YjI5YzhhMmY1YTk1YzA2NzQ4ZWRiNTc4OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhNzBhMzU3MGVjNWMwMjkxMzA0Y2QxOWRhNDY5Mjg3MDMxMWZiODVmNGRkN2U0YzNhMTU2NDFhN2E4OTExZjMifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L74-L77",
+          "resource": "repo://src/purge_roms.rs#L76-L79",
           "version": "repo-lines-v1:sha256:8804d318d3d22c751ad28074ceaf03ec76275a121b3e18df6d119d64e0d0f3a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFiODc5YzgwZDMyZjY0OWVmMDdlZmI0YTI3NzVjNzRmZDgyMjVkZjI3ODEzNGRhY2M2MzY2NzRkOTU2NTI2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU3NjZkZTdmNTJjYTNlNTljMjA4MDcxNmNiZjczMzFlMDViNTRjOWI2Mzk4ZDg0ZGQ5NzFiNTA4ZDM3MWJhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVhMmI1Yzk0OWQ1MDNiYzk3ZGI0ZGE3OWI2MThjZDQyZGQ4N2Q4YWMwM2M0ZjJkZmVjNDkyMGI4MDgxNTIwNyJ9"
         }
       ]
     },
     {
       "id": "claim_18f62932e7a84ece8ef54bda194787d3",
-      "statement": "purge-roms --foreign reconciles filesystem-to-database rather than the reverse: WalkDir over the global ROM directory, each file's path stripped to relative and looked up with find_romfile_by_path, and a file with no row is announced and then confirmed individually before deletion (unless --yes).",
+      "statement": "purge-roms --foreign reconciles filesystem-to-database rather than the reverse: WalkDir over the global ROM directory, each file's path stripped to relative and looked up with find_romfile_by_path, and a file with no row is announced and then confirmed individually before deletion (unless --yes), except a file in a .update-partitions store that a known WUA still lists among its store entries.",
       "evidence": [
         {
           "resource": "repo://src/database.rs#L2979-L2995",
           "version": "repo-lines-v1:sha256:3f2c872233927e85d68ecb699c049b480a3254d945d5b640095ba56b600750e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjQzNjNkODAzZGFkNDAzZjQzOWUwNzEzN2RkMmE1ZGIwOThlNWNhZGQ0NjQzNGQ5Njc1ODc3ZmNmYmNjNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNjNjNGQxYWY4Y2Q4OWJiMGJkZDc2NTdmZmNiZjY4MDZhNjEwZDc5ZDZjOGQ0YzMwN2MyNDFkZjM5MDA1MjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyMTNkNGE4ZWZmMmM4ZGQ1OTM4YzQ3YzgyZDBkYjdhZThmYzkzNGRhMTlmY2JhM2NjZTJjNDkzYzg0NTJlMmYifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L166-L202",
-          "version": "repo-lines-v1:sha256:f6f08471783740311b36dfc1e828363cc31eed3d15e9ad3842b1d44e3dffed84:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZmNiZGFlMWQxMGE1ODU2MGRjYjdjYjQxNmJlYjliZTAyOWMxYTg2ZDMyNzU3MzA1MmI5NmM3NDk2NGJhZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNzk0NTk0MzcxNGI2NDRlMTIxNTBkMTg0MWY5MjdlNmEyYWYwODdkMTc1OTlmYjkxNDkzZjdmYTgyZTQ0ZjQifQ"
+          "resource": "repo://src/purge_roms.rs#L168-L250",
+          "version": "repo-lines-v1:sha256:719f315d4b2fbe7fbd6eb36ef5ccdf2e103d5ec7e430196773e03d36513129fb:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZmNiZGFlMWQxMGE1ODU2MGRjYjdjYjQxNmJlYjliZTAyOWMxYTg2ZDMyNzU3MzA1MmI5NmM3NDk2NGJhZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNzVjNzBkOTQ2MzYyNWUxMDc5ZmQ4ZmM4ZWU2MmFkMmU5MmM0MmJlYWFiZmQ4NWI3OGQ4ZTBhNDk3OWI5NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YWI3YjZkOWI2ZTE5NTY1M2ZjOGI1NWY2M2YzNjQ2MDY4NTVjNDU0ZmM1NjU4NTFmMzFhMmYwOTQ1ZGE3NDIifQ"
         }
       ]
     },
@@ -181,11 +181,11 @@
       "statement": "Empty-directory cleanup after a deletion is shared by every purge category: --missing and --trash/--orphan climb out of each deleted file's parent immediately, and get_kept_directories is what bounds that climb so the ROM directory, every system directory and every Trash survive. purge-roms --foreign is the exception only in timing: it collects the parent directories it emptied into a HashSet and runs remove_empty_directories after the WalkDir iteration has fully finished, so no directory is deleted while the walk is still reading it.",
       "evidence": [
         {
-          "resource": "repo://src/purge_roms.rs#L173-L207",
-          "version": "repo-lines-v1:sha256:f6b17fa51d28682b83453f921a53ed91aed4ed87f9d235ec405c4f6b5cc4fde8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5ZjU2MWY5ZTJlYzZhYzkxMWM2NTEyNGI5M2UwMjhjZmRkM2Q2MDNmZmQyNTljYWUwOTAxMWRlZjVlMzIyZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YjE3OGJhYjYzYmEwZjVlY2ZhMmYxZTAxMzdjMGYwMmM5YWUzYTUyYzdkY2U4MTZlMmZiN2Y3NmMzNWMyNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYTcxYjI0ZTE0N2U5OTAxY2FlYjNkMDE2NmMxNzk0ZGVkNTRlY2M1ZWQ3MWY1MmY4NzQ0ZDQ5ODU4MWZkZTQifQ"
+          "resource": "repo://src/purge_roms.rs#L175-L242",
+          "version": "repo-lines-v1:sha256:9ae50eb82e60bfb47f00e3b160a563a3d3b1b3164dbe79aae66b5c5d83c16b3a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZWY2NGRhYmY3OGUwODMyZTMxMTdmMTk5ZDljNzkwY2UzZGY5ZTU0MWU1ODRmZjFkYzJlOTZiODhmZGQzNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YjE3OGJhYjYzYmEwZjVlY2ZhMmYxZTAxMzdjMGYwMmM5YWUzYTUyYzdkY2U4MTZlMmZiN2Y3NmMzNWMyNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYTcxYjI0ZTE0N2U5OTAxY2FlYjNkMDE2NmMxNzk0ZGVkNTRlY2M1ZWQ3MWY1MmY4NzQ0ZDQ5ODU4MWZkZTQifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L94-L147",
+          "resource": "repo://src/purge_roms.rs#L96-L149",
           "version": "repo-lines-v1:sha256:370680650791882d807df9e2720bc34c9045f2eba0b0fe4062c58a93b73de083:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjFjNDU5YjM2ZjE0YjhmMzFiYzhjYjI4OWRmM2VjOTA4NjA0ZWRjZWMwMWJlMjIxNWM5Njg1NDE4ZGEwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NTEzODc0NDM1NjlmY2Q2YTQxYjkwZTc0OWQxYThjMWJhNmIxNzhjNjkxZDE2ZjA4OTlhMTVhNzdhYWI2ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMGExZTY5YmEyYTdlODhlOWVkYzk5YWFhNDlkYzMzZWU3OGUwN2VhN2EzMGQxYmRlNjFmNDhiYzMzMjc4MjAifQ"
         },
         {
@@ -223,7 +223,7 @@
           "version": "repo-lines-v1:sha256:4de79a9e189e6e82550953f1ec696c303c55ae16bfb0719efc078f17e8de11cb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjFhYmZlNzQ0OTAzNGM0Yzg0YmE5NjY5MWRiMjg1MzBhMGVlOTRmODYxN2FjZTk3MWMxNTg4MTYzYmMyZGE4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmYzZTM3ZjY3OWNkNjY3MDJiNzFmM2Y5OGQ3YjJiNjJlMDAwYTMzYWRiNDg5MTU0N2M2NmE5MmQ0MTI0YjE3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVmNmY0NjZlNTljZmMzMDcwM2M0NWY3MmFmNjVkZTU0YWMzNjNkMzU0Y2MxYTMzMzAzNTBhY2Q0NTI0MzRjNCJ9"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L94-L106",
+          "resource": "repo://src/purge_roms.rs#L96-L108",
           "version": "repo-lines-v1:sha256:05a1f4ff380e4f13d0b9672a071487a0999a79317fcbfdd11d74c7df5c3e6433:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjFjNDU5YjM2ZjE0YjhmMzFiYzhjYjI4OWRmM2VjOTA4NjA0ZWRjZWMwMWJlMjIxNWM5Njg1NDE4ZGEwYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NTEzODc0NDM1NjlmY2Q2YTQxYjkwZTc0OWQxYThjMWJhNmIxNzhjNjkxZDE2ZjA4OTlhMTVhNzdhYWI2ZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2NmYTQ3NTQzMjEwZWU4YjU4NTIxZDYyMTMyN2RiNjVlZGJjNjdlODg4MmYyMTY0M2Y2MjFiYzZmOWI2ZTYifQ"
         },
         {
@@ -379,14 +379,14 @@
           "version": "repo-lines-v1:sha256:42a16e29b30419fc8026a24ea5a4ae117e724e907532f5cc8a6e3049b1e5a136:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NDZlYWFjOWQxNDU5NzRmNjMzYmRkOWRhYjA2OGJlMjAyNTQ5ZjM4ODY4NWRjMzEzZjk2Zjk3OGUzOTRmYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMjU5MTBiODgxMThkYjRlYTlkN2NiYzA2YTA3YzY0YmNhMTVlODZkNWZkMmFiMmZjOTI2Y2E3OWNlNGViMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMTM4MzEzNWRhY2NjNjNkZjA5ZTI3NGM4Njk1YTE0ZjNmMjliYWQ1OTJjOGQ4ZTE3ZTU2OWM4NjEwMjAwZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjZTEyOWMzNGYwY2NlMTVmMmM2NTkxY2FmZDU3Y2ZhY2ViNjA0ZGM4ODFjYzIyZGQ4M2E3ZGM1NTA5MTZmMjMifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L172-L182",
-          "version": "repo-lines-v1:sha256:9bc2a3053cdeec99a8a1eb21848f2a0427e1ff62f7464cc8eb20b8e3fd2318bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NTViYjRhMGQ4Yjk0NTM2MzBiODE4Njk2Zjk3OTY1OTBiOTJhNWY3NjE2ZTczOTczYTY4ZmFmM2QwMWZkM2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNzIxYjliNTljNjE4MDkyZTM3M2Q4YjU4ZmMyMGMyOTJmNWQ3ZmFiNjU3Y2EwODBlOTcyYmEwNDFhN2IyYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMzg4ZDYzNmQzYWIyZGJkNmNiNWJhZjkxYTBmMzczZDVhNDVkNTA5NmU5YjRjMTMwOWM2M2YxYmZkZWFjNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMjAyNmVjNmVhM2RjZjNmYzM2YTkwYTZjYmIxYjYzZTVjOWNmMTc2NzM2YTk3MWNiYWNhZDc2Mzg5MDQ1ODgifQ"
+          "resource": "repo://src/purge_roms.rs#L174-L182",
+          "version": "repo-lines-v1:sha256:809425cfc925dede0f227b9e8b07570e07a631802bec9b5f5daeea02da7be799:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc1NWJiNGEwZDhiOTQ1MzYzMGI4MTg2OTZmOTc5NjU5MGI5MmE1Zjc2MTZlNzM5NzNhNjhmYWYzZDAxZmQzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTlkZmQyM2I1MDMwODRmYjhhOGIyZDI5YzgzNDBiODhjZTlkYWMwOGY2MDYwYjJmMzFhNTQyMzAxMzJjOWRlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTIzODhkNjM2ZDNhYjJkYmQ2Y2I1YmFmOTFhMGYzNzNkNWE0NWQ1MDk2ZTliNGMxMzA5YzYzZjFiZmRlYWM3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM5MmQzMjhmZTAzZTkxZDc2ODU4ODNhNjZkNzQ3MDY2NDYzNjkzODU3Y2I1ZDRhMDU4OWQ1Mzc1YzZiMDVhNiJ9"
         }
       ]
     },
     {
       "id": "claim_d63e14fbb3214192b82c5e63127e03ea",
-      "statement": "roms.original is set by catalog import from the declared rom name's extension: DAT import marks a rom original only when its extension is not in NON_ORIGINAL_EXTENSIONS (chd, cso, nsz, rvz, wux, zso, 7z, zip), and IRD child roms are written with original = false, which is why IRD folder contents are retired by purge-irds rather than by check-roms.",
+      "statement": "roms.original is set by catalog import from the declared rom name's extension: DAT import marks a rom original only when its extension is not in NON_ORIGINAL_EXTENSIONS (chd, cso, nsz, rvz, wua, wux, zso, 7z, zip), and IRD child roms are written with original = false, which is why IRD folder contents are retired by purge-irds rather than by check-roms.",
       "evidence": [
         {
           "resource": "repo://src/import_dats.rs#L810-L851",
@@ -397,8 +397,8 @@
           "version": "repo-lines-v1:sha256:49360db586999a9be88239769fed8c5be6ec7eb9e921221c2dd88f352f95e7d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjljYjdlZTk4NDhkMTAzNTdjNDI1YmYxNTQwMGEwMzE5NGU2ZGI2ZTJjOTAyZmYxMzIxZTQwODI1N2I4NzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkZTk4NDRiYmYwZDhlN2U5YWZlYWVhNjBkNjk4NWZjY2M0ZTYwNjU4NTFmNzA5OTk5YzYzOGRkNjA0MmMyYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1YWU0NDJkODE5NzhkYWJlOWFjY2QwNDY1Zjg3YTk3NTk0NjA0NjVhNmNjODNlZjVmY2FiNTI1ZTM0YmUzMGMifQ"
         },
         {
-          "resource": "repo://src/mimetype.rs#L40-L49",
-          "version": "repo-lines-v1:sha256:90a35c9d6c4d800e5d95ed7c3ef5d952f219814852692f589998a3be75524efb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Yjg1YTJjNTU2MTJlNWViNDY0NzYxOTFhMTJhZGIwMTQ1Nzk3MWI0ZTU4MjA4YWM0Mzk1YWEzMDI5MTVmZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYjZkN2E1OGNhMzg5M2U3NDIxN2VlMGIxY2FkMGVjNjFhZWNjNzllNTY5OTI1MmViMDNjYzgxOWU4ZjMyNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MjdkMTI3M2VlZjE4Mjc3NjU4NmUzNjBiOGZjMWE4NTkyNDQ1NmEyMWE1MDlmODczOTk0YjY2NGQ3NDkxYzcifQ"
+          "resource": "repo://src/mimetype.rs#L39-L49",
+          "version": "repo-lines-v1:sha256:8c67d0162f8206d53b514d8da4e755124168015075da1829ee7c48371b194023:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MTdmODBhODhhZGNjOTIwMDFlMjc3NzU1ZGJhODdlMDE2YWI0OWMwZDczMDFiNTZjMjhjYzE3NWU2NTgyZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2ViYTNmN2NjMTk4ZjNkODgzNDFiNmU5Y2JkYjY1Y2UyYjQ3ZmYyMmZlMGE4MzI4YTJhMTYzNzNmZWE3YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NzA1NDkwN2I1YjkwZGQwMjM5MDYxZGQ1OTMxZTAyZjQ1OGEyZjYwNDM5ZjBhM2MxMzJkZjdmMTk1NWM5MDYifQ"
         }
       ]
     },
@@ -407,19 +407,19 @@
       "statement": "The integrity and purge workflows commit per unit rather than per invocation — check_system per system, purge_romfiles per category, purge_ird per game — while purge-roms --missing deletes rows with no transaction of its own, so an error partway leaves earlier work durable and each loop prints its own count.",
       "evidence": [
         {
-          "resource": "repo://src/check_roms.rs#L131-L257",
-          "version": "repo-lines-v1:sha256:5c8027a091813c5195d7f8339ef0e526769f346ecf14093f024f05b446a539d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYzkzZjFiMzc2YTkyNDhmZDg1MDgzZmNhMmRiNDQ4ZWQ4NDNlNDUzZDllYjM4NDlhZGIyYTE0MzA4MDU5YzYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzMzMzFhZTk1NTViMWY0N2I4ZDM3NGZhNDgyY2JmNmZlNTcwZGQ0MTdmODYzZDdkZTliY2Q4OTI4NjBkYzZiIn0"
+          "resource": "repo://src/check_roms.rs#L131-L272",
+          "version": "repo-lines-v1:sha256:755f8dcc3a483a616468c707f03a731c9741329f0371321001290fcabed9291f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYzkzZjFiMzc2YTkyNDhmZDg1MDgzZmNhMmRiNDQ4ZWQ4NDNlNDUzZDllYjM4NDlhZGIyYTE0MzA4MDU5YzYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzMzMzFhZTk1NTViMWY0N2I4ZDM3NGZhNDgyY2JmNmZlNTcwZGQ0MTdmODYzZDdkZTliY2Q4OTI4NjBkYzZiIn0"
         },
         {
           "resource": "repo://src/purge_irds.rs#L104-L167",
           "version": "repo-lines-v1:sha256:f803836cc4c6e0e61ec6029d8d266bf2fb97e147ef09ae9a83ab815eb82b6a80:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMDdmZWI2ZjBjOTIwNTU1NzdkNTk1Y2M2YTYwMTQ0ZTVlMzJiYjBlZWE1MmUxYzQ4NjA0NTYyYjIwNTQ2NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDA1ZDIwMGYxMmM3M2Y5OWJmMTg5NjhmMmY2NzVjODk1M2JkMDE2ZmY4Y2RhMTc1Y2YwYzZkYjY4NjI3MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NGM3MzFjZjdlZjhjMjA4MGVhZGU3YzkxMWEyYzQxYzdkMTA0MGMxOTc2ODVlMGIyOTViMzA2NTBhYWY0MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiZTk1ZDNkODdhZmVjOTUzYWEzZTI3ZGE1OGMzMTI1NzgzYTJkN2VkMjQwZWE2Nzc1NTVhYjYxYTFhNTZiY2QifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L136-L152",
+          "resource": "repo://src/purge_roms.rs#L138-L154",
           "version": "repo-lines-v1:sha256:be04d52f3f53083776c028d78a90f10844e0fb01a8b5b237afbb09bdff51d13a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3NzJlODJkNjgwYjI3OTM3MmE3YWUyZDk2OTk4NTgzNDU5OTUyNjZmZjVkZWRiZThlYzBkYjQ4YWZmNzkyMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjOTllNjRjYTc2NmQyYTE3NmEzYmNlODdmMjcyYzZiOTRmYjE2MTc0YzFkNzMyOTBkZjkzODJjOGNlMjk2ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZjY1Yjc2OGM1OWMyODBkMjg1ZGYwYWVmZjc1YTg2Yzk4MTVmYTQxYjY3YTYwOTYyNGUyMmY1OWNiYjliYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiNGJmNWFmYTBhMmQyNWFiZGI1NmZlOWI3MDQ5NjcyOTg0NzdmZGJiNThiZTBmZDExMmUwY2JlYTAxOTMwMWEifQ"
         },
         {
-          "resource": "repo://src/purge_roms.rs#L93-L106",
+          "resource": "repo://src/purge_roms.rs#L95-L108",
           "version": "repo-lines-v1:sha256:59310d350ec34d994ae89cfd3dfcc94af6e991d1e7ffaff3fea6867e2226ce84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2Mjk1ODNjMWZjNzI5NjVlMDRjOTFhYjExYzE3ZDNkZTkwOTcxMTlkNWVkY2Q3YzM0MDZjZjMwNmZjZjFmMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczN2ZkODYyYjZiMjZjMGI1NmI3YTIxNmUyODEyNWJkMmMxOTI5MWVhNTEyYWQ1YzIxYzhkZmEyZWU4MTQ0MGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0M2NmYTQ3NTQzMjEwZWU4YjU4NTIxZDYyMTMyN2RiNjVlZGJjNjdlODg4MmYyMTY0M2Y2MjFiYzZmOWI2ZTYifQ"
         }
       ]
@@ -469,7 +469,7 @@
       "statement": "CHD integrity verification no longer depends on an external binary: it goes through the in-repo chd-rs crate, whose get_version() returns the literal \"built-in\". CommonRomfile::parse_chd opens the container with Chd::open on a blocking task and returns type, logical size, data SHA1, own SHA1, declared parent SHA1 and track_count, deliberately reporting size 0 and an empty data hash for a CD because only its tracks are hashed.",
       "evidence": [
         {
-          "resource": "repo://Cargo.toml#L79-L79",
+          "resource": "repo://Cargo.toml#L80-L80",
           "version": "repo-lines-v1:sha256:9e1624a226dc1f2efb1891ae18390c74e22f4f2f0d8b49370504c4fd0bd4de4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWUxNjI0YTIyNmRjMWYyZWZiMTg5MWFlMTgzOTBjNzRlMjJmNGYyZjBkOGI0OTM3MDUwNGM0ZmQwYmQ0ZGU0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmNiOWM3NDgwMTBjN2Y1ZTMwODY2NDg3YTI2N2FiM2UwMTA1NjMzYTAyMGUxYjQ4MmFlNjczOWQ1NGE4MWU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA0MGEzM2U3OTI1NTBhOWQzZGMwNmQxYzQ2MjE5ZGUyNzE1NTRkN2ZhMTZhMmRlN2ZlMWJkYjQ4Y2UwMGYxMyJ9"
         },
         {
@@ -542,17 +542,31 @@
     },
     {
       "id": "claim_cd2f80cd1cc34251b60e842076012c5f",
-      "statement": "WuxRomfile::check hashes the decompressing wux_rs::Image against the DAT's WUD row without writing a WUD, extracting one to the temp directory only when the system has a header; no Wii U key is needed.",
+      "statement": "WuxRomfile::check hashes the decompressing wux_rs::Image against the DAT's disc row without writing a WUD, extracting one to the temp directory only when the system has a header; no Wii U key is needed.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L53-L112",
-          "version": "repo-lines-v1:sha256:68b4095bec76383312a24af9873630dfbd6f4e5a2d1779a3aed0185d6dfb4986:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyMTc2OTdkNDcwYTdkNTRjYjA0NDNjZTExNDAxMWYwNDY3MWUwYzA5OTU1Y2E4OTZlZGQ3ZTYyZWEwYjkyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYTE1OTdiZmZhNGQyYzMwYmQ3MjJjZjJiNWM1ZjY3MGJkZWVlYmI5Mjg4YjA4OGY4NTAxN2I5NDZmZDAyYzYifQ"
+          "resource": "repo://src/wux.rs#L110-L180",
+          "version": "repo-lines-v1:sha256:7422a59a2b3d81248d00daa38e313cd6e4e7eacac1e5f6433627c6a1aaba3888:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzODI5MDkwYmM5YzBjOTg3YjVhYzczMjg0MzQ1MGFhMmNhYTZkZjliZDVlMzYyMzIyODE1YWY3M2YxOTMyYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliOTY2Y2NiYjQ4ZGQzZGQ0MmI1Y2ZhZThhZjQyNzBjNTNmNTQ4ZmUzNmMzMTg3NzdjYmViZTZkNzJhNTg2NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e54844044844d7b8cc3be7060496719",
+      "statement": "WuaRomfile::check compares a lossless WUA's disc info with the DAT row and then rebuilds a WUX in the temp directory, which fails when the Wii U keys or the WUA's store entries are missing or the rebuilt disc does not match its SHA-1, sending the WUA to Trash.",
+      "evidence": [
+        {
+          "resource": "repo://src/check_roms/test_wua_without_its_update.rs#L55-L80",
+          "version": "repo-lines-v1:sha256:fb42b8c7d29e2631a127472051f013f19eb32fe0a2dbd980d9a9e712164e7492:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZTI0OTUwZmQzZDgxZWMzZDYwYjA2YjkyZWZkMDU2ZDRhNjRkMDA5ZDE3YmE0MTkxNGEwNDE1ZTFlZDQ4YjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/wux.rs#L247-L278",
+          "version": "repo-lines-v1:sha256:5eb9ab2434912280941d40bc2c0b21f5841ee4d68bd23098f0cfb0e8711a672a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZjMwYmM4YWU2YmM1ZGQ3YjkxMTRjMjAwZTFhMjQ1ZTcwYTViODZkNjMwNzAxYzgwZjQwMzVjZDQ0N2QyNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OWNiZDc4OWIwNTVhYmI2ZWZiYWUxYmY1YTk2YWVkMzIzNmEyNWVhZGJmNWNhN2NmNmI0MDY2MTJiMTIxNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4NGUzMTdlYTg4OGI2MjAxZjc3ZDMwOWVmYzFiNjA5NWIwNzgyZTRjNjI3MzhlYjMwYzY2NzlmZjVlNzZjODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNmI2M2E3Y2E5NDdkODYwNTIwNDkyZmMxMTllZWQ5MDU1YjhmNGQ5ZDhmODZjMmZiNTkxNGJiYWY3YTk5YzQifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-25T14:55:31.619Z"
+    "at": "2026-10-26T20:09:06.498Z"
   }
 }

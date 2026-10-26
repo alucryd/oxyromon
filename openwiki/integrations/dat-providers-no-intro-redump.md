@@ -80,10 +80,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -117,8 +117,9 @@ The Wii U shows how a provider's DAT shape reaches the import code. No-Intro's
 CDN DAT lists each update or DLC as a game whose ROMs are the title's files under
 the CDN's names: `tmd.<version>`, `cetk.<version>`, and a bare content ID such as
 `00000000` with its `.h3`. `import-roms` keys on that TMD to import a title folder
-whole, and a downloader's `title.tmd` and `.app` names match too. Disc DATs list
-the `.wud` instead. See [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
+whole, and a downloader's `title.tmd` and `.app` names match too. Redump's disc DATs
+list each disc as an `.iso` instead, which a WUX or a lossless WUA is matched
+against. See [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 
 Arcade versus console is not a provider switch but a DAT-shape switch: a DAT whose
 entries are `<machine>` rather than `<game>` sets `systems.arcade = true`
