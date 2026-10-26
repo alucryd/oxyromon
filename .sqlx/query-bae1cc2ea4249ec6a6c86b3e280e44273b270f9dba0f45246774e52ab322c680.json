@@ -1,0 +1,74 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT DISTINCT romfiles.*\n        FROM romfiles\n        JOIN roms ON roms.romfile_id = romfiles.id\n        WHERE roms.name = 'title.tmd'\n        OR roms.name = 'tmd'\n        OR roms.name LIKE 'tmd.%'\n        ORDER BY romfiles.path\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "romfiles",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "path",
+        "ordinal": 1,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "romfiles",
+            "name": "path"
+          }
+        }
+      },
+      {
+        "name": "size",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "romfiles",
+            "name": "size"
+          }
+        }
+      },
+      {
+        "name": "parent_id",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "romfiles",
+            "name": "parent_id"
+          }
+        }
+      },
+      {
+        "name": "romfile_type",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "romfiles",
+            "name": "romfile_type"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "bae1cc2ea4249ec6a6c86b3e280e44273b270f9dba0f45246774e52ab322c680"
+}

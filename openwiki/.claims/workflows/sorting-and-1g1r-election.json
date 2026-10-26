@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:50a6367f66f8ed37b0f4e8bc0741bc7eb2466f6669e03dbdb4e1863107087b65",
+  "pageVersion": "sha256:f3a5953321e74357e5dd4ee49aa2af42d7990ae1ddaf6a9464ef1885aca4c2e6",
   "claims": [
     {
       "id": "claim_70ba4573e4dd45f594589f98a495e5af",
@@ -98,11 +98,11 @@
     },
     {
       "id": "claim_cba8fa1153df49f983d89c22581d0a3b",
-      "statement": "A game's destination comes from get_sorted_path: the system directory, its 1G1R or its Trash subdirectory by sorting, an uppercase-initial or # subfolder under the alpha scheme (taken from the command line or else from REGIONS_ALL_SUBFOLDERS/REGIONS_ONE_SUBFOLDERS, never for Trash), and a per-game directory for non-archive arcade sets and JB folders; patches and playlists move with their game.",
+      "statement": "A game's destination comes from get_sorted_path: the system directory, its 1G1R or its Trash subdirectory by sorting, an uppercase-initial or # subfolder under the alpha scheme (taken from the command line or else from REGIONS_ALL_SUBFOLDERS/REGIONS_ONE_SUBFOLDERS, never for Trash), and a per-game directory for non-archive arcade sets, JB folders and non-archive NUS titles; patches and playlists move with their game.",
       "evidence": [
         {
-          "resource": "repo://src/common.rs#L399-L462",
-          "version": "repo-lines-v1:sha256:096ac4baee3ddbf2cb3b00ea8d82d7c5cb9407e3e00476cee01479689a1a5f4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NGM2MmQzNTNhZGViMjVkZmFlNTQ1YjIxZTZmMTA2Njk3NWI1ZGUyMDNiNjE3ODYyYzY1ZmI4YzIyOWY0NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkNmIzY2ZjNzQ3ODBlZGNmYjgwZjJmZDRjYzIzZWM4NGM3NGFiMWUyMTk3NjViNTQ3NGIwZWM4N2Y3MTM2MzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MmVlNTdlNDFhOGMyMGFlMDE2NGRmMjYxNDM5ZGNjNDk5ZDM1MjA4MzQxNTE1MTZkMDQ3ZThkZWFlOGE0NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZmM3ZDJjNTU0MjMzYmIzMmRjNmE5MWVmN2ZhZmU3ZDBkMjNmNDJiZWI2YTQ3OThmYWZjODgxOTQ2NGQ2MzcifQ"
+          "resource": "repo://src/common.rs#L400-L471",
+          "version": "repo-lines-v1:sha256:e1eb1458b19dd27d2b85d04817cf9325d70a1a0b1fa2b62e056fb70e3f542226:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NGM2MmQzNTNhZGViMjVkZmFlNTQ1YjIxZTZmMTA2Njk3NWI1ZGUyMDNiNjE3ODYyYzY1ZmI4YzIyOWY0NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MmVlNTdlNDFhOGMyMGFlMDE2NGRmMjYxNDM5ZGNjNDk5ZDM1MjA4MzQxNTE1MTZkMDQ3ZThkZWFlOGE0NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3N2Y5MmE4ZmYzZjhhM2E4YzNlNmIyZTJjZWM4ZjNhZDliMGFkNzVkN2JkN2EwZDgwOWUwYmZmMGZhNWE5OTgifQ"
         },
         {
           "resource": "repo://src/sort_roms.rs#L654-L719",
@@ -111,6 +111,10 @@
         {
           "resource": "repo://src/util.rs#L470-L477",
           "version": "repo-lines-v1:sha256:89a561ad3dbb854dd030df9309c39a711588d880027270325935402727ef5806:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzcwZDhiMjc1M2Y3MjkwNGQyZGQxZjAwNjgwZDMzY2QxMDE1ODYxMzAwOGU0YWIwYWYwZDY5ZjlkZjM3NmFlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTllNzYzNTVjZjExOTk0ODBjM2Y5OTgzNmIxNDg2Yzg0MWQ4OTFmYWFkOTA0YzYwOGUwOTMwMjJkMzc1N2FlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY5MWI0MDJhNDI3NmI0MjU3YWZkYmQ3NTEyNjJkZDNjZjVlNWQ4Nzg3NzQ4NDhiNmM4M2MyY2EyYWUzZmQzMCJ9"
+        },
+        {
+          "resource": "repo://src/wux.rs#L418-L426",
+          "version": "repo-lines-v1:sha256:851ccebebdfe5c0014037f8b75648cb7e3cb700a64979175f711f5fa30ed23c1:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM3MmIxNDE5Yzk1OTdjNDJlODBiNjUxZjRlYTAwOTZhY2E0MDJiZTRjZjg5OGEwYzAxNmEyNDhhMzdhYTdkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ2YjU1YzY4NDI4YmQ5ZThkNmI0ZTRjZjBiYmZiYjgyNzgxYTMyNTg2MTBhZTllMDEyMjc3MDQ2MzUwZDA3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTcyM2I2NTM5NmM2YzUwMTRlMTk0YWU5NjYwMjYwNThlNzk2Yzg1ZTRmMzRiOWQ0ZDU3YzRjYjA1NGY1YWM0ZSJ9"
         }
       ]
     },
@@ -155,6 +159,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-20T21:43:24.013Z"
+    "at": "2026-10-25T14:55:31.619Z"
   }
 }

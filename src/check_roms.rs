@@ -9,6 +9,7 @@ use super::prompt::*;
 use super::rvz::AsRvz;
 use super::transcode::romfile_as_chd;
 use super::util::*;
+use super::wux::{AsWua, AsWux};
 use super::xso::AsXso;
 use anyhow::{Result, anyhow, bail};
 use clap::{Arg, ArgAction, ArgMatches, Command};
@@ -181,6 +182,28 @@ async fn check_system(
                 .as_rvz()?
                 .check(&mut transaction, progress_bar, &header, &romfile_roms)
                 .await
+        } else if WUA_EXTENSION == romfile_extension {
+            // a lossless WUA rebuilds its disc; any other is checked as it is
+            let common = romfile.as_common(&mut transaction).await?;
+            match common.clone().as_wua() {
+                Ok(wua_romfile) => {
+                    wua_romfile
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms)
+                        .await
+                }
+                Err(_) => {
+                    common
+                        .check(&mut transaction, progress_bar, &header, &romfile_roms)
+                        .await
+                }
+            }
+        } else if WUX_EXTENSION == romfile_extension {
+            romfile
+                .as_common(&mut transaction)
+                .await?
+                .as_wux()?
+                .check(&mut transaction, progress_bar, &header, &romfile_roms)
+                .await
         } else if ZSO_EXTENSION == romfile_extension {
             romfile
                 .as_common(&mut transaction)
@@ -341,6 +364,12 @@ mod test_rvz;
 mod test_sevenzip;
 #[cfg(test)]
 mod test_sevenzip_with_header;
+#[cfg(test)]
+mod test_wua;
+#[cfg(test)]
+mod test_wua_without_its_update;
+#[cfg(test)]
+mod test_wux;
 #[cfg(test)]
 mod test_zip;
 #[cfg(test)]

@@ -48,12 +48,14 @@ sources:
     resource: repo://src/server.rs
   - id: openwiki-source-0a9271029eb893aacec54c15
     resource: repo://src/sort_roms.rs
+  - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
+    resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-25T14:55:31.619Z
 ---
 
 # Quickstart & Task Routing
@@ -66,9 +68,10 @@ export. The same binary can also run as a web server (GraphQL API plus an embedd
 and as a Model Context Protocol server — both optional Cargo features, and both thin wrappers
 over the very same subcommand implementations the CLI runs.
 
-Format handling is in-tree: the seven crates under `crates/` (`chd-rs`, `cia-rs`, `gdi-rs`,
-`nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external tools oxyromon used to shell
-out to, so **oxyromon needs no external program at runtime** and a plain build needs no format
+Format handling is in-tree: seven of the eight crates under `crates/` (`chd-rs`, `cia-rs`,
+`gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`) are ports of the external tools oxyromon
+used to shell out to, and the eighth, `wux-rs`, adds Wii U support following wudd and Cemu. So
+**oxyromon needs no external program at runtime** and a plain build needs no format
 toolchain installed. `mame-tools`/`chdman`, `xdelta3` and `ffmpeg` appear only in CI as reference
 binaries for the crates' own tests.
 
@@ -126,7 +129,7 @@ flowchart LR
 | Path        | What it is                                                                                                                                  |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | root        | The `oxyromon` package: the binary, `build.rs`, `migrations/`, `.sqlx/` offline query data.                                                  |
-| `crates/`   | Seven format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently. |
+| `crates/`   | Eight format crates (`chd-rs`, `cia-rs`, `gdi-rs`, `nsz-rs`, `wux-rs`, `xdelta-rs`, `xps-rs`, `xso-rs`), workspace members, standalone library + CLI, published independently. |
 | `frontend/` | The Leptos SPA. **Not** a workspace member — it declares its own `[workspace]`.                                                              |
 | `desktop/`  | The Tauri shell that spawns `oxyromon server` as a sidecar. Also standalone.                                                                  |
 | `tests/`    | DAT and ROM fixtures plus the two integration targets: `tests/mcp_stdio.rs` and `tests/crates.rs`.                                            |
@@ -146,18 +149,20 @@ standalone CLI with the same capabilities:
 | Crate       | Began as a port of | CLI        | Used by oxyromon for  |
 | ----------- | ------------------ | ---------- | --------------------- |
 | `chd-rs`    | chdman             | `chdrs`    | CHD                   |
+| `cia-rs`    | ctrtool            | `ciars`    | CIA                   |
 | `gdi-rs`    | gdidrop            | `gdirs`    | GDI                   |
 | `nsz-rs`    | nsz                | `nszrs`    | NSZ                   |
 | `xdelta-rs` | xdelta3            | `xdeltars` | XDELTA patches        |
 | `xps-rs`    | Flips              | `xpsrs`    | IPS and BPS patches   |
 | `xso-rs`    | maxcso             | `xsors`    | CSO/ZSO               |
+| `wux-rs`    | none (wudd, Cemu)  | `wuxrs`    | Wii U WUD/WUX, WUA and NUS export |
 
 Archives go through `sevenz-rust2` and `zip`, RVZ and WBFS through `nod` (which builds its
-compression libraries from source, so a C toolchain is required), and CIA through `cia-rs`.
+compression libraries from source, so a C toolchain is required).
 `chd-rs` takes its FLAC codec from the pure-Rust `rusty_flac`, so no CMake is needed.
 
 ```sh
-cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs -p xso-rs   # the CLIs
+cargo build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p wux-rs -p xps-rs -p xso-rs   # the CLIs
 cargo test -p xso-rs                              # one crate
 cargo test --release -p xso-rs -- --ignored       # its slow tests
 ```
@@ -166,8 +171,10 @@ cargo test --release -p xso-rs -- --ignored       # its slow tests
 release archives.
 
 `oxyromon info` is the dependency check: it probes every backend's `get_version()`, prints
-`<name>: built-in` for every backend, all of which are linked crates, and special-cases NSZ — a missing `prod.keys`
-shows up as `built-in, prod.keys not found`, since only compressing NCAs needs keys.
+`<name>: built-in` for every backend, all of which are linked crates, and special-cases two that need keys. A
+missing `prod.keys` shows up as `built-in, prod.keys not found`, since only compressing NCAs needs it. Missing
+Wii U keys show up as `built-in, no Wii U keys imported`; `oxyromon import-keys` stores them in the data
+directory, and only WUA and NUS exports need them.
 
 ## Task routing
 
@@ -182,6 +189,7 @@ shows up as `built-in, prod.keys not found`, since only compressing NCAs needs k
 | extension constants, magic-byte matchers                                                                  | [File Type Detection and Extension Constants](concepts/file-type-detection-and-extensions.md) |
 | adding or changing a format module (`archive`, `chd`, `rvz`, `xso`, …)                                    | [Format Modules and Their Crate Backends](concepts/format-modules-and-format-crates.md) |
 | CHD read/write, hunk and codec behavior, parent CHDs, `src/chd.rs` ↔ `crates/chd-rs`                      | [CHD Format and the chd-rs Crate](concepts/chd-format-and-chd-rs.md)           |
+| Wii U WUD/WUX/WUA/NUS, `import-keys`, updates and DLC, `src/wux.rs` ↔ `crates/wux-rs`                     | [Wii U Formats and the wux-rs Crate](concepts/wii-u-formats-and-wux-rs.md)     |
 | `CommonRomfile` and its trait system                                                                      | [Romfile Trait System](concepts/romfile-trait-system.md)                       |
 | DAT parsing, header definitions, Redump/No-Intro downloads                                                | [Catalog Ingestion: DATs, Headers and Downloads](workflows/dat-ingestion.md)   |
 | hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |

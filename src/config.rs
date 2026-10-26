@@ -606,6 +606,17 @@ pub async fn set_string(
     upsert_setting(connection, key, Some(value.to_string()), system_id).await;
 }
 
+/// Where oxyromon keeps its database and the keys it imports:
+/// `OXYROMON_DATA_DIRECTORY`, or the platform's data directory.
+pub fn get_data_directory() -> Result<PathBuf> {
+    match env::var("OXYROMON_DATA_DIRECTORY") {
+        Ok(data_directory) => Ok(PathBuf::from(data_directory)),
+        Err(_) => Ok(dirs::data_dir()
+            .context("No data directory to keep oxyromon's database in")?
+            .join("oxyromon")),
+    }
+}
+
 pub async fn get_rom_directory(connection: &mut SqliteConnection) -> PathBuf {
     match get_directory(connection, "ROM_DIRECTORY", None).await {
         Some(rom_directory) => rom_directory,

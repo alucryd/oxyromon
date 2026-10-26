@@ -6,6 +6,8 @@ tags: [dat-providers, no-intro, redump, mame, fbneo, download-dats, naming-token
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
+  - id: openwiki-source-50f94ae1d9f2b065641770f1
+    resource: repo://crates/wux-rs/src/nus.rs
   - id: openwiki-source-66de04ab1b5b16fdc2ef21f2
     resource: repo://data/No-Intro_NES.xml
   - id: openwiki-source-9594fdc8eb7c8cc0ab2dd040
@@ -46,6 +48,8 @@ sources:
     resource: repo://src/import_dats/test_regions_world.rs
   - id: openwiki-source-30ed0eedcb90a24300e7a1fe
     resource: repo://src/import_dats/test_zip_update_unknown_system.rs
+  - id: openwiki-source-9add64e166d8ef19bd58c5af
+    resource: repo://src/import_roms.rs
   - id: openwiki-source-b23fc7fb5544ff535eae8c43
     resource: repo://src/mcp/prompts.rs
   - id: openwiki-source-f6b27667092492e425164ff8
@@ -72,10 +76,14 @@ sources:
     resource: repo://tests/profile.xml
   - id: openwiki-source-b6fbe21cd25e7e095cc8c367
     resource: repo://tests/Test%20System%20(20200721)%20(MAME).dat
-generated: { by: "claude-code", at: "2026-10-19T17:45:26.496Z" }
+  - id: openwiki-source-cc9a39413c8a670060b6243d
+    resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
+  - id: openwiki-source-706217a392bda126ca145591
+    resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
+generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # DAT Providers and Naming Conventions
@@ -104,6 +112,14 @@ the in-tree `zip` crate, and the README states that every format is handled in-p
 so oxyROMon needs no external tool. The format tools oxyromon once launched — `chdman`
 and `ctrtool` among them — were replaced by the crates under `crates/`; see
 [External Tools](external-tools.md).
+
+The Wii U shows how a provider's DAT shape reaches the import code. No-Intro's
+CDN DAT lists each update or DLC as a game whose ROMs are the title's files under
+the CDN's names: `tmd.<version>`, `cetk.<version>`, and a bare content ID such as
+`00000000` with its `.h3`. `import-roms` keys on that TMD to import a title folder
+whole, and a downloader's `title.tmd` and `.app` names match too. Redump's disc DATs
+list each disc as an `.iso` instead, which a WUX or a lossless WUA is matched
+against. See [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 
 Arcade versus console is not a provider switch but a DAT-shape switch: a DAT whose
 entries are `<machine>` rather than `<game>` sets `systems.arcade = true`

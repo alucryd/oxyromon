@@ -1,16 +1,21 @@
-use super::common::*;
-use super::config::*;
+use super::common::to_hex;
+use super::crc32::Crc32;
+use super::mimetype::{ISO_EXTENSION, WUA_EXTENSION, WUX_EXTENSION};
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use super::wux::has_extension;
 use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::value_parser;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::ProgressBar;
+use md5::Md5;
 use quick_xml::se;
 use serde::Serialize;
+use sha1::{Digest, Sha1};
 use sqlx::sqlite::SqliteConnection;
+use std::io::Read;
 use std::path::Path;
 use std::path::PathBuf;
 use std::str;
@@ -120,7 +125,7 @@ pub async fn main(
 
 #[allow(clippy::too_many_arguments)]
 pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
-    connection: &mut SqliteConnection,
+    _connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     input_directory: P,
     output_directory: Option<Q>,
@@ -151,62 +156,53 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         clrmamepros: vec![],
     };
 
+    // One game per file, except that a WUX or a lossless WUA is listed as the
+    // disc it holds, an ISO as Redump lists it, and a NUS title's folder, an
+    // update or DLC as Nintendo's servers deliver it, as one game whose ROMs
+    // are its files, as No-Intro lists them.
     let mut games_xml: Vec<GameXml> = vec![];
-    let walker = WalkDir::new(&input_directory).into_iter();
-    for entry in walker.filter_map(|e| e.ok()) {
-        if entry.path().is_file() {
-            let romfile = CommonRomfile::from_path(&entry.path())?;
-            let rom_name = romfile
-                .path
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            print_subheader(progress_bar, &format!("Processing \"{}\"", rom_name));
-            let rom_xml = RomXml {
-                name: rom_name,
-                size: romfile.get_size(connection, progress_bar).await? as i64,
-                crc: Some(
-                    romfile
-                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Crc)
-                        .await?
-                        .0,
-                ),
-                md5: Some(
-                    romfile
-                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Md5)
-                        .await?
-                        .0,
-                ),
-                sha1: Some(
-                    romfile
-                        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Sha1)
-                        .await?
-                        .0,
-                ),
-                merge: None,
-                status: None,
+    let mut walker = WalkDir::new(&input_directory).into_iter();
+    while let Some(entry) = walker.next() {
+        let Ok(entry) = entry else { continue };
+        let path = entry.path();
+        // the update partitions lossless WUAs share, not games of their own
+        if path.is_dir() && entry.file_name() == wux_rs::STORE_DIR {
+            walker.skip_current_dir();
+            continue;
+        }
+        if path.is_dir() && entry.depth() > 0 && wux_rs::tmd_path(path).is_some() {
+            walker.skip_current_dir();
+            let game_name = path.file_name().unwrap().to_str().unwrap().to_string();
+            print_subheader(progress_bar, &format!("Processing \"{}\"", game_name));
+            let mut files: Vec<PathBuf> = std::fs::read_dir(path)?
+                .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                .filter(|path| path.is_file())
+                .collect();
+            files.sort();
+            let mut roms = Vec::with_capacity(files.len());
+            for file in files {
+                let rom_name = file.file_name().unwrap().to_str().unwrap().to_string();
+                roms.push(rom_xml(progress_bar, &file, rom_name)?);
+            }
+            games_xml.push(game_xml(game_name, roms));
+        } else if path.is_file() {
+            let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
+            print_subheader(progress_bar, &format!("Processing \"{}\"", file_name));
+            let game_name = path.file_stem().unwrap().to_str().unwrap().to_string();
+            let is = |extension| has_extension(path, extension);
+            let disc_name = format!("{game_name}.{ISO_EXTENSION}");
+            // What a lossless WUA keeps of its disc needs no reading.
+            let wua = match is(WUA_EXTENSION) {
+                true => wux_rs::disc_info(path)
+                    .with_context(|| format!("Failed to read \"{}\"", path.display()))?,
+                false => None,
             };
-            let game_name = romfile
-                .path
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            let game_xml = GameXml {
-                name: game_name.clone(),
-                description: game_name.clone(),
-                roms: vec![rom_xml],
-                disks: vec![],
-                isbios: false,
-                isdevice: false,
-                cloneof: None,
-                romof: None,
-                comment: None,
+            let rom = match wua {
+                Some(info) => disc_rom_xml(disc_name, &info),
+                None if is(WUX_EXTENSION) => rom_xml(progress_bar, path, disc_name)?,
+                None => rom_xml(progress_bar, path, file_name)?,
             };
-            games_xml.push(game_xml);
+            games_xml.push(game_xml(game_name, vec![rom]));
         }
     }
 
@@ -250,9 +246,83 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
         .write_all(buffer.as_bytes())
         .await
         .context("Failed to write DAT file")?;
+    // tokio writes in the background: wait for it, or the DAT may be cut short
+    dat_file.flush().await.context("Failed to write DAT file")?;
 
     Ok(())
 }
 
+fn game_xml(name: String, roms: Vec<RomXml>) -> GameXml {
+    GameXml {
+        description: name.clone(),
+        name,
+        roms,
+        disks: vec![],
+        isbios: false,
+        isdevice: false,
+        cloneof: None,
+        romof: None,
+        comment: None,
+    }
+}
+
+/// A lossless WUA's disc as a ROM named `name`, from what the WUA keeps.
+fn disc_rom_xml(name: String, info: &wux_rs::DiscInfo) -> RomXml {
+    RomXml {
+        name,
+        size: info.size as i64,
+        crc: Some(format!("{:08x}", info.crc32)),
+        md5: Some(to_hex(&info.md5)),
+        sha1: Some(to_hex(&info.sha1)),
+        merge: None,
+        status: None,
+    }
+}
+
+/// `path` as a ROM named `name`, hashed in one pass; a WUX as the WUD it holds,
+/// decompressed as it is read.
+fn rom_xml(progress_bar: &ProgressBar, path: &Path, name: String) -> Result<RomXml> {
+    let mut reader: Box<dyn Read> = match has_extension(path, WUX_EXTENSION) {
+        true => Box::new(
+            wux_rs::Image::open(path)
+                .with_context(|| format!("Failed to open \"{}\"", path.display()))?,
+        ),
+        false => Box::new(open_file_sync(&path)?),
+    };
+    progress_bar.reset();
+    progress_bar.set_style(get_bytes_progress_style());
+    progress_bar.set_message("Computing CRC, MD5 and SHA1");
+    let (mut crc, mut md5, mut sha1) = (Crc32::new(), Md5::new(), Sha1::new());
+    let mut buffer = vec![0; 1 << 20];
+    let mut size = 0;
+    loop {
+        let n = reader
+            .read(&mut buffer)
+            .with_context(|| format!("Failed to read \"{}\"", path.display()))?;
+        if n == 0 {
+            break;
+        }
+        Digest::update(&mut crc, &buffer[..n]);
+        Digest::update(&mut md5, &buffer[..n]);
+        Digest::update(&mut sha1, &buffer[..n]);
+        size += n as u64;
+        progress_bar.inc(n as u64);
+    }
+    progress_bar.set_message("");
+    Ok(RomXml {
+        name,
+        size: size as i64,
+        crc: Some(to_hex(&crc.finalize())),
+        md5: Some(to_hex(&md5.finalize())),
+        sha1: Some(to_hex(&sha1.finalize())),
+        merge: None,
+        status: None,
+    })
+}
+
 #[cfg(test)]
 mod test_dat;
+#[cfg(test)]
+mod test_wua;
+#[cfg(test)]
+mod test_wux_and_nus;

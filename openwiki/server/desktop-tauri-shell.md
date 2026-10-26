@@ -46,16 +46,20 @@ sources:
     resource: repo://frontend/src/sse.rs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
+  - id: openwiki-source-2a737474d86fc75cc9d9694f
+    resource: repo://src/config.rs
   - id: openwiki-source-b94e49e3da43d66b03ed7c7e
     resource: repo://src/database.rs
+  - id: openwiki-source-f7509e92ca643a1db54a74c4
+    resource: repo://src/import_keys.rs
   - id: openwiki-source-7fb657fead83b71b9836ddac
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
-generated: { by: "claude-code", at: "2026-10-24T21:19:09.823Z" }
+generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-24T21:19:09.823Z
+    at: 2026-10-26T20:09:06.498Z
 ---
 
 # Desktop App (Tauri Sidecar)
@@ -285,12 +289,15 @@ the `/mcp` endpoint that the standalone `oxyromon server` does.
 The sidecar is self-sufficient. Every format oxyromon handles is now produced by an
 in-tree crate under `crates/` or a Rust dependency — CHD via chd-rs, CSO/ZSO via
 xso-rs, GDI via gdi-rs, XDELTA via xdelta-rs, BPS/IPS via xps-rs, NSZ via nsz-rs,
-CIA via cia-rs, 7z/ZIP via sevenz-rust2 and zip, RVZ/WBFS via nod — so the tools
+CIA via cia-rs, WUX/WUA/NUS via wux-rs, 7z/ZIP via sevenz-rust2 and zip, RVZ/WBFS
+via nod — so the tools
 oxyromon once shelled out to (`chdman`, `ctrtool`, `xdelta3`, `flips`, `maxcso`,
 `dolphin-tool`, `wit`, 7-Zip/p7zip) are gone from the runtime entirely.
 `src/info.rs` reflects that: its dependency list reports `chd-rs`, `cia-rs`, `nod`,
-`nsz-rs`, `sevenz-rust2`, `xdelta-rs`, `xps-rs` and `xso-rs` as built-in versions,
-and no external binary is needed for any format.
+`nsz-rs`, `sevenz-rust2`, `wux-rs`, `xdelta-rs`, `xps-rs` and `xso-rs` as built-in
+versions, and no external binary is needed for any format. Wii U keys for WUA and NUS
+exports go in the shared data directory through `import-keys`, so the desktop app
+and the CLI see the same keys.
 
 That has two packaging consequences:
 
@@ -325,10 +332,11 @@ images do not carry and for which no cross toolchain exists, so a Windows or mac
 bundle must be produced on that operating system. `desktop.sh` is the standalone
 equivalent.
 
-The rest of the release matrix is CLI-only, and per target it emits **eight
-binaries**: the server-enabled `oxyromon`, plus the seven format-crate CLIs built with
-`cross build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p xps-rs
--p xso-rs` — `chdrs`, `ciars`, `gdirs`, `nszrs`, `xdeltars`, `xpsrs`, `xsors` — packed as
+The rest of the release matrix is CLI-only, and per target it emits **nine
+binaries**: the server-enabled `oxyromon`, plus the eight format-crate CLIs built with
+`cross build --release -p chd-rs -p cia-rs -p gdi-rs -p nsz-rs -p xdelta-rs -p wux-rs
+-p xps-rs -p xso-rs` — `chdrs`, `ciars`, `gdirs`, `nszrs`, `wuxrs`, `xdeltars`, `xpsrs`,
+`xsors` — packed as
 `.tar.xz` on Linux and macOS (`7z` archives on `x86_64-pc-windows-gnullvm`), signed
 with `rcodesign` on the Apple targets. `SKIP_TRUNK=true` is exported for the whole
 script, so each target reuses the `trunk build --release` the loop runs first on the

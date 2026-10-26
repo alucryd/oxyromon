@@ -19,6 +19,7 @@ mod gdi;
 mod generate_playlists;
 mod import_dats;
 mod import_irds;
+mod import_keys;
 mod import_patches;
 mod import_roms;
 mod info;
@@ -47,6 +48,7 @@ mod util;
 #[cfg(feature = "server")]
 mod validator;
 mod wbfs;
+mod wux;
 mod xdelta;
 mod xps;
 mod xso;
@@ -60,7 +62,6 @@ use env_logger::Builder;
 use indicatif_log_bridge::LogWrapper;
 use progress::*;
 use std::env;
-use std::path::PathBuf;
 use util::*;
 
 #[tokio::main]
@@ -74,6 +75,7 @@ async fn main() -> Result<()> {
         download_dats::subcommand(),
         import_irds::subcommand(),
         import_patches::subcommand(),
+        import_keys::subcommand(),
         import_roms::subcommand(),
         purge_irds::subcommand(),
         sort_roms::subcommand(),
@@ -115,10 +117,7 @@ async fn main() -> Result<()> {
         );
         print_separator(&progress_bar);
 
-        let data_directory = match env::var("OXYROMON_DATA_DIRECTORY") {
-            Ok(data_directory) => PathBuf::from(data_directory),
-            Err(_) => dirs::data_dir().unwrap().join("oxyromon"),
-        };
+        let data_directory = config::get_data_directory()?;
         create_directory(&progress_bar, &data_directory, true).await?;
 
         let db_file = data_directory.join("oxyromon.db");
@@ -148,6 +147,7 @@ async fn main() -> Result<()> {
                 "import-patches" => {
                     import_patches::main(connection, sub_matches, &progress_bar).await?
                 }
+                "import-keys" => import_keys::main(connection, sub_matches, &progress_bar).await?,
                 "import-roms" => import_roms::main(connection, sub_matches, &progress_bar).await?,
                 "sort-roms" => sort_roms::main(connection, sub_matches, &progress_bar).await?,
                 "convert-roms" => {
