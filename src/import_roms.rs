@@ -3085,6 +3085,10 @@ mod test_none_selected;
 #[cfg(test)]
 mod test_nus;
 #[cfg(test)]
+mod test_nus_multi_version;
+#[cfg(test)]
+mod test_nus_multi_version_missing;
+#[cfg(test)]
 mod test_original;
 #[cfg(test)]
 mod test_original_delete;
