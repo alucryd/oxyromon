@@ -80,10 +80,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Format Crate Test Strategy
@@ -132,11 +132,14 @@ nested directories, all with made-up keys (`DISC_KEY`, `COMMON_KEY`, `TITLE_KEY`
   also pins the refusals: missing keys, a damaged hashed block, a file that is not a
   disc, and a title given twice. An update under No-Intro's CDN names must convert
   the same as one under a downloader's names.
-- `tests/nus.rs` converts the disc to an installable folder and checks that a
-  damaged content fails its TMD hash.
+- `tests/nus.rs` converts the disc to an installable folder, twice into the same
+  folder, and checks that a damaged content fails its TMD hash. A folder in the
+  way, holding a user's file or another title's NUS folder, must be refused and
+  left as it was.
 - `tests/revert.rs` turns a WUA of the disc and its update back into NUS folders and
   compares them byte for byte, hidden files included. A WUA without revert data
-  must refuse to revert.
+  must refuse to revert. Reverting over an earlier output replaces it, while a
+  folder holding anything else is refused and left as it was.
 - `tests/disc.rs` rebuilds the disc from its WUA byte for byte, as a WUD and as a
   WUX. Two discs with the same update under different disc keys must share one
   store entry, which holds the title decrypted. Without a store the update stays

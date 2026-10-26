@@ -114,10 +114,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -464,7 +464,8 @@ and both are strict about the parent link:
   whose file is gone. `--foreign` inverts the same lookup, walking the ROM
   directory and reporting relative paths for which `find_romfile_by_path` returns
   `None`, except files in a `.update-partitions` store that one of the library's
-  WUAs still lists among its store entries. Both paths are the DB-side of the relative-path invariant, and every
+  WUAs still lists among its store entries, or any store file at all when one
+  of those WUAs can't be read. Both paths are the DB-side of the relative-path invariant, and every
   purge branch finishes by recomputing completion for all systems.
 
 `find_romfiles_by_system_id_and_extension_and_no_parent_id` is the fourth shape:

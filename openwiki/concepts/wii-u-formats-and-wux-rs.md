@@ -3,14 +3,18 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 sources:
+  - id: openwiki-source-ce853e79f786a28d42f8717a
+    resource: repo://crates/wux-rs/Cargo.toml
   - id: openwiki-source-1877f90a07c967103e553a55
     resource: repo://crates/wux-rs/README.md
   - id: openwiki-source-35760035950e3f037cce37d1
     resource: repo://crates/wux-rs/src/bin/wuxrs/main.rs
   - id: openwiki-source-02ad64b473f2daa8b546908e
     resource: repo://crates/wux-rs/src/disc.rs
+  - id: openwiki-source-bb63ebff30207378358552a3
+    resource: repo://crates/wux-rs/src/io.rs
   - id: openwiki-source-1eccc54b012309dc15e12f9a
     resource: repo://crates/wux-rs/src/keys.rs
   - id: openwiki-source-0d7f3750c3990980bf2fe743
@@ -25,23 +29,29 @@ sources:
     resource: repo://crates/wux-rs/src/wux.rs
   - id: openwiki-source-25b7040885cc73ab1df42d28
     resource: repo://crates/wux-rs/src/zarchive.rs
+  - id: openwiki-source-459bee48f81e7fcc3cd4f278
+    resource: repo://crates/wux-rs/tests/nus.rs
   - id: openwiki-source-10fddfccad5d7bf89d675953
     resource: repo://src/convert_roms.rs
   - id: openwiki-source-b6706f0791a5270c40cccdb6
     resource: repo://src/create_dats.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
+  - id: openwiki-source-a44e692a5f3268aa48d01296
+    resource: repo://src/export_roms/test_wua_to_nus.rs
   - id: openwiki-source-f7509e92ca643a1db54a74c4
     resource: repo://src/import_keys.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
+  - id: openwiki-source-0f30444a2cbc21370988fd60
+    resource: repo://src/purge_roms/test_foreign_store_unreadable_wua.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -158,7 +168,7 @@ flowchart LR
 | `rebuild.rs` | `wua_to_wux` and `wua_to_wud`, checked against the disc's SHA-1 |
 | `zarchive.rs` | A streaming ZArchive writer and reader: 64 KiB blocks compressed with zstd in parallel on rayon, then the offset records, name table and file tree |
 | `revert.rs` | Collects the `.nus/` revert data while writing a WUA, and `wua_to_nus` to replay it |
-| `keys.rs` | `parse_keys` / `load_keys` for Cemu's `keys.txt` format, and `cemu_keys_path` |
+| `keys.rs` | `parse_keys` / `load_keys` for Cemu's `keys.txt` format, and `cemu_keys_path`, which only exists with the `cli` feature, as only the CLI looks for Cemu's keys |
 
 A disc's contents in its game partition are the CDN's byte for byte, except
 content 0, the FST. A NUS folder exported from a disc therefore matches
@@ -254,7 +264,10 @@ it.
 lossless WUA. `WUX` writes WUXs, copies existing ones as they are, and
 rebuilds WUAs. `NUS` writes a disc's title as a NUS folder for WUP Installer
 GX2. From a WUA it replays the revert data and keeps only the game's title,
-the one whose ID starts `00050000`. `WUA` writes Cemu's archive and bundles
+the one whose ID starts `00050000`. A folder already where a NUS folder goes
+is replaced only when every file in it is one the export writes again, as an
+earlier export of the same disc. Anything else is left as it is and the export
+fails, in wux-rs's `to_nus` and `wua_to_nus` as in oxyromon's WUA path. `WUA` writes Cemu's archive and bundles
 the library's updates and DLC, with the update partitions in a
 `.update-partitions` store in the destination. A WUA source is rebuilt to a
 WUX in the temp directory first, so updates added to the library since it was
@@ -271,7 +284,8 @@ plus the bundled folders' sizes.
 
 **Purge.** `purge-roms -f` treats store files as foreign unless a WUA in the
 library still lists them in `store_entries`. So update partitions no WUA needs
-are deleted, and those still needed are kept.
+are deleted, and those still needed are kept. When a known WUA can't be read,
+it may need any of them, so every store file is kept and a warning names it.
 
 **create-dats.** A `.wux` is listed as the `.iso` it holds, hashed as it
 decompresses. A lossless `.wua` is listed as its `.iso` from its disc info,

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4a645fb6486cd86f1a087bbf3e0d593f13c44122c64c1238fcc544128d9aebd6",
+  "pageVersion": "sha256:2276f2a43f05c7289a4415a102548b318079e3bc758915f7b51bfda75b00fc7d",
   "claims": [
     {
       "id": "claim_709f7ceeb611426f9818159498c3a446",
@@ -395,8 +395,8 @@
       "statement": "create-dats emits one <game> per file with size, CRC32, MD5 and SHA1 computed in a single read, except that a WUX is listed as the .iso it holds, a lossless WUA as its .iso from the disc info it keeps without reading it, .update-partitions stores are skipped, and a subdirectory holding a NUS title's TMD becomes one game whose ROMs are its files; it writes the Logiqx DOCTYPE, flushes the file before returning, and defaults the DAT version to the creation timestamp YYYYMMDD-HHMMSS so a regenerated self-made catalog passes the lexicographic version gate instead of being skipped as older.",
       "evidence": [
         {
-          "resource": "repo://src/create_dats.rs#L121-L330",
-          "version": "repo-lines-v1:sha256:43d95b14a7c9681d20a127907bc25991a2ea8565801aed862ddd9d3a996c2fac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkODk3NzFmZTFiNjYyODg3NWFhMjNlN2RiZTRhYTcxNDYxZDAwY2RmYjY2ZGRmMTFiOWQ4MjBhYzU4OTdmZGY2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYzJjYzc1N2VhYzNhNjJjNjE2YTc2ZDIwNDk0NGE4ZjUzNzdiYzA2YWM4ZDZjMWMzMDdiYjExZjMxZTYwYTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZWM5ODI3Nzk0MmEyYjYxZjgyZThkZDdiY2UzZWJmZWIxOWVlM2FiYjVjZjE0YWJlMjcwZTFhNzk4NGM3YjEzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxOGYxM2IzODYwNjgzMmViNjE0ZmJhZGY5YTQxNWNhMzFjZmEzMWU0NTNhOWNlYzQzY2Q3OTBlZmJiMzM3NzdhIn0"
+          "resource": "repo://src/create_dats.rs#L121-L320",
+          "version": "repo-lines-v1:sha256:801953ecdfe92c8ea2da320b4aeaa09237d4ae255403345ace3e667396000fd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlY2NmNTU3MzFhNTRiN2VjNzVjMDU2Nzc3NjRjM2U0ODE2ZDgzZjI3MzMyMTNjMjhhMDZmOGFjMzJlZGY4OGU2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NDc1ZTk0YTkwNGFjNDliMzE1NGQ0NjcyYTY2ZTg2MjliODZkYWM3NGUzZTI5MzdiZTY5MjdhZTNkYTExYzUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0OTU1NDc1YWFlNDgxYTUwMDlhNjA4MmQ1ZjY2NjdlNDhmNmM5YTA0NzcyZTViZjVkODY3YzI3ZmUyZGQ0ZWE3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNTIxNjA0YjM1ZmM0MGFmMDBjYmE0ZWVhMmZkNWUyYzNhZjE4NjNiMzkxMTg1ZDdiZjRiYjA5ZTcyZDBjOGIzIn0"
         },
         {
           "resource": "repo://src/create_dats/test_dat.rs#L37-L69",
@@ -581,6 +581,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T21:20:28.066Z"
   }
 }

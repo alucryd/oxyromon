@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6492f2b26ce19d244a5ff405823d189b4039c3d69140837be87d31bcf2d3516d",
+  "pageVersion": "sha256:0ee06bd617142708f5c0a8ccabd4197ddd06a00ed0dccce24861456cde4196b6",
   "claims": [
     {
       "id": "claim_44357edf534742ce98dabc19de5096a1",
@@ -596,11 +596,11 @@
     },
     {
       "id": "claim_fb7f3b6bbe6b43d7a1109edd6ed269d4",
-      "statement": "`purge-roms --missing` is a disk check rather than a SQL predicate: it reads every romfile row and deletes those whose rebuilt absolute path is not a file, while `--foreign` inverts the lookup by walking the ROM directory and reporting relative paths for which `find_romfile_by_path` returns `None`, sparing update-partition store files that a known WUA still references.",
+      "statement": "`purge-roms --missing` is a disk check rather than a SQL predicate: it reads every romfile row and deletes those whose rebuilt absolute path is not a file, while `--foreign` inverts the lookup by walking the ROM directory and reporting relative paths for which `find_romfile_by_path` returns `None`, sparing update-partition store files that a known WUA still references, and every store file when a known WUA's references can't be read.",
       "evidence": [
         {
-          "resource": "repo://src/purge_roms.rs#L168-L237",
-          "version": "repo-lines-v1:sha256:d72fc338953accebc19ebc29427781f2500eed2735737d0ea4fd7923f541ef16:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZmNiZGFlMWQxMGE1ODU2MGRjYjdjYjQxNmJlYjliZTAyOWMxYTg2ZDMyNzU3MzA1MmI5NmM3NDk2NGJhZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNzk0NTk0MzcxNGI2NDRlMTIxNTBkMTg0MWY5MjdlNmEyYWYwODdkMTc1OTlmYjkxNDkzZjdmYTgyZTQ0ZjQifQ"
+          "resource": "repo://src/purge_roms.rs#L168-L267",
+          "version": "repo-lines-v1:sha256:f7f9ee288379f552bf7a2abd89a5217b349735c2ebe2c44933ea7f31f9273150:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2M2ZjYmRhZTFkMTBhNTg1NjBkY2I3Y2I0MTZiZWI5YmUwMjljMWE4NmQzMjc1NzMwNTJiOTZjNzQ5NjRiYWZhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzNWY2ZjQ2NmU1OWNmYzMwNzAzYzQ1ZjcyYWY2NWRlNTRhYzM2M2QzNTRjYzFhMzMzMDM1MGFjZDQ1MjQzNGM0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyY2Y4MzQ3NzQ0MzM4Y2U1NmJlOWZiZjc2OGFkNGE0MjVmYmUzY2ZjYmEwYjEzNThmYzlmZjQ3NTg4NGJkNGFiIn0"
         },
         {
           "resource": "repo://src/purge_roms.rs#L87-L116",
@@ -687,6 +687,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T21:20:28.066Z"
   }
 }

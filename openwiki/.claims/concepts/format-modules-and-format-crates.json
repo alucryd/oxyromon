@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a5be2ccb0abf11f22d9795ff8c790e8615eeb0346080f2528642ece51e5bc19e",
+  "pageVersion": "sha256:ba29cb62bf9edddf677cfa9d23317d89cd9cfce24801e7da2e7964ee11a194c7",
   "claims": [
     {
       "id": "claim_703194daad044e61895c0aaf9bef5779",
@@ -657,11 +657,11 @@
           "version": "repo-lines-v1:sha256:a3798c9775048495c46f4f8b3613b8bf5fb91b63eb9a7053bbcb3e424b2d2ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UwNzc0N2YwOTY2N2E4OTMxM2ExMjZkZjc3ZTMwMDhhYmI5MGM0YmE2YjM5MjgyODIyYjE0MzI3OWQ2NzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU5ZmM5YzYzNWJlMGE0MjE3NzdhMjJjYWRmY2Q3ZDJlMzIwN2E2YmRlYTY3ZDAxNzA0MThmMzZlMmY2ODUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RmYWE2ZjdmMjk3ZjQ3OWM1OTRmZmEzOGYwOWMwM2JmYjQwODExMGEzNTNmODIzYzc3YzlmMGFjOWIxNDRiNiJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L590-L598",
+          "resource": "repo://src/wux.rs#L619-L627",
           "version": "repo-lines-v1:sha256:727c717910b27ee740cb7b89acc6d46bf0172b0d53991ea3a9789bdf738ac11f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U1ZDUxOWQxNmU5MzlkMzkzMTA1OTVlODI0NjgxODU0NTYyYWNkMWM0MmY2YmZjMDhiZWQ2ODczNGYwYWQ3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2U4NmJiNzM5NGRkYjRiOTBmNWRkMTZmZTAzYzllMmVkNTFjMTg2ZGM1YjIyM2E4NzY4OGQxN2ExNTYzMzIxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZhNmE5OTJmNWZkZTM1NjJlZDAzOWQ4ZDRjMzc1NTcwNDdjMjQzNTA4NjUyYTIyZmNlNmU1Y2IwMDI5ZmZjYiJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L689-L696",
+          "resource": "repo://src/wux.rs#L718-L725",
           "version": "repo-lines-v1:sha256:cee9816effbdb2f1610f6fa4b558e40972e50ef173c5afdb631ac39568dab742:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhkZjVkNTU5Mjk4ZTllYmFmOWNhYzc2Y2NmOTYyOGUzN2JmNzA1NjEyNTBiOTdkZjJjNzE5NmE0YWM4MzhjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUyMDM4NmU1OTQyNGEzYzVlY2JhNDkzOGEzOTk0NjAxYTg5NjYxYWEwNjBiZWY0NTlmNDllMmQwMjIxNzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
@@ -681,7 +681,7 @@
       "statement": "When asked to bundle, ToWua adds the newest update and DLC in the library to the disc: find_update_and_dlc scans romfiles of TMDs, keeps titles whose ID shares the disc's low 32 bits and whose high half is 0005000E or 0005000C, skips a title without a ticket with a warning, and keeps the highest version per title ID.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L395-L520",
+          "resource": "repo://src/wux.rs#L394-L519",
           "version": "repo-lines-v1:sha256:65d3840e7c3fbb1d7fbaba405a85e7ffd357d09c78aed28ce71680379bcd3673:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjM1ODZiM2ZjZDVjN2IwNjUxNDU3ODI4NzQyM2UxZjdhZGM3Y2E4NWUwMTM1YzMxMmIyNTQ1MmZmNDA2ZjBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMGYzMGJjOGFlNmJjNWRkN2I5MTE0YzIwMGUxYTI0NWU3MGE1Yjg2ZDYzMDcwMWM4MGY0MDM1Y2Q0NDdkMjU1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTkzOTNhZWU5OTVhOGQxZTI0YzlhNjk3MGIyYjQwZDk3ODQwNjQ3Mzc4YmZiZTRiY2NhMzUzYmZkZmI0MWJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMjI2ZmNkNmE4YTA0OWJjYWRiYWUzMmE5MzQ1NGUwZGFlZTE5MDkwZmY0NzQ4YjFjNWEyZTcwNzMyZWFlZmIyIn0"
         }
       ]
@@ -691,14 +691,14 @@
       "statement": "WuaRomfile reports its disc's hash and size from the DiscInfo a lossless WUA keeps, without reading the disc, and its Check compares that with the DAT and then rebuilds a WUX in a temp directory, which wux-rs verifies against the disc's SHA-1.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L184-L278",
-          "version": "repo-lines-v1:sha256:a4a1d6d3cad73d27ea6732d3d25f332afb1fbca04d48cc4c66eaf438165762e1:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZjcxNjhjNWJkODhlZDM0ODkyY2Y1NzI2MmNkZjlkYjg0ZGFmMTM3Mjg3ZmMwOGE5MTg0MjBiN2NiZGE1MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OWNiZDc4OWIwNTVhYmI2ZWZiYWUxYmY1YTk2YWVkMzIzNmEyNWVhZGJmNWNhN2NmNmI0MDY2MTJiMTIxNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzNmI2M2E3Y2E5NDdkODYwNTIwNDkyZmMxMTllZWQ5MDU1YjhmNGQ5ZDhmODZjMmZiNTkxNGJiYWY3YTk5YzQifQ"
+          "resource": "repo://src/wux.rs#L184-L269",
+          "version": "repo-lines-v1:sha256:7491f024f1c0a39ed87dc31ffb05efc28cbff74a7e950d281fa860fa60d5e743:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZjcxNjhjNWJkODhlZDM0ODkyY2Y1NzI2MmNkZjlkYjg0ZGFmMTM3Mjg3ZmMwOGE5MTg0MjBiN2NiZGE1MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNmQwYWY1MTRmMTc1MmM3OTQ0NGVlOTU1Zjk3ZTFmYjk5N2RmNDc4M2Y2YzM4NjExOTdkYWQxOThlOWE1ZTIifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T21:20:28.066Z"
   }
 }

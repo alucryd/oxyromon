@@ -64,6 +64,8 @@ sources:
     resource: repo://src/purge_irds/test_ird.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
+  - id: openwiki-source-0f30444a2cbc21370988fd60
+    resource: repo://src/purge_roms/test_foreign_store_unreadable_wua.rs
   - id: openwiki-source-efeca90dcd77f2dabe1eaf26
     resource: repo://src/purge_roms/test_foreign_subfolder.rs
   - id: openwiki-source-2697b8bba4712f76c229dc3c
@@ -90,10 +92,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -360,9 +362,12 @@ Key behaviours:
   `wux_rs::store_entries`. The scan first collects every file and the known
   ones, gathers the store entries of the known WUAs, and only then decides, so
   update partitions no WUA needs any more are deleted like any foreign file.
+  The pass fails closed: when a known WUA's store entries can't be read, it may
+  need any update partition, so every store file is kept and a warning names
+  the WUA.
   This is the only purge that can delete a file oxyromon never knew
   about, so it is the one category where a mistaken `ROM_DIRECTORY` setting is
-  most dangerous ([src/purge_roms.rs](../../src/purge_roms.rs#L168-L250)).
+  most dangerous ([src/purge_roms.rs](../../src/purge_roms.rs#L168-L267)).
 - **`--foreign` confirms per file.** It asks before each individual deletion, so
   answering "no" leaves that one file and moves on, unlike the batched trash and
   orphan passes.
@@ -558,7 +563,8 @@ without being moved
 subfolder is gone while the system directory remains;
 `test_foreign_subfolder` asserts that deleting the last foreign file removes
 `Test System` but never the ROM directory; `test_foreign_store` asserts that a
-WUA's store entry survives while a stray file in the store is deleted; `test_trashed` asserts the system
+WUA's store entry survives while a stray file in the store is deleted, and
+`test_foreign_store_unreadable_wua` that both survive when the WUA is cut short; `test_trashed` asserts the system
 `Trash` directory itself is left in place, empty; and
 `test_trashed_rom_directory` asserts the same for the **ROM directory's** `Trash`
 holding an `import-roms` reject ([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),

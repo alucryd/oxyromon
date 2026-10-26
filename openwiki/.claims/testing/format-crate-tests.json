@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:60c33cc85e8c396c1cb84a18e3fe3107173365b6e78ad4873e87c5e19ed3555b",
+  "pageVersion": "sha256:d87f8e24a4396ce163a4deba803e7816b15bd8bc36a4466ba686770e4f794532",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -551,8 +551,8 @@
       "statement": "wux-rs's tests run against a synthetic Wii U disc that tests/common/mod.rs builds and encrypts with made-up disc, common, title and vWii keys, plus an update as a NUS folder; tests/wua.rs reads the WUAs back with the independent zarust ZArchive reader and pins refusals for missing keys, a damaged hashed block, a non-disc file and a duplicated title.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/Cargo.toml#L33-L41",
-          "version": "repo-lines-v1:sha256:d63489b53d7c38a6bcf14d4a716f5660bd73986dd0560e476239f98a9026bc6b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkODFmNWNhZWViZjM0NDRiNzBkNTViZjVhN2U4YWYyOTMxNThlMzM5OGFhMWY4ZjMzODY0NjE4NWE2NjU0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg1YjMzNTM3ZTUyZmY1NWFhNDBmZWU2NGM1OGFlOGQ5NjM4OGMxOTlkZGIwZDI4NGFmNzYwZjBiMDNhNmY1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmE2YTNjZDIyNTA5MGJjMTU2NTJhM2U4NDMyZjRkZDllZTBlZThmYmUwYmVhYWMzNTljNGJkYmJiZGRiZGY2ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWNmNGI5MjYyYzlmZTI2Njg5MzE3MWJkMzg4YWY1NGVlOGE4NzI4NTMzYmViMDU5MDIxN2U5Nzg2ZDQwNWMzYyJ9"
+          "resource": "repo://crates/wux-rs/Cargo.toml#L37-L43",
+          "version": "repo-lines-v1:sha256:c29db103868e5ee41ac70849f6be5d50bf25fbe075517f55035c3c16ab70cd86:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMyYTQwYjE2ZTczZDlhNjcwYjYxYTNhYzA4Mjg1MmJmM2Y3M2QwNmVmYjlmZGEwYzYyOTVmYzNjZGYxOWEwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE0ZjhmNmJiN2U1YzBkOGJiY2I0ZGUxZDQyNzVkMDlmODYxY2Y4NzAwMzQyNDk2OTY2MzY2YWM2YzA5YzdmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg1ZjY3ZTA2MzMyNDE5OGY4OTQ1OTBhZDQ4YTczMTQzMzM5NjQzMDc5MmRhOTZmYjYyMTQ3NDU5ZGIxM2Q2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQyOTJkODA2YmQ2YWVkMTg5MzZlODg2ZGVhNzQyMjM0ZTc4YmFiY2I3Y2Q5MmQ0MGRlYjQ5ZGJhOGFiNDBiYyJ9"
         },
         {
           "resource": "repo://crates/wux-rs/tests/common/mod.rs#L1-L20",
@@ -601,10 +601,24 @@
           "version": "repo-lines-v1:sha256:f944cb8d239e311ca211a2c0cfc2f554197992787807d6baf16639547f01f6c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOWExODkyYWIzNDUxZWE1MWExOWU2MzM5MGFlM2ExYzI2ZjI2OTliMmFhYTU4YzExZTExMmY5NDZiOTBlYjEyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
+    },
+    {
+      "id": "claim_e688ee9e03c54ceeabef64b3b6aff9c6",
+      "statement": "tests/nus.rs and tests/revert.rs check that converting into an earlier output replaces it, while a folder in the way holding anything else, a user's file or another title's NUS folder, is refused and left as it was, with no .part folder behind.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/tests/nus.rs",
+          "version": "repo-file-v1:sha256:a3cb91327f577553d9fabb1f02902c1431f12ec7809798b5302f71d912744fe8"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/revert.rs",
+          "version": "repo-file-v1:sha256:e9f11d7cec3a1fad12de378ca81501334f019adc784aec152f268ca0e6f02739"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T21:20:28.066Z"
   }
 }

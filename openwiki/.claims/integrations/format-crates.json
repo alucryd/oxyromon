@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:be0b009d07e5493cf11d171a6e7151660c2d49af3c8c13fc24317943101e80e2",
+  "pageVersion": "sha256:b729315f1fd3268cd559643dce6bc53b397ca68fa406684b710c9b15081ea033",
   "claims": [
     {
       "id": "claim_caa17141f634409dbccb9366097931e2",
@@ -530,7 +530,7 @@
         },
         {
           "resource": "repo://crates/wux-rs/Cargo.toml#L1-L47",
-          "version": "repo-lines-v1:sha256:3d257627851f37bf2abf9d2d1bee756cef4d6839e1a2a809002df8f920b23ad9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OWZlNmUzYzNjZDc4YTJiMWIwYjE5YjM2MzljN2Y4MDk3ODRhNmVkNjk1YmJjODU5NGFlODdmOWViMmExMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:52e0f624cca421bb91c10d138cddd5d7b90fb5e719af6cc72ae8c6e8fd42e96f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjIwZDlhNDNmMjk3NTZhZjUzNDM2OWI5MmFjY2M0ZGNkNTY1YjZiYzE3MThkZDIwZDdhYzU4MTJjZDc4OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -549,8 +549,8 @@
       "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/src/lib.rs#L30-L52",
-          "version": "repo-lines-v1:sha256:37e52863756e1f52d757ffeb4954601f6909129b043e4154485537cdff85c9e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODU3NWFlNjFhZThiYmU1OWU3Yzg2MzRkMDMzNzU1MTIwN2NiOWI5ZmUwNzhhOTlmN2VjZTZmZTc2Mjg3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZjZiMmE3NDFjYmJmYmI0YTg0ZDc1YmNjYzYxZWMxM2M5MzM5OGU5NzIzNWVmOTUzNmE0Y2ZhM2NiNzM5MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYzRlZWFhMzQ0NTVhMzNkYTRhZWE3NmE4ODA4NTk4NWZhMzk1MjNlZjFmYzZhYmY3N2IwZWVkZWQxMmU5ZDkifQ"
+          "resource": "repo://crates/wux-rs/src/lib.rs#L30-L54",
+          "version": "repo-lines-v1:sha256:48fb826fd90ddcaad8c1a179bfbba9a9e36951c4f070906c1ae85519235c55bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODU3NWFlNjFhZThiYmU1OWU3Yzg2MzRkMDMzNzU1MTIwN2NiOWI5ZmUwNzhhOTlmN2VjZTZmZTc2Mjg3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZjZiMmE3NDFjYmJmYmI0YTg0ZDc1YmNjYzYxZWMxM2M5MzM5OGU5NzIzNWVmOTUzNmE0Y2ZhM2NiNzM5MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYzRlZWFhMzQ0NTVhMzNkYTRhZWE3NmE4ODA4NTk4NWZhMzk1MjNlZjFmYzZhYmY3N2IwZWVkZWQxMmU5ZDkifQ"
         },
         {
           "resource": "repo://crates/wux-rs/src/rebuild.rs#L28-L66",
@@ -575,10 +575,28 @@
           "version": "repo-lines-v1:sha256:7ebeb94b2cb1e0cc90a224796021cc54a67b21273309fba83f99f1497ae78fe6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YWVlZjJiMTk1NDBlYzZlNzE1MjYyOThkZDVhMGViMTE0NDZlNTRhYjZmNTA4YmVlNWZjZDY1Yjc0N2Y3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YWI5NzVhMDg0NzlmYmRjNDc3ZmQ5NjViZGVlNjljYTk1OWEwZGU5NGY1YWNiODYxOTBjYzU0NGU3ZGNmYzEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b46bca86acae4c06b73120c1b85be766",
+      "statement": "wux-rs moves a staged <output>.part folder into place with io::finish_dir, which replaces an existing folder only when every file in it, recursively, has its like in the new one, and otherwise fails with an AlreadyExists I/O error and removes the staged folder.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/src/io.rs#L32-L77",
+          "version": "repo-lines-v1:sha256:1c3a92f46905f5752914209d4c9ef88360733d5b830c9c2db6de9cb9d49b30ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjYTBmZDVmNDEwNDEzNjUwNjM4YWI0MmZmOTc0NzRmYzI1ZGZlZjM3MjM1MDFjNjA0Y2EyZTliNTk1ZTM1YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYTEwMzdmMDcxOTYxZmIzYjEzYTdkYWZmNjlhY2MyYmFiODEwZmU4YmRhMTZhMmIyMjcxNTU0MzcxNGNjNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkZWRiNzJkZjQyMTgzN2Q2ZDhiNzMwYzhlMzJhZmRkNjFlMzY4YWUzNDU3NWFhN2RkZjRhZjZkNDlmYjg2MDMifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/nus.rs",
+          "version": "repo-file-v1:sha256:a3cb91327f577553d9fabb1f02902c1431f12ec7809798b5302f71d912744fe8"
+        },
+        {
+          "resource": "repo://crates/wux-rs/tests/revert.rs",
+          "version": "repo-file-v1:sha256:e9f11d7cec3a1fad12de378ca81501334f019adc784aec152f268ca0e6f02739"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T21:20:28.066Z"
   }
 }

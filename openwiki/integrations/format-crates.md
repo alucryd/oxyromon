@@ -66,12 +66,18 @@ sources:
     resource: repo://crates/wux-rs/src/bin/wuxrs/main.rs
   - id: openwiki-source-b50a26200a8a4e4e83f9eac1
     resource: repo://crates/wux-rs/src/error.rs
+  - id: openwiki-source-bb63ebff30207378358552a3
+    resource: repo://crates/wux-rs/src/io.rs
   - id: openwiki-source-fb3fc971ccda3173fb55c35e
     resource: repo://crates/wux-rs/src/lib.rs
   - id: openwiki-source-8b154e92f317de1d79a56d61
     resource: repo://crates/wux-rs/src/rebuild.rs
   - id: openwiki-source-a7055168e07a2f5ab1abc26e
     resource: repo://crates/wux-rs/src/wua.rs
+  - id: openwiki-source-459bee48f81e7fcc3cd4f278
+    resource: repo://crates/wux-rs/tests/nus.rs
+  - id: openwiki-source-9c665d9fab5f86f2cc31d823
+    resource: repo://crates/wux-rs/tests/revert.rs
   - id: openwiki-source-3177d2bf46b3b23d873f6783
     resource: repo://crates/xdelta-rs/src/bin/xdeltars/main.rs
   - id: openwiki-source-b284ee56f1a8ed8eeb895333
@@ -126,10 +132,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T21:20:28.066Z
 ---
 
 # Format Crates in crates/
@@ -268,11 +274,12 @@ stateDiagram-v2
 *Caption: the write lifecycle every format crate shares; nothing at the destination path changes until the whole output is complete.*
 
 The halves are literally the same code, duplicated per crate:
-`xso-rs` and `wux-rs` factor it into `crate::io::{part, finish}`, while `chd-rs`
+`xso-rs` and `wux-rs` factor it into `crate::io::{part, finish}`, plus
+`finish_dir` in `wux-rs` for folder outputs, while `chd-rs`
 (`writer::part_path` plus a rename-or-remove arm shared by `write_part`,
 `Chd::extract`, `extract_cd` and `extract_ld`), `nsz-rs`,
 `xdelta-rs`, `xps-rs` and `gdi-rs` each carry a private `part`/`finish` pair.
-Three crate-specific variations matter:
+Four crate-specific variations matter:
 
 - **`gdi-rs` stages a whole set.** A GDI is one descriptor plus one file per
   track, so it writes every `.part` first and renames them all only after the
@@ -287,6 +294,11 @@ Three crate-specific variations matter:
   past the reserved PFS0 header, lets the caller stream members, then rewinds
   and writes the header from the recorded `(name, offset, size)` layout. It
   drops the `File` before renaming or removing, which Windows requires.
+- **`wux-rs` writes folders.** `to_nus` and `wua_to_nus` stage a whole folder
+  as `<output>.part` and move it into place with `io::finish_dir`. An existing
+  folder there is replaced only when every file in it, recursively, is one the
+  new folder holds too, an earlier output of the same. Otherwise the write fails
+  with an `AlreadyExists` I/O error and leaves the folder alone.
 
 `nsz-rs` additionally `create_dir_all`s the output's parent before opening the
 `.part` — the only crate that creates directories for you.
@@ -463,7 +475,8 @@ installable without the organizer.
   progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
   `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
   `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
-  stream and `load_keys` for Cemu's `keys.txt`. `STORE_DIR` names the
+  stream and `load_keys` for Cemu's `keys.txt`. `cemu_keys_path`, and the
+  `dirs` dependency it needs, exist only with the `cli` feature. `STORE_DIR` names the
   `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
   [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).
 - **`xso_rs::compress` / `decompress` / `probe`**, with `Stats { input_size,
