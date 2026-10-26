@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f604963a0347cdc262d95bd4e37a2ec4bfcc7cc3f4f1cca7da47735753834c0f",
+  "pageVersion": "sha256:a7e5b5241d304a0c8595ed934d5474fa7f97a9ed1fa7d6ae2cc65547bb84763b",
   "claims": [
     {
       "id": "claim_efe0fa849f8445de9c6ed9311f3b26ac",
       "statement": "oxyromon supports two networked DAT providers with asymmetric capability: Redump supports both downloading new DATs and refreshing imported ones, while No-Intro supports update-check only because it publishes a summary (profile.xml) but no direct DAT links; `download-dats` without `-u` for No-Intro prints the warning \"Not supported\", and the mutually exclusive `-n/--nointro` / `-r/--redump` flags each require the other to be absent. Automatically downloading No-Intro DATs is still an open item in the README TODO list.",
       "evidence": [
         {
-          "resource": "repo://README.md#L431-L450",
+          "resource": "repo://README.md#L432-L451",
           "version": "repo-lines-v1:sha256:814158f6ef3db216aa0d077e7b19effbc94519cb63449bbaf82b4e01d05be3c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNjc5M2U5NjcxMjRlMWE5YmI0NzA4ZDUwZjM3Y2FjMzJiN2MxNDRmMDYyMGRkMzczMTZlZGI0MmJmYjM4MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZDA4OGQ1YTk3ZWNjZWVmMWJiOGRjMGZlNDIwYTRmZWNlN2E1NWU5MjM5ZjQ5MTlmNTJlZDYzNWVhMmNjZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3M2U3M2FiYjc0NTgwMmMzMzNiODcyNjQ0MzVlMjQ5NDdiNmI3YmYwZjU2ZmUzMDI4ZThmMjBlODljODVmYmEifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L139-L194",
+          "resource": "repo://src/download_dats.rs#L195-L250",
           "version": "repo-lines-v1:sha256:92d1fffca92c860ef95d53ed462d1d4c413af98daf4874f75f96299f8bb9df2a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNDQ1N2MwMTlmZmJhOTVkYjU1ZDAzOTQ4MTE2YTRlN2JlYmY5NWZkZmM5N2UyOWQ5ZmMwMWZjNzQ2ZWQyN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmZjNjNjM3MWNmMDA5MjM1NDAyNmI0ZGVhNTM1MWViNmRhZmI3NjZjMzg5Mzg3Y2ExZjk4M2FkMGE5NmE3ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjMjk1OTliNzliZmE4OWZlZWMyZDUzMmVhMzc1OGNlYWNlN2MxMTE0MWZkNjc2NmU1ZDI1M2IxZjc4MDBjNzYifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L196-L238",
+          "resource": "repo://src/download_dats.rs#L252-L294",
           "version": "repo-lines-v1:sha256:045719da751a2963b1bdafae1e06e069bb98d959dc36386915d87cf8f944a13f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZmRmOTAxZWVmNTk5NWZjZmYwZjYwZTEwOWE2YjlmMGI0ZTA2MjFjMWI1ZTIwYWRiNGQzNDYxMzIzZWMxYTMifQ"
         }
       ]
     },
     {
       "id": "claim_ba7ff955fb924da0b95e2177ff559263",
-      "statement": "Provider families map to content types and entry paths: No-Intro (datomatic.no-intro.org) for cartridge consoles/computers, Redump (redump.org) for optical systems, MAME/FBNeo for arcade; only Redump is fetched by oxyromon, so No-Intro, MAME and FBNeo catalogs must be downloaded by hand and brought in through `import-dats`.",
+      "statement": "Provider families map to content types and entry paths: No-Intro (datomatic.no-intro.org) for cartridge consoles/computers, Redump (redump.info) for optical systems, MAME/FBNeo for arcade; only Redump is fetched by oxyromon, so No-Intro, MAME and FBNeo catalogs must be downloaded by hand and brought in through `import-dats`.",
       "evidence": [
         {
-          "resource": "repo://README.md#L33-L42",
-          "version": "repo-lines-v1:sha256:0af166756f1c8209fda71f088f40a2ec9cd2a6ede3cd8fe7131f31c0b1bafb40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1M2ZiMjQ5MTZhYTk5ZDZkNTdiMTI2NzM1ZDVjZDNlNGJkOWVlNmQwNGU3YTFhYzViYTE5MjNhNGQxMTJhMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMTE5NzM5NDRhNDg0MjZjOWVjMzgzMWYwZGIxNmI0OGI2N2UxNzJkYjJhNGY2NjQ0ZWY2NzFkMmNlMDVjYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZGQxMmRjZmRmYTBlY2QzMTMzOTMxYmU0NTZjY2UzN2FiZTM2Zjk3MmVlZGM3YmJmYWM0Y2FlNjdlZmYwZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwODlmNTIwZTU3ZjEyZjIwOGU5Nzc2YmIyNWRkYTdjZDkzYTM4MzVkZTlmZTZjZjUyZTZkMGQ2MWI4ZGVlMzAifQ"
+          "resource": "repo://README.md#L35-L41",
+          "version": "repo-lines-v1:sha256:a5fd53e5623d37dfeac07284d8705a15b0b80c6af6898cd399c33a8e54715b05:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcwZTJmYzg0ZDdmZTVmMTQ2YTUxMjk3NjkyYTE5MmNjNWZhNjQ4ZGE0ZTgwZjY3YjQwY2JlZjg1MmQ1NTgxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTIwNDk0MTA5MzJhN2I5NzhhNDBkZmU2MWIzMWI0ZjQ2MWE4MWExNjFhZTI0NzdmZWEwMjUyYTkzYzkzNzE2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmMyODgyODIzZTJhZmQ4NDdmMDE4YTgyZjRlNDIwZWE3MTJkNzMzNzBmYjk3ZWZmYzMyZWQwZjBjMDA2NDk5MyJ9"
         },
         {
           "resource": "repo://src/download_dats.rs#L21-L26",
-          "version": "repo-lines-v1:sha256:720c5bccb8c45db8f27de1bef4ce203cb949efbf48c3ef38591157d31a327db4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2ZWExYjE4ZTBiOTY2OGE5NGE5MzA5MDgyZmNmZDQ2Yjk5YTUwMDE3NWIzZTczMzMxYzM0MTVkNTU4M2U2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMzNTI1N2E3OThiYmM2NjRmNjZmMjRhZjYzOTZlMjAyZjk1MzU4NmZjOTg2NGM3MTUzNDNmY2ExZDQyYzczZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0OGNiNzY1NThlMmM3OWEzYjZiMWYzMzRjMTNkZDI2ZGNmMzk0MjllZjQ4YTRmZjQ3NTM5NGI1ZGM4MDcyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZlMTBjOWZlYjk2NDY2MWFhYmZhODY1NDQ0NjExOTllZGZiZGM1NjQyYzk3NTY3NzljZGI3YzJiNTAxZWIwYiJ9"
+          "version": "repo-lines-v1:sha256:40fb54961b01168c1f9032e679c3f03f44018c713746b76a23c2ec44bbea2091:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2ZWExYjE4ZTBiOTY2OGE5NGE5MzA5MDgyZmNmZDQ2Yjk5YTUwMDE3NWIzZTczMzMxYzM0MTVkNTU4M2U2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDc5NTdiMzg1MGM2OWRiZjcyODU4NTIyZTMxNTcyMTQ2M2ZiZjA2YTVkMWMyYmVjMDk2NzUwODY4ZTQwNThiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0OGNiNzY1NThlMmM3OWEzYjZiMWYzMzRjMTNkZDI2ZGNmMzk0MjllZjQ4YTRmZjQ3NTM5NGI1ZGM4MDcyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZlMTBjOWZlYjk2NDY2MWFhYmZhODY1NDQ0NjExOTllZGZiZGM1NjQyYzk3NTY3NzljZGI3YzJiNTAxZWIwYiJ9"
         }
       ]
     },
     {
       "id": "claim_641ee4206034403eb83ba033771e16c8",
-      "statement": "Provider provenance is data, not metadata: `systems.url` is copied verbatim from the DAT `<header><url>` (\"www.no-intro.org\" / \"http://redump.org/\"), and `find_systems_by_url` is the only mechanism used to scope a command to one provider — the No-Intro update-check candidate list, the Redump update list, and `generate-playlists`, which limits its picker to Redump because multi-disc games only exist there.",
+      "statement": "Provider provenance is data, not metadata: `systems.url` is copied verbatim from the DAT `<header><url>` (\"www.no-intro.org\" / \"https://redump.info/\"), and `find_systems_by_url` is the only mechanism used to scope a command to one provider — the No-Intro update-check candidate list, the Redump update list, and `generate-playlists`, which limits its picker to Redump because multi-disc games only exist there.",
       "evidence": [
         {
           "resource": "repo://src/database.rs#L106-L131",
@@ -47,8 +47,8 @@
           "version": "repo-lines-v1:sha256:67911ae24cbade9d4a2b99aa6c243a0c9e20566d56258c7ae8eec193c77557df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlYWYzNGY0NTg5NjI4ODI2ZjA4MTk4NDhlNTc2NTIzMDliNmQyYTVhNWM3YjU4MWVhYzA1N2RiNjlhZTEyMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NzMxMTZiYTJiNzIxYWI2Zjg2MTk1MmUzOTE5M2M0ODc1NzdlYWM3Mjg2NTg1ZTQ4NDA1ZjVmNmZlYjhmZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViZjI3NTJhNGEzZWI5NDgwNDI5M2YwYzE4NzI2MTQ5NWE2OTM2ODQ0YzU3YWU3ODUyZTIzNzQ0MjUzYjdhMzgifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L256-L257",
-          "version": "repo-lines-v1:sha256:0f1c39c71d4ff06735dc7e96e3132bc1b78356d4b6f33484b46c5e616d5b18fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTkwYTg1ODIyNTYyMTJmYTg3ODZiMmUwM2VlNzQwODBlM2IyNmRkZjM4NTk5YWRiMDFlYzQzNDljMDJmYjNiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgxZDRhZDg5NjZjMGI2NjYyMzViMjA0ZWYzYWQxMzlmNTgxYWRmNjZmYTU1OGI2NzgxMzI4Mzk2OWQ3NjAwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk0YWJjYmEwZDQ0YTMwZjQxZmVhZTM4YjBlMzBmNTZkYjMyNmE3NjNhODg0ZmZlNzMxM2Q4M2EyZGFiMGEzMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg2NWNlYTljYmE3OGVkOTM2OGI4OTAwZjdiZDM0NWQ0OTAyZTZlYTg2ZTE2MDNlNTg4NWNjMzQxNGY1NjgwZiJ9"
+          "resource": "repo://src/download_dats.rs#L21-L26",
+          "version": "repo-lines-v1:sha256:40fb54961b01168c1f9032e679c3f03f44018c713746b76a23c2ec44bbea2091:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2ZWExYjE4ZTBiOTY2OGE5NGE5MzA5MDgyZmNmZDQ2Yjk5YTUwMDE3NWIzZTczMzMxYzM0MTVkNTU4M2U2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDc5NTdiMzg1MGM2OWRiZjcyODU4NTIyZTMxNTcyMTQ2M2ZiZjA2YTVkMWMyYmVjMDk2NzUwODY4ZTQwNThiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0OGNiNzY1NThlMmM3OWEzYjZiMWYzMzRjMTNkZDI2ZGNmMzk0MjllZjQ4YTRmZjQ3NTM5NGI1ZGM4MDcyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZlMTBjOWZlYjk2NDY2MWFhYmZhODY1NDQ0NjExOTllZGZiZGM1NjQyYzk3NTY3NzljZGI3YzJiNTAxZWIwYiJ9"
         },
         {
           "resource": "repo://src/generate_playlists.rs#L41-L48",
@@ -58,15 +58,15 @@
     },
     {
       "id": "claim_596c8338b8ce44b48fa3ee07f326fb4e",
-      "statement": "The Redump system catalogue `REDUMP_SYSTEMS_CODES` is a compile-time `phf_map!` of exact Redump system name to datfile URL code (e.g. \"Nintendo - GameCube\" => \"gc\"), wrapped in `cfg_if!` so that under `cfg(test)` it collapses to the single entry \"Test System\" => \"ts\"; this keeps every download test offline and makes a bulk (`-a`) selection iterate exactly one URL, without any production code path differing.",
+      "statement": "The Redump system catalogue `REDUMP_SYSTEMS_CODES` is a compile-time `phf_map!` of exact Redump DAT header name to uppercase datfile URL code (e.g. \"Nintendo - GameCube\" => \"GC\"), wrapped in `cfg_if!` so that under `cfg(test)` it collapses to the single entry \"Test System\" => \"TS\"; this keeps every download test offline and makes a bulk (`-a`) selection iterate exactly one URL, without any production code path differing.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L28-L89",
-          "version": "repo-lines-v1:sha256:9d23324e562a07bccb5b37eaf846b19041dcd57342b29796675e8e8363550b46:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOTIxMWJkZDdjN2RhMDMyNGI1OGNmNTJiNmQ5NDM5ZDkzOGI0ZGI5MzZmMWE2NGFmM2FhOWRiYWRlN2YyZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3YmI3OWY0Njg5MjMwMmNkNDMxMDRmOWI5NTg5YWI0YTg0OGJiMjYwMzc3NzNkNzAwMzE0NmJiMWU0N2E3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlZmRhNDA1MWIyOTM2OTIxYWU4NzhkODA1ZjEyMTFmOWZmNTJkYzE1MTdjMTE3NWYxNTc4M2RlNDViMDYzNWEifQ"
+          "resource": "repo://src/download_dats.rs#L28-L145",
+          "version": "repo-lines-v1:sha256:fd19c3ee0b0533933fb59c6ec5dca42ee082dee847728522e293de92180dbfa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YjkyMTFiZGQ3YzdkYTAzMjRiNThjZjUyYjZkOTQzOWQ5MzhiNGRiOTM2ZjFhNjRhZjNhYTlkYmFkZTdmMmZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNjc4NzQwNzM3YTc2Yjg4ZjVhMmY5MmQ4Mjk1ZTdhNGQ2NDJhNWY1ODEzZjFiMmY4NDMwOTkxYzgzODk2YmZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZWZkYTQwNTFiMjkzNjkyMWFlODc4ZDgwNWYxMjExZjlmZjUyZGMxNTE3YzExNzVmMTU3ODNkZTQ1YjA2MzVhIn0"
         },
         {
           "resource": "repo://src/download_dats/test_redump_failures.rs#L43-L47",
-          "version": "repo-lines-v1:sha256:da8e38ab4d6d23bb12c47eea05da7e32dd4c2c4392e31daecef42f92e97e270d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhkNWYxOTQyMTdjNmFkOGE4M2RlYTZiNWE2OWYwYTNlOTYyZWUwOGQyYTliNGNkNzM1NjA0ZTE4YjBiZjExNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQzZDcwN2Y4OWFkY2FiMDQ0NDlhYzBhNmU1NmNkZDg0ZGUyMzZmMjA4ZTM1YTdhZGZkZmYyYjUzODA4MzU1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTQ4NzEzNzYzMGVjYzJkNzczMjUxNjdiMWNlNGQwYjVjZWMxNzQ3YjZlZGYyYzdiMzgxZWQxY2NhMjY1MzhiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE3YTJhY2ZmMTUwM2UzMDY1ODE4ZmExNThlNTdiODRhODdmMmM1MWRmODhkMjIxOWZmY2NjY2EyNWVhNGQxNCJ9"
+          "version": "repo-lines-v1:sha256:323713fea3cf780543e9ba01a25d5b1f61e37ac112e1eb4d8c892724b4be01ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhkNWYxOTQyMTdjNmFkOGE4M2RlYTZiNWE2OWYwYTNlOTYyZWUwOGQyYTliNGNkNzM1NjA0ZTE4YjBiZjExNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWQzZDcwN2Y4OWFkY2FiMDQ0NDlhYzBhNmU1NmNkZDg0ZGUyMzZmMjA4ZTM1YTdhZGZkZmYyYjUzODA4MzU1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVhNWNiNjEwNjUxM2FhYWJlZDUyYTQ1MDVmNzMyYmRlNGY1ZWQxNWIzMTIyYzA0M2Y4YzRmMjZhYmNhODA4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGU5NGJiY2IwMDRiMDVhZWEzNTdkMWI1MDEwODFhYWY3YjNmOTYyZDg0ZWMxNzI2MjhiZjM2MzVjZTIwODZlOCJ9"
         }
       ]
     },
@@ -79,34 +79,34 @@
           "version": "repo-lines-v1:sha256:edde9febad71dd499384af0e936b2fa9fa1b1a438131cad281314229c93f5035:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZDA2MmJjN2QwYWQ3NGIxNmYzYjc3M2MxODI2MjVkMGM2MGZmYTA0YzMwNTI2NWY1YzIwMDA4Mzk3NTkyMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlOTU0MzRmNDYyNDlhZDYxNzU1ZTRmMWUxYWYzYmI3ZTU3MzM5MTAzYWZkZmY5Y2YyNWI0YmEyZmQ3NDc0NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMGQ4OWQyNTE3MWU2ZTcxMmFjMmY0MzEzNGQzZmNkZGI0ZmNlOTVkYWM0NWNhMDg1MDNjODMxM2E4MzNlY2QifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L275-L308",
+          "resource": "repo://src/download_dats.rs#L331-L364",
           "version": "repo-lines-v1:sha256:becef276f07f5b5ac39c1eeda503d537afb055afa7ef041b03255558f1c8f72e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTBlMTVjZDQ4ZjI2MjQ4YTgyYTlkNzA2NTg0ZDc2YzhlNDgzNzM2NTk0Nzg4NzQ1ZDVjMjE2MGVmOGUyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZGFjZTQwYTUyNzQxMzFjN2JlZjZjNGZiMjI0MmYyMmM4M2JhNTJkN2U0MmE2MWM0MGM2OWI1OWQ5OGRlZWUifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L91-L115",
+          "resource": "repo://src/download_dats.rs#L147-L171",
           "version": "repo-lines-v1:sha256:65ae7fcd1b2364c899826ebbfbdd063f01b65dde1b88a11eeb73843c35d35f78:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YWIwOGE1NDY0MGE2MTAwZGU4NTA3ZjY5ZDI1ZGY1NDI4MmUxMDRkNTI0OWMwYTJjZGM2YjY0OTIyNDBiMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZDE2MGM2ZDE3NjM1MzFlZDZiNDE4Y2EyOWY4Y2Q1N2M0NGY4NmYzMWVhM2MyNzQ0NDI0MjcyMzRmODNjNzcifQ"
         }
       ]
     },
     {
       "id": "claim_ae6c581aca324a9891cdd2e114a35796",
-      "statement": "Per-system fetch GETs `{base}/datfile/{code}/` into memory, rejecting an HTTP error status, opens it as a ZIP extracted into a TempDir under TMP_DIRECTORY, then runs `parse_dat(..., skip_header = true)` and `import_dat(..., None, None, force, false)`, returning DatOutcome::Imported when import_dat produced a summary and DatOutcome::UpToDate when it returned None; an unknown system name, an unreachable host, an HTTP error, a non-ZIP body or a ZIP without exactly one entry is an error for that system.",
+      "statement": "Per-system fetch GETs `{base}/datfile/{code}` (no trailing slash, base https://redump.info) into memory, rejecting an HTTP error status, opens it as a ZIP extracted into a TempDir under TMP_DIRECTORY, then runs `parse_dat(..., skip_header = true)` and `import_dat(..., None, None, force, false)`, returning DatOutcome::Imported when import_dat produced a summary and DatOutcome::UpToDate when it returned None; an unknown system name, an unreachable host, an HTTP error, a non-ZIP body or a ZIP without exactly one entry is an error for that system.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L405-L412",
-          "version": "repo-lines-v1:sha256:bde233b9a92f70443fe2118353c9aba7c123b85e11b0395b1553702f96230efc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYwYTZhNTQ0NjE2NDI3MmRhN2IxOTE2YmEwMjc5ZTQ0MmFlMDMzN2I4MGEyZWNlYjI0N2RlOWJjYjNlYzEzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmIwYzk2ZTgwMGI3ZmU2OWFkOGY4NTQwY2U1NTRhZDA3ZDNkMDI5YzdiMDA0ZGIxYTNkZjVmMjk5OTc3NTg3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTI1Zjk5NjM0ODEwNTM1ODVjZjgwNWQzMDMyOGI2YzA2OTZiMzBjMWQ3NDBhNWZkNjVhNmUyNmU4YjljYjgyOCJ9"
+          "resource": "repo://src/download_dats.rs#L21-L26",
+          "version": "repo-lines-v1:sha256:40fb54961b01168c1f9032e679c3f03f44018c713746b76a23c2ec44bbea2091:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2E2ZWExYjE4ZTBiOTY2OGE5NGE5MzA5MDgyZmNmZDQ2Yjk5YTUwMDE3NWIzZTczMzMxYzM0MTVkNTU4M2U2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDc5NTdiMzg1MGM2OWRiZjcyODU4NTIyZTMxNTcyMTQ2M2ZiZjA2YTVkMWMyYmVjMDk2NzUwODY4ZTQwNThiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjY0OGNiNzY1NThlMmM3OWEzYjZiMWYzMzRjMTNkZDI2ZGNmMzk0MjllZjQ4YTRmZjQ3NTM5NGI1ZGM4MDcyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGZlMTBjOWZlYjk2NDY2MWFhYmZhODY1NDQ0NjExOTllZGZiZGM1NjQyYzk3NTY3NzljZGI3YzJiNTAxZWIwYiJ9"
         },
         {
-          "resource": "repo://src/download_dats.rs#L438-L501",
-          "version": "repo-lines-v1:sha256:01eaeaef057a25082d4cc3ec1486d4206f8fefcaa9c35b77b33cd93f067abd47:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
+          "resource": "repo://src/download_dats.rs#L494-L557",
+          "version": "repo-lines-v1:sha256:09f2fdcdd781e789c806c699426e423bd1f4a6bc55e21fb95d63d70fac5065d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
         },
         {
           "resource": "repo://src/download_dats/test_redump.rs#L37-L87",
-          "version": "repo-lines-v1:sha256:f5e94b73b832ed05b49ac2e3419daa183eb624782be4b5f96d03b11fe7d1247f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZjJlMzRkNzA2ZWZmODBkNzZiZDkzNWM1MDQxN2QzYTZkNmRlNWIzZTBmMGRmZDA2MGYxNTBiODUzN2NiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:09b525191b2758355bfc9f5056574531600b71dd8db8f161adbc1a8c29597a29:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZjJlMzRkNzA2ZWZmODBkNzZiZDkzNWM1MDQxN2QzYTZkNmRlNWIzZTBmMGRmZDA2MGYxNTBiODUzN2NiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://src/download_dats/test_redump_failures.rs#L39-L105",
-          "version": "repo-lines-v1:sha256:252fc50971a5aa58b191f468ca39f59173122a86c4bbe6169aed5349766376b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNWY4ZWJlZDc1YTA3OTBmOTkwZjc3ODQ3MGNmOTQ4NWI5NjhmZjMwNGY5YjQ4ODc1Yjk3NGUxMDljNDFkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:8d240caa57b5ad8e0b0b6c3f939edb9b8de51ca727d205739148f38c423ef8a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNWY4ZWJlZDc1YTA3OTBmOTkwZjc3ODQ3MGNmOTQ4NWI5NjhmZjMwNGY5YjQ4ODc1Yjk3NGUxMDljNDFkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -115,11 +115,11 @@
       "statement": "The download path's only pacing is one `sleep(Duration::from_secs(1))` after every system, failures included, applied by download_redump_dat around the fetch; there is no retry or backoff. Every surface loops through collect_redump_dats, which reports a failed system, continues with the next, and returns DatOutcomes with imported, up_to_date and failed lists; the CLI's download_redump_batch fails the run at the end naming every system that failed.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L333-L403",
+          "resource": "repo://src/download_dats.rs#L389-L459",
           "version": "repo-lines-v1:sha256:1d52902f6465cc17bdfe710b94b38bf13f6d537fc3cf7d3b9a841b168aa98e6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYmJkMGUxOWZmMzU0NDAzNmU5NTMxZDdlODY4MTFmZGZjZTEyNGQwYTIxYTYwODEwNjBmMWZjMGE4Y2IwYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwYTVlYmU4MmE2Nzc0MzFmOTk5ZjgyNmE0MDQ2M2E2NjEwODIzYWQzZjkzY2YzNzhiZWU0MTg4ZmUxZjQ1ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MjcyYjdiNGY0YzA4ZmZmYzdjNzViNzJiZDJkNjIzYjNlYmU3YTQwYjBkYzVmZjkwZDJiNDEwMTFjYWE4NDAifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L414-L436",
+          "resource": "repo://src/download_dats.rs#L470-L492",
           "version": "repo-lines-v1:sha256:45526cdfb916b7e2015946ad5c24b2b0728b6b263e9bfd1eba25a942834aaa4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYjUzNjRhOTVmNWExZGM2YWNkYmNhMDVjZWRkZmQ5YTIwNTA4Njc2MjE1MDk4YWEzY2M0YjNkOWRhN2Q5YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxOGFjMDkzNGNmODczMTNiMjNlZjU0YmI1ZDJjNmNjNDNmZDBlZDg2MGEwOGQ2ZTE0ODczM2E3MmE2ODliNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhYWZkYzZjYjY5NDE3YTYwN2QzMDI1MWJkZDYyNDAxMDk4MWJkM2U0NzU5NmU0ODdlM2I4N2VkYWY3ZDgzNWMifQ"
         }
       ]
@@ -130,11 +130,11 @@
       "evidence": [
         {
           "resource": "repo://src/download_dats.rs#L189-L194",
-          "version": "repo-lines-v1:sha256:46ad94230cf04edf036851bd5b256c8f00c16fb9462166073e3ba20484a59aa7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY3NDJmZmMxMTYwYTk4ZTBhYWYwZjYwZGY4MDA5YzlmNzlkMDJlZDQ0NzU0NDVhYzljZDI0N2JhNDk0OGJiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2Y3MGRjMDZiZTNkMjhhMzdlNTRmOWI4MWNhNDRjMzg0YTAxNTg2YmYxNjJlODcyNGNiYzk2M2RkMDAzYWM1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMyOTU5OWI3OWJmYTg5ZmVlYzJkNTMyZWEzNzU4Y2VhY2U3YzExMTQxZmQ2NzY2ZTVkMjUzYjFmNzgwMGM3NiJ9"
+          "version": "repo-lines-v1:sha256:5899059d5a5858476247d811494c995bbcdbef6c531ff9d00f403c60b210167f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE0OTM5YzJkMDczYzFlNWM1NDlhMGVkOTlmNTNiOTlmMmY5NzhkN2VkZmY4MWUxNTE2NjE2MGUyY2Y3OTQxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjEwZmMxOTA1Yjg1MDgwNWQ0MDY0Mzc4Yjc5ZWQ4Mzg4ODg1ZDk3YWE1YTM1ZDNkYmNiNzFlZmE4YWM1ZGVlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk3NTMzZmQ3MzhjNzQxNTczNmUyN2E4YzU5Y2JkOTgwMzYyZjJhMmI5M2Y3MjZhY2VjOWQ4NWRkYzk5NjViNiJ9"
         },
         {
-          "resource": "repo://src/download_dats.rs#L438-L501",
-          "version": "repo-lines-v1:sha256:01eaeaef057a25082d4cc3ec1486d4206f8fefcaa9c35b77b33cd93f067abd47:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
+          "resource": "repo://src/download_dats.rs#L494-L557",
+          "version": "repo-lines-v1:sha256:09f2fdcdd781e789c806c699426e423bd1f4a6bc55e21fb95d63d70fac5065d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMzg1YjI3Y2JlZjFkNzc3OTgxYmI0YzYyOWFjYWU3MGQ1MDMxMWZiNWZlZTdhYjU5YzE4N2Y0ZGU5ZjVjNzcifQ"
         },
         {
           "resource": "repo://src/download_dats/test_redump.rs#L65-L70",
@@ -147,11 +147,11 @@
       "statement": "Update detection is `is_update`, a lexicographic `new_version.cmp(old_version)` that skips older and equal versions; `create_or_update_system` aborts the entire DAT import (returns None) unless `is_update(...) || force`, so a same-dated or older DAT never overwrites the catalog unless `-f/--force` is passed — and force is threaded only into the Redump update path, never into new-system downloads.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L215-L235",
+          "resource": "repo://src/download_dats.rs#L271-L291",
           "version": "repo-lines-v1:sha256:8671c92fc7a09d7003ca563a08fc7a195780a5c197bdea2b900245103bf4eb05:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZWFjMzJhODY2ODI3ODYwMjdmZGY0ZGE2NjJmZWI4NTJkMTI4ZWEwYmE3NmMyMmY5YjRkYzhmMDk4MTQ2OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NWU1ZmY1MWVjMjk5MzNkODAxNGU1YjlhNTk5NGFmYzNhNzc4ZWJlZjYxZjI3MGNjNjc1MjU3ZjhlY2IyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YWI3YjZkOWI2ZTE5NTY1M2ZjOGI1NWY2M2YzNjQ2MDY4NTVjNDU0ZmM1NjU4NTFmMzFhMmYwOTQ1ZGE3NDIifQ"
         },
         {
-          "resource": "repo://src/download_dats.rs#L275-L330",
+          "resource": "repo://src/download_dats.rs#L331-L386",
           "version": "repo-lines-v1:sha256:641560f0068d72efc55a99850421228b8dd6bb101ede79a682a69ee63b940102:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiOTBlMTVjZDQ4ZjI2MjQ4YTgyYTlkNzA2NTg0ZDc2YzhlNDgzNzM2NTk0Nzg4NzQ1ZDVjMjE2MGVmOGUyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNDVhN2NhYjg0MTlhYzM0NTBjZjY4NzA5NmM0ZjE2ZTk4OWVmNjdiY2NlYTZmMGQ2YTk4YzM4MDQ1MjQwNTYifQ"
         },
         {
@@ -173,7 +173,7 @@
       "statement": "`update_nointro_dats` GETs `{NOINTRO_BASE_URL}/profile.xml`, failing on an unreachable host or an HTTP error status, deserializes it into `ProfileXml` (each `<datfile>` element aliased to a `SystemXml`), and for each database system with url `www.no-intro.org` reports either the version verdict, \"System is no longer available\" when the profile has no entry with that exact name, or a parse error — it never downloads a DAT.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L240-L273",
+          "resource": "repo://src/download_dats.rs#L296-L329",
           "version": "repo-lines-v1:sha256:2100de313d254bf774df0f3b64a39a76b97ed1b7fc0d99086076434677e0ef32:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzZjA0MDFiMTc3NmQ0Njc2YzVlYTgyOGRiMzRiOTQ1YjE5ZWEzMjhmYzE5NDE1M2Y0ZDgyNDM2MGVmOGE2NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZmY1MzhkYzExOGQ2MWNlM2ZmNmQ1NWIxMzI5Y2IwMDc5NTFkZGNhNzJiODk3NjM4ZDMzYzM0ZDE5NjEwMzEifQ"
         },
         {
@@ -195,7 +195,7 @@
       "statement": "The `server`/`mcp` features reuse the same two primitives: `find_redump_systems` backs the GraphQL `downloadableSystems(update:)` query and the MCP `downloadable_systems` tool, while `download_redump_systems` — which runs the shared collect_redump_dats loop against the real Redump URL, so an unknown name lands in the failed list since non-CLI callers may pass anything — backs the GraphQL `download_dats` mutation and MCP tool.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L101-L137",
+          "resource": "repo://src/download_dats.rs#L157-L193",
           "version": "repo-lines-v1:sha256:639646359c2fed7eff90fe76ffe0672f7850c09b897158fa976860e10feadfce:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MzQ4M2U0MGI4MzNkNDM2ZTE4NGEzOThlY2UwMjAzNWViYmNlOWVhNjUzMDRjZTc2YjYxZDYxY2E3NzU4MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZWIzZDBiMjNlZjBlY2I1OWYzMjc2MDc0Y2M5MTE3NDJlMWE5ZDg1NDA2ZmU1OWZiNDRhZWNmYmU1OTg4YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjNzI0YjVhYmI1NDU4YjViNDllYmMzZDA4NzNhZGVmMDA5NGZiNzU5NzhkZjkwMjU1NDBiY2U1YTljYTkwN2QifQ"
         },
         {
@@ -368,10 +368,10 @@
     },
     {
       "id": "claim_7414a70fe3b5453aa08577a132abf6ed",
-      "statement": "The download module's tests are declared behind `#[cfg(test)] mod` in `src/download_dats.rs` and use wiremock so no request leaves the machine: the success test mocks `^/datfile/[a-z0-9-]+/$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs plus the `-s` copy, then that the same DAT again is UpToDate and forced is Imported; the Redump failures test asserts empty and two-entry ZIPs and a 404 return Err with the database left empty; the No-Intro tests mock `/profile.xml`, and an HTTP error or unreachable host there is an Err.",
+      "statement": "The download module's tests are declared behind `#[cfg(test)] mod` in `src/download_dats.rs` and use wiremock so no request leaves the machine: the success test mocks `^/datfile/[A-Z0-9-]+$` with `tests/Test System (20200721).zip`, asserts 1 system / 6 games / 8 ROMs plus the `-s` copy, then that the same DAT again is UpToDate and forced is Imported; the Redump failures test mocks `/datfile/TS` and asserts empty and two-entry ZIPs and a 404 return Err with the database left empty; the No-Intro tests mock `/profile.xml`, and an HTTP error or unreachable host there is an Err.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L503-L510",
+          "resource": "repo://src/download_dats.rs#L559-L566",
           "version": "repo-lines-v1:sha256:f746b056d5ea919918112e9a2064d552b01beffc89d1c3ec4c9ea5fad37f18c5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVjZjVmYzIzZjJhNmQyM2MzZWE1MWU3MmY1ZTg5NmM3NTU1ZmJhYTA1Y2Q1YjFlYTE4MmJmOTYxOGE4ZTgxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ2MmI5MDcxNTFmMTQ1ZTVmYTFiNmZhYjUwNzZkMjgwNGEwOWRmYWFmZDM4NTgwOTBhYjE0MDhmMDcxYWFiMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjA2M2M0ZDFhZjhjZDg5YmIwYmRkNzY1N2ZmY2JmNjgwNmE2MTBkNzlkNmM4ZDRjMzA3YzI0MWRmMzkwMDUyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -384,11 +384,11 @@
         },
         {
           "resource": "repo://src/download_dats/test_redump.rs#L37-L87",
-          "version": "repo-lines-v1:sha256:f5e94b73b832ed05b49ac2e3419daa183eb624782be4b5f96d03b11fe7d1247f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZjJlMzRkNzA2ZWZmODBkNzZiZDkzNWM1MDQxN2QzYTZkNmRlNWIzZTBmMGRmZDA2MGYxNTBiODUzN2NiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:09b525191b2758355bfc9f5056574531600b71dd8db8f161adbc1a8c29597a29:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZjJlMzRkNzA2ZWZmODBkNzZiZDkzNWM1MDQxN2QzYTZkNmRlNWIzZTBmMGRmZDA2MGYxNTBiODUzN2NiNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://src/download_dats/test_redump_failures.rs#L39-L105",
-          "version": "repo-lines-v1:sha256:252fc50971a5aa58b191f468ca39f59173122a86c4bbe6169aed5349766376b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNWY4ZWJlZDc1YTA3OTBmOTkwZjc3ODQ3MGNmOTQ4NWI5NjhmZjMwNGY5YjQ4ODc1Yjk3NGUxMDljNDFkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:8d240caa57b5ad8e0b0b6c3f939edb9b8de51ca727d205739148f38c423ef8a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNWY4ZWJlZDc1YTA3OTBmOTkwZjc3ODQ3MGNmOTQ4NWI5NjhmZjMwNGY5YjQ4ODc1Yjk3NGUxMDljNDFkOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -459,7 +459,7 @@
       "statement": "In `download-dats`, `-u` and `-a` are forwarded to both provider branches, but `-f/--force` and `-s/--save` are consumed only by the Redump branches: on the No-Intro path clap accepts them and nothing reads them.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L196-L238",
+          "resource": "repo://src/download_dats.rs#L252-L294",
           "version": "repo-lines-v1:sha256:045719da751a2963b1bdafae1e06e069bb98d959dc36386915d87cf8f944a13f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZmRmOTAxZWVmNTk5NWZjZmYwZjYwZTEwOWE2YjlmMGI0ZTA2MjFjMWI1ZTIwYWRiNGQzNDYxMzIzZWMxYTMifQ"
         }
       ]
@@ -469,7 +469,7 @@
       "statement": "The MCP `onboard_system` prompt decides its first step from the Redump catalogue: `find_redump_systems(connection, false)` is consulted for an unknown system name, and a match instructs the model to call `download_dats` with the exact catalogue name, while a non-match instructs it to locate No-Intro/MAME Logiqx DATs on disk and call `import_dats`.",
       "evidence": [
         {
-          "resource": "repo://src/download_dats.rs#L91-L115",
+          "resource": "repo://src/download_dats.rs#L147-L171",
           "version": "repo-lines-v1:sha256:65ae7fcd1b2364c899826ebbfbdd063f01b65dde1b88a11eeb73843c35d35f78:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YWIwOGE1NDY0MGE2MTAwZGU4NTA3ZjY5ZDI1ZGY1NDI4MmUxMDRkNTI0OWMwYTJjZGM2YjY0OTIyNDBiMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3ZDE2MGM2ZDE3NjM1MzFlZDZiNDE4Y2EyOWY4Y2Q1N2M0NGY4NmYzMWVhM2MyNzQ0NDI0MjcyMzRmODNjNzcifQ"
         },
         {
@@ -499,10 +499,24 @@
           "version": "repo-file-v1:sha256:04197de2536a91644beff81a5efed19759578718930f11c67c833f086e53ab1f"
         }
       ]
+    },
+    {
+      "id": "claim_87e815a158e548d9b0551eded42c667a",
+      "statement": "Because Redump provenance is an exact url match, the move to redump.info ships a migration that rewrites existing systems from http://redump.org/ to https://redump.info/ and renames the twelve systems Redump renamed, keeping the old name as custom_name; a system whose rename was skipped keeps the old url, and if the update list still yields a name the catalogue lacks, fetch_redump_dat fails that system with \"Unknown Redump system\" instead of panicking.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20261026000001_move_redump_to_redump_info.sql",
+          "version": "repo-file-v1:sha256:58e1d96ef7075543bfe6cb118b7ed0adfdf316759fdf13af467404bce082cfd3"
+        },
+        {
+          "resource": "repo://src/download_dats.rs#L494-L505",
+          "version": "repo-lines-v1:sha256:08c691e25444f6baab0bef29eab066d36834341a9dcdc60f732889765e52b244:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1N2ZjYTgyZTVjNGZhYzg4M2VlMjAxMTQ5M2U4MmEzYWNkMDk2NjIxNDNiZjcxNjJhZjBjYzNlNmVhMTc4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZTcyZDljZjUxNjkzM2ZkNDc3M2M0MmE5NzEwODZlMWRjNGJkYzA2ZjNiOWFiNDEwMzk2MDRmMDUwZGIxYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGU5MzIxNmJiZjliYjZkMmZjOTA1YzU4YjNjN2QyMzI1NDNjYzU2OTg3OTI5MThhOTM3MThkY2RhMTlhMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ZGI2MmI0ZTI4ZGQ0YjBhZDE2NjAxYmE4MTZjZmY0ZmFjNTZlNjQ3MjE3MzdiMmFmNzY4YTcxM2ViZjE3ZWMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T22:40:03.236Z"
   }
 }

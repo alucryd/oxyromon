@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ee06bd617142708f5c0a8ccabd4197ddd06a00ed0dccce24861456cde4196b6",
+  "pageVersion": "sha256:12999f1ed135a71f2e703ceb4059f3f7e1dbaf2d0df09a4444b3a1a7a9cda713",
   "claims": [
     {
       "id": "claim_44357edf534742ce98dabc19de5096a1",
@@ -683,10 +683,42 @@
           "version": "repo-lines-v1:sha256:10531acc6d3f8acfce6c7ac16754da3d69426a14fab4028ea508b73a3713e3c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzMzViY2I1NDIxNTU4MDA4NDY1NmRkOTJiMTJkYTk1ZGI4OTEzZTEyMWRiMzVmODgwNTVkY2Y1NmJiNmQ4ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliM2FkNzc3ZTg2NWE3MjcxYmQ3NWU0Mzc3NmY2NmRmYTNjZGUzYjI4NjQ1N2ZjMWFmY2FmYjJlNzRlZThkODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYzQ2Nzk3ZjE4NDExOTgwNGNhYzI5MjU4NjExNTI1NjA5NjgyOGFjY2M3YzAwMWMyNmY5YjhhZGM0ZDY0OWMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2055fcbf78a340b8923b23d39126e223",
+      "statement": "The redump.info migration renames twelve Redump systems while preserving their directories by storing the old name as custom_name when none is set, and guards each rename against collisions on both the UNIQUE systems.name column and the unique systems_custom_name index so a collision skips the rename instead of aborting the migration.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20210323000001_create_systems.sql#L3-L3",
+          "version": "repo-lines-v1:sha256:151b333a7183e004e5e5dd7038d0bf366746789c44d83dfc01fb9adf1bfced7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUxYjMzM2E3MTgzZTAwNGU1ZTVkZDcwMzhkMGJmMzY2NzQ2Nzg5YzQ0ZDgzZGZjMDFmYjlhZGYxYmZjZWQ3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUxYjMzM2E3MTgzZTAwNGU1ZTVkZDcwMzhkMGJmMzY2NzQ2Nzg5YzQ0ZDgzZGZjMDFmYjlhZGYxYmZjZWQ3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzZhZTg1OTYxZTJiMWYzMTk5OTMzZDZlZjIwYjA5MjVhYTY3NzUxZTA1NjFkYjFmZTNmMDQ5MTRlYTRjMmVkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMyZTYzYWQ3ODA2MGZkZjFlN2U0ZGMwMjIyODkzOTgzZWRiZmQ3MDBiYTA5YzdlMTkxYzNjYWVlN2E1MTYyMyJ9"
+        },
+        {
+          "resource": "repo://migrations/20240314193153_add_custom_name_to_system.sql#L4-L4",
+          "version": "repo-lines-v1:sha256:1478de70e48d31d2bdfd5f5744e6066aaff734a35863f1b971cc1216cb88ade9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ3OGRlNzBlNDhkMzFkMmJkZmQ1ZjU3NDRlNjA2NmFhZmY3MzRhMzU4NjNmMWI5NzFjYzEyMTZjYjg4YWRlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ3OGRlNzBlNDhkMzFkMmJkZmQ1ZjU3NDRlNjA2NmFhZmY3MzRhMzU4NjNmMWI5NzFjYzEyMTZjYjg4YWRlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRjYWJjMWQyNzJhMDM2OTBlNjQ5NDk5MzdiNjEyNGRkNDU0NmYxOTBhYWNlMDhhOWMzN2U1Y2E5M2RlMTdjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://migrations/20261026000001_move_redump_to_redump_info.sql#L1-L10",
+          "version": "repo-lines-v1:sha256:4fe6f2011c86ba35dacd5b7baef63687ba1892e2921e4834d3bdd9ce555984fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMzA5ZDVhZDdiMjQwMTU0NjJjNTlhOGMwNzZhMThiOWFmMDE4ODA0OTI1Nzc3ZjE0ZjEyMGI0ZjAxNjFkNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5NWRmMTQ1ZjU4MTcxNzUxOTg3ZDA4ZTgwMzBhMWJhMDgxYTQyNmI3NjEwMDU4NWJiNzU2MWRlNjY1ODM3Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNWUwOTJkOTVmYWZkODE2ZTk4MWI2YTEzZDk0MWRmMTVjMTg0ZGMyMTJkZmVhYjlmYjFlNGI5YzM0N2MxOGEifQ"
+        },
+        {
+          "resource": "repo://src/util.rs#L227-L265",
+          "version": "repo-lines-v1:sha256:23f816408c74e251ae07e27baec23fc1569ce625bb6e5df349ecb233329f841d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5M2VjZDNlZjFjYTUzNjk5NzZjMTFhODYxMWE2ZjMxYWNiM2Q1OTg1ZjA5N2IyMjg5MmFjODkxZTdmY2U0ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MmFkZjUyMDQzM2I0ODEwYzE2ZTNlZmZmMTczZDFmZGVhOGVkYjA3OTVjMGY4NzMzNDRjMWU4OGZhYWNjN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f12a7b2c0364d7db7f0026626ecad56",
+      "statement": "The redump.info migration moves every remaining http://redump.org/ system to https://redump.info/ except systems still carrying one of the twelve old names, whose rename was skipped.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/20261026000001_move_redump_to_redump_info.sql#L78-L94",
+          "version": "repo-lines-v1:sha256:b60abeae4979d9e17526203d05746872c429ebd4f1885932415979585bc36e82:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZGIyZDEyMjRlZDhkN2E1Mjk4MDA3YjBlZjQ4ODU1ODdjZGI1YTVhNDE1MmFhZmYzMDlkNWFiYThkM2Y3NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMTNmMTY1Nzk1M2Y4YzlmZDZlNTE1NzMyOWE2ZmM1Y2I0YzdjNjZlOTY3Y2Y0OWFhN2NmMDFjZWNiOTU4ZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T21:20:28.066Z"
+    "at": "2026-10-26T22:40:03.236Z"
   }
 }

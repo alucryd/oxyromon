@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2d9f56025999d02718f38f219eafe93dfbe452f9d46198fa3f320938aeecfd08",
+  "pageVersion": "sha256:2d78bbfa84f013ae5b6eb673696f7107855d867f593fad116135f130533d0abd",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
@@ -206,15 +206,15 @@
     },
     {
       "id": "claim_0005afa41d7c4bdb8e15a82b37194dd0",
-      "statement": "Network-facing fixtures are replayed through wiremock: tests/profile.xml answers GET /profile.xml for the no-intro DAT flow and Test System (20200721).zip is the redump datfile payload a mocked GET /datfile/.../ returns, while Test System (20210401).zip supplies a DAT nested in a subdirectory for import-dats.",
+      "statement": "Network-facing fixtures are replayed through wiremock: tests/profile.xml answers GET /profile.xml for the no-intro DAT flow and Test System (20200721).zip is the redump datfile payload a mocked GET /datfile/<CODE> returns, while Test System (20210401).zip supplies a DAT nested in a subdirectory for import-dats.",
       "evidence": [
         {
           "resource": "repo://src/download_dats/test_nointro.rs#L35-L50",
           "version": "repo-lines-v1:sha256:bbc62377989b69daea3d58d2064c6fa67b7f8c24028c31f7830686cc4275d7fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3OWVlMGNjYmI3NWI3OGUyODFjM2I1ZjVjZTEzY2MyNWJiYzdlNjczYjViZGU3Nzc4MDdiNTg4Njc0ZWM4YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDg0Y2FlMjZlMGZjMjEyOTMxY2Q0NzQxZDI2OTM0MDBkMWE0YmI1MzZjNTdmNjM3MDFkNTQ0MDM4YTE4NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkOTI3ODVkODMzZjBkMTNlZTg4NDU1N2IxMzZjM2MyMzdlODhjMDUxZjZhZDYzODE3MWQzNzk2Y2I2OTllOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwNWE3OGRlZjY5MTk1MzJkNThiYzI4ZDU1OGI0ZTJmMDM5M2I0OWQwODViZGI0MDg3MWQ5ZWNhY2MyYjVkNGQifQ"
         },
         {
-          "resource": "repo://src/download_dats/test_redump.rs#L28-L70",
-          "version": "repo-lines-v1:sha256:677ab25b09441b69941359449943c27c78862a1277f9eaa8e030b59342a14420:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzM5NGRhNmMzYjk3MzM3YzViYTYzNWQwNjI2MWY2Njc4OGUyMzdiMTc1MzA1OGFmYzFiZDUwZjRkYzNhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZTQyMDhjZDZmZmI4YzRhMzU0N2IyZjU0YWRhMTk5NzhjM2YzNjVlNzhmOTUwMmVmNTE0NWNkZDJhYTg1NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://src/download_dats/test_redump.rs#L28-L86",
+          "version": "repo-lines-v1:sha256:b5bc6d885d344eb9cdac30e77f179e33028909cefeac7ddc17895b3ebe8c259f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzM5NGRhNmMzYjk3MzM3YzViYTYzNWQwNjI2MWY2Njc4OGUyMzdiMTc1MzA1OGFmYzFiZDUwZjRkYzNhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2OGY3ODBjY2QzYmY1MjcyMGVkNDIxM2E5ZjIyNDg4ZDA1NmYwOWY2ZDZkNDQyZTA0Y2VmZDA3NjYwZTQwMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
           "resource": "repo://src/import_dats/test_zip_nested.rs#L25-L45",
@@ -605,6 +605,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T22:40:03.236Z"
   }
 }

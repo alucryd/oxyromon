@@ -35,7 +35,7 @@ oxyROMon comes in three flavors, all driving the same code and the same database
 A system is created from a Logiqx DAT file:
 
 - Cartridge-based consoles and older computers: [Dat-o-Matic](https://datomatic.no-intro.org/) (No-Intro).
-- Disc-based consoles: [Redump](http://redump.org/), or let `download-dats` fetch them for you.
+- Disc-based consoles: [Redump](https://redump.info/), or let `download-dats` fetch them for you.
 - MAME: [Progetto-Snaps](https://www.progettosnaps.net/index.php).
 - FBNeo: harder to find, [libretro](https://git.libretro.com/libretro/FBNeo/-/tree/master/dats) has some.
 
