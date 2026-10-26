@@ -42,7 +42,9 @@ pub use crypto::Key;
 pub use error::{Error, Result};
 pub use image::Image;
 pub use install::to_nus;
-pub use keys::{cemu_keys_path, load_keys, parse_keys};
+#[cfg(feature = "cli")]
+pub use keys::cemu_keys_path;
+pub use keys::{load_keys, parse_keys};
 pub use lossless::{DISC_DIR, DiscInfo, STORE_DIR, disc_info, store_entries};
 pub use nus::{ticket_path, tmd_path};
 pub use rebuild::{wua_to_wud, wua_to_wux};

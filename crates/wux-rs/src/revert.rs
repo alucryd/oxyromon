@@ -16,7 +16,7 @@
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
@@ -25,6 +25,7 @@ use crate::Stats;
 use crate::crypto::{Key, cbc_decrypt};
 use crate::disc::{Fst, Source};
 use crate::error::{Error, Result, corrupt};
+use crate::io::{finish_dir, part};
 use crate::nus::{self, Content, HASHED, SHA1};
 use crate::wua::{Item, parse_ticket, title_key, tree};
 use crate::zarchive::Reader;
@@ -398,7 +399,7 @@ pub fn wua_to_nus(
         .sum::<Result<u64>>()?;
     let input_size = std::fs::metadata(input)?.len();
 
-    let part = part_dir(output);
+    let part = part(output);
     if part.exists() {
         std::fs::remove_dir_all(&part)?;
     }
@@ -435,19 +436,7 @@ pub fn wua_to_nus(
             output_size,
         })
     })();
-    match result {
-        Ok(stats) => {
-            if output.exists() {
-                std::fs::remove_dir_all(output)?;
-            }
-            std::fs::rename(&part, output)?;
-            Ok(stats)
-        }
-        Err(e) => {
-            let _ = std::fs::remove_dir_all(&part);
-            Err(e)
-        }
-    }
+    finish_dir(&part, output, result)
 }
 
 /// Rebuild the title whose revert data is at `node`, and whose files are in
@@ -675,11 +664,4 @@ pub(crate) fn encrypt(key: &Key, iv: &mut [u8; 16], buf: &mut [u8]) {
         cipher.encrypt_block(block.into());
         *iv = *block;
     }
-}
-
-/// Where the folder `output` is written until it is complete.
-fn part_dir(output: &Path) -> PathBuf {
-    let mut name = output.file_name().unwrap_or_default().to_os_string();
-    name.push(".part");
-    output.with_file_name(name)
 }

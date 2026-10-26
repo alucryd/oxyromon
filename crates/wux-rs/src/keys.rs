@@ -1,6 +1,6 @@
 //! Keys, read the way Cemu reads its `keys.txt`. None ship with this crate.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::crypto::Key;
 use crate::error::Result;
@@ -34,7 +34,8 @@ pub fn load_keys(path: &Path) -> Result<Vec<Key>> {
 }
 
 /// Where Cemu keeps its `keys.txt` when it isn't portable.
-pub fn cemu_keys_path() -> Option<PathBuf> {
+#[cfg(feature = "cli")]
+pub fn cemu_keys_path() -> Option<std::path::PathBuf> {
     dirs::data_dir().map(|dir| dir.join("Cemu").join("keys.txt"))
 }
 

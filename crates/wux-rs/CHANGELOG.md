@@ -15,4 +15,5 @@
 - Added hash checks on hashed clusters, so a damaged disc fails rather than converting to a broken WUA
 - Added a progress callback to the library API, reporting input bytes consumed
 - Added writing to `<output>.part`, renamed into place once complete, so a failed run leaves an existing output alone and nothing else behind
-- Added the `wuxrs` CLI, which compresses WUDs, decompresses WUXs, converts either to WUA or NUS, and turns WUAs back into their disc or into NUS, with `--updates` for the store of update partitions, `--add` for an update or DLC's NUS folder, as many as given, in oxyROMon's look, refusing to write one input's output over another's; it sits behind the default `cli` feature
+- Added refusing to replace an existing output folder, of NUS or reverted titles, unless every file in it is one the conversion writes again, as an earlier output of the same
+- Added the `wuxrs` CLI, which compresses WUDs, decompresses WUXs, converts either to WUA or NUS, and turns WUAs back into their disc or into NUS, with `--updates` for the store of update partitions, `--add` for an update or DLC's NUS folder, as many as given, in oxyROMon's look, refusing to write one input's output over another's; it sits behind the default `cli` feature; `cemu_keys_path`, and its `dirs` dependency, sit behind it too

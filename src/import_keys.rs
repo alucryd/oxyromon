@@ -2,6 +2,7 @@
 //! so that a headless install needs no emulator alongside it. For now, the Wii
 //! U's: disc keys and the common key, in the format of Cemu's `keys.txt`.
 
+use super::common::to_hex;
 use super::config::*;
 use super::progress::*;
 use anyhow::{Context, Result};
@@ -86,8 +87,7 @@ fn write_keys(keys: &IndexSet<wux_rs::Key>, destination: &Path) -> Result<()> {
     std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
     let mut file = options.open(&part)?;
     for key in keys {
-        let hex: String = key.iter().map(|b| format!("{b:02x}")).collect();
-        writeln!(file, "{hex}")?;
+        writeln!(file, "{}", to_hex(key))?;
     }
     file.sync_all()?;
     std::fs::rename(&part, destination)?;

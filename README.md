@@ -234,7 +234,7 @@ WUX compresses a WUD losslessly, as wudd dumps it and Cemu reads it.
 WUA is Cemu's archive of a disc's decrypted game files, and a WUA oxyROMon writes is lossless too: it also keeps, where Cemu doesn't look, what rebuilds the disc byte for byte, its partitions' layout and headers and the data a WUA otherwise drops, so it converts back to WUX or to the original ISO, checked against the disc's SHA-1.
 Every Wii U disc carries a system update, about 1.3 GB, which the many discs carrying the same one share: a WUA keeps it in a hidden `.update-partitions` folder in its system's directory, once for every WUA there, decrypted and compressed to about 600 MB, as NKit keeps its recovery partitions.
 Mario Tennis: Ultra Smash, a 2.1 GB WUX, becomes an 0.8 GB WUA, with 0.6 GB of update partition shared with the other discs carrying its update.
-`purge-roms -f` deletes the update partitions no WUA needs any more, and importing a WUA brings the ones it needs from the `.update-partitions` folder next to it.
+`purge-roms -f` deletes the update partitions no WUA needs any more, keeping them all if a WUA can't be read, and importing a WUA brings the ones it needs from the `.update-partitions` folder next to it.
 WUAs Cemu writes, or oxyROMon did before, can't rebuild their disc and are not lossless.
 A WUA oxyROMon writes also keeps revert data for each title it holds: `wuxrs` turns it back into a NUS folder per title, whose contents are byte for byte the disc's and its update's, checked against their TMDs.
 WUA and NUS need the disc's key and the Wii U common key, neither of which ships with oxyROMon.
@@ -247,6 +247,7 @@ Exporting a disc to WUA adds the newest update and DLC in the library, from any 
 A title needs its ticket to be decrypted: No-Intro lists every update with one, but no DLC, so DLC without a ticket is skipped with a warning.
 
 Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console: the disc's TMD, ticket and certificates, and the game's contents, each checked against the TMD.
+A folder already in its place is only replaced if it holds nothing the export wouldn't write, as an earlier export of the same disc; otherwise the export fails and leaves it alone.
 A disc's game partition holds the title's CDN contents byte for byte, so every `.app` and `.h3` matches No-Intro's CDN DAT; only `title.tmd` differs, as Nintendo signed one for the disc and another for its servers.
 
 ## Web UI and desktop app

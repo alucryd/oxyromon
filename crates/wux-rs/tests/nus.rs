@@ -90,3 +90,29 @@ fn a_damaged_content_fails_its_tmd_hash() {
     assert!(!output.exists());
     assert!(!dir.path().join("Test Game.part").exists());
 }
+
+#[test]
+fn a_folder_in_the_way_is_left_as_it_is() {
+    let dir = tempfile::tempdir().unwrap();
+    let wud = dir.path().join("g.wud");
+    std::fs::write(&wud, common::wud()).unwrap();
+    // a folder of anything, and a NUS folder of another title, the update
+    let other = dir.path().join("other");
+    std::fs::create_dir(&other).unwrap();
+    std::fs::write(other.join("save.dat"), b"mine").unwrap();
+    let update = dir.path().join("update");
+    std::fs::create_dir(&update).unwrap();
+    common::nus(&update);
+    for output in [other, update] {
+        let before = names(&output);
+        let result = wux_rs::to_nus(&wud, &output, &keys(), &mut |_| {});
+        assert!(
+            matches!(&result, Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::AlreadyExists),
+            "{result:?}"
+        );
+        assert_eq!(names(&output), before);
+        let mut part = output.into_os_string();
+        part.push(".part");
+        assert!(!Path::new(&part).exists());
+    }
+}

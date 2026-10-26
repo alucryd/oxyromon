@@ -81,3 +81,25 @@ fn a_wua_without_revert_data_does_not_revert() {
     assert!(matches!(result, Err(Error::Unsupported(_))), "{result:?}");
     assert!(!output.exists());
 }
+
+#[test]
+fn a_wua_reverts_over_its_earlier_output_only() {
+    let dir = tempfile::tempdir().unwrap();
+    let wud = dir.path().join("g.wud");
+    std::fs::write(&wud, common::wud()).unwrap();
+    let wua = dir.path().join("g.wua");
+    wux_rs::to_wua(&[&wud], &wua, &keys(), None, &mut |_| {}).unwrap();
+
+    // an earlier output is replaced
+    let output = dir.path().join("reverted");
+    wux_rs::wua_to_nus(&wua, &output, &keys(), &mut |_| {}).unwrap();
+    wux_rs::wua_to_nus(&wua, &output, &keys(), &mut |_| {}).unwrap();
+    assert!(output.join(FOLDER).is_dir());
+
+    // a folder holding anything else is not
+    std::fs::write(output.join("save.dat"), b"mine").unwrap();
+    let result = wux_rs::wua_to_nus(&wua, &output, &keys(), &mut |_| {});
+    assert!(matches!(result, Err(Error::Io(_))), "{result:?}");
+    assert!(output.join("save.dat").is_file());
+    assert!(!dir.path().join("reverted.part").exists());
+}

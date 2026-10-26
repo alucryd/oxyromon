@@ -10,7 +10,7 @@
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
@@ -19,6 +19,7 @@ use crate::Stats;
 use crate::crypto::cbc_decrypt;
 use crate::disc::Source;
 use crate::error::{Result, corrupt};
+use crate::io::{finish_dir, part};
 use crate::nus::{self, HASHED, SHA1};
 use crate::wua::DiscGame;
 
@@ -46,7 +47,7 @@ pub fn to_nus(
     let input_size = std::fs::metadata(input)?.len();
     let total: u64 = tmd.contents.iter().map(|c| c.size).sum();
 
-    let part = part_dir(output);
+    let part = part(output);
     if part.exists() {
         std::fs::remove_dir_all(&part)?;
     }
@@ -138,24 +139,5 @@ pub fn to_nus(
             output_size,
         })
     })();
-    match result {
-        Ok(stats) => {
-            if output.exists() {
-                std::fs::remove_dir_all(output)?;
-            }
-            std::fs::rename(&part, output)?;
-            Ok(stats)
-        }
-        Err(e) => {
-            let _ = std::fs::remove_dir_all(&part);
-            Err(e)
-        }
-    }
-}
-
-/// Where the folder `output` is written until it is complete.
-fn part_dir(output: &Path) -> PathBuf {
-    let mut name = output.file_name().unwrap_or_default().to_os_string();
-    name.push(".part");
-    output.with_file_name(name)
+    finish_dir(&part, output, result)
 }

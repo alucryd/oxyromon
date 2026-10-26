@@ -2188,6 +2188,8 @@ mod test_single_track_chd_to_iso;
 #[cfg(test)]
 mod test_single_track_cue_bin_to_iso;
 #[cfg(test)]
+mod test_wua_to_nus;
+#[cfg(test)]
 mod test_wua_to_wux;
 #[cfg(test)]
 mod test_wud_to_wua;

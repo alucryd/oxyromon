@@ -200,11 +200,10 @@ impl WuaRomfile {
 
     /// The disc's hash, as a DAT lists it.
     fn hash(&self, hash_algorithm: &HashAlgorithm) -> String {
-        let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect();
         match hash_algorithm {
             HashAlgorithm::Crc => format!("{:08x}", self.info.crc32),
-            HashAlgorithm::Md5 => hex(&self.info.md5),
-            HashAlgorithm::Sha1 => hex(&self.info.sha1),
+            HashAlgorithm::Md5 => to_hex(&self.info.md5),
+            HashAlgorithm::Sha1 => to_hex(&self.info.sha1),
         }
     }
 
@@ -571,7 +570,18 @@ fn wua_to_disc_nus(
                     .is_some_and(|name| name.starts_with("00050000"))
             })
             .ok_or_else(|| wux_rs::Error::Corrupt("the WUA holds no game".into()))?;
+        // only an earlier export of the same is replaced
         if output.exists() {
+            if !holds_only(output, &game) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::AlreadyExists,
+                    format!(
+                        "{} is in the way, and holds files this would not write",
+                        output.display()
+                    ),
+                )
+                .into());
+            }
             std::fs::remove_dir_all(output)?;
         }
         std::fs::rename(game, output)?;
@@ -579,6 +589,25 @@ fn wua_to_disc_nus(
     })();
     let _ = std::fs::remove_dir_all(&titles);
     result
+}
+
+/// Whether every file in `dir`, and in its folders, has its like in `like`,
+/// so that replacing `dir` with `like` loses nothing.
+fn holds_only(dir: &Path, like: &Path) -> bool {
+    std::fs::read_dir(dir).is_ok_and(|mut entries| {
+        entries.all(|entry| {
+            entry.is_ok_and(|entry| {
+                let other = like.join(entry.file_name());
+                match entry.file_type() {
+                    Ok(kind) if kind.is_dir() => {
+                        other.is_dir() && holds_only(&entry.path(), &other)
+                    }
+                    Ok(_) => other.is_file(),
+                    Err(_) => false,
+                }
+            })
+        })
+    })
 }
 
 impl ToNus for WudRomfile {}

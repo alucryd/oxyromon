@@ -1,8 +1,10 @@
+use super::common::to_hex;
 use super::crc32::Crc32;
 use super::mimetype::{ISO_EXTENSION, WUA_EXTENSION, WUX_EXTENSION};
 use super::model::*;
 use super::progress::*;
 use super::util::*;
+use super::wux::has_extension;
 use anyhow::{Context, Result};
 use chrono::prelude::*;
 use clap::value_parser;
@@ -187,10 +189,7 @@ pub async fn create_dat<P: AsRef<Path>, Q: AsRef<Path>>(
             let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
             print_subheader(progress_bar, &format!("Processing \"{}\"", file_name));
             let game_name = path.file_stem().unwrap().to_str().unwrap().to_string();
-            let is = |extension: &str| {
-                path.extension()
-                    .is_some_and(|e| e.eq_ignore_ascii_case(extension))
-            };
+            let is = |extension| has_extension(path, extension);
             let disc_name = format!("{game_name}.{ISO_EXTENSION}");
             // What a lossless WUA keeps of its disc needs no reading.
             let wua = match is(WUA_EXTENSION) {
@@ -269,13 +268,12 @@ fn game_xml(name: String, roms: Vec<RomXml>) -> GameXml {
 
 /// A lossless WUA's disc as a ROM named `name`, from what the WUA keeps.
 fn disc_rom_xml(name: String, info: &wux_rs::DiscInfo) -> RomXml {
-    let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
     RomXml {
         name,
         size: info.size as i64,
         crc: Some(format!("{:08x}", info.crc32)),
-        md5: Some(hex(&info.md5)),
-        sha1: Some(hex(&info.sha1)),
+        md5: Some(to_hex(&info.md5)),
+        sha1: Some(to_hex(&info.sha1)),
         merge: None,
         status: None,
     }
@@ -284,10 +282,7 @@ fn disc_rom_xml(name: String, info: &wux_rs::DiscInfo) -> RomXml {
 /// `path` as a ROM named `name`, hashed in one pass; a WUX as the WUD it holds,
 /// decompressed as it is read.
 fn rom_xml(progress_bar: &ProgressBar, path: &Path, name: String) -> Result<RomXml> {
-    let is_wux = path
-        .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case(WUX_EXTENSION));
-    let mut reader: Box<dyn Read> = match is_wux {
+    let mut reader: Box<dyn Read> = match has_extension(path, WUX_EXTENSION) {
         true => Box::new(
             wux_rs::Image::open(path)
                 .with_context(|| format!("Failed to open \"{}\"", path.display()))?,
@@ -314,13 +309,12 @@ fn rom_xml(progress_bar: &ProgressBar, path: &Path, name: String) -> Result<RomX
         progress_bar.inc(n as u64);
     }
     progress_bar.set_message("");
-    let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
     Ok(RomXml {
         name,
         size: size as i64,
-        crc: Some(hex(&crc.finalize())),
-        md5: Some(hex(&md5.finalize())),
-        sha1: Some(hex(&sha1.finalize())),
+        crc: Some(to_hex(&crc.finalize())),
+        md5: Some(to_hex(&md5.finalize())),
+        sha1: Some(to_hex(&sha1.finalize())),
         merge: None,
         status: None,
     })

@@ -182,14 +182,13 @@ impl WuxSink {
         })
     }
 
-    fn finish(mut self) -> Result<u64> {
+    fn finish(self) -> Result<u64> {
         let mut file = self.file.into_inner().map_err(|e| e.into_error())?;
         let bytes: Vec<u8> = self.table.iter().flat_map(|i| i.to_le_bytes()).collect();
         file.seek(SeekFrom::Start(HEADER_SIZE))?;
         file.write_all(&bytes)?;
         let size = file.seek(SeekFrom::End(0))?;
         file.sync_all()?;
-        let _ = &mut self.buf;
         Ok(size)
     }
 }

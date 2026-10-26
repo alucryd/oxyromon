@@ -27,7 +27,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::{fs::File, str::FromStr};
 
-fn to_hex(bytes: &[u8]) -> String {
+pub(crate) fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 

@@ -29,6 +29,52 @@ pub fn finish<T>(part: &Path, output: &Path, result: Result<T>) -> Result<T> {
     result
 }
 
+/// [`finish`] for a folder. An existing `output` is replaced only if it is
+/// an earlier output of the same, every file in it one `part` holds too:
+/// anything else is left as it is, and the write fails.
+pub fn finish_dir<T>(part: &Path, output: &Path, result: Result<T>) -> Result<T> {
+    let result = result.and_then(|value| {
+        if output.exists() {
+            if !holds_only(output, part) {
+                return Err(io::Error::new(
+                    io::ErrorKind::AlreadyExists,
+                    format!(
+                        "{} is in the way, and holds files this would not write",
+                        output.display()
+                    ),
+                )
+                .into());
+            }
+            std::fs::remove_dir_all(output)?;
+        }
+        std::fs::rename(part, output)?;
+        Ok(value)
+    });
+    if result.is_err() {
+        let _ = std::fs::remove_dir_all(part);
+    }
+    result
+}
+
+/// Whether every file in `dir`, and in its folders, has its like in `like`,
+/// so that replacing `dir` with `like` loses nothing.
+fn holds_only(dir: &Path, like: &Path) -> bool {
+    std::fs::read_dir(dir).is_ok_and(|mut entries| {
+        entries.all(|entry| {
+            entry.is_ok_and(|entry| {
+                let other = like.join(entry.file_name());
+                match entry.file_type() {
+                    Ok(kind) if kind.is_dir() => {
+                        other.is_dir() && holds_only(&entry.path(), &other)
+                    }
+                    Ok(_) => other.is_file(),
+                    Err(_) => false,
+                }
+            })
+        })
+    })
+}
+
 /// Read `buf` from `file` at `offset` without moving any shared file cursor.
 pub fn read_at(file: &File, buf: &mut [u8], offset: u64) -> io::Result<usize> {
     #[cfg(unix)]

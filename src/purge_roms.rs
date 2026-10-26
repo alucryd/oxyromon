@@ -6,7 +6,7 @@ use super::model::Romfile;
 use super::progress::*;
 use super::prompt::*;
 use super::util::*;
-use super::wux::STORE_DIR;
+use super::wux::{STORE_DIR, has_extension};
 use anyhow::{Context, Result};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
@@ -192,15 +192,28 @@ async fn purge_foreign_romfiles(
             files.push(entry.path().to_path_buf());
         }
     }
-    // The update partitions the library's WUAs keep in their stores.
-    let referenced: HashSet<String> = known
+    // The update partitions the library's WUAs keep in their stores. A WUA
+    // that can't be read may need any of them, so then they are all kept.
+    let mut referenced: HashSet<String> = HashSet::new();
+    let mut keep_stores = false;
+    for path in known
         .iter()
-        .filter(|path| {
-            path.extension()
-                .is_some_and(|e| e.eq_ignore_ascii_case(WUA_EXTENSION))
-        })
-        .flat_map(|path| wux_rs::store_entries(path).unwrap_or_default())
-        .collect();
+        .filter(|path| has_extension(path, WUA_EXTENSION))
+    {
+        match wux_rs::store_entries(path) {
+            Ok(entries) => referenced.extend(entries),
+            Err(error) => {
+                print_warning(
+                    progress_bar,
+                    &format!(
+                        "Failed to read \"{}\", keeping every update partition: {error}",
+                        path.display()
+                    ),
+                );
+                keep_stores = true;
+            }
+        }
+    }
     let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
     let mut count = 0;
     for path in files {
@@ -209,10 +222,11 @@ async fn purge_foreign_romfiles(
             .and_then(|p| p.file_name())
             .is_some_and(|name| name == STORE_DIR);
         let referenced = in_store
-            && path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| referenced.contains(name));
+            && (keep_stores
+                || path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| referenced.contains(name)));
         if !known.contains(&path) && !referenced {
             let relative_path = path
                 .strip_prefix(&rom_directory)
@@ -256,6 +270,8 @@ async fn purge_foreign_romfiles(
 mod test_foreign;
 #[cfg(test)]
 mod test_foreign_store;
+#[cfg(test)]
+mod test_foreign_store_unreadable_wua;
 #[cfg(test)]
 mod test_foreign_subfolder;
 #[cfg(test)]
