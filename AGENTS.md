@@ -30,7 +30,7 @@ cargo test --release -p xso-rs -- --ignored                  # its slow tests
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp # the stdio-only MCP build
 
-cargo sqlx prepare -- --features server       # after any query change
+cargo sqlx prepare -- --all-targets --features server  # after any query change; --all-targets keeps test-only queries
 ```
 
 Helper scripts at the root: `build.sh`, `desktop.sh`, `dist.sh`, `docker.sh`,
@@ -178,8 +178,7 @@ matcher in `mimetype.rs`. Add branches in `import_roms.rs`, `convert_roms.rs`
 and `check_roms.rs`, and report it from `info.rs`.
 
 **New migration.** Add `migrations/YYYYMMDDHHMMSS_description.sql`, update the
-row struct in `model.rs` and the queries in `database.rs`, run `cargo sqlx
-prepare -- --features server`, then build with `--features server`.
+row struct in `model.rs` and the queries in `database.rs`, run `cargo sqlx prepare -- --all-targets --features server`, then build with `--features server`.
 
 **New setting.** Add the key to its category in `config.rs`: `BOOLEANS`,
 `choice_options` (plus its enum), `choice_list_options`, `integer_range`,
