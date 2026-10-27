@@ -463,6 +463,18 @@ pub async fn purge_irds(state: AppState, system_id: i64) {
     }
 }
 
+/// Ask the server to move the files of one game to its system's Trash.
+pub async fn purge_game(state: AppState, game_id: i64) {
+    state.purging_game_id.set(game_id);
+    let mutation = r#"mutation PurgeGames($gameIds: [Int!]!) {
+        purgeGames(gameIds: $gameIds)
+    }"#;
+    let variables = json!({ "gameIds": [game_id] });
+    if request_action(state, "Purging the game", mutation, variables).await.is_err() {
+        state.purging_game_id.set(-1);
+    }
+}
+
 /// Ask the server to generate M3U playlists for every system.
 pub async fn generate_playlists(state: AppState) {
     state.generating_playlists.set(true);

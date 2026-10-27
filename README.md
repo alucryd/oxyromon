@@ -270,7 +270,7 @@ The MCP server lets an AI assistant explore and maintain your library with the s
 
 - **Read-only tools:** `status`, `list_systems`, `get_system`, `list_games`, `get_game`, `search_games`, `get_settings`, `downloadable_systems` and `parse_game_name`.
 - **Mutating tools:** `import_dats`, `download_dats`, `import_roms`, `sort_roms`, `check_roms`, `convert_roms` and `set_setting`.
-- **Destructive tools:** `purge_roms`, `purge_systems` and `purge_irds`, which refuse to run without `confirm: true`.
+- **Destructive tools:** `purge_roms`, `purge_systems`, `purge_games` and `purge_irds`, which refuse to run without `confirm: true`.
 
 Mutating tools run to completion within the call, report progress as they go, and can be cancelled.
 The server also exposes resources (`oxyromon://status`, `oxyromon://systems`, `oxyromon://systems/{id}` and `oxyromon://settings`) and two guided prompts, `onboard_system` and `audit_system`.
@@ -315,6 +315,7 @@ Commands:
   import-patches      Import patch files into oxyromon
   import-keys         Import Wii U keys into oxyromon
   import-roms         Validate and import ROM files or directories into oxyromon
+  purge-games         Move the files of games to the trash
   purge-irds          Unassociate games from IRD files
   sort-roms           Sort ROM files according to region and version preferences
   convert-roms        Convert ROM files between common formats
@@ -698,6 +699,22 @@ Options:
   -f, --foreign  Physically delete ROM files unknown to the database
   -y, --yes      Automatically say yes to prompts
   -h, --help     Print help
+```
+
+### purge-games
+
+Moves the files of games to their system's `Trash`, for you to delete afterwards with `purge-roms --trash`.
+The games stay in the database, now missing, and `sort-roms` leaves their files where they are.
+A file that also holds ROMs of a game not being purged, such as a merged arcade set, stays in place, and so does a multi-disc playlist until all its discs are purged.
+Without `--game`, it prompts for games among those with files.
+
+```text
+Usage: oxyromon purge-games [OPTIONS]
+
+Options:
+  -s, --system <SYSTEM>  Select systems by name
+  -g, --game <GAME>      Select games by exact name
+  -h, --help             Print help
 ```
 
 ### purge-systems

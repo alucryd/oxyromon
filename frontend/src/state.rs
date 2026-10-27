@@ -105,6 +105,7 @@ pub struct AppState {
     pub purging_irds_system_id: RwSignal<i64>,
     pub generating_playlists: RwSignal<bool>,
     pub purging_roms: RwSignal<bool>,
+    pub purging_game_id: RwSignal<i64>,
 
     /// Fired when the server has changed the data behind the selection, to
     /// fetch it again without changing the selection; see [`AppState::refresh`].
@@ -123,6 +124,7 @@ pub struct AppState {
     pub import_dat_modal_open: RwSignal<bool>,
     pub import_rom_modal_open: RwSignal<bool>,
     pub purge_rom_modal_open: RwSignal<bool>,
+    pub purge_game_modal_open: RwSignal<bool>,
     pub convert_rom_modal_open: RwSignal<bool>,
     pub convert_rom_system_id: RwSignal<i64>,
     pub import_patch_modal_open: RwSignal<bool>,
@@ -190,6 +192,7 @@ impl AppState {
         let purging_irds_system_id = RwSignal::new(-1);
         let generating_playlists = RwSignal::new(false);
         let purging_roms = RwSignal::new(false);
+        let purging_game_id = RwSignal::new(-1);
         let refresh = Trigger::new();
 
         let complete_filter = RwSignal::new(true);
@@ -366,6 +369,7 @@ impl AppState {
             purging_irds_system_id,
             generating_playlists,
             purging_roms,
+            purging_game_id,
             refresh,
 
             complete_filter,
@@ -379,6 +383,7 @@ impl AppState {
             import_dat_modal_open: RwSignal::new(false),
             import_rom_modal_open: RwSignal::new(false),
             purge_rom_modal_open: RwSignal::new(false),
+            purge_game_modal_open: RwSignal::new(false),
             convert_rom_modal_open: RwSignal::new(false),
             convert_rom_system_id: RwSignal::new(-1),
             import_patch_modal_open: RwSignal::new(false),
