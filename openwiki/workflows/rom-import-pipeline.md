@@ -80,10 +80,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # ROM Import Pipeline
@@ -492,9 +492,12 @@ untouched when unset, untouched under `--as-is`, `convert-roms --save` making th
 choice permanent, and an arcade system refusing `CHD` while accepting `ZIP`.
 
 Finally `compute_system_completion` runs for each touched system
-([src/util.rs](../../src/util.rs#L429-L460)). It also creates zero-byte placeholder
+([src/util.rs](../../src/util.rs#L404-L438)). It also creates zero-byte placeholder
 files for size-0 roms in partial games, so a partially imported set is visible on
-disk as well as in the database.
+disk as well as in the database. For a Wii U update or DLC whose DAT entry spans
+several versions, it grades the title against its newest TMD, so importing the
+newest version as Nintendo's servers deliver it makes the title complete; see
+[Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 
 ## Failure modes worth remembering
 

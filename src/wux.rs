@@ -14,7 +14,10 @@
 
 use super::common::*;
 use super::config::*;
-use super::database::{find_romfiles_of_tmds, find_roms_by_game_id_no_parents};
+use super::database::{
+    find_multi_version_nus_game_ids_by_system_id, find_romfile_by_id, find_romfiles_of_tmds,
+    find_roms_by_game_id_no_parents, update_game_completion,
+};
 use super::import_keys::WIIU_KEYS_FILE;
 use super::mimetype::*;
 use super::model::*;
@@ -23,7 +26,7 @@ use super::util::*;
 use anyhow::{Context, Result, bail};
 use indicatif::ProgressBar;
 use sqlx::SqliteConnection;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use tokio::task::spawn_blocking;
 
@@ -703,6 +706,79 @@ pub fn is_tmd_name(name: &str) -> bool {
                     .strip_prefix('.')
                     .is_some_and(|v| !v.is_empty() && v.bytes().all(|b| b.is_ascii_digit()))
         })
+}
+
+/// Recompute the completion of a system's NUS titles whose DAT entry spans
+/// several versions, as No-Intro's CDN DAT lists them: each version's TMD, and
+/// every content any of them used. Nintendo's servers deliver the newest
+/// version, whose TMD lists only the contents it uses, so such a title is
+/// complete when its newest TMD and the files that TMD lists are; older TMDs,
+/// and contents only older versions use, are ignored. A title whose newest TMD
+/// is missing keeps the completion computed from all its ROMs.
+pub async fn update_nus_games_completion(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    system_id: i64,
+) -> Result<()> {
+    for game_id in find_multi_version_nus_game_ids_by_system_id(connection, system_id).await {
+        let roms = find_roms_by_game_id_no_parents(connection, game_id).await;
+        let Some(newest) = roms
+            .iter()
+            .filter_map(|rom| Some((rom.name.strip_prefix("tmd.")?.parse::<u16>().ok()?, rom)))
+            .max_by_key(|(version, _)| *version)
+            .map(|(_, rom)| rom)
+        else {
+            continue;
+        };
+        let Some(romfile_id) = newest.romfile_id else {
+            continue;
+        };
+        let path = find_romfile_by_id(connection, romfile_id)
+            .await
+            .as_common(connection)
+            .await?
+            .path;
+        let tmd = match tokio::fs::read(&path)
+            .await
+            .map_err(anyhow::Error::from)
+            .and_then(|bytes| Ok(wux_rs::parse_tmd(&bytes)?))
+        {
+            Ok(tmd) => tmd,
+            Err(e) => {
+                print_warning(
+                    progress_bar,
+                    &format!("Failed to read \"{}\": {e:#}", path.display()),
+                );
+                continue;
+            }
+        };
+        let contents: HashSet<String> = tmd
+            .contents
+            .iter()
+            .map(|content| format!("{:08x}", content.id))
+            .collect();
+        let complete = roms
+            .iter()
+            .filter(|rom| {
+                if is_tmd_name(&rom.name) {
+                    return rom.id == newest.id;
+                }
+                let name = rom.name.strip_suffix(".h3").unwrap_or(&rom.name);
+                !is_content_name(name) || contents.contains(name)
+            })
+            .all(|rom| rom.romfile_id.is_some());
+        let completion = match complete {
+            true => Completion::Full,
+            false => Completion::Partial,
+        };
+        update_game_completion(connection, game_id, completion).await;
+    }
+    Ok(())
+}
+
+/// Whether `name` is a NUS content's CDN name, its ID in eight hex digits.
+fn is_content_name(name: &str) -> bool {
+    name.len() == 8 && name.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 /// Whether `game` is a NUS title, an update or DLC as Nintendo's servers
