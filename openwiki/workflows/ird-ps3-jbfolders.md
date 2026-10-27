@@ -54,10 +54,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-2209a68ba11f4f6225c7aec7
     resource: repo://tests/Test%20System%20(20230527)%20(PSN).dat
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # PS3 IRD Files and JB Folders
@@ -334,7 +334,10 @@ behaviours hang off it:
   disc's own files are present, even with none of the PS3 add-on directories
   installed**
   ([src/database.rs](../../src/database.rs#L461-L491),
-  [src/database.rs](../../src/database.rs#L577-L611)).
+  [src/database.rs](../../src/database.rs#L577-L611)). Wii U updates and DLC
+  get a sibling rule right after it, ignoring the older versions a No-Intro CDN
+  entry lists; see
+  [Wii U Formats and wux-rs](../concepts/wii-u-formats-and-wux-rs.md).
 - **Placement.** A JB-folder game's sorted path always nests under the game name,
   so a JB folder is a directory rather than a loose file
   ([src/common.rs](../../src/common.rs#L444-L449)).

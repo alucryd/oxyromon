@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:57f9e50f3cd5a2f2a9696e4f72d632d1f7d2653fe45ca651cf8e9688ef99d790",
+  "pageVersion": "sha256:3fba43b26df9a8854467ba3d19cba3be7aa0ac87c82d435a7cd19b2971314062",
   "claims": [
     {
       "id": "claim_752df5508f6c4a998b11e3b177d358bd",
@@ -37,7 +37,7 @@
           "version": "repo-lines-v1:sha256:5894c21dc58e82d537d6db5119f15ca7b60c96698adf38b47d9fd9845ab9e2d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMDUzOTU1OWVjOGY1MDhmYjBkN2I5NDFiNzA2ZDc1ZTdhNWQ2MWUzNzZlYWNiODQxMmE5ZjcwZTdkMDRiNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkZTllNzJiMmExYWRhNjMxNTk4OTY2ODNhOTcyMDg0OTI3YzRmZTAwYjExNjkxYzFmOTcyNTZjNWI4MTYxYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMDg1MzIwZGU4ZjY5ODgzZTA5ZjhkYTNkZDFjYzlkMzRhZmQxZDAxZTllZDU0NDA1YzY3ZDRlNGUxNzZmNjAifQ"
         },
         {
-          "resource": "repo://src/wux.rs#L555-L612",
+          "resource": "repo://src/wux.rs#L558-L615",
           "version": "repo-lines-v1:sha256:608cbcc74b9851755c168be2925a6180430ee5a298dfc5bd3b1a897f5fea28d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZmViNzMyZGIyMzNhOTNiM2JjNDViZjZhMjY5ZDU0MTgxZGRiZmE0NWM5YTA5NTAxNThkMTI0NmQ5OWU0ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMmRjNTliMWQwN2IxOWM0NDg4YTQ5OTVhYzc4ZTk5MWQ5MjcyZWEyZjgyNzc2OGNkZTk4ODA4NDA0NDA3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmYmFhN2I2ZDUwNGJiODJkNTc5N2FlZmFkZTI3OTU0NmE3NWRlNzA5ZGJkZWNkNGRlNWU2MjRkYWFhZTU4NDIifQ"
         }
       ]
@@ -179,7 +179,7 @@
       "statement": "oxyromon keeps one update-partition store per system, a .update-partitions folder in the system directory, and a WUA finds its store as the nearest .update-partitions folder in a directory above it.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L41-L58",
+          "resource": "repo://src/wux.rs#L44-L61",
           "version": "repo-lines-v1:sha256:d0e04f3e4aaef58e51f094607164d1c38943b2c8948c593807c91f2431debcb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTMwZTAxYTljNjUwYzA5MjllZmVjZjBjMzU3OTFmZDU5MDQwMWJiNGIwZTNkMjNhZDBjNmUzNDZiMzdlZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczODJhYmNkOWE5YTM2YWI4MjAxNjhmYTc0YjU3NTljOGQ0YWQ5NjhmMTQxZDA4NTFhYjg3ZGIyYWIxOWQ0NWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5NTZmMjkwNGZjNDRmY2MyYTFmMGEwYmY1YjYzMDFhNjFkNzU5MGQxYTVhNTUzMmJhYmMxMGUxYjUwZWVkMDYifQ"
         }
       ]
@@ -193,7 +193,7 @@
           "version": "repo-lines-v1:sha256:0272ac2c4dae18eb8e6c926e37361bd208c8ef911aec7c70053a232036f9945f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQ2MWY5NDRiNTg2MGY1MzgxYTNhMWQxN2U2NTkxOTE1YWNmNDFjMmUyMjM0NTAzNzhmN2RiY2Q3NTc4M2Y2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmRiM2ZkYTU4ZmQzM2Y4OGVlMWIwMDBhODVmYjE0Y2I1MWMyODJlNTk1MWZkMDRjOGViZWE4NzdjODgzYmE3MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L629-L689",
+          "resource": "repo://src/wux.rs#L632-L692",
           "version": "repo-lines-v1:sha256:b3d9ab5d837975037b6dd4eb55c840f4b60d549b4a1b33341250119e397fdfdb:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMDQzOGNiZGE4NjE3MzRlNjMzMDRiMDQ1MWMyMGM1NWU5ZjMwNTk2Y2YzMmI4MmQ2OTQ4YjhmNzFkMDg1M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMWQxZjExNzgxNzNiYzAxODIwZDliODkxZGM4NDk5MzI1MjU0YjhhMDEyNDQzNmNjMDlkMDQ1ZTUxOGZmYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YmYyZjBiZjc2NTI0YzExZTc2NmQwYWNhOGZmOWI4ZmZhOWRiNWE3ZDllMGMxOTIwZGY3MGZjZTljNDUwNDQifQ"
         }
       ]
@@ -229,7 +229,7 @@
           "version": "repo-file-v1:sha256:6ef87241539ca2bd8a2cd9acc05417949ea97131c3672174978d4c6af2ce0cad"
         },
         {
-          "resource": "repo://src/wux.rs#L555-L612",
+          "resource": "repo://src/wux.rs#L558-L615",
           "version": "repo-lines-v1:sha256:608cbcc74b9851755c168be2925a6180430ee5a298dfc5bd3b1a897f5fea28d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZmViNzMyZGIyMzNhOTNiM2JjNDViZjZhMjY5ZDU0MTgxZGRiZmE0NWM5YTA5NTAxNThkMTI0NmQ5OWU0ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMmRjNTliMWQwN2IxOWM0NDg4YTQ5OTVhYzc4ZTk5MWQ5MjcyZWEyZjgyNzc2OGNkZTk4ODA4NDA0NDA3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmYmFhN2I2ZDUwNGJiODJkNTc5N2FlZmFkZTI3OTU0NmE3NWRlNzA5ZGJkZWNkNGRlNWU2MjRkYWFhZTU4NDIifQ"
         }
       ]
@@ -247,10 +247,60 @@
           "version": "repo-lines-v1:sha256:506c3bfef5aea2ff16e214c5ce9e9f9cde378926166064f002cfee4c485006de:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzNkZGRjNmQ4OGZlMGI5NDczMjg2NGVhZDAzZTZjOTQ0OWUwYjBmYzYxYjU1M2U0ZjY0NmI0OTEyNjhjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNjYzI2ODk1MTc4ZDMxYWFhNGY0Y2E4NWY0MDkzYzUxMjllMDI4YTdkZDVjOTQwZGIzZDY4YzRkMmVhYjg4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_4d89d85829ba4bc598781be11a9096c5",
+      "statement": "For each game of a console system listing more than one `tmd.<version>`, update_nus_games_completion reads the newest TMD's file with wux_rs::parse_tmd and marks the game Full when the newest TMD, the contents it lists with their .h3, and every non-TMD non-content ROM have files, Partial otherwise; older TMDs and contents only older versions use are ignored, and a game whose newest TMD is missing or unreadable keeps the SQL-computed completion.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/src/lib.rs#L49-L49",
+          "version": "repo-lines-v1:sha256:2b95eed5efe1704c639dbe011ca49022a769849c9f4ff6f3493ed7acf3c91cef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI5NWVlZDVlZmUxNzA0YzYzOWRiZTAxMWNhNDkwMjJhNzY5ODQ5YzlmNGZmNmYzNDkzZWQ3YWNmM2M5MWNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI5NWVlZDVlZmUxNzA0YzYzOWRiZTAxMWNhNDkwMjJhNzY5ODQ5YzlmNGZmNmYzNDkzZWQ3YWNmM2M5MWNlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTdlOWFkYmRjYTcxY2I4OGE4OTNlOWYyNmY2YTgyNmRhMjhhZmFmYzQ4NjU1YzRkYjdlNDQwMDgxMDJmOGNlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzQyNTE1ZmY2OTViNTc5MWZmODQ4NjE2OWZjYjJjYjQ5Njk3YzZlMmY0YTVkMDlkMjkyMjg5YzY3YTcwZmFhYyJ9"
+        },
+        {
+          "resource": "repo://src/database.rs#L613-L654",
+          "version": "repo-lines-v1:sha256:d86aaaaa558ea857dca39442203bead554ccdb0fb04463da95d08878338b85ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNTA3YzQyYzMxM2QxMDdhZTA4OWU1M2E4MTNjNjFmOGJmOGJlNzlmNWViNjg0Y2NhYTdlNmZiZjQzNjI0NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0MWExMGQxYzU1NGNlNDY1NGFkNzBkMDBmNWRjNDE5NTgyYzE3YjI0NjQ1ZGU0OTQ1MjJjZjI5MTBjNGViM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNjA1NmU4YzZkYjFlMGZhNjU1ZWRiZTBkYTM2ODlkNjJmMjE3MzYxNjA3NmIzOWI4ODgzZjFlZTVlNDAxODEifQ"
+        },
+        {
+          "resource": "repo://src/util.rs#L404-L438",
+          "version": "repo-lines-v1:sha256:4cdd8d4aeee142609fc7843d1137730e0c1a37edee51328dccd34fc01647a61c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjZmNDcyYjk5MTI1MzY2YTU3NWFiMmEwMzQ4NDgwN2M3ZDM3ODdmY2JmZTA4ZTRhNGFmMmQ2ZDZjNDkxNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmIxNDMxMDVhNGE3NWZjZjUwMDNkNDIwZWZmZDAxZDg0Mzk4ZGFkMzE4NGMyOWI3YmVhYTdhNjczYjg2YmQifQ"
+        },
+        {
+          "resource": "repo://src/wux.rs#L711-L782",
+          "version": "repo-lines-v1:sha256:ea0b52bc5256ff5192942c820ac44cac613986fb0e4e91832a0ff5a938e4c3c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZTE3NjlmZmQ4NGEzOGQ5NTIwODM1NTg4ZjhkZDAyNjQwMmUwM2IyZTYwNjNkMGM4ZTRhODBiYWRjZTFjODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkNmI1NWM2ODQyOGJkOWU4ZDZiNGU0Y2YwYmJmYmI4Mjc4MWEzMjU4NjEwYWU5ZTAxMjI3NzA0NjM1MGQwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2Y2QxNjRjM2M5NGQwMDhhNWMyMmQyZGVhNjRkYzIzNGYwZTJlNDU0MjliNjBjNzYxZmMxNWRlYjk1NmU2ZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e87bfc4e7b1041eaadac7ccc5ee10afb",
+      "statement": "import_nus returns \"Already imported\" as soon as the folder's TMD matches a ROM that already has a file, so re-importing a title folder does not fill in a content that was missing at its first import.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_roms.rs#L705-L745",
+          "version": "repo-lines-v1:sha256:1cac54539461e04f4b258f3ea5158da2c53b776f301d0e335e7cab55fcac0d6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxNTZhODBmZGRjNTA1MTAzNDlmMTJjNDM1MzZmYTYwZmE3NDE1ODgxM2M1ZjY0NzM2ZGM4NDVjMzI1YzE3NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwZGI2ODg2NDdjZWZjN2ViNDcwYWUzMTRjNGQxNzQzMDExNjc5ZmUyNjQyMzc0ZDkzYzRkOTQzNmQwN2FjYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyZjg2OWFhOWE5ODllNTgzODUyOWUwNjI0ZjY5NTdlMTVmYjY5MzBlNWRmM2E3NGE4OTBiODRiNjEyNjM2ZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cad1ef8b98f14bd381f58b111c86c8a7",
+      "statement": "The CDN History DAT fixture adds an older TMD and a content only it used to the test update; test_nus_multi_version asserts that importing the newest version alone yields Full, and test_nus_multi_version_missing that missing one of the newest TMD's contents yields Partial.",
+      "evidence": [
+        {
+          "resource": "repo://src/import_roms/test_nus_multi_version.rs",
+          "version": "repo-file-v1:sha256:770283f6c9e23414f41214a849e9cc6f001c6a035e13a6cfd8beec879ed045ce"
+        },
+        {
+          "resource": "repo://src/import_roms/test_nus_multi_version_missing.rs",
+          "version": "repo-file-v1:sha256:bcf48c2fc7ac13ead448b6c956ab29c4c40d412d0e0359209eb3c2c3f75b7fab"
+        },
+        {
+          "resource": "repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat",
+          "version": "repo-file-v1:sha256:88d70143381bfefef08371c3d7c4a4dbd6c20c819182a442ecd31b89b017c4a5"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T21:20:28.066Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }

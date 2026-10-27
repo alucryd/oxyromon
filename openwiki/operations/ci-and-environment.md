@@ -70,10 +70,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -344,7 +344,7 @@ either a live `DATABASE_URL` or the checked-in offline cache in `.sqlx/` (one
 JSON file per query hash). CI sets no `DATABASE_URL` and no `SQLX_OFFLINE`
 variable — with the variable absent, cargo finds the committed `.sqlx/` and the
 macros check against those snapshots — as do the Docker builds and the cross
-containers. That makes `cargo sqlx prepare -- --features server` part of any
+containers. That makes `cargo sqlx prepare -- --all-targets --features server` part of any
 change to `migrations/` or to a query: an unprepared query change does not merely
 break the author's machine, it breaks the clippy passes, the release build and
 every container build, because none of them has a database to introspect. The
@@ -387,7 +387,7 @@ a no-op — append `server` (or any other subcommand).
 ## Practical checklist
 
 - Touching a query or a migration? Run
-  `cargo sqlx prepare -- --features server` and commit `.sqlx/`, or CI and every
+  `cargo sqlx prepare -- --all-targets --features server` and commit `.sqlx/`, or CI and every
   image build fails.
 - Touching `src/mcp/` or code shared with the server? Verify
   `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`.

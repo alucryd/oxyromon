@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba29cb62bf9edddf677cfa9d23317d89cd9cfce24801e7da2e7964ee11a194c7",
+  "pageVersion": "sha256:30831a9f8a5d5decddd07ebddad8df511600334556c44662fcdc1ded44fac2b8",
   "claims": [
     {
       "id": "claim_703194daad044e61895c0aaf9bef5779",
@@ -31,8 +31,8 @@
           "version": "repo-lines-v1:sha256:07a254b9dbd346d8bd90bbdc120f6070f8518a380115754706d9720486452966:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkM2NmNmVlOGE1ODJlOTAzYTNkMmYzZWNhZDE0MWQzYWEyMjNmMTk1ZmZjMDMyNjFjNGYwMzgzNmM4NGQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZkNThjZmZhYWQzMTA1YjQ2ODFjN2ZmYjBmNTc4MTI0NzZiYWQ4NThkMjMzM2EwYWJlODVlOTI0NTBlMjcxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc2ODE5NjA3MmMzNmI0YzhhNWE1N2EzYjNlNGU3YWQ0ZTljNTM4M2NmOGYxZTQ4MmQ2ZDE0N2ZkNGM0ZTYzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTU4YzFjZjM2ZjE0OGNhMmJhNWE0M2NhZGVhYjY1NWJjMDRjOTlmMDYxYzdjZWE0Yjc4YjMzZDY1MmM5MDQ4NiJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L1-L30",
-          "version": "repo-lines-v1:sha256:1bf0001ed9b664e2e90ea78ae3dc31bcdc5ad57685705521a67ac880bc2cd230:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYmUwNDgzNDIzNDA4MjFmOWUzY2E4YWJlNjA2OWZjNmJiN2NiZTBiN2JjMGU4OTk2NmYwYTQwZmU0NTVlYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMmFkN2E4YWNhMDBlMGI5MDIwMGE0MzE3MzY5NzY5NGM3N2RiYTUzMmU0YjA2ZjEyODU3ZjQ0MDIyMDJkZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjYjY5YjYxNDY1YTUzMmFiNjRjZTIyMjI0MjU1YzU3NWEwNDA5MGMzZjMxY2I1ODVkYjg1MmMwMDliYjk2YjgifQ"
+          "resource": "repo://src/wux.rs#L1-L31",
+          "version": "repo-lines-v1:sha256:37e9ee25613d731545a9d3dcda42c70193c5a85016a7c89b05a705b7ddb415c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkYmUwNDgzNDIzNDA4MjFmOWUzY2E4YWJlNjA2OWZjNmJiN2NiZTBiN2JjMGU4OTk2NmYwYTQwZmU0NTVlYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDU4Y2ZmYWFkMzEwNWI0NjgxYzdmZmIwZjU3ODEyNDc2YmFkODU4ZDIzMzNhMGFiZTg1ZTkyNDUwZTI3MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2OTI1Nzg2YmVkOTRkZWMxODM2OTk1Yjg1YWFjN2E2NmQ4N2Y0YjRmYWMwMTcyZTI5ZjJlYzQ2MjBjYmJmMDIifQ"
         }
       ]
     },
@@ -653,15 +653,15 @@
       "statement": "wux::get_version never fails: it returns \"built-in\" when the Wii U keys file is present and \"built-in, no Wii U keys imported\" otherwise, and the ToWua and ToNus exports bail with \"No Wii U keys imported\" when the keys file that import-keys stores in the data directory is missing.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L32-L39",
+          "resource": "repo://src/wux.rs#L35-L42",
           "version": "repo-lines-v1:sha256:a3798c9775048495c46f4f8b3613b8bf5fb91b63eb9a7053bbcb3e424b2d2ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UwNzc0N2YwOTY2N2E4OTMxM2ExMjZkZjc3ZTMwMDhhYmI5MGM0YmE2YjM5MjgyODIyYjE0MzI3OWQ2NzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU5ZmM5YzYzNWJlMGE0MjE3NzdhMjJjYWRmY2Q3ZDJlMzIwN2E2YmRlYTY3ZDAxNzA0MThmMzZlMmY2ODUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RmYWE2ZjdmMjk3ZjQ3OWM1OTRmZmEzOGYwOWMwM2JmYjQwODExMGEzNTNmODIzYzc3YzlmMGFjOWIxNDRiNiJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L619-L627",
+          "resource": "repo://src/wux.rs#L622-L630",
           "version": "repo-lines-v1:sha256:727c717910b27ee740cb7b89acc6d46bf0172b0d53991ea3a9789bdf738ac11f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U1ZDUxOWQxNmU5MzlkMzkzMTA1OTVlODI0NjgxODU0NTYyYWNkMWM0MmY2YmZjMDhiZWQ2ODczNGYwYWQ3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2U4NmJiNzM5NGRkYjRiOTBmNWRkMTZmZTAzYzllMmVkNTFjMTg2ZGM1YjIyM2E4NzY4OGQxN2ExNTYzMzIxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWZhNmE5OTJmNWZkZTM1NjJlZDAzOWQ4ZDRjMzc1NTcwNDdjMjQzNTA4NjUyYTIyZmNlNmU1Y2IwMDI5ZmZjYiJ9"
         },
         {
-          "resource": "repo://src/wux.rs#L718-L725",
+          "resource": "repo://src/wux.rs#L794-L801",
           "version": "repo-lines-v1:sha256:cee9816effbdb2f1610f6fa4b558e40972e50ef173c5afdb631ac39568dab742:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhkZjVkNTU5Mjk4ZTllYmFmOWNhYzc2Y2NmOTYyOGUzN2JmNzA1NjEyNTBiOTdkZjJjNzE5NmE0YWM4MzhjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUyMDM4NmU1OTQyNGEzYzVlY2JhNDkzOGEzOTk0NjAxYTg5NjYxYWEwNjBiZWY0NTlmNDllMmQwMjIxNzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
@@ -671,7 +671,7 @@
       "statement": "WuxRomfile hashes a WUX without writing a temp file, streaming a decompressing wux_rs::Image through hash_reader on spawn_blocking, and its Check extracts a WUD to the temp directory only when the DAT declares a header.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L110-L180",
+          "resource": "repo://src/wux.rs#L113-L183",
           "version": "repo-lines-v1:sha256:7422a59a2b3d81248d00daa38e313cd6e4e7eacac1e5f6433627c6a1aaba3888:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzODI5MDkwYmM5YzBjOTg3YjVhYzczMjg0MzQ1MGFhMmNhYTZkZjliZDVlMzYyMzIyODE1YWY3M2YxOTMyYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliOTY2Y2NiYjQ4ZGQzZGQ0MmI1Y2ZhZThhZjQyNzBjNTNmNTQ4ZmUzNmMzMTg3NzdjYmViZTZkNzJhNTg2NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
         }
       ]
@@ -681,7 +681,7 @@
       "statement": "When asked to bundle, ToWua adds the newest update and DLC in the library to the disc: find_update_and_dlc scans romfiles of TMDs, keeps titles whose ID shares the disc's low 32 bits and whose high half is 0005000E or 0005000C, skips a title without a ticket with a warning, and keeps the highest version per title ID.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L394-L519",
+          "resource": "repo://src/wux.rs#L397-L522",
           "version": "repo-lines-v1:sha256:65d3840e7c3fbb1d7fbaba405a85e7ffd357d09c78aed28ce71680379bcd3673:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjM1ODZiM2ZjZDVjN2IwNjUxNDU3ODI4NzQyM2UxZjdhZGM3Y2E4NWUwMTM1YzMxMmIyNTQ1MmZmNDA2ZjBmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMGYzMGJjOGFlNmJjNWRkN2I5MTE0YzIwMGUxYTI0NWU3MGE1Yjg2ZDYzMDcwMWM4MGY0MDM1Y2Q0NDdkMjU1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2OTkzOTNhZWU5OTVhOGQxZTI0YzlhNjk3MGIyYjQwZDk3ODQwNjQ3Mzc4YmZiZTRiY2NhMzUzYmZkZmI0MWJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMjI2ZmNkNmE4YTA0OWJjYWRiYWUzMmE5MzQ1NGUwZGFlZTE5MDkwZmY0NzQ4YjFjNWEyZTcwNzMyZWFlZmIyIn0"
         }
       ]
@@ -691,7 +691,7 @@
       "statement": "WuaRomfile reports its disc's hash and size from the DiscInfo a lossless WUA keeps, without reading the disc, and its Check compares that with the DAT and then rebuilds a WUX in a temp directory, which wux-rs verifies against the disc's SHA-1.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L184-L269",
+          "resource": "repo://src/wux.rs#L187-L272",
           "version": "repo-lines-v1:sha256:7491f024f1c0a39ed87dc31ffb05efc28cbff74a7e950d281fa860fa60d5e743:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZjcxNjhjNWJkODhlZDM0ODkyY2Y1NzI2MmNkZjlkYjg0ZGFmMTM3Mjg3ZmMwOGE5MTg0MjBiN2NiZGE1MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNmQwYWY1MTRmMTc1MmM3OTQ0NGVlOTU1Zjk3ZTFmYjk5N2RmNDc4M2Y2YzM4NjExOTdkYWQxOThlOWE1ZTIifQ"
         }
       ]
@@ -699,6 +699,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T21:20:28.066Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }
