@@ -8,6 +8,8 @@ use anyhow::Result;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
+use std::collections::HashSet;
+use std::path::PathBuf;
 use std::time::Duration;
 
 pub fn subcommand() -> Command {
@@ -59,9 +61,13 @@ pub async fn purge_system(
     print_header(progress_bar, &format!("Processing \"{}\"", system.name));
 
     let romfiles = find_romfiles_by_system_id(connection, system.id).await;
+    let mut emptied_directories: HashSet<PathBuf> = HashSet::new();
 
     for romfile in romfiles {
         let common_romfile = romfile.as_common(connection).await?;
+        if let Some(directory) = common_romfile.path.parent() {
+            emptied_directories.insert(directory.to_path_buf());
+        }
         let new_path = get_trash_path(connection, Some(system), &common_romfile.path).await?;
         common_romfile
             .rename(progress_bar, &new_path, false)
@@ -77,10 +83,18 @@ pub async fn purge_system(
 
     progress_bar.disable_steady_tick();
 
+    // the system is gone, so its game directories are no longer kept
+    let kept_directories = get_kept_directories(connection).await?;
+    for directory in &emptied_directories {
+        remove_empty_directories(directory, &kept_directories).await?;
+    }
+
     Ok(())
 }
 
 #[cfg(test)]
 mod test_purge_systems;
+#[cfg(test)]
+mod test_purge_systems_arcade;
 #[cfg(test)]
 mod test_purge_systems_by_name;

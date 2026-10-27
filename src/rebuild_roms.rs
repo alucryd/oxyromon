@@ -391,7 +391,7 @@ async fn add_rom(
         .as_common(connection)
         .await?;
     if let Some(destination_archive_romfile) = destination_archive_romfile {
-        if source_romfile.path.extension().unwrap() == ZIP_EXTENSION {
+        if source_romfile.path.extension() == Some(ZIP_EXTENSION.as_ref()) {
             // both source and destination are archives
             copy_files_between_archives(
                 progress_bar,
@@ -427,7 +427,7 @@ async fn add_rom(
             }
         }
         update_rom_romfile(connection, rom.id, Some(destination_archive_romfile.id)).await;
-    } else if source_romfile.path.extension().unwrap() == ZIP_EXTENSION {
+    } else if source_romfile.path.extension() == Some(ZIP_EXTENSION.as_ref()) {
         // source is archive and destination is file
         let romfile_id = source_romfile
             .as_archive(progress_bar, Some(source_rom))
@@ -733,6 +733,8 @@ async fn delete_rom(
 pub(crate) mod merged_set;
 #[cfg(test)]
 mod test_full_non_merged_to_non_merged;
+#[cfg(test)]
+mod test_merged_loose_to_non_merged;
 #[cfg(test)]
 mod test_merged_to_non_merged;
 #[cfg(test)]
