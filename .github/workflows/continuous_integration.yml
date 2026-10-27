@@ -56,6 +56,9 @@ jobs:
       # feature combination on its own.
       - name: Run clippy (MCP without server)
         run: cargo clippy --no-default-features --features use-rustls,mcp --all-targets
+      # The web UI is its own workspace, built for the browser.
+      - name: Run clippy (web UI)
+        run: cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets
       - name: Build
         run: cargo build --release --features server
       - name: Test
