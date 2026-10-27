@@ -29,6 +29,7 @@ cargo test -p xso-rs                                         # one format crate
 cargo test --release -p xso-rs -- --ignored                  # its slow tests
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp # the stdio-only MCP build
+(cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets) # the web UI
 
 cargo sqlx prepare -- --all-targets --features server  # after any query change; --all-targets keeps test-only queries
 ```
@@ -36,7 +37,7 @@ cargo sqlx prepare -- --all-targets --features server  # after any query change;
 Helper scripts at the root: `build.sh`, `desktop.sh`, `dist.sh`, `docker.sh`,
 `test.sh` (the test suite under `cargo llvm-cov`).
 
-CI runs both clippy invocations above, a release build with `--features
+CI runs the three clippy invocations above, a release build with `--features
 server`, and the workspace tests under `cargo llvm-cov`. It installs
 `mame-tools`, `ffmpeg` and `xdelta3` only as reference tools for the format
 crates' tests, and runs `apt-get update` first: the runner's package lists go

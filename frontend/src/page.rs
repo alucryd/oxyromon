@@ -459,10 +459,10 @@ fn focus_row(game_id: i64) {
     let Some(document) = web_sys::window().and_then(|window| window.document()) else {
         return;
     };
-    if let Some(element) = document.get_element_by_id(&format!("game-{game_id}")) {
-        if let Some(row) = wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlElement>(&element) {
-            let _ = row.focus();
-        }
+    if let Some(element) = document.get_element_by_id(&format!("game-{game_id}"))
+        && let Some(row) = wasm_bindgen::JsCast::dyn_ref::<web_sys::HtmlElement>(&element)
+    {
+        let _ = row.focus();
     }
 }
 
