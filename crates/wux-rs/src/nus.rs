@@ -80,7 +80,9 @@ pub fn parse_wii_tmd(bytes: &[u8]) -> Result<Tmd> {
         title_id: u64::from_be_bytes(bytes[0x18C..0x194].try_into().unwrap()),
         version: u16::from_be_bytes([bytes[0x1DC], bytes[0x1DD]]),
         contents: records
-            .chunks_exact(36)
+            .as_chunks::<36>()
+            .0
+            .iter()
             .map(|r| {
                 let mut hash = [0; 32];
                 hash[..20].copy_from_slice(&r[16..36]);

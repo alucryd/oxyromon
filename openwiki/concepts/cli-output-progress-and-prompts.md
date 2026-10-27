@@ -81,7 +81,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Progress Bars, Categorized Output and Prompts

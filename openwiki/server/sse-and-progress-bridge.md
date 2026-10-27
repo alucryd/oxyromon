@@ -44,10 +44,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "openwiki/0.7.2", at: "2026-10-10T22:10:44.671Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-19T17:45:26.496Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # SSE Events and Progress Bridging
@@ -172,11 +172,11 @@ These prefixes are actually emitted:
 
 | Prefix | Emitted from | Trigger |
 | --- | --- | --- |
-| `sort_roms`, `check_roms`, `generate_playlists`, `purge_roms`, `convert_roms`, `purge_irds` | `spawn_cli_action` in `src/mutation.rs` | GraphQL mutation |
+| `sort_roms`, `check_roms`, `generate_playlists`, `purge_roms`, `convert_roms`, `purge_irds`, `purge_games` | `spawn_cli_action` in `src/mutation.rs` | GraphQL mutation |
 | `download_dats` | inlined in the `download_dats` mutation | GraphQL mutation |
 | `purge` | inlined in the `purge_system` mutation | GraphQL mutation |
 | `import_rom`, `import_patch`, `import_irds`, `import_dat` | the four upload handlers in `src/server.rs` | `POST /roms`, `/patches`, `/irds`, `/dats` |
-| `import_dats`, `download_dats`, `sort_roms`, `check_roms`, `convert_roms`, `purge_roms`, `purge`, `purge_irds` | `OxyromonMcp::run_action` in [`src/mcp/actions.rs`](../../src/mcp/actions.rs#L57-L174) | MCP `tools/call` over `/mcp` |
+| `import_dats`, `download_dats`, `sort_roms`, `check_roms`, `convert_roms`, `purge_roms`, `purge`, `purge_irds`, `purge_games` | `OxyromonMcp::run_action` in [`src/mcp/actions.rs`](../../src/mcp/actions.rs#L57-L174) | MCP `tools/call` over `/mcp` |
 
 Two details the table hides:
 
@@ -221,7 +221,7 @@ nothing left to clear it. The frontend defends itself in two ways:
 
 - `source.set_onopen(..)` resets every in-flight flag (`purging_system_id`,
   `sorting_system_id`, `checking_system_id`, `purging_irds_system_id`,
-  `generating_playlists`, `purging_roms`) on *every* opening, including the
+  `generating_playlists`, `purging_roms`, `purging_game_id`) on *every* opening, including the
   first, so a reconnect starts from "nothing is running".
 - `on_finished` clears a flag on `complete` **or** `error`, so neither outcome
   can strand it.

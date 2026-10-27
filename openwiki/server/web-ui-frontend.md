@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -217,7 +217,11 @@ ROMs down to their `romfile`s, sorts by path and deduplicates — many ROMs shar
 archive — and the pane links each entry to `GET /romfiles/{id}` with `download`, a
 plain anchor rather than a fetch. `RomfilesCard` also strips the leading system
 directory segment for display, since the stored path is relative to
-`ROM_DIRECTORY`. The statistics card is mixed too: system/game/ROM counts come from
+`ROM_DIRECTORY`. Its header carries a trash button, shown only when the game has
+files, that opens `PurgeGameModal`; confirming calls `purge_game`, which sends the
+`purgeGames` mutation for the selected game alone. While `purging_game_id` is set
+the button is replaced by a spinner, until the `purge_games` SSE terminal event
+clears it. The statistics card is mixed too: system/game/ROM counts come from
 the same memos the lists do, and only the four aggregate sizes are a separate query
 per system.
 
@@ -328,7 +332,7 @@ selection to `-1` — a purged system has nothing left to fetch.
 
 `EventSource` reconnects on its own but never replays what it missed, so a terminal
 event sent while the socket was down would leave a flag set forever. `set_onopen`
-therefore resets **all six** busy flags on every opening, including the first: a
+therefore resets **all seven** busy flags on every opening, including the first: a
 reconnect starts from "nothing is running". Closures are intentionally leaked with
 `forget()` and the `EventSource` with `std::mem::forget`, since the connection lives
 as long as the page.
@@ -448,8 +452,8 @@ The UI keeps its own copies of the server's format lists. `PREFER_FORMAT_CHOICES
 so a new format must be added to both by hand. The UI offers no export, so the
 export-only Wii U target `NUS` never appears in it.
 
-Dialog placement in the tree matters. The per-system `SettingsModal` and
-`DeleteModal` sit **outside** the `.page` flex column on purpose: a `wa-dialog`
+Dialog placement in the tree matters. The per-system `SettingsModal`,
+`DeleteModal` and `PurgeGameModal` sit **outside** the `.page` flex column on purpose: a `wa-dialog`
 host is `display: none` while closed and `display: block` once open, so inside that
 column it becomes a flex item the moment it opens and its gap shoves the page
 behind it. Dialogs paint in the top layer regardless of where they sit, so moving

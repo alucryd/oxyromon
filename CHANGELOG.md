@@ -3,6 +3,7 @@
 ## Features
 
 - Added the `MERGED` strategy to `rebuild-roms`, storing each clone's files in its parent's ZIP, once, with a clone's file whose name its parent already uses with other contents under `<clone>/`, as ClrMamePro does. `check-roms`, `export-roms` and the other commands find files filed that way, and `sort-roms` moves a merged ZIP with its parent rather than its clones
+- Added the `purge-games` subcommand, moving the files of individual games to their system's `Trash` and leaving the games missing, with a purge button on the web UI's ROM files panel and a `purge_games` MCP tool. Files shared with games not being purged stay in place
 - Added `-s/--system` to `purge-systems`, selecting systems by name instead of prompting for them
 - Added `-a/--arcade` to `import-dats`, an Arcade switch to the web UI's DAT import and an `arcade` parameter to the MCP `import_dats` tool, importing DATs that list games instead of machines, such as FBNeo's, as arcade systems. An update keeps a system arcade, and `-f` reverts it
 - Added the `mcp` subcommand: a Model Context Protocol server on stdin/stdout, for AI assistants — read, mutate, and (behind `confirm: true`) purge the library, with progress notifications, cancellation, resources, and guided prompts; `--read-only` registers only the non-mutating tools
@@ -28,6 +29,7 @@
 
 ## Fixes
 
+- The web UI's system deletion dialog no longer says the files on disk are left alone: they move to the system's `Trash`
 - Fixed `create-dats` reading each file three times, once per checksum; it now reads it once
 - Fixed `create-dats` sometimes writing a DAT cut short, and `import-roms` sometimes hashing a CIA's TMD before its certificates were written to it
 - Fixed `import-roms` panicking when "None" is picked at the "Please select a ROM" prompt; the file is now skipped, without the same prompt coming back once per hash algorithm, or the file going to the trash because an earlier hash matched nothing

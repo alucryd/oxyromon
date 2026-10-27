@@ -172,7 +172,7 @@ async fn process_system(
                 }
             };
         for game in games {
-            update_game_playlist(connection, game.id, playlist_id).await;
+            update_game_playlist(connection, game.id, Some(playlist_id)).await;
         }
     }
     Ok(())

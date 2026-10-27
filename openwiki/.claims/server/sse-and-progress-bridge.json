@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:62850c4323a5ba2270a639a2e150cd8e57e6218bf5960427cd98d67537c1c9d3",
+  "pageVersion": "sha256:d478bae6563115e664d3e6ca1b99586bb1ea4484d09fab2f08883b790f9fd035",
   "claims": [
     {
       "id": "claim_576b8c67163e49f78677876793d52f3a",
       "statement": "The SSE transport is a single tokio broadcast channel of capacity 100 (broadcast::channel::<SseMessage>(100)) created in server::main together with one CancellationToken; the Sender is handed to axum through AppState and to GraphQL resolvers through Schema::data, so mutations, the four upload handlers and the nested MCP HTTP service all publish onto the same bus. SseMessage is { event: String, data: String } — the JSON payload is serialized once at the sender and every subscriber receives identical bytes.",
       "evidence": [
         {
-          "resource": "repo://src/mutation.rs#L11-L19",
+          "resource": "repo://src/mutation.rs#L12-L20",
           "version": "repo-lines-v1:sha256:fb7fcab8c6d4fdf5615c898a010934c29557f67688433a1daf5a33756826e941:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNhM2Q3ZDM4NGQ0NzIxYzFlOTNlNGNiNTQ5ZDI1MmVjM2EwMzVhMTBhYzJiM2E3NDE4YzgyZDg0MzQ1MWY1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMzMmIxNjRkY2M3NThjNTgyMzAzZTYyYjIyZDMyZTAyYTgyZDVkN2NjNjA4ZmY0YjVlMDZkMDc5Mjc0YzA4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNmMGZmMWY5YjFkM2Q4OWY3OTM3ZGI4NTdkMDU4NmI3YmE5MTI2OTc0Y2JlNWNhNzMxMWUyZDdjNjExNjdlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGU2ZDVjYjc2ZDhmNzVjZDE0ODQ2ODgzYmVmY2RhODk5ZGNmMDFhOGNlYzYxNTVlMTVlOWM3NzAwOWYzYjVhZSJ9"
         },
         {
@@ -49,7 +49,7 @@
       "statement": "spawn_cli_action is the template for GraphQL-triggered long work: it emits {prefix}_started, then acquires its database connection *inside* the spawned task and runs the CLI subcommand, and emits {prefix}_complete with success:true or {prefix}_error with success:false plus a human-readable message. Acquiring after `started` is what guarantees a pool-exhaustion failure surfaces as {prefix}_error instead of silence — the invariant being that every code path emits exactly one terminal event.",
       "evidence": [
         {
-          "resource": "repo://src/mutation.rs#L21-L79",
+          "resource": "repo://src/mutation.rs#L22-L80",
           "version": "repo-lines-v1:sha256:ab7ee87c606dc34614d447b3dca7e51fd961560fac84d13805d720a8c2adec8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MTAyZTFhODIwNDU1NTVhMzc0OGJmODZlNjliMjUwMTNkM2RjZWU2Zjg3NzNkYjQ5ODI5ZWQwYTgwMTY4NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyZDNhN2NmN2ZlNzdiMzZiM2MzZGM3NThhMDVjZjdlMGRhNjEwZTgxZTkwMzU4ZTE5NWIwMzZmNjE2ODRjZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMjI2ZTk4YWQ2ZTQ2YTliODEyZWQzMjBjY2YzZjBiZWExMmIzN2Q4MDM2ZjVkNTZjZjM3ZGZhYmYxNTQ3NjgifQ"
         }
       ]
@@ -59,15 +59,15 @@
       "statement": "The event prefixes actually emitted by the web server are: sort_roms, check_roms, generate_playlists, purge_roms, convert_roms and purge_irds via spawn_cli_action; download_dats and purge inlined in the download_dats and purge_system mutations (note the system-purge prefix is `purge`, not `purge_system`); and import_dat, import_rom, import_patch and import_irds from the four multipart upload handlers, each of which returns 202 Accepted and reports only over SSE.",
       "evidence": [
         {
-          "resource": "repo://src/mutation.rs#L237-L313",
+          "resource": "repo://src/mutation.rs#L238-L314",
           "version": "repo-lines-v1:sha256:005aa4f790c592d070a6fdbeac7f2953e4875d25f957691e50ed4662f46cbded:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNDRlY2IwYzYyZDQ5ZTIwNmM5ZmZlZTljZWRkYmQ1MTA0NTU1ZmQ5OGE2MDFkODQ5NzNjMDhlYTM0ODNlMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhY2ZiN2Q5ZDJlZWM3ZmIzODkwNDU1ZmU3NWQzZjhmMTc0MmNjZmQyNTJmNzdiYjlhMDA3NzUxZmQ4MGQyYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMzcwYjk5NGRhN2Y0N2I1YTJhZTdkY2IwMTAyZGVhYjJkYmY5ZDJiOTNjMWRkMTkwZDQ1MTVjNTJjY2NhN2QifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L315-L395",
+          "resource": "repo://src/mutation.rs#L316-L396",
           "version": "repo-lines-v1:sha256:ee69b6227a9e8f78b9229c7308627b5fd071888506a30411bcd7fd2fdcc4906b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWQxMTdlZGM2ZDFiM2U4MzU0MWY4YjlhOWIwYzBmMDg0MWUyNmMxNGMwZjhjYmIxNWIyMDg3NmZkMmQzZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4ODU4MjU5NDc5YmI1ZmYzY2Y0YjE2MDhjNTA0MzYzNzM5NThhMWQ3NWY2NDZlMDZiNGUyOWQ5MzVkNGMzN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4OWJiNzI4MWUwMmQ3MzlmZDhmMDgyY2YzMTBjNTYwOTI5M2FiNDM4Njc2YzI2ODI2YjJmMzk1ZmE2ODM0MTkifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L402-L692",
+          "resource": "repo://src/mutation.rs#L458-L748",
           "version": "repo-lines-v1:sha256:5967a663f37d39ce9dde8c3309872a681e62043d142f6c611e362f6f36b641d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjkxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZWJjZmVmNDc2NzE3MGMzNzQ4OTJlNjA5MDA4NGEyN2EwZDQ4MDU1MzY5MWMxN2IyY2FkYjJhNmM4OTc4ZTNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhODRlZmZmNTQzZWI0YzA5OTFjNjAzZjdjNDFiODY4YTVlYTEyMjMyOGFmM2JkNzA1ZmMyMmYyMWM0ZGMzNGY2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIn0"
         },
         {
@@ -101,15 +101,15 @@
           "version": "repo-lines-v1:sha256:7919221aa563b48a4c67ef3881cca211a12a3a36e2f64f5e31d0001f09dbaafe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNjQ5NGQ2ZjExMWNiNDU4MDNjMmM0N2Y2ZDhlMjQzMDE2M2YzYjJjNTUzZTQ0MGIzYTNhMjdkN2FkYmE3MmRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDY0MTMyNzk3NGNmYmExMjZiMjYyMTBiNTBjMjlhZTA3M2U4MTJkZjA3OWRjYzhlMDJkYTc2MjhlNDMyNjZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNTM4ZjU4YTZiYjVlMjJhNjVlZTZjNDNkMDMxMzRhZmE4NzVhY2QxZTZmMmY1NDcxYTg1OTNjZDg5NmUyZjBiIn0"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L176-L244",
+          "resource": "repo://src/mcp/write.rs#L178-L246",
           "version": "repo-lines-v1:sha256:e338a6f954ac05f8ce9997f819e448b582386bf77d7d0517b29c73020a324968:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MzlhZGIwMDNiMmM2NDgwMmE2ODlkNzA2MzgzNWU3ZDA4ZmI1N2QyY2VmMDRlMDAxNTZhMTJlODIxYzBhMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmOWE2ZDAwNzAwNzdhNzU2YmIxNjkzNmNiOWIzZmE2YzdkOWYwZmI2NDI0Y2FlYTMwMGM3MjI1YTg2ZGM1YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2ZGFiNjRjZTY0ODA2YmZmYzkzNmQwMzdjN2VlNDUxYWI4YjU3ZTNhZDMwYWE2ZmUzZWU5NDVkYTQ5M2NhNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5ZWM4MjAxNDA4MjU2ZTVlYjRhYWMxY2JlYjZkYWZhYjc2NGE2YjJiOWM4ZGM2ZDk3YTFkNGMyMzA2MGFjMzMifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L61-L105",
+          "resource": "repo://src/mcp/write.rs#L63-L107",
           "version": "repo-lines-v1:sha256:6a18183d846b22f67192ff059700feddb3a859c30bdc8a7787acd0d8b7590828:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNzYzMDQxNTlhNGI4OGQxMTMxYTU3MmIxOTcxMmVhYTdlOGI3MjJmYWQ3ZjEzNTUyMzhmNzg0ZmJiZjFlYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOGUxOWM3OThkYTQ2NDNiMzZhNDk5ZmMzNDE0NmNjNDQzZDgyN2ViZmU0MTQ4MGY0NDZiZjc2MGI0YTlmMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwYzYzYjRjNzc4MzA1ZWZjYWQ3YjkwOGQ1Njc1OTc4OGUwMDU0YjI0MWQ3MTlmZjZkYTRmODg0OTU2YjYyODQifQ"
         },
         {
-          "resource": "repo://src/mcp/write.rs#L663-L697",
+          "resource": "repo://src/mcp/write.rs#L665-L699",
           "version": "repo-lines-v1:sha256:2625f1ed8ce8c3326df146dfa7500cc8a7abe3c9f9bdde832c633f1d8e06f586:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1Zjc1ZThkYTdmMWMxNTBlYjJiNzdkNDVlY2I0YWJhNTI1YjEyMGFmMWMzMTgxNmMyNjVkNmU0YjU3Nzc5ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNDRhYmY4Y2ZjOTUwNmUwYWY0ZjhlZWE5MGE2MGE3YTllNTk3OTk4OTRkMWI4NmRiNmQzMWE3OGNjODg0YTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2ZGFiNjRjZTY0ODA2YmZmYzkzNmQwMzdjN2VlNDUxYWI4YjU3ZTNhZDMwYWE2ZmUzZWU5NDVkYTQ5M2NhNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiYzllYWJiNzdlZWFlZmIyYmIzMDM2ZTIzOTIzZDhmYzg5NTQzMmVlZDdlNzA1MTVhOGY4MWI4OTdmMzMzNTMifQ"
         }
       ]
@@ -123,7 +123,7 @@
           "version": "repo-lines-v1:sha256:467cd23b6cad6332e0a4f3c8cb576dc6b815d1f23242fed5477ad87a99a5e0dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZTE2MGFmMGQ2MDJjNzJmYWFiNWNkZmJkMmFiMmFhM2Y0MGE4NDY0YzRiMDJjMWQ4OTRkOTg4Y2Y5NGI1MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjODJmMzVmNzYxNWJkMTc4ZWRiZWZhNzg1M2FkMzE0YmYzNGZkZDNjNjMzMTJiOWI5N2Q5OWY2MDc3MmNhM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3YzI2Yzc4YjdkMTY2ZWIwZGU3ZjA3NTdhNDFiYmJkYzUyZTNjZjI5N2NiZjQ5ZGIyZDRjYzc0MzkxZDU4MGEifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L40-L58",
+          "resource": "repo://src/mutation.rs#L41-L59",
           "version": "repo-lines-v1:sha256:588a069aa9c7fd73442f5a753b4e0de30372462d5b7f848fb582ea90aeab8f9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMTNmNmVhZjliNDY1YzVkNDA3YjM1MzgyZjRjZmQ2YTQ1ZDI4ZGZkNDE0OWYxZDMwZTlmNjI2ZTY0MDEwZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Y2RlZjgwODVhZTc0YWI2MzZkNjQ1OWY1YzZkNWZiZmIwZGIyNjRmMWIwZDc1YmFjNTE5YzliM2Y2NzE3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1YmUxYTAyMDM4YWZmYzgyZjAxOTYxYzI0MDFiOGE5ZTM0MGIzZDgxNjYyNGRlZjYyNmYzOWMzMmU2MWQzODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4MGU2M2JjNGJmMmYyNjc3MjVjNTA3NGU3ZTFlMmVlMjllNmQxNmMwMmUyZTJjMThlYzgxNDFiZmFhZjEyNDkifQ"
         }
       ]
@@ -137,7 +137,7 @@
           "version": "repo-lines-v1:sha256:92d189dcb7257a65cbff55eacb98a76c8edef1fdca32d0351f2b8e2ba4a21b46:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MTM2YzAzYWEwNDNlYzU1OTQwZDJmY2M1OWUzMjA2YWE0MjEwNDcwYmVkMjViODljMjdiNWUzZDM2MmZmYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZGY4ZDVkOTQyZmIwMTcwZTQ5Y2VmOTI5NTE4OTIwYTRiOTY0ZWU4NmMyY2Q5MWY0YzVhMWJlOTAyZTdhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNDIxNThhYWIyMWFhNGQ5ODk4ODU3YzUxZDE4MDNiNWZiYjRhY2M4MDIwMGNkNzk5OTU5OGFkMjA3ZGMwZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4YjE5MmExNzMwNDhjYTAyYTA0MTg3YThiYjllMWQ4NzRmMTgzNGI0ZmI4NGYwNGEyM2EwNTc2ZDk5MThmMTUifQ"
         },
         {
-          "resource": "repo://src/mutation.rs#L435-L437",
+          "resource": "repo://src/mutation.rs#L491-L493",
           "version": "repo-lines-v1:sha256:608d0644022d512478b89dddac4d6e6122d53b8737c98561c1dac7e85ee59a36:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUxMzk5NzYzMGJkODA0YTQxMmIyYzYzOTg0ZjgwMmQyMDIzZTg4YTViZjM0YWQ4ODI1MmUxNDM3MDg2NzQyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJlNTJiNTA3MDJlMGU5MzFiYjQ4NDk3OTIwN2I0ODk4MTI2MjhjNmU3YjAwZDZiY2E1YjQ3NDU1NjE3ZDNjYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdjMDc5ZWUzOWU5NjRkMjNlN2RlNTU2ZTIyMmI3MjhmY2UzMGZiZTZjYTdkOTQxY2M1NDg1ZTEwNzBiYTJlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzkzZWRiMGU0NjVlZjk0MmUzNDhiODY2ZDM3NWFmOTRlMDI3ODI3ZTBmNDFlZDMzZTJkMjNmZWRmM2QyM2RlZSJ9"
         },
         {
@@ -148,15 +148,15 @@
     },
     {
       "id": "claim_e2fa6b49c6cb4329b9b2524d8cbaed2f",
-      "statement": "connect_sse opens one EventSource('/events') for the SPA's whole lifetime and leaks its closures. Because EventSource reconnects by itself but never replays missed events, it installs an onopen handler that resets every in-flight flag (purging_system_id, sorting_system_id, checking_system_id, purging_irds_system_id, generating_playlists, purging_roms) on every opening including the first, and registers on_finished to clear each flag on {prefix}_complete *or* {prefix}_error so neither outcome can strand a spinner.",
+      "statement": "connect_sse opens one EventSource('/events') for the SPA's whole lifetime and leaks its closures. Because EventSource reconnects by itself but never replays missed events, it installs an onopen handler that resets every in-flight flag (purging_system_id, sorting_system_id, checking_system_id, purging_irds_system_id, generating_playlists, purging_roms, purging_game_id) on every opening including the first, and registers on_finished to clear each flag on {prefix}_complete *or* {prefix}_error so neither outcome can strand a spinner.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/api.rs#L413-L475",
-          "version": "repo-lines-v1:sha256:d86210ecbb99afbe98c91779d95beaf819490d46edad05405fff9414f5e11c31:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E2NjU3NWJkZTNiM2FhMWQ3OWI1NDYzNDI2MWZiMTFiMmJkMjAwOTJkMTU0NDgzOWRiMGE2MmE5YzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjEyN2VlY2VhODM4ZWJkOGJmZDMzNjFiNzgxNDI4ZGQ2NmY3NDJiY2RjNmY4OWEzZWY0MzliZmY2MmQyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3N2ZlZTBhMTg2Y2Q3NTk2ODczNWI3OWRmYjcxMzgzNzBlZDgzOTI2ODIyZTY5ZWIwYTJhOTBmYmQ3MTZmYzMifQ"
+          "resource": "repo://frontend/src/api.rs#L413-L487",
+          "version": "repo-lines-v1:sha256:3b1766377c3c2ce9eba87f20e7fdddc7c392dd648a44a75715ceaa97d9f82fd9:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2E2NjU3NWJkZTNiM2FhMWQ3OWI1NDYzNDI2MWZiMTFiMmJkMjAwOTJkMTU0NDgzOWRiMGE2MmE5YzJkNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MjEyN2VlY2VhODM4ZWJkOGJmZDMzNjFiNzgxNDI4ZGQ2NmY3NDJiY2RjNmY4OWEzZWY0MzliZmY2MmQyZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3N2ZlZTBhMTg2Y2Q3NTk2ODczNWI3OWRmYjcxMzgzNzBlZDgzOTI2ODIyZTY5ZWIwYTJhOTBmYmQ3MTZmYzMifQ"
         },
         {
-          "resource": "repo://frontend/src/sse.rs#L152-L176",
-          "version": "repo-lines-v1:sha256:541fd40a6bade914f1abb41bbf9cdb318e887b2e4e767e258202b4eb604b79a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTBkYWYwZGExZmU3MjAzNWZjMDUxMDkyNWYwZDc2YjE4YWZkMjQzNzIxMjA0NTM4NDlkNTBkYTY1NWMzZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MzNkNjBmM2RmNjEzNDQ2YzFjYWVhZWI2MDUwMWRhNGJlZjRlOGQxZGRjMTA4NDcyZmQ0NWJhMTY0YmE0N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/src/sse.rs#L156-L182",
+          "version": "repo-lines-v1:sha256:a48827bb411c8fbb6805d2cf64029c18724d21153ec39d99c23649cba2820e10:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTBkYWYwZGExZmU3MjAzNWZjMDUxMDkyNWYwZDc2YjE4YWZkMjQzNzIxMjA0NTM4NDlkNTBkYTY1NWMzZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MzNkNjBmM2RmNjEzNDQ2YzFjYWVhZWI2MDUwMWRhNGJlZjRlOGQxZGRjMTA4NDcyZmQ0NWJhMTY0YmE0N2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://frontend/src/sse.rs#L68-L82",
@@ -241,8 +241,8 @@
       "statement": "No test exercises /events or MCP progress notifications: the server tests boot the real main() and assert only HTTP status codes (202 accepted, 400 rejected) or re-query GraphQL after a sleep, and tests/mcp_stdio.rs builds tools/call params without a progressToken so the progress poller never runs under test. Its hand-rolled client reads stdout until a line carries its own id (so unsolicited notifications are tolerated) and close() asserts a clean exit on stdin EOF. Consequently the SSE event names and payload shapes are an unverified contract — renaming a prefix compiles cleanly, silently breaks the matching SPA listener, and fails no test.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/sse.rs#L97-L150",
-          "version": "repo-lines-v1:sha256:dae0b2cb415c23706025c53982cb563d25a1edff6ec6a77a33c09788748f30a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjljZDc5YmU3ZmQ4OTMzY2Q1ZmVlZjVmZTE5YTdkNjRjNWUwYjZkOWVlOTBkNTBiYTJhODNhYzZlYTg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzY2MyZGE3YjMyNWVlNmExNGY3ZjA2M2JiNTBjOTAwMGEzNTBmODgwOWYxMThiODUzOWMxY2FmM2MwMmE3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0M2QxNzdkY2I4ZDgyNDBkNjU3ZDgyM2IzYTFmNTY1NDhkMGE2MzZmOGJiNzA0ZjNjMDU2Y2MzNmI3YjRkZDgifQ"
+          "resource": "repo://frontend/src/sse.rs#L97-L154",
+          "version": "repo-lines-v1:sha256:ddb3ace68f492fcf07067a9eb408b50637e7634afc43a01ba3cec4f7ec350762:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjljZDc5YmU3ZmQ4OTMzY2Q1ZmVlZjVmZTE5YTdkNjRjNWUwYjZkOWVlOTBkNTBiYTJhODNhYzZlYTg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzY2MyZGE3YjMyNWVlNmExNGY3ZjA2M2JiNTBjOTAwMGEzNTBmODgwOWYxMThiODUzOWMxY2FmM2MwMmE3MjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0M2QxNzdkY2I4ZDgyNDBkNjU3ZDgyM2IzYTFmNTY1NDhkMGE2MzZmOGJiNzA0ZjNjMDU2Y2MzNmI3YjRkZDgifQ"
         },
         {
           "resource": "repo://src/server/test_uploads.rs#L85-L110",
@@ -263,7 +263,7 @@
       "statement": "The byte-level progress that ultimately reaches MCP clients comes from a workspace-wide contract: each format crate entry point takes `progress: &mut dyn FnMut(u64)` called with the input bytes consumed since the last call, adding up to the input size, and run_blocking in src/progress.rs adapts that callback to `bar.inc(n)` on a bytes-styled bar of `length` moved onto the blocking pool. Callers supply the matching total — the input file's metadata().len() for xso-rs/nsz/xdelta/xps, chd_rs::cd_input_size for a CD image, gdi_rs::input_size for GDI, and the CHD's info().logical_size when extracting — so those byte counts are precisely the position/total pair the poller forwards.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L134-L136",
+          "resource": "repo://AGENTS.md#L135-L137",
           "version": "repo-lines-v1:sha256:de0117a85cf42524e917ba497d27f62428cb7d6c5322942857704e2196cf6e1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZjNGE2NTRmNWQwNzllNmM2MTYyMTVlYjdhYmVjMTBjNGQyNWJiMTE3YjU3YWI5ZTAwNDU5NGEzNTBmM2I1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI1YTdkNDY1Y2NhYTNiNDJlN2I4ZjQ5MWJkMGUxYmI4OTg2ZWE2ZDFkZWY2OTEzOGIwZjFhZDdmNzA2NmJkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlmMjU2ZTNiZWExZTE4Njk5ZWZlOWE1Mzg0ZTM3MzlhMGFiZjU1MzM0MDI2NDlhMWZhYWUyZGFiMzg2YzdiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTk4MTRiZjk2MGNhNWU1ZDlmOThmNjRjZTUwOTczNTA1N2NkMGU5ZTg2N2YzNDg3YWIyYjgxMTk3NzVmNDgwNyJ9"
         },
         {
@@ -303,6 +303,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-19T17:45:26.496Z"
+    "at": "2026-10-27T21:16:24.550Z"
   }
 }

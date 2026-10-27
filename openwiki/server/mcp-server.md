@@ -60,10 +60,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T22:40:03.236Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # MCP Server: Tools, Resources and Prompts
@@ -78,14 +78,15 @@ false`, features `server`, `macros`, `transport-io`, `schemars`). One type,
 from the `mcp` subcommand, and the Streamable HTTP Tower service that
 [`src/server.rs`](../../src/server.rs) nests at `/mcp`.
 
-Tools do not reimplement actions. Seven of the ten write tools synthesize the
+Tools do not reimplement actions. Seven of the eleven write tools synthesize the
 argv a human would type, hand it to the subcommand's own clap `Command` with
 `try_get_matches_from`, and call that subcommand's `main()` on a pooled
 connection — the exact trick the GraphQL mutations use, so CLI, GraphQL and MCP
-cannot drift apart per surface. `download_dats`, `purge_systems` and
-`set_setting` skip the argv step and call the same library entry points the
+cannot drift apart per surface. `download_dats`, `purge_systems`, `purge_games`
+and `set_setting` skip the argv step and call the same library entry points the
 subcommands call
-(`download_redump_systems`, `purge_system`, `config::set_setting` /
+(`download_redump_systems`, `purge_system`, `purge_games::purge_games`,
+`config::set_setting` /
 `unset_setting` / `add_to_list` / `remove_from_list`), and the read tools go
 straight to `database.rs` helpers.
 
@@ -161,10 +162,10 @@ connection at all.
 
 Write tools (`import_dats`, `download_dats`, `import_roms`, `sort_roms`,
 `check_roms`, `convert_roms`, `set_setting`, `purge_roms`, `purge_systems`,
-`purge_irds`) run to completion inside the call — MCP has no job queue. Most
+`purge_games`, `purge_irds`) run to completion inside the call — MCP has no job queue. Most
 also carry an annotation hint: `idempotent_hint = true` on the safe-repeat
 actions, `open_world_hint = true` on `download_dats` (it reaches redump.info), and
-`destructive_hint = true` on the three purges, so clients can decide how eagerly
+`destructive_hint = true` on the four purges, so clients can decide how eagerly
 to auto-invoke each. `convert_roms` is annotated only as non-read-only.
 
 `download_dats` downloads *and imports* each named Redump system, which its
@@ -315,7 +316,7 @@ Destructive tools need an explicit `confirm: true` in the arguments. `confirm`
 is `#[serde(default)]`, so it is optional in the JSON Schema and an omitted
 value reaches the refusal path instead of looking like a required field the
 model must fill in.
-`purge_systems` and `purge_irds` gate unconditionally; `purge_roms` gates only
+`purge_systems`, `purge_games` and `purge_irds` gate unconditionally; `purge_roms` gates only
 when `trash` or `foreign` is set, since those delete files, and separately
 refuses a call with none of the four flags set. Refusal is `need_confirm(tool)`:
 a *tool-level* error result explaining that `"<tool>"` is destructive and was
@@ -323,6 +324,10 @@ refused — not a protocol error. Because the subcommands would otherwise prompt
 a TTY that does not exist, the synthesized argv appends `--yes` (`sort_roms`,
 `purge_roms`) — the only two subcommands the MCP surface reaches that declare a
 `YES` flag at all, and the same escape the subcommand's own tests use.
+Once confirmed, `purge_games` refuses an empty `game_ids` list or any id with no
+game, so a typo cannot silently purge fewer games than asked. After the purge
+it sends a resource-updated notification for the URI of every system the games
+belong to.
 
 ## Error taxonomy
 
