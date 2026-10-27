@@ -124,6 +124,12 @@ format of Cemu's `keys.txt`, and tries each:
 So the common key can sit in Cemu's `keys.txt` with the disc keys, where
 Cemu ignores it.
 
+`load_keys` also reads a console's OTP dump, `otp.bin`: a 1 KiB binary file
+whose Wii U common key sits at 0xE0 and vWii common key at 0xD0. `parse_otp`
+takes both from its bytes, leaving out a slot never programmed. The vWii key
+serves the vWii titles a disc's update partition can carry, which are kept
+as they are without it.
+
 ## Scope
 
 - **One game partition per disc.** Like Cemu, only a disc's first GM
@@ -161,7 +167,7 @@ wuxrs -f nus game.wua          # to game/<title id>_v<version>/, per title
 | `-f FORMAT`    | what to convert to, `wud`, `wux`, `wua` or `nus`           |
 | `--add DIR`    | NUS folder of an update or DLC to add to the WUA, repeatable, with a single input |
 | `--updates DIR` | the update partitions WUAs share (default: `.update-partitions` next to each WUA) |
-| `--keys FILE`  | keys for WUA and NUS (default: Cemu's `keys.txt`)          |
+| `--keys FILE`  | keys for WUA and NUS, as Cemu's `keys.txt` or an `otp.bin` (default: Cemu's `keys.txt`) |
 
 Like every oxyROMon tool, `wuxrs` draws oxyROMon's progress bar, reports each
 input on a line of its own, and exits non-zero when any of them failed. It
