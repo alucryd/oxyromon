@@ -10,7 +10,8 @@ use super::actions::{need_confirm, ok_json, ok_text, read_only_denial, tool_erro
 use super::output::{ActionOut, DownloadDatsOut, FailedSystemOut};
 use super::params::{
     CheckRomsParams, ConvertRomsParams, DownloadDatsParams, ImportDatsParams, ImportRomsParams,
-    PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams, SetSettingParams, SortRomsParams,
+    PurgeGamesParams, PurgeIrdsParams, PurgeRomsParams, PurgeSystemParams, SetSettingParams,
+    SortRomsParams,
 };
 use super::resources::system_uri;
 use super::{OxyromonMcp, internal};
@@ -23,6 +24,7 @@ use crate::import_dats;
 use crate::import_roms;
 use crate::model::System;
 use crate::progress::*;
+use crate::purge_games;
 use crate::purge_irds;
 use crate::purge_roms;
 use crate::purge_systems::purge_system;
@@ -697,6 +699,65 @@ impl OxyromonMcp {
         self.notify_resource_updated(&ctx.peer, &system_uri(params.system_id))
             .await;
         Ok(ok_text(format!("purged \"{name}\"")))
+    }
+
+    #[tool(
+        description = "Purge games: their files move to their system's Trash directory and the games stay in the catalog, now missing. A file that also holds ROMs of another game is left in place. Game ids come from list_games or search_games. Needs confirm: true.",
+        annotations(read_only_hint = false, destructive_hint = true)
+    )]
+    async fn purge_games(
+        &self,
+        Parameters(params): Parameters<PurgeGamesParams>,
+        ctx: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, McpError> {
+        if self.read_only {
+            return Ok(read_only_denial("purge_games"));
+        }
+        if !params.confirm {
+            return Ok(need_confirm("purge_games"));
+        }
+        if params.game_ids.is_empty() {
+            return Ok(tool_error("no game ids given"));
+        }
+        let games = {
+            let connection = &mut self.pool.acquire().await.map_err(internal)?;
+            find_games_by_ids(connection, &params.game_ids).await
+        };
+        if let Some(game_id) = params
+            .game_ids
+            .iter()
+            .find(|id| !games.iter().any(|game| game.id == **id))
+        {
+            return Ok(tool_error(format!(
+                "game {game_id} not found; list_games has the ids"
+            )));
+        }
+        let mut system_ids: Vec<i64> = games.iter().map(|game| game.system_id).collect();
+        system_ids.sort_unstable();
+        system_ids.dedup();
+        let count = games.len();
+        let outcome = self
+            .run_action(
+                format!("Purging {count} game(s)"),
+                Some("purge_games"),
+                ctx.peer.clone(),
+                ctx.meta.get_progress_token(),
+                ctx.ct.clone(),
+                move |connection, progress_bar| {
+                    Box::pin(async move {
+                        purge_games::purge_games(connection, progress_bar, &games).await
+                    })
+                },
+            )
+            .await;
+        if let Err(message) = outcome {
+            return Ok(tool_error(message));
+        }
+        for system_id in system_ids {
+            self.notify_resource_updated(&ctx.peer, &system_uri(system_id))
+                .await;
+        }
+        Ok(ok_text(format!("purged {count} game(s)")))
     }
 
     #[tool(

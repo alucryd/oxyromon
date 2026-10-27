@@ -8,6 +8,7 @@ use leptos::task::spawn_local;
 
 use crate::api::check_roms;
 use crate::api::generate_playlists;
+use crate::api::purge_game;
 use crate::api::purge_irds;
 use crate::api::purge_system;
 use crate::api::sort_roms;
@@ -210,6 +211,8 @@ pub fn Page() -> impl IntoView {
         />
 
         <DeleteModal open=modals.delete_open target=modals.delete_target />
+
+        <PurgeGameModal />
 
         <Toast />
     }
@@ -648,7 +651,23 @@ fn RomfilesCard() -> impl IntoView {
     };
     view! {
         <div class="panel">
-            <CardHeader title="ROM Files" loading=state.loading_roms />
+            <CardHeader title="ROM Files" loading=state.loading_roms>
+                <Show
+                    when=move || state.purging_game_id.get() == -1
+                    fallback=|| view! { <wa-spinner></wa-spinner> }
+                >
+                    <Show when=move || !state.romfiles.with(Vec::is_empty)>
+                        <button
+                            class="plain-button icon-button"
+                            aria-label="Purge this game"
+                            title="Purge this game"
+                            on:click=move |_| state.purge_game_modal_open.set(true)
+                        >
+                            <wa-icon name="trash"></wa-icon>
+                        </button>
+                    </Show>
+                </Show>
+            </CardHeader>
             <div class="panel-body">
                 <For each=rows key=|entry| entry.clone() let:entry>
                     {
@@ -765,7 +784,7 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
                     <wa-icon slot="icon" name="triangle-exclamation"></wa-icon>
                     {move || {
                         format!(
-                            "Everything oxyromon knows about \"{}\" will be removed. Files on disk are left alone.",
+                            "Everything oxyromon knows about \"{}\" will be removed. Its files move to the system's Trash directory.",
                             name(),
                         )
                     }}
@@ -776,6 +795,52 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
             </wa-button>
             <wa-button slot="footer" variant="danger" appearance="filled" on:click=confirm>
                 Delete
+            </wa-button>
+        </Modal>
+    }
+}
+
+#[component]
+fn PurgeGameModal() -> impl IntoView {
+    let state = expect_context::<AppState>();
+    let open = state.purge_game_modal_open;
+    let name = move || {
+        let game_id = state.game_id.get();
+        state.games.with(|games| {
+            games
+                .iter()
+                .find(|game| game.id == game_id)
+                .map(|game| game.name.clone())
+                .unwrap_or_default()
+        })
+    };
+
+    let confirm = move |_| {
+        let game_id = state.game_id.get_untracked();
+        if game_id != -1 {
+            spawn_local(async move { purge_game(state, game_id).await });
+        }
+        open.set(false);
+    };
+
+    view! {
+        <Modal open=open title=Signal::derive(|| "Purge game".to_string()) size="xs">
+            <div class="wa-stack wa-gap-m">
+                <wa-callout variant="danger">
+                    <wa-icon slot="icon" name="triangle-exclamation"></wa-icon>
+                    {move || {
+                        format!(
+                            "The files of \"{}\" will move to the system's Trash directory, and the game will show as missing. Files shared with other games stay in place.",
+                            name(),
+                        )
+                    }}
+                </wa-callout>
+            </div>
+            <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
+                Cancel
+            </wa-button>
+            <wa-button slot="footer" variant="danger" appearance="filled" on:click=confirm>
+                Purge
             </wa-button>
         </Modal>
     }

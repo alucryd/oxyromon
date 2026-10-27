@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6de391094468817e1cc2a3374ad46c2d6d3ab28ec6b42355054b69219d835f85",
+  "pageVersion": "sha256:cae68f9be0dfeefb4d09f6edd924f7b7c10e5129719fe1e6d9f5836f6b62907c",
   "claims": [
     {
       "id": "claim_987db34fed214490868d6d3b69714abf",
@@ -39,15 +39,15 @@
       "statement": "src/main.rs gates whole modules with cfg(feature) — `mcp` for src/mcp.rs, `server` for mutation, query, server and validator — and gates the corresponding subcommand registrations and the post-scope server dispatch, so the argv surface shrinks with the feature set: `oxyromon mcp` and `oxyromon server` do not exist in a default build.",
       "evidence": [
         {
-          "resource": "repo://src/main.rs#L174-L181",
+          "resource": "repo://src/main.rs#L177-L184",
           "version": "repo-lines-v1:sha256:b6431520aea908a13967a4ddd692f57c519c15610a36635ee522ecd821c5b863:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI5NDE1OWIwMmJlYjQxMGQxNDQ5MDliMzMyZWQxNjgzOWE4NDU3OWE4MDUzNWU3MWMyNDY5MmZjN2U4ZmE0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ4M2MzY2M1MjBkZTBjMzY1YTE1Njc0YjE4Y2U3ZGQ5MGQ2MGI4ZGQ2NTQ3MzNlOTNjZDg5ZTE0YWUyZDZkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjJkMzM4ZTNhNjE4OWE0OTA2M2QzYTIxMGFlZjRjYjA0NDAxMzBkZjBmNGRhMDBlM2JhMWYwMGVjYjA4MjY3YiJ9"
         },
         {
-          "resource": "repo://src/main.rs#L27-L49",
-          "version": "repo-lines-v1:sha256:8fa2bc106f03ecb72eb3ca53d5d50b1513884f0a70d209e197cc2d7173d6834f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNzEzOGJkODNhNWY4NGZmMTRjNDM4MzVkY2ZjMGU4Mzg5MmU0NjBhMWM4YWUxY2ZjZWEzZTcwZjhhZTI4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNGU1MWE4NDk4NDA2YTBmM2JmYjllZDI3NGJhOGY1YTkyZjI0NmFmMTFjMDM0NWFlOTZhODUwM2I2YzFiYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyY2IyMDI4YWE4NGIzMzdhYTkyYTUwYmI1OTAzYWNmMGFkYzM0MDFiOTMzYTEwMzFiNWQwNjE2NDEwNTRkM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2YTczOTg4MTU0ZmQ2MTliNTc4ODM0MTMyNjRhZTk3NjRlZjU1MGRiZTFjZGM5MGU3MTUxMTk4NWQyNWQ4NjEifQ"
+          "resource": "repo://src/main.rs#L27-L50",
+          "version": "repo-lines-v1:sha256:e600c8d9c5347eea504a0797d3c64d6ecfe775598c709c110a66370401d7dc54:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNzEzOGJkODNhNWY4NGZmMTRjNDM4MzVkY2ZjMGU4Mzg5MmU0NjBhMWM4YWUxY2ZjZWEzZTcwZjhhZTI4ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNGU1MWE4NDk4NDA2YTBmM2JmYjllZDI3NGJhOGY1YTkyZjI0NmFmMTFjMDM0NWFlOTZhODUwM2I2YzFiYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyY2IyMDI4YWE4NGIzMzdhYTkyYTUwYmI1OTAzYWNmMGFkYzM0MDFiOTMzYTEwMzFiNWQwNjE2NDEwNTRkM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2YTczOTg4MTU0ZmQ2MTliNTc4ODM0MTMyNjRhZTk3NjRlZjU1MGRiZTFjZGM5MGU3MTUxMTk4NWQyNWQ4NjEifQ"
         },
         {
-          "resource": "repo://src/main.rs#L91-L94",
+          "resource": "repo://src/main.rs#L93-L96",
           "version": "repo-lines-v1:sha256:211db178b74226cc9e47b89058985dbb7cead649232612c870e3a418e97a0324:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTc2NmI4YzAzMTgwODlmMGZiMDdjZDUxNzhjNDNiNWVmZjk2NjNiNTk3YjAwYTY0MTQyYjkyNTFiNjk1MDExYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdkZDRhYzQ3NzdlNDU5ZTAyYzE5YmQ0YTdjYjBlZjZjOTg2NDFhNDFmZTRiMzIxOTkyMWNkMDYyZWUwODljMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDcwZDg3NmEwMWQ1ZjkxYjhkMDc2YzI5Y2EzZTZlZTE1OGJiN2QzNjNlNTA5NTJhZjZiYjc2OTk4MWUxMmI1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWIwYmZhZTZhNzg2MTIzMjc0NjhlNWMxMWQ2NzI4ZGM0ZDMxN2Q3ZTAzYTQ1MTg3Y2VlODdmODcwNjQ5ZWFhZCJ9"
         }
       ]
@@ -67,7 +67,7 @@
       "statement": "Server-only capability is threaded through otherwise-shared code: OxyromonMcp's sse_tx field, with_sse, mcp_http_service() and the sse_send fan-out in mcp/actions.rs are cfg(feature = \"server\") (the stdio build has no SseMessage at all); model.rs attaches GraphQL derives via cfg_attr and defines Dependency/GameInformation only under `server`; find_games_by_system_id_paged, process_dat_upload and ImportDatResult exist only under `server`.",
       "evidence": [
         {
-          "resource": "repo://src/database.rs#L738-L744",
+          "resource": "repo://src/database.rs#L785-L791",
           "version": "repo-lines-v1:sha256:437c8c2b1d6d3e63bae08678529a6a678a1c84507774f9ddcd7dc7191bede933:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFhYzA0ZTBiOGNlNDE1ZTM5NDMwMTY1YTExNTJkZGY3MTMxNWQ3ODZkYjJjZDE1Y2QyNGU4Mzg5MmNhMDFiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGE2NzNiODJkMDUzYTUwMzQ3MDNkODQ0YWQ3ZGYwZTA2NGZlY2Y3ODIxMThjZDQyMGZkZjNkM2FkYjYyMjg0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRiZmQ5ZmRkYWJmY2Q4YWYzODdmNzAxM2VlZThhMDFiODU5MzlkNzU3MTlhNmEzMWVlNDJhZGM4N2RlNjRmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDNkODcwNGJmYjc1Y2M5NDhlMmRiNWU0YzY5ZTFkNGE4ZjdlODYwYmY5ZDZiZmY0N2JhZWVjYzQxMmY0ODNkYiJ9"
         },
         {
@@ -389,7 +389,7 @@
       "statement": "The Cargo feature set is exactly default = [use-rustls], use-native-tls, mcp and server: the old `nod` and `sevenz` features are gone and no cfg gate for those names survives in src/, because nod, sevenz-rust2, zip and the eight crates under crates/ are plain unconditional dependencies. Every build therefore compiles the CHD, RVZ/WBFS, Wii U, 7z and ZIP code paths, and only mcp/server still add or remove functionality.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L15-L16",
+          "resource": "repo://CHANGELOG.md#L17-L18",
           "version": "repo-lines-v1:sha256:a197fa96b598402df33ea81d3c6d0aa0768fc629605458fe5c4b2c17cd39995d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzE3NmUwNjBmNmQwMTQxYjc4YmI5Yjk3MDY1ZDE0MzM4YmM1NGM4Mjc4NWU1MmRlN2IxOGE4YTg2NjdkNjVjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDYyY2I4MDk2OGExNjQ5N2E1OTE5YTJhY2U5NDEyMzZjYzg2OTkxNGMwNTA2OTJhYWNkMzhiMjdjOTQzZDQ4ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlN2IzZjAwYjRlMjBmOTlhNjI5Y2MzMjVmZWE4ZDNiNzViMGFkNmYwYzBhNWY4OWQ4OWMwYjg1M2NjOWY1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRlOTFiZmRhMGViYzEwMWVjNWZkYTBiZWExZjUxYTM5NmM3YjAzMzM5ODMzNjYyMWVjNWIyOGIwNzAxNjM0OCJ9"
         },
         {
@@ -529,6 +529,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-27T21:16:24.550Z"
   }
 }

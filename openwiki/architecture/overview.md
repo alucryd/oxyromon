@@ -83,7 +83,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # System Architecture Overview

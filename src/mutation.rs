@@ -5,6 +5,7 @@ use super::database::*;
 use super::download_dats::download_redump_systems;
 use super::generate_playlists;
 use super::progress::*;
+use super::purge_games;
 use super::purge_irds;
 use super::purge_roms;
 use super::purge_systems::purge_system;
@@ -390,6 +391,61 @@ impl Mutation {
                 }
             }
         });
+
+        Ok(true)
+    }
+
+    /// Move the files of the given games to their system's Trash directory.
+    /// The games stay in the catalog, now missing; a file shared with a game
+    /// not being purged is left in place.
+    ///
+    /// Returns as soon as the work is handed to a background task; the outcome
+    /// arrives over SSE as `purge_games_*`.
+    async fn purge_games(&self, ctx: &Context<'_>, game_ids: Vec<i64>) -> Result<bool> {
+        log::debug!("mutation::purge_games({:?})", game_ids);
+        let pool = ctx.data_unchecked::<SqlitePool>().clone();
+        let sse_tx = ctx
+            .data_unchecked::<broadcast::Sender<SseMessage>>()
+            .clone();
+        let mut connection = acquire_connection(&pool).await?;
+
+        if game_ids.is_empty() {
+            return Err(async_graphql::Error::new("No games given"));
+        }
+        let games = find_games_by_ids(&mut connection, &game_ids).await;
+        if let Some(game_id) = game_ids
+            .iter()
+            .find(|id| !games.iter().any(|game| game.id == **id))
+        {
+            return Err(async_graphql::Error::new(format!(
+                "Game {game_id} not found"
+            )));
+        }
+        let (message, complete_message) = match games.as_slice() {
+            [game] => (
+                format!("Purging '{}'", game.name),
+                format!("Purged '{}'", game.name),
+            ),
+            _ => (
+                format!("Purging {} games", games.len()),
+                format!("Purged {} games", games.len()),
+            ),
+        };
+
+        spawn_cli_action(
+            pool,
+            sse_tx,
+            "purge_games",
+            message,
+            complete_message,
+            "Failed to purge games",
+            move |connection| {
+                Box::pin(async move {
+                    let progress_bar = ProgressBar::hidden();
+                    purge_games::purge_games(connection, &progress_bar, &games).await
+                })
+            },
+        );
 
         Ok(true)
     }

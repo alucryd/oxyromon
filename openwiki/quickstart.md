@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Quickstart & Task Routing
@@ -195,7 +195,7 @@ directory, and only WUA and NUS exports need them.
 | hashing, matching, placement, `PREFER_FORMAT` on import                                                   | [ROM Import Pipeline](workflows/rom-import-pipeline.md)                        |
 | region and 1G1R election, discard filters, subfolder schemes, `Trash` placement                            | [Sorting and the 1G1R Election](workflows/sorting-and-1g1r-election.md)        |
 | `convert-roms` / `export-roms` and the conversion matrix (CHD via in-process chd-rs)                       | [Format Conversion and Export](workflows/format-conversion-and-export.md)      |
-| `check-roms`, the purge family, empty-directory cleanup                                                   | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md) |
+| `check-roms`, the purge family (including purge-games), empty-directory cleanup                           | [Integrity Checking, Purging and Trash](workflows/integrity-check-and-purge.md) |
 | arcade merging strategies and M3U playlists                                                               | [Arcade Rebuilds and M3U Playlists](workflows/arcade-rebuild-and-playlists.md) |
 | PS3 IRD files and JB folders                                                                              | [PS3 IRD Files and JB Folders](workflows/ird-ps3-jbfolders.md)                 |
 | routes, `AppState`, DataLoader, uploads, shutdown                                                         | [HTTP Server, GraphQL API and Uploads](server/http-server-and-graphql-api.md)  |

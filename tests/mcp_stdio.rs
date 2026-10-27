@@ -138,6 +138,7 @@ fn handshake_exposes_the_full_surface() {
         "purge_roms",
         "purge_systems",
         "purge_irds",
+        "purge_games",
     ] {
         assert!(
             tools.contains(&expected.to_string()),
@@ -223,10 +224,11 @@ fn import_dats_then_read_the_catalog_back() {
 #[test]
 fn destructive_tools_need_confirmation() {
     let mut client = Client::spawn(&[]);
-    for tool in ["purge_roms", "purge_systems", "purge_irds"] {
+    for tool in ["purge_roms", "purge_systems", "purge_irds", "purge_games"] {
         let arguments = match tool {
             // confirm omitted: it is optional, so absence must refuse too
             "purge_roms" => json!({"trash": true}),
+            "purge_games" => json!({"game_ids": [1]}),
             _ => json!({"system_id": 1, "confirm": false}),
         };
         let result = client.call(tool, arguments);
