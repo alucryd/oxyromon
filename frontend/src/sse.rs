@@ -145,6 +145,10 @@ pub fn connect_sse(state: AppState) {
     on_event(&source, "purge_irds_error", state, NotificationKind::Error);
     on_complete(&source, "purge_irds_complete", state);
 
+    on_event(&source, "purge_games_started", state, NotificationKind::Info);
+    on_event(&source, "purge_games_error", state, NotificationKind::Error);
+    on_complete(&source, "purge_games_complete", state);
+
     on_event(&source, "generate_playlists_started", state, NotificationKind::Info);
     on_event(&source, "generate_playlists_error", state, NotificationKind::Error);
     on_complete(&source, "generate_playlists_complete", state);
@@ -160,6 +164,7 @@ pub fn connect_sse(state: AppState) {
         state.purging_irds_system_id.set(-1);
         state.generating_playlists.set(false);
         state.purging_roms.set(false);
+        state.purging_game_id.set(-1);
     });
     source.set_onopen(Some(reset.as_ref().unchecked_ref()));
     reset.forget();
@@ -170,6 +175,7 @@ pub fn connect_sse(state: AppState) {
     on_finished(&source, "purge_irds", move || state.purging_irds_system_id.set(-1));
     on_finished(&source, "generate_playlists", move || state.generating_playlists.set(false));
     on_finished(&source, "purge_roms", move || state.purging_roms.set(false));
+    on_finished(&source, "purge_games", move || state.purging_game_id.set(-1));
 
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);

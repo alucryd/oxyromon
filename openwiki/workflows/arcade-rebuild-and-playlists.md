@@ -50,6 +50,8 @@ sources:
     resource: repo://src/mutation.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
+  - id: openwiki-source-82e96c0f155bab36abef9bdf
+    resource: repo://src/purge_games.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
@@ -74,10 +76,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-af9ca7a4de06de516c2bef85
     resource: repo://tests/Test%20System%20(20200721)%20(MAME%20Rebuild).dat
-generated: { by: "claude-code", at: "2026-10-20T21:43:24.013Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Arcade Rebuilds and M3U Playlists
@@ -422,13 +424,18 @@ The rules worth knowing before changing this function:
 ## games.playlist_id: the join the rest of the toolchain reads
 
 The final step of each group is `update_game_playlist(connection, game.id,
-playlist_id)` for every game in the group
+Some(playlist_id))` for every game in the group
 ([src/generate_playlists.rs](../../src/generate_playlists.rs#L174-L176),
-[src/database.rs](../../src/database.rs#L654-L667)). The column was added by
+[src/database.rs](../../src/database.rs#L697-L714)). The column was added by
 [`20230106190403_add_playlist_id_to_games.sql`](../../migrations/20230106190403_add_playlist_id_to_games.sql)
 as `INTEGER REFERENCES romfiles(id) ON DELETE SET NULL` with an index — so a
 playlist is an ordinary `romfiles` row, and deleting it never deletes the discs, it
 only unlinks them.
+
+`purge-games` undoes this link. Once none of a playlist's discs has a file left,
+whether purged in that run or an earlier one, it moves the `.m3u` to the Trash
+and passes `None` for every disc
+([src/purge_games.rs](../../src/purge_games.rs#L146-L189)).
 
 ```
 games (Disc 1) ──playlist_id──▶ romfiles (Playlist: Game.m3u) ◀──playlist_id── games (Disc 2)

@@ -694,7 +694,11 @@ pub async fn update_game_jbfolder(connection: &mut SqliteConnection, id: i64, jb
     .unwrap_or_else(|_| panic!("Error while updating game with id {}", id));
 }
 
-pub async fn update_game_playlist(connection: &mut SqliteConnection, id: i64, playlist_id: i64) {
+pub async fn update_game_playlist(
+    connection: &mut SqliteConnection,
+    id: i64,
+    playlist_id: Option<i64>,
+) {
     sqlx::query!(
         "
         UPDATE games
@@ -803,7 +807,7 @@ pub async fn find_games_by_system_id_paged(
     .unwrap_or_else(|_| panic!("Error while finding games with system id {}", system_id))
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "mcp"))]
 pub async fn find_games_by_ids(connection: &mut SqliteConnection, ids: &[i64]) -> Vec<Game> {
     let sql = format!(
         "

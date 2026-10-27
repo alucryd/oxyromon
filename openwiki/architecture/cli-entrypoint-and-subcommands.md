@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-27T21:16:24.550Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -57,7 +57,7 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -217,10 +217,10 @@ only `(connection, progress_bar)`. The server pair breaks the shape
 deliberately: `mcp::main(pool, matches)` and `server::main(pool, matches)` take
 a `SqlitePool` because they must multiplex requests.
 
-The dispatch table in `src/main.rs` covers nineteen always-available
+The dispatch table in `src/main.rs` covers twenty always-available
 subcommands, in vec order: `info`, `config`, `create-dats`, `import-dats`,
 `download-dats`, `import-irds`, `import-patches`, `import-keys`, `import-roms`,
-`purge-irds`, `sort-roms`, `convert-roms`, `export-roms`, `rebuild-roms`,
+`purge-games`, `purge-irds`, `sort-roms`, `convert-roms`, `export-roms`, `rebuild-roms`,
 `check-roms`, `purge-roms`, `purge-systems`, `generate-playlists`, and
 `benchmark`, plus the feature-gated `mcp` (`--read-only` exposes non-mutating
 tools only) and `server` (`--address`/`--port`). `import-keys` is the one

@@ -33,6 +33,7 @@ mod mutation;
 mod nsz;
 mod progress;
 mod prompt;
+mod purge_games;
 mod purge_irds;
 mod purge_roms;
 mod purge_systems;
@@ -77,6 +78,7 @@ async fn main() -> Result<()> {
         import_patches::subcommand(),
         import_keys::subcommand(),
         import_roms::subcommand(),
+        purge_games::subcommand(),
         purge_irds::subcommand(),
         sort_roms::subcommand(),
         convert_roms::subcommand(),
@@ -143,6 +145,7 @@ async fn main() -> Result<()> {
                     download_dats::main(connection, sub_matches, &progress_bar).await?
                 }
                 "import-irds" => import_irds::main(connection, sub_matches, &progress_bar).await?,
+                "purge-games" => purge_games::main(connection, sub_matches, &progress_bar).await?,
                 "purge-irds" => purge_irds::main(connection, sub_matches, &progress_bar).await?,
                 "import-patches" => {
                     import_patches::main(connection, sub_matches, &progress_bar).await?

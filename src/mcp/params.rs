@@ -188,6 +188,15 @@ pub(crate) struct PurgeSystemParams {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub(crate) struct PurgeGamesParams {
+    /// Move the files of these games to their system's Trash directory.
+    pub game_ids: Vec<i64>,
+    /// Must be true to proceed.
+    #[serde(default)]
+    pub confirm: bool,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub(crate) struct PurgeIrdsParams {
     /// Purge every IRD (JB folder) game of this system.
     pub system_id: i64,
