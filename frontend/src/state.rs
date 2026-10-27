@@ -125,6 +125,8 @@ pub struct AppState {
     pub import_rom_modal_open: RwSignal<bool>,
     pub purge_rom_modal_open: RwSignal<bool>,
     pub purge_game_modal_open: RwSignal<bool>,
+    /// The game the purge dialog is about, picked from its row's menu.
+    pub purge_game_target: RwSignal<Option<Game>>,
     pub convert_rom_modal_open: RwSignal<bool>,
     pub convert_rom_system_id: RwSignal<i64>,
     pub import_patch_modal_open: RwSignal<bool>,
@@ -384,6 +386,7 @@ impl AppState {
             import_rom_modal_open: RwSignal::new(false),
             purge_rom_modal_open: RwSignal::new(false),
             purge_game_modal_open: RwSignal::new(false),
+            purge_game_target: RwSignal::new(None),
             convert_rom_modal_open: RwSignal::new(false),
             convert_rom_system_id: RwSignal::new(-1),
             import_patch_modal_open: RwSignal::new(false),
