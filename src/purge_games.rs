@@ -8,7 +8,8 @@ use anyhow::{Context, Result};
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use indicatif::ProgressBar;
 use sqlx::sqlite::SqliteConnection;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::btree_map::Entry;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 pub fn subcommand() -> Command {
@@ -48,16 +49,18 @@ pub async fn main(
             progress_bar,
             &format!("Purging games of \"{}\"", system.name),
         );
-        // only games with files have anything to purge
         let mut games = find_games_by_system_id(connection, system.id).await;
+        if let Some(game_names) = &game_names {
+            for game_name in game_names {
+                if !games.iter().any(|game| &game.name == *game_name) {
+                    print_warning(progress_bar, &format!("Game \"{}\" not found", game_name));
+                }
+            }
+        }
+        // only games with files have anything to purge
         games.retain(|game| game.completion > 0);
         let games = match &game_names {
             Some(game_names) => {
-                for game_name in game_names {
-                    if !games.iter().any(|game| &game.name == *game_name) {
-                        print_warning(progress_bar, &format!("Game \"{}\" not found", game_name));
-                    }
-                }
                 games.retain(|game| game_names.contains(&&game.name));
                 games
             }
@@ -81,14 +84,19 @@ pub async fn purge_games(
 ) -> Result<()> {
     let game_ids: HashSet<i64> = games.iter().map(|game| game.id).collect();
     let kept_directories = get_kept_directories(connection).await?;
-    let mut system_ids: BTreeSet<i64> = BTreeSet::new();
-    let mut playlist_ids: BTreeSet<i64> = BTreeSet::new();
+    // each system with its Trash and the playlists of its purged games
+    let mut systems: BTreeMap<i64, (System, PathBuf, BTreeSet<i64>)> = BTreeMap::new();
 
     for game in games {
         print_subheader(progress_bar, &format!("Purging \"{}\"", game.name));
-        let system = find_system_by_id(connection, game.system_id).await;
-        let trash_directory = get_trash_directory(connection, Some(&system)).await?;
-        system_ids.insert(system.id);
+        let (_, trash_directory, playlist_ids) = match systems.entry(game.system_id) {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => {
+                let system = find_system_by_id(connection, game.system_id).await;
+                let trash_directory = get_trash_directory(connection, Some(&system)).await?;
+                entry.insert((system, trash_directory, BTreeSet::new()))
+            }
+        };
 
         let romfile_ids: BTreeSet<i64> = find_roms_with_romfile_by_game_id(connection, game.id)
             .await
@@ -120,7 +128,7 @@ pub async fn purge_games(
                 progress_bar,
                 &romfile,
                 game,
-                &trash_directory,
+                trash_directory,
                 &kept_directories,
             )
             .await?
@@ -135,15 +143,13 @@ pub async fn purge_games(
         }
     }
 
-    for system_id in system_ids {
-        let system = find_system_by_id(connection, system_id).await;
-        let trash_directory = get_trash_directory(connection, Some(&system)).await?;
+    for (system, trash_directory, playlist_ids) in systems.values() {
+        let system_games = find_games_by_system_id(connection, system.id).await;
         // a playlist goes once none of the discs it lists has a file left,
         // whether purged in this run or an earlier one
-        for playlist_id in &playlist_ids {
-            let playlist_games: Vec<Game> = find_games_by_system_id(connection, system_id)
-                .await
-                .into_iter()
+        for playlist_id in playlist_ids {
+            let playlist_games: Vec<&Game> = system_games
+                .iter()
                 .filter(|game| game.playlist_id == Some(*playlist_id))
                 .collect();
             let Some(first_game) = playlist_games.first() else {
@@ -151,9 +157,13 @@ pub async fn purge_games(
             };
             let mut has_files = false;
             for game in &playlist_games {
-                has_files |= !find_roms_with_romfile_by_game_id(connection, game.id)
+                if !find_roms_with_romfile_by_game_id(connection, game.id)
                     .await
-                    .is_empty();
+                    .is_empty()
+                {
+                    has_files = true;
+                    break;
+                }
             }
             if has_files {
                 continue;
@@ -164,7 +174,7 @@ pub async fn purge_games(
                 progress_bar,
                 &playlist,
                 first_game,
-                &trash_directory,
+                trash_directory,
                 &kept_directories,
             )
             .await?
@@ -174,7 +184,7 @@ pub async fn purge_games(
                 }
             }
         }
-        compute_system_completion(connection, progress_bar, &system).await?;
+        compute_system_completion(connection, progress_bar, system).await?;
     }
 
     Ok(())

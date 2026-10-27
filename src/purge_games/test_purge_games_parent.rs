@@ -84,13 +84,14 @@ async fn test() {
     );
 
     // when both games are purged
-    purge_games(
-        &mut connection,
-        &progress_bar,
-        &[parent_game.clone(), child_game.clone()],
-    )
-    .await
-    .unwrap();
+    let both_games: Vec<Game> = find_games_by_system_id(&mut connection, system.id)
+        .await
+        .into_iter()
+        .filter(|game| game.id == parent_game.id || game.id == child_game.id)
+        .collect();
+    purge_games(&mut connection, &progress_bar, &both_games)
+        .await
+        .unwrap();
 
     // then both files go
     for romfile_id in [parent_romfile_id, child_romfile_id] {
