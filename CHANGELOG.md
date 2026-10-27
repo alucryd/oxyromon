@@ -41,7 +41,6 @@
 - Fixed `export-roms -f ORIGINAL` putting an arcade game's files directly in the output directory, next to the empty directory meant for them
 - Fixed converting a Wii U title's folder to 7Z or ZIP: its content files, named by their bare ID, were left out of the archive, because a DAT ROM named without an extension was taken for a converted format. Such ROMs are now original unless they are disks, the CHDs MAME lists, and a migration corrects those already imported
 - Fixed converting a Wii U title's folder to 7Z or ZIP writing the archive inside that folder; the archive now takes its place, and converting or exporting it back to ORIGINAL puts its files back in a folder of their own instead of next to it
-- Fixed `check-roms` panicking on a file without an extension, as a Wii U title's contents are
 - Fixed `purge-roms -t` skipping the ROM directory's own `Trash`, where `import-roms -t` puts files that match no system
 - Fixed `import-dats` and `download-dats` dropping a system's custom name and extension when updating it
 - Fixed 7z extraction and rewrites holding entire entries in memory, which could run to gigabytes for a disc image
@@ -50,6 +49,8 @@
 - The desktop app's Debian package no longer depends on `p7zip`
 - Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
 - Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
+- Fixed `purge-systems` leaving behind the directories it emptied, such as an arcade game's directory of loose files
+- Fixed `rebuild-roms` and `check-roms` panicking on a loose file whose name has no extension, such as HBMAME's `yrw801-m` after importing a merged ZIP, or a Wii U title's contents
 - Fixed `rebuild-roms` leaving copies of a parent's files in a clone's directory when another of the clone's files was missing from its parent
 - Fixed `check-roms`, `convert-roms` and `export-roms` saying "No matching games found" when the games named with `-g` exist but are incomplete; they now say how many incomplete games match, as only complete ones are processed
 - Fixed `rebuild-roms` exiting silently when there are no arcade systems; it now says so
