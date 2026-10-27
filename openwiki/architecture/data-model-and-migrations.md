@@ -118,10 +118,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T22:40:03.236Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -423,14 +423,16 @@ the server turns `None` into a 400 instead of a crash.
 ## Derived state: completion
 
 `systems.completion` and `games.completion` are `Completion` values
-(None/Partial/Full) recomputed in SQL, never set from Rust.
+(None/Partial/Full) recomputed in SQL, except for the Wii U pass below.
 `compute_system_completion` (in `util.rs`) is the single orchestrator: it first
 creates placeholder empty files for partial games, then picks the game-completion
 statement based on the system's `arcade` flag and `Merging` mode — split and
 merged sets ignore merged parent roms (a merged set files each clone's own roms
 where a split one does, only inside the parent's ZIP), non-merged sets ignore
 parent roms whose parent game is a BIOS, full sets consider every rom — then runs the jbfolder
-variant for console systems, and finally rolls the game states up into the
+variant for console systems, then the Wii U pass `update_nus_games_completion`,
+which regrades titles whose DAT entry spans several versions against their
+newest TMD (the one step that reads a file rather than staying in SQL), and finally rolls the game states up into the
 system with a `CASE` in `update_system_completion`. Every mutation-heavy
 subcommand (`import-dats`, `import-roms`, `sort-roms`, `check-roms`, `purge-roms`,
 `rebuild-roms`, `import-irds`) ends by calling it, which is why completion is
@@ -520,14 +522,14 @@ filename, and written in SQLite dialect. The repository's own checklist
 1. Create `migrations/<next timestamp>_<description>.sql`.
 2. If a column was added, update the matching struct in `src/model.rs`; if the
    change alters SQL, add or edit the query in `src/database.rs`.
-3. Run `cargo sqlx prepare -- --features server`.
+3. Run `cargo sqlx prepare -- --all-targets --features server`.
 4. Verify with `cargo build --features server`.
 
 ```mermaid
 flowchart TD
   A["write the next timestamped sql file in migrations"] --> B["update the row struct in src/model.rs if columns changed"]
   B --> C["add or edit queries in src/database.rs"]
-  C --> D["cargo sqlx prepare with the server feature"]
+  C --> D["cargo sqlx prepare for all targets with the server feature"]
   D --> E["each macro query is cached under .sqlx with its describe output"]
   E --> F["cargo build reads the cached describe data instead of a live database"]
   F --> G["commit the migration, the code, and the regenerated .sqlx files together"]
@@ -541,8 +543,10 @@ records each macro's describe output into the committed `.sqlx/` directory, whos
 file names are the query hashes and whose bodies record the query text, the
 parameter count and the described result columns. With the `server` feature the
 macro set is larger — `query.rs`, `mutation.rs` and `mcp/` add queries — which
-is why the documented command passes `-- --features server`, and why CI builds
-and tests with that feature so an unrefreshed cache cannot slip through. The
+is why the documented command passes `--features server`, and why CI builds
+and tests with that feature so an unrefreshed cache cannot slip through. It also
+passes `--all-targets`: without it `prepare` skips test code and deletes the
+cached data of queries only tests use, such as `SELECT * FROM roms ORDER BY name`. The
 whole payload lives one file per query in `.sqlx/`. Editing SQL, or changing a
 table a macro reads, invalidates the cached describe and the macro fails to
 compile until `prepare` runs again. The converse is equally useful at review

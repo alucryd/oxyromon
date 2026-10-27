@@ -610,6 +610,49 @@ pub async fn update_jbfolder_games_completion_by_system_id(
     .unwrap_or_else(|_| panic!("Error while marking game as complete"));
 }
 
+/// The ids of a system's games listing more than one CDN TMD (`tmd.<version>`):
+/// a NUS title whose DAT entry spans several versions.
+pub async fn find_multi_version_nus_game_ids_by_system_id(
+    connection: &mut SqliteConnection,
+    system_id: i64,
+) -> Vec<i64> {
+    sqlx::query_scalar!(
+        "
+        SELECT games.id
+        FROM games
+        JOIN roms ON roms.game_id = games.id
+        WHERE games.system_id = ?
+        AND roms.name LIKE 'tmd.%'
+        GROUP BY games.id
+        HAVING COUNT(*) > 1
+        ",
+        system_id,
+    )
+    .fetch_all(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while finding NUS games with system id {}", system_id))
+}
+
+pub async fn update_game_completion(
+    connection: &mut SqliteConnection,
+    id: i64,
+    completion: Completion,
+) {
+    let completion = completion as i64;
+    sqlx::query!(
+        "
+        UPDATE games
+        SET completion = ?
+        WHERE id = ?
+        ",
+        completion,
+        id,
+    )
+    .execute(connection)
+    .await
+    .unwrap_or_else(|_| panic!("Error while updating completion of game with id {}", id));
+}
+
 pub trait GameOperations {
     async fn update_sorting(&self, connection: &mut SqliteConnection, sorting: Sorting) -> bool;
 }

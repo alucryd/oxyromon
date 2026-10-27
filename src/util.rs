@@ -4,6 +4,7 @@ use super::database::*;
 use super::mimetype::*;
 use super::model::*;
 use super::progress::*;
+use super::wux::update_nus_games_completion;
 
 use anyhow::{Context, Result};
 use indicatif::ProgressBar;
@@ -427,6 +428,7 @@ pub async fn compute_system_completion(
     } else {
         update_games_completion_by_system_id(connection, system.id).await;
         update_jbfolder_games_completion_by_system_id(connection, system.id).await;
+        update_nus_games_completion(connection, progress_bar, system.id).await?;
     }
     update_system_completion(connection, system.id).await;
 

@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT games.id\n        FROM games\n        JOIN roms ON roms.game_id = games.id\n        WHERE games.system_id = ?\n        AND roms.name LIKE 'tmd.%'\n        GROUP BY games.id\n        HAVING COUNT(*) > 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "832de6a9b261c67ba0806b04af65140d2a423c0545b555fc70bebd36516a70cc"
+}

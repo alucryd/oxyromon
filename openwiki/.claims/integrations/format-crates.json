@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b729315f1fd3268cd559643dce6bc53b397ca68fa406684b710c9b15081ea033",
+  "pageVersion": "sha256:f5d5603fc8458a58aaf59c3f36fc10626d0d9026a81014bf70bf2476a20cd0f7",
   "claims": [
     {
       "id": "claim_caa17141f634409dbccb9366097931e2",
@@ -441,7 +441,7 @@
       "statement": "CHD and CIA stopped being child-process dependencies in oxyromon 0.25: chd-rs replaced chdman and cia-rs replaced ctrtool, both modules' get_version() return the literal \"built-in\", and chdman and ctrtool survive only as $CHDMAN/$CTRTOOL/$PATH reference binaries for the crates' tests. The README's supported-formats table names cia-rs as the CIA backend.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L17-L19",
+          "resource": "repo://CHANGELOG.md#L18-L20",
           "version": "repo-lines-v1:sha256:74e91bfda0ebc101ec5fda0bea1f51a396c7b033398336621ec5b28b07016348:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVkYzNkYTY0Njc2ZjI2NTU5ZjM4MzYzYjg4ZDQ0OGY4ZjNkMTMwNmVkNTZkN2I5YzU2NmVhMGY2N2MyMTAwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM1NDg0NGQwNzExNGYzOTFiNWQ5NmU2ZjAzZTJjZTkzYjNlYjVlZjg0YjJkMDU1ZDRmYmYyZWQ0NGIzNzI0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiNmRkZTlkZGNhYjk0NWYyYzY4ZGI1MjgwNTY5MDBmYThlYWM4YmE3YjE5NWI3ZDU3MzNmNzY2ZWMyODMyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZjYmIxZDJmYjU5ZGQ1YTc5N2E2Yjc2YjYzY2EyYjM0MTZmOTRkNjUxMjAwMDI5ZTM1ZTJmZTAxZDNhNjYxMSJ9"
         },
         {
@@ -546,11 +546,15 @@
     },
     {
       "id": "claim_cabb4d35b52043de9adb50c3638d21de",
-      "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it.",
+      "statement": "wux-rs's public API covers lossless WUAs: to_wua takes an optional store for update partitions, wua_to_wux and wua_to_wud take the same store and the keys to rebuild the disc, and disc_info and store_entries read what a WUA keeps without rebuilding it; it also exports parse_tmd with Tmd and Content, which oxyromon uses to grade a Wii U title against its newest TMD.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/src/lib.rs#L30-L54",
-          "version": "repo-lines-v1:sha256:48fb826fd90ddcaad8c1a179bfbba9a9e36951c4f070906c1ae85519235c55bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODU3NWFlNjFhZThiYmU1OWU3Yzg2MzRkMDMzNzU1MTIwN2NiOWI5ZmUwNzhhOTlmN2VjZTZmZTc2Mjg3MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZjZiMmE3NDFjYmJmYmI0YTg0ZDc1YmNjYzYxZWMxM2M5MzM5OGU5NzIzNWVmOTUzNmE0Y2ZhM2NiNzM5MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYzRlZWFhMzQ0NTVhMzNkYTRhZWE3NmE4ODA4NTk4NWZhMzk1MjNlZjFmYzZhYmY3N2IwZWVkZWQxMmU5ZDkifQ"
+          "resource": "repo://crates/wux-rs/src/lib.rs#L41-L53",
+          "version": "repo-lines-v1:sha256:82a527d55f8c87d9c33e448f5441515841d9a41db20775ab90aadb04125f851a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGM1ZTcyNmYxYjI5MjkwODlmZGJmY2FlYTdiNTMwODc5ODg1ZDlmMzhiM2ZiZDFhMjFhODBhNzRiMzdhMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MDRhNDMwY2ZjM2MwMTJlYzVkNjBlYzEzODI1ZWQ5ZWU0MjBmNTQ0NDI5ZDc5YmQ0YzYwYjYwY2NhNjU2NjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NzQxZTZlNTA4ODJlYzAxMWUyODhlYTcwYjgxOWZlNzdjZGQyZDI2ZmM1MzRiMWY3NDIzZDQyMThiZDJhZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyNjcwNzg5MTExMDFmMGU0NGM1MDFjODMwZjcyYjMxMjlhNTE2N2MwYWVjZjFiYjVhMjRiZTBmOTk2YThkODUifQ"
+        },
+        {
+          "resource": "repo://crates/wux-rs/src/nus.rs#L20-L66",
+          "version": "repo-lines-v1:sha256:ed53ca3b34226fcea848ffde5c05fe97f46d2b3ccd529102bdf36a4a9fa13d12:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2Y2Y5Y2FiNzllYWQ4NTczOTM0NzNhYWRlNDlmMjg4NjdjN2FhNGMyNjg0ODRkZmJjNmIxMzE5MDZjNzg3M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMGM0M2UwYTEwZTAyOWNhODgxNWU5OGFhZjI3MThhNzBhZmUwYWExZTA4ZTJkMjc3ZGI0ZTRiN2Q0M2E1MTEifQ"
         },
         {
           "resource": "repo://crates/wux-rs/src/rebuild.rs#L28-L66",
@@ -597,6 +601,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T21:20:28.066Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }

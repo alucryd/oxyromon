@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0b272893fb44531d22a37ac98f2db9deffcdbc7b14ba883e26793a6fdadcaf44",
+  "pageVersion": "sha256:d161bd2731aceaca182657c7ff08a619c971a17acbeba0a1c162f3497b4a2daa",
   "claims": [
     {
       "id": "claim_d42146da208949d8b60001552f88ad59",
@@ -29,7 +29,7 @@
           "version": "repo-lines-v1:sha256:780b17a0e84e53e5e97bcd2c66e5454c98a6294249c191a3af9a27c1d9c054e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQzMDllYzE5YmNmOGVmNGRhZGZkNzE3ZjIzNTVmODg2MTExODI2MGE2YTQyYTRkMDA1Y2UxYWYxZDFjNzZiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmZkMTY0ZGYzMDYzMTNjOTZmNGYwYmQxMzkxODUyNDRlNTNmYmYwZWI1OGI1ZmZhM2YzZmVlNjY1ZWRlODg1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://src/database.rs#L3176-L3214",
+          "resource": "repo://src/database.rs#L3219-L3257",
           "version": "repo-lines-v1:sha256:840815d5490c7d2c52f9fae5639922f31d6730822f70adfefae5143413efa857:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZjdiOWQ4NzkxMGM5NmEzNjljNTIwODA1NmYyNGI2ZWM2N2YxMjVjZTlkNDkwODI4MzcxMjgzODE0MDgzOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMTAzODViY2RlNDRmYzRjNTRlYWJlM2E0YTNiMzJiN2E0MTljOTJkYzExZDg0NDFmNTdiZWNhZTJjODZlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -65,7 +65,7 @@
           "version": "repo-lines-v1:sha256:5bc5ba0a1a65c2b162434a1a40f3ac1712d886a3c03f7f2b1873a2b2873e3072:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNTBkZDljODc3MzEyZmZhY2I2YzcwMzBmZjNhY2NkZjVjMTI4MTNkNDg4YWQ2NDUwMTcxZTM5MGNjYzIxODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
         },
         {
-          "resource": "repo://src/database.rs#L3141-L3174",
+          "resource": "repo://src/database.rs#L3184-L3217",
           "version": "repo-lines-v1:sha256:3c021d6abb09d2e11f1971e9e476332379d0ce114253a51f6f7fad6df0d00302:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlYWI3ZWQ0MGUwOWMxMjY4YjNiNDJhMWU5MWVlNjllZmYyNWNmNjlkZTJlYmQ3ZDAyOWQ0MzY3OTZkYTM4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwN2ZmODVkNDIxYWY0NzkwMGZlNmYwNjdmMWJiZWQyNTFlZTE1NTNiZGQ5MzQ0Yzk4NmI0ZjExYzJlODY5ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliY2RhNjVmMThkMjhmZWNlMWVjOGQ3MGQ3NGVjZmQzMTFiNDQ3NzdiZmU2YmUxYzliNDkwMWUxYTlmODZiZGEifQ"
         }
       ]
@@ -83,7 +83,7 @@
           "version": "repo-lines-v1:sha256:11c3f4782f81f0d765b0b865f04f0998a835bacc2b31b6b83389384cbd9ca186:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZDMzMGEyZDNjY2JlMTU5NGE3NzBiOWQyN2RlMjQ5MDk2MWJhODY2YTFjNzNhZTEzMTFiOWU3OTRlOTNlMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDE5YjJiZTE1Yjk2NWVjZDRiMDZjODI1NGYzYWViOTU4ODcxZjA5ODI1OGJlNWY5ODdhZDY2MTM0YTVhNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhNzM1ZjhmOTcyYzdhNzMxZjU2ZDA1MjlmZWI2ZTMyZTU1ZTUzYWZhZjM5OWFiMzI3ZGY4YmYwZjIwOGQ0N2QifQ"
         },
         {
-          "resource": "repo://src/util.rs#L26-L34",
+          "resource": "repo://src/util.rs#L27-L35",
           "version": "repo-lines-v1:sha256:931b24619b0ad8eb3d812799d0fc2ebb74a7898a03d69dc859d4efcb5d13413e:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZmMzYxOGY4NmJkNjkzZDQ3ODA0OTkwNzg2MGI5ZjQ1NmIwYmI5NTI5MzVlZmMyYzhhNDk0NDYzNjBiNTQ4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzliOWI4YTc3YWU0OGEyMGNhZTBiMGVlOGI0ZDU2ODA0YjUzODg3YzA0Mjc4NDExM2UzYjFmYmE4ZmNjMDM5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWIzOGU3MmFiN2RhNGE0MjU1ZTEwZTdmMWRmMjQ2ZDYyZmJlN2ZlMzkxN2U2YTc5NjUzMmE2NmQ4NzQ4M2JlMiJ9"
         }
       ]
@@ -159,7 +159,7 @@
       "statement": "The config subcommand exposes one -n/--system flag (percent globs resolved via find_systems_by_name_like) plus six operations (--list, --get, --set, --unset, --add, --remove) each declared conflicts_with_all of the others, and main fans an edit out over every system matching the glob through prompt_for_systems_like while a read collapses to a single system through prompt_for_system_like; an edit glob with no match warns and returns Ok.",
       "evidence": [
         {
-          "resource": "repo://README.md#L348-L365",
+          "resource": "repo://README.md#L350-L367",
           "version": "repo-lines-v1:sha256:9bb29a7d767b9bff427bfbdd00a3ce3e6b413b19e8e9d52a1f6882948e82699c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlN2UyMmU2ZjZjNWIxMzVkM2FiMzZmMmJlMzYwZmFhOGM3NzBiNjRjMGRiZDg5ZmMxMzM5OWE4OTcxYjRiNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MDY2MTIyMWE2MTM1NzU2YjFmYzc4ZWQ1NWQyMWM0YTYzMTZlM2EyNTY4NDU1M2E2NTAwZjE4MGJmZDY1MmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5MTBiYjE0ZDFkNzZmMzUyNzZmMTM4YTljNGMxZDQ4NDAyYmY2ZTg5NmQ4MTE1YjIxMjljZDc4MjI5OTNhNGYifQ"
         },
         {
@@ -243,7 +243,7 @@
           "version": "repo-lines-v1:sha256:328b5c7e04cb449428db5a21baccdd3ea6049fd80e8798c9f8fb51f85d7c4a1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkzNjg2ZjY1ZjI3OTIxNjMxMGYzN2JmZmMxZDNhZWU4Y2NkYTliYmFkMjRhYmZmODJlOGZhMWE3MDdhYjE3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNmMTlmMTI2MGJkOGFmOTM2NTAwMmRmYjJjMWYwOGJlODMzMzRiNzU3MDA0Y2VjMjZhMzRjZThhMGZkODhlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVmMWFlNDM0YWQ0ZmM5ODYzMjI3YzI1MTc5NjExMzQ2ZjM3ZDQ4MDMyZTJlMTdjYzc2ZDk2OTExZjRhZmQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNkMmQ4MDgzMjJiMjEwYjNmZDdkMzc4MTgyMmUyOTBkNjc5NzdlZTE4ZmUxNTk5ZmU2ZjMyZTkyODE3NzlmOCJ9"
         },
         {
-          "resource": "repo://src/util.rs#L259-L265",
+          "resource": "repo://src/util.rs#L260-L266",
           "version": "repo-lines-v1:sha256:356d0cfdbefbd15e3b69fa1c6c1b3be831095c553679d5de770834e0ff830d19:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI2ZGZlZGQyN2NkODExNjk2MDUyM2EzYzQ4ZDY0Y2Q1MWIyZWM3OWJkYTIxYmFkYjIxNmMzN2VkYTU5NTkzOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDcxYTdlYjE2MTY3OWEzNzRmMGEyZGYwMjJjNzgwZDBkZmQ4ZDM4N2E0OWEyZWYxZGFjNDgxYTJhYjEzNjFjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjcyYWRmNTIwNDMzYjQ4MTBjMTZlM2VmZmYxNzNkMWZkZWE4ZWRiMDc5NWMwZjg3MzM0NGMxZTg4ZmFhY2M3ZiJ9"
         }
       ]
@@ -479,7 +479,7 @@
       "statement": "Adding a setting means four coordinated edits: classify the key in config.rs (slice membership or a match arm in choice_options, choice_list_options or integer_range, with a lowercase-serialized strum enum for choices, plus NULLABLES/SORTED_LISTS as needed), add a migration seeding the default, read it through the typed accessor with the system scope, and expose it in query.rs/mutation.rs only when the web UI needs it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L184-L190",
+          "resource": "repo://AGENTS.md#L183-L189",
           "version": "repo-lines-v1:sha256:be415a40abc3351cb271599e999c84455cfd7246f70a01cbafa6c88b3d2a7804:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTM4MTFmMzNlYjJmNjMyOGUyZGZmMjI5YmFkNzdjMjJmNWU4MGQ4ZjlmMmYzYmQ5YzBiYTgwMDQzN2Q5NzE3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzM3ODAzNzBmYTllZjMwNTMyNTg0MjZlOTcwNmZmY2RlZGJlYmNlYTY3NDQ1Y2FmNjNkNTcyNzU3YjQ2MDAwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIyNjA4ZWVjNzYwNGQ1OGEwNGRmMjFmZWNjNTNkZGFlYmZiYmUzOGNhOGI1NjQxYzAxODQxNzZjOTM2ZmU5ZSJ9"
         },
         {
@@ -637,6 +637,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-26T23:15:44.056Z"
   }
 }

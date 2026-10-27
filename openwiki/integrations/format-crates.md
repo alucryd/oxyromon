@@ -70,6 +70,8 @@ sources:
     resource: repo://crates/wux-rs/src/io.rs
   - id: openwiki-source-fb3fc971ccda3173fb55c35e
     resource: repo://crates/wux-rs/src/lib.rs
+  - id: openwiki-source-50f94ae1d9f2b065641770f1
+    resource: repo://crates/wux-rs/src/nus.rs
   - id: openwiki-source-8b154e92f317de1d79a56d61
     resource: repo://crates/wux-rs/src/rebuild.rs
   - id: openwiki-source-a7055168e07a2f5ab1abc26e
@@ -132,10 +134,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Format Crates in crates/
@@ -475,7 +477,9 @@ installable without the organizer.
   progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
   `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
   `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
-  stream and `load_keys` for Cemu's `keys.txt`. `cemu_keys_path`, and the
+  stream, `load_keys` for Cemu's `keys.txt`, and `parse_tmd` with its `Tmd` and
+  `Content`, which oxyromon reads to grade a Wii U title against its newest
+  version. `cemu_keys_path`, and the
   `dirs` dependency it needs, exist only with the `cli` feature. `STORE_DIR` names the
   `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
   [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).

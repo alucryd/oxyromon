@@ -56,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-26T23:15:44.056Z
 ---
 
 # Builds, Distribution and Releases
@@ -317,7 +317,7 @@ flowchart TD
   does not exist yet. "Current version" means the `version` field in `Cargo.toml`.
   Format crates keep their own changelogs in the same shape.
 - **Offline query data must be committed.** `sqlx` verifies queries at compile time,
-  so `migrations/` and query changes require `cargo sqlx prepare -- --features
+  so `migrations/` and query changes require `cargo sqlx prepare -- --all-targets --features
   server` to refresh `.sqlx/`. Without it the build needs a live `DATABASE_URL`,
   which cross containers and the Docker builds do not have — a query change left
   unprepared breaks the release matrix rather than just the developer's machine.
