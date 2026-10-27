@@ -141,17 +141,17 @@ pub async fn main(
     matches: &ArgMatches,
     progress_bar: &ProgressBar,
 ) -> Result<()> {
-    let mut systems: Vec<System> = vec![];
-    if let Some(system_names) = matches.get_many::<String>("SYSTEM") {
-        for system_name in system_names {
-            systems.append(&mut find_systems_by_name_like(connection, system_name).await);
+    // -s is authoritative: matching no system must not fall back to all of them
+    let systems: Vec<Option<System>> = match matches.get_many::<String>("SYSTEM") {
+        Some(system_names) => {
+            let systems = resolve_systems_by_name_like(connection, system_names).await;
+            if systems.is_empty() {
+                bail!("No matching system found");
+            }
+            systems.into_iter().map(Some).collect()
         }
-    }
-    systems.dedup_by_key(|system| system.id);
-    let mut systems: Vec<Option<System>> = systems.into_iter().map(Some).collect();
-    if systems.is_empty() {
-        systems.push(None);
-    }
+        None => vec![None],
+    };
 
     let trash = matches.get_flag("TRASH");
     let delete = matches.get_flag("DELETE");
@@ -3195,5 +3195,7 @@ mod test_zip_single_file;
 mod test_zip_single_file_extract;
 #[cfg(test)]
 mod test_zip_special_characters;
+#[cfg(test)]
+mod test_unknown_system;
 #[cfg(test)]
 mod test_zso;
