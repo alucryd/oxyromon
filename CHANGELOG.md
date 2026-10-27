@@ -49,6 +49,7 @@
 - The desktop app's Debian package no longer depends on `p7zip`
 - Fixed `download-dats` panicking when redump.org or No-Intro could not be reached, and silently doing nothing when No-Intro's profile could not be read
 - Fixed the MCP `download_dats` tool reporting every system as downloaded; it now lists each as imported, already up to date or failed, and its description says it imports
+- Fixed `import-roms -s` matching against every system when the name matched none, as after a typo; it now fails with "No matching system found"
 - Fixed `purge-systems` leaving behind the directories it emptied, such as an arcade game's directory of loose files
 - Fixed `rebuild-roms` and `check-roms` panicking on a loose file whose name has no extension, such as HBMAME's `yrw801-m` after importing a merged ZIP, or a Wii U title's contents
 - Fixed `rebuild-roms` leaving copies of a parent's files in a clone's directory when another of the clone's files was missing from its parent
