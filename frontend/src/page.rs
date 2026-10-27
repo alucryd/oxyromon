@@ -546,6 +546,17 @@ fn GamesCard() -> impl IntoView {
                     }
                 }
                 on:keydown=move |ev: web_sys::KeyboardEvent| {
+                    // Keys pressed in a row's action menu belong to the menu.
+                    let in_menu = ev
+                        .target()
+                        .and_then(|target| {
+                            wasm_bindgen::JsCast::dyn_into::<web_sys::Element>(target).ok()
+                        })
+                        .and_then(|element| element.closest("wa-dropdown").ok().flatten())
+                        .is_some();
+                    if in_menu {
+                        return;
+                    }
                     let total = state.filtered_games.with(Vec::len);
                     if total == 0 {
                         return;
@@ -582,6 +593,7 @@ fn GamesCard() -> impl IntoView {
                         let weight = if game.sorting == 1 { "row-elected" } else { "" };
                         let description = game.description.clone().unwrap_or_default();
                         let selected = move || state.game_id.get() == id;
+                        let has_files = game.completion > 0;
                         view! {
                             <div class=move || row_class(position, selected())>
                                 <button
@@ -601,6 +613,38 @@ fn GamesCard() -> impl IntoView {
                                 >
                                     {name.clone()}
                                 </button>
+                                <div style="padding-inline-end: var(--wa-space-2xs);">
+                                    <Show
+                                        when=move || state.purging_game_id.get() == id
+                                        fallback=move || {
+                                            let game = game.clone();
+                                            view! {
+                                                <wa-dropdown>
+                                                    <button
+                                                        slot="trigger"
+                                                        class="plain-button icon-button"
+                                                        aria-label="Game actions"
+                                                    >
+                                                        <wa-icon name="ellipsis-vertical"></wa-icon>
+                                                    </button>
+                                                    <wa-dropdown-item
+                                                        variant="danger"
+                                                        disabled=!has_files
+                                                        on:click=move |_| {
+                                                            state.purge_game_target.set(Some(game.clone()));
+                                                            state.purge_game_modal_open.set(true);
+                                                        }
+                                                    >
+                                                        <wa-icon slot="icon" name="trash"></wa-icon>
+                                                        Purge
+                                                    </wa-dropdown-item>
+                                                </wa-dropdown>
+                                            }
+                                        }
+                                    >
+                                        <wa-spinner></wa-spinner>
+                                    </Show>
+                                </div>
                             </div>
                         }
                     }
@@ -651,23 +695,7 @@ fn RomfilesCard() -> impl IntoView {
     };
     view! {
         <div class="panel">
-            <CardHeader title="ROM Files" loading=state.loading_roms>
-                <Show
-                    when=move || state.purging_game_id.get() == -1
-                    fallback=|| view! { <wa-spinner></wa-spinner> }
-                >
-                    <Show when=move || !state.romfiles.with(Vec::is_empty)>
-                        <button
-                            class="plain-button icon-button"
-                            aria-label="Purge this game"
-                            title="Purge this game"
-                            on:click=move |_| state.purge_game_modal_open.set(true)
-                        >
-                            <wa-icon name="trash"></wa-icon>
-                        </button>
-                    </Show>
-                </Show>
-            </CardHeader>
+            <CardHeader title="ROM Files" loading=state.loading_roms />
             <div class="panel-body">
                 <For each=rows key=|entry| entry.clone() let:entry>
                     {
@@ -804,21 +832,18 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
 fn PurgeGameModal() -> impl IntoView {
     let state = expect_context::<AppState>();
     let open = state.purge_game_modal_open;
+    let target = state.purge_game_target;
     let name = move || {
-        let game_id = state.game_id.get();
-        state.games.with(|games| {
-            games
-                .iter()
-                .find(|game| game.id == game_id)
+        target.with(|game| {
+            game.as_ref()
                 .map(|game| game.name.clone())
                 .unwrap_or_default()
         })
     };
 
     let confirm = move |_| {
-        let game_id = state.game_id.get_untracked();
-        if game_id != -1 {
-            spawn_local(async move { purge_game(state, game_id).await });
+        if let Some(game) = target.get_untracked() {
+            spawn_local(async move { purge_game(state, game.id).await });
         }
         open.set(false);
     };
