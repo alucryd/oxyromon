@@ -15,7 +15,7 @@ use crate::api::sort_roms;
 use crate::components::settings_modal::SettingsModal;
 use crate::model::{Game, Rom, Romfile, Sizes, System};
 use crate::state::{AppState, ROW_HEIGHT};
-use crate::ui::{Modal, SizeTile, StatTile, control_number, use_media_query};
+use crate::ui::{DeleteDialog, SizeTile, StatTile, control_number, use_media_query};
 use crate::ui::{ScrollWindow, Spacer};
 
 fn system_color(system: &System) -> &'static str {
@@ -636,7 +636,7 @@ fn GamesCard() -> impl IntoView {
                                                         }
                                                     >
                                                         <wa-icon slot="icon" name="trash"></wa-icon>
-                                                        Purge
+                                                        Delete
                                                     </wa-dropdown-item>
                                                 </wa-dropdown>
                                             }
@@ -792,82 +792,87 @@ fn StatsCard() -> impl IntoView {
     }
 }
 
+/// What only the Trash empties: said in both delete dialogs.
+const TRASH_NOTE: (&str, &str) = (
+    "circle-info",
+    "Nothing leaves the disk until the Trash is emptied with Purge ROM files.",
+);
+
+const SYSTEM_EFFECTS: &[(&str, &str)] = &[
+    ("database", "The system and its games are removed from the catalog."),
+    ("folder-open", "Its files move to the system's Trash folder."),
+    TRASH_NOTE,
+];
+
+const GAME_EFFECTS: &[(&str, &str)] = &[
+    ("database", "The game stays in the catalog, shown as missing."),
+    ("folder-open", "Its files move to the system's Trash folder."),
+    ("link", "Files shared with other games stay in place."),
+    TRASH_NOTE,
+];
+
 #[component]
 fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl IntoView {
     let state = expect_context::<AppState>();
-    let name = move || target.get().map(|system| system.name).unwrap_or_default();
-
-    let confirm = move |_| {
+    let name = Signal::derive(move || target.with(|system| system.as_ref().map(|system| system.name.clone()).unwrap_or_default()));
+    let detail = Signal::derive(move || {
+        target.with(|system| match system {
+            Some(system) if system.games_total > 0 => {
+                format!("{} of {} games complete", system.games_complete, system.games_total)
+            }
+            _ => "No games".to_string(),
+        })
+    });
+    let confirm = Callback::new(move |()| {
         if let Some(system) = target.get_untracked() {
             spawn_local(async move { purge_system(state, system.id).await });
         }
-        open.set(false);
         target.set(None);
-    };
+    });
 
     view! {
-        <Modal open=open title=Signal::derive(|| "Delete system".to_string()) size="xs">
-            <div class="wa-stack wa-gap-m">
-                <wa-callout variant="danger">
-                    <wa-icon slot="icon" name="triangle-exclamation"></wa-icon>
-                    {move || {
-                        format!(
-                            "Everything oxyromon knows about \"{}\" will be removed. Its files move to the system's Trash directory.",
-                            name(),
-                        )
-                    }}
-                </wa-callout>
-            </div>
-            <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
-                Cancel
-            </wa-button>
-            <wa-button slot="footer" variant="danger" appearance="filled" on:click=confirm>
-                Delete
-            </wa-button>
-        </Modal>
+        <DeleteDialog
+            open=open
+            title="Delete system"
+            name=name
+            detail=detail
+            effects=SYSTEM_EFFECTS
+            on_confirm=confirm
+        />
     }
 }
 
 #[component]
 fn PurgeGameModal() -> impl IntoView {
     let state = expect_context::<AppState>();
-    let open = state.purge_game_modal_open;
     let target = state.purge_game_target;
-    let name = move || {
-        target.with(|game| {
-            game.as_ref()
-                .map(|game| game.name.clone())
+    let name = Signal::derive(move || target.with(|game| game.as_ref().map(|game| game.name.clone()).unwrap_or_default()));
+    // The games list only ever shows the selected system's games.
+    let detail = Signal::derive(move || {
+        let system_id = state.system_id.get();
+        state.systems.with(|systems| {
+            systems
+                .iter()
+                .find(|system| system.id == system_id)
+                .map(|system| system.name.clone())
                 .unwrap_or_default()
         })
-    };
-
-    let confirm = move |_| {
+    });
+    let confirm = Callback::new(move |()| {
         if let Some(game) = target.get_untracked() {
             spawn_local(async move { purge_game(state, game.id).await });
         }
-        open.set(false);
-    };
+    });
 
     view! {
-        <Modal open=open title=Signal::derive(|| "Purge game".to_string()) size="xs">
-            <div class="wa-stack wa-gap-m">
-                <wa-callout variant="danger">
-                    <wa-icon slot="icon" name="triangle-exclamation"></wa-icon>
-                    {move || {
-                        format!(
-                            "The files of \"{}\" will move to the system's Trash directory, and the game will show as missing. Files shared with other games stay in place.",
-                            name(),
-                        )
-                    }}
-                </wa-callout>
-            </div>
-            <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
-                Cancel
-            </wa-button>
-            <wa-button slot="footer" variant="danger" appearance="filled" on:click=confirm>
-                Purge
-            </wa-button>
-        </Modal>
+        <DeleteDialog
+            open=state.purge_game_modal_open
+            title="Delete game"
+            name=name
+            detail=detail
+            effects=GAME_EFFECTS
+            on_confirm=confirm
+        />
     }
 }
 

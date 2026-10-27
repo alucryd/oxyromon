@@ -483,4 +483,33 @@
     border-inline-start: 3px solid var(--wa-color-danger-fill-loud);
     background-color: var(--wa-color-danger-fill-quiet);
   }
+
+  /* === Delete confirmations === */
+
+  /* The thing about to go, marked by a round danger badge, then one line per
+     consequence. */
+  .delete-badge {
+    flex: none;
+    inline-size: var(--wa-space-3xl);
+    block-size: var(--wa-space-3xl);
+    border-radius: var(--wa-border-radius-circle);
+    background-color: var(--wa-color-danger-fill-quiet);
+    color: var(--wa-color-danger-on-quiet);
+    font-size: var(--wa-font-size-l);
+  }
+
+  .delete-name {
+    font-weight: var(--wa-font-weight-semibold);
+    overflow-wrap: anywhere;
+  }
+
+  .delete-effects {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .delete-effects wa-icon {
+    color: var(--wa-color-text-quiet);
+  }
 }
