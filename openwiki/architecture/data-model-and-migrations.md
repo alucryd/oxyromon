@@ -106,6 +106,8 @@ sources:
     resource: repo://src/model.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
+  - id: openwiki-source-82e96c0f155bab36abef9bdf
+    resource: repo://src/purge_games.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-f314ed3b08dd849d591fdb0f
@@ -118,10 +120,10 @@ sources:
     resource: repo://src/transcode.rs
   - id: openwiki-source-66dda2cecfc81c486446cc8e
     resource: repo://src/util.rs
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Data Model, SQLite Usage and Migrations
@@ -303,7 +305,8 @@ is already registered unless `--force` is given.
 Parent/child structures are self-referential rather than junction tables:
 `games.parent_id` is the clone-to-parent link, `games.bios_id` the BIOS a game
 needs, `games.playlist_id` the `.m3u` romfile a game belongs to
-(`ON DELETE SET NULL`), `roms.parent_id` the merged-set parent rom, and
+(`ON DELETE SET NULL`, and cleared explicitly by `purge-games` when it trashes
+the playlist), `roms.parent_id` the merged-set parent rom, and
 `romfiles.parent_id` the CHD a given CHD was written against (`ON DELETE
 SET NULL`). The romfile link is deliberately not "the archive that contains this
 file": oxyromon registers whole files, and the only child rows it creates point

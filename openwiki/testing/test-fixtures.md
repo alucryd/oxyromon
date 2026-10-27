@@ -120,10 +120,10 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN).dat
   - id: openwiki-source-706217a392bda126ca145591
     resource: repo://tests/Test%20System%20(20261025)%20(WUD).dat
-generated: { by: "claude-code", at: "2026-10-26T22:40:03.236Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T22:40:03.236Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 
@@ -538,11 +538,11 @@ The behaviours pinned by the suite:
 
 | Test | Contract |
 | --- | --- |
-| `handshake_exposes_the_full_surface` | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 19 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
+| `handshake_exposes_the_full_surface` | `initialize` names the server `oxyromon`; `tools/list` contains every one of the 20 tool names it enumerates; `prompts/list` is exactly `audit_system`, `onboard_system` **in that order**; `resources/list` is exactly `oxyromon://status`, `oxyromon://systems`, `oxyromon://settings` |
 | `status_reports_the_empty_library` | `structuredContent.version` equals `CARGO_PKG_VERSION`, `read_only` false, `systems` 0 |
 | `unknown_ids_are_tool_errors_with_pointers` | `get_system` with an unknown id is a **tool-level** `isError` whose text points at `list_systems` |
 | `import_dats_then_read_the_catalog_back` | Importing `tests/Test System (20200721).dat` through the tool yields one system with `games_total` 6, `search_games "test game"` count 6, `list_games limit 2` returning 2 of 6 |
-| `destructive_tools_need_confirmation` | `purge_roms` with `confirm` omitted, and `purge_systems` / `purge_irds` with `confirm: false`, error and mention `confirm` |
+| `destructive_tools_need_confirmation` | `purge_roms` and `purge_games` with `confirm` omitted, and `purge_systems` / `purge_irds` with `confirm: false`, error and mention `confirm` |
 | `convert_roms_accepts_any_case` | after a DAT import, `convert_roms` accepts `"zip"` and refuses `"nkit"` with "unknown format" |
 | `setting_validation_mirrors_the_cli` | `PREFER_REGIONS=broad` accepted, `mars` rejected with "valid", an unknown key rejected, and the accepted value read back through `get_settings` |
 | `read_only_hides_and_refuses_the_write_tools` | With `--read-only` the mutating tools are absent from `tools/list` **and** a direct `tools/call` returns a JSON-RPC `error` object, not a tool result |

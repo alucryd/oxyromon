@@ -56,10 +56,10 @@ sources:
     resource: repo://src/validator.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-25T14:55:31.619Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # HTTP Server, GraphQL API and Uploads
@@ -256,10 +256,14 @@ This is the invariant that most distinguishes the write path from the read path.
 
 `spawn_cli_action(pool, sse_tx, prefix, start_message, complete_message, fail_prefix, run)`
 is the single template behind `sort_roms`, `check_roms`, `generate_playlists`,
-`purge_roms`, `convert_roms` and `purge_irds`. It spawns a task, emits
+`purge_roms`, `convert_roms`, `purge_irds` and `purge_games`. It spawns a task, emits
 `{prefix}_started`, acquires a connection, runs the caller's closure, then emits
 `{prefix}_complete` or `{prefix}_error` — and the closure it runs is the CLI
 subcommand's own `main()`, reached through a synthesised `ArgMatches`.
+`purge_games` is the exception: it validates every id on the request path
+(refusing an empty list or an unknown id), then its closure calls
+`purge_games::purge_games` with the fetched `Game` rows directly instead of
+synthesising argv.
 
 ```mermaid
 sequenceDiagram

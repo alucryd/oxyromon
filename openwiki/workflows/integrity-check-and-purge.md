@@ -1,8 +1,8 @@
 ---
 type: workflow
 title: Integrity Checking, Purging and Trash
-description: How check-roms re-hashes imported ROM files and trashes mismatches (CHDs verified in process through the built-in chd-rs crate, per track for multi-track CDs), and how the purge family (purge-roms missing/orphan/trash/foreign, purge-systems, purge-irds) reconciles the database with the filesystem without ever deleting the ROM, system or Trash directories.
-tags: [check-roms, purge-roms, purge-systems, purge-irds, trash, integrity, crc, orphan, foreign, empty-directories, destructive]
+description: How check-roms re-hashes imported ROM files and trashes mismatches (CHDs verified in process through the built-in chd-rs crate, per track for multi-track CDs), and how the purge family (purge-roms missing/orphan/trash/foreign, purge-systems, purge-games, purge-irds) reconciles the database with the filesystem without ever deleting the ROM, system or Trash directories.
+tags: [check-roms, purge-roms, purge-systems, purge-games, purge-irds, trash, integrity, crc, orphan, foreign, empty-directories, destructive]
 sources:
   - id: openwiki-source-651d1fb6c9e49916a916ab51
     resource: repo://Cargo.toml
@@ -58,6 +58,10 @@ sources:
     resource: repo://src/nsz.rs
   - id: openwiki-source-fcdf0f9c4361c1ee384f2689
     resource: repo://src/prompt.rs
+  - id: openwiki-source-82e96c0f155bab36abef9bdf
+    resource: repo://src/purge_games.rs
+  - id: openwiki-source-794d7dc7594b0bee36240519
+    resource: repo://src/purge_games/test_purge_games_folder.rs
   - id: openwiki-source-1365b33b317f3d0f1e82b7b0
     resource: repo://src/purge_irds.rs
   - id: openwiki-source-3c95c695729a3d795fe5d1a9
@@ -92,20 +96,20 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T21:20:28.066Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T21:20:28.066Z
+    at: 2026-10-27T21:16:24.550Z
 ---
 
 # Integrity Checking, Purging and Trash
 
-Four subcommands close the loop between what the database believes is on disk and
+Five subcommands close the loop between what the database believes is on disk and
 what is actually on disk. `check-roms` re-hashes files against the catalog and
-*buries* the ones that no longer match; the `purge-*` trio then removes either
-the records (missing, orphan) or the files (trash, foreign, whole systems, IRD
-child files). Every one of them is a plain CLI subcommand registered in
-[src/main.rs](../../src/main.rs#L69-L170), and each is also reachable from the
+*buries* the ones that no longer match; the four `purge-*` commands then remove
+either the records (missing, orphan) or the files (trash, foreign, whole systems,
+single games, IRD child files). Every one of them is a plain CLI subcommand
+registered in [src/main.rs](../../src/main.rs#L71-L173), and each is also reachable from the
 GraphQL mutations the UI drives and from the MCP tools.
 
 They share two helpers in [src/util.rs](../../src/util.rs#L278-L338):
@@ -143,8 +147,8 @@ filename — and those files are swept by the same `--trash` pass as the flat na
 
 Two consequences matter when changing this area:
 
-- **A trashed file is still a `romfiles` row and still on disk.** `check-roms`
-  and `purge-systems` both *rename* rather than delete, and update the row in the
+- **A trashed file is still a `romfiles` row and still on disk.** `check-roms`,
+  `purge-systems` and `purge-games` all *rename* rather than delete, and update the row in the
   same step, so nothing is lost until `purge-roms --trash` runs.
 - **Trash is never emptied implicitly.** Nothing in this workflow physically
   deletes a trashed file except `purge-roms --trash`, and
@@ -439,10 +443,53 @@ the games and roms disappear with the system while the `romfiles` rows
 survive — pointing into `Trash`, where `purge-roms --trash` can find them
 ([src/purge_systems.rs](../../src/purge_systems.rs#L55-L84)).
 
-Note the asymmetry the UI reflects: the web UI's *Delete system* dialog warns
-that "Files on disk are left alone", because the files are only moved, never
-deleted, by this command
-([frontend/src/page.rs](../../frontend/src/page.rs#L748-L782)).
+The web UI's *Delete system* dialog says so: "Its files move to the system's
+Trash directory", because this command only moves files and never deletes them
+([frontend/src/page.rs](../../frontend/src/page.rs#L767-L801)).
+
+## purge-games: the files go to Trash, the games stay
+
+`purge-games` is the per-game counterpart. It keeps the catalog and retires the
+files: each selected game ends up missing, and its files sit in the system's
+`Trash` until `purge-roms --trash` deletes them. The CLI selects systems by
+`--system` and games by exact name with `--game`; without `--game` it prompts
+from the games that have files. A `--game` name that matches no game of the
+system prints a "not found" warning. A name that matches a game with no files is
+silently skipped, since there is nothing to purge
+([src/purge_games.rs](../../src/purge_games.rs#L35-L73)).
+
+`purge_games(connection, progress_bar, games)` is the shared entry point. The
+CLI, the `purgeGames` mutation and the MCP `purge_games` tool all call it with
+`Game` rows. For every game it walks the romfiles of the game's ROMs and moves a
+file only when it is safe to:
+
+1. **Shared files stay.** A file that also holds ROMs of a game outside the
+   purged set is skipped. Purging both games in one call moves it.
+2. **Parent CHDs stay.** A file that is the `romfiles.parent_id` of a CHD still
+   holding ROMs of another game is skipped, because that child cannot be read
+   without it.
+3. **Collisions are refused.** If the Trash path already exists, the file is
+   left in place with a warning and its ROMs stay linked.
+4. **Missing files are forgotten.** A file already gone from disk has its
+   `romfiles` row deleted.
+
+A moved file keeps its row, now pointing into Trash, and every ROM it held is
+unlinked (`romfile_id` set to NULL). So the game reads as missing, and
+`sort-roms` does not move the file back
+([src/purge_games.rs](../../src/purge_games.rs#L77-L145)).
+
+The Trash path keeps the game's folder when the file sits in one. The path is
+rebuilt from the rightmost component equal to the game name, which covers
+arcade sets, JB folders and Wii U NUS titles, so same-named files of different
+games do not collide. Files outside such a folder land in the Trash root. After
+each move, `remove_empty_directories` tidies the old location
+([src/purge_games.rs](../../src/purge_games.rs#L197-L243)).
+
+Playlists are handled once per system after the games. A playlist is trashed
+only when none of the games listing it still has a ROM with a file, counting
+games purged in earlier runs. Its games then get `playlist_id` cleared.
+Finally `compute_system_completion` runs for every system touched
+([src/purge_games.rs](../../src/purge_games.rs#L146-L189)).
 
 ## purge-irds: un-associating a PS3 JB folder
 
@@ -477,14 +524,14 @@ through `get_trash_directory`.
 The three entry surfaces agree on the work and disagree precisely on the
 destructive boundary.
 
-| Path | check-roms | purge-roms | purge-systems | purge-irds |
-| --- | --- | --- | --- | --- |
-| CLI | prompts + `-y` | interactive `confirm` unless `-y` | interactive selection | interactive loop unless `--system` |
-| GraphQL (`src/mutation.rs`) | `-a` or `--system`, hidden bar | always `-y` | calls `purge_system` directly | always `--system` |
-| MCP (`src/mcp/write.rs`) | `system_id` or `all: true` | flags + `confirm: true`, forced `--yes` | `confirm: true` | `confirm: true` |
+| Path | check-roms | purge-roms | purge-systems | purge-games | purge-irds |
+| --- | --- | --- | --- | --- | --- |
+| CLI | prompts + `-y` | interactive `confirm` unless `-y` | interactive selection | `--game` or interactive selection | interactive loop unless `--system` |
+| GraphQL (`src/mutation.rs`) | `-a` or `--system`, hidden bar | always `-y` | calls `purge_system` directly | game ids, calls `purge_games` directly | always `--system` |
+| MCP (`src/mcp/write.rs`) | `system_id` or `all: true` | flags + `confirm: true`, forced `--yes` | `confirm: true` | game ids + `confirm: true` | `confirm: true` |
 
 - **GraphQL drives them over SSE.** `mutation::check_roms`,
-  `mutation::purge_roms` and `mutation::purge_irds` hand the work to
+  `mutation::purge_roms`, `mutation::purge_irds` and `mutation::purge_games` hand the work to
   `spawn_cli_action`, which acquires a pooled connection *inside* the task and
   reports `{prefix}_started` / `_complete` / `_error` on the SSE stream; the
   mutation returns immediately. `purgeSystem` follows the same event contract but
@@ -498,16 +545,18 @@ destructive boundary.
   *orphan* under "Remove from database" and *trash* and *foreign* under a
   visually flagged "Delete files from disk" section
   ([frontend/src/components/purge_rom_modal.rs](../../frontend/src/components/purge_rom_modal.rs#L47-L96)).
+  Purging a game is a trash button on the ROM files card, behind its own
+  confirmation dialog.
   On `purge_complete` the frontend drops a purged system from the selection,
   since there is nothing left of it to fetch
   ([frontend/src/sse.rs](../../frontend/src/sse.rs#L52-L60)).
 - **MCP gates exactly the file-deleting operations behind `confirm: true`.**
   `purge_roms` requires it only when `trash` or `foreign` is set — `missing` and
-  `orphan` are record-only — while `purge_systems` and `purge_irds` require it
-  unconditionally; all three carry `destructive_hint = true`, refuse with
+  `orphan` are record-only — while `purge_systems`, `purge_games` and
+  `purge_irds` require it unconditionally; all four carry `destructive_hint = true`, refuse with
   `read_only_denial` under `--read-only`, and answer a missing confirmation with
   the `need_confirm` tool error
-  ([src/mcp/write.rs](../../src/mcp/write.rs#L583-L722),
+  ([src/mcp/write.rs](../../src/mcp/write.rs#L608-L790),
   [src/mcp/actions.rs](../../src/mcp/actions.rs#L40-L50)).
   `check_roms` is annotated `idempotent_hint = true` and needs no confirm, even
   though it trashes — it never destroys data.
@@ -533,11 +582,13 @@ The bundled `audit_system` prompt encodes the intended operator sequence:
   are opt-in at both the CLI (`-t`/`-f`) and MCP (`confirm: true`) layer.
 - **Transaction scope is per-unit**, not per-invocation: `check_system` commits
   per system, `purge_romfiles` commits per category, `purge_ird` commits per
-  game. An error midway leaves earlier units committed — which is why each loop
+  game, and `purge_games` runs without a transaction, so each moved file and
+  its unlinked ROMs are already final when a later file fails. An error midway leaves earlier units committed — which is why each loop
   prints its own count rather than reporting only at the end.
 - **Completion is the visible aftermath.** `check-roms` recomputes it only when
   it trashed something; `purge-roms` recomputes it for every system
-  unconditionally; `purge-irds` recomputes the one system it touched. See
+  unconditionally; `purge-games` and `purge-irds` recompute the systems they
+  touched. See
   [Arcade Rebuilds and M3U Playlists](arcade-rebuild-and-playlists.md) for how
   `compute_system_completion` chooses its SQL.
 - **`roms.original` decides what `check-roms` will even look at.**
@@ -570,3 +621,13 @@ WUA's store entry survives while a stray file in the store is deleted, and
 holding an `import-roms` reject ([src/purge_roms/test_foreign_subfolder.rs](../../src/purge_roms/test_foreign_subfolder.rs#L32-L42),
 [src/purge_roms/test_trashed.rs](../../src/purge_roms/test_trashed.rs#L58-L75),
 [src/purge_roms/test_trashed_rom_directory.rs](../../src/purge_roms/test_trashed_rom_directory.rs#L69-L79)).
+
+The purge-games tests each pin one safety rule. `test_purge_games_shared` keeps a file that
+also stores another game's ROM. `test_purge_games_parent` keeps a parent CHD
+while its child's game remains, and moves both files once both games are purged. `test_purge_games_clash` leaves both files untouched
+when the Trash path is taken. `test_purge_games_missing` drops the row of a file
+already deleted by hand. `test_purge_games_folder` moves a Wii U NUS title folder
+whole into Trash and runs `sort-roms` afterwards to show it stays there, and
+`test_purge_games_playlist` trashes the M3U only once its last disc is purged
+([src/purge_games/test_purge_games_folder.rs](../../src/purge_games/test_purge_games_folder.rs#L56-L82),
+[src/purge_games/test_purge_games_clash.rs](../../src/purge_games/test_purge_games_clash.rs#L44-L80)).
