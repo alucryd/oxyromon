@@ -96,10 +96,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:50:09.478Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-27T21:50:09.478Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -545,8 +545,8 @@ destructive boundary.
   *orphan* under "Remove from database" and *trash* and *foreign* under a
   visually flagged "Delete files from disk" section
   ([frontend/src/components/purge_rom_modal.rs](../../frontend/src/components/purge_rom_modal.rs#L47-L96)).
-  Purging a game is a trash button on the ROM files card, behind its own
-  confirmation dialog.
+  Purging a game is the Purge item in that game's actions menu in the games
+  list, behind its own confirmation dialog.
   On `purge_complete` the frontend drops a purged system from the selection,
   since there is nothing left of it to fetch
   ([frontend/src/sse.rs](../../frontend/src/sse.rs#L52-L60)).

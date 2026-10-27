@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-10-27T21:50:09.478Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-27T21:50:09.478Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -217,11 +217,7 @@ ROMs down to their `romfile`s, sorts by path and deduplicates — many ROMs shar
 archive — and the pane links each entry to `GET /romfiles/{id}` with `download`, a
 plain anchor rather than a fetch. `RomfilesCard` also strips the leading system
 directory segment for display, since the stored path is relative to
-`ROM_DIRECTORY`. Its header carries a trash button, shown only when the game has
-files, that opens `PurgeGameModal`; confirming calls `purge_game`, which sends the
-`purgeGames` mutation for the selected game alone. While `purging_game_id` is set
-the button is replaced by a spinner, until the `purge_games` SSE terminal event
-clears it. The statistics card is mixed too: system/game/ROM counts come from
+`ROM_DIRECTORY`. The statistics card is mixed too: system/game/ROM counts come from
 the same memos the lists do, and only the four aggregate sizes are a separate query
 per system.
 
@@ -377,6 +373,17 @@ children and exactly one `tabindex="0"` (the active row, falling back to the fir
 game), arrow/Home/End movement, and `focus_row` looking the DOM id up live so a
 row past the overscan simply does not take focus yet. Changing the system or any
 filter resets scroll to the top rather than stranding the view mid-list.
+
+Each game row also carries an actions menu, a `wa-dropdown` like the one on
+system rows. Today it holds a single danger item, Purge, disabled when the game
+has no files. Picking it stores the row's game in `purge_game_target` and opens
+`PurgeGameModal`, so the dialog acts on that game whether or not it is the
+selected one. Confirming calls `purge_game`, which sends the `purgeGames`
+mutation for that one game. While `purging_game_id` holds the row's id, a
+spinner replaces the menu until the `purge_games` SSE terminal event clears it.
+The list's keydown handler returns early for keys pressed inside a
+`wa-dropdown`, so arrows and Enter drive the menu instead of moving the
+selection.
 
 ## Web Awesome integration constraints
 
