@@ -135,7 +135,11 @@ async fn check_system(
 
     for romfile in &romfiles {
         let romfile_path = romfile.as_common(&mut transaction).await?.path;
-        let romfile_extension = romfile_path.extension().unwrap().to_str().unwrap();
+        // a NUS title's contents are named by their bare ID
+        let romfile_extension = romfile_path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .unwrap_or_default();
         let romfile_roms = roms_by_romfile_id.remove(&romfile.id).unwrap();
 
         print_subheader(
@@ -350,6 +354,8 @@ mod test_cso;
 mod test_iso_chd;
 #[cfg(test)]
 mod test_multiple_tracks_chd;
+#[cfg(test)]
+mod test_nus;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]
