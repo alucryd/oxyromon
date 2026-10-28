@@ -1063,7 +1063,7 @@ fn find_transforms(
             let Some(&entry) = files.get(&name) else {
                 continue;
             };
-            let hashed = content.flags & nus::HASHED != 0;
+            let hashed = content.is_hashed();
             let size = fst.extent(entry).2;
             let Some(at) = place(entry) else { continue };
             // A raw content's file is padded to the AES block size.

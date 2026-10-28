@@ -158,3 +158,22 @@ fn a_missing_h3_file_needs_the_common_key() {
     assert!(matches!(error, Error::MissingKey(_)), "{error}");
     assert!(!dir.path().join("00000012.h3").exists());
 }
+
+#[test]
+fn a_vwii_title_is_left_alone() {
+    let dir = tempfile::tempdir().unwrap();
+    common::nus(dir.path());
+    std::fs::remove_file(dir.path().join("00000012.h3")).unwrap();
+    // A vWii title's ID, whose type is not the Wii U's 0005.
+    let tmd_path = dir.path().join("title.tmd");
+    let mut tmd = std::fs::read(&tmd_path).unwrap();
+    tmd[0x18C..0x194].copy_from_slice(&0x0000_0007_4841_4341u64.to_be_bytes());
+    std::fs::write(&tmd_path, tmd).unwrap();
+    let before = names(dir.path());
+    assert!(
+        wux_rs::write_missing_h3(dir.path(), &[])
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(names(dir.path()), before);
+}

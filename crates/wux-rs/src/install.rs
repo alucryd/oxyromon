@@ -22,7 +22,7 @@ use crate::crypto::cbc_decrypt;
 use crate::disc::Source;
 use crate::error::{Result, corrupt};
 use crate::io::{finish, finish_dir, part};
-use crate::nus::{self, Content, HASHED, SHA1};
+use crate::nus::{self, Content, SHA1};
 use crate::wua::{DiscGame, open_nus_title};
 
 /// A hashed block, and how many share the H2 hashes that make one H3 hash.
@@ -73,7 +73,7 @@ pub fn to_nus(
                     content.index
                 ))
             })?;
-            let hashed = content.flags & HASHED != 0;
+            let hashed = content.is_hashed();
             if !content.size.is_multiple_of(if hashed { BLOCK } else { 16 }) {
                 return Err(corrupt(format!(
                     "content {:08x} is {} bytes",
@@ -172,7 +172,7 @@ pub fn write_missing_h3(dir: &Path, keys: &[Key]) -> Result<Vec<PathBuf>> {
     let missing: Vec<&Content> = tmd
         .contents
         .iter()
-        .filter(|c| c.flags & HASHED != 0 && !present.contains(&format!("{:08x}.h3", c.id)))
+        .filter(|c| c.is_hashed() && !present.contains(&format!("{:08x}.h3", c.id)))
         .collect();
     if missing.is_empty() {
         return Ok(Vec::new());
