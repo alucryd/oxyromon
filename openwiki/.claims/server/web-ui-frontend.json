@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f63678d9f41cd6a7cbbfec270564534655c04c4ae1e08b5d11417be964aa19c4",
+  "pageVersion": "sha256:8b79a8b83bdd77fb7f6945a9044b036e765495263c93020d377678fcd4aa0f85",
   "claims": [
     {
       "id": "claim_2916724381064a98beaccce1a88c3633",
@@ -383,12 +383,12 @@
       "statement": "Virtualization depends on a fixed row height shared as two constants in two languages: ROW_HEIGHT = 40.0 in state.rs and --row-height: 40px in styles.css, linked only by comments. ScrollWindow turns scrollTop/clientHeight into a half-open range with OVERSCAN = 8 and Spacer divs keep the scrollbar proportional; zebra striping is keyed off the row's absolute position rather than :nth-child so stripes do not shift as rows are recycled.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/page.rs#L50-L61",
-          "version": "repo-lines-v1:sha256:fbf7391f106e91556c02a56b152b7bcc7e81633d9c67891a78ce45514ece1143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MTQ2YzBkZWJhNzYwMDcwMTFiYjdlNWZhOTg4OTE5YTg3MjViYzRhZDVhYmVkNjVlMTQ2NDE0NjIwNGUxOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2NDk4NjA4M2ExMDZjNjU5MGI5MzNiNjZkNWIyNWM1ZDQ3YTFhNDUzM2ZkNTQxOTY2NmNmZWMzODNmYTFlMjEifQ"
+          "resource": "repo://frontend/src/page.rs#L53-L63",
+          "version": "repo-lines-v1:sha256:0213d413615f67fdda09572839360f6cf88e1fb78cbe534051e63633a10fa1a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNTg1ZWVhZWQ1ODM2MjRkNDQxZDQ5MTM3ZGY2YjU5MWRiZDQxNzRlNGJjOTE5ODE5NTY2ODBlZTRmYjNjOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MjIyZjNkMDljZDcwNDcyM2ZhYTQxNzg3YjI3OTU1ZmJhMzlmZTIyZWU5MjVlZTM4MTllZmYxZGU1ZTJmOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5YTc0MmY3NTI5MzkzODk1Y2VjMWQ5YzVkM2VmMDllNTIxNGNiMmZjYzY1YTg4NWE2ZGEwZTkwZmJiODg3MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZWRiYTBlYzI2ZDc1Nzc0MjlhYTdiOGFlZWIxOTczMGVhMDExZWUyMmMzMjBhZmU1OWQwZmI5ZjY5ZDAxYmIifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L584-L653",
-          "version": "repo-lines-v1:sha256:39f715ae3e921bbdb1bd443106f289d715dbb945e96b7141b54565796059c990:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNjQ3OWNjMjMwNDQwZmQ0MWU4MjI0MjE4Njc5Njk4NTU5ZDI4OTNiZDY3YjQzODBhZmFiODExYjM4YTU1YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTAwNTlmNDhjYTU2ZjZiNTBmZGM2OWExNWM3YjdlNjMzY2MxZTEzNjA4ZGFhNTBlZDkyM2JlYjBmNjM2ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1ODQ0OTVkYmYwZTM1YzNkYmIwYmUwNDJjNWJkNTE3MzBmMDQ0MWVhMmNiZTRhOTdjNzNkMzNjYWY2YTMzNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMmRjMzQwYjE0ZWYyZDIzZTgyMGM4YmFjYzNjNTZlNWVkODFmNjUzYWMzNTgxZGI4M2M5NjEzZDc2YTA4NTYifQ"
+          "resource": "repo://frontend/src/page.rs#L586-L652",
+          "version": "repo-lines-v1:sha256:35b1d11bfcf5a0d15c537d21d85150795d1a5e7e336d6eecfae67e4e6de57aa4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYTQ0NGZiYWRjMWU5MjBlMjVkMDdmZDliNWM0ZTYxMjAyOTk4YTg1NGI5MWY4OTE1OGU3ZmY2ODk1NjMwZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjQ5NGE3MTFjYTM5MDc0ZTk0ODg2MzQ4N2JkZWQzNTgyYjEwMWZkMjI4NGRhZDM0ZDE2MGY2MDMyYTcyZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjcwYjljMDFjZGUwZDkwZDgzMTVhYWE1NzQ5ODRmNWMyNGJjMjNjZWQ1MzcyYTkyNDRhNTZhMjJhZmEwOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWYwNWZmODkzYTg3ZDg3YTgxYjViZmViODU0YmZmMWM0MjM1OGMyMTllNjJiMWFmZmJjZDc4YWU0ZjZkM2MifQ"
         },
         {
           "resource": "repo://frontend/src/state.rs#L47-L49",
@@ -409,12 +409,12 @@
       "statement": "The games panel is a real role=listbox with role=option rows and exactly one tabindex=\"0\" (the active row, falling back to the first game); arrow/Home/End keys select and scroll, focus_row looks the row's DOM id up live so a row past the overscan simply does not take focus, and changing system or any filter resets scrollTop and the window rather than stranding the view mid-list.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/page.rs#L454-L545",
-          "version": "repo-lines-v1:sha256:ba43e1875ac3b9bfee72dab6fafab8b57edf8b3feae0231b286dcd3d2c6cabf4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3MmEzMzM3YzEzOTZiZDJhNmYzY2Q4NDM2MDc5MmMzZWRlM2NiOTk0NmU5NWQ3ZWVjNjhiNDkyZmVhZDRiMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MTU3ODA0ZTZhMWFmZDUzNzk3MmNjOWM5OTM1YzIyMDRjNWUyYjdiNzYyZmQ0NTU5ZTliNjgyY2JlMDhmYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNmExNGVjODczODE0NzI3ZjA5NmUwY2RjMzlmNjkwN2ZiMmU5MDIyMzBlYTQyM2NiMWExODIwNTA1MzUyNjMifQ"
+          "resource": "repo://frontend/src/page.rs#L458-L540",
+          "version": "repo-lines-v1:sha256:40b5dd6a5e0e8b2c444ec11e0db9ac87aa8c4a8c6faa46bcb8918ab752f68016:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMTEwZDQ4ZjAzYTBlNmUzYjJmNTAxMTZmZGVmODk0MjJiMDM4NDA0M2ZkMzBkYjAyNDk4YTcxYWI3ZGFiNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NmYxMTBjOTA0NjdiNGNlNmY1ZmMyODA5MjUxZDljZjg4MmYzM2U4ZjY1MTEwZmNiOGJlNzQ3ODU4MTIyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5ZmJkYzEwMjQyMGIwODU0ZDdmMDQ2YzVlNTNkYmVkYTg2ZmE0ZGE3Y2VmNDdhZDZkMWE3NGM1NmY0YzE4NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5OTFhNzI3NzRiMDQwZmFmMGFmMGFhNWRmMTRmOTg5Njk1ZjgxMThhZGFhMzVkOTFhNjA0ZjIxZDI2NzExMjEifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L546-L656",
-          "version": "repo-lines-v1:sha256:3af30195b81ec4dfadf24c81794a84b0b5d1b98e2fd2ca0c5099182dc5ba5c15:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGIzMzljMTdkNGNjNTRlNzBjNGZjZmVjYjYxMWJiOWU3ZDM2M2YyNWIxOGUwOTIzYTFkMzA2Y2M5NTkyNGU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiY2JmNGIxM2Q1NThmZDg4NWI4OTU0NGFiMmJlN2NiZTc2NjQxNGNiZWIwMDliZjM1NWRlMGQ3NmMzODQ3MGMyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOWI0NmU4ZjBiZTM3YzIwMmYzMWEwZTBhOTIzYTU4YTMzOGQwNTk4MjI1Yzk0Mjk5NGIwM2I3MTAyZDE4ZjJjIn0"
+          "resource": "repo://frontend/src/page.rs#L541-L656",
+          "version": "repo-lines-v1:sha256:98fc093f5242a7b43b098ee3a540ed7b454964d8a76f0407ded9f99f8f607888:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNzgyMzc4M2YwNTJlODU4YmEyNWNiMDBjNDAwYjdjNTg0YTM4NjkwMjhlOTE5N2IwMWQxNTc3NmI4MGJhNTFhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYjVkOTg3Y2Q5MmI4OTEzYjgwZWZkYmZjMGI0MjhiY2IwM2IwYTM2Y2E5ZTJiZTQ5YzRkNzcyZGVhMGQ2MWY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOWI0NmU4ZjBiZTM3YzIwMmYzMWEwZTBhOTIzYTU4YTMzOGQwNTk4MjI1Yzk0Mjk5NGIwM2I3MTAyZDE4ZjJjIn0"
         }
       ]
     },
@@ -471,7 +471,7 @@
           "version": "repo-lines-v1:sha256:ce4cd1f6f40940a6ef5bbcd0fd5ea6e2daa44fd0c41814152a6ac2def5724f22:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MmVhY2IwMjIzYWMwMDMwMjA3YTM1ZWJhNzIxZjExMzFhODRjZmU3YzZhNDM4YzczNmZjNjBlYWYyM2NlYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L874-L887",
+          "resource": "repo://frontend/src/page.rs#L907-L920",
           "version": "repo-lines-v1:sha256:41a783d0da2311bc274a074b5cf11e872b3b3106adaf5a63876b42fd0b34e01a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZjMzYjJiMzA3NTIzNDEzZmYxMjViMTdjYjNhYmZjNDVkM2JiMDY3ZDc4YzNmM2M1ZjZiNjI1YmNhZTdkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -590,7 +590,7 @@
     },
     {
       "id": "claim_38f1d6c4778943cda279c3817faace33",
-      "statement": "Nothing may load from a CDN at runtime — the UI is served by oxyromon server and bundled into the desktop app, both required to work offline. index.html calls setBasePath(\"/webawesome\") and setIconPath(\"/icons\") to override the Font Awesome CDN defaults, and the Trunk pre_build hook fetch-webawesome.sh vendors the pinned dist-cdn build plus an explicit icon allow-list into gitignored frontend/vendor/; its stamp hashes the icon list as well as both versions so adding an icon forces a re-fetch instead of silently rendering nothing.",
+      "statement": "Nothing may load from a CDN at runtime — the UI is served by oxyromon server and bundled into the desktop app, both required to work offline. index.html calls setBasePath(\"/webawesome\") and setIconPath(\"/icons\") to override the Font Awesome CDN defaults, and the Trunk pre_build hook fetch-webawesome.sh vendors the pinned dist-cdn build plus an explicit icon allow-list into gitignored frontend/vendor/; its stamp hashes the icon list as well as both versions so adding an icon forces a re-fetch instead of silently rendering nothing, and an icon name Font Awesome does not ship prints a warning rather than failing the fetch.",
       "evidence": [
         {
           "resource": "repo://AGENTS.md#L79-L81",
@@ -605,11 +605,11 @@
           "version": "repo-lines-v1:sha256:5d4c70c0bec2dd505b5d559bf433fb6bd18f9c0977126c6a3bffd1bdeed17d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDVjODI4YTIzY2YzMTg4ZDA3MTQ4NzU0Nzc0YmQwMGJiMzgzOWQ2MmUzMWUxNjBhZWEwYjgyODNkNWI4MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliZWEzMmRkMWY0OTA5M2QzM2NhNGZjNzA5ZjQ0MjA2MTQ1NDczZGU1MGQ4NWEwMTcxNTNkZGVlNGJlZWQyNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNzk0MGNhMTVhZWIzYmM2NDI0ZmQ5YzVmNjg1Nzk4Y2NhNGE3ZTE1NGQ5M2E4NTk1ZmU1ODYzZjQ0MjQ2MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MGI3MmI3MTBhNGI3MTA5YjZkNDZhNzQwY2IzNWZlZDlkMjZmNWI2MzQ4ZjUyN2IzYjQwMTE4YmYxOGMwODYifQ"
         },
         {
-          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L1-L33",
-          "version": "repo-lines-v1:sha256:fd6e8aa25c7c94cbe662ba7ca1b4127e5e0391ad84c81b1731757d85515c9d5c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYjIwODg2Mjk5YzNjOWQ2MTIxZjllZWMwNGQ2YWQ4ZWFmMWM5MjBiMjZlZWQyODk2MWVkYWI0ODBkZDU2OWIifQ"
+          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L1-L34",
+          "version": "repo-lines-v1:sha256:779be1cb1f141387abb43833ccdbd87ef3f5e8975fa2c0d27a702d40b62bf8a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlYjIwODg2Mjk5YzNjOWQ2MTIxZjllZWMwNGQ2YWQ4ZWFmMWM5MjBiMjZlZWQyODk2MWVkYWI0ODBkZDU2OWIifQ"
         },
         {
-          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L64-L90",
+          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L65-L91",
           "version": "repo-lines-v1:sha256:a2369882d575de73e269e3b9ba64fffbd285d7971a2fc27aa101efb4e8f845cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzOTIyNDI0NDNjYWI1ZTJhZTI1ODYzNWU3MWNkZGUzMmQxNThkNjM1Zjk5MjE5YjJhMmQ3MDMyYWQyODNmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNmU2NzgwNzY5MWJhZjQ0ZmYxNWIzNWE1ZjVhNWI2OGEyODMyZjYyNmFhM2UzZmRiNjE3OGNhYjFmY2Y0M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmYTc1ZTA4ZWNiNWRhNzgyODY2OWQ5MzFiZjNiODZiMTQ2ZTc0YzA3NWJmMWVmNzEzNmU3YTdmNTM3NjEwMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
@@ -816,19 +816,19 @@
     },
     {
       "id": "claim_c2cf8623abbf4eccbee88a14d70461d3",
-      "statement": "Each game row has a wa-dropdown actions menu whose Purge item is disabled when the game has no files; it stores the row's game in purge_game_target and opens PurgeGameModal, whose confirmation calls purge_game to send the purgeGames mutation for that game regardless of the current selection, and purging_game_id swaps that row's menu for a spinner until the purge_games SSE terminal event resets it.",
+      "statement": "Each game row has a wa-dropdown actions menu whose Delete item is disabled when the game has no files; it stores the row's game in purge_game_target and opens PurgeGameModal, whose confirmation calls purge_game to send the purgeGames mutation for that game regardless of the current selection, and purging_game_id swaps that row's menu for a spinner until the purge_games SSE terminal event resets it.",
       "evidence": [
         {
           "resource": "repo://frontend/src/api.rs#L479-L491",
           "version": "repo-lines-v1:sha256:faaf6c08d69b73f33e7425e00e6a787d54f40a271bb661da59f6cffcdf7c1237:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNTU4OTA0ZTZmMjg2MTE3ZmY5MDNiMzU5OTNiNjk0YTYyNGY4ZDQxYmM4MDU5NWRlYWUxMTMyOTJkODU5OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MzYwYWNlMjQxODA1ZTllMDVlNWE3OGViNWI2NjRhODJiYTkxYWYzYmI2ZjFjYzQ4YTM3MjMwMjY0ZjdjZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlYTZjM2U3MDIyYmY5NTM0OGNlZTJiZTU3NzFkODI1NDFhYzQ3MzIwOGQ3N2Y4Y2VkNjk0ZTYzYjAwOGY3MGYifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L588-L650",
-          "version": "repo-lines-v1:sha256:ef5df3f18d898bdc29e92391da8e03e7d04528885917f4ff5f8921bf42f5c728:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMjgzZGE5MDQ0YzQ3YTRkMjJkMDY4NDRkMTg3OTQ2ZWMzOTZjNjhiYjcyNzFlOGFhNzk2NDY1MTY5MGIzZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYTMyMWQzZjBlYWI2ZThjZTYzZTNmODVjNzg3MTg1YjBhNWQ2OGQ0NmJiMDY1ZGRjNTJjMTMzOWFiNDQ4YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZTYxMjczMzE4MWFhOWRiZGZkNjgwZDM0MjY0YTU5YzRhOTJhOGM0YzQxMzkxNjFkZWUwYzM4YWE1MWNiMWIifQ"
+          "resource": "repo://frontend/src/page.rs#L612-L645",
+          "version": "repo-lines-v1:sha256:ad75e2f71ef4480608c757802613e0f35366a905849fa7cc27811dd26fea405b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMzk4ZDY0OTVhODQzYmVmY2FmNzE0NzZjOGM1MjA5ODVjNDA1NmE1YWI1MzE5ZDliYzQyMWQwNDNkNmNkN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YmU3OGMzODJjM2NmYTI5OTdhOTkyOTZjNWQzNWU4YTJkMmZlMTM0NzFkNWY2MDQ5Y2UzY2MwYmE3NWM3YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOWZlOGVlZDhmMjljZjg0ZWY4YmQwZWVhYTBjMzM2NzliYjljODQ4MGI4Y2VkMTAxMTZjYWE1OWY0ZWUxM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3OWU5ZjVlOWU5NDgxMGYxMDBhYmQyNjYzMTJjYjZiNTZlYWQ0MzM5NjU4MDZiZDY4ZGQ4Y2NkOWIxYTFjM2QifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L831-L872",
-          "version": "repo-lines-v1:sha256:da0602b463705f5bc8bcf1d035928a31ee59063a360a225e863ebd9a1a4b6404:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNjQ3ZGM0NThjM2E5NDFhMmU3NzE4ZGQ3YTY1M2FmM2ZlNzVlZDcwZmRjZGRmZjNhYmQ3YmNlMDdiNWE3N2YifQ"
+          "resource": "repo://frontend/src/page.rs#L867-L912",
+          "version": "repo-lines-v1:sha256:7979e6d18d171fb3d17e16946b374af9b5ea7e69caff6d0c68a95577d7809491:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4ZGY1YjhjNTU1ZGJkZDI3NDRiNjM4ZjkzYWIwOTZkMTY3YjY2YjVlYjFjYzk3Y2I5MzIwYzhmM2JkODg2MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOWQyOGYxMTJhMmJmOThhYTBiODdjNjYyNzBhMDIxMzM0NDJkZjQzMzViOWU3MDk4ZTU2ODY4NjZhN2YzOTcifQ"
         },
         {
           "resource": "repo://frontend/src/sse.rs#L195-L232",
@@ -845,10 +845,28 @@
           "version": "repo-lines-v1:sha256:d76676bec0637e859d22e04ff7da1651dbcf378980313ad9f7ee5ec6d2425265:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYmIwYzYyNDdlOGM2YTEyMzkwYjkwMzQ3OTg5OGQyZjY5NDRhZGVhMmRlMzFlZTg5NWJjODczYWU5MTRhMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjEwYjZhMDY5NGE4MGU2N2Y1OWRkNjliZjU0OGM2YTc1M2M3OWQ3MTU3ZTVmMjA5ZTQ5NWM4NjU1MDdlZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZTlmZGIyNzBhYTdhMGJlNTc1YTk2ZmIyNDYwMjkxZTk3MjA3YTE5YmQ1NTE4NTQyZWQ0NzdiMmRkZTBkYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMTMyM2E0ZDMzZWI2MGRiYWEwM2VkNGU2NGI3NTkzZTJmNWM1OWZiZGQ1NDBjOGNjZTQ3ZjJjYWU1Y2QzNzMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5d64c61d940f4563ae66ea9a7e1de29b",
+      "statement": "DeleteModal (system) and PurgeGameModal (game) both render the shared DeleteDialog from frontend/src/ui.rs: a danger badge beside the target's name, a quiet detail line, and one icon-plus-sentence line per consequence from the static SYSTEM_EFFECTS or GAME_EFFECTS lists, which share the TRASH_MOVE and TRASH_NOTE entries; Delete runs on_confirm then closes, Cancel only closes, and every effect icon must be in the fetch script's icon list.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/scripts/fetch-webawesome.sh#L14-L22",
+          "version": "repo-lines-v1:sha256:a87445ae86eccbf1e76b622e69fea377f4904678aa9b0ce55fcb31c0eb184fcc:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNjOWRmZWQ2NmZlZGZjNDI5MTY0NWJhMzA3ZDQ5ZjllY2ZkNTIzYTY5ZGI4ZDViYTBkNDA5MjM2ODIwMjhmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRiZGQ3Y2M1NTE4N2MwZjFhZjZkMjFjNWU1MmE3NzMwYjdjMjYyYmQxMzkxNWY4MzU2NDg3NmI5Njc0MGJiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBiYjJiN2UyODc2MjExZWQ3NDg3ZDRiMmU3YTBkM2RiZWVmMzQ3ZmZhMGY1MGM2NjA3MjIwNjg3NGUyYTg4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzI0N2QyMDM0YTg5N2QxOWY0NTE5YzQyYTYzNzE5ODAyYzU4ZTRiM2QwNWNjZDk0MWIzOGFmZTA1ZDE3ZTdkZiJ9"
+        },
+        {
+          "resource": "repo://frontend/src/page.rs#L794-L912",
+          "version": "repo-lines-v1:sha256:858d6a3ac2f4f9a817517f985ef9140461bbbf033fafc61f62d676eca251cf6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhOGRmNWI4YzU1NWRiZGQyNzQ0YjYzOGY5M2FiMDk2ZDE2N2I2NmI1ZWIxY2M5N2NiOTMyMGM4ZjNiZDg4NjAyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMDJkYzM0MGIxNGVmMmQyM2U4MjBjOGJhY2MzYzU2ZTVlZDgxZjY1M2FjMzU4MWRiODNjOTYxM2Q3NmEwODU2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZDlkMjhmMTEyYTJiZjk4YWEwYjg3YzY2MjcwYTAyMTMzNDQyZGY0MzM1YjllNzA5OGU1Njg2ODY2YTdmMzk3In0"
+        },
+        {
+          "resource": "repo://frontend/src/ui.rs#L180-L238",
+          "version": "repo-lines-v1:sha256:71cfac72a808b71a223304a3881a2332dc7138daa65abeb1cce3c836991572a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZjJlMjhlZmFjODRmNmI0OGQ4NzhiMDdiODE3ZmFhNjgwNWU5MTQyMmM1NjVjZDAyNmJiNzM3M2MzMjMzYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NTdmZjkzY2ExOGE1Mjg4YTBlZjkwYzIwZDhhMzhmZWRmMjgyZmM3MDVjN2Y4ZWQwNDE5NGNhMzFlYzE3MzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzNTk4MjUyNmRiY2E0NjZiOTcwZjE5MzU0NDdiYjhmY2IwZDk5NWQyOWIzOWVlNWM1OWY3MTVjYjllNjVkMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T12:28:25.132Z"
+    "at": "2026-10-28T17:34:44.685Z"
   }
 }

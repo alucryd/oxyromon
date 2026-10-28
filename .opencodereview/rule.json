@@ -36,6 +36,11 @@
       "rule": "MCP tool surface reviewed as the interface the model actually reads. Check: every value list in a tool description or parameter doc comment matches exactly what the validation code and the synthesized clap parser accept, including case; every parameter doc comment states the semantics the handler applies to the value (for example a list value replacing the whole list), not only its type; any boolean whose true value triggers an irreversible action defaults so that omitting it reaches the refusal path; a tool reporting per-system outcomes (imported, up to date, failed) maps the shared collector's result from download_dats.rs rather than looping over systems itself; one boundary label per `?`-chain, since the same `with_context` label applied twice to one chain renders twice."
     },
     {
+      "path": "frontend/src/**/*.rs",
+      "merge_system_rule": true,
+      "rule": "Leptos web UI. frontend/ is rustfmt-formatted (edition 2024) but CI gates it with clippy only, so formatting drift is invisible to the pipeline. Check: run `rustfmt --edition 2024 --check` on each changed .rs file and report any hunk that lands inside changed code; drift in untouched code is not a finding."
+    },
+    {
       "path": "README.md",
       "merge_system_rule": true,
       "rule": "OxyRomon README reviewed as prose against the code it documents. Check: every flag, default, path, command example and supported-format claim still matches the clap definition and the module that implements it, including code added in this diff; counts and lists it states (supported systems, formats, flags) match what the code accepts; two sections of the document do not contradict each other; the diff does not leave a section describing behaviour the diff removed."
