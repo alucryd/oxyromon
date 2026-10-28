@@ -1,6 +1,7 @@
 //! Import the keys oxyromon needs but does not ship into its data directory,
 //! so that a headless install needs no emulator alongside it. For now, the Wii
-//! U's: disc keys and the common key, in the format of Cemu's `keys.txt`.
+//! U's: disc keys and the common key, in the format of Cemu's `keys.txt`, and
+//! the Wii U and vWii common keys from a console's OTP dump.
 
 use super::common::to_hex;
 use super::config::*;
@@ -21,7 +22,7 @@ pub fn subcommand() -> Command {
         .about("Import Wii U keys into oxyromon")
         .arg(
             Arg::new("KEYS")
-                .help("Set the key files to import, in the format of Cemu's keys.txt")
+                .help("Set the key files to import, as Cemu's keys.txt or a Wii U's otp.bin")
                 .required(true)
                 .num_args(1..)
                 .index(1)
@@ -96,3 +97,5 @@ fn write_keys(keys: &IndexSet<wux_rs::Key>, destination: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod test_import_keys;
+#[cfg(test)]
+mod test_import_otp;

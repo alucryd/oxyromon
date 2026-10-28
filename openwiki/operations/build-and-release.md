@@ -56,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Builds, Distribution and Releases
@@ -324,10 +324,11 @@ flowchart TD
 - **The pre-release gate is CI, not a release workflow.**
   `.github/workflows/continuous_integration.yml` runs on pushes and pull requests to
   `master` and `develop` with `SKIP_TRUNK: "true"` and a pinned `TRUNK_VERSION` of
-  0.21.14: it builds the web UI once, then runs two clippy passes —
-  `--workspace --all-targets --features oxyromon/server` and
-  `--no-default-features --features use-rustls,mcp --all-targets`, the latter
-  existing so `mcp`-only builds cannot rot — a `cargo build --release --features
+  0.21.14: it builds the web UI once, then runs three clippy passes —
+  `--workspace --all-targets --features oxyromon/server`,
+  `--no-default-features --features use-rustls,mcp --all-targets`, existing so
+  `mcp`-only builds cannot rot, and the web UI's own workspace for
+  `wasm32-unknown-unknown` — a `cargo build --release --features
   server`, and workspace coverage with `cargo llvm-cov`, uploaded to Codecov. It
   installs `mame-tools`, `xdelta3` and `ffmpeg` because the crates' interop tests
   compare against chdman and xdelta3, make LaserDisc AVIs with ffmpeg, and skip

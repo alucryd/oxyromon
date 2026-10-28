@@ -102,10 +102,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Test Harness and Conventions
@@ -480,12 +480,14 @@ test in the workspace is `#[ignore]`d — the 2 GiB `index_shift_round_trips` in
 
 `./test.sh` is now a single line, identical to CI's coverage step
 ([test.sh](../../test.sh#L1-L3),
-[continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L61-L62)).
-CI brackets that run with two clippy passes — `--workspace --all-targets
---features oxyromon/server`, and a second covering the MCP-without-web-server
-combination, `--no-default-features --features use-rustls,mcp --all-targets` —
-plus a `--release --features server` build, before uploading the `lcov.info` to
-Codecov ([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L51-L66)).
+[continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L64-L65)).
+CI brackets that run with three clippy passes — `--workspace --all-targets
+--features oxyromon/server`, a second covering the MCP-without-web-server
+combination, `--no-default-features --features use-rustls,mcp --all-targets`,
+and a third over the web UI's own workspace, `--target wasm32-unknown-unknown
+--all-targets` from `frontend/` — plus a `--release --features server` build,
+before uploading the `lcov.info` to Codecov
+([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L51-L69)).
 
 Two build facts matter when a suite feels inexplicably slow. `[profile.dev.package."*"]`
 sets `opt-level = 3` for dependencies, because hashing and the pure-Rust codecs run

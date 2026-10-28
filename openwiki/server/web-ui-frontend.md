@@ -76,10 +76,10 @@ sources:
     resource: repo://src/query.rs
   - id: openwiki-source-dfa02c19f5d8e4215d36f9c0
     resource: repo://src/server.rs
-generated: { by: "claude-code", at: "2026-10-27T21:50:09.478Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:50:09.478Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Web UI (Leptos SPA + Web Awesome)
@@ -566,14 +566,14 @@ returns early without one leaves a menu spinner turning forever.
 
 ## Verification
 
-Nothing under `frontend/src` is tested, and CI does not lint it either:
-`continuous_integration.yml` installs trunk (pinned `TRUNK_VERSION`), runs
-`cd frontend && trunk build --release` once with `SKIP_TRUNK=true` exported for
-every later cargo invocation, and then runs clippy and `cargo llvm-cov` over
-`--workspace`, which — for the reason in the first paragraph — excludes this crate.
-So a frontend change is checked only by compiling (rustfmt and clippy are run
-manually from `frontend/`, per the repository's own guidance) and by whatever the
-server tests happen to cover on the other side of the boundary. Treat the GraphQL
+Nothing under `frontend/src` is tested. `continuous_integration.yml` installs
+trunk (pinned `TRUNK_VERSION`), runs `cd frontend && trunk build --release` once
+with `SKIP_TRUNK=true` exported for every later cargo invocation, and runs
+`cargo llvm-cov` over `--workspace`, which — for the reason in the first
+paragraph — excludes this crate. CI does lint it, in a clippy pass of its own:
+`cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`.
+So a frontend change is checked by compiling, by that clippy pass, and by
+whatever the server tests happen to cover on the other side of the boundary. Treat the GraphQL
 field names, the SSE event prefixes and `ROW_HEIGHT`/`--row-height` as three
 unverified contracts that only a browser reveals.
 

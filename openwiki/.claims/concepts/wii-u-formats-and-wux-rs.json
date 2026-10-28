@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2b4a2b4fcceef7677f370ccd22491d58a7300d88ea2cf7ca52079d293a6388c9",
+  "pageVersion": "sha256:17de0b7ec2fae46968fdf1c5b69b89eb23c6b0ed131a97bd192d5df105ee4b8c",
   "claims": [
     {
       "id": "claim_752df5508f6c4a998b11e3b177d358bd",
@@ -47,8 +47,8 @@
       "statement": "wux-rs ships no keys and tries each candidate key: the disc key is the one that decrypts the partition table, and the common key the one whose title key opens the game partition's FST, so disc keys and the common key can share Cemu's keys.txt; parse_keys reads one 32-digit hex key per line, ignoring text after # or ; and dropping spaces, tabs, dashes and underscores.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/README.md#L117-L133",
-          "version": "repo-lines-v1:sha256:ead8c935790a27843a6e678b7325ac2100ba06790509fd1d0263e9dd3816cfa9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmODgxMWRiM2E3YTlkODY2YTk2NTY0ZDRjNmEzYTA3M2E0Y2VjZDU3Mzg2NGNiYWI5Y2JjOGVmMGQ1NWU4ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMDIzYjA1N2NmNmI1NzhhZTIxZTFkYzBkMWI5ZWNhNmU2MmYwOGRiNGU1YWM3ZmFhMjg4MmQ2NWQ1ODI1ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMzNiMmIwM2M1NzY0YmE0YWYwN2EwMGU4MGI3ZmIxMDIzOGRlMjZmM2Y4Y2JjNjQ2M2M1MDMyNDZkMWU5YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiM2I4MmU5YzdmY2VlYzZhOGZmZWZhYjYzYjZkNTY3ZDRiYWM0YTNkNjk5NTgyZjU3OTk3Y2U4MzFlNDU3ZmYifQ"
+          "resource": "repo://crates/wux-rs/README.md#L113-L125",
+          "version": "repo-lines-v1:sha256:05663afbcc01241bac3c77454dd063b12e3a65fd0a91b9c22e2e7f284a6c89ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxOTE0ZjRhYzYzOGJhYjJmYzU5NGQ0MGY1YWMwZDgxNGFkOGVjNzFlZjdiNzkxY2U2Yjk0Mzk3ZGRkMzQyMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwNjQ1OGVjMjk2M2M0YWM3MzZiNzE0ZGUxNTYzZDkxYjMxYTJkN2UzMmRmYjZjODI2YjhkMjQzNWNiOTkzMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMzg4YzUxMjRlMzhjNTM3NmQwZDBlZTc4OTljOGM5MWE1NzM4ZGRkY2VlYjZhYjA2NjQyOTUwMjFiZjNhNTYifQ"
         },
         {
           "resource": "repo://crates/wux-rs/src/disc.rs#L159-L174",
@@ -59,8 +59,8 @@
           "version": "repo-lines-v1:sha256:08b102fce6625e7465535951d5f86fc66a2e0880ec1f9d7426df5ece28dd90c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMjYzZDY1N2FiNWNhMGU4YzcxNTRjYzA5MmFhMWE5ZGRlMWE0MjgyNmZlYjdmMGNlZWExYzQ3MTNmZWQ2MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDVlZGM2N2U0NDFiYTBhZGEwYTZjMGViMjQwODQ1MjJiNmE4YWM0MjdlOTQwNTFmMzQwOTdlZWJjOGY5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhMTg5NmI2YjY1YzQzNDE4YWRhZTIzOGM1Y2NkMmRlZjJhMDY4NjY2OTc2YzE5Y2ZiOWY5YjM1YjI5NTk2OWQifQ"
         },
         {
-          "resource": "repo://crates/wux-rs/src/keys.rs#L1-L35",
-          "version": "repo-lines-v1:sha256:22326aad766a0adc927b3badd9ae3f2bfdbca6b45ce833aa091369d58eab2f73:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNmEzZWYzMmRjOTkxOWY5MTEzZDM1MGQ5NDIyY2FmMmY2OWZiOGEyNmZmNjAxYjY5ZDZhODA2YWFhOTIzYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MzlkNTUzOWM3NGQ5YWM5YzFjNDU0NDFmY2IzOGI3ODQyMGQ4MzFlYzEzYmZiOWNiODBlYjllMzJhYTc3YmQifQ"
+          "resource": "repo://crates/wux-rs/src/keys.rs#L9-L30",
+          "version": "repo-lines-v1:sha256:d97fc0b1f7a2cf29c4e292ea03fa4e83dbb3b8e384dfc2dad333040c5ea6224d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNTc0OTBhNjI4NGI4YTQ3ZmZmMWUyYTY5YzM1MTg5MjZkYWU3Njc2MjQ5N2JlNzY3M2VjOTQzYzAwMDhiOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiMGNlNjI1MjY0NDU2ZTI0NmFmM2RjMTBmYzZkNTBlOGQ5OTk4MTAzZWQwNDM1ZTAyMDUxMGM2ZjZlN2RjNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5MmVhOGE5NmE1MGUzODljOTEyOWZjMzE2OGFkMzc5NzY1ZTgzMmVlMDE0MGRjYjNiOTJiZTFlYTA2MjRjNzQifQ"
         }
       ]
     },
@@ -69,8 +69,8 @@
       "statement": "import-keys merges the keys of each given file into wiiu_keys.txt in oxyromon's data directory, keeping each key once in first-seen order, writing a .part file with mode 0600 that is renamed into place, warning on a file with no keys and skipping the write when no key is new.",
       "evidence": [
         {
-          "resource": "repo://src/import_keys.rs#L1-L98",
-          "version": "repo-lines-v1:sha256:b6f521173b904c9bf6e5a12da8dd2bec24dabdd1f61f4be185f748fb06171c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjRjNmNiOTVlMDVkNjQxNTY4MzhmM2YzMzY1NzQ4ZTk3OTJkNjNlMWIzMTJlODMwYjhkMzAwMmEzN2IzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmFmZTcxZDU1MzM0MDVhN2QzYjVlMDE4YmVmYzZlMGEyOWNmYmUxMzFmNmViZmZkZmQ1OTEyNmU4YTUyZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/import_keys.rs#L33-L96",
+          "version": "repo-lines-v1:sha256:9157a04e83d729c492af1818b42974bbb8bf8f138aa71d926892b27c5ec3c0c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGY4MGY2MTJjODc0NGMwMjdhNjkyOWU5NTMxZjJmMTMxNWFiMjhjMzcyMTIyOTAzNTM3N2Y4YmU3YzU1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3YTk3YTFkZGNkYzU3YTMwYjZkNDZjNzBjNmFjYzA0MzUzYWMwN2JhYjRlOTA5MGU4MmY3NTA1NDUwMTY4YzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNDYwYjFmYjFjNjU4MmE5ZDhiNjEyMzM5NWI4YTk1YWQ2YmZhOWQ4YWFkOWUxZDRmNDA0MmVlMjYzNjMwNjkifQ"
         }
       ]
     },
@@ -243,7 +243,7 @@
           "version": "repo-lines-v1:sha256:71205a878b9392ebf286a20d632ce50f3cec10d7e5fb46d6d242eb70cd35316c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0NmNjMzdlMzJmNjRlMjI0YWIxMGMwMjMyZTlhZGYzNjVlYmMxMDk2YjFiYjcwZTEzOTBjYTY5N2VmNzg4ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMjIwZDlhNDNmMjk3NTZhZjUzNDM2OWI5MmFjY2M0ZGNkNTY1YjZiYzE3MThkZDIwZDdhYzU4MTJjZDc4OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjZmY0NWFmYzYyMWVlMzk0MDAzZjc2NDdjNjBhOTkxNTgwM2NkNTE5ZWJhNjQ3NjJkN2U5NmY1ZjFlNzdkOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://crates/wux-rs/src/keys.rs#L36-L40",
+          "resource": "repo://crates/wux-rs/src/keys.rs#L72-L76",
           "version": "repo-lines-v1:sha256:506c3bfef5aea2ff16e214c5ce9e9f9cde378926166064f002cfee4c485006de:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyMzNkZGRjNmQ4OGZlMGI5NDczMjg2NGVhZDAzZTZjOTQ0OWUwYjBmYzYxYjU1M2U0ZjY0NmI0OTEyNjhjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNjYzI2ODk1MTc4ZDMxYWFhNGY0Y2E4NWY0MDkzYzUxMjllMDI4YTdkZDVjOTQwZGIzZDY4YzRkMmVhYjg4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2JjOThkNmIwZGM0OTJjNTAxNmRmMTA4MDVhM2E1NGViOWMxODRhNWE2MTM3ZTdmNGJlY2ZhMGMyMjA1NTBkMCJ9"
         }
       ]
@@ -297,10 +297,20 @@
           "version": "repo-file-v1:sha256:88d70143381bfefef08371c3d7c4a4dbd6c20c819182a442ecd31b89b017c4a5"
         }
       ]
+    },
+    {
+      "id": "claim_53f0a8ae178a46dd9996016b8085dc82",
+      "statement": "load_keys reads a non-UTF-8 file of exactly 1 KiB as a Wii U otp.bin, taking the Wii U common key at 0xE0 and the vWii common key at 0xD0 and skipping all-zero or all-ones slots; it refuses such a file when neither slot is programmed, and any other binary file, with an Unsupported error naming both accepted formats.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/src/keys.rs#L32-L70",
+          "version": "repo-lines-v1:sha256:6c22453467d549d4b28a4b4ddbf70abe21d65cb20fe8b50ee25da4329f713903:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3OGQ5ZDNhMWQ1MTgyMTE5ZTc4MDYzMTJlYzcxYWFjMjFmYzc2ZjJmOGQzNGM0OWExOTkyNjQ2MjUzMzY2ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ODU5MjEwZWJjYjEyY2Y2OGM2MTYyMjJmYzU2MGMxZjY4ZTJmYTMxZjYzMDQ5M2RmODA5NTg4ODdkNTdhZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZTJiYWRjMTAxZDA5N2IyZDQyZmI4MGM3NjRiMWQzNTQyNTFhOTRiMjVhZGViNDdjZGUwZDQxMTA2MTdkYjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-27T21:16:24.550Z"
+    "at": "2026-10-28T08:10:36.025Z"
   }
 }
