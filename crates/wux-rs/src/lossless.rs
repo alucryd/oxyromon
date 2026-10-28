@@ -37,7 +37,7 @@ use crate::crypto::{Key, cbc_decrypt, decrypt_block};
 use crate::disc::{self, Fst, Mode, PartitionSource, SECTOR};
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
-use crate::io::finish;
+use crate::io::{Scaled, finish};
 use crate::nus;
 use crate::revert::encrypt;
 use crate::wua::{self, DiscGame, parse_ticket, ticket_iv, tree};
@@ -760,6 +760,18 @@ pub(crate) fn write<W: Write>(
     for (_, bytes) in &patches {
         writer.append(bytes)?;
     }
+    // The streams count for the disc's size, as `to_wua` budgets them, though
+    // they leave out the game's contents and the disc's padding: reported as
+    // they are, they would fall far short, and the rest come in one jump.
+    let mut streams = Scaled::new(
+        &mut *report,
+        parts
+            .iter()
+            .filter(|p| p.layout.storage != Storage::None)
+            .map(|p| p.layout.stream_len)
+            .sum(),
+        image.size(),
+    );
     let mut partition_layouts = Vec::with_capacity(parts.len());
     for (i, mut part) in parts.into_iter().enumerate() {
         if part.layout.storage == Storage::None {
@@ -777,7 +789,7 @@ pub(crate) fn write<W: Write>(
             let mut half = |chunk: &[u8]| {
                 let n = chunk.len() as u64 / 2;
                 reported += n;
-                report(n);
+                streams.add(n);
                 Ok(())
             };
             emit(&image, &part, &disc_key, false, &mut half, &mut sha1)?;
@@ -798,7 +810,7 @@ pub(crate) fn write<W: Write>(
                 true,
                 &mut |chunk| {
                     reported += chunk.len() as u64;
-                    report(chunk.len() as u64);
+                    streams.add(chunk.len() as u64);
                     writer.append(chunk)
                 },
                 &mut sha1,
@@ -807,9 +819,10 @@ pub(crate) fn write<W: Write>(
             writer.file(sub, b"transforms")?;
             writer.append(&transforms_to_bytes(&part.transforms))?;
         }
-        report(part.layout.stream_len.saturating_sub(reported));
+        streams.add(part.layout.stream_len.saturating_sub(reported));
         partition_layouts.push(part.layout);
     }
+    streams.finish();
     let layout = Layout {
         info,
         game: game_folder.to_string(),
