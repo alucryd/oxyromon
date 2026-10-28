@@ -8,45 +8,30 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # The web UI (Leptos + Trunk) is built once by the "Build web UI" step below;
-  # all cargo invocations reuse those assets instead of rebuilding the wasm.
+  # The web UI (Leptos + Trunk) is built once, by the web-ui job; no cargo
+  # invocation rebuilds the wasm. Without its assets, build.rs leaves
+  # target/assets empty, which is all clippy and the tests need.
   SKIP_TRUNK: "true"
   TRUNK_VERSION: "0.21.14"
 
-jobs:
-  build:
-    runs-on: ubuntu-26.04
+# The runner image ships apt lists baked at image-build time, which go stale
+# within days. Ubuntu rolls superseded .debs out of the pool when a newer point
+# version lands, so installing against the cached lists 404s: every job that
+# installs packages runs `apt-get update` first.
 
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
-      - name: Install dependencies
-        # The runner image ships apt lists baked at image-build time, which go stale
-        # within days. Ubuntu rolls superseded .debs out of the pool when a newer
-        # point version lands, so installing against the cached lists 404s.
-        run: |
-          sudo apt-get -o Acquire::Retries=3 update
-          # all three are only for the crates' tests, which compare against
-          # chdman and xdelta3, make the LaserDisc AVIs with ffmpeg, and skip
-          # without them
-          sudo apt-get -o Acquire::Retries=3 install mame-tools xdelta3 ffmpeg
-          # the desktop shell's Tauri webview, for its clippy pass
-          sudo apt-get -o Acquire::Retries=3 install libwebkit2gtk-4.1-dev libxdo-dev
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          target: wasm32-unknown-unknown
-          components: clippy, rustfmt, llvm-tools-preview
-      - name: Use the installed toolchain
-        run: rustup default stable
-      - name: Configure rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            .
-            frontend
-            desktop
+          components: rustfmt
       # frontend/ and desktop/ are workspaces of their own, so the root's
       # `--all` does not reach them.
       - name: Check formatting
@@ -54,12 +39,65 @@ jobs:
           cargo fmt --all --check
           (cd frontend && cargo fmt --check)
           (cd desktop && cargo fmt --check)
+
+  web-ui:
+    name: Web UI
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          components: clippy
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: frontend
       - name: Install Trunk
         run: |
           curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz" \
             | tar -xzf- -C "$HOME/.cargo/bin"
       - name: Build web UI
         run: cd frontend && trunk build --release
+      # The web UI is its own workspace, built for the browser.
+      - name: Run clippy
+        run: cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets
+      - name: Upload web UI
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-ui
+          path: target/assets
+          if-no-files-found: error
+          retention-days: 1
+
+  test:
+    name: Lint and test
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install dependencies
+        # only for the crates' tests, which compare against chdman and xdelta3,
+        # make the LaserDisc AVIs with ffmpeg, and skip without them
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install mame-tools xdelta3 ffmpeg
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, llvm-tools-preview
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
       - name: Install llvm-cov
         run: cargo install cargo-llvm-cov
       # The whole workspace: oxyromon and the format crates under crates/. A
@@ -70,20 +108,48 @@ jobs:
       # feature combination on its own.
       - name: Run clippy (MCP without server)
         run: cargo clippy --no-default-features --features use-rustls,mcp --all-targets
-      # The web UI is its own workspace, built for the browser.
-      - name: Run clippy (web UI)
-        run: cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets
-      - name: Build
-        run: cargo build --release --features server
-      # tauri-build refuses to compile without the sidecar binary declared in
-      # tauri.conf.json, so stage the release build above first.
-      - name: Run clippy (desktop)
-        run: |
-          sh desktop/scripts/stage-sidecar.sh
-          cd desktop && cargo clippy --all-targets
       - name: Test
         run: cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
           token: ${{secrets.CODECOV_TOKEN}}
+
+  release:
+    name: Release build and desktop
+    needs: web-ui
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install dependencies
+        # the desktop shell's Tauri webview
+        run: |
+          sudo apt-get -o Acquire::Retries=3 update
+          sudo apt-get -o Acquire::Retries=3 install libwebkit2gtk-4.1-dev libxdo-dev
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+      - name: Use the installed toolchain
+        run: rustup default stable
+      - name: Configure rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            desktop
+      - name: Download web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-ui
+          path: target/assets
+      # The release binary, with the web UI embedded, staged as the desktop
+      # shell's sidecar: tauri-build refuses to compile without it.
+      - name: Build
+        run: sh desktop/scripts/stage-sidecar.sh
+      # The desktop shell is its own workspace.
+      - name: Run clippy (desktop)
+        run: cd desktop && cargo clippy --all-targets
