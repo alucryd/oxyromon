@@ -12,6 +12,8 @@
 - Added OTP dumps to `load_keys`: a Wii U's 1 KiB `otp.bin` gives its Wii U and vWii common keys, which `parse_otp` also takes from bytes
 - Added the update partition's blocks, each encrypted on its own, to the clusters an FST can list, and the partition header's hash type
 - Added `parse_tmd`, which reads a Wii U TMD's title ID, version and content records
+- Added `to_wua_with_tickets`, which takes tickets for the NUS folders that hold none, as candidates found by title ID, as DLC needs: No-Intro lists no ticket for it, and a downloader's is kept apart; and `ticket_title_id`, which reads the title a ticket is for
+- Added `write_missing_h3`, which writes the H3 files a NUS folder's TMD lists but the folder lacks, each checked against the TMD, needing the Wii U common key only when one is missing
 - Added a streaming, parallel ZArchive writer, and a reader
 - Added key handling in the format of Cemu's `keys.txt`, finding the disc key and the Wii U common key among candidates; no key ships with the crate
 - Added hash checks on hashed clusters, so a damaged disc fails rather than converting to a broken WUA

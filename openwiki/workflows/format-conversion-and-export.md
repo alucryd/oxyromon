@@ -88,10 +88,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # Format Conversion and Export
@@ -545,7 +545,7 @@ export-side analogue of the `recompress` rule:
 | ISO → ISO | `copy_file` |
 | WUX → WUX | `copy_file`; a WUX has no settings to re-encode with |
 | WUA → WUX | rebuilt from the WUA and its store |
-| NUS title → ORIGINAL | its files copied into a folder named after the game |
+| NUS title → ORIGINAL | its files copied into a folder named after the game, with the stored ticket added as `title.tik` when it has none and any `.h3` the DAT leaves out rebuilt |
 | GDI set → GDI | GDI file plus every track file copied |
 | multi-track CD CHD → CSO/ZSO | **no file written** |
 
@@ -590,10 +590,11 @@ The export-only targets:
   shared by the WUAs exported there. `ToWua` also bundles the
   newest update and DLC in the library, from any system: it reads the disc's
   title ID, scans every romfile that is a TMD, and keeps titles sharing the
-  disc's low 32 bits whose type is `0005000E` (update) or `0005000C` (DLC). A
-  title without a ticket is skipped with a warning, since No-Intro lists DLC
-  without one ([src/export_roms.rs](../../src/export_roms.rs#L1608-L1660),
-  [src/wux.rs](../../src/wux.rs#L395-L520)).
+  disc's low 32 bits whose type is `0005000E` (update) or `0005000C` (DLC).
+  No-Intro lists DLC without a ticket, so a title holding none takes the one
+  import kept for its title ID in the store of tickets, and is skipped with a
+  warning when there is none ([src/export_roms.rs](../../src/export_roms.rs#L1608-L1660),
+  [src/wux.rs](../../src/wux.rs#L466-L590)).
 - **`to_nus`** writes the disc's title as a NUS folder for WUP Installer GX2,
   named after the source's stem. From a lossless WUA it replays the revert data
   and keeps the game's title only. All three Wii U targets gather their discs

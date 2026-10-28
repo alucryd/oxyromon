@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f23b346e573ebdffcfb24d242f36c5cb0ecfbabad7f3b336d5af750af3932cad",
+  "pageVersion": "sha256:9c010258806c3302fcade20e3c836cc2331fa4c9aae8cdfc62db6221926cc4cd",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
@@ -584,11 +584,11 @@
     },
     {
       "id": "claim_6cd34ea87e5a4c88a698a534d5e46d6c",
-      "statement": "crates/wux-rs/tests/real.rs holds five #[ignore]d tests that skip unless WUXRS_DISC names a real WUD or WUX, taking keys from WUXRS_KEYS or Cemu's keys.txt, comparing with a Cemu-made WUA in WUXRS_WUA and an update in WUXRS_ADD when set, and rebuilding the disc from its WUA.",
+      "statement": "crates/wux-rs/tests/real.rs holds five #[ignore]d tests that skip unless WUXRS_DISC names a real WUD or WUX, taking keys from WUXRS_KEYS or Cemu's keys.txt, comparing with a Cemu-made WUA in WUXRS_WUA and an update in WUXRS_ADD when set, and rebuilding the disc from its WUA, plus a sixth that, given a real NUS folder in WUXRS_NUS, rebuilds its .h3 files with write_missing_h3 and compares each byte for byte.",
       "evidence": [
         {
-          "resource": "repo://crates/wux-rs/tests/real.rs#L1-L209",
-          "version": "repo-lines-v1:sha256:c96926cbbdb220519472ead85e7bcf341ebbdffb2eee35fb53c11d0a4caa6961:eyJzZWxlY3RlZExpbmVDb3VudCI6MjA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1ZmMzYTA2Mjc2YjE5M2Y0ODE3YjFiNzZhYjYwYzJhZjI5ZjhjN2YzMzhkNjAwMGQzNjJhMjI0ODQ1ZGVjNWExIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://crates/wux-rs/tests/real.rs#L1-L251",
+          "version": "repo-lines-v1:sha256:be935426f9b126c29fc6bc0a90a3bc4e0b4150089e145763c0d98e087eb1a5e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1ZmMzYTA2Mjc2YjE5M2Y0ODE3YjFiNzZhYjYwYzJhZjI5ZjhjN2YzMzhkNjAwMGQzNjJhMjI0ODQ1ZGVjNWExIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -608,7 +608,7 @@
       "evidence": [
         {
           "resource": "repo://crates/wux-rs/tests/nus.rs",
-          "version": "repo-file-v1:sha256:a3cb91327f577553d9fabb1f02902c1431f12ec7809798b5302f71d912744fe8"
+          "version": "repo-file-v1:sha256:0573a97d74a95cba5d6f3c09bec6441d29fd3e1be266a056319acda95bcdeddf"
         },
         {
           "resource": "repo://crates/wux-rs/tests/revert.rs",
@@ -625,10 +625,20 @@
           "version": "repo-lines-v1:sha256:b6d2fe25caf8a32dc91c1a0dbc8066fc9546e1aa986b398afe716f9b6abd968c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YWIwNjVjZjFmODhiMGU5M2Y5ZjQ1ZjdkOWU4Mjc4ZjVhYzg5Mjc4ZmJiYjRkN2EwNmNlYjU5YWQ5NGZmMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_812a1264c77240fc92ae2330202f40cb",
+      "statement": "crates/wux-rs/tests/nus.rs checks that write_missing_h3 rebuilds a removed .h3 as it was with no .part left behind, needs no key when every .h3 is present even named in upper case, and fails with MissingKey and writes nothing when one is missing without the common key.",
+      "evidence": [
+        {
+          "resource": "repo://crates/wux-rs/tests/nus.rs#L120-L160",
+          "version": "repo-lines-v1:sha256:eb643f6cc497606b960993e78ea2ad0a1fd29d685e983aa1bcb6cd90f783c3a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyY2Q0ZGI0OGEzNTBlOGYwYjQ3OTQ0YzQ2ZTNmZmRiYmExMzJkMjI5MGE5MWQ3MDEyYjU2ZWI0NmM4YWI0ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T12:28:25.132Z"
+    "at": "2026-10-28T19:18:06.223Z"
   }
 }

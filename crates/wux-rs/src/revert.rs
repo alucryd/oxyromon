@@ -26,7 +26,7 @@ use crate::crypto::{Key, cbc_decrypt};
 use crate::disc::{Fst, Source};
 use crate::error::{Error, Result, corrupt};
 use crate::io::{finish_dir, part};
-use crate::nus::{self, Content, HASHED, SHA1};
+use crate::nus::{self, Content, SHA1};
 use crate::wua::{Item, parse_ticket, title_key, tree};
 use crate::zarchive::Reader;
 
@@ -215,7 +215,7 @@ pub fn collect(
             index => fst.cluster_offset(index),
         }
         .ok_or_else(|| corrupt(format!("the title has no content {}", content.index)))?;
-        let hashed = content.flags & HASHED != 0;
+        let hashed = content.is_hashed();
         if !content.size.is_multiple_of(if hashed { BLOCK } else { 16 }) {
             return Err(corrupt(format!(
                 "content {:08x} is {} bytes",
@@ -468,7 +468,7 @@ fn rebuild(
             report,
         )?;
         out.flush()?;
-        if content.flags & HASHED != 0 {
+        if content.is_hashed() {
             std::fs::write(output.join(format!("{:08x}.h3", content.id)), &h3)?;
         }
     }
@@ -592,7 +592,7 @@ impl Contents {
             .unwrap_or(&none_residue);
         let key = &self.key;
         let (mut sha1, mut sha256) = (Sha1::new(), Sha256::new());
-        if content.flags & HASHED == 0 {
+        if !content.is_hashed() {
             let mut buf = vec![0; CHUNK as usize];
             let mut iv = [0; 16];
             iv[..2].copy_from_slice(&content.index.to_be_bytes());
