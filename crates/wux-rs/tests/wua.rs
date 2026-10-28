@@ -205,3 +205,25 @@ fn a_title_without_its_ticket_converts_with_one_given_apart() {
     let folder = reverted.join(common::UPDATE_FOLDER);
     assert_eq!(std::fs::read(folder.join("title.tik")).unwrap(), ticket);
 }
+
+#[test]
+fn progress_moves_on_through_the_whole_conversion() {
+    let (dir, _, wux) = setup();
+    let store = dir.path().join(wux_rs::STORE_DIR);
+    let output = dir.path().join("g.wua");
+    let mut calls = Vec::new();
+    let stats = wux_rs::to_wua(&[&wux], &output, &keys(), Some(&store), &mut |n| {
+        calls.push(n)
+    })
+    .unwrap();
+    assert_eq!(calls.iter().sum::<u64>(), stats.input_size);
+    // Nothing is left for one jump at the end: the disc's padding, which its
+    // partitions' streams leave out, used to make up most of the bar there.
+    // A small disc is read in few chunks, so the chunks themselves are big.
+    let last = *calls.last().unwrap();
+    assert!(
+        last * 10 < stats.input_size,
+        "{last} of {} reported at the end",
+        stats.input_size
+    );
+}

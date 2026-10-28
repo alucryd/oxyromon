@@ -12,7 +12,7 @@ use crate::crypto::{Key, decrypt_block};
 use crate::disc::{self, Fst, PartitionSource, Source};
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
-use crate::io::{finish, part};
+use crate::io::{Scaled, finish, part};
 use crate::nus::{self, NusSource, Tmd};
 use crate::revert::{self, Meta, REVERT_DIR};
 use crate::zarchive::{self, Writer};
@@ -102,14 +102,7 @@ pub fn to_wua_with_tickets(
     let part = part(output);
     let result = (|| {
         let mut writer = Writer::new(BufWriter::with_capacity(1 << 20, File::create(&part)?));
-        let (mut done, mut reported) = (0u64, 0u64);
-        let mut report = |n: u64| {
-            done += n;
-            let scaled =
-                (u128::from(done) * u128::from(input_size) / u128::from(total.max(1))) as u64;
-            progress(scaled - reported);
-            reported = scaled;
-        };
+        let mut scaled = Scaled::new(progress, total, input_size);
         for (title, tree) in titles.iter().zip(&trees) {
             let root = writer.dir(zarchive::ROOT, title.folder().as_bytes())?;
             // Archive nodes of the FST's directories, by FST index.
@@ -126,7 +119,7 @@ pub fn to_wua_with_tickets(
                     .fst
                     .read_with(title.source.as_ref(), item.entry, &mut |chunk| {
                         writer.append(chunk)?;
-                        report(chunk.len() as u64);
+                        scaled.add(chunk.len() as u64);
                         Ok(())
                     })?;
             }
@@ -139,7 +132,7 @@ pub fn to_wua_with_tickets(
                 &title.fst,
                 tree,
                 &title.meta,
-                &mut report,
+                &mut |n| scaled.add(n),
             )?;
             let dir = writer.dir(revert, title.folder().as_bytes())?;
             for (name, bytes) in files {
@@ -148,9 +141,11 @@ pub fn to_wua_with_tickets(
             }
         }
         if let (Some(folder), Some(disc_input)) = (&disc, disc_input) {
-            crate::lossless::write(&mut writer, disc_input, folder, keys, store, &mut report)?;
+            crate::lossless::write(&mut writer, disc_input, folder, keys, store, &mut |n| {
+                scaled.add(n)
+            })?;
         }
-        progress(input_size.saturating_sub(reported));
+        scaled.finish();
         let file = writer.finish()?.into_inner().map_err(|e| e.into_error())?;
         file.sync_all()?;
         Ok(Stats {

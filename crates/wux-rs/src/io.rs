@@ -1,5 +1,5 @@
 //! Positional reads, so many workers can read one file without seeking, and
-//! the `.part` file an output is written to.
+//! the `.part` file an output is written to, and progress scaled to a budget.
 
 use std::fs::File;
 use std::io;
@@ -111,4 +111,39 @@ pub fn read_exact_at(file: &File, buf: &mut [u8], offset: u64) -> io::Result<()>
         }
     }
     Ok(())
+}
+
+/// Bytes reported as a share of `budget`, their sum being `total`.
+pub(crate) struct Scaled<'a> {
+    report: &'a mut dyn FnMut(u64),
+    total: u64,
+    budget: u64,
+    done: u64,
+    reported: u64,
+}
+
+impl<'a> Scaled<'a> {
+    pub(crate) fn new(report: &'a mut dyn FnMut(u64), total: u64, budget: u64) -> Self {
+        Scaled {
+            report,
+            total,
+            budget,
+            done: 0,
+            reported: 0,
+        }
+    }
+
+    pub(crate) fn add(&mut self, n: u64) {
+        self.done = (self.done + n).min(self.total);
+        let scaled = (u128::from(self.done) * u128::from(self.budget)
+            / u128::from(self.total.max(1))) as u64;
+        (self.report)(scaled - self.reported);
+        self.reported = scaled;
+    }
+
+    /// Report whatever is left of the budget: all of it when nothing was added.
+    pub(crate) fn finish(&mut self) {
+        (self.report)(self.budget - self.reported);
+        self.reported = self.budget;
+    }
 }
