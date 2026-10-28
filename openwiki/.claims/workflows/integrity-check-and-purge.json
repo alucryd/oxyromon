@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c5ffcaaca1805d8923f66bb152dd33dadc9f56ac45ed75dab9c2a7d08774af46",
+  "pageVersion": "sha256:0af2e17cacd34f72de1e804b1ddc5a31735b41bee056ea5611836de83410fec3",
   "claims": [
     {
       "id": "claim_8c1d5e38cb434501948072b26c6f8998",
@@ -340,15 +340,15 @@
     },
     {
       "id": "claim_cd2a21c05e3d4632a83e6ae2659f11e3",
-      "statement": "The web UI mirrors the destructive boundary in its purge modal, grouping missing and orphan under 'Remove from database' and trash and foreign under a danger-styled 'Delete files from disk' section, with the Purge button disabled until at least one category is picked; the Delete system dialog instead warns that the system's files move to its Trash directory.",
+      "statement": "The web UI mirrors the destructive boundary in its purge modal, grouping missing and orphan under 'Remove from database' and trash and foreign under a danger-styled 'Delete files from disk' section, with the Purge button disabled until at least one category is picked; the Delete system dialog instead says the system's files move to its Trash folder and that nothing leaves the disk until the Trash is emptied with Purge ROM files.",
       "evidence": [
         {
           "resource": "repo://frontend/src/components/purge_rom_modal.rs#L51-L100",
           "version": "repo-lines-v1:sha256:3b63d91f40dafa274fac4aa38d12e609bef93d9f821ab527fa1973c27532b3e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzZWE1MjFkYWNlMGFlZjQ5MTU1MWE0MDc5YjE4MThiOWNkYjgwOGExNDQwMDlkYWI3YTk5NWNiMDUzZDI4MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMTRhOWM3MmQyMjVhNTNjOGIwYzkxMjViYzEwM2QwY2ZmMDVjZjk4NmQwZGFhZTZjYmVmOWY4NGQ1YjA4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L795-L829",
-          "version": "repo-lines-v1:sha256:6a3bf5316265a607d0032a15337cfb45b39e54912962f4cd65c124514725c89b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNzJlZThlMjQzNzFiMTg2MjU1NTAyZjFhMzIyZTBjN2MzNjNkNDkzYWZkMWQ5OGEwZGQ2NGY4ZmY0Y2ZmNWQifQ"
+          "resource": "repo://frontend/src/page.rs#L794-L865",
+          "version": "repo-lines-v1:sha256:6def08b56be2935ccf6d56cc3388380c8c9875eec440eaa0b0b4f90e912b6bd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMmRjMzQwYjE0ZWYyZDIzZTgyMGM4YmFjYzNjNTZlNWVkODFmNjUzYWMzNTgxZGI4M2M5NjEzZDc2YTA4NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNzJlZThlMjQzNzFiMTg2MjU1NTAyZjFhMzIyZTBjN2MzNjNkNDkzYWZkMWQ5OGEwZGQ2NGY4ZmY0Y2ZmNWQifQ"
         }
       ]
     },
@@ -632,21 +632,21 @@
     },
     {
       "id": "claim_c35c8705953d47bdb539d82e9fbfdfde",
-      "statement": "In the web UI, purging a game is the Purge item of that game's actions menu in the games list, confirmed through a dedicated dialog before the purgeGames mutation is sent.",
+      "statement": "In the web UI, purging a game is the Delete item of that game's actions menu in the games list, confirmed through a dedicated dialog, which also says files shared with other games stay in place, before the purgeGames mutation is sent.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/page.rs#L588-L650",
-          "version": "repo-lines-v1:sha256:ef5df3f18d898bdc29e92391da8e03e7d04528885917f4ff5f8921bf42f5c728:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMjgzZGE5MDQ0YzQ3YTRkMjJkMDY4NDRkMTg3OTQ2ZWMzOTZjNjhiYjcyNzFlOGFhNzk2NDY1MTY5MGIzZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkYjMzOWMxN2Q0Y2M1NGU3MGM0ZmNmZWNiNjExYmI5ZTdkMzYzZjI1YjE4ZTA5MjNhMWQzMDZjYzk1OTI0ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyYTMyMWQzZjBlYWI2ZThjZTYzZTNmODVjNzg3MTg1YjBhNWQ2OGQ0NmJiMDY1ZGRjNTJjMTMzOWFiNDQ4YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZTYxMjczMzE4MWFhOWRiZGZkNjgwZDM0MjY0YTU5YzRhOTJhOGM0YzQxMzkxNjFkZWUwYzM4YWE1MWNiMWIifQ"
+          "resource": "repo://frontend/src/page.rs#L612-L645",
+          "version": "repo-lines-v1:sha256:ad75e2f71ef4480608c757802613e0f35366a905849fa7cc27811dd26fea405b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMzk4ZDY0OTVhODQzYmVmY2FmNzE0NzZjOGM1MjA5ODVjNDA1NmE1YWI1MzE5ZDliYzQyMWQwNDNkNmNkN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YmU3OGMzODJjM2NmYTI5OTdhOTkyOTZjNWQzNWU4YTJkMmZlMTM0NzFkNWY2MDQ5Y2UzY2MwYmE3NWM3YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxOWZlOGVlZDhmMjljZjg0ZWY4YmQwZWVhYTBjMzM2NzliYjljODQ4MGI4Y2VkMTAxMTZjYWE1OWY0ZWUxM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3OWU5ZjVlOWU5NDgxMGYxMDBhYmQyNjYzMTJjYjZiNTZlYWQ0MzM5NjU4MDZiZDY4ZGQ4Y2NkOWIxYTFjM2QifQ"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L831-L872",
-          "version": "repo-lines-v1:sha256:da0602b463705f5bc8bcf1d035928a31ee59063a360a225e863ebd9a1a4b6404:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1YjkxZjVmNWVkNjNlOWM1MmExNGEyZTYwMTY5NDU4MDI1NDI2NTI3MzIxZjNiZjQ3MWM5MDlhNDFjMWI5MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNjQ3ZGM0NThjM2E5NDFhMmU3NzE4ZGQ3YTY1M2FmM2ZlNzVlZDcwZmRjZGRmZjNhYmQ3YmNlMDdiNWE3N2YifQ"
+          "resource": "repo://frontend/src/page.rs#L794-L912",
+          "version": "repo-lines-v1:sha256:858d6a3ac2f4f9a817517f985ef9140461bbbf033fafc61f62d676eca251cf6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhOGRmNWI4YzU1NWRiZGQyNzQ0YjYzOGY5M2FiMDk2ZDE2N2I2NmI1ZWIxY2M5N2NiOTMyMGM4ZjNiZDg4NjAyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMDJkYzM0MGIxNGVmMmQyM2U4MjBjOGJhY2MzYzU2ZTVlZDgxZjY1M2FjMzU4MWRiODNjOTYxM2Q3NmEwODU2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZDlkMjhmMTEyYTJiZjk4YWEwYjg3YzY2MjcwYTAyMTMzNDQyZGY0MzM1YjllNzA5OGU1Njg2ODY2YTdmMzk3In0"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T11:29:22.151Z"
+    "at": "2026-10-28T17:34:44.685Z"
   }
 }
