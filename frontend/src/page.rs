@@ -798,15 +798,27 @@ const TRASH_NOTE: (&str, &str) = (
     "Nothing leaves the disk until the Trash is emptied with Purge ROM files.",
 );
 
+/// Where the files go: said in both delete dialogs.
+const TRASH_MOVE: (&str, &str) = (
+    "folder-open",
+    "Its files move to the system's Trash folder.",
+);
+
 const SYSTEM_EFFECTS: &[(&str, &str)] = &[
-    ("database", "The system and its games are removed from the catalog."),
-    ("folder-open", "Its files move to the system's Trash folder."),
+    (
+        "database",
+        "The system and its games are removed from the catalog.",
+    ),
+    TRASH_MOVE,
     TRASH_NOTE,
 ];
 
 const GAME_EFFECTS: &[(&str, &str)] = &[
-    ("database", "The game stays in the catalog, shown as missing."),
-    ("folder-open", "Its files move to the system's Trash folder."),
+    (
+        "database",
+        "The game stays in the catalog, shown as missing.",
+    ),
+    TRASH_MOVE,
     ("link", "Files shared with other games stay in place."),
     TRASH_NOTE,
 ];
@@ -814,11 +826,21 @@ const GAME_EFFECTS: &[(&str, &str)] = &[
 #[component]
 fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl IntoView {
     let state = expect_context::<AppState>();
-    let name = Signal::derive(move || target.with(|system| system.as_ref().map(|system| system.name.clone()).unwrap_or_default()));
+    let name = Signal::derive(move || {
+        target.with(|system| {
+            system
+                .as_ref()
+                .map(|system| system.name.clone())
+                .unwrap_or_default()
+        })
+    });
     let detail = Signal::derive(move || {
         target.with(|system| match system {
             Some(system) if system.games_total > 0 => {
-                format!("{} of {} games complete", system.games_complete, system.games_total)
+                format!(
+                    "{} of {} games complete",
+                    system.games_complete, system.games_total
+                )
             }
             _ => "No games".to_string(),
         })
@@ -846,7 +868,13 @@ fn DeleteModal(open: RwSignal<bool>, target: RwSignal<Option<System>>) -> impl I
 fn PurgeGameModal() -> impl IntoView {
     let state = expect_context::<AppState>();
     let target = state.purge_game_target;
-    let name = Signal::derive(move || target.with(|game| game.as_ref().map(|game| game.name.clone()).unwrap_or_default()));
+    let name = Signal::derive(move || {
+        target.with(|game| {
+            game.as_ref()
+                .map(|game| game.name.clone())
+                .unwrap_or_default()
+        })
+    });
     // The games list only ever shows the selected system's games.
     let detail = Signal::derive(move || {
         let system_id = state.system_id.get();
