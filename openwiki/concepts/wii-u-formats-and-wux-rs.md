@@ -3,7 +3,7 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:18:06.223Z" }
 sources:
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
@@ -13,6 +13,8 @@ sources:
     resource: repo://crates/wux-rs/src/bin/wuxrs/main.rs
   - id: openwiki-source-02ad64b473f2daa8b546908e
     resource: repo://crates/wux-rs/src/disc.rs
+  - id: openwiki-source-29fd9184eefd8f20571c6a17
+    resource: repo://crates/wux-rs/src/install.rs
   - id: openwiki-source-bb63ebff30207378358552a3
     resource: repo://crates/wux-rs/src/io.rs
   - id: openwiki-source-1eccc54b012309dc15e12f9a
@@ -41,12 +43,16 @@ sources:
     resource: repo://src/database.rs
   - id: openwiki-source-bfaccf08e532321769e4b6b5
     resource: repo://src/export_roms.rs
+  - id: openwiki-source-be7327f55121804d3c341624
+    resource: repo://src/export_roms/test_nus_missing_h3_to_original.rs
   - id: openwiki-source-a44e692a5f3268aa48d01296
     resource: repo://src/export_roms/test_wua_to_nus.rs
   - id: openwiki-source-f7509e92ca643a1db54a74c4
     resource: repo://src/import_keys.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
     resource: repo://src/import_roms.rs
+  - id: openwiki-source-7f6e94dedc63ef8dee1c7276
+    resource: repo://src/import_roms/test_nus_missing_h3.rs
   - id: openwiki-source-7f143595ec1df3c8cd4b8489
     resource: repo://src/import_roms/test_nus_multi_version_missing.rs
   - id: openwiki-source-b114aadc915534d21194e6ea
@@ -63,7 +69,7 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T19:18:06.223Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -142,6 +148,12 @@ at level 19 with a 128 MiB window (`2^27`), named `<sha1>.zst` after the
 stream's SHA-1. That is about 600 MB per update. Without a store, the stream
 goes into the WUA itself. `store_entries` lists the names a WUA needs.
 
+Progress follows the stream as it is read, chunk by chunk, rather than jumping
+once a partition is done. A partition bound for the store is read twice, once
+to hash it for its name and once to compress it when the store lacks it, so
+each read counts for half its length. When the entry already exists, the
+second half is reported at once.
+
 oxyromon keeps one store per system: a hidden `.update-partitions` folder
 (`wux_rs::STORE_DIR`) in the system's directory, from `store_directory`. A WUA
 finds its store with `find_store`, the nearest `.update-partitions` folder in
@@ -174,7 +186,7 @@ flowchart LR
 | `image.rs` | `Image`, which reads a WUD or a WUX the same way, so hashing and conversion never need the WUD on disk |
 | `disc.rs` | The disc as Cemu reads it: a partition table encrypted with the disc key, partitions, and an FST whose files are split into raw, hashed or per-block encrypted clusters, the last used by the update partition |
 | `nus.rs` | TMD parsing and the `tmd_path` / `ticket_path` lookups, which accept a downloader's names (`title.tmd`, `title.tik`) or No-Intro's (`tmd.<version>`, `cetk.<version>`) |
-| `install.rs` | `to_nus`: copies the game partition's encrypted contents as they are, checks each against the TMD, and takes the TMD, ticket and certificates from the SI partition |
+| `install.rs` | `to_nus`: copies the game partition's encrypted contents as they are, checks each against the TMD, and takes the TMD, ticket and certificates from the SI partition. `write_missing_h3`: writes the `.h3` files a NUS folder's TMD lists but the folder lacks |
 | `wua.rs` | `to_wua` and `title_id`, for a disc or a NUS folder. A WUA holds at most one disc |
 | `lossless.rs` | Writes the `.wud/` layout and the partition streams, and exposes `disc_info`, `store_entries`, `DISC_DIR` and `STORE_DIR` |
 | `rebuild.rs` | `wua_to_wux` and `wua_to_wud`, checked against the disc's SHA-1 |
@@ -282,6 +294,21 @@ web UI still shows the ignored files as missing; only completion changes.
 library, so a title imported with a content missing is not completed by
 importing its folder again.
 
+**H3 files the DAT leaves out.** No-Intro's CDN DAT sometimes omits a hashed
+content's `.h3`, though a title installs only with every one. Content 45 of
+Mario Kart 8 (Europe)'s v81 update is such a case. Completion only counts ROMs
+the DAT lists, so the title is still complete. `import_nus` leaves the file
+where it is and, when the folder's TMD lists that content as hashed, says
+exporting rebuilds it instead of reporting no match. The ORIGINAL export of a
+NUS title then calls oxyromon's `write_missing_h3`, which loads the Wii U keys
+and runs wux-rs's. That rebuilds each missing `.h3` from the contents' encrypted
+hash blocks: an H3 entry is the SHA-1 of the H2 hashes in the first block of
+each group of 4096, decrypted with the title key. Each file is checked against
+the TMD, which records an `.h3`'s hash as its content's. Keys are needed only
+when a file is missing, and a failure only warns, since the rest of the title
+is exported. A folder whose TMD is not a Wii U title's, as a vWii title's, is
+left alone.
+
 **Check.** `check-roms` has a WUX branch and a WUA branch. The WUX branch
 hashes the decompressed stream directly, or extracts a WUD first when the DAT
 declares a header, though no Wii U DAT does. The WUA branch compares the disc
@@ -312,7 +339,7 @@ the library's updates and DLC, with the update partitions in a
 `.update-partitions` store in the destination. A WUA source is rebuilt to a
 WUX in the temp directory first, so updates added to the library since it was
 written get bundled. Updates and DLC are already NUS folders, so they are
-exported as ORIGINAL.
+exported as ORIGINAL, which rebuilds any `.h3` file the DAT left out.
 
 **Bundling.** With `bundle` set, as export sets it, `ToWua` reads the disc's
 title ID, then scans every romfile that is a TMD across all systems. It keeps
@@ -348,7 +375,11 @@ keys share one store entry, that without a store the update stays in the WUA,
 that a missing or damaged entry fails the rebuild, and that a sector off the
 layout is kept whole. `tests/real.rs` runs only when `WUXRS_DISC` points at a
 real disc and is `#[ignore]`d otherwise. It now also rebuilds the disc from
-its WUA.
+its WUA, and with `WUXRS_NUS` set to a real NUS folder it rebuilds every `.h3`
+file of the folder and compares each with the original, byte for byte.
+`tests/nus.rs` checks that a missing `.h3` is rebuilt as it was, that a folder
+holding all of them, named in upper case as downloaders name them, needs no
+key, and that a missing one without the common key fails with nothing written.
 
 In oxyromon, `tests/Test Game (USA).wud`, its `.wux`, the update folder
 `tests/Test Game (USA) (Update)/` and the WUD and CDN DATs drive the
@@ -358,7 +389,11 @@ plus `purge_roms/test_foreign_store.rs`. The CDN History DAT adds an older TMD a
 content only it used to the same update: `import_roms/test_nus_multi_version.rs`
 checks the newest version alone is complete, and
 `test_nus_multi_version_missing.rs` that one of its own contents missing leaves
-it partial. `check_roms/test_wua_without_its_update.rs`
+it partial. The CDN Missing H3 DAT leaves out the update's `.h3`, as No-Intro
+sometimes does: `import_roms/test_nus_missing_h3.rs` checks the title is still
+complete with the file left behind, and
+`export_roms/test_nus_missing_h3_to_original.rs` that the export rebuilds it.
+`check_roms/test_wua_without_its_update.rs`
 checks that a WUA whose store entry is gone fails its check. See
 [Format Crate Tests](../testing/format-crate-tests.md) and
 [Test Fixtures](../testing/test-fixtures.md).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:252f64a5b43ffacbdd7ba06e51726b9ada1127d01e2cf9fe86c50af743255c09",
+  "pageVersion": "sha256:6ea32062d40044315adfb018b5b99e5e3f71330198fb8a486eaee46862e93f2e",
   "claims": [
     {
       "id": "claim_b087aba3f1c046f49eec90868ad7d336",
@@ -63,7 +63,7 @@
       "statement": "Because MAME's CHD DATs carry no size and list the CHD's own SHA-1, import_roms retries a failed SHA-1 match of a CHD with its chd_sha1 and size 0.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L1410-L1435",
+          "resource": "repo://src/import_roms.rs#L1433-L1458",
           "version": "repo-lines-v1:sha256:f2fdb94b4bc50a3b2a330f74f29c7c72dd240889637aca1b5e39bb6d6359c64b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmFlN2UzMWZhYTE5YTNjNDEyNmE3NjM3MDBmMjI0ZmYxMjI3M2NkMWFlMzkzYzM5ZjUyNDE5YzBjODMwOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiZTAzZDdiNDMyODhiMzQ3Y2I3MGZlNzgyMTQ4YWYzMDlhMmVlODQ3MDc0OWQ1YWViZGQ1MWRlNWM5YzcyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Zjk3MTA4YWYyNWI1MjU4ODdjYWExZDZhNjU0N2ZmZjM4MzJlNTc0MmJhY2Y4OTU2MzAxNzI4NzlkOTk5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZmZlMjE2Mzg4MDVhOTM4MjFkZmU1YWUwZjUyOGQ0ZDZmNTIzN2QwZjA1OGRjYzBhNzJlMTdmYzdkOWJmNmIifQ"
         }
       ]
@@ -109,11 +109,11 @@
           "version": "repo-lines-v1:sha256:7a142ebdd34cf4cb9a6a11eb37635b2df734a67dccc3f468e14c5f5fa5f28a4e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OGEzYzI4N2RiYzIwNjA2MTIyZDVlYmQwY2NhM2JhMjE4MjBmYmVhYzUxN2I5ZTU5MmRjOTgxNmI4MmM3NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNmJiMTU2ZDE0YzNiODE0OThlMmZiY2ViOTg5NjMxMTYyN2U5NTA3MzgzNzcxZTFlMmYyZmRkYjcwMmIyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMDI0ZDQ4M2EyNzBjNjkyMGNjMWE3NDMyYjM0M2Q3ZTJjN2I5ZDU0ODJlMmM4MGE3ODBkNGVkMTU3OGNmYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlOTNjZDJiY2FjYjNhOTIwOGY2YWJkZmM5MDU1MDQ3YTEyOTdmZTJhYzBlMDJiZDc1NjQ5MGYyMDZkMjc5NGEifQ"
         },
         {
-          "resource": "repo://src/export_roms.rs#L815-L816",
+          "resource": "repo://src/export_roms.rs#L816-L817",
           "version": "repo-lines-v1:sha256:b31dc20fc60df3da39922768f52459dda426b8847685006e6ba63e73961d1745:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU3ZmM1MTViNjc4YTNkMzczMzIyNGM3ZmZhZjdhZDE4NjQ1NzcwN2NhYWMyNTBmN2NjOTdkZjc0NzcwNjE2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdlYWY2ZWNiMzliNmVjNDlmMTQ0NzQyMjk1NDc0YWJjZWUxOTNkMzE0OGU0NWZiYTgyZjI4YjExYmJjMzNkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE5Zjg2ZDI4ZTc4NGY5ZmQzMWZiNzJkMTVmNjBjYmNlYWFmZGQ2NjljYmQ1YjZkYTc4ODhhMDIzMzIxZWJiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg0MmVhYjBkYzdiMGNhZTUwMzc3YWQ1YjQ2YzQxNTQ2MjU4MTdiODY4NThlMDZkYTA1MTA0YzNiZTJhMmNjMiJ9"
         },
         {
-          "resource": "repo://src/util.rs#L438-L468",
+          "resource": "repo://src/util.rs#L440-L470",
           "version": "repo-lines-v1:sha256:d670ed5bc51c90f7885eb9056930c6e3cf5f72895bed0327ab9436e206586c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYTU2ZjhhMWYwYjhhYzMxMDMwMmY2YmVjNWFkMTk4YTZkYjRjMWMwYWI5MTkyYTA2YTg2NGNiNTIxZDk3YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlYzM3N2RjNGQ3MTczYjlmNzIzMGRlNDcxMjE4N2FjMzRlN2MyM2U4NDBlODM5M2IwMDc1NGZiYzU2MGI0OTQifQ"
         }
       ]
@@ -191,6 +191,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-28T19:18:06.223Z"
   }
 }

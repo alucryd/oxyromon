@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a3a0864874fbd76723afd5544992a256fc0ef1d0d1048e4168a862a78a9c0a2f",
+  "pageVersion": "sha256:990d704b491d7e3ea2f1c7a59fc94b5c7a3c858ec31f4e0df8678662e7c19e40",
   "claims": [
     {
       "id": "claim_62e2eb596fd1472683dffa8d1316579b",
@@ -151,15 +151,15 @@
       "statement": "MAME arcade DAT fixtures' <disk> rows carry only a SHA1 and no size, matching MAME's own CHD DATs; import_chd has a dedicated retry that looks the file up by chd_sha1 with size 0 on every non-CD branch - DVD, HD and LaserDisc - and an arcade system stores the matched CHD under <system>/<game>/.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L1410-L1430",
+          "resource": "repo://src/import_roms.rs#L1433-L1453",
           "version": "repo-lines-v1:sha256:3d2f507966fac001d7265c8edf0155abfcf7e401a2ed165e584b7a4a284f23ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmFlN2UzMWZhYTE5YTNjNDEyNmE3NjM3MDBmMjI0ZmYxMjI3M2NkMWFlMzkzYzM5ZjUyNDE5YzBjODMwOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNGU2ZjBiODNjYWY0ZjA2MzgxNDI3ZTYzNTgyNzg2ODBjODNiNjI0NmY4NGM2NzQ1NTM0YzNiNjZlNmU0MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Zjk3MTA4YWYyNWI1MjU4ODdjYWExZDZhNjU0N2ZmZjM4MzJlNTc0MmJhY2Y4OTU2MzAxNzI4NzlkOTk5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNWQzYTc2ZDgyYjE4N2U2NDFhNmZjZmQxOTAxMmExZDJlZWU0MDg3Zjk4ZmFjMGI3ZjZmOTA4MzYyMmQ5ZjQifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L1525-L1545",
+          "resource": "repo://src/import_roms.rs#L1548-L1568",
           "version": "repo-lines-v1:sha256:3d2f507966fac001d7265c8edf0155abfcf7e401a2ed165e584b7a4a284f23ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmFlN2UzMWZhYTE5YTNjNDEyNmE3NjM3MDBmMjI0ZmYxMjI3M2NkMWFlMzkzYzM5ZjUyNDE5YzBjODMwOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNGU2ZjBiODNjYWY0ZjA2MzgxNDI3ZTYzNTgyNzg2ODBjODNiNjI0NmY4NGM2NzQ1NTM0YzNiNjZlNmU0MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Zjk3MTA4YWYyNWI1MjU4ODdjYWExZDZhNjU0N2ZmZjM4MzJlNTc0MmJhY2Y4OTU2MzAxNzI4NzlkOTk5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNWQzYTc2ZDgyYjE4N2U2NDFhNmZjZmQxOTAxMmExZDJlZWU0MDg3Zjk4ZmFjMGI3ZjZmOTA4MzYyMmQ5ZjQifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L1649-L1669",
+          "resource": "repo://src/import_roms.rs#L1672-L1692",
           "version": "repo-lines-v1:sha256:3d2f507966fac001d7265c8edf0155abfcf7e401a2ed165e584b7a4a284f23ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmFlN2UzMWZhYTE5YTNjNDEyNmE3NjM3MDBmMjI0ZmYxMjI3M2NkMWFlMzkzYzM5ZjUyNDE5YzBjODMwOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNGU2ZjBiODNjYWY0ZjA2MzgxNDI3ZTYzNTgyNzg2ODBjODNiNjI0NmY4NGM2NzQ1NTM0YzNiNjZlNmU0MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1Zjk3MTA4YWYyNWI1MjU4ODdjYWExZDZhNjU0N2ZmZjM4MzJlNTc0MmJhY2Y4OTU2MzAxNzI4NzlkOTk5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNWQzYTc2ZDgyYjE4N2U2NDFhNmZjZmQxOTAxMmExZDJlZWU0MDg3Zjk4ZmFjMGI3ZjZmOTA4MzYyMmQ5ZjQifQ"
         },
         {
@@ -405,7 +405,7 @@
           "version": "repo-lines-v1:sha256:2a3fd3a5e15b25caf3bb4de04e77282c55cbd65a7ec3f7c598593a5a076679cb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NzEwNGQwZGYyODFmN2VjMDNmNGU3ZDAwMjQzNWJlODY0ODcxYzExY2QxZDhkZWU3ZDUxMzg3NTVlNjAzNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYzIwNWQ3ZDRlNGJjNjk4NTYxNWRhOGFlZGJkMmJlOTAyMWE4YjZhMjgyYjM0NWY1MGFmZjg5YmRiY2JmYWEifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L1264-L1387",
+          "resource": "repo://src/import_roms.rs#L1287-L1410",
           "version": "repo-lines-v1:sha256:106a7d63acda06c78e623c047e8f448591eb9aa57ac4419e7b33ba50d7299c92:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNjQyMmRhZjljZjg1YTg1N2I5ZDMxZWZiMWYyYjAwMzQ0NjU4OGZiNTEwOTA3YTUxMGU1YjFhY2VjOTY0ODlhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhODAwZDgzNjY5NDBmNDQ2YjExM2E2Yzg3YWQxZDk4NDc2NGFhNTE1ZTBjZTA0NmZjZjljNTZmNDgxMDM1OWFkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzMTE0Njc5NmZiNTUwZjk4ZjM2NjkzOGEwZjczODdlZjFjYTNiZGM2YjY1MGUyMmIzZGQ5MzI2ZGE4YTNhNDRhIn0"
         },
         {
@@ -605,6 +605,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T12:28:25.132Z"
+    "at": "2026-10-28T19:18:06.223Z"
   }
 }
