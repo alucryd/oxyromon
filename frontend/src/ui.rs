@@ -181,6 +181,64 @@ pub fn Modal(
     }
 }
 
+/// The confirmation before deleting something: what is about to go, then what
+/// will happen to it, one line per consequence.
+///
+/// `effects` pairs an icon with its sentence. Every icon must be listed in
+/// `scripts/fetch-webawesome.sh`, or it renders nothing.
+#[component]
+pub fn DeleteDialog(
+    open: RwSignal<bool>,
+    title: &'static str,
+    #[prop(into)] name: Signal<String>,
+    #[prop(into)] detail: Signal<String>,
+    effects: &'static [(&'static str, &'static str)],
+    on_confirm: Callback<()>,
+) -> impl IntoView {
+    view! {
+        <Modal open=open title=Signal::derive(move || title.to_string()) size="sm">
+            <div class="wa-stack wa-gap-l">
+                <div class="wa-flank wa-gap-m wa-align-items-center">
+                    <div class="delete-badge wa-cluster wa-justify-content-center wa-align-items-center">
+                        <wa-icon name="trash"></wa-icon>
+                    </div>
+                    <div class="wa-stack wa-gap-3xs">
+                        <span class="delete-name">{move || name.get()}</span>
+                        <small class="wa-color-text-quiet">{move || detail.get()}</small>
+                    </div>
+                </div>
+                <ul class="delete-effects wa-stack wa-gap-s">
+                    {effects
+                        .iter()
+                        .map(|(icon, text)| {
+                            view! {
+                                <li class="wa-flank wa-gap-s">
+                                    <wa-icon name=*icon></wa-icon>
+                                    <span>{*text}</span>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            </div>
+            <wa-button slot="footer" appearance="plain" on:click=move |_| open.set(false)>
+                Cancel
+            </wa-button>
+            <wa-button
+                slot="footer"
+                variant="danger"
+                on:click=move |_| {
+                    on_confirm.run(());
+                    open.set(false);
+                }
+            >
+                <wa-icon slot="start" name="trash"></wa-icon>
+                Delete
+            </wa-button>
+        </Modal>
+    }
+}
+
 /// Where a dialog takes its one file: clicked to browse or dropped onto, and
 /// showing the file once there is one.
 ///

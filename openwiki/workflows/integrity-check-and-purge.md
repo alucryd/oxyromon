@@ -96,10 +96,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-27T21:50:09.478Z" }
+generated: { by: "claude-code", at: "2026-10-28T17:34:44.685Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T17:34:44.685Z
 ---
 
 # Integrity Checking, Purging and Trash
@@ -444,8 +444,9 @@ survive — pointing into `Trash`, where `purge-roms --trash` can find them
 ([src/purge_systems.rs](../../src/purge_systems.rs#L55-L84)).
 
 The web UI's *Delete system* dialog says so: "Its files move to the system's
-Trash directory", because this command only moves files and never deletes them
-([frontend/src/page.rs](../../frontend/src/page.rs#L767-L801)).
+Trash folder", and adds that nothing leaves the disk until the Trash is emptied
+with Purge ROM files, because this command only moves files and never deletes them
+([frontend/src/page.rs](../../frontend/src/page.rs#L794-L865)).
 
 ## purge-games: the files go to Trash, the games stay
 
@@ -545,8 +546,9 @@ destructive boundary.
   *orphan* under "Remove from database" and *trash* and *foreign* under a
   visually flagged "Delete files from disk" section
   ([frontend/src/components/purge_rom_modal.rs](../../frontend/src/components/purge_rom_modal.rs#L47-L96)).
-  Purging a game is the Purge item in that game's actions menu in the games
-  list, behind its own confirmation dialog.
+  Purging a game is the Delete item in that game's actions menu in the games
+  list, behind its own confirmation dialog, which also says files shared with
+  other games stay in place.
   On `purge_complete` the frontend drops a purged system from the selection,
   since there is nothing left of it to fetch
   ([frontend/src/sse.rs](../../frontend/src/sse.rs#L52-L60)).
