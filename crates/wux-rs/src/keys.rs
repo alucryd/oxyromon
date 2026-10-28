@@ -4,7 +4,7 @@
 use std::path::Path;
 
 use crate::crypto::Key;
-use crate::error::Result;
+use crate::error::{Error, Result};
 
 /// Parse keys in Cemu's `keys.txt` format: one 32-digit hex key per line,
 /// anything after `#` or `;` ignored, and spaces, tabs, dashes and
@@ -47,14 +47,25 @@ pub fn parse_otp(otp: &[u8]) -> Vec<Key> {
 }
 
 /// Read a keys file: text as Cemu's `keys.txt`, or a 1 KiB binary file as an
-/// OTP dump.
+/// OTP dump. An OTP dump carries no magic, so a 1 KiB binary file is only
+/// refused when neither common key slot was ever programmed.
 pub fn load_keys(path: &Path) -> Result<Vec<Key>> {
+    let unsupported = || {
+        Error::Unsupported(format!(
+            "{}: expected Cemu's keys.txt (text) or a Wii U's otp.bin (binary, {OTP_SIZE} bytes)",
+            path.display()
+        ))
+    };
     match String::from_utf8(std::fs::read(path)?) {
         Ok(text) => Ok(parse_keys(&text)),
-        Err(error) if error.as_bytes().len() == OTP_SIZE => Ok(parse_otp(error.as_bytes())),
-        Err(error) => {
-            Err(std::io::Error::new(std::io::ErrorKind::InvalidData, error.utf8_error()).into())
+        Err(error) if error.as_bytes().len() == OTP_SIZE => {
+            let keys = parse_otp(error.as_bytes());
+            if keys.is_empty() {
+                return Err(unsupported());
+            }
+            Ok(keys)
         }
+        Err(_) => Err(unsupported()),
     }
 }
 
@@ -66,7 +77,17 @@ pub fn cemu_keys_path() -> Option<std::path::PathBuf> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
+
+    use tempfile::NamedTempFile;
+
     use super::*;
+
+    fn load(bytes: &[u8]) -> Result<Vec<Key>> {
+        let mut file = NamedTempFile::new().unwrap();
+        file.write_all(bytes).unwrap();
+        load_keys(file.path())
+    }
 
     #[test]
     fn keys_are_read_as_cemu_reads_them() {
@@ -90,11 +111,7 @@ mod tests {
         let mut otp = vec![0x80; OTP_SIZE];
         otp[0xD0..0xE0].copy_from_slice(&[0x11; 16]);
         otp[0xE0..0xF0].copy_from_slice(&[0x22; 16]);
-        let path = std::env::temp_dir().join(format!("wux-rs-otp-{}.bin", std::process::id()));
-        std::fs::write(&path, &otp).unwrap();
-        let keys = load_keys(&path);
-        std::fs::remove_file(&path).unwrap();
-        assert_eq!(keys.unwrap(), vec![[0x22; 16], [0x11; 16]]);
+        assert_eq!(load(&otp).unwrap(), vec![[0x22; 16], [0x11; 16]]);
 
         // a slot never programmed is left out
         otp[0xD0..0xE0].copy_from_slice(&[0; 16]);
@@ -104,10 +121,8 @@ mod tests {
 
     #[test]
     fn other_binary_files_are_refused() {
-        let path = std::env::temp_dir().join(format!("wux-rs-bin-{}.bin", std::process::id()));
-        std::fs::write(&path, [0x80; 16]).unwrap();
-        let keys = load_keys(&path);
-        std::fs::remove_file(&path).unwrap();
-        assert!(keys.is_err());
+        assert!(matches!(load(&[0x80; 16]), Err(Error::Unsupported(_))));
+        // 1 KiB, but no common key slot was ever programmed
+        assert!(matches!(load(&[0xFF; OTP_SIZE]), Err(Error::Unsupported(_))));
     }
 }
