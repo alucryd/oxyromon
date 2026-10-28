@@ -37,7 +37,7 @@ use crate::crypto::{Key, cbc_decrypt, decrypt_block};
 use crate::disc::{self, Fst, Mode, PartitionSource, SECTOR};
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
-use crate::io::finish;
+use crate::io::{Scaled, finish};
 use crate::nus;
 use crate::revert::encrypt;
 use crate::wua::{self, DiscGame, parse_ticket, ticket_iv, tree};
@@ -763,17 +763,15 @@ pub(crate) fn write<W: Write>(
     // The streams count for the disc's size, as `to_wua` budgets them, though
     // they leave out the game's contents and the disc's padding: reported as
     // they are, they would fall far short, and the rest come in one jump.
-    let mut streams = Scaled {
-        report: &mut *report,
-        total: parts
+    let mut streams = Scaled::new(
+        &mut *report,
+        parts
             .iter()
             .filter(|p| p.layout.storage != Storage::None)
             .map(|p| p.layout.stream_len)
             .sum(),
-        budget: image.size(),
-        done: 0,
-        reported: 0,
-    };
+        image.size(),
+    );
     let mut partition_layouts = Vec::with_capacity(parts.len());
     for (i, mut part) in parts.into_iter().enumerate() {
         if part.layout.storage == Storage::None {
@@ -835,31 +833,6 @@ pub(crate) fn write<W: Write>(
     writer.file(dir, b"layout")?;
     writer.append(&layout.to_bytes())?;
     Ok(())
-}
-
-/// Bytes reported as a share of `budget`, their sum being `total`.
-struct Scaled<'a> {
-    report: &'a mut dyn FnMut(u64),
-    total: u64,
-    budget: u64,
-    done: u64,
-    reported: u64,
-}
-
-impl Scaled<'_> {
-    fn add(&mut self, n: u64) {
-        self.done = (self.done + n).min(self.total);
-        let scaled = (u128::from(self.done) * u128::from(self.budget)
-            / u128::from(self.total.max(1))) as u64;
-        (self.report)(scaled - self.reported);
-        self.reported = scaled;
-    }
-
-    /// Whatever is left of the budget, as when there was no stream.
-    fn finish(&mut self) {
-        (self.report)(self.budget - self.reported);
-        self.reported = self.budget;
-    }
 }
 
 /// A store entry's file name: the SHA-1 of the stream it holds.
