@@ -8,20 +8,22 @@
 //! signed by Nintendo for the disc, says so. The folder installs, but its FST
 //! and TMD differ from the CDN's.
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
 
 use crate::Stats;
+use crate::crypto::Key;
 use crate::crypto::cbc_decrypt;
 use crate::disc::Source;
 use crate::error::{Result, corrupt};
-use crate::io::{finish_dir, part};
-use crate::nus::{self, HASHED, SHA1};
-use crate::wua::DiscGame;
+use crate::io::{finish, finish_dir, part};
+use crate::nus::{self, Content, SHA1};
+use crate::wua::{DiscGame, open_nus_title};
 
 /// A hashed block, and how many share the H2 hashes that make one H3 hash.
 const BLOCK: u64 = 0x10000;
@@ -71,7 +73,7 @@ pub fn to_nus(
                     content.index
                 ))
             })?;
-            let hashed = content.flags & HASHED != 0;
+            let hashed = content.is_hashed();
             if !content.size.is_multiple_of(if hashed { BLOCK } else { 16 }) {
                 return Err(corrupt(format!(
                     "content {:08x} is {} bytes",
@@ -95,9 +97,7 @@ pub fn to_nus(
                     // The first block of each group holds the group's H2 hashes.
                     for (i, block) in chunk.chunks(BLOCK as usize).enumerate() {
                         if (offset / BLOCK + i as u64).is_multiple_of(BLOCKS_PER_H3) {
-                            let mut hashes = block[..0x400].to_vec();
-                            cbc_decrypt(&game.title_key, &mut [0; 16], &mut hashes);
-                            h3.extend(Sha1::digest(&hashes[0x280..0x3C0]));
+                            h3.extend(h3_hash(&game.title_key, block));
                         }
                     }
                 } else {
@@ -140,4 +140,83 @@ pub fn to_nus(
         })
     })();
     finish_dir(&part, output, result)
+}
+
+/// Write, in the NUS folder at `dir`, the `<content id>.h3` of each hashed
+/// content its TMD lists but it lacks, each checked against the TMD, and
+/// return the files written. An H3 hash is the SHA-1 of a group of blocks'
+/// H2 hashes, which the contents hold encrypted with the title key: a title
+/// installs only with every H3 file, which No-Intro sometimes leaves out.
+///
+/// `keys` are needed only when an H3 file is missing, and are candidates as
+/// in Cemu's `keys.txt`: among them must be the Wii U common key. A folder
+/// whose TMD is not a Wii U title's, as a vWii title's, is left alone.
+pub fn write_missing_h3(dir: &Path, keys: &[Key]) -> Result<Vec<PathBuf>> {
+    let Some(tmd_path) = nus::tmd_path(dir) else {
+        return Ok(Vec::new());
+    };
+    let tmd_bytes = std::fs::read(tmd_path)?;
+    // The title ID is where it is in a Wii TMD too, whose records differ.
+    let is_wiiu = tmd_bytes
+        .get(0x18C..0x194)
+        .is_some_and(|id| u64::from_be_bytes(id.try_into().unwrap()) >> 48 == 5);
+    if !is_wiiu {
+        return Ok(Vec::new());
+    }
+    let tmd = nus::parse_tmd(&tmd_bytes)?;
+    // Downloaders write the IDs in upper case, No-Intro in lower case.
+    let present: HashSet<String> = std::fs::read_dir(dir)?
+        .filter_map(|entry| entry.ok()?.file_name().into_string().ok())
+        .map(|name| name.to_lowercase())
+        .collect();
+    let missing: Vec<&Content> = tmd
+        .contents
+        .iter()
+        .filter(|c| c.is_hashed() && !present.contains(&format!("{:08x}.h3", c.id)))
+        .collect();
+    if missing.is_empty() {
+        return Ok(Vec::new());
+    }
+    let title = open_nus_title(dir, keys, &[])?;
+    let mut written = Vec::with_capacity(missing.len());
+    let mut head = vec![0; 0x400];
+    for content in missing {
+        if !content.size.is_multiple_of(BLOCK) {
+            return Err(corrupt(format!(
+                "content {:08x} is {} bytes",
+                content.id, content.size
+            )));
+        }
+        // The first block of each group holds the group's H2 hashes.
+        let mut h3 = Vec::new();
+        for offset in (0..content.size).step_by((BLOCK * BLOCKS_PER_H3) as usize) {
+            title
+                .source
+                .read_cluster(content.index, 0, offset, &mut head)?;
+            h3.extend(h3_hash(&title.title_key, &head));
+        }
+        let matches = match content.flags & SHA1 != 0 {
+            true => Sha1::digest(&h3).as_slice() == &content.hash[..20],
+            false => Sha256::digest(&h3).as_slice() == &content.hash[..],
+        };
+        if !matches {
+            return Err(corrupt(format!(
+                "content {:08x} fails its TMD hash",
+                content.id
+            )));
+        }
+        let path = dir.join(format!("{:08x}.h3", content.id));
+        let part = part(&path);
+        finish(&part, &path, std::fs::write(&part, &h3).map_err(Into::into))?;
+        written.push(path);
+    }
+    Ok(written)
+}
+
+/// The H3 hash of a group of hashed blocks, from its first block: the SHA-1
+/// of the group's H2 hashes, in the block's encrypted hash area.
+fn h3_hash(title_key: &Key, block: &[u8]) -> [u8; 20] {
+    let mut hashes = block[..0x400].to_vec();
+    cbc_decrypt(title_key, &mut [0; 16], &mut hashes);
+    Sha1::digest(&hashes[0x280..0x3C0]).into()
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a9c7e6611605c0e8417b4cc887b4dd04ba5929245cf72d5ac65a454ac5e4ec0a",
+  "pageVersion": "sha256:4837e66f503fc1e72c6f1a524eaa62cf64b251ae003121a1c84723b728dca1ac",
   "claims": [
     {
       "id": "claim_d5d061cf788d45739c14a039d86425f2",
@@ -11,8 +11,8 @@
           "version": "repo-lines-v1:sha256:fc3ae68684d675390f1b22eaae658b11c8c073d1d9a0b6d289ef0a29759107c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOTQ4NGVlZGYzNjRmYjhjMTJmMWViOThmYmY2YTliNGY2NTBmNDI3ODc0YThkNzM1OTAxMGFhZGU0MzFiYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMDYzYjkwZWMxZDQ4YTNhNTI4ZWQyMGZlMzk2ZjFmZTNmYWFkYWNlNjFjZGJjNmQwZWE2NjIzZjEzYWRmZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwODI5ODU1Y2FhYWY4M2Y2OTVjZGI0ZTEyYmJlZDcwMDAxYzhmZWEzY2QxMjEwNTk2YTE3YzU0OTM5NGViM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYjcxNzBmZDYxOTk1M2MzNDdjNmM1ODU1NTJlOWUyZTk2MDkzZTA3NDU4MzNiN2YxODFlYjg2ZTU5MmM0ZDIifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L3069-L3134",
-          "version": "repo-lines-v1:sha256:712390d3f3d276be4bd8d78c871c9aa57a8a5e135120b9152a27cfef127d16cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWM3OTg3ZDNjMjNkMGFhYzFiZjJjZjc3ZDI3NzA3OWQ1ZGI4OTljYTdjZTU1OGE0ODIzMzUyYTY5ZmI5YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/import_roms.rs#L3130-L3199",
+          "version": "repo-lines-v1:sha256:ea5b41f6100aebfd4893bce48f1d100dd7bae9e0e227f2a3bda74ffb9bb14355:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1Y2Y1ZmMyM2YyYTZkMjNjM2VhNTFlNzJmNWU4OTZjNzU1NWZiYWEwNWNkNWIxZWExODJiZjk2MThhOGU4MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWM3OTg3ZDNjMjNkMGFhYzFiZjJjZjc3ZDI3NzA3OWQ1ZGI4OTljYTdjZTU1OGE0ODIzMzUyYTY5ZmI5YjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZjZmNDY2ZTU5Y2ZjMzA3MDNjNDVmNzJhZjY1ZGU1NGFjMzYzZDM1NGNjMWEzMzMwMzUwYWNkNDUyNDM0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
           "resource": "repo://tests/mcp_stdio.rs#L1-L43",
@@ -155,15 +155,15 @@
       "statement": "Import helpers thread an explicit UnattendedMode { None, Skip, First } - the value parsed from the CLI's -u/--unattended flag - instead of relying on cfg!(test); tests pass UnattendedMode::Skip (or First), and because a non-None mode makes multi-match resolution return early (Skip yields MatchState::Skipped, First takes the first candidate), prompt_for_roms is never reached under test.",
       "evidence": [
         {
-          "resource": "repo://src/import_roms.rs#L109-L118",
+          "resource": "repo://src/import_roms.rs#L111-L120",
           "version": "repo-lines-v1:sha256:2dd0ce9d627a319a964347aba802760c006e55ad88656121dd712fd61e11f3b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMTAwOTZlZjI5ODM2YTY5YjAyNWY2MzdiOWMyMDIzMWM4MmNkN2Q4ZDhmMDQ1MGVmZWM3MmVlNjliZDM3ZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MWNjYWZjMTg1OTQ4ZjBmMjVmYzE5MDFlZjE4MGNkZGI0ZDM4ZTIwYWUzNGI5M2IxYzY2OGNiZjEyZTUwYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMzkwYjNmN2VhYjkzOWFmYmViMjRkZWEzYjQ2ZmJhOWQ5MWQxOWNkNGRmMmIwY2RiZDM4ZWUwNTAxNWZlYmEifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L2910-L2937",
+          "resource": "repo://src/import_roms.rs#L2971-L2998",
           "version": "repo-lines-v1:sha256:452a563ef720d1c1523b77210136675f91c72468892d60e04a138e4e49720506:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NjI0ZDJjMTIxNzY3MWFiYTNmOWEzZjdkN2QyYjViODkyNDgyMDc1Y2U3YmZmYTM3NmQyYmY2YTgxMGMzYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Y2RlZjgwODVhZTc0YWI2MzZkNjQ1OWY1YzZkNWZiZmIwZGIyNjRmMWIwZDc1YmFjNTE5YzliM2Y2NzE3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMDc4ZDAzNTllOTA0N2VhNGYxZTUwMTFhOWRhN2M5NGRmYTdiZDRkMGYxOTU2OGNlOGRhZWQxYTZkZjJmNDkifQ"
         },
         {
-          "resource": "repo://src/import_roms.rs#L40-L55",
+          "resource": "repo://src/import_roms.rs#L42-L57",
           "version": "repo-lines-v1:sha256:1bf5a40a451c7c12942d66b1ec3f64a077d76533b130f5625a58616ac80d649a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyYTEyMmNjMzMwZWQxYzY5N2Q3YTQ5N2M1NmIyZjk5Y2RlZjYwMzg2OTY5MjE1ZTcxMzNkMmU4YjM4MTY2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyM2E0YmFjMWFmNWQ3NDE4NmNlMWMyYWFiNmQwZDM4NWZhM2I0NjI2MTJjZjkyY2U0MWE2YTQyYThjZGNhZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMmUyOTdjMjNkODMzMDRhZTk2N2NjNjkwZGZhMTViMGI3NTI4YmZlOTg2YjhhYTgzNDUxZTExZTAzZjUxODEifQ"
         },
         {
@@ -439,7 +439,7 @@
       "statement": "Under cfg(test), src/wux.rs reads Wii U keys from tests/Test Game (USA).keys.txt instead of the data directory's wiiu_keys.txt, so the WUA and NUS export tests need no import-keys run.",
       "evidence": [
         {
-          "resource": "repo://src/wux.rs#L35-L42",
+          "resource": "repo://src/wux.rs#L39-L46",
           "version": "repo-lines-v1:sha256:a3798c9775048495c46f4f8b3613b8bf5fb91b63eb9a7053bbcb3e424b2d2ad8:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2UwNzc0N2YwOTY2N2E4OTMxM2ExMjZkZjc3ZTMwMDhhYmI5MGM0YmE2YjM5MjgyODIyYjE0MzI3OWQ2NzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU5ZmM5YzYzNWJlMGE0MjE3NzdhMjJjYWRmY2Q3ZDJlMzIwN2E2YmRlYTY3ZDAxNzA0MThmMzZlMmY2ODUzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2RmYWE2ZjdmMjk3ZjQ3OWM1OTRmZmEzOGYwOWMwM2JmYjQwODExMGEzNTNmODIzYzc3YzlmMGFjOWIxNDRiNiJ9"
         }
       ]
@@ -447,6 +447,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T12:28:25.132Z"
+    "at": "2026-10-28T19:36:29.623Z"
   }
 }

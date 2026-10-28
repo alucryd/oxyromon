@@ -28,6 +28,10 @@ sources:
     resource: repo://src/import_roms/test_multiple_tracks_chd.rs
   - id: openwiki-source-ce909429aa84530845ef3778
     resource: repo://src/import_roms/test_none_selected.rs
+  - id: openwiki-source-7f6e94dedc63ef8dee1c7276
+    resource: repo://src/import_roms/test_nus_missing_h3.rs
+  - id: openwiki-source-4c13db32f406c7729c88944d
+    resource: repo://src/import_roms/test_nus_unlisted_ticket.rs
   - id: openwiki-source-c63a2a415ce9850aa169d04a
     resource: repo://src/import_roms/test_original_delete.rs
   - id: openwiki-source-f13ad111e0b94e6baae4cb31
@@ -80,10 +84,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # ROM Import Pipeline
@@ -428,14 +432,24 @@ back import ([src/import_dats.rs](../../src/import_dats.rs#L896-L945)).
 
 An update or DLC arrives as a NUS folder: a TMD, a ticket, and one file per
 content. `import_nus` handles it outside `import_rom` with a transaction of its own
-([src/import_roms.rs](../../src/import_roms.rs#L693-L800)).
+([src/import_roms.rs](../../src/import_roms.rs#L695-L834)).
 
 - **The TMD finds the game.** A TMD names one title at one version, so it is hashed
   and matched first, in the given system or any. A `Duplicate` prints `Already
   imported`, and no match prints a warning.
+- **A ticket no DAT lists is kept apart.** Once the TMD matches, as a new
+  title or one already imported, `keep_unlisted_ticket` moves the folder's
+  ticket to the store of tickets, `<title id>.tik` in a `wiiu_tickets` folder
+  in the data directory, when it is for the TMD's title and no DAT ROM has its
+  size and SHA-1. That is DLC's case: No-Intro lists no ticket for it, and the
+  one a downloader made is the only one there is.
 - **The other files match within that game only**, since a game and its update can
   hold identical files. Size and hash must agree, and among identical candidates the
   ROM named like the file (ignoring `.app`) wins.
+- **An `.h3` the DAT leaves out stays behind.** No-Intro sometimes omits a hashed
+  content's `.h3`. When the TMD, read before any file moves, lists that content
+  as hashed, the file is skipped with a note that exporting the title rebuilds
+  it, rather than a "No match" warning.
 - Placement goes through `get_sorted_path`, which gives a NUS title its own folder
   because every title names its contents alike.
 - It needs no `--system` and no Wii U keys. Keys only matter for WUA and NUS

@@ -11,6 +11,10 @@
 //! with oxyromon: `import-keys` stores them in its data directory, from files
 //! in the format of Cemu's `keys.txt`, where the common key can sit alongside
 //! the disc keys. Like Cemu, wux-rs tries each key.
+//!
+//! A title needs its ticket too. No-Intro lists none for DLC, which
+//! Nintendo's servers deliver without one, so the ticket a downloader made
+//! is kept apart, in a store of tickets in the data directory, by title ID.
 
 use super::common::*;
 use super::config::*;
@@ -39,6 +43,74 @@ fn keys_path() -> Result<PathBuf> {
         return Ok(PathBuf::from("tests/Test Game (USA).keys.txt"));
     }
     Ok(get_data_directory()?.join(WIIU_KEYS_FILE))
+}
+
+/// The store of the tickets No-Intro does not list, a `<title id>.tik` each.
+const WIIU_TICKETS_DIRECTORY: &str = "wiiu_tickets";
+
+/// Where the tickets No-Intro does not list are kept: in the data directory,
+/// beside the keys, as a title ID names one title whatever its system; in
+/// tests, in the temp directory, which each test sets.
+async fn tickets_directory(connection: &mut SqliteConnection) -> Result<PathBuf> {
+    if cfg!(test) {
+        return Ok(get_tmp_directory(connection)
+            .await
+            .join(WIIU_TICKETS_DIRECTORY));
+    }
+    Ok(get_data_directory()?.join(WIIU_TICKETS_DIRECTORY))
+}
+
+/// The ticket kept for `title_id`, if any.
+pub async fn stored_ticket(
+    connection: &mut SqliteConnection,
+    title_id: u64,
+) -> Result<Option<PathBuf>> {
+    let path = tickets_directory(connection)
+        .await?
+        .join(format!("{title_id:016x}.tik"));
+    Ok(path.is_file().then_some(path))
+}
+
+/// Move the ticket at `path`, for `title_id`, to the store of tickets.
+pub async fn store_ticket(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    path: &Path,
+    title_id: u64,
+) -> Result<()> {
+    let directory = tickets_directory(connection).await?;
+    create_directory(progress_bar, &directory, true).await?;
+    rename_file(
+        progress_bar,
+        &path,
+        &directory.join(format!("{title_id:016x}.tik")),
+        true,
+    )
+    .await?;
+    print_success(
+        progress_bar,
+        &format!("Kept the ticket of {title_id:016x}, which the DAT does not list"),
+    );
+    Ok(())
+}
+
+/// Give the NUS title exported to `directory` the ticket kept for it, as
+/// `title.tik`, when it has none of its own.
+pub async fn add_stored_ticket(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    directory: &Path,
+) -> Result<()> {
+    if wux_rs::ticket_path(directory).is_some() {
+        return Ok(());
+    }
+    let Ok((title_id, _)) = wux_rs::title_id(directory, &[]) else {
+        return Ok(());
+    };
+    if let Some(path) = stored_ticket(connection, title_id).await? {
+        copy_file(progress_bar, &path, &directory.join("title.tik"), true).await?;
+    }
+    Ok(())
 }
 
 /// The store a system's WUAs share their update partitions in.
@@ -417,8 +489,12 @@ pub trait ToWua: GetRomfile {
         );
         let keys = load_wiiu_keys()?;
         let mut inputs = vec![input.clone()];
+        let mut tickets = Vec::new();
         if bundle {
-            inputs.extend(find_update_and_dlc(connection, progress_bar, &input, &keys).await?);
+            let (directories, stored) =
+                find_update_and_dlc(connection, progress_bar, &input, &keys).await?;
+            inputs.extend(directories);
+            tickets = stored;
         }
         let mut length = 0;
         for input in &inputs {
@@ -430,7 +506,7 @@ pub trait ToWua: GetRomfile {
         let (output, store) = (path.clone(), store.to_path_buf());
         run_blocking(progress_bar, length, move |progress| {
             let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
-            wux_rs::to_wua(&inputs, &output, &keys, Some(&store), progress)
+            wux_rs::to_wua_with_tickets(&inputs, &output, &keys, &tickets, Some(&store), progress)
         })
         .await
         .with_context(|| format!("Failed to create \"{}\"", path.display()))?;
@@ -445,21 +521,23 @@ impl ToWua for WuxRomfile {}
 
 /// The folders of the newest update and DLC in the library for the game on
 /// the disc at `disc`: titles whose ID shares the game's low half, typed
-/// `0005000E` for an update and `0005000C` for DLC.
+/// `0005000E` for an update and `0005000C` for DLC, and the stored tickets of
+/// those that hold none.
 async fn find_update_and_dlc(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
     disc: &Path,
     keys: &[wux_rs::Key],
-) -> Result<Vec<PathBuf>> {
+) -> Result<(Vec<PathBuf>, Vec<Vec<u8>>)> {
     let tmds = find_romfiles_of_tmds(connection).await;
     if tmds.is_empty() {
-        return Ok(Vec::new());
+        return Ok((Vec::new(), Vec::new()));
     }
     let (title_id, _) = wux_rs::title_id(disc, keys)
         .with_context(|| format!("Failed to read \"{}\"", disc.display()))?;
     // the newest version of each matching title
     let mut found: HashMap<u64, (u16, PathBuf)> = HashMap::new();
+    let mut tickets: HashMap<u64, Vec<u8>> = HashMap::new();
     for tmd in tmds {
         let path = tmd.as_common(connection).await?.path;
         let Some(directory) = path.parent() else {
@@ -473,16 +551,24 @@ async fn find_update_and_dlc(
         {
             continue;
         }
-        // No-Intro lists DLC without the ticket it would need
-        if wux_rs::ticket_path(directory).is_none() {
-            print_warning(
-                progress_bar,
-                &format!(
-                    "\"{}\" has no ticket to decrypt it with, skipping",
-                    directory.file_name().unwrap().to_str().unwrap()
-                ),
-            );
-            continue;
+        // No-Intro lists DLC without the ticket it would need: the one a
+        // downloader made is in the store of tickets, if it was imported
+        if wux_rs::ticket_path(directory).is_none() && !tickets.contains_key(&id) {
+            match stored_ticket(connection, id).await? {
+                Some(path) => {
+                    tickets.insert(id, std::fs::read(&path)?);
+                }
+                None => {
+                    print_warning(
+                        progress_bar,
+                        &format!(
+                            "\"{}\" has no ticket to decrypt it with, skipping: import its folder with the ticket a downloader made",
+                            directory.file_name().unwrap().to_str().unwrap()
+                        ),
+                    );
+                    continue;
+                }
+            }
         }
         if found.get(&id).is_none_or(|(newest, _)| version > *newest) {
             found.insert(id, (version, directory.to_path_buf()));
@@ -499,7 +585,7 @@ async fn find_update_and_dlc(
             ),
         );
     }
-    Ok(directories)
+    Ok((directories, tickets.into_values().collect()))
 }
 
 /// The total size of the files directly in `directory`.
@@ -774,6 +860,43 @@ pub async fn update_nus_games_completion(
         update_game_completion(connection, game_id, completion).await;
     }
     Ok(())
+}
+
+/// Write the H3 files the NUS title exported to `directory` lacks: No-Intro
+/// sometimes leaves one out of its DATs, though the title installs only with
+/// it. A failure only warns, since the rest of the title is exported.
+pub fn write_missing_h3(progress_bar: &ProgressBar, directory: &Path) {
+    // Keys are needed only if an H3 file is missing.
+    let (keys, keys_error) = match load_wiiu_keys() {
+        Ok(keys) => (keys, None),
+        Err(error) => (Vec::new(), Some(error)),
+    };
+    match wux_rs::write_missing_h3(directory, &keys) {
+        Ok(paths) => {
+            for path in paths {
+                print_info(
+                    progress_bar,
+                    &format!(
+                        "Rebuilt \"{}\", which the DAT leaves out",
+                        path.file_name().unwrap().to_str().unwrap()
+                    ),
+                );
+            }
+        }
+        Err(error) => {
+            let error = match (error, keys_error) {
+                (wux_rs::Error::MissingKey(_), Some(keys_error)) => keys_error.to_string(),
+                (error, _) => error.to_string(),
+            };
+            print_warning(
+                progress_bar,
+                &format!(
+                    "Failed to rebuild the H3 files of \"{}\": {error}",
+                    directory.file_name().unwrap().to_str().unwrap()
+                ),
+            );
+        }
+    }
 }
 
 /// Whether `name` is a NUS content's CDN name, its ID in eight hex digits.

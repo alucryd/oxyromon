@@ -244,8 +244,11 @@ It reads files in the format of Cemu's `keys.txt`, one key per line, where the c
 Wii U updates and DLC are games of their own, as No-Intro's CDN DAT lists them: a folder per title, holding its TMD, ticket and content files as Nintendo's servers deliver them.
 Each title keeps its files in a folder of its own, since every title names them alike.
 No-Intro lists each title once, with every version's TMD and every content any version used, while Nintendo's servers deliver only the newest version: a title counts as complete with its newest TMD and the files that TMD lists, the older ones being ignored.
+No-Intro sometimes leaves a hashed content's H3 file out of its DAT, though a title installs only with every one: importing leaves such a file where it is, and exporting the title rebuilds it from its content and checks it against the TMD, which needs the Wii U common key.
 Exporting a disc to WUA adds the newest update and DLC in the library, from any system, matched by title ID, as Cemu bundles them.
-A title needs its ticket to be decrypted: No-Intro lists every update with one, but no DLC, so DLC without a ticket is skipped with a warning.
+A title needs its ticket to be decrypted: No-Intro lists every update with one, but no DLC, which Nintendo's servers deliver without one.
+Importing a title's folder keeps the ticket a downloader made, when no DAT lists it, in a `wiiu_tickets` folder in oxyROMon's data directory, beside the keys, by title ID; importing the folder of a title already imported keeps it too.
+Exporting to WUA decrypts the title with it, and exporting the title for a console adds it as `title.tik`, which WUP Installer GX2 needs; DLC without a ticket is skipped with a warning.
 
 Exporting a disc to NUS writes the folder WUP Installer GX2 installs on a console: the disc's TMD, ticket and certificates, and the game's contents, each checked against the TMD.
 A folder already in its place is only replaced if it holds nothing the export wouldn't write, as an earlier export of the same disc; otherwise the export fails and leaves it alone.

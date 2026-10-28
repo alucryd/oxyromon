@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+<datafile>
+	<header>
+		<name>Test System (CDN)</name>
+		<description>Test System (CDN)</description>
+		<version>20261025</version>
+		<date>20261025</date>
+		<author>Maxime Gauduin</author>
+	</header>
+	<game name="Test Game (USA) (Update)">
+		<description>Test Game (USA) (Update)</description>
+		<game_id>0005000e10101010</game_id>
+		<rom name="00000010" size="272" crc="e0abb3aa" md5="81edb9ccacf7dc77afe3588bc5c55d2f" sha1="7a8db13eef1511b190c6a49115e95f84c6bc34ee"/>
+		<rom name="00000011" size="65536" crc="556da015" md5="fa04b4a3f6482d9fcf622ec8d53ce98f" sha1="7d3e1e86b9844f5144301dfb9dc49aeeed3189b8"/>
+		<rom name="00000012" size="131072" crc="9411af2f" md5="4c95e83228a23c309db5e3d5e1e496a1" sha1="2ab4956749a5bdbe9aa53c26fbfd3c00b4272298"/>
+		<rom name="00000012.h3" size="20" crc="9aebe106" md5="24adf4c7efed0d51c0c6b5bb331c18ac" sha1="6d25feffb97232a68a85e7127509d7e06086f2c9"/>
+		<rom name="tmd.48" size="2964" crc="061a9593" md5="66634fa18bebb688f6f7db9cb0b8e6e6" sha1="ed7f44bafe06f28f222fec6905828d51f64caeb2"/>
+	</game>
+</datafile>
