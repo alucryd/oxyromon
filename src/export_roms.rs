@@ -16,7 +16,7 @@ use super::util::*;
 use super::wbfs::ToWbfs;
 use super::wux::{
     AsWua, AsWud, AsWux, STORE_DIR, ToNus, ToWua, ToWux, add_stored_ticket, disc_to_wud,
-    has_extension, is_nus_title, write_missing_h3,
+    has_extension, is_nus_title, is_tmd_name, write_missing_h3,
 };
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Context, Result, bail};
@@ -1927,6 +1927,8 @@ async fn to_original(
             bail!("Multiple archives found");
         }
         let romfile = romfiles.first().unwrap();
+        // a NUS title's files, named alike in every title, in a folder of its own
+        let nus_title = roms.iter().any(|rom| is_tmd_name(&rom.name));
         let roms: Vec<&Rom> = roms
             .iter()
             .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
@@ -1935,7 +1937,7 @@ async fn to_original(
         let tmp_directory = create_tmp_directory(connection).await?;
         for rom in &roms {
             let game = games_by_id.get(&rom.game_id).unwrap();
-            let destination_directory = if system.arcade {
+            let destination_directory = if system.arcade || nus_title {
                 destination_directory.join(&game.name)
             } else {
                 destination_directory.clone()
@@ -2153,6 +2155,8 @@ mod test_multiple_tracks_cue_bin_to_gdi;
 mod test_multiple_tracks_cue_bin_to_iso;
 #[cfg(test)]
 mod test_nus_missing_h3_to_original;
+#[cfg(test)]
+mod test_nus_sevenzip_to_original;
 #[cfg(test)]
 mod test_nus_stored_ticket_to_original;
 #[cfg(test)]

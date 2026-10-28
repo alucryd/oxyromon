@@ -12,7 +12,9 @@ use super::prompt::*;
 use super::rvz::{AsRvz, RvzCompressionAlgorithm, ToRvz};
 use super::transcode::*;
 use super::util::*;
-use super::wux::{AsWua, AsWud, AsWux, ToWua, ToWux, disc_to_wud, has_extension, store_directory};
+use super::wux::{
+    AsWua, AsWud, AsWux, ToWua, ToWux, disc_to_wud, has_extension, is_tmd_name, store_directory,
+};
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Result, bail};
 use clap::builder::PossibleValuesParser;
@@ -1210,6 +1212,10 @@ async fn to_archive(
                 .unwrap()
                 .to_path_buf();
 
+            // an arcade game's or a NUS title's folder becomes its archive
+            let nus_title = roms.iter().any(|rom| is_tmd_name(&rom.name));
+            let in_folder = system.arcade || nus_title;
+
             let romfiles = roms
                 .iter()
                 .map(|rom| romfiles_by_id.get(&rom.romfile_id.unwrap()).unwrap())
@@ -1221,7 +1227,7 @@ async fn to_archive(
                     .to_archive(
                         progress_bar,
                         &common_romfile.path.parent().unwrap(),
-                        &match system.arcade {
+                        &match in_folder {
                             true => directory.parent().unwrap(),
                             false => directory.as_path(),
                         },
@@ -1298,6 +1304,10 @@ async fn to_archive(
                         .await?
                         .delete(progress_bar, false)
                         .await?;
+                }
+                // a NUS title's folder only once empty: it is not ours alone
+                if nus_title && std::fs::read_dir(&directory)?.next().is_none() {
+                    remove_directory(progress_bar, &directory, false).await?;
                 }
             }
         }
@@ -2826,12 +2836,14 @@ async fn to_original(
             .await?
             .as_archive(progress_bar, None)
             .await?;
+        // an arcade game's or a NUS title's files go in a folder of their own
+        let in_folder = system.arcade || roms.iter().any(|rom| is_tmd_name(&rom.name));
         let roms: Vec<&Rom> = roms
             .iter()
             .filter(|rom| rom.romfile_id.unwrap() == romfile.id)
             .collect();
 
-        let destination_directory = match system.arcade {
+        let destination_directory = match in_folder {
             true => {
                 let romfile_path = &archive_romfiles.first().unwrap().romfile.path;
                 let directory = romfile_path
@@ -3286,6 +3298,10 @@ mod test_multiple_tracks_chd_to_sevenzip_cue_bin;
 mod test_multiple_tracks_chd_to_zso_should_do_nothing;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_chd;
+#[cfg(test)]
+mod test_nus_sevenzip_to_original;
+#[cfg(test)]
+mod test_nus_to_sevenzip;
 #[cfg(test)]
 mod test_original_to_sevenzip;
 #[cfg(test)]

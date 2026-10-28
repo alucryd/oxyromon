@@ -758,6 +758,18 @@ async fn create_or_update_games(
     Ok(orphan_romfile_ids)
 }
 
+/// Whether a ROM is in its original format, which conversions start from: a
+/// disk is a CHD, and a name with a converted format's extension is that
+/// format. A name without an extension is original, as a NUS title's
+/// contents, named by their bare ID, are.
+fn is_original(name: &str, disk: bool) -> bool {
+    !disk
+        && PathBuf::from(name)
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_none_or(|extension| !NON_ORIGINAL_EXTENSIONS.contains(&extension))
+}
+
 async fn create_or_update_roms(
     connection: &mut SqliteConnection,
     progress_bar: &ProgressBar,
@@ -816,11 +828,7 @@ async fn create_or_update_roms(
                     disk,
                     game_id,
                     rom_parent_id,
-                    PathBuf::from(&rom_xml.name)
-                        .extension()
-                        .is_some_and(|extension| {
-                            !NON_ORIGINAL_EXTENSIONS.contains(&extension.to_str().unwrap())
-                        }),
+                    is_original(&rom_xml.name, disk),
                 )
                 .await;
                 if (rom_xml.size != rom.size
@@ -841,11 +849,7 @@ async fn create_or_update_roms(
                     disk,
                     game_id,
                     rom_parent_id,
-                    PathBuf::from(&rom_xml.name)
-                        .extension()
-                        .is_some_and(|extension| {
-                            !NON_ORIGINAL_EXTENSIONS.contains(&extension.to_str().unwrap())
-                        }),
+                    is_original(&rom_xml.name, disk),
                 )
                 .await
             }
@@ -1094,6 +1098,8 @@ mod test_dat_mame;
 mod test_dat_mame_chd;
 #[cfg(test)]
 mod test_dat_mame_mixed;
+#[cfg(test)]
+mod test_dat_nus;
 #[cfg(test)]
 mod test_dat_outdated_forced;
 #[cfg(test)]

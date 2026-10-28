@@ -46,5 +46,9 @@ async fn test() {
     assert!(system.arcade);
 
     assert_eq!(find_games(&mut connection).await.len(), 1);
-    assert_eq!(find_roms(&mut connection).await.len(), 1);
+    let roms = find_roms(&mut connection).await;
+    assert_eq!(roms.len(), 1);
+    // a disk is a CHD, named without an extension
+    assert!(roms[0].disk);
+    assert!(!roms[0].original);
 }
