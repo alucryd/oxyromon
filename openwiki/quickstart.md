@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Quickstart & Task Routing
@@ -237,7 +237,8 @@ cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.
 `--features oxyromon/server` is required because a workspace selection spans several packages, so
 a feature must name its package. CI runs clippy over the whole workspace with
 `--all-targets --features oxyromon/server`, then clippy again with
-`--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, then
+`--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, and
+clippy on the web UI from `frontend/` with `--target wasm32-unknown-unknown --all-targets`, then
 builds `--release --features server` and tests under `cargo llvm-cov`. The reference tools it
 installs (`mame-tools` for `chdman`, `xdelta3`, `ffmpeg`) exist only so the crates' parity tests
 can run; those suites skip rather than fail when the tool is absent.

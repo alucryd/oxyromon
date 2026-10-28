@@ -5,7 +5,7 @@ description: How src/main.rs registers clap subcommands, runs global startup (do
 tags: [cli, entrypoint, clap, subcommands, connection-scope, tokio, sqlite, info]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-28T08:10:36.025Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -57,7 +57,7 @@ sources:
     resource: repo://src/sort_roms.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 ---
 
 # CLI Entrypoint and the Subcommand Contract
@@ -224,9 +224,10 @@ subcommands, in vec order: `info`, `config`, `create-dats`, `import-dats`,
 `check-roms`, `purge-roms`, `purge-systems`, `generate-playlists`, and
 `benchmark`, plus the feature-gated `mcp` (`--read-only` exposes non-mutating
 tools only) and `server` (`--address`/`--port`). `import-keys` is the one
-subcommand that ignores its connection: it merges Wii U keys files into
-`wiiu_keys.txt` in the data directory, outside the database, so neither GraphQL
-nor MCP can ever return them.
+subcommand that ignores its connection: it merges Wii U keys files, as Cemu's
+`keys.txt` or a console's `otp.bin`, into `wiiu_keys.txt` in the data
+directory, outside the database, so neither GraphQL nor MCP can ever return
+them.
 
 Selection of work follows a consistent pattern across the batch subcommands:
 

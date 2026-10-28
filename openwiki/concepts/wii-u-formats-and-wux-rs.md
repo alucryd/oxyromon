@@ -3,7 +3,7 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 sources:
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
@@ -63,7 +63,7 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-27T21:16:24.550Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -180,7 +180,7 @@ flowchart LR
 | `rebuild.rs` | `wua_to_wux` and `wua_to_wud`, checked against the disc's SHA-1 |
 | `zarchive.rs` | A streaming ZArchive writer and reader: 64 KiB blocks compressed with zstd in parallel on rayon, then the offset records, name table and file tree |
 | `revert.rs` | Collects the `.nus/` revert data while writing a WUA, and `wua_to_nus` to replay it |
-| `keys.rs` | `parse_keys` / `load_keys` for Cemu's `keys.txt` format, and `cemu_keys_path`, which only exists with the `cli` feature, as only the CLI looks for Cemu's keys |
+| `keys.rs` | `parse_keys` for Cemu's `keys.txt` format, `parse_otp` for a console's `otp.bin`, `load_keys` dispatching between them, and `cemu_keys_path`, which only exists with the `cli` feature, as only the CLI looks for Cemu's keys |
 
 A disc's contents in its game partition are the CDN's byte for byte, except
 content 0, the FST. A NUS folder exported from a disc therefore matches
@@ -218,6 +218,15 @@ once in first-seen order. The file is written to a `.part` file with mode
 `0600` and renamed into place, so a failed write leaves the old keys intact.
 The subcommand reports a warning for a file with no keys and does nothing when
 no key is new.
+
+A file that is not UTF-8 text is read as a console's OTP dump, `otp.bin`, but
+only when it is exactly 1 KiB. `parse_otp` takes the Wii U common key at 0xE0
+and the vWii common key at 0xD0, leaving out a slot that is all zeros or all
+ones. The vWii key serves the vWii titles a disc's update partition can carry.
+An OTP dump has no magic or checksum, so `load_keys` refuses a 1 KiB binary
+file only when neither slot was programmed. Any other binary file is refused
+too, with an `Unsupported` error naming both accepted formats. An `otp.bin`
+carries no disc keys, so it covers the common keys only.
 
 WUA and NUS need keys, including rebuilding a disc from a WUA. WUD, WUX and
 importing a WUA work without them. `wux::get_version`, shown by `info`, says

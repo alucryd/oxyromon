@@ -1,7 +1,7 @@
 ---
 type: reference
 title: CI Pipelines and Runtime Environment
-description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the two clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
+description: How .github/workflows/continuous_integration.yml gates every change (apt reference tools for the format crates' tests, toolchain, trunk, the three clippy passes, release build and coverage), and exactly which runtime environment variables the binary reads, when, and for how long they stay authoritative.
 tags: [ci, github-actions, clippy, coverage, environment-variables, trunk, sqlx, toolchain]
 sources:
   - id: openwiki-source-90dbbac45e714e041e170795
@@ -70,10 +70,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -129,12 +129,13 @@ flowchart TD
   UI --> COV["cargo install cargo-llvm-cov"]
   COV --> L1["clippy workspace all-targets features oxyromon/server"]
   L1 --> L2["clippy no-default-features features use-rustls,mcp all-targets"]
-  L2 --> B["cargo build --release --features server"]
+  L2 --> L3["cd frontend, clippy target wasm32-unknown-unknown all-targets"]
+  L3 --> B["cargo build --release --features server"]
   B --> T["cargo llvm-cov workspace features oxyromon/server, lcov output"]
   T --> U["codecov-action v7 with CODECOV_TOKEN"]
 ```
 
-*Caption: the CI job as a single linear pipeline — one wasm build, two clippy passes, one release build, one coverage run.*
+*Caption: the CI job as a single linear pipeline — one wasm build, three clippy passes, one release build, one coverage run.*
 
 Why each step exists:
 
@@ -184,7 +185,7 @@ Why each step exists:
   wasm bundle is target- and feature-independent, so it is compiled once into
   `target/assets` (`frontend/Trunk.toml` sets `dist = "../target/assets"`, where
   the `rust-embed` derive in `src/server.rs` looks for it) and every later cargo
-  invocation — two clippy runs, a release build, and a workspace test run that
+  invocation — three clippy runs, a release build, and a workspace test run that
   rebuilds the `server` feature many times over — reuses those assets instead of
   recompiling wasm. `build.rs` honors the variable only when `server` is enabled,
   and `SKIP_TRUNK` is **not** declared with `cargo:rerun-if-env-changed`, so
@@ -192,7 +193,8 @@ Why each step exists:
   before any cargo invocation, its `pre_build` hook — which fetches Web Awesome
   into the gitignored `frontend/vendor/` — executes exactly once per job instead
   of once per `build.rs` run.
-- **Two clippy passes** — see the next section.
+- **Three clippy passes** — see the next section. The third lints the web UI,
+  which declares its own `[workspace]`, for `wasm32-unknown-unknown`.
 - **`cargo build --release --features server`** builds the artifact users
   actually get (server implies `mcp`, and the release profile uses
   `lto = "thin"`, `codegen-units = 1`, `panic = "abort"`, which ordinary debug
@@ -203,9 +205,10 @@ Why each step exists:
   `codecov/codecov-action@v7` step uploads it with `secrets.CODECOV_TOKEN`.
 
 ```sh
-# the two commands CI treats as the compile gate, verbatim
+# the three commands CI treats as the compile gate, verbatim
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp --all-targets
+cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets
 ```
 
 ## Feature-combination coverage, and what a change must keep compiling
