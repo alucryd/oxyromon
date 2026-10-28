@@ -13,7 +13,9 @@ use super::progress::*;
 use super::prompt::*;
 use super::rvz::AsRvz;
 use super::util::*;
-use super::wux::{AsWua, AsWux, STORE_DIR, copy_store_entries, find_store, store_directory};
+use super::wux::{
+    AsWua, AsWux, STORE_DIR, copy_store_entries, find_store, store_directory, store_ticket,
+};
 use super::xso::AsXso;
 use anyhow::{Result, bail};
 use clap::value_parser;
@@ -736,6 +738,8 @@ async fn import_nus<P: AsRef<Path>>(
             }
             MatchState::Duplicate => {
                 print_skip(progress_bar, "Already imported");
+                // a ticket the title was imported without may come later
+                keep_unlisted_ticket(&mut transaction, progress_bar, path.as_ref(), &tmd).await?;
                 return Ok(None);
             }
             MatchState::Skipped => break,
@@ -746,6 +750,7 @@ async fn import_nus<P: AsRef<Path>>(
         print_warning(progress_bar, "No match");
         return Ok(None);
     };
+    keep_unlisted_ticket(&mut transaction, progress_bar, path.as_ref(), &tmd).await?;
 
     // then its files, within that game
     let mut roms: Vec<Rom> = find_roms_by_game_id_no_parents(&mut transaction, game.id)
@@ -827,6 +832,39 @@ async fn import_nus<P: AsRef<Path>>(
     commit_transaction(transaction).await;
 
     Ok(Some([system.id, game.id]))
+}
+
+/// Keep, in the store of tickets, the ticket the NUS folder at `path` holds
+/// for its title when no DAT lists it. Nintendo's servers deliver none for
+/// DLC, so No-Intro lists none, and the one a downloader made is the only one
+/// there is. A ticket a DAT lists is imported with its title instead.
+async fn keep_unlisted_ticket(
+    connection: &mut SqliteConnection,
+    progress_bar: &ProgressBar,
+    path: &Path,
+    tmd: &Option<wux_rs::Tmd>,
+) -> Result<()> {
+    let (Some(ticket_path), Some(tmd)) = (wux_rs::ticket_path(path), tmd) else {
+        return Ok(());
+    };
+    let for_title = std::fs::read(&ticket_path)
+        .ok()
+        .and_then(|bytes| wux_rs::ticket_title_id(&bytes).ok())
+        == Some(tmd.title_id);
+    if !for_title {
+        return Ok(());
+    }
+    let (sha1, size) = CommonRomfile::from_path(&ticket_path)?
+        .get_hash_and_size(connection, progress_bar, 1, 1, &HashAlgorithm::Sha1)
+        .await?;
+    if !find_roms_without_romfile_by_size_and_sha1(connection, size, &sha1)
+        .await
+        .is_empty()
+        || count_roms_with_romfile_by_size_and_sha1(connection, size, &sha1).await > 0
+    {
+        return Ok(());
+    }
+    store_ticket(connection, progress_bar, &ticket_path, tmd.title_id).await
 }
 
 async fn import_jbfolder<P: AsRef<Path>>(
@@ -3113,6 +3151,8 @@ mod test_nus_missing_h3;
 mod test_nus_multi_version;
 #[cfg(test)]
 mod test_nus_multi_version_missing;
+#[cfg(test)]
+mod test_nus_unlisted_ticket;
 #[cfg(test)]
 mod test_original;
 #[cfg(test)]

@@ -177,7 +177,7 @@ pub fn write_missing_h3(dir: &Path, keys: &[Key]) -> Result<Vec<PathBuf>> {
     if missing.is_empty() {
         return Ok(Vec::new());
     }
-    let title = open_nus_title(dir, keys)?;
+    let title = open_nus_title(dir, keys, &[])?;
     let mut written = Vec::with_capacity(missing.len());
     let mut head = vec![0; 0x400];
     for content in missing {

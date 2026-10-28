@@ -166,3 +166,42 @@ fn an_update_named_as_no_intro_names_it_converts_the_same() {
         (common::TITLE_ID, 32)
     );
 }
+
+#[test]
+fn a_title_without_its_ticket_converts_with_one_given_apart() {
+    let dir = tempfile::tempdir().unwrap();
+    let update = dir.path().join("update");
+    std::fs::create_dir(&update).unwrap();
+    let expected = common::nus(&update);
+    // As DLC comes: No-Intro lists no ticket, a downloader's is kept apart.
+    let ticket = std::fs::read(update.join("title.tik")).unwrap();
+    std::fs::remove_file(update.join("title.tik")).unwrap();
+    assert_eq!(wux_rs::ticket_title_id(&ticket).unwrap(), common::UPDATE_ID);
+    let output = dir.path().join("u.wua");
+
+    let without = wux_rs::to_wua(&[&update], &output, &keys(), None, &mut |_| {});
+    assert!(matches!(without, Err(Error::MissingKey(_))));
+
+    // Another title's ticket is no use.
+    let mut other = ticket.clone();
+    other[0x1DC..0x1E4].copy_from_slice(&common::TITLE_ID.to_be_bytes());
+    let wrong = wux_rs::to_wua_with_tickets(
+        &[&update],
+        &output,
+        &keys(),
+        &[other.clone()],
+        None,
+        &mut |_| {},
+    );
+    assert!(matches!(wrong, Err(Error::MissingKey(_))));
+    assert!(!output.exists());
+
+    let tickets = [other, ticket.clone()];
+    wux_rs::to_wua_with_tickets(&[&update], &output, &keys(), &tickets, None, &mut |_| {}).unwrap();
+    assert_eq!(files(&output), expected);
+    // The revert data keeps the ticket, so the title reverts with it.
+    let reverted = dir.path().join("reverted");
+    wux_rs::wua_to_nus(&output, &reverted, &keys(), &mut |_| {}).unwrap();
+    let folder = reverted.join(common::UPDATE_FOLDER);
+    assert_eq!(std::fs::read(folder.join("title.tik")).unwrap(), ticket);
+}

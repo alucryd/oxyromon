@@ -15,8 +15,8 @@ use super::transcode::*;
 use super::util::*;
 use super::wbfs::ToWbfs;
 use super::wux::{
-    AsWua, AsWud, AsWux, STORE_DIR, ToNus, ToWua, ToWux, disc_to_wud, has_extension, is_nus_title,
-    write_missing_h3,
+    AsWua, AsWud, AsWux, STORE_DIR, ToNus, ToWua, ToWux, add_stored_ticket, disc_to_wud,
+    has_extension, is_nus_title, write_missing_h3,
 };
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Context, Result, bail};
@@ -2099,6 +2099,7 @@ async fn to_original(
             .await?;
         }
         if nus_title {
+            add_stored_ticket(connection, progress_bar, &destination_directory).await?;
             write_missing_h3(progress_bar, &destination_directory);
         }
     }
@@ -2152,6 +2153,8 @@ mod test_multiple_tracks_cue_bin_to_gdi;
 mod test_multiple_tracks_cue_bin_to_iso;
 #[cfg(test)]
 mod test_nus_missing_h3_to_original;
+#[cfg(test)]
+mod test_nus_stored_ticket_to_original;
 #[cfg(test)]
 mod test_nus_to_original;
 #[cfg(test)]
@@ -2208,6 +2211,8 @@ mod test_wux_to_wua;
 mod test_wux_to_wud;
 #[cfg(test)]
 mod test_wux_to_wux_should_copy;
+#[cfg(test)]
+mod test_wux_with_stored_ticket_update_to_wua;
 #[cfg(test)]
 mod test_wux_with_ticketless_update_to_wua;
 #[cfg(test)]
