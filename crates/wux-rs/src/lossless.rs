@@ -767,16 +767,25 @@ pub(crate) fn write<W: Write>(
             continue;
         }
         let in_store = store.filter(|_| part.layout.name.starts_with("UP"));
+        // Reported as it is read: an update partition is over a gigabyte.
+        let mut reported = 0;
         if let Some(store) = in_store {
             part.layout.storage = Storage::Store;
             // Its SHA-1 first, which names it: the store may have it already.
+            // Each of the two reads counts for half.
             let mut sha1 = Sha1::new();
-            emit(&image, &part, &disc_key, false, &mut |_| Ok(()), &mut sha1)?;
+            let mut half = |chunk: &[u8]| {
+                let n = chunk.len() as u64 / 2;
+                reported += n;
+                report(n);
+                Ok(())
+            };
+            emit(&image, &part, &disc_key, false, &mut half, &mut sha1)?;
             part.layout.stream_sha1 = sha1.finalize().into();
             let path = store.join(store_name(&part.layout.stream_sha1));
             if !path.is_file() {
                 std::fs::create_dir_all(store)?;
-                write_entry(&image, &part, &disc_key, &path)?;
+                write_entry(&image, &part, &disc_key, &path, &mut half)?;
             }
         } else {
             let sub = writer.dir(dir, format!("{i:02}").as_bytes())?;
@@ -787,14 +796,18 @@ pub(crate) fn write<W: Write>(
                 &part,
                 &disc_key,
                 true,
-                &mut |chunk| writer.append(chunk),
+                &mut |chunk| {
+                    reported += chunk.len() as u64;
+                    report(chunk.len() as u64);
+                    writer.append(chunk)
+                },
                 &mut sha1,
             )?;
             part.layout.stream_sha1 = sha1.finalize().into();
             writer.file(sub, b"transforms")?;
             writer.append(&transforms_to_bytes(&part.transforms))?;
         }
-        report(part.layout.stream_len);
+        report(part.layout.stream_len.saturating_sub(reported));
         partition_layouts.push(part.layout);
     }
     let layout = Layout {
@@ -867,7 +880,13 @@ pub(crate) fn read_entry_head(
 
 /// Write a partition's stream as a store entry: its head, then the stream,
 /// all one zstd stream.
-fn write_entry(image: &Image, part: &Part, disc_key: &Key, path: &Path) -> Result<()> {
+fn write_entry(
+    image: &Image,
+    part: &Part,
+    disc_key: &Key,
+    path: &Path,
+    report: &mut dyn FnMut(&[u8]) -> Result<()>,
+) -> Result<()> {
     // Another export of a disc with the same update may be writing it too:
     // each writes its own, and either's rename leaves the same entry.
     let mut name = path.file_name().unwrap_or_default().to_os_string();
@@ -887,7 +906,10 @@ fn write_entry(image: &Image, part: &Part, disc_key: &Key, path: &Path) -> Resul
             part,
             disc_key,
             true,
-            &mut |chunk| Ok(encoder.write_all(chunk)?),
+            &mut |chunk| {
+                encoder.write_all(chunk)?;
+                report(chunk)
+            },
             &mut sha1,
         )?;
         encoder.finish()?.sync_all()?;
