@@ -134,10 +134,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
+generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-28T08:10:36.025Z
 ---
 
 # Format Crates in crates/
@@ -393,7 +393,8 @@ for common options. `--`-only long flags carry no short alias.
 picks the target (`wud`, `wux`, `wua` or `nus`), `--add DIR` adds an update or
 DLC folder to a WUA, `--updates DIR` names the store of update partitions WUAs
 share (the `.update-partitions` folder next to each WUA by default), and
-`--keys FILE` overrides Cemu's `keys.txt`. A `.wua` input goes back to its WUX
+`--keys FILE` overrides Cemu's `keys.txt` with another keys file or a
+console's `otp.bin`. A `.wua` input goes back to its WUX
 by default, or to NUS folders with `-f nus`.
 
 `chdrs` is the one tool whose `main` does not hand argv straight to `ui::run`:
@@ -477,7 +478,8 @@ installable without the organizer.
   progress)`, `to_nus(input, output, keys, progress)`, `wua_to_nus`,
   `wua_to_wux` / `wua_to_wud(input, output, store, keys, progress)`, `disc_info`,
   `store_entries` and `title_id`**, plus `Image` to read a WUD or WUX as one
-  stream, `load_keys` for Cemu's `keys.txt`, and `parse_tmd` with its `Tmd` and
+  stream, `load_keys` for Cemu's `keys.txt` or an `otp.bin`, with `parse_keys` and
+  `parse_otp` for each, and `parse_tmd` with its `Tmd` and
   `Content`, which oxyromon reads to grade a Wii U title against its newest
   version. `cemu_keys_path`, and the
   `dirs` dependency it needs, exist only with the `cli` feature. `STORE_DIR` names the

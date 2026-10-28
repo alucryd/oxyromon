@@ -54,7 +54,7 @@ fn cli() -> Command {
         .arg(
             Arg::new("keys")
                 .long("keys")
-                .help("Keys file for WUA and NUS, as Cemu reads it [default: Cemu's keys.txt]")
+                .help("Keys file for WUA and NUS, as Cemu's keys.txt or a Wii U's otp.bin [default: Cemu's keys.txt]")
                 .value_parser(value_parser!(PathBuf)),
         )
 }

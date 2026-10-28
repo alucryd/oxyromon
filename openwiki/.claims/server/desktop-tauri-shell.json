@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ebf436b6a77091614183eaccbe257b22dab1cb963c27f979e2d29cfd38d5443a",
+  "pageVersion": "sha256:8db3e345468354a6ceda5be814312dae0242084e9b1156ff87d2aec55d6a6a0b",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -97,7 +97,7 @@
           "version": "repo-lines-v1:sha256:50a1ee922df3010d25cf1810bbd2f320e40810d57e58f5940ba5b7304ba110bd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg0NTRiMWE5YmY1MTg1MTU3NzJmNTFhNzM5ZDgwYzdhYjdiMjMzMDAzZDI3ZGY2ODdmM2VhMmVkZDFlYTRmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVkMTQyZDZjNzA0OWQ0NjhkYmIyOTg2NTg0NjEzMDkxYTM4OTE3M2U0MzI0Y2EyOWMwYjVlZGY4YzEyNWUxYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTAzNTEyZTBmOTFkOWIwYzBjOWY4YTMzYzM1NTQ5Zjg4NWY2OTFlYjIwNjkwNTY1YjNmNGEyMDViZTg4NzU2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQxZGNjZjBjODQ2ZmU2ZmNlMmI4ZDc3ZTdmN2EwNGQyNDI1YmM5YWFmNjZiNDhiMjE0NTFhZjJhY2I3ZmU5NCJ9"
         },
         {
-          "resource": "repo://frontend/src/page.rs#L664-L674",
+          "resource": "repo://frontend/src/page.rs#L711-L721",
           "version": "repo-lines-v1:sha256:321bf63990484cbb345a3155ed63a0784905df54405666f18d1174d12efd8bad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZTQyNGE1ZTNlNWU1YTU3NDkxNGZhZDcxYTAyMWQzN2MxZjZmMTE2NWY2ODMwNjFkMWEwNjIyNjE4MzNhMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljNzI2NThhMWE5NDU4NjM5ODRhZjJmOGZkMzI4ZjZlNGQ4ZTE1MDI0MmFjMTcwYzE1YWM2ZDZhN2M3YWRiNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5YjY3ZDJjYzMwMTFjNmM2NGNkMzAwZjc0NGNkZmNiOGE0ZDRiM2E4NmM3ZTQ1MTI5ZDhlYTk2OGI2MzdhNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MzU0NmIxYTU2YTY2MzQ2NjAzYTA2YmZjMzZmMWRjNzIwNzU0NjZiNmJiNzcwM2FhOTZhZDAzNmVkNWRkZWIifQ"
         },
         {
@@ -197,11 +197,11 @@
           "version": "repo-lines-v1:sha256:77a822bf5b4ccce3f8dcf52ccbe0308beb550297fd610558fd61b435774a1a71:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE5ODUzYzYwMjRmYWE2M2IwOTc5MDYyODNhZTFjNWU5MDkxNzE0Y2ZjZmE5ZmIzN2MyMmIyOTQzZjJiZTk3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA0NGQ5NmRlOGNkNzg1MTYxNGM3YTliNTA0NGVhYjllOWY1ZmRmMzZjMTgxZjM4MmQwNWZlZDRkZmE1MDE5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2E3MzVmOGY5NzJjN2E3MzFmNTZkMDUyOWZlYjZlMzJlNTVlNTNhZmFmMzk5YWIzMjdkZjhiZjBmMjA4ZDQ3ZCJ9"
         },
         {
-          "resource": "repo://src/import_keys.rs#L33-L40",
+          "resource": "repo://src/import_keys.rs#L35-L42",
           "version": "repo-lines-v1:sha256:700a126902f784b41aa24ac226776da5687ce0c4084025795c32256a5fdc1c2f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDFmNTQ2M2M1YmFlMmVlZGJiYTM1OTc0NjM3MDlmNWE4MzIxNzJhYmI4ZDEwMjU4ODk1Y2UyMjEzNDJmNjZhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTgxMTBjOGQ1YTBlNGNlNzA5Nzg1OTUxYWNhY2JmYWJlNzg2YWFlNWRlMmFiNDZjN2Q2Y2IyMGNiZDMzOTgwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAyZWYzYzRkZjdmMDU3Y2Q3N2UyZTY2YmVkOWE0MTZlYTgzMDkyZWY5MWJkN2MyNzM2NjlmZmM0YmZkN2QzMCJ9"
         },
         {
-          "resource": "repo://src/main.rs#L120-L127",
+          "resource": "repo://src/main.rs#L122-L129",
           "version": "repo-lines-v1:sha256:fb09b63b701dbe037aa69dccde353a4752f1c3b26977c5fa226a9c0131f5fa18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZlMjU0NjA0NDFmYzI4ZTRjM2IxNGVlZmI4ZDc5MjkzNmQ5Njk1MmEwMDdkNjkzNGQzZTMzOTQwYmJlYmMyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE5OWQ4NWU4NTA5N2RjNThkMzA2YWFjMWEwNDc5NzRjYTZhMzE2Y2UzMmQ4OTY5OGJhNjk0MDdhNjQ4MTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQxNjE4ZDFhMGI3MGRmMDBkNzAzYTczOTNiYjg5ZThmN2U1NDYxMjBjOTNiZjMwNmQ0ZGVmMThhYmJmMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViODc3ZjY3Mzg3ZmNjMTM2MDEzNGQyMzg5NjJjOWY1Y2M0MDMyYWM1NWM3MDU5ZDdlYTc1NjkxYzI3OWU1NSJ9"
         }
       ]
@@ -254,11 +254,11 @@
     },
     {
       "id": "claim_9873b14ce8424e8e9f514fba2fe72784",
-      "statement": "CI never validates the desktop crate: the single CI workflow pins SKIP_TRUNK=true workflow-wide and builds the web UI once in its `Build web UI` step (`cd frontend && trunk build --release`, trunk pinned by TRUNK_VERSION) so the clippy/build/llvm-cov `--workspace` steps reuse those assets, and since desktop/ declares its own [workspace] while the root workspace members are only crates/*, no CI step ever compiles the shell or installs the Tauri CLI or webkit2gtk — regressions there surface only in a manual or dist.sh build.",
+      "statement": "CI never validates the desktop crate: the single CI workflow pins SKIP_TRUNK=true workflow-wide and builds the web UI once in its `Build web UI` step (`cd frontend && trunk build --release`, trunk pinned by TRUNK_VERSION) so the clippy/build/llvm-cov `--workspace` steps reuse those assets, and since desktop/ declares its own [workspace] while the root workspace members are only crates/* and the only separate-workspace clippy pass targets frontend/, no CI step ever compiles the shell or installs the Tauri CLI or webkit2gtk — regressions there surface only in a manual or dist.sh build.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L62",
-          "version": "repo-lines-v1:sha256:b1264f4ade706ab68f90a3cb5f61718b85640563582c65fe180497af304ec694:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L65",
+          "version": "repo-lines-v1:sha256:20f9c6542d96e98e879f9bb405aa47b0cf9a1972994517cf797ebdc40efe2800:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjI5MzE4NjgyMTlhNDEwZmRkMzlkMTIzYzE0MTRhODhkNjdiMzM4N2ExMDg2OGRiNjlhYTgxNTQyY2UzNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4ZDc0OGVmYWJlNDkxZTYxZDQ4NzczZmM5YWU5ODNlNzdlNTlkZWI5YWI2NjFiNTgwNTg3NTU1MWFlNDVmZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
@@ -329,7 +329,7 @@
       "statement": "Because those dependencies moved in tree, the desktop bundle declares no external-tool runtime dependency at all: tauri.conf.json has no bundle.linux.deb.depends table, so the Debian package's former p7zip dependency is gone (recorded in the 0.25.0 changelog), and the Alpine container likewise installs no codec or archive tool to run the server, removing its build-only packages after the build.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L39-L39",
+          "resource": "repo://CHANGELOG.md#L43-L43",
           "version": "repo-lines-v1:sha256:3c63e197a71f59445839c6e3ee8124ff289519fb508447617e02c79296eea7be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M2M2UxOTdhNzFmNTk0NDU4MzljNmUzZWU4MTI0ZmYyODk1MTlmYjUwODQ0NzYxN2UwMmM3OTI5NmVlYTdiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhmYWFmNzhlMzQyMDgzOTBkNTljODFkYjQ2ZGQ2ZjkyZWI1ZmYwNGQzYjc3YWZkNzUwY2QwYmY5NWRiOTgyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDkzNTRlYmUxMzhjMmVkY2Y3ZjU1ZGNiYjE3NTRhM2M0Y2MwZTEyOGJjMDE3ZWUwYjMyNzI3ZDg3OTIzMmY3OSJ9"
         },
         {
@@ -385,6 +385,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-26T20:09:06.498Z"
+    "at": "2026-10-28T08:10:36.025Z"
   }
 }

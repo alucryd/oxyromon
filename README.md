@@ -239,7 +239,7 @@ WUAs Cemu writes, or oxyROMon did before, can't rebuild their disc and are not l
 A WUA oxyROMon writes also keeps revert data for each title it holds: `wuxrs` turns it back into a NUS folder per title, whose contents are byte for byte the disc's and its update's, checked against their TMDs.
 WUA and NUS need the disc's key and the Wii U common key, neither of which ships with oxyROMon.
 `import-keys` stores them in oxyROMon's data directory, so a headless server needs no emulator.
-It reads files in the format of Cemu's `keys.txt`, one key per line, where the common key can sit alongside the disc keys.
+It reads files in the format of Cemu's `keys.txt`, one key per line, where the common key can sit alongside the disc keys, and a console's OTP dump, `otp.bin`, for the Wii U and vWii common keys.
 
 Wii U updates and DLC are games of their own, as No-Intro's CDN DAT lists them: a folder per title, holding its TMD, ticket and content files as Nintendo's servers deliver them.
 Each title keeps its files in a folder of its own, since every title names them alike.
@@ -512,13 +512,14 @@ Options:
 
 Imports Wii U keys, which exporting to WUA needs, from files in the format of Cemu's `keys.txt`: one 32-digit hex key per line, with anything after `#` or `;` ignored.
 Disc keys and the Wii U common key can share a file.
+A console's OTP dump, `otp.bin`, can be imported too: its Wii U and vWii common keys are taken from it, the vWii key serving the vWii titles a disc's update partition can carry.
 The keys are merged into `wiiu_keys.txt` in oxyROMon's data directory, readable by its owner only, each key kept once, so importing again after new dumps only adds the new ones.
 
 ```text
 Usage: oxyromon import-keys <KEYS>...
 
 Arguments:
-  <KEYS>...  Set the key files to import, in the format of Cemu's keys.txt
+  <KEYS>...  Set the key files to import, as Cemu's keys.txt or a Wii U's otp.bin
 
 Options:
   -h, --help  Print help

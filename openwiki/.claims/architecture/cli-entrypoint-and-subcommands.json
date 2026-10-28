@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ef13d86d041289f26a3712de897a74b48dd57af322989b0f07325ae24b62426d",
+  "pageVersion": "sha256:1509880323dde49019e612b1f943c707bdbaf278504108612acbb66fbeb746d6",
   "claims": [
     {
       "id": "claim_f854afcce118483faaa96aefa8a19eea",
@@ -301,11 +301,11 @@
       "statement": "Adding a subcommand is a fixed contract: create src/<name>.rs, implement subcommand() and async main(connection, matches, progress_bar), declare the module in src/main.rs, append it to the subcommands vec, add its match arm, and put tests in src/<name>/test_*.rs wired with #[cfg(test)] mod test_*; at the module bottom.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L111-L115",
+          "resource": "repo://AGENTS.md#L112-L116",
           "version": "repo-lines-v1:sha256:98ebc325b73ac0bc6703bbeb56e511ead21727dfff6b2d25d11e708c5c635dbf:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmU3ZjRiMzZhYzljZTBkMDZkY2Q3MmNjYzI0ZWIyOTBlY2NhM2RhZGNlZTM2Y2Q2NDE2ODlhMjgwNDhjODU0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxNGUxYzJiZGU2ODZjNzlmOTZiMzQxNWY3ZTA1OTcyYTNjM2M0ZTcwZjFhMGRlZDllOTg2OGVjMjg0Yzk1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjMwYjRjMmY4ZWVjYTYyNmQ3ZTczM2U3YTJiZWY5OGRjMjc4ZjY5ZTFhN2QxMWY0MGZiMDgxYWI4NDcxN2QwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBkZjRlZDU0Yjc3ODk0NmE3ODU0MGZmMDEyODUwZmM2MmRmOTgyNzdhOTk0YTY5ZDA0MTRmYTljNTY2ODcyMyJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L168-L172",
+          "resource": "repo://AGENTS.md#L169-L173",
           "version": "repo-lines-v1:sha256:b1c15878b5dc60ce74baf4f328fa466ac6e51afc22188711f546e7b6da034220:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZhMDBjMzU2NTBhNDVlNTEyNGM2NDA5MjQ0ZTQ3ZTRhZjg5NGFmOTg5OGZlN2IxZjQ4MTNlYzgxMTYyOGRmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ0N2JiZDYxYTZjNTU3ZjM1NzIxMDQ3ZDg0NTRmY2JjYjE2ZTcxMWYwNTZhNjI0MmQ5NGFhNzU0NWY4OThjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIxNjk0ODRlYjQyOTI1YzYyODAxYzI3ZTE4NWE3YTMxZDExZjc2NDkwOWMxZTNjM2JkN2M5NjFiMmYxOGFiYSJ9"
         },
         {
@@ -458,17 +458,17 @@
     },
     {
       "id": "claim_eb121c38ffde438caf96522a25a07d0c",
-      "statement": "import-keys merges Wii U keys files in Cemu's keys.txt format into wiiu_keys.txt in the data directory, keeping each key once, written owner-only and renamed into place, outside the database so the GraphQL and MCP surfaces cannot return keys.",
+      "statement": "import-keys merges Wii U keys files, in Cemu's keys.txt format or a console's otp.bin, into wiiu_keys.txt in the data directory, keeping each key once, written owner-only and renamed into place, outside the database so the GraphQL and MCP surfaces cannot return keys.",
       "evidence": [
         {
-          "resource": "repo://src/import_keys.rs#L1-L98",
-          "version": "repo-lines-v1:sha256:b6f521173b904c9bf6e5a12da8dd2bec24dabdd1f61f4be185f748fb06171c7f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjRjNmNiOTVlMDVkNjQxNTY4MzhmM2YzMzY1NzQ4ZTk3OTJkNjNlMWIzMTJlODMwYjhkMzAwMmEzN2IzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxYmFmZTcxZDU1MzM0MDVhN2QzYjVlMDE4YmVmYzZlMGEyOWNmYmUxMzFmNmViZmZkZmQ1OTEyNmU4YTUyZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://src/import_keys.rs#L1-L96",
+          "version": "repo-lines-v1:sha256:c136a1ec15ddddbee1831c8f217e24580e3a607fc870dca8103f1ffdf48e6ddd:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjRjNmNiOTVlMDVkNjQxNTY4MzhmM2YzMzY1NzQ4ZTk3OTJkNjNlMWIzMTJlODMwYjhkMzAwMmEzN2IzMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmNDYwYjFmYjFjNjU4MmE5ZDhiNjEyMzM5NWI4YTk1YWQ2YmZhOWQ4YWFkOWUxZDRmNDA0MmVlMjYzNjMwNjkifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-27T21:16:24.550Z"
+    "at": "2026-10-28T08:10:36.025Z"
   }
 }
