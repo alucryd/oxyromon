@@ -6,6 +6,7 @@
 //! NUS folder, checking every content against its TMD, reverts its WUA to
 //! NUS folders, comparing them with the disc's and the update's, and rebuilds
 //! the disc from its WUA, byte for byte, its update partition in a store.
+//! Set `WUXRS_NUS` to a NUS folder holding its H3 files to rebuild them.
 //!
 //! ```sh
 //! WUXRS_DISC=game.wux WUXRS_WUA=game.wua cargo test --release -p wux-rs -- --ignored
@@ -206,4 +207,45 @@ fn a_real_disc_rebuilds_from_its_wua() {
     let back = dir.path().join("back.wux");
     wux_rs::wua_to_wux(&wua, &back, Some(&store), &keys, &mut |_| {}).unwrap();
     assert_eq!(info.sha1, sha1(wux_rs::Image::open(&back).unwrap()));
+}
+
+#[test]
+#[ignore]
+fn a_real_title_gets_its_h3_files_back() {
+    let Some(nus) = std::env::var_os("WUXRS_NUS").map(PathBuf::from) else {
+        eprintln!("WUXRS_NUS is unset, skipping");
+        return;
+    };
+    let keys = std::env::var_os("WUXRS_KEYS")
+        .map(PathBuf::from)
+        .or_else(wux_rs::cemu_keys_path)
+        .unwrap();
+    let keys = wux_rs::load_keys(&keys).unwrap();
+    // The folder without its H3 files, linked rather than copied.
+    let dir = tempfile::tempdir_in(nus.parent().unwrap()).unwrap();
+    let mut h3s = Vec::new();
+    for entry in std::fs::read_dir(&nus).unwrap() {
+        let path = entry.unwrap().path();
+        let name = path.file_name().unwrap().to_str().unwrap().to_lowercase();
+        match name.ends_with(".h3") {
+            true => h3s.push((name, std::fs::read(&path).unwrap())),
+            false => std::fs::hard_link(&path, dir.path().join(&name)).unwrap(),
+        }
+    }
+    assert!(!h3s.is_empty(), "the folder holds no H3 file");
+    let written = wux_rs::write_missing_h3(dir.path(), &keys).unwrap();
+    assert_eq!(written.len(), h3s.len());
+    for (name, bytes) in &h3s {
+        assert_eq!(
+            &std::fs::read(dir.path().join(name)).unwrap(),
+            bytes,
+            "{name}"
+        );
+    }
+    // Nothing is missing any more.
+    assert!(
+        wux_rs::write_missing_h3(dir.path(), &[])
+            .unwrap()
+            .is_empty()
+    );
 }

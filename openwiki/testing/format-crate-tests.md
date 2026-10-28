@@ -82,10 +82,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:18:06.223Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T12:28:25.132Z
+    at: 2026-10-28T19:18:06.223Z
 ---
 
 # Format Crate Test Strategy
@@ -158,7 +158,12 @@ nested directories, all with made-up keys (`DISC_KEY`, `COMMON_KEY`, `TITLE_KEY`
 with a message unless `WUXRS_DISC` names a WUD or WUX, read keys from `WUXRS_KEYS`
 or Cemu's `keys.txt`, and compare against a Cemu-made WUA in `WUXRS_WUA` and an
 update in `WUXRS_ADD` when those are set. The fifth rebuilds the disc from its
-WUA.
+WUA. A sixth needs no disc: with `WUXRS_NUS` naming a real NUS folder, it links
+the folder's files but its `.h3` ones into a temp folder, has
+`write_missing_h3` rebuild them, and compares each with the original, byte for
+byte. `tests/nus.rs` covers the same on the synthetic update: a missing `.h3`
+comes back as it was, a folder holding them all needs no key, and one missing
+without the common key fails with nothing written.
 
 ## Round-trip versus interop
 

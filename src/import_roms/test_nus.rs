@@ -74,6 +74,8 @@ async fn test() {
     let games = find_full_games_by_system_id(&mut connection, system.id).await;
     assert_eq!(games[0].completion, 2);
 
-    // and what it did not list is left be
+    // and what it did not list is left be, while the ticket it lists stays
+    // with the title rather than in the store of tickets
     assert!(nus_directory.join("title.cert").is_file());
+    assert!(!tmp_directory.join("wiiu_tickets").exists());
 }
