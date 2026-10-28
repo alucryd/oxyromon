@@ -416,7 +416,10 @@ pub async fn purge_system(state: AppState, system_id: i64) {
         purgeSystem(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": system_id });
-    if request_action(state, "Purging the system", mutation, variables).await.is_err() {
+    if request_action(state, "Purging the system", mutation, variables)
+        .await
+        .is_err()
+    {
         state.purging_system_id.set(-1);
     }
 }
@@ -431,7 +434,10 @@ pub async fn sort_roms(state: AppState, system_id: i64) {
         sortRoms(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
-    if request_action(state, "Sorting ROMs", mutation, variables).await.is_err() {
+    if request_action(state, "Sorting ROMs", mutation, variables)
+        .await
+        .is_err()
+    {
         state.sorting_system_id.set(-1);
     }
 }
@@ -446,7 +452,10 @@ pub async fn check_roms(state: AppState, system_id: i64) {
         checkRoms(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": (system_id > 0).then_some(system_id) });
-    if request_action(state, "Checking ROMs", mutation, variables).await.is_err() {
+    if request_action(state, "Checking ROMs", mutation, variables)
+        .await
+        .is_err()
+    {
         state.checking_system_id.set(-1);
     }
 }
@@ -458,7 +467,10 @@ pub async fn purge_irds(state: AppState, system_id: i64) {
         purgeIrds(systemId: $systemId)
     }"#;
     let variables = json!({ "systemId": system_id });
-    if request_action(state, "Purging the IRDs", mutation, variables).await.is_err() {
+    if request_action(state, "Purging the IRDs", mutation, variables)
+        .await
+        .is_err()
+    {
         state.purging_irds_system_id.set(-1);
     }
 }
@@ -470,7 +482,10 @@ pub async fn purge_game(state: AppState, game_id: i64) {
         purgeGames(gameIds: $gameIds)
     }"#;
     let variables = json!({ "gameIds": [game_id] });
-    if request_action(state, "Purging the game", mutation, variables).await.is_err() {
+    if request_action(state, "Purging the game", mutation, variables)
+        .await
+        .is_err()
+    {
         state.purging_game_id.set(-1);
     }
 }
@@ -481,7 +496,10 @@ pub async fn generate_playlists(state: AppState) {
     let mutation = r#"mutation GeneratePlaylists {
         generatePlaylists
     }"#;
-    if request_action(state, "Generating playlists", mutation, json!({})).await.is_err() {
+    if request_action(state, "Generating playlists", mutation, json!({}))
+        .await
+        .is_err()
+    {
         state.generating_playlists.set(false);
     }
 }
