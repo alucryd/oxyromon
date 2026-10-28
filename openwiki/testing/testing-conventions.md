@@ -102,10 +102,10 @@ sources:
     resource: repo://tests/crates.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Test Harness and Conventions
@@ -345,9 +345,9 @@ suites, the in-crate suite is never tool-gated — a green run there
 really does mean the code path executed.
 
 CI installs `mame-tools`, `xdelta3` and `ffmpeg` **as test-time oracles only** —
-the comment in the workflow says they are "only for the crates' tests … and skip
+the comment in the workflow says they are "only for the crates' tests, … and skip
 without them" — and not as runtime dependencies of `oxyromon`
-([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L23-L32)).
+([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L86-L91)).
 The consequence for green runs still holds wherever the policy applies: a skipped
 test is reported as passing, so an oracle-gated path can be silently unexercised —
 check the `skipping:` line in the output, not the exit code. `maxcso` is *not*
@@ -481,14 +481,16 @@ test in the workspace is `#[ignore]`d — the 2 GiB `index_shift_round_trips` in
 `./test.sh` is now a single line, identical to CI's coverage step
 ([test.sh](../../test.sh#L1-L3),
 [continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L64-L65)).
-CI brackets that run with four clippy passes — `--workspace --all-targets
---features oxyromon/server`, a second covering the MCP-without-web-server
-combination, `--no-default-features --features use-rustls,mcp --all-targets`,
-and a third over the web UI's own workspace, `--target wasm32-unknown-unknown
---all-targets` from `frontend/`, and a fourth over the desktop shell from
-`desktop/` — plus a `--release --features server` build and a `cargo fmt
---check` in all three workspaces, before uploading the `lcov.info` to Codecov
-([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L49-L89)).
+CI runs that coverage in its *Lint and test* job, after two clippy passes —
+`--workspace --all-targets --features oxyromon/server`, and a second covering
+the MCP-without-web-server combination,
+`--no-default-features --features use-rustls,mcp --all-targets` — then uploads
+the `lcov.info` to Codecov. The job has a 60-minute timeout, so a hung test
+fails it rather than holding the runner. Three other jobs run alongside: a
+*Format* check over the three workspaces, a *Web UI* job that lints
+`frontend/` for `wasm32-unknown-unknown`, and a release job that builds
+`--release --features server` and lints `desktop/`
+([continuous_integration.yml](../../.github/workflows/continuous_integration.yml#L79-L116)).
 
 Two build facts matter when a suite feels inexplicably slow. `[profile.dev.package."*"]`
 sets `opt-level = 3` for dependencies, because hashing and the pure-Rust codecs run

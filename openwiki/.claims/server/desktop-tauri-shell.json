@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b2e16973bb69ebefb487d3a9b077a141c0ea2a021968821785f0820adbcb6b1d",
+  "pageVersion": "sha256:172bd8635739b43c74643d99fcffa4be1b100cd0366d6e4e13ea64f1c7f281a4",
   "claims": [
     {
       "id": "claim_39904a0122234866be08ff0536490482",
@@ -239,7 +239,7 @@
       "statement": "Recorded failure modes: a blank window on Linux is WebKitGTK's DMA-BUF renderer on some GPU/driver combinations (confirm with WEBKIT_DISABLE_DMABUF_RENDERER=1); `failed to locate the bundled oxyromon binary` means the sidecar was never staged for the current target triple; and `failed to run linuxdeploy` is linuxdeploy's too-old binutils failing on .relr.dyn sections, worked around with NO_STRIP=true.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L229-L240",
+          "resource": "repo://AGENTS.md#L232-L243",
           "version": "repo-lines-v1:sha256:f27b4cfd7b3f4398ad7842ac3b448a6cfc2906e4ad7205ced4d5ae15a6e51d72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjNjdmOTgyYzNjNTgxNDFjYzkzOTc3MGU2YmFlZDFhNzg5OWQ5YjQ1NmZhOTJiZGNjNjQ2MTJiYjU5NWRjZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOThlZDM1ODFhYjExYWJjMmFjNzIwZmRmYWQ3YjU4ODkxNGNlYjVmNjZmNmMxZGY2OWZlNzUyNDFlZWNhOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2ODAzOGJkZTcxNWU2YzM1NTkwNTAyNzE2MGNmYWFiYzliMWRmZjY5MWUzYzk2MTg4MWQzZjY0ZjdiNmUwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5NDZiNTFiODZhN2U4OGQwNmQ5ZGNmMDgwODlhY2I2YWE4NDQ2MDUwOGUyODg5YjM1N2JmMDQ2NTg3YjExYzIifQ"
         },
         {
@@ -254,15 +254,15 @@
     },
     {
       "id": "claim_9873b14ce8424e8e9f514fba2fe72784",
-      "statement": "CI lints the desktop crate in a dedicated step: desktop/ declares its own [workspace] while the root workspace members are only crates/*, so `--workspace` skips it; after `cargo build --release --features server` the job runs desktop/scripts/stage-sidecar.sh to stage that binary as the sidecar, then `cargo clippy --all-targets` in desktop/, with libwebkit2gtk-4.1-dev and libxdo-dev installed and `cargo fmt --check` covering the crate. CI never installs the Tauri CLI or bundles the app; the bundle is built only by hand or by dist.sh.",
+      "statement": "CI lints the desktop crate in a dedicated job: desktop/ declares its own [workspace] while the root workspace members are only crates/*, so `--workspace` skips it. The Release build and desktop job downloads the web UI artifact, runs desktop/scripts/stage-sidecar.sh to build `--release --features server` and stage it as the sidecar, then `cargo clippy --all-targets` in desktop/, and is the only job that installs libwebkit2gtk-4.1-dev and libxdo-dev; the Format job runs `cargo fmt --check` on the crate. CI never installs the Tauri CLI or bundles the app; the bundle is built only by hand or by dist.sh.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L56",
-          "version": "repo-lines-v1:sha256:d1270365f8e7e3c16cfe97a863c2f5b6cbf1f3ea884c40198d202257b58007a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNDlkOTQ1NDI4OWJhMWIzYzY1ZjJhNjI5YmZiNmI2ZDkzNzMzYjM2MmRlNDkyYzRhOTU1ZTNlZjA0OTA1MTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2M2U3MDQ4NDYwZGFmZTQyNjAzNDQ2YWE3MDQ1MTUwYTc3MjhlOGQxYzBkN2UxOTk0Yzg3YWMxNzA5ZDJmOTAifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L118-L155",
+          "version": "repo-lines-v1:sha256:e640460ab9f7d7b93d36136ca5ae5ebfac51d3364ba185333ef912f3d645149e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMmUyNTRlMDAzZGRiMzY4ZjUxYWM3NTg0MTc3YjdhY2RiYmZjYTQzYTcyMGJmZWIyYTY1MWYxZTFjNDBjNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNzdhMWU0ZmYyMGM2NzY0MDFlZGYyNmVlMzliNTZmM2FiM2Q5ODVlNzZhYWFkMWYzYTg0NTgxMWM4M2QwMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMzkwOWQ4Mjg3Y2QwMmFkNTI4ZjMzM2Q0ZmYyYTAxMDc5MTIzMmJiMTQzOTcxYTFjNjVlYjM3MGIzZDJiYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L76-L83",
-          "version": "repo-lines-v1:sha256:d55d120db5047ad1eed38b0e6bc206d78e476834488a9d161a77eeed8de6d646:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODUxN2EwMjdkZjg1OGUzYmU2NWUyOWQ1NjMwOTJlNjUwMmY3ZmM2MzZlYzMxN2VlMDZlODljZWE3NTIwZGM3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDY5YjhjMjBkMTQ4ZTBkNzYwYTk1YmZlOTMzODJmMjE0MDdkMmI4OWI2YThiNjBiMTFkMmMwYmVlOWRjM2E5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM4NWQ5ZDYyZmUxZTM4ZmVkOThjZTgxYjE5OWU1YmZiNWU3YjU3Y2M3NWY2MjJkNzk2OTQxYzY5NzU4YTQwMSJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L41",
+          "version": "repo-lines-v1:sha256:1a303b4ee4485ca59741c5ed5fcc3e62ae265951e04f38443e36529c42560983:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNWM2NmMwMTRjZDQ0NmVkNGNkNmZlZmMzNzAzMjRmNDY1NDRjMmIwZmNiNGMzZWQ5YWM2NmFjYmEwZDFkMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNDlkOTQ1NDI4OWJhMWIzYzY1ZjJhNjI5YmZiNmI2ZDkzNzMzYjM2MmRlNDkyYzRhOTU1ZTNlZjA0OTA1MTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NjJiMWVlNWJlNjRmYzQwODg1MDg2ZWMxOTEwZGNmNDQ2MmNmOGY4NWQ1ZTBkZWIwNTEyNjRjNjEzNTY4NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NmU5NzdhYTQ1MGQzYWZkNDRmMDZjM2IzOGJmYTMyNjA2NDk1NzFmY2NkN2NlZjEzMjM2OWU4MjIxNzlmNWQifQ"
         },
         {
           "resource": "repo://Cargo.toml#L19-L20",
@@ -389,6 +389,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T11:29:22.151Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

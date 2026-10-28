@@ -123,7 +123,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-27T21:16:24.550Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 

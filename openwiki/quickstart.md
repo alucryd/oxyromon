@@ -52,10 +52,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Quickstart & Task Routing
@@ -235,15 +235,16 @@ cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.
 ```
 
 `--features oxyromon/server` is required because a workspace selection spans several packages, so
-a feature must name its package. CI runs clippy over the whole workspace with
-`--all-targets --features oxyromon/server`, then clippy again with
-`--no-default-features --features use-rustls,mcp` so the stdio-only MCP build stays covered, and
-clippy on the web UI from `frontend/` with `--target wasm32-unknown-unknown --all-targets`, then
-builds `--release --features server`, stages that binary as the desktop sidecar and runs clippy
-from `desktop/`, and tests under `cargo llvm-cov`. Before all of that it runs `cargo fmt --check`
-in the root, `frontend/` and `desktop/` workspaces. The reference tools it
-installs (`mame-tools` for `chdman`, `xdelta3`, `ffmpeg`) exist only so the crates' parity tests
-can run; those suites skip rather than fail when the tool is absent.
+a feature must name its package. CI runs four parallel jobs. *Format* runs `cargo fmt --check`
+in the root, `frontend/` and `desktop/` workspaces. *Web UI* builds the UI with trunk, runs clippy
+on it with `--target wasm32-unknown-unknown --all-targets`, and uploads it as an artifact.
+*Lint and test* runs clippy over the whole workspace with `--all-targets --features
+oxyromon/server`, again with `--no-default-features --features use-rustls,mcp` so the stdio-only
+MCP build stays covered, then tests under `cargo llvm-cov`. *Release build and desktop* waits for
+the UI, builds `--release --features server` with it, stages that binary as the desktop sidecar and
+runs clippy from `desktop/`. The reference tools the test job installs (`mame-tools` for
+`chdman`, `xdelta3`, `ffmpeg`) exist only so the crates' parity tests can run; those suites skip
+rather than fail when the tool is absent.
 
 ## Invariants an agent hits immediately
 

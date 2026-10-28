@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e1ebc6e0ed2e0489d43ca67d9d1e165246f74e0887dc1b2ba9afafdd49b8eb86",
+  "pageVersion": "sha256:f63678d9f41cd6a7cbbfec270564534655c04c4ae1e08b5d11417be964aa19c4",
   "claims": [
     {
       "id": "claim_2916724381064a98beaccce1a88c3633",
@@ -423,7 +423,7 @@
       "statement": "Four constraints govern talking to the Lit-based Web Awesome elements from view!: state must be set with prop: bindings (not attributes); unknown on: events need an explicit web_sys::Event payload annotation while known events must not be annotated; custom events bubble and are composed so handlers must compare event.target() with current_target() (Modal's wa-after-hide and remember_position's wa-reposition both do); and form controls re-dispatch input/change from the custom element, which is why ui.rs reads value/checked/position off event.target() with js_sys::Reflect instead of event_target_value.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L208-L214",
+          "resource": "repo://AGENTS.md#L211-L217",
           "version": "repo-lines-v1:sha256:39926a3ee97ef671722b5f1e129d42b9e9a439613dc5e4d78c8a6b3e9638c5eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIwZWVmNDE1NzZlNDY2OWVhNzYwMGVmMjA3YTVjZGJmMjIwNmU5MjllZjk3YjQ5NGI4YzNjM2NlMjNlYjhjMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFkMGMzZmY0ZTNhYTA1MmI2ZWYzM2Q3Zjc3NjFhOWJkYjIxMGZmYWU2ZmVjNWE1MzM5NzU5NzEyNDg0YjEzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRmNTU5ZmRlZGM2ODUxODQ2M2UzZTA3Y2NmODJkZDk4OWU4MWQwNmM3Njg2ZDIxZjFjMDJlYmJjYmFkMDEwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRjZDJkNTc1YmIzOTkwNWI3ZGRiMDFiODkwYTNjMzc3MTcwOWZiYjI3ZTBlMDZjOTRiNTAxZWZkMzg0ODQ0MiJ9"
         },
         {
@@ -445,7 +445,7 @@
       "statement": "The app root carries the wa-cloak class so nothing paints until every custom element inside has been upgraded (otherwise each <wa-*> is an unknown inline element and the navbar renders as unstyled run-on text), and Modal builds its children only while open for the same reason: a closed, not-yet-upgraded <wa-dialog> would spill its contents onto the page.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L223-L224",
+          "resource": "repo://AGENTS.md#L226-L227",
           "version": "repo-lines-v1:sha256:25ddcc3c7f41e6b7c42ec829ae7e2011bf5a2eac33acca517b6a8c92c63a4971:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJlNzA0ZmFmYmI2ZGI3NWE1YjA5NWMzZDU2MTJlN2NmZDNkOWEyMWU0NzcyMDlhNzVkYjdkOGJjZTU3YTU4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M1N2RjZjJhYzZkZGU1OWE0YzY5MTk0Nzc1ODM1M2QxZGExOWE0MDE2MjQ4Mjg1Zjk1Njk3YTQ2NTQ3NGVlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc5M2JiYmZlNGFlYzdhNDNjMWNhOTJjNWE0ZWQwNWE3NTBhNzdhMTBiYmY2NTIyNWYyZTcyYzFhMTg1Yzk2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDRkYzFjYjFmN2Q2NmYxZGEzMDUyY2ZlNjFiNDdjMmM2ZjgxYzhhNGE5NGFkZTkwMDJmZTAxOWMwYmFmMWRiZiJ9"
         },
         {
@@ -539,7 +539,7 @@
       "statement": "styles.css is wrapped in @layer app, declared after webawesome.css so its rules beat the component library without specificity (and order within the layer still matters, since the bare-target reset must precede the classes built on it). index.html must also load styles/color/variants.css, because the theme alone defines --wa-color-brand-* only inside component shadow styles and any app rule using those tokens is otherwise silently dropped as invalid.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L215-L220",
+          "resource": "repo://AGENTS.md#L218-L223",
           "version": "repo-lines-v1:sha256:eee4f8da46b25c5578b11703c7bbbf9d03c5b790957edcd6c729b80fc064f680:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjllMWUwN2YzY2I2ZjVhMzM4MWNlODUyMTlkMTcwOGQwMjEzNjNjZjczMDU4MGY3NWRiNTgzZWRhMDc5NTUwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcxYTIxOWMxZDdhYjhlNDZiZGJhZTg1OTcxODQ0MTM5YjZlNTM4MzI4NWI3MjZiOWJkODk3YTI0OWIzYWRkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzJjYzA3Zjk1ZDdiMGM3MjE0NjZhMjE2MGRkZTNmMWQxYzAzZjUwYzY5ZThhYWU5NmUwNzU4ZTBkNmZlNmFiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODI4ZDBhOTYxMWM3MzVmMTcxMTVhNDBhOTY1OWJjYTlkOTgwODU5YzY5MTNiYjE1N2I3YjhmN2FmZTNlZmE1YyJ9"
         },
         {
@@ -557,7 +557,7 @@
       "statement": "Anything that is a <button> only for semantics — a whole list row, an icon target, a dropzone — needs the .plain-button class, because Web Awesome's native.css gives native buttons chrome, a fixed height, centred flex layout and nowrap text; the reset also sets justify-content: flex-start explicitly since any .plain-button that later becomes a flex container would otherwise inherit the centring.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L221-L222",
+          "resource": "repo://AGENTS.md#L224-L225",
           "version": "repo-lines-v1:sha256:74d0f2051f754a1d11da4c8a4344fec8d8957da2fb9cc0261b2cc440ccd83c06:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc4MjJkYzNiZDg1MDhjY2Y2YzQyNWZlNzQ3ZjE0ODdlZjRiMGZmNDBkYjAxZjc2ZjM1ZTRlZjdmNDEwNGIzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA3OTlhYjRkNzk5ZGZhNmExOGVlMTVhN2VjN2RkZGM2YjNjZjYzNDFjOGVkOWFmZjMwMzYwYzU3YzZhNGU5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGE1MWQ3MmNhNjAzNzlhODRkMWY5NTkxMTY3MzQyMzNjMWYwYTBjMGJkOTQ5YzlmZDVjODIyY2YzMWM5ZGVhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGJlMmExYjgyYTE5ZDJmNDhkNTI0MDg1ODI5Y2NiOTRjMzdlNTAyNDFhY2IxNDRmZDQ2YzNjODczMmQxYzllMSJ9"
         },
         {
@@ -593,7 +593,7 @@
       "statement": "Nothing may load from a CDN at runtime — the UI is served by oxyromon server and bundled into the desktop app, both required to work offline. index.html calls setBasePath(\"/webawesome\") and setIconPath(\"/icons\") to override the Font Awesome CDN defaults, and the Trunk pre_build hook fetch-webawesome.sh vendors the pinned dist-cdn build plus an explicit icon allow-list into gitignored frontend/vendor/; its stamp hashes the icon list as well as both versions so adding an icon forces a re-fetch instead of silently rendering nothing.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L76-L78",
+          "resource": "repo://AGENTS.md#L79-L81",
           "version": "repo-lines-v1:sha256:eed79fbfb090b14b5ae12db746bd4a888d83983c54a27da757fb5ad44ed3b011:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGEyMjljMDY1NzVkMTFmYzkwZDZlMjU3MDVlNjJmYjk3Y2QxNTliMmNjNTEzNjQ1NTQwMmRlMGQ5NDA1ZDUzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE0MzNlZjk4YTBkOTcyMzEwYjg1NWE4ODU2N2NiYjNmNDRiMmMzY2NlMDdmYWJlNGYxNWRhZGZlOWZmMzQxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2M0NDdmMWMyNDU2YmY5ZGY2ODI5OWZmNDg0ZDUyMDBlN2NmZjliYjU1OWJiZjg5NDM3MjdlN2EwNGFmZWJkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2NlNTQzNzNiZGJhYTE3YWNiMTY3YjBlYTg4NjlhYTJjY2MwYjljYjFmY2RkMTVmZjdiMjQ2YmNhYjAxYTQ0OSJ9"
         },
         {
@@ -619,7 +619,7 @@
       "statement": "Dark mode is a single wa-dark class toggled on <html> by set_dark and persisted to localStorage under color-theme, applied by init_theme before mount and defaulting to dark; the --wa-* tokens carry both values so styles.css never mentions a colour scheme, with the logo's two variants the only exception. init_language overwrites document.documentElement.lang from navigator.language because index.html hardcodes lang=\"en\", which Web Awesome's localization would otherwise fall back to for <wa-format-bytes> and <wa-relative-time>.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L225-L226",
+          "resource": "repo://AGENTS.md#L228-L229",
           "version": "repo-lines-v1:sha256:c4eea3a5932e61503607a6ec832b6cd46204149bfe7d9c84007407c1a1dffd88:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODUxMjI5ZTFiNDE5OWMwYmY0ZmZlZWYwOTBjZTBjODdiY2JhZGY5NTkxNjQ3YWVmYjI2MTI5YWJmZTcwNWQyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzY2NmM0MDY5NTcxNmRmNjk5YWIzMTVjMzM1NzdlYzQ0MjZkOWU2MzA1ZGE0ZjcwMzYyODk3NzYwM2FmYzBkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjVlNmZiMzhlZDJlMTUxZGVkM2RkNDc3YjQ2OTZhYWIwMjg1OTVlMDU5YzUxNWI3NWUyZDZkYzFhZjliZmMwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDBlZjk4ZWM0YWQwYTlhMGJhMmUxM2UxMjQ5ODJhNDEyMTZlMThkNDA5N2JmN2E4ZDc2Y2Q1MWExMmE0MmU3ZiJ9"
         },
         {
@@ -703,7 +703,7 @@
       "statement": "Adding a query or mutation end to end means: a resolver in the #[Object] impl in src/query.rs or src/mutation.rs, a backend type in src/model.rs with #[cfg_attr(feature = \"server\", derive(Clone, SimpleObject))], a document string in frontend/src/api.rs deserializing into a frontend/src/model.rs type with camelCase naming, and a component call via spawn_local that updates AppState signals and reports failure through report_error. A long-running action must additionally emit {prefix}_started/_complete/_error and register the listeners in sse.rs.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L196-L199",
+          "resource": "repo://AGENTS.md#L199-L202",
           "version": "repo-lines-v1:sha256:e1ba89c6cc25d3ad759d2e5a9cac63fa23a51eaa7f716017fd477874f03714e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI3MGFiYmRhMjM0YWRmOTExOTRjMDJjZjI2OWIwOTliY2NmOTdhNzEyMzM1NjI4NWNkOTA2YjZjNWRjOGVhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUzZmVmODA5ZDM1ODE0ZmNmYjU4ZWZhZDVhZjIxNWM1MmRjNDIwYjNhNDFjNDdlYzBhMWExZjE5ODJiYmY1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI0MmI2NjFhNzdkZGY2Y2RhZjAxZjk2MzhhNzRiYTFkMjcyNWM1ZDViNjQxNWEzNTk2MjAyMzAxOWU2MmI3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTcxNTMxNzk2YzM4Y2Q4MWU1Zjc3NTM0NzBjOGM0M2ZhMmMyMjFkNTFiMThhYzc4N2UzYTUzODBhNzJmMzYyMCJ9"
         },
         {
@@ -722,15 +722,19 @@
     },
     {
       "id": "claim_bacbae62801a4ef680b68b7f393a71ae",
-      "statement": "The frontend has no tests of its own: continuous_integration.yml pins TRUNK_VERSION, exports SKIP_TRUNK=true, builds the UI once with `cd frontend && trunk build --release`, and runs cargo llvm-cov only over --workspace, which excludes frontend/ because that crate declares its own workspace; CI lints it in a separate pass, `cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets`, and checks its formatting with `cargo fmt --check` from frontend/.",
+      "statement": "The frontend has no tests of its own: continuous_integration.yml pins TRUNK_VERSION and exports SKIP_TRUNK=true; its Web UI job builds the UI once with `cd frontend && trunk build --release`, lints it with `cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets` and uploads target/assets for the release job, while cargo llvm-cov runs only over --workspace, which excludes frontend/ because that crate declares its own workspace; the Format job checks its formatting with `cargo fmt --check` from frontend/.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L49-L85",
-          "version": "repo-lines-v1:sha256:e403e135594b01835d996a728618cf6da606668e1a63fc7e34e4c98c6d5f4ca1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNTdhMmIwOWFlMzVhZWNlMGYwNjUzYjcxYWU5ODNlZjM3YmUwNDk1YTg1MDJjMmNlNjYyZTJjMThkZGM1NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzViNTkzMzAxMTUyMWVlZTExMWQ5NjliZTlkYWFhZmQ0NDllZTFlZTM4OGI5MDdkZmU5NWQ1ODUxODRiMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L111-L112",
+          "version": "repo-lines-v1:sha256:c290280b7b45ce20876f1ebc6286f6155cbcba810f836427b71d950551105db9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
         },
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
-          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5MzgyODhkYzc1NjJjYTBmMzc0YjQwMTU3ZGM1NzMwMDQ0YjRlMjc4MTMwYTg1MDQwYWZiNGQ2NzAxNjkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L77",
+          "version": "repo-lines-v1:sha256:5670474a93c5c50d272907ff06640ccd0191e9e170a77b6a28fe14885a1b0619:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNWM2NmMwMTRjZDQ0NmVkNGNkNmZlZmMzNzAzMjRmNDY1NDRjMmIwZmNiNGMzZWQ5YWM2NmFjYmEwZDFkMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZTZlNzI5MTZkNjM0MTM2YjkxNWI3YTVmY2Y5NTUxZDM4ZjE3YjY5ODk0ZGUwZTMxMmQ1NmRjMzMzNDkyOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NjJiMWVlNWJlNjRmYzQwODg1MDg2ZWMxOTEwZGNmNDQ2MmNmOGY4NWQ1ZTBkZWIwNTEyNjRjNjEzNTY4NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4OTk1ODJhNGQzNWNjYWQ1YmY3OTFjMzhmYTUxM2Y3YmI4NTk3Njg1ZjFhYzY5Y2I1YzdlNTcyZjY2NDQwYTUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L20",
+          "version": "repo-lines-v1:sha256:30ad1c014ee8e111433651c836e1410eb5519af994939a18ab83c2a7821e5789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYTU5NGYzNGI3ZjBlYTU3M2RhNzg3MDNlMjc0OTMwZGI3MThjOTQyY2FmM2MwNDI1MTc1NWY2MjNjNjBkNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ODdlYWNmNWJmNTI5NjIzMzIwYjdmOWRiYjA2NmE1YmQxMDU1YWFhODUwN2JiZmZhOTQ1YzU3ZTEzMjNjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OTM4Mjg4ZGM3NTYyY2EwZjM3NGI0MDE1N2RjNTczMDA0NGI0ZTI3ODEzMGE4NTA0MGFmYjRkNjcwMTY5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNzdmN2U4ZDNlZGZmNTM3MzRhYTU4ZDNjZTZlNzM2NjJkNDQ1N2EyMTY2NWYzM2RhZDZiZmUwODRhY2Q5NTIifQ"
         },
         {
           "resource": "repo://frontend/Cargo.toml#L7-L9",
@@ -845,6 +849,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T11:29:22.151Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

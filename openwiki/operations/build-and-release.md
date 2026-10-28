@@ -56,10 +56,10 @@ sources:
     resource: repo://src/wux.rs
   - id: openwiki-source-06dfbbee2ae2d2a513ed6819
     resource: repo://test.sh
-generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Builds, Distribution and Releases
@@ -324,18 +324,20 @@ flowchart TD
 - **The pre-release gate is CI, not a release workflow.**
   `.github/workflows/continuous_integration.yml` runs on pushes and pull requests to
   `master` and `develop` with `SKIP_TRUNK: "true"` and a pinned `TRUNK_VERSION` of
-  0.21.14: it checks `cargo fmt` in the root, `frontend/` and `desktop/`
-  workspaces, builds the web UI once, then runs three clippy passes —
-  `--workspace --all-targets --features oxyromon/server`,
+  0.21.14, and runs four jobs. *Format* checks `cargo fmt` in the root,
+  `frontend/` and `desktop/` workspaces. *Web UI* builds the UI once with
+  trunk, lints it for `wasm32-unknown-unknown`, and uploads it as an artifact
+  that lives one day. *Lint and test* runs clippy with
+  `--workspace --all-targets --features oxyromon/server` and with
   `--no-default-features --features use-rustls,mcp --all-targets`, existing so
-  `mcp`-only builds cannot rot, and the web UI's own workspace for
-  `wasm32-unknown-unknown` — a `cargo build --release --features
-  server`, a fourth clippy pass over the desktop shell once that binary is staged
-  as its sidecar, and workspace coverage with `cargo llvm-cov`, uploaded to
-  Codecov. It installs `mame-tools`, `xdelta3` and `ffmpeg` because the crates' interop tests
-  compare against chdman and xdelta3, make LaserDisc AVIs with ffmpeg, and skip
-  rather than fail when those are absent, and the webkit2gtk and xdo development
-  packages for the desktop pass. Nothing in CI runs `dist.sh`, `docker.sh`
+  `mcp`-only builds cannot rot, then workspace coverage with `cargo llvm-cov`,
+  uploaded to Codecov. It installs `mame-tools`, `xdelta3` and `ffmpeg` because
+  the crates' interop tests compare against chdman and xdelta3, make LaserDisc
+  AVIs with ffmpeg, and skip rather than fail when those are absent. *Release
+  build and desktop* waits for the UI artifact, builds `--release --features
+  server` with it through the sidecar staging script, and lints the desktop
+  shell, with the webkit2gtk and xdo development packages installed.
+  Nothing in CI runs `dist.sh`, `docker.sh`
   or `cargo publish`.
 
 ```sh

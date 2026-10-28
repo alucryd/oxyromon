@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d60b29d219d5017e7bab00df9b2d61479cd6e186e18f35a3bd05de7a0cb2c9b7",
+  "pageVersion": "sha256:f23b346e573ebdffcfb24d242f36c5cb0ecfbabad7f3b336d5af750af3932cad",
   "claims": [
     {
       "id": "claim_56ecae6ff3f14ff0babfd3201239caab",
       "statement": "The standard of proof for every crate under crates/ is agreement with the upstream reference implementation rather than self-consistency, and the suites are split accordingly: roundtrip.rs / apply.rs / decode.rs / convert.rs exercise the crate alone, interop.rs runs the upstream binary as a child process, and where a reference cannot be run a pinned reference-made artifact or a generated vector file stands in for it.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L161-L163",
+          "resource": "repo://AGENTS.md#L164-L166",
           "version": "repo-lines-v1:sha256:f53ac784aec7eabbbd4a6614f73e43a10fdc1a1f395e2203037f7222ced4513d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU3MDRhNzlmNzdhNTBjYzg3ZDdlMjJmODUxZTEzMmQwOGY5YjhiNTdjYTJlZDcwMDNlNzdjNWVkZGIxOGYyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzODU2YjUyMTA2MDkzZGQ4MzJjNzZlMmEzZThhZTkyM2VkYzBjODlhYWQzZDVkODhhNTIwMmFhYzk3YmRlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwNGMwMjkxZjI5ZWM4NTFlZDg3YTYxNDc0MDQzNjFlMTgxZTBlMTZkYTM5ZDNlZTZjMjcwODk4MjMzNThmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJhZmQyOTM3ZGU3NTllNzU1NDQ1NGVkYjM5OGM5NmFjMTA5NTlmOWU5ZjkyNmZkOGMxOWQ1NTE1Zjc5ZmFiZiJ9"
         },
         {
@@ -64,11 +64,11 @@
     },
     {
       "id": "claim_487b3ace52ae4a7fbd174a0689799689",
-      "statement": "CI's dependency step runs `apt-get -o Acquire::Retries=3 update` and installs mame-tools (whose chdman), xdelta3 and ffmpeg - all three commented as being only for the crates' tests, which skip without them - so the chd-rs parity suites and the xdelta-rs comparison execute on every run, while neither maxcso nor flips is installed and the xso-rs and xps-rs interop tests always skip in CI and are a local responsibility.",
+      "statement": "CI's lint and test job runs `apt-get -o Acquire::Retries=3 update` and installs mame-tools (whose chdman), xdelta3 and ffmpeg - commented as being only for the crates' tests, which skip without them - so the chd-rs parity suites and the xdelta-rs comparison execute on every run, while neither maxcso nor flips is installed and the xso-rs and xps-rs interop tests always skip in CI and are a local responsibility.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         }
       ]
     },
@@ -357,8 +357,8 @@
       "statement": "The crates are executed as part of the workspace: `cargo test --workspace --features oxyromon/server` locally (test.sh is the same command under cargo llvm-cov), and in CI that llvm-cov step is what actually runs them since clippy only lints test targets. The root package adds the cross-crate check tests/crates.rs, which requires the seven copied src/bin/<cli>/ui.rs files (chdrs, ciars, gdirs, nszrs, wuxrs, xdeltars, xpsrs) to be byte-identical to xso-rs's.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L67-L85",
-          "version": "repo-lines-v1:sha256:a06e977abda31763c74a0e8e1e3cd77c31691100ec6164caa6b7e39a2010b0c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDE4ZDliNTI2ZjEwODBhMmIwZTBlZDUzNDA3ZmNjMzQ3YTU0ODY0OWNjZTMxZjVjNDFiYTUwYmYxNzVlODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYWM5MzZjMDcyNzUzODk4ZTcwYTA3OTY5NjYyODM0MDVjMTVkYjc0Njg0YWU1MjEzMjZjYWM4YmM0YjA5NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L103-L112",
+          "version": "repo-lines-v1:sha256:178184d269d000a59c884fc4cfec7dbd0c0e77f3000e3ff5760569ee595ecaed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMzQ4NTM2MWVkN2E5ZjI4OTdlZTQ0ZTU0ZmFjYzM4MjczZjM3MzUxZTRmOTc5YTRkYjg1N2M5YzcwODdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://test.sh#L1-L3",
@@ -629,6 +629,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T11:29:22.151Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

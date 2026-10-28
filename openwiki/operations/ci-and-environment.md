@@ -76,10 +76,10 @@ sources:
     resource: repo://src/xso.rs
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T11:29:22.151Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T11:29:22.151Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # CI Pipelines and Runtime Environment
@@ -103,12 +103,12 @@ harnesses.
 
 | Workflow | Trigger | Runs on | What it produces |
 | --- | --- | --- | --- |
-| `continuous_integration.yml` | `push` and `pull_request` to `master` and `develop` | `ubuntu-26.04` | clippy verdicts, a release `server` binary, `lcov.info` uploaded to Codecov |
+| `continuous_integration.yml` | `push` and `pull_request` to `master` and `develop` | `ubuntu-26.04` | format and clippy verdicts, a release `server` binary, `lcov.info` uploaded to Codecov |
 | `docker.yml` | `push` to `develop` | `ubuntu-latest` | `alucryd/oxyromon` image pushed to Docker Hub, tags from the git ref |
 
 Both workflows fire on a push to `develop`, but nothing orders them: the image
 publish derives its tags from the git ref via `docker/metadata-action` and does
-not depend on the CI job, so a `develop` push publishes a container image while
+not depend on the CI jobs, so a `develop` push publishes a container image while
 the clippy/build/coverage verdict on that same commit is still running — and
 even after it fails. `master` is gated by CI but publishes nothing.
 
@@ -118,32 +118,44 @@ refreshes `openwiki/`, but no such workflow exists in `.github/workflows/` in th
 current tree, so the regeneration cadence is not something CI here defines or
 gates.
 
-## The CI job, step by step
+## The CI jobs, step by step
 
-The job is a single `build` job with no matrix; the feature matrix is expressed
-as separate cargo invocations instead. Job-level `env` sets `CARGO_TERM_COLOR`,
-`SKIP_TRUNK: "true"` and `TRUNK_VERSION: "0.21.14"`.
+The workflow runs four jobs with no matrix; the feature matrix is expressed as
+separate cargo invocations instead. Workflow-level `env` sets
+`CARGO_TERM_COLOR`, `SKIP_TRUNK: "true"` and `TRUNK_VERSION: "0.21.14"`. Every
+job has a `timeout-minutes`, so a hung process fails the job instead of holding
+the runner for GitHub's six-hour default. The jobs start together; only the
+release job waits, for the web UI artifact.
 
 ```mermaid
 flowchart TD
-  CO["checkout v7"] --> APT["apt-get update with Acquire Retries 3, then install mame-tools xdelta3 ffmpeg, webkit2gtk and xdo dev packages"]
-  APT --> TC["rust-toolchain stable plus wasm32-unknown-unknown, clippy, rustfmt, llvm-tools-preview"]
-  TC --> DEF["rustup default stable"]
-  DEF --> CACHE["Swatinem/rust-cache v2 over root, frontend and desktop"]
-  CACHE --> FMT["cargo fmt --check in root, frontend and desktop"]
-  FMT --> TRUNK["install trunk from the pinned TRUNK_VERSION tarball into cargo bin"]
-  TRUNK --> UI["cd frontend, trunk build --release (the one and only wasm build)"]
-  UI --> COV["cargo install cargo-llvm-cov"]
-  COV --> L1["clippy workspace all-targets features oxyromon/server"]
-  L1 --> L2["clippy no-default-features features use-rustls,mcp all-targets"]
-  L2 --> L3["cd frontend, clippy target wasm32-unknown-unknown all-targets"]
-  L3 --> B["cargo build --release --features server"]
-  B --> L4["stage-sidecar.sh, then cd desktop, clippy all-targets"]
-  L4 --> T["cargo llvm-cov workspace features oxyromon/server, lcov output"]
-  T --> U["codecov-action v7 with CODECOV_TOKEN"]
+  subgraph FMTJ["Format, 10 min"]
+    F1["checkout, toolchain with rustfmt"] --> F2["cargo fmt --check in root, frontend and desktop"]
+  end
+  subgraph UIJ["Web UI, 30 min"]
+    W1["checkout, toolchain with wasm32-unknown-unknown and clippy, cache frontend"] --> W2["install pinned trunk"]
+    W2 --> W3["cd frontend, trunk build --release"]
+    W3 --> W4["cd frontend, clippy target wasm32-unknown-unknown all-targets"]
+    W4 --> W5["upload target/assets as the web-ui artifact"]
+  end
+  subgraph TESTJ["Lint and test, 60 min"]
+    T1["checkout, apt-get update, install mame-tools xdelta3 ffmpeg"] --> T2["toolchain with clippy and llvm-tools-preview, cache root"]
+    T2 --> T3["cargo install cargo-llvm-cov"]
+    T3 --> T4["clippy workspace all-targets features oxyromon/server"]
+    T4 --> T5["clippy no-default-features features use-rustls,mcp all-targets"]
+    T5 --> T6["cargo llvm-cov workspace features oxyromon/server"]
+    T6 --> T7["codecov-action v7"]
+  end
+  subgraph RELJ["Release build and desktop, 60 min"]
+    R1["checkout, apt-get update, install webkit2gtk and xdo dev packages"] --> R2["toolchain with clippy, cache root and desktop"]
+    R2 --> R3["download web-ui into target/assets"]
+    R3 --> R4["stage-sidecar.sh: cargo build --release --features server, copy to desktop/binaries"]
+    R4 --> R5["cd desktop, clippy all-targets"]
+  end
+  W5 --> R3
 ```
 
-*Caption: the CI job as a single linear pipeline — one format check, one wasm build, four clippy passes, one release build, one coverage run.*
+*Caption: four jobs; the only dependency is the release build, which embeds the web UI the Web UI job built.*
 
 Why each step exists:
 
@@ -153,7 +165,7 @@ Why each step exists:
   version lands, so installing against the cached lists 404s. The retries cover
   transient mirror failures on the refresh itself, not just the install.
 - **`mame-tools` (which provides `chdman`), `xdelta3` and `ffmpeg` are installed
-  purely as reference implementations for the format crates' tests**, as the
+  in the lint and test job only, purely as reference implementations for the format crates' tests**, as the
   workflow's own comment says: the chd-rs suites compare `chdrs` against
   `chdman`, the xdelta-rs suite compares against `xdelta3`, and `ffmpeg` makes
   the AVI fixtures the LaserDisc tests feed to both tools. Every one of these
@@ -176,7 +188,8 @@ Why each step exists:
   own `[workspace]`, so only `trunk` and that `cd frontend` clippy pass compile
   the Leptos app, both for the wasm target. **`llvm-tools-preview`** is required by
   `cargo-llvm-cov`. `rustup default stable` makes the freshly installed toolchain
-  the one every later `cargo` invocation resolves to.
+  the one every later `cargo` invocation resolves to. Each job installs only
+  the components and targets it uses.
 - **Toolchain pinning is asymmetric.** There is no `rust-toolchain.toml`
   anywhere in the tree, so `dtolnay/rust-toolchain@stable` installs whatever
   stable is current on the day the workflow runs; the only MSRV anchor in the
@@ -188,50 +201,59 @@ Why each step exists:
   paying for a source build of trunk, while `cargo-llvm-cov` is installed
   unpinned from crates.io on every run. In practice a new stable release can
   break CI with no repository change.
-- **A dedicated "Build web UI" step** (`cd frontend && trunk build --release`)
-  is the whole reason the workflow sets `SKIP_TRUNK: "true"` at job level. The
-  wasm bundle is target- and feature-independent, so it is compiled once into
-  `target/assets` (`frontend/Trunk.toml` sets `dist = "../target/assets"`, where
-  the `rust-embed` derive in `src/server.rs` looks for it) and every later cargo
-  invocation — four clippy runs, a release build, and a workspace test run that
-  rebuilds the `server` feature many times over — reuses those assets instead of
-  recompiling wasm. `build.rs` honors the variable only when `server` is enabled,
-  and `SKIP_TRUNK` is **not** declared with `cargo:rerun-if-env-changed`, so
-  flipping it does not itself re-run the script. Because the trunk step runs
-  before any cargo invocation, its `pre_build` hook — which fetches Web Awesome
-  into the gitignored `frontend/vendor/` — executes exactly once per job instead
-  of once per `build.rs` run.
-- **A formatting check** runs `cargo fmt --check` in the root workspace and
-  again in `frontend/` and `desktop/`: each declares its own `[workspace]`, so
-  the root's `cargo fmt --all` never reaches them. `rustfmt` is installed with
-  the toolchain for it.
-- **Four clippy passes** — see the next section. The third lints the web UI,
-  which declares its own `[workspace]`, for `wasm32-unknown-unknown`. The fourth
-  lints the Tauri desktop shell, also its own workspace. It runs after the
-  release build because `tauri-build` refuses to compile until the sidecar
-  declared as `externalBin` exists, so the step first runs
-  `desktop/scripts/stage-sidecar.sh`, which reuses that build and copies it to
-  `desktop/binaries/oxyromon-<triple>`. Its webview needs the
-  `libwebkit2gtk-4.1-dev` and `libxdo-dev` packages.
-- **`Swatinem/rust-cache` lists all three workspaces**, since each has its own
-  `target/` directory.
-- **`cargo build --release --features server`** builds the artifact users
-  actually get (server implies `mcp`, and the release profile uses
-  `lto = "thin"`, `codegen-units = 1`, `panic = "abort"`, which ordinary debug
-  builds never exercise).
+- **The Web UI job builds the UI once** (`cd frontend && trunk build --release`),
+  which is why the workflow sets `SKIP_TRUNK: "true"`: no cargo invocation
+  anywhere runs trunk itself. The wasm bundle is target- and
+  feature-independent, so it is compiled once into `target/assets`
+  (`frontend/Trunk.toml` sets `dist = "../target/assets"`, where the
+  `rust-embed` derive in `src/server.rs` looks for it), lints the frontend for
+  `wasm32-unknown-unknown`, and uploads that folder as the `web-ui` artifact,
+  kept for one day. The trunk step's `pre_build` hook, which fetches Web Awesome
+  into the gitignored `frontend/vendor/`, runs once per workflow.
+- **The lint and test job compiles against an empty UI.** `build.rs` creates
+  `target/assets` when it is missing, which is all the `RustEmbed` derive needs
+  to compile, and no test reads the embedded UI. So this job, the slowest, needs
+  neither trunk nor the wasm target and starts at once. `build.rs` honors
+  `SKIP_TRUNK` only when `server` is enabled, and it is **not** declared with
+  `cargo:rerun-if-env-changed`, so flipping it does not itself re-run the script.
+- **A Format job** runs `cargo fmt --check` in the root workspace and again in
+  `frontend/` and `desktop/`: each declares its own `[workspace]`, so the root's
+  `cargo fmt --all` never reaches them. It installs only `rustfmt` and needs no
+  cache.
+- **Four clippy passes** — see the next section. The first two run in the lint
+  and test job, the third in the Web UI job, and the fourth in the release job.
+- **The release job builds what users get, then lints the desktop shell.** It
+  downloads the `web-ui` artifact into `target/assets` and runs
+  `desktop/scripts/stage-sidecar.sh`, which runs
+  `cargo build --release --features server` and copies the binary to
+  `desktop/binaries/oxyromon-<triple>`. That build exercises the release
+  profile (server implies `mcp`, and the profile uses `lto = "thin"`,
+  `codegen-units = 1`, `panic = "abort"`, which ordinary debug builds never
+  exercise). `tauri-build` refuses to compile the desktop shell until that
+  sidecar declared as `externalBin` exists, so its clippy pass comes last. Only
+  this job installs the webview's `libwebkit2gtk-4.1-dev` and `libxdo-dev`
+  packages, keeping their roughly 150 packages and the desktop build out of the
+  test job.
+- **`Swatinem/rust-cache` lists each job's workspaces**: `frontend` for the Web
+  UI job, the root for the lint and test job, and the root plus `desktop` for
+  the release job, since each workspace has its own `target/` directory.
 - **`cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path
   lcov.info`** runs the tests, not merely a coverage report of compilation: the
   whole workspace under the fullest feature set. `lcov.info` is gitignored; the
   `codecov/codecov-action@v7` step uploads it with `secrets.CODECOV_TOKEN`.
 
 ```sh
-# the commands CI treats as the format and compile gate
+# the commands CI treats as the format and compile gate, by job
+# Format
 cargo fmt --all --check
 (cd frontend && cargo fmt --check)
 (cd desktop && cargo fmt --check)
+# Lint and test
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp --all-targets
-(cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets)
+# Web UI
+(cd frontend && trunk build --release && cargo clippy --target wasm32-unknown-unknown --all-targets)
+# Release build and desktop
 sh desktop/scripts/stage-sidecar.sh && (cd desktop && cargo clippy --all-targets)
 ```
 
@@ -279,7 +301,7 @@ by packagers. No
 clippy invocation passes `-D warnings`, and the manifests declare no `[lints]`
 section, so this gate fails on hard errors in a feature combination, not on new
 lint warnings. Formatting, by contrast, is gated: any `rustfmt` diff in any of
-the three workspaces fails the job.
+the three workspaces fails the Format job.
 
 ## Runtime environment variables
 
