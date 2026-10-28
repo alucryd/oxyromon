@@ -136,10 +136,10 @@ sources:
     resource: repo://src/xps.rs
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-28T19:18:06.223Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:18:06.223Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # Format Crates in crates/
@@ -485,7 +485,9 @@ installable without the organizer.
   `Content`, which oxyromon reads to grade a Wii U title against its newest
   version and, through `Content::is_hashed`, to recognise an `.h3` file the DAT
   leaves out. `write_missing_h3(dir, keys)` writes those files back into a NUS
-  folder, checked against its TMD. `cemu_keys_path`, and the
+  folder, checked against its TMD. `to_wua_with_tickets` is `to_wua` with
+  tickets for the NUS folders holding none, as DLC comes, matched by title ID,
+  which `ticket_title_id` reads. `cemu_keys_path`, and the
   `dirs` dependency it needs, exist only with the `cli` feature. `STORE_DIR` names the
   `.update-partitions` store and `DISC_DIR` the `.wud` folder of a lossless WUA. Internal:
   [Wii U Formats and the wux-rs Crate](../concepts/wii-u-formats-and-wux-rs.md).

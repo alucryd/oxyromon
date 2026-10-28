@@ -64,10 +64,10 @@ sources:
     resource: repo://src/xps/test_patch.rs
   - id: openwiki-source-196778315263fb8bcc8066e5
     resource: repo://src/xso.rs
-generated: { by: "claude-code", at: "2026-10-26T20:09:06.498Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T23:15:44.056Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # Format Modules and Their Crate Backends
@@ -445,8 +445,10 @@ With `bundle`, which export sets and conversion does not, `ToWua` also bundles
 the newest update and DLC from the library. It reads the
 disc's title ID, scans every romfile that is a TMD, and keeps titles whose ID
 shares the disc's low half and whose type is `0005000E` (update) or
-`0005000C` (DLC). A title without a ticket is skipped with a warning, since
-No-Intro lists DLC without one. See
+`0005000C` (DLC). No-Intro lists DLC without a ticket, so a title holding
+none takes the one kept for its title ID in the store of tickets, passed to
+`wux_rs::to_wua_with_tickets`, and is skipped with a warning when there is
+none. See
 [Wii U Formats and wux-rs](wii-u-formats-and-wux-rs.md) for the formats
 themselves.
 

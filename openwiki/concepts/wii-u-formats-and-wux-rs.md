@@ -3,7 +3,7 @@ type: concept
 title: Wii U Formats and the wux-rs Crate
 description: The four Wii U shapes oxyromon handles (WUD, WUX, lossless WUA and NUS folders), what the in-tree wux-rs crate does with each, how a lossless WUA rebuilds its disc and shares update partitions through a store, how keys reach it through import-keys, and how oxyromon wires discs, updates and DLC through import, convert, check, export, purge and create-dats.
 tags: [wii-u, wux, wud, wua, nus, wux-rs, keys, import-keys, cemu, zarchive, lossless, update-partitions]
-generated: { by: "claude-code", at: "2026-10-28T19:18:06.223Z" }
+generated: { by: "claude-code", at: "2026-10-28T19:36:29.623Z" }
 sources:
   - id: openwiki-source-ce853e79f786a28d42f8717a
     resource: repo://crates/wux-rs/Cargo.toml
@@ -35,6 +35,8 @@ sources:
     resource: repo://crates/wux-rs/src/zarchive.rs
   - id: openwiki-source-459bee48f81e7fcc3cd4f278
     resource: repo://crates/wux-rs/tests/nus.rs
+  - id: openwiki-source-560d653ce20fe8e35d8f160e
+    resource: repo://crates/wux-rs/tests/wua.rs
   - id: openwiki-source-10fddfccad5d7bf89d675953
     resource: repo://src/convert_roms.rs
   - id: openwiki-source-b6706f0791a5270c40cccdb6
@@ -45,8 +47,12 @@ sources:
     resource: repo://src/export_roms.rs
   - id: openwiki-source-be7327f55121804d3c341624
     resource: repo://src/export_roms/test_nus_missing_h3_to_original.rs
+  - id: openwiki-source-569d22b0cd6be431d6dce291
+    resource: repo://src/export_roms/test_nus_stored_ticket_to_original.rs
   - id: openwiki-source-a44e692a5f3268aa48d01296
     resource: repo://src/export_roms/test_wua_to_nus.rs
+  - id: openwiki-source-69d5eed4a5e6755cddec99a9
+    resource: repo://src/export_roms/test_wux_with_stored_ticket_update_to_wua.rs
   - id: openwiki-source-f7509e92ca643a1db54a74c4
     resource: repo://src/import_keys.rs
   - id: openwiki-source-9add64e166d8ef19bd58c5af
@@ -57,6 +63,10 @@ sources:
     resource: repo://src/import_roms/test_nus_multi_version_missing.rs
   - id: openwiki-source-b114aadc915534d21194e6ea
     resource: repo://src/import_roms/test_nus_multi_version.rs
+  - id: openwiki-source-4c13db32f406c7729c88944d
+    resource: repo://src/import_roms/test_nus_unlisted_ticket.rs
+  - id: openwiki-source-d1f7a3e2bc952509d6c122b4
+    resource: repo://src/import_roms/test_nus.rs
   - id: openwiki-source-313c10a1161be7da48ebd676
     resource: repo://src/purge_roms.rs
   - id: openwiki-source-0f30444a2cbc21370988fd60
@@ -69,7 +79,7 @@ sources:
     resource: repo://tests/Test%20System%20(20261025)%20(CDN%20History).dat
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:18:06.223Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # Wii U Formats and the wux-rs Crate
@@ -187,7 +197,7 @@ flowchart LR
 | `disc.rs` | The disc as Cemu reads it: a partition table encrypted with the disc key, partitions, and an FST whose files are split into raw, hashed or per-block encrypted clusters, the last used by the update partition |
 | `nus.rs` | TMD parsing and the `tmd_path` / `ticket_path` lookups, which accept a downloader's names (`title.tmd`, `title.tik`) or No-Intro's (`tmd.<version>`, `cetk.<version>`) |
 | `install.rs` | `to_nus`: copies the game partition's encrypted contents as they are, checks each against the TMD, and takes the TMD, ticket and certificates from the SI partition. `write_missing_h3`: writes the `.h3` files a NUS folder's TMD lists but the folder lacks |
-| `wua.rs` | `to_wua` and `title_id`, for a disc or a NUS folder. A WUA holds at most one disc |
+| `wua.rs` | `to_wua` and `title_id`, for a disc or a NUS folder, and `to_wua_with_tickets`, whose tickets, candidates found by title ID, serve the NUS folders holding none; `ticket_title_id` reads a ticket's title. A WUA holds at most one disc |
 | `lossless.rs` | Writes the `.wud/` layout and the partition streams, and exposes `disc_info`, `store_entries`, `DISC_DIR` and `STORE_DIR` |
 | `rebuild.rs` | `wua_to_wux` and `wua_to_wud`, checked against the disc's SHA-1 |
 | `zarchive.rs` | A streaming ZArchive writer and reader: 64 KiB blocks compressed with zstd in parallel on rayon, then the offset records, name table and file tree |
@@ -292,7 +302,7 @@ web UI still shows the ignored files as missing; only completion changes.
 
 `import_nus` stops with "Already imported" as soon as a folder's TMD is in the
 library, so a title imported with a content missing is not completed by
-importing its folder again.
+importing its folder again. It still keeps the folder's unlisted ticket first.
 
 **H3 files the DAT leaves out.** No-Intro's CDN DAT sometimes omits a hashed
 content's `.h3`, though a title installs only with every one. Content 45 of
@@ -308,6 +318,20 @@ the TMD, which records an `.h3`'s hash as its content's. Keys are needed only
 when a file is missing, and a failure only warns, since the rest of the title
 is exported. A folder whose TMD is not a Wii U title's, as a vWii title's, is
 left alone.
+
+**Tickets the DAT leaves out.** Nintendo's servers deliver no ticket for DLC,
+so No-Intro lists none, and the only one there is comes from a downloader. As
+it is no ROM, `import_nus` hands it to `keep_unlisted_ticket` once the TMD has
+matched, whether as a new title or one already imported. The ticket is kept
+when it is for the TMD's title and no DAT ROM has its size and SHA-1, so an
+update's listed `cetk` is imported with its title as before. It moves to the
+store of tickets, a `wiiu_tickets` folder in the data directory, beside the
+keys, as `<title id>.tik`: a title ID names one title whatever its system, so
+the store needs no system and survives renames, and `purge-roms` never sees
+it. In tests it sits in the temp directory each test sets. Bundling gives a
+title holding no ticket the stored one, and the ORIGINAL export of a NUS title
+copies it in as `title.tik` before rebuilding missing `.h3` files, which need
+it too. Revert data keeps the ticket, so a WUA reverts to NUS folders with it.
 
 **Check.** `check-roms` has a WUX branch and a WUA branch. The WUX branch
 hashes the decompressed stream directly, or extracts a WUD first when the DAT
@@ -345,8 +369,9 @@ exported as ORIGINAL, which rebuilds any `.h3` file the DAT left out.
 title ID, then scans every romfile that is a TMD across all systems. It keeps
 titles that share the disc ID's low 32 bits and whose high half is `0005000E`
 (update) or `0005000C` (DLC), and takes the highest version of each. A title
-without a ticket is skipped with a warning, because No-Intro lists DLC without
-the ticket needed to decrypt it. The progress bar length is the disc's size
+holding no ticket, as No-Intro lists DLC, takes the stored one for its title
+ID, and all are passed to `to_wua_with_tickets`. Without one it is skipped with
+a warning to import its folder with the ticket a downloader made. The progress bar length is the disc's size
 plus the bundled folders' sizes.
 
 **Purge.** `purge-roms -f` treats store files as foreign unless a WUA in the

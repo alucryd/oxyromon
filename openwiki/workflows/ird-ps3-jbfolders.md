@@ -57,7 +57,7 @@ sources:
 generated: { by: "claude-code", at: "2026-10-26T23:15:44.056Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T19:18:06.223Z
+    at: 2026-10-28T19:36:29.623Z
 ---
 
 # PS3 IRD Files and JB Folders
