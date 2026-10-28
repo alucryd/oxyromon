@@ -13,7 +13,7 @@ use crate::disc::{self, Fst, PartitionSource, Source};
 use crate::error::{Error, Result, corrupt};
 use crate::image::Image;
 use crate::io::{finish, part};
-use crate::nus::{self, NusSource};
+use crate::nus::{self, NusSource, Tmd};
 use crate::revert::{self, Meta, REVERT_DIR};
 use crate::zarchive::{self, Writer};
 
@@ -285,36 +285,17 @@ fn open_disc(input: &Path, keys: &[Key]) -> Result<Title> {
 
 /// A NUS title, named after its TMD.
 fn open_nus(dir: &Path, keys: &[Key]) -> Result<Title> {
-    let tmd_path = nus::tmd_path(dir).ok_or_else(|| corrupt("the title has no TMD"))?;
-    let tmd_bytes = std::fs::read(tmd_path)?;
-    let tmd = nus::parse_tmd(&tmd_bytes)?;
-    let ticket_path = nus::ticket_path(dir)
-        .ok_or_else(|| Error::MissingKey("the title has no ticket to decrypt it with".into()))?;
-    let ticket = std::fs::read(ticket_path)?;
-    let (title_id, encrypted_key) = parse_ticket(&ticket)?;
-    if title_id != tmd.title_id {
-        return Err(corrupt(format!(
-            "the ticket is for {title_id:016x}, the TMD for {:016x}",
-            tmd.title_id
-        )));
-    }
-    let source = NusSource::open(dir, &tmd)?;
-    let size = tmd
-        .contents
-        .iter()
-        .find(|c| c.index == 0)
-        .ok_or_else(|| corrupt("the TMD lists no FST"))?
-        .size;
-    let size = u32::try_from(size).map_err(|_| corrupt(format!("the FST is {size} bytes")))?;
-    let mut encrypted = vec![0; (size as usize).next_multiple_of(16)];
-    source.read_cluster(0, 0, 0, &mut encrypted)?;
-    let title_key = title_key(&encrypted, title_id, &encrypted_key, keys)?;
-    let fst = Fst::open(
-        &format!("title {title_id:016x}"),
-        encrypted,
-        size,
+    let NusTitle {
+        tmd_bytes,
+        tmd,
+        ticket,
+        source,
+        fst,
+        fst_size,
         title_key,
-    )?;
+    } = open_nus_title(dir, keys)?;
+    let title_id = tmd.title_id;
+    let fst = Fst::open(&format!("title {title_id:016x}"), fst, fst_size, title_key)?;
     let mut input_size = 0;
     for entry in std::fs::read_dir(dir)? {
         let metadata = entry?.metadata()?;
@@ -340,6 +321,54 @@ fn open_nus(dir: &Path, keys: &[Key]) -> Result<Title> {
         version: tmd.version,
         input_size,
         disc: false,
+    })
+}
+
+/// A NUS folder opened: its TMD, its ticket, its contents, and the title key,
+/// found with the encrypted FST it decrypts.
+pub(crate) struct NusTitle {
+    pub tmd_bytes: Vec<u8>,
+    pub tmd: Tmd,
+    pub ticket: Vec<u8>,
+    pub source: NusSource,
+    pub fst: Vec<u8>,
+    pub fst_size: u32,
+    pub title_key: Key,
+}
+
+pub(crate) fn open_nus_title(dir: &Path, keys: &[Key]) -> Result<NusTitle> {
+    let tmd_path = nus::tmd_path(dir).ok_or_else(|| corrupt("the title has no TMD"))?;
+    let tmd_bytes = std::fs::read(tmd_path)?;
+    let tmd = nus::parse_tmd(&tmd_bytes)?;
+    let ticket_path = nus::ticket_path(dir)
+        .ok_or_else(|| Error::MissingKey("the title has no ticket to decrypt it with".into()))?;
+    let ticket = std::fs::read(ticket_path)?;
+    let (title_id, encrypted_key) = parse_ticket(&ticket)?;
+    if title_id != tmd.title_id {
+        return Err(corrupt(format!(
+            "the ticket is for {title_id:016x}, the TMD for {:016x}",
+            tmd.title_id
+        )));
+    }
+    let source = NusSource::open(dir, &tmd)?;
+    let size = tmd
+        .contents
+        .iter()
+        .find(|c| c.index == 0)
+        .ok_or_else(|| corrupt("the TMD lists no FST"))?
+        .size;
+    let fst_size = u32::try_from(size).map_err(|_| corrupt(format!("the FST is {size} bytes")))?;
+    let mut fst = vec![0; (fst_size as usize).next_multiple_of(16)];
+    source.read_cluster(0, 0, 0, &mut fst)?;
+    let title_key = title_key(&fst, title_id, &encrypted_key, keys)?;
+    Ok(NusTitle {
+        tmd_bytes,
+        tmd,
+        ticket,
+        source,
+        fst,
+        fst_size,
+        title_key,
     })
 }
 

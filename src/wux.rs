@@ -776,6 +776,43 @@ pub async fn update_nus_games_completion(
     Ok(())
 }
 
+/// Write the H3 files the NUS title exported to `directory` lacks: No-Intro
+/// sometimes leaves one out of its DATs, though the title installs only with
+/// it. A failure only warns, since the rest of the title is exported.
+pub fn write_missing_h3(progress_bar: &ProgressBar, directory: &Path) {
+    // Keys are needed only if an H3 file is missing.
+    let (keys, keys_error) = match load_wiiu_keys() {
+        Ok(keys) => (keys, None),
+        Err(error) => (Vec::new(), Some(error)),
+    };
+    match wux_rs::write_missing_h3(directory, &keys) {
+        Ok(paths) => {
+            for path in paths {
+                print_info(
+                    progress_bar,
+                    &format!(
+                        "Rebuilt \"{}\", which the DAT leaves out",
+                        path.file_name().unwrap().to_str().unwrap()
+                    ),
+                );
+            }
+        }
+        Err(error) => {
+            let error = match (error, keys_error) {
+                (wux_rs::Error::MissingKey(_), Some(keys_error)) => keys_error.to_string(),
+                (error, _) => error.to_string(),
+            };
+            print_warning(
+                progress_bar,
+                &format!(
+                    "Failed to rebuild the H3 files of \"{}\": {error}",
+                    directory.file_name().unwrap().to_str().unwrap()
+                ),
+            );
+        }
+    }
+}
+
 /// Whether `name` is a NUS content's CDN name, its ID in eight hex digits.
 fn is_content_name(name: &str) -> bool {
     name.len() == 8 && name.bytes().all(|b| b.is_ascii_hexdigit())

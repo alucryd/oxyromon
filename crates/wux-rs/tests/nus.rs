@@ -116,3 +116,45 @@ fn a_folder_in_the_way_is_left_as_it_is() {
         assert!(!Path::new(&part).exists());
     }
 }
+
+#[test]
+fn a_title_missing_an_h3_file_gets_it_back() {
+    let dir = tempfile::tempdir().unwrap();
+    common::nus(dir.path());
+    let h3 = dir.path().join("00000012.h3");
+    let expected = std::fs::read(&h3).unwrap();
+    std::fs::remove_file(&h3).unwrap();
+    let written = wux_rs::write_missing_h3(dir.path(), &keys()).unwrap();
+    assert_eq!(written, vec![h3.clone()]);
+    assert_eq!(std::fs::read(&h3).unwrap(), expected);
+    assert!(!names(dir.path()).iter().any(|name| name.ends_with(".part")));
+}
+
+#[test]
+fn a_title_with_its_h3_files_needs_no_key() {
+    let dir = tempfile::tempdir().unwrap();
+    common::nus(dir.path());
+    // Named as downloaders name them, in upper case.
+    std::fs::rename(
+        dir.path().join("00000012.h3"),
+        dir.path().join("00000012.H3"),
+    )
+    .unwrap();
+    let before = names(dir.path());
+    assert!(
+        wux_rs::write_missing_h3(dir.path(), &[])
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(names(dir.path()), before);
+}
+
+#[test]
+fn a_missing_h3_file_needs_the_common_key() {
+    let dir = tempfile::tempdir().unwrap();
+    common::nus(dir.path());
+    std::fs::remove_file(dir.path().join("00000012.h3")).unwrap();
+    let error = wux_rs::write_missing_h3(dir.path(), &[DISC_KEY]).unwrap_err();
+    assert!(matches!(error, Error::MissingKey(_)), "{error}");
+    assert!(!dir.path().join("00000012.h3").exists());
+}

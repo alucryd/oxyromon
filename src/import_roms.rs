@@ -699,6 +699,10 @@ async fn import_nus<P: AsRef<Path>>(
 ) -> Result<Option<[i64; 2]>> {
     let tmd_path = wux_rs::tmd_path(path.as_ref()).unwrap();
     let tmd_romfile = CommonRomfile::from_path(&tmd_path)?;
+    // read now, as its file may be moved before the others are matched
+    let tmd = std::fs::read(&tmd_path)
+        .ok()
+        .and_then(|bytes| wux_rs::parse_tmd(&bytes).ok());
 
     let mut transaction = begin_transaction(connection).await;
 
@@ -779,7 +783,26 @@ async fn import_nus<P: AsRef<Path>>(
             .find(|&i| file_name.trim_end_matches(".app") == roms[i].name)
             .or_else(|| matches.first().copied());
         let Some(index) = index else {
-            print_warning(progress_bar, &format!("No match for \"{}\"", file_name));
+            // No-Intro sometimes leaves a hashed content's H3 file out
+            let rebuilt = file_name
+                .to_lowercase()
+                .strip_suffix(".h3")
+                .and_then(|id| u32::from_str_radix(id, 16).ok())
+                .is_some_and(|id| {
+                    tmd.iter()
+                        .flat_map(|tmd| &tmd.contents)
+                        .any(|content| content.id == id && content.is_hashed())
+                });
+            match rebuilt {
+                true => print_skip(
+                    progress_bar,
+                    &format!(
+                        "\"{}\" is not in the DAT, exporting the title rebuilds it",
+                        file_name
+                    ),
+                ),
+                false => print_warning(progress_bar, &format!("No match for \"{}\"", file_name)),
+            }
             continue;
         };
         let rom = roms.remove(index);
@@ -3084,6 +3107,8 @@ mod test_multiple_tracks_chd;
 mod test_none_selected;
 #[cfg(test)]
 mod test_nus;
+#[cfg(test)]
+mod test_nus_missing_h3;
 #[cfg(test)]
 mod test_nus_multi_version;
 #[cfg(test)]

@@ -29,6 +29,13 @@ pub struct Content {
     pub hash: [u8; 32],
 }
 
+impl Content {
+    /// Whether its file is made of hashed blocks, and has an H3 file.
+    pub fn is_hashed(&self) -> bool {
+        self.flags & HASHED != 0
+    }
+}
+
 /// A Wii U TMD.
 pub struct Tmd {
     pub title_id: u64,

@@ -16,6 +16,7 @@ use super::util::*;
 use super::wbfs::ToWbfs;
 use super::wux::{
     AsWua, AsWud, AsWux, STORE_DIR, ToNus, ToWua, ToWux, disc_to_wud, has_extension, is_nus_title,
+    write_missing_h3,
 };
 use super::xso::{AsXso, ToXso, XsoType};
 use anyhow::{Context, Result, bail};
@@ -2077,7 +2078,8 @@ async fn to_original(
     for (game_id, roms) in others {
         // a NUS title's files, named alike in every title, in a folder of its own
         let game = games_by_id.get(&game_id).unwrap();
-        let destination_directory = match is_nus_title(connection, game).await {
+        let nus_title = is_nus_title(connection, game).await;
+        let destination_directory = match nus_title {
             true => {
                 let directory = destination_directory.join(&game.name);
                 create_directory(progress_bar, &directory, true).await?;
@@ -2095,6 +2097,9 @@ async fn to_original(
                 false,
             )
             .await?;
+        }
+        if nus_title {
+            write_missing_h3(progress_bar, &destination_directory);
         }
     }
 
@@ -2145,6 +2150,8 @@ mod test_multiple_tracks_cue_bin_to_chd;
 mod test_multiple_tracks_cue_bin_to_gdi;
 #[cfg(test)]
 mod test_multiple_tracks_cue_bin_to_iso;
+#[cfg(test)]
+mod test_nus_missing_h3_to_original;
 #[cfg(test)]
 mod test_nus_to_original;
 #[cfg(test)]

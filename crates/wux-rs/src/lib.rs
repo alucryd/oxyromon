@@ -41,7 +41,7 @@ mod zarchive;
 pub use crypto::Key;
 pub use error::{Error, Result};
 pub use image::Image;
-pub use install::to_nus;
+pub use install::{to_nus, write_missing_h3};
 #[cfg(feature = "cli")]
 pub use keys::cemu_keys_path;
 pub use keys::{load_keys, parse_keys, parse_otp};
