@@ -56,10 +56,10 @@ sources:
     resource: repo://src/info.rs
   - id: openwiki-source-b55a21a31ede1b56cd31a6a6
     resource: repo://src/main.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Desktop App (Tauri Sidecar)
@@ -89,15 +89,15 @@ only by hand or by `dist.sh`. Its `[profile.release]` is size-oriented
 (`opt-level = "z"`, `lto`, `codegen-units = 1`, `strip`), independent of the root
 profile, and it keeps its own `Cargo.lock`.
 
-That separation is also why CI never validates the shell: the single `CI` workflow
-sets `SKIP_TRUNK: "true"` workflow-wide, builds the web UI once in its `Build web
-UI` step (`cd frontend && trunk build --release`, with trunk pinned by
-`TRUNK_VERSION` and the `wasm32-unknown-unknown` target installed), and then lets
-`cargo clippy --workspace`, `cargo build --release --features server` and
-`cargo llvm-cov --workspace` reuse those assets instead of recompiling the wasm.
-That matrix builds and tests exactly the binary the sidecar is, but no CI step
-installs the Tauri CLI or `webkit2gtk`, and the root workspace's members are only
-`crates/*`, so `--workspace` skips `desktop/` entirely.
+That separation is why CI lints the shell in a job of its own. The root
+workspace's members are only `crates/*`, so `cargo clippy --workspace` skips
+`desktop/` entirely. The *Release build and desktop* job downloads the web UI
+the *Web UI* job built, runs `desktop/scripts/stage-sidecar.sh`, which runs
+`cargo build --release --features server` and stages the binary as the sidecar,
+then `cargo clippy --all-targets` from `desktop/`. It is the only job that
+installs `libwebkit2gtk-4.1-dev` and `libxdo-dev` for the webview. The *Format*
+job checks the crate's formatting with `cargo fmt --check`. CI still never installs the Tauri CLI or
+bundles the app: the bundle is built only by hand or by `dist.sh`.
 
 `desktop/build.rs` is a single `tauri_build::build()` call, which is what makes the
 staged sidecar a build-time requirement rather than a runtime one (see

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1937c435f107a0b3f37a6ec7ca81a04ffdc9a8f620f17892be3dd818d3830137",
+  "pageVersion": "sha256:a9c7e6611605c0e8417b4cc887b4dd04ba5929245cf72d5ac65a454ac5e4ec0a",
   "claims": [
     {
       "id": "claim_d5d061cf788d45739c14a039d86425f2",
@@ -25,7 +25,7 @@
       "statement": "The canonical test skeleton is: acquire the global MUTEX, build a DB from a NamedTempFile via establish_connection, create ROM and TMP directories with TempDir::new_in(\"tests\") and point the settings at them, import a DAT through import_dats::subcommand()/main(), then act and assert; a ProgressBar::hidden() stands in for the real bar so the production print_* helpers still run.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L112-L123",
+          "resource": "repo://AGENTS.md#L120-L131",
           "version": "repo-lines-v1:sha256:c1b8b61771250f53e18d79c77acd4508b2d16691fe8855cb361b744ffece7240:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlN2Y0YjM2YWM5Y2UwZDA2ZGNkNzJjY2MyNGViMjkwZWNjYTNkYWRjZWUzNmNkNjQxNjg5YTI4MDQ4Yzg1NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkN2JhYmQyMTEzODEyZDc4Y2Q4ZTQwYjgzZDgwNDUzMGRkN2Y1ZmE1MDgxMDM4ZDVjODE3YzFiOTZiOGFjMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMGI0YzJmOGVlY2E2MjZkN2U3MzNlN2EyYmVmOThkYzI3OGY2OWUxYTdkMTFmNDBmYjA4MWFiODQ3MTdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTNiZWEwZGIzNWJlOGZlYzE3MDcwMDAzYjdlZjgwZTdlMzA4ZjcwM2IyM2QxZTUyOTIxMmNmYTBlMGJlYzQifQ"
         },
         {
@@ -117,7 +117,7 @@
       "statement": "AGENTS.md's Tests section warns that a forgotten test MUTEX causes flaky failures: the failure mode is flakiness in a full run rather than a deterministic error.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L118-L119",
+          "resource": "repo://AGENTS.md#L126-L127",
           "version": "repo-lines-v1:sha256:5e483701c9d04d9fabca78ac1c6628f91ff55837a92b9756e47a3dde3ad0db25:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJhMTU1MWRiMDc0M2FlZmY4ZjAwOTFkY2JjMjAxYWQyNWNlMWNkMjM0NDU1MTVkNjI3OGE0NDk4YTk1ZDcxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNkMDBjMDkxM2M1YmEyODc5NTdjNDQ1NDZkOTRkMTY1ZWQxOGU1MTQ0ZmYzN2M0MjQ1YzkwY2MwMjY4MjFmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjVmODdjOGRiNmFjYzcxMTc2YzM0NmQ4NTgwOThiYzkzMWU3MzE2YjU1MDkxMzAzMDY2YTBjNGVjNjQ2MWJkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzAzMTY5NDMzZjUyZTI3Y2ZlYjhkOTVlYThhMmNmNWIxOGNkMzg2NTA0OWY1NjI3OGZlN2EyYzBhODU1ZWJhNiJ9"
         }
       ]
@@ -211,8 +211,8 @@
       "statement": "The application has no external-tool probe: every format dependency, cia-rs and wux-rs included, is a linked library whose get_version() returns a constant such as \"built-in\". The same get_version() functions feed the info dependency report, the GraphQL dependencies field and the MCP status payload. CI installs mame-tools, xdelta3 and ffmpeg purely as test-time oracles for the crates' tests, not as runtime dependencies; ctrtool, maxcso and flips are absent there, so those interop suites skip by design.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         },
         {
           "resource": "repo://src/archive.rs#L481-L484",
@@ -329,7 +329,7 @@
       "statement": "The suite is run with `cargo test --workspace --features oxyromon/server` (the package-qualified feature is required because --workspace selects several packages), coverage with `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` as CI does, per-crate with `cargo test -p <crate>`, and slow tests with `cargo test --release -p <crate> -- --ignored`; only one workspace test is #[ignore]d, the 2 GiB index_shift_round_trips in crates/xso-rs.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L64-L65",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L111-L112",
           "version": "repo-lines-v1:sha256:c290280b7b45ce20876f1ebc6286f6155cbcba810f836427b71d950551105db9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjYjMyYzRiOWIyOWRjOWQ4N2JkYmQ5OTk4ZGFmNTQzYjMwYTdhZTAyMWQ5NGU5N2MxODU3ZWFmOGFiNmQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
         },
         {
@@ -337,7 +337,7 @@
           "version": "repo-lines-v1:sha256:6415a0cd1c336697ac15cd211dd7e97c1463617c5310bb9d48c3e957f23b6280:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTUyZTYyYjA2NzBlZWM4NDk4MTFkYzNiYWM5NDk2MDgwM2NhY2VjZGM0MzNmMmFkYzUwMjcxYTdjNGI3N2RiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDljOGEzNGNlNDM3ZTJmZDNhOTBjOTEzNmRjYWQ4NmMzY2MyOGMzYjRjYzNlYzExYzVkOTg4YWU3YjJiY2NhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc1ZGEwMzc4ZmVkMzZhM2QwNTE0NDY2NjkwMjMzZmNlZjBiMTBiZmI3M2Q3MDk1NTA3MDNlZDRhMDA5MGIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ1YWRjZmU4MmQwZDc4MjBmOGE5ZDA4OWUwMWEyNzU3ZjU3OTdjMGRhZWVkMGU0YmNhMzEwOGMxNmE1NmZiMyJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L36-L37",
+          "resource": "repo://AGENTS.md#L38-L39",
           "version": "repo-lines-v1:sha256:d6972576a8e29c269bc5f9e7008709ea42ffb0f759bbd6fc462a20245906f3cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEzODg1NjE2N2FiNzM0MmZmOGM1ODFiMTA2NzI5YTkwNTNiNDZiODU5OWIxY2E4N2NmN2RmMGE3ZGYzNTI0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDc1ZDNjY2U1YTBkODRhZjU0ODQ1YmMwMjczZTU3YTFjZThkYmRlNDU2YTEyZWExNzY5ODE0ZDFlZTYxMTBjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjE1YjE1MjgwOWEzOGEyMDg5NDEyMTVjODg1NDgyNjQ0ZTYzOGIzM2NlZDA2NTM1M2JiMjE1ZDU5Njc0NzI3MyJ9"
         },
         {
@@ -351,7 +351,7 @@
       "statement": "test.sh is a single command now - `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info` - identical to CI's coverage step; it no longer runs a second pass with the oxyromon/nod and oxyromon/sevenz features, which the root [features] table does not declare because nod and sevenz-rust2 are plain dependencies.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L64-L65",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L111-L112",
           "version": "repo-lines-v1:sha256:c290280b7b45ce20876f1ebc6286f6155cbcba810f836427b71d950551105db9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwOTEzYjA5YTZhYjQ5YjVlYzdlMjhjNjZiNTQ1MTI3NjdmYzE4MzU4ODNiMGM3MjQyYjcxNjJlNzJiNzU5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjYjMyYzRiOWIyOWRjOWQ4N2JkYmQ5OTk4ZGFmNTQzYjMwYTdhZTAyMWQ5NGU5N2MxODU3ZWFmOGFiNmQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGUxMmFkZTlhN2ExOTZiM2NiN2RlYWZmMDZkNzEzZjA2MTBkZTJiODMzN2NhZjU4NGQyMzFlMzk1YTQwZmIyZSJ9"
         },
         {
@@ -397,11 +397,11 @@
       "statement": "A new subcommand is expected to ship tests in src/<command>/test_*.rs, one scenario per file named for the behaviour, each registered with #[cfg(test)] mod test_*; catalogue state is built by importing a DAT through import_dats::main rather than inserting rows, except for pure path-building helpers such as common/test_path_*.rs which construct System/Game/Rom structs in place.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L112-L123",
+          "resource": "repo://AGENTS.md#L120-L131",
           "version": "repo-lines-v1:sha256:c1b8b61771250f53e18d79c77acd4508b2d16691fe8855cb361b744ffece7240:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlN2Y0YjM2YWM5Y2UwZDA2ZGNkNzJjY2MyNGViMjkwZWNjYTNkYWRjZWUzNmNkNjQxNjg5YTI4MDQ4Yzg1NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkN2JhYmQyMTEzODEyZDc4Y2Q4ZTQwYjgzZDgwNDUzMGRkN2Y1ZmE1MDgxMDM4ZDVjODE3YzFiOTZiOGFjMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMGI0YzJmOGVlY2E2MjZkN2U3MzNlN2EyYmVmOThkYzI3OGY2OWUxYTdkMTFmNDBmYjA4MWFiODQ3MTdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZTNiZWEwZGIzNWJlOGZlYzE3MDcwMDAzYjdlZjgwZTdlMzA4ZjcwM2IyM2QxZTUyOTIxMmNmYTBlMGJlYzQifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L170-L174",
+          "resource": "repo://AGENTS.md#L178-L182",
           "version": "repo-lines-v1:sha256:9acf74cc4cef23e797fec56e0c97df4383ab4a94562b8be8dd2ae76f8d86c125:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2NhZjVhYzAyZTVhZDRmMzkwMzM0NDQzODIyYTE0MTAzNDFhZTMwYWQ3NjIxNWEzYWZhZjFlMTlkM2EwNWI0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGUzZDNlNDM1Mjc3NGQyYjY0ODNkMmUzNzU1ZDhkMzk3OThiNjFiNTBjZmY3MzFhMTU2ZWVhM2U2NzAyMWE2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM2ZGJhMTMxOWI2ZmI0MWE0OGQxM2YwZTljOTFhY2M1MzY2MGY2ZmU0MzQwYzllYTRlZjBlNzBkNDFjMzY0OSJ9"
         },
         {
@@ -412,11 +412,11 @@
     },
     {
       "id": "claim_2fb92cf1bcf446f9992a2c782a78bb7e",
-      "statement": "CI brackets the single coverage run with three clippy passes - `cargo clippy --workspace --all-targets --features oxyromon/server`, a second covering the MCP-without-web-server combination, `cargo clippy --no-default-features --features use-rustls,mcp --all-targets`, and a third over frontend/ for wasm32-unknown-unknown - then a `cargo build --release --features server`, before uploading lcov.info to Codecov; every clippy pass uses --all-targets, so crate and workspace test code is linted too.",
+      "statement": "CI's Lint and test job runs two clippy passes - `cargo clippy --workspace --all-targets --features oxyromon/server` and `cargo clippy --no-default-features --features use-rustls,mcp --all-targets` for the MCP-without-web-server combination - before the single coverage run, uploads lcov.info to Codecov, and has a 60-minute timeout; Format, Web UI and release jobs run alongside, the last two linting frontend/ for wasm32-unknown-unknown and desktop/ after a `--release --features server` build. Every clippy pass uses --all-targets, so crate and workspace test code is linted too.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L69",
-          "version": "repo-lines-v1:sha256:5aabc69593fc0f0363d2922662dc7207a81fa1fdcd467a960eb13cb1615b7603:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOTYzM2MzNzYxOTYyZWEyYjlhMWMzZWRkYzAxY2Y2NmMzMTE2ODcxYTk4M2Q4NzBkYTQ0N2U5NzRhNGEwZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjI3NDY0MzVjYzliOGQ1YTk5ZDhkN2E4M2NmNzNmODA4ZWYwM2EzZTlhNDI4NTU4MWU1N2QyNDRhYWI1NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L155",
+          "version": "repo-lines-v1:sha256:b4d991b35a9532f5c571eefb5a84f3bf74f8f4b41543814f98d4043759bf3734:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMjVjNjZjMDE0Y2Q0NDZlZDRjZDZmZWZjMzcwMzI0ZjQ2NTQ0YzJiMGZjYjRjM2VkOWFjNjZhY2JhMGQxZDJhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0YTc3YTFlNGZmMjBjNjc2NDAxZWRmMjZlZTM5YjU2ZjNhYjNkOTg1ZTc2YWFhZDFmM2E4NDU4MTFjODNkMDI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmOTYyYjFlZTViZTY0ZmM0MDg4NTA4NmVjMTkxMGRjZjQ0NjJjZjhmODVkNWUwZGViMDUxMjY0YzYxMzU2ODYxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -447,6 +447,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

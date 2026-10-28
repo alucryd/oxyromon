@@ -129,15 +129,40 @@ pub fn connect_sse(state: AppState) {
     on_event(&source, "purge_roms_error", state, NotificationKind::Error);
     on_complete(&source, "purge_roms_complete", state);
 
-    on_event(&source, "convert_roms_started", state, NotificationKind::Info);
-    on_event(&source, "convert_roms_error", state, NotificationKind::Error);
+    on_event(
+        &source,
+        "convert_roms_started",
+        state,
+        NotificationKind::Info,
+    );
+    on_event(
+        &source,
+        "convert_roms_error",
+        state,
+        NotificationKind::Error,
+    );
     on_complete(&source, "convert_roms_complete", state);
 
-    on_event(&source, "import_patch_started", state, NotificationKind::Info);
-    on_event(&source, "import_patch_error", state, NotificationKind::Error);
+    on_event(
+        &source,
+        "import_patch_started",
+        state,
+        NotificationKind::Info,
+    );
+    on_event(
+        &source,
+        "import_patch_error",
+        state,
+        NotificationKind::Error,
+    );
     on_complete(&source, "import_patch_complete", state);
 
-    on_event(&source, "import_irds_started", state, NotificationKind::Info);
+    on_event(
+        &source,
+        "import_irds_started",
+        state,
+        NotificationKind::Info,
+    );
     on_event(&source, "import_irds_error", state, NotificationKind::Error);
     on_complete(&source, "import_irds_complete", state);
 
@@ -145,12 +170,27 @@ pub fn connect_sse(state: AppState) {
     on_event(&source, "purge_irds_error", state, NotificationKind::Error);
     on_complete(&source, "purge_irds_complete", state);
 
-    on_event(&source, "purge_games_started", state, NotificationKind::Info);
+    on_event(
+        &source,
+        "purge_games_started",
+        state,
+        NotificationKind::Info,
+    );
     on_event(&source, "purge_games_error", state, NotificationKind::Error);
     on_complete(&source, "purge_games_complete", state);
 
-    on_event(&source, "generate_playlists_started", state, NotificationKind::Info);
-    on_event(&source, "generate_playlists_error", state, NotificationKind::Error);
+    on_event(
+        &source,
+        "generate_playlists_started",
+        state,
+        NotificationKind::Info,
+    );
+    on_event(
+        &source,
+        "generate_playlists_error",
+        state,
+        NotificationKind::Error,
+    );
     on_complete(&source, "generate_playlists_complete", state);
 
     // An EventSource reconnects on its own but does not replay what it missed,
@@ -170,12 +210,22 @@ pub fn connect_sse(state: AppState) {
     reset.forget();
 
     on_finished(&source, "purge", move || state.purging_system_id.set(-1));
-    on_finished(&source, "sort_roms", move || state.sorting_system_id.set(-1));
-    on_finished(&source, "check_roms", move || state.checking_system_id.set(-1));
-    on_finished(&source, "purge_irds", move || state.purging_irds_system_id.set(-1));
-    on_finished(&source, "generate_playlists", move || state.generating_playlists.set(false));
+    on_finished(&source, "sort_roms", move || {
+        state.sorting_system_id.set(-1)
+    });
+    on_finished(&source, "check_roms", move || {
+        state.checking_system_id.set(-1)
+    });
+    on_finished(&source, "purge_irds", move || {
+        state.purging_irds_system_id.set(-1)
+    });
+    on_finished(&source, "generate_playlists", move || {
+        state.generating_playlists.set(false)
+    });
     on_finished(&source, "purge_roms", move || state.purging_roms.set(false));
-    on_finished(&source, "purge_games", move || state.purging_game_id.set(-1));
+    on_finished(&source, "purge_games", move || {
+        state.purging_game_id.set(-1)
+    });
 
     // Keep the EventSource alive for the app lifetime.
     std::mem::forget(source);

@@ -82,10 +82,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-13df766a80853b510f45e6c3
     resource: repo://tests/crates.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Format Crate Test Strategy
@@ -230,11 +230,11 @@ flowchart TD
 
 The consequence is deliberate but must be understood: **a green `cargo test` does
 not prove interop conformance**, only that the code did not regress on whatever
-the machine could exercise. CI installs the three tools it can get from apt —
+the machine could exercise. CI's lint and test job installs the three tools it can get from apt —
 `mame-tools` (for `chdman`), `ffmpeg` and `xdelta3` — with a comment saying they
 are *"only for the crates' tests, which compare against chdman and xdelta3, make
 the LaserDisc AVIs with ffmpeg, and skip without them"*, so the whole `chd-rs`
-parity suite and the `xdelta-rs` comparison actually run on every CI job. It
+parity suite and the `xdelta-rs` comparison actually run on every CI run. It
 installs none of `ctrtool`, `maxcso` or `flips`, so the `cia-rs`, `xso-rs` and
 `xps-rs` interop tests skip on every CI run and are a **local** responsibility:
 build ctrtool from Project_CTR and maxcso, point `$CTRTOOL` and `$MAXCSO` at
@@ -531,7 +531,7 @@ CI's `cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path
 lcov.info` step is what executes these tests — clippy only lints them — so a
 crate's suite gates every pull request even though nobody invokes `cargo test -p`
 directly ([CI Pipelines and Runtime Environment](../operations/ci-and-environment.md)).
-The dependency step refreshes apt first (`apt-get -o Acquire::Retries=3 update`)
+The test job's dependency step refreshes apt first (`apt-get -o Acquire::Retries=3 update`)
 because the runner image bakes its package lists at image-build time and Ubuntu
 rolls superseded `.deb`s out of the pool, so installing against the cached lists
 404s. `./test.sh` from the repository root is the same single llvm-cov command.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4d5baa74578e4f7a5b1790ad5b65f8ee2594e610038b9619249506e4ff61ddce",
+  "pageVersion": "sha256:c5ffcaaca1805d8923f66bb152dd33dadc9f56ac45ed75dab9c2a7d08774af46",
   "claims": [
     {
       "id": "claim_8c1d5e38cb434501948072b26c6f8998",
@@ -343,7 +343,7 @@
       "statement": "The web UI mirrors the destructive boundary in its purge modal, grouping missing and orphan under 'Remove from database' and trash and foreign under a danger-styled 'Delete files from disk' section, with the Purge button disabled until at least one category is picked; the Delete system dialog instead warns that the system's files move to its Trash directory.",
       "evidence": [
         {
-          "resource": "repo://frontend/src/components/purge_rom_modal.rs#L47-L96",
+          "resource": "repo://frontend/src/components/purge_rom_modal.rs#L51-L100",
           "version": "repo-lines-v1:sha256:3b63d91f40dafa274fac4aa38d12e609bef93d9f821ab527fa1973c27532b3e8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzZWE1MjFkYWNlMGFlZjQ5MTU1MWE0MDc5YjE4MThiOWNkYjgwOGExNDQwMDlkYWI3YTk5NWNiMDUzZDI4MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMTRhOWM3MmQyMjVhNTNjOGIwYzkxMjViYzEwM2QwY2ZmMDVjZjk4NmQwZGFhZTZjYmVmOWY4NGQ1YjA4YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         },
         {
@@ -361,8 +361,8 @@
           "version": "repo-lines-v1:sha256:26713e8b9ed6822a415df968d068757d3c664159e3befeb3caa0a5e46b8b6bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3YzU0MTFiYjNhODA1MTFlNWU2OTNmYWQxZTQ4YTQ3ZmRhN2Y1NTRiMzI3NDMxNTYxY2U3Zjg3N2JiN2ZmMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyZDExY2FmNDNlOTdlZjM2OWU2YmVlZDFhMjY4YmQwNTgzOGYyOWI5ZGQyNTRiZjY5YmE2NDg4NDE0NzIzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YjljYTA1MWE3ZGIwMjY5MGQwYzY5YWI1MWJiMDRlZWI4ZmUwNjliYmNiODA2NzI2MTM5OTRjNjIyOWI4NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZjllZWVmNTQwNjhkODUxNGUxYzY2NTRkNWEyMmQwNTA0ZDdiMWY0MDU4YjIwOTQyYTZlNGRkN2Y3NmRkODgifQ"
         },
         {
-          "resource": "repo://frontend/src/sse.rs#L97-L182",
-          "version": "repo-lines-v1:sha256:63f48f753ca8981751a45272495fb22fe467a9ad2604aaf0ad76889133d55cea:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZjljZDc5YmU3ZmQ4OTMzY2Q1ZmVlZjVmZTE5YTdkNjRjNWUwYjZkOWVlOTBkNTBiYTJhODNhYzZlYTg4OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzN2U3NGE3NDZmM2U0ZmE5OGQ3Y2I5OGRiMDdkMzBiZmY2NWNlZjY3NmYxN2FiMWVhNDkzYWM0ODQ5MDY4MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://frontend/src/sse.rs#L88-L232",
+          "version": "repo-lines-v1:sha256:194f6cf35dbd615f611f26a04dfa2532e6480638bb67999e4676867637d4b3df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOTMxYzYwZWIwOTBjODVlNmMyODU0NGMwZjMwODA0ODQ5ZmQxZjMxNjkxM2U5MDFjNWMxNjIyZThkZTk3ODY3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NDFkMjBkNzIzNjc1YjI0MjZiNTcyMWM2YmJjZjAwYjEzMTAwM2FkMzQzM2I4NjY2OWY3ZWExMTA3NTFjNzM5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -647,6 +647,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-27T21:50:09.478Z"
+    "at": "2026-10-28T11:29:22.151Z"
   }
 }

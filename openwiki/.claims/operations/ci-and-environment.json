@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6ffdee8332b32fee3be55b9f79a95f468f3abe268a3ec1daa86fdffc99418ec7",
+  "pageVersion": "sha256:1c2498585326a2823ca7d8a59cb8784aef2e6dc54715a86d2675f19cb230ee0e",
   "claims": [
     {
       "id": "claim_8b2514d79d614acba7dc978bdc048ed8",
       "statement": "Two GitHub Actions workflows divide the operational surface: continuous_integration.yml gates pushes and pull requests to master and develop on ubuntu-26.04, and docker.yml publishes an image on push to develop; neither is a release workflow, so no workflow runs dist.sh, docker.sh, desktop.sh or cargo publish.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L1-L18",
-          "version": "repo-lines-v1:sha256:95ef765f19e2a0beaca13b1aa5e4aefd98f201b58fa2cc0b462382395195e1aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZTFiMzJmYTA5MDc5YWUyZjAwMDFmZmYwZWNhMjdiNDk4NTk1N2Q0ZWI0ODU3OTI5YjNjZjA1OGZhYWU1NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ZTBlZjk4ZDM3YzcyNTFmMDNiZTBmOTgxMWMxMzc5MDA3ZjI0ZmZjZWY3MGE4NzliOTZmZDUxODE4YjEyMDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NDhkOWEyMzUxZmYzMmJlZWMzMjZmZGVhNjQwNzMyNjI2YzMyNGI3NDZjM2E4ZmI4YjgwMTVjZGZkNjg1Y2QifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L1-L26",
+          "version": "repo-lines-v1:sha256:818b9aeee74c245e61e0f5bd26cb926d295cb6f07b8c2dc06a1e2260fcc558a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZTFiMzJmYTA5MDc5YWUyZjAwMDFmZmYwZWNhMjdiNDk4NTk1N2Q0ZWI0ODU3OTI5YjNjZjA1OGZhYWU1NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNjRjNDM2NmE2ZjdkNGEzNjcxYzcxOTM0MDcyOTA4MzBlNjEyMWMzNzYxYTVhN2E0MDU0NTQ0OGUwZTI4ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMifQ"
         },
         {
           "resource": "repo://.github/workflows/docker.yml#L1-L11",
@@ -36,19 +36,23 @@
     },
     {
       "id": "claim_2a102b96e41c4f4b83a88f70893a8370",
-      "statement": "CI sets SKIP_TRUNK=true at job level and builds the web UI exactly once in a dedicated step (cd frontend && trunk build --release) into target/assets; every later cargo invocation reuses those assets, so the wasm payload is compiled once instead of once per clippy, build and test run.",
+      "statement": "CI sets SKIP_TRUNK=true for the whole workflow and builds the web UI exactly once, in the Web UI job (cd frontend && trunk build --release), uploading target/assets as the web-ui artifact; the release job downloads it before its release build, and the lint and test job compiles against the empty target/assets that build.rs creates, so the wasm payload is compiled once per workflow.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L47-L48",
-          "version": "repo-lines-v1:sha256:f8d1035f493f09b222e203d00300941960b67bc4000e22b692d1fa443a25e875:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDAwYWVhODVmNjM3OWIzMjhhNmI3ZThmMmI3MTVkM2QxZTk0MDFkZjUwNDg0YzU2NWI1YjZkZjhkODVlNDAyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWE0OGQ5MzA3OWU4MGIxZWM0ODk2NjI4ZjFlMzc4OGRhOTQ2ZGQ5ODUyYzgwZmZjZmYwNWQxMzRjYmY5N2YzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGU5ZTMzZDVkYmVlOTlhZmUwYzUxNzNmMTU4ZjQ1ZWJlN2I5YzdkMzIxNTJjZmM0ZGI1OWZmMjdlNGJmYzA5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTIyYzUxNWFmZGE4M2U2OTFiZWI4MzE1Mzc0OTJmNGUzOGY5MzhiMzc1MWJiZWZhMDBmZTIwMWMzNjRmMDRlZSJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L144-L148",
+          "version": "repo-lines-v1:sha256:eac6f8e3658d4eb9619b6b1595d19081a9de8c0d9df2c473a6be8f470f2a6948:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc5MDgzYWIxYmMyMjM1ZTVjMGMxMmExOGE4NjBiNDlkZTBlYmIxOTc0ODliODNkYzgxOGFhNjA4NGIyZDRlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhhZTQwY2E4MDkzZmViYzdkMTJjNmIyOTgxMTdmYTQwZWJmNmVlODlkOWFhNzQwMTc4YTgwOTVlNWQyZDUzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODZmMmFhMDZiZGQ3ZTkxYWM0YzAyZmE1MjRmODU1NWQyNmQ5MTY2ODBhNmJjZTMxYjc4MDA5ZjlhOWJkNDExMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTczNWY2Njc2Yjc0OWQ0ZDIwN2IzN2Y5MWRiMTlhZGQwNWZhOTIxZDEyOTU0ZGQ1Y2U2NDFjNzgzYWRkZTc3NSJ9"
         },
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
-          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQwZTE1NWNhZjJhODE2OWU1NWNjNjNlNDVhNDI1ODg1ODUxYTJhY2I4NmE5M2VhYmZlM2MyNDRjOTc4ODU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L77",
+          "version": "repo-lines-v1:sha256:11239cbd6b30d864968ac274704f51a4ef36070b010bd628955130b862bcca46:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMTI5NzlkYzZiN2VjNDQ5YTNhMmQ1NjQ5YWE4NWNmODY4YTYzYTZhNzVjMjJkYTE5YzAyYmU1ZTg3YTUzZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZTZlNzI5MTZkNjM0MTM2YjkxNWI3YTVmY2Y5NTUxZDM4ZjE3YjY5ODk0ZGUwZTMxMmQ1NmRjMzMzNDkyOTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmMmU0MTk1YmJjN2QxYmIwYjBjYjNlMDQ1Y2E4NjkyZmY4MmRjYTAxMTc4ZDI5ZDNmNmYxNGNiYmE0MzE4YjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4OTk1ODJhNGQzNWNjYWQ1YmY3OTFjMzhmYTUxM2Y3YmI4NTk3Njg1ZjFhYzY5Y2I1YzdlNTcyZjY2NDQwYTUifQ"
         },
         {
-          "resource": "repo://build.rs#L5-L33",
-          "version": "repo-lines-v1:sha256:6a819b8449f4e3e6db89e7b0ee833fd46997721a14e526faf5eb2a4516ca6b44:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjllZWU5MWJjMGIxYTc3YjVmMjI0ZmQ2OTQ1ZjNkZWMyMzRlNTU5NmI5NDc1YzkwYzVhZWM5ZTZhZTIwYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjcyYTZlNDI5ZjZjY2I1MWQ4ZDc5MjQxY2E5NTU5YjU2ZGYwOTMzOTUxYTE0YWY3OWZhM2QzMjUwNTI2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyZWU0MzMyYzc1MzRkMTRlZjcwYWRjYjM0ZTgwMDI5YTMzMWJkNDRlMzM5YTE3ZWE0MjU1OTZiMTE0MzYwNDIifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L20",
+          "version": "repo-lines-v1:sha256:30ad1c014ee8e111433651c836e1410eb5519af994939a18ab83c2a7821e5789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYTU5NGYzNGI3ZjBlYTU3M2RhNzg3MDNlMjc0OTMwZGI3MThjOTQyY2FmM2MwNDI1MTc1NWY2MjNjNjBkNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ODdlYWNmNWJmNTI5NjIzMzIwYjdmOWRiYjA2NmE1YmQxMDU1YWFhODUwN2JiZmZhOTQ1YzU3ZTEzMjNjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OTM4Mjg4ZGM3NTYyY2EwZjM3NGI0MDE1N2RjNTczMDA0NGI0ZTI3ODEzMGE4NTA0MGFmYjRkNjcwMTY5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNzdmN2U4ZDNlZGZmNTM3MzRhYTU4ZDNjZTZlNzM2NjJkNDQ1N2EyMTY2NWYzM2RhZDZiZmUwODRhY2Q5NTIifQ"
+        },
+        {
+          "resource": "repo://build.rs#L5-L40",
+          "version": "repo-lines-v1:sha256:0954a1e5532c2fcab9039fe4bc118dece7f9b4de94d70838e79948d52b6f3713:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYjllZWU5MWJjMGIxYTc3YjVmMjI0ZmQ2OTQ1ZjNkZWMyMzRlNTU5NmI5NDc1YzkwYzVhZWM5ZTZhZTIwYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDZkNTAxZTU2M2I2M2M3OWE1MjRmMDliYmRlNzk4NjcyZDhhYzBkOTY4ZTQzMTA3MTgwOWU0MzVlOGRlZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjcyYTZlNDI5ZjZjY2I1MWQ4ZDc5MjQxY2E5NTU5YjU2ZGYwOTMzOTUxYTE0YWY3OWZhM2QzMjUwNTI2NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MmUzNWJkZmJiZDE0MzBiYWRmNDgzMWNjMjIzYWJhMjUzNDk5OGJiYjAzNjU1NmNiOGY3Y2ZkOTIxYzRjY2IifQ"
         }
       ]
     },
@@ -57,11 +61,11 @@
       "statement": "CI installs trunk by extracting a release tarball pinned by TRUNK_VERSION=0.21.14 rather than building it from source, and the Dockerfile downloads the same pinned version as its musl build, keeping the bundled UI reproducible across CI and the published image.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L14-L14",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L15-L15",
           "version": "repo-lines-v1:sha256:7e3f87ac2cc4a1a85378e9b487f796b6cfb8bde7c55c28ffbdddf101cdd6bc66:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTU4ZWNhOWFmZDdlYjUyOWUzOWNmNWQwYTFiYjc0MDBhNGZhOGIzNjZiNjI1MjM4MjJjOWY0ZGY1NzM4OWNiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
         },
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L46",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L62-L65",
           "version": "repo-lines-v1:sha256:8cf3bfb2ed4795ba195679284f0ebbbc3361ca2de2f789632a8e2bff198465d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliMjkzMTg2ODIxOWE0MTBmZGQzOWQxMjNjMTQxNGE4OGQ2N2IzMzg3YTEwODY4ZGI2OWFhODE1NDJjZTM2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMzMjY5ZjdmNGUzNmYwN2QyZjRlNzgwM2MzOWU1ZjQ5NTU3NzEyZGEzMmVjYjc1Mjg2MWEyM2I0YzA4MmUwMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThkNzQ4ZWZhYmU0OTFlNjFkNDg3NzNmYzlhZTk4M2U3N2U1OWRlYjlhYjY2MWI1ODA1ODc1NTUxYWU0NWZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3NjMwMmM0ZTc5MDZhY2UzMGE5MDE3OTdiZWI1ZjBjNzc3OGZmYmFmNmUyMjk2OGQ3MDI0YjBjZGU2Y2Y4OCJ9"
         },
         {
@@ -72,15 +76,15 @@
     },
     {
       "id": "claim_c58476b165894f20b44621799fdd3b76",
-      "statement": "The wasm32-unknown-unknown target exists in CI solely for the trunk build: frontend/ declares its own [workspace], so no cargo invocation in the job compiles the Leptos app, and llvm-tools-preview is present only because cargo-llvm-cov requires it.",
+      "statement": "Only the Web UI job installs the wasm32-unknown-unknown target, for its trunk build and the web UI clippy pass: frontend/ declares its own [workspace], so only those two compile the Leptos app; llvm-tools-preview is installed only in the lint and test job, because cargo-llvm-cov requires it.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L33-L38",
-          "version": "repo-lines-v1:sha256:4b1af966207eb10edbce8523ed0938b038fd27c96f0f391774819494cb7dfd9b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1YTBlMzZhYTUxNTk0ZjAxMTQwOWVhNGFjMGJmMWRhZmIxNDM3NzEwMjMwNjQ3MjA2MzQwMWQ0MjJiYTE5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI3ZTVmYzlmNjdkYzQ0MTdiYjhiOWVmZDYwMGU0OWIzNTAxOTU3N2YwOGRlNTM0OTg5MDk4OTZiNGFlMjUyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWEwYWVkMTE0NWRjNTFmZWQ3NmY0ZTFjMDdkYTU4MDRkZWNlNTgxNDk0ZTJmZjliNTQyMzk4MWM1YmJjNGRhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUzNWVlYmQ4ZDUwMDc4MTVhZTUzNWNjMTE0NzNlZDMyNTM3MTk3ODQ0NGExZjUyZWE0NWE2OWM2YTZmNWE1NSJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L50-L70",
+          "version": "repo-lines-v1:sha256:9de767e3e23a973056b4478eb31ab7bec3dd697bf61a289d677be621f04d3fa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWEwZTM2YWE1MTU5NGYwMTE0MDllYTRhYzBiZjFkYWZiMTQzNzcxMDIzMDY0NzIwNjM0MDFkNDIyYmExOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZTAwZTQ0OTkzMjdkZTcwZTEwYjhlOTNkYmJkNWU3YzliMWM4ZjJiMjliYTgxMTAyZmQ0NGJhZTQ3MzRiZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzZTBhOTc2ZTc0MGYxNjRjY2NjYWQzNmU0YjA1YzlhN2U4YWY3Zjc3M2JmZDk2YTdkMDg5NmM3ZTczYzFjNDgifQ"
         },
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L49-L49",
-          "version": "repo-lines-v1:sha256:2a86146aecef3d129cc0300a55a4ab2de97a7eac514f9d54622398ee9848ee76:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE4NjE0NmFlY2VmM2QxMjljYzAzMDBhNTVhNGFiMmRlOTdhN2VhYzUxNGY5ZDU0NjIyMzk4ZWU5ODQ4ZWU3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE4NjE0NmFlY2VmM2QxMjljYzAzMDBhNTVhNGFiMmRlOTdhN2VhYzUxNGY5ZDU0NjIyMzk4ZWU5ODQ4ZWU3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFhNmJjODM0M2YxYTMwYTU2MDk0ODA4MzllYmYwYjQ4YzU0ZGU0MmY5ZjE1OGFmZjBmN2Y2ZTIyNTRlNDI2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWRhYzkzNmMwNzI3NTM4OThlNzBhMDc5Njk2NjI4MzQwNWMxNWRiNzQ2ODRhZTUyMTMyNmNhYzhiYzRiMDk0NiJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L92-L102",
+          "version": "repo-lines-v1:sha256:b86bd1bf20ef6a536072568fbce2de488be0f1cdf6b1441678e50ca380151950:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWEwZTM2YWE1MTU5NGYwMTE0MDllYTRhYzBiZjFkYWZiMTQzNzcxMDIzMDY0NzIwNjM0MDFkNDIyYmExOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGE5ZDdiZDZmODcxY2YxYWMwYjkwZmIwMTY3YjA4NWM2NjZlNTQ4OWY1MjNlZTIwZDEzMzcwZmJiMDIwM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0M2YwODY0YTJlZDM4NDBmY2M2MTYzOGQzYWQ4OTMyZDIxMjkzODA0YjZjNWM4ZGI5MTI2ZTY5YWI3NDY2MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4YWQ0NDJjZGM1Nzg1M2FmZDFlNjhmYmU5NjY3YzQ1YjQxNDA2ZjRhMGVmYTM2MzY5ODUxNzA2NzRjNzA4OGYifQ"
         },
         {
           "resource": "repo://frontend/Cargo.toml#L7-L9",
@@ -90,29 +94,37 @@
     },
     {
       "id": "claim_e520ce29aabe4d129c070b9ba97b9d52",
-      "statement": "CI runs sudo apt-get -o Acquire::Retries=3 update before any install because the runner image bakes its apt lists at image-build time and Ubuntu rolls superseded .debs out of the pool when a newer point version lands, so installing against the cached lists 404s; the retries also cover transient failures of the refresh itself.",
+      "statement": "Every CI job that installs packages runs sudo apt-get -o Acquire::Retries=3 update first because the runner image bakes its apt lists at image-build time and Ubuntu rolls superseded .debs out of the pool when a newer point version lands, so installing against the cached lists 404s; the retries also cover transient failures of the refresh itself.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L126-L130",
+          "version": "repo-lines-v1:sha256:f3b3e44b3fe0d117020c5a04b3d078b88fb3151c761813628235d6da7bfb131a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmNDNiYzkwNjkyYmNlZTVjMDMyZTkyZWRhNGZmNGJlNWZhOTQ5MWMwZjI5YzE3NWM4ZDUxNGNkMjU1ZGVlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L40-L44",
-          "version": "repo-lines-v1:sha256:6b15b7565f9c88f1182c474c9a81fb0565c9fb4070a59247987309fb5ee135b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTlmZjJkOWU3N2VlZTE1MzYyZGZmY2YwOGVkM2E1ZDVkOWVmMzY4YWMzYWZjYWVhMTJmZjY0ZjQwOWY1YmZmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlMjg3Yjc2OTI2NWE3N2QyYWE2YjQ5ZmNiODYxYjAyMTUwYWJkZTFlOTYxM2U1MDhlM2M1NzZjNTJlNDFjMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdkNzBkNTM4NWU5YjdlMmVjYjNhZWE2Yjc0N2QwZWE4NDdmMTI3YzRkZmQ5ZTRhMWI1NWM5NzMyODBkNjg3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDVkZDYxMzIwMTg2ODU4YTk0ZWVhNjc4OWE2NmVjYzA1MDFiN2Q3OTc4Mzk5NjliMDY2ZmNkYzFhZTMwNDY2NyJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L17-L20",
+          "version": "repo-lines-v1:sha256:b69a52b600c23b736239212348a241a0af4c45e1503f830b0cb1dd0051609e85:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg5NzkwN2RjMzU2MWRjZTAxMjU4MDA5MThkYTRhYWIxNDY0MjNkNjg1ZmEyMjc4Yjk1MDRhZGRkNjU2OWU2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4N2VhY2Y1YmY1Mjk2MjMzMjBiN2Y5ZGJiMDY2YTViZDEwNTVhYWE4NTA3YmJmZmE5NDVjNTdlMTMyM2NlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE4M2E4ZTBhNjE4Y2MyYjU5MjdiYTM1NzlkZTdjMWI1NGIxNjdlZGM5YjI2MzFiZWZkZWEyNGZlN2IyMTcwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDI3N2Y3ZThkM2VkZmY1MzczNGFhNThkM2NlNmU3MzY2MmQ0NDU3YTIxNjY1ZjMzZGFkNmJmZTA4NGFjZDk1MiJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L42-L52",
+          "version": "repo-lines-v1:sha256:f1db002a747aa3f33f0a5e9219bcbac98f32b40c69efb6e7d9f210d72b2e6b17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MjI5NWJiMTBiOGJjNzY3ZjdjMTAxNGE5YTQxNDcwY2UxYTM3M2NlMTI5YzNhMDY3ZmQwMTllOWI1YzJhNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkZTEyMTY2YWRmYWNjODM0MjhlOWMxOWNlYmMwZWQyNzk1OGY5MzcyNDBjM2IzYmNkNWU5NTRmOTMyYjBmODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3ZDcwZDUzODVlOWI3ZTJlY2IzYWVhNmI3NDdkMGVhODQ3ZjEyN2M0ZGZkOWU0YTFiNTVjOTczMjgwZDY4NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1ZGQ2MTMyMDE4Njg1OGE5NGVlYTY3ODlhNjZlY2MwNTAxYjdkNzk3ODM5OTY5YjA2NmZjZGMxYWUzMDQ2NjcifQ"
         }
       ]
     },
     {
       "id": "claim_ab14a42d14974a3cb4240d12ce531dbf",
-      "statement": "CI installs mame-tools, xdelta3 and ffmpeg solely as reference implementations for the format crates' tests — chdman for the chd-rs comparisons, xdelta3 for xdelta-rs, ffmpeg for the LaserDisc AVI fixtures — because those suites skip rather than fail when the reference binary is missing. ctrtool, maxcso and flips are absent, so the cia-rs, xso-rs and xps-rs interop suites skip on every CI run and remain a local responsibility, while oxyromon's own CIA import test runs in-process with no skip guard.",
+      "statement": "CI installs mame-tools, xdelta3 and ffmpeg, in the lint and test job only, solely as reference implementations for the format crates' tests — chdman for the chd-rs comparisons, xdelta3 for xdelta-rs, ffmpeg for the LaserDisc AVI fixtures — because those suites skip rather than fail when the reference binary is missing. ctrtool, maxcso and flips are absent, so the cia-rs, xso-rs and xps-rs interop suites skip on every CI run and remain a local responsibility, while oxyromon's own CIA import test runs in-process with no skip guard.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         },
         {
           "resource": "repo://crates/chd-rs/tests/ld.rs#L255-L261",
-          "version": "repo-lines-v1:sha256:1b18ecbebbb317c9e505d089598e54b006ce956a911bb00f21f5673a3f07bc0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTZhODA5ZDZmOWJlZDI2MDI3OGViMjZkZWM4ZGZkNWM5ZTAwNWEzMDE3MjgyZTViM2UyZmFiNmQ5MGIwZmFhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q4NTEyZWUwN2RhOTAzMjM2NDZkMWJjZmFlMDEyOTcyZmU4OWY1MDgwMjNmNThhY2YzMTUxZGVjNDA5NWNhYSJ9"
+          "version": "repo-lines-v1:sha256:1b18ecbebbb317c9e505d089598e54b006ce956a911bb00f21f5673a3f07bc0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJjZDRkYjQ4YTM1MGU4ZjBiNDc5NDRjNDZlM2ZmZGJiYTEzMmQyMjkwYTkxZDcwMTJiNTZlYjQ2YzhhYjRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQ5ZTEyNTQ2NDI1NTc2ZDNkZWFlOGM5YjlkYmYxMjhkNWQ2ZGRhZjVkN2ZlODU3OTM0OTI3ZGVmZmEzYjlkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU5Mzc2NzkxZTY5NDc2ZjdhMDcxODk2ZGMyNWI5MTM3ZWY4NDIzZTNlOTYzNDBjY2ZhYzMzMjNkNDJjYTUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q4NTEyZWUwN2RhOTAzMjM2NDZkMWJjZmFlMDEyOTcyZmU4OWY1MDgwMjNmNThhY2YzMTUxZGVjNDA5NWNhYSJ9"
         },
         {
           "resource": "repo://crates/cia-rs/tests/interop.rs#L17-L22",
@@ -141,7 +153,7 @@
       "statement": "CI enforces the feature matrix with two clippy passes: cargo clippy --workspace --all-targets --features oxyromon/server (package-qualified because --workspace selects several packages) and cargo clippy --no-default-features --features use-rustls,mcp --all-targets, the latter existing because server implies mcp and can never exercise the mcp-without-server build, which is itself a shipped artifact.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L58",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L103-L110",
           "version": "repo-lines-v1:sha256:7cffa17e31c314f8ff91d9a499593b14e18b3fb792e305adf7e904ab7e3d803b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxMTI5M2ZmNTNiZWZkNjcwYWRjMzlkNWI5NTQ1MTRkZjU4ZjgxMzgwOTM2YzFhZWNjYzc2ODFhODVhZTc3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM2Mjc0NjQzNWNjOWI4ZDVhOTlkOGQ3YTgzY2Y3M2Y4MDhlZjAzYTNlOWE0Mjg1NTgxZTU3ZDI0NGFhYjU3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
@@ -159,7 +171,7 @@
       "statement": "Any code reachable from src/mcp must compile with no server cfg active: server-only pieces such as SseMessage, the sse_tx field, with_sse and mcp_http_service are each behind #[cfg(feature = \"server\")], so referencing them outside that boundary fails the mcp-without-server clippy pass.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L57-L58",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L109-L110",
           "version": "repo-lines-v1:sha256:b836086130a30260316fa949b49fa8d438b1f73a432230003b87c8e857654849:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWIyNTVmOWJkZjFkN2ExYThiYmNiNDUyNGNjNTYzMGE5NGNkMzZjZjIzNmQzNWFkZTJlMmVhOGVlMTExZGE2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjU5M2UyYWEyMjQ5Y2IwYzExOGVmNWYyYTA1ZmNmZmFlMzQ3NzcyNWE1ZjU5MTgyNGE0MGVlY2Q3YjVlNTdjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
@@ -177,8 +189,8 @@
       "statement": "The mcp-only feature combination is linted but never executed in CI: clippy --all-targets compiles test targets without running them, so runtime coverage of the stdio server comes from the llvm-cov run under oxyromon/server, where tests/mcp_stdio.rs (gated #![cfg(feature = \"mcp\")]) compiles and drives the real binary over stdin/stdout.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L55-L65",
-          "version": "repo-lines-v1:sha256:a032a75280607bd746100173f631c74b32fd6e713bb6244ee6991d983a9134ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzY2Y2NjA4YmYxNTE5MTc0ZmRjZGRiOTE5NDNjMDg4ZjU3N2NkNTIwODZkNDZiYjFhOTI3ZWRkZGY2OGJjNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzY2UxZGFiMGJiNmE3MjBhMGRiYTcxMjQ1OTE0NGUyMzU1NWM5N2M4Mjk1NWRmZTNhYjdiZDU3MmQ3ZWY1ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L103-L112",
+          "version": "repo-lines-v1:sha256:178184d269d000a59c884fc4cfec7dbd0c0e77f3000e3ff5760569ee595ecaed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMTEyOTNmZjUzYmVmZDY3MGFkYzM5ZDViOTU0NTE0ZGY1OGY4MTM4MDkzNmMxYWVjY2M3NjgxYTg1YWU3NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMDkxM2IwOWE2YWI0OWI1ZWM3ZTI4YzY2YjU0NTEyNzY3ZmMxODM1ODgzYjBjNzI0MmI3MTYyZTcyYjc1OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMzQ4NTM2MWVkN2E5ZjI4OTdlZTQ0ZTU0ZmFjYzM4MjczZjM3MzUxZTRmOTc5YTRkYjg1N2M5YzcwODdkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMTJhZGU5YTdhMTk2YjNjYjdkZWFmZjA2ZDcxM2YwNjEwZGUyYjgzMzdjYWY1ODRkMjMxZTM5NWE0MGZiMmUifQ"
         },
         {
           "resource": "repo://tests/mcp_stdio.rs#L1-L10",
@@ -195,7 +207,7 @@
       "statement": "The CI compile gate fails on hard errors rather than on new lints: neither clippy invocation passes -D warnings, no manifest declares a [lints] section, and the workflow contains no cargo fmt step.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L53-L58",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L105-L110",
           "version": "repo-lines-v1:sha256:31860a9b72ca0e17490185aa7c464aba9e8e5420628454dcd69bfe4e54bf5fb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlkMThkOWI1MjZmMTA4MGEyYjBlMGVkNTM0MDdmY2MzNDdhNTQ4NjQ5Y2NlMzFmNWM0MWJhNTBiZjE3NWU4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYzkzNmMwNzI3NTM4OThlNzBhMDc5Njk2NjI4MzQwNWMxNWRiNzQ2ODRhZTUyMTMyNmNhYzhiYzRiMDk0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
@@ -209,7 +221,7 @@
       "statement": "CI runs the whole workspace test suite through cargo llvm-cov --workspace --features oxyromon/server --lcov --output-path lcov.info and uploads that gitignored lcov.info to Codecov with secrets.CODECOV_TOKEN.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L64-L69",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L111-L116",
           "version": "repo-lines-v1:sha256:da6e8a4605d40618b3066d8e57e92418f25628e4668613277fdbf6dcfc2669e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDM4NjJlY2JhMjYzZjUzODNlOWQ0NzA0NGIwMjQyZDljY2JjMTVmOGYzZjhlMTJmY2JkMTEwYTlkYzY5NzRkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM5NjMzYzM3NjE5NjJlYTJiOWExYzNlZGRjMDFjZjY2YzMxMTY4NzFhOTgzZDg3MGRhNDQ3ZTk3NGE0YTBlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJjYjMyYzRiOWIyOWRjOWQ4N2JkYmQ5OTk4ZGFmNTQzYjMwYTdhZTAyMWQ5NGU5N2MxODU3ZWFmOGFiNmQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -220,15 +232,19 @@
     },
     {
       "id": "claim_744ffe09e7f141aeb69b7b0741514201",
-      "statement": "CI additionally builds cargo build --release --features server, exercising the release profile (lto thin, codegen-units 1, panic abort) that the artifact users receive and that debug builds never test.",
+      "statement": "The release job runs cargo build --release --features server through desktop/scripts/stage-sidecar.sh, with the web UI embedded, exercising the release profile (lto thin, codegen-units 1, panic abort) that the artifact users receive and that debug builds never test.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L62-L63",
-          "version": "repo-lines-v1:sha256:395603c035ac94e469a1cbc7af6a9ca28c4f27a96ab8c13168c5977b40c4c291:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkOWRlMTUxOWYxNzc0MmM5Y2IzNjE0NDk0ZmFmMmNmNmQ4MzUyM2JkNTkwNDY3MWNhNTBlZTNjMDc2MzZkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlmZmUwMGJhYWU2Yjg4Y2Q1MWUzMWIyNTdiNjZhNWIzNzI4NGQxZGVkN2RlMjc4MmZkNDViYWFjZDE2NWFjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM4NWQ5ZDYyZmUxZTM4ZmVkOThjZTgxYjE5OWU1YmZiNWU3YjU3Y2M3NWY2MjJkNzk2OTQxYzY5NzU4YTQwMSJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L144-L152",
+          "version": "repo-lines-v1:sha256:1685bd7043a3755b6cf5c4a95fb81b243c6d504a28b23ff20a79473c7798fce2:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc5MDgzYWIxYmMyMjM1ZTVjMGMxMmExOGE4NjBiNDlkZTBlYmIxOTc0ODliODNkYzgxOGFhNjA4NGIyZDRlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNlNGE1YTZjODZhODQ2ZjU3MDQ0NTc2ZjkwZDEzODU5YWViNzcxMmJiOTM3OThlOWFmMjRhZDM4MzA3MjlhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODZmMmFhMDZiZGQ3ZTkxYWM0YzAyZmE1MjRmODU1NWQyNmQ5MTY2ODBhNmJjZTMxYjc4MDA5ZjlhOWJkNDExMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThkZDVhZTgwYTYxYzE5ZDM4ZTA3OGE5MmU1MGMwNzY0NTBjZDkwMTgyMDllZTY2NzhmMzk4OWMwNWVhZGQxYSJ9"
         },
         {
           "resource": "repo://Cargo.toml#L174-L178",
-          "version": "repo-lines-v1:sha256:58ddcb61d9fc7d1e7f81491970a4a3f2af7f9111ea579f413850b6ae7e07f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxYjk5MGFkOGY0Mjg0YzM1NGNkOGY5YjZiMWIwZDAxNTY1MDJhYmIwOGFiMjlhYjUwODI0OTRkN2EwNzYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUwMTVhOTA3ZDgzNzZiYzNjYzEwM2ZiMmIwZDM4NDVhMTc1MDA4M2E3YmMzMDZkZjQ2ZmQwYjY5YjNmNzhiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTUzYTU5MjlhMzExNTMzZTFlYWY3YzI1YjgyYWU2ZDIyZjQzOTJjNjk5MTJlODZmNzc5YjlmMWE5MGIwMzdiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "version": "repo-lines-v1:sha256:58ddcb61d9fc7d1e7f81491970a4a3f2af7f9111ea579f413850b6ae7e07f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTYxYjk5MGFkOGY0Mjg0YzM1NGNkOGY5YjZiMWIwZDAxNTY1MDJhYmIwOGFiMjlhYjUwODI0OTRkN2EwNzYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUwMTVhOTA3ZDgzNzZiYzNjYzEwM2ZiMmIwZDM4NDVhMTc1MDA4M2E3YmMzMDZkZjQ2ZmQwYjY5YjNmNzhiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTUzYTU5MjlhMzExNTMzZTFlYWY3YzI1YjgyYWU2ZDIyZjQzOTJjNjk5MTJlODZmNzc5YjlmMWE5MGIwMzdiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Y2NjIxYThkODY0N2JhNzU0MDFjOGJjMDFmZmIzYzM4ZmU4YzUzMzBkOTg0Y2M3MWFmM2IzNDBhYzZhYjA4NSJ9"
+        },
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L1-L22",
+          "version": "repo-lines-v1:sha256:b65559e5788d0886e4a8adc967136d8759088cebcd7f547a0a80c13c640cbdcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMGNkNDA1NjExMjFiZDY4ZTU1MGRkNGM5M2QxNTcyMWRkNTY5YmNiNjdhMzZjOGI5ZjhkYzBmZTA3YzQ4NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -315,12 +331,12 @@
       "statement": "No CI step, Dockerfile or cross build sets DATABASE_URL or SQLX_OFFLINE; the sqlx query macros are verified at compile time against the committed .sqlx/ snapshots, so a query or migration change left unprepared by cargo sqlx prepare -- --all-targets --features server breaks CI, the container build and the release matrix, not only the author's machine.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L14",
-          "version": "repo-lines-v1:sha256:2afd59a6f9db3076381dd8a11228a866bd141d3717a38bb3ea16eb9b82e0ace7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhNTk0ZjM0YjdmMGVhNTczZGE3ODcwM2UyNzQ5MzBkYjcxOGM5NDJjYWYzYzA0MjUxNzU1ZjYyM2M2MGQ1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZjg3YWMyY2M0YTFhODUzNzhlOWI0ODdmNzk2YjZjZmI4YmRlN2M1NWMyOGZmYmRkZGYxMDFjZGQ2YmM2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg5MzgyODhkYzc1NjJjYTBmMzc0YjQwMTU3ZGM1NzMwMDQ0YjRlMjc4MTMwYTg1MDQwYWZiNGQ2NzAxNjkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQyNzhmMTk3ZmJmOGZkYjYxN2UxN2EzMmE3YjQyZGViN2Y4ZjNkZjM3Njg2NjBmMzhmNWQ4YmU1Mzc0ZmVhMyJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L9-L20",
+          "version": "repo-lines-v1:sha256:30ad1c014ee8e111433651c836e1410eb5519af994939a18ab83c2a7821e5789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYTU5NGYzNGI3ZjBlYTU3M2RhNzg3MDNlMjc0OTMwZGI3MThjOTQyY2FmM2MwNDI1MTc1NWY2MjNjNjBkNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ODdlYWNmNWJmNTI5NjIzMzIwYjdmOWRiYjA2NmE1YmQxMDU1YWFhODUwN2JiZmZhOTQ1YzU3ZTEzMjNjZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OTM4Mjg4ZGM3NTYyY2EwZjM3NGI0MDE1N2RjNTczMDA0NGI0ZTI3ODEzMGE4NTA0MGFmYjRkNjcwMTY5MDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNzdmN2U4ZDNlZGZmNTM3MzRhYTU4ZDNjZTZlNzM2NjJkNDQ1N2EyMTY2NWYzM2RhZDZiZmUwODRhY2Q5NTIifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L34-L34",
-          "version": "repo-lines-v1:sha256:6b697c041de9262735017a0e5deaf39855607f6a0bfb469292e986cda5b32431:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDQ1YWRjZmU4MmQwZDc4MjBmOGE5ZDA4OWUwMWEyNzU3ZjU3OTdjMGRhZWVkMGU0YmNhMzEwOGMxNmE1NmZiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzk5YTMyNTFkNTM4ZmVkMjMyMjM5NThjM2I4OTQ5YzJhNGEyMzgwOGVhYzBlZjAzYzc2ZDc5MzU4ZDIzMGNiMyJ9"
+          "resource": "repo://AGENTS.md#L36-L36",
+          "version": "repo-lines-v1:sha256:6b697c041de9262735017a0e5deaf39855607f6a0bfb469292e986cda5b32431:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI2OTdjMDQxZGU5MjYyNzM1MDE3YTBlNWRlYWYzOTg1NTYwN2Y2YTBiZmI0NjkyOTJlOTg2Y2RhNWIzMjQzMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg5ZjdmY2ViNjcxMGQyNjgyNDc2ODBlNGE1MWE2Yzc2MWE5YjU2OTIxOWU4OWZiYmZlMWFkNjlmZGVhZmJjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzk5YTMyNTFkNTM4ZmVkMjMyMjM5NThjM2I4OTQ5YzJhNGEyMzgwOGVhYzBlZjAzYzc2ZDc5MzU4ZDIzMGNiMyJ9"
         },
         {
           "resource": "repo://Cargo.toml#L130-L135",
@@ -337,7 +353,7 @@
       "statement": "CI compiles only the rustls backend: use-native-tls, bare --no-default-features and every macOS/Windows target are never built there, so an OpenSSL-only break is invisible until someone or a packager builds it, and nothing enforces that exactly one TLS backend is selected.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L53-L58",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L105-L110",
           "version": "repo-lines-v1:sha256:31860a9b72ca0e17490185aa7c464aba9e8e5420628454dcd69bfe4e54bf5fb6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzlkMThkOWI1MjZmMTA4MGEyYjBlMGVkNTM0MDdmY2MzNDdhNTQ4NjQ5Y2NlMzFmNWM0MWJhNTBiZjE3NWU4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRhYzkzNmMwNzI3NTM4OThlNzBhMDc5Njk2NjI4MzQwNWMxNWRiNzQ2ODRhZTUyMTMyNmNhYzhiYzRiMDk0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
@@ -383,7 +399,7 @@
       "statement": "With the mcp subcommand or the server's /mcp mount, stdout carries MCP JSON-RPC, so code reachable from the MCP server must not print to stdout and should use log macros or the progress helpers instead.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L50-L53",
+          "resource": "repo://AGENTS.md#L58-L61",
           "version": "repo-lines-v1:sha256:4daaae8c99b0ae3b4ac547d72d154fcc904926f3e6b411511dabf9720ac27f5f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRlYjM5ZGFhMDgzZDg5YmVjYzBjYzI0ZWU4OTlmZGI5NzM4ODhiNmY3OTVkMjZkMWRiYWQ0ZWVkZTA3ZDNjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzZDg0ZWMwODVhYWI0NGI4OGRiMmI5NGYwNzNlNzM5NjNlMTM3NzQ4M2JkMzQ0MmZjZjhkYjY1ZmE3N2QwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI0Y2NhZDU0MzUxOWJjNzI5OTA2MGJjNTY5NzFjYjMzNDdkM2Y1NWQ1YzNlOGVkMDUwNzEwMzI4MmQzNGQ5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjIzMDkzYmI0OWIwYzM1OGUyZGJkNmI4MGZlM2UwOWI5N2U1YzVjMmI3ODMxZmJmZWJhYzM2NzgzNjU2ODdlZCJ9"
         },
         {
@@ -397,12 +413,8 @@
       "statement": "CI pins no Rust toolchain: no rust-toolchain.toml exists, so dtolnay/rust-toolchain@stable installs whatever stable is current when the workflow runs, while the only declared MSRV anchor is rust-version = \"1.94.0\" in Cargo.toml's [workspace.package], repeated in AGENTS.md, and nothing in CI enforces it; cargo-llvm-cov is likewise installed unpinned, so a new stable release can break the gate with no repository change.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L33-L40",
-          "version": "repo-lines-v1:sha256:6962f56a173e4ef59fd4e0f953f9deb4f6c9c2df6b790b9ff2d5020d3b934b22:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1YTBlMzZhYTUxNTk0ZjAxMTQwOWVhNGFjMGJmMWRhZmIxNDM3NzEwMjMwNjQ3MjA2MzQwMWQ0MjJiYTE5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM5NDAxNTE1ZDVjZjBmMGRkY2ZkMTc5NDY3NjE2ZjYxZGE5MDE2YjQ4YmYwYzlhZGJlODU3NDdlZThkNDM4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ1ODlmYmM0MGU1Yjg5MzVlMTUzY2NhMjQyODIxNTNlMjNmZjVhOGIzOGRkNjM5ZmQ1ODg2MDU1MjYxNWRmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjZmOWExZjc4NGI4MzgwOWMzM2FhNDBiNjcwYmMwN2M3Y2MxMzhjMDVmMzRmNzM5OTRjNjBlZTRlZjAyNTljNyJ9"
-        },
-        {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L49-L50",
-          "version": "repo-lines-v1:sha256:7e972434e2ae43b9814a498eda57e6efffcbf32376c9e9b3347c19a7daade725:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE4NjE0NmFlY2VmM2QxMjljYzAzMDBhNTVhNGFiMmRlOTdhN2VhYzUxNGY5ZDU0NjIyMzk4ZWU5ODQ4ZWU3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNkYTlkN2JkNmY4NzFjZjFhYzBiOTBmYjAxNjdiMDg1YzY2NmU1NDg5ZjUyM2VlMjBkMTMzNzBmYmIwMjAzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFhNmJjODM0M2YxYTMwYTU2MDk0ODA4MzllYmYwYjQ4YzU0ZGU0MmY5ZjE1OGFmZjBmN2Y2ZTIyNTRlNDI2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDhhZDQ0MmNkYzU3ODUzYWZkMWU2OGZiZTk2NjdjNDViNDE0MDZmNGEwZWZhMzYzNjk4NTE3MDY3NGM3MDg4ZiJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L92-L102",
+          "version": "repo-lines-v1:sha256:b86bd1bf20ef6a536072568fbce2de488be0f1cdf6b1441678e50ca380151950:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWEwZTM2YWE1MTU5NGYwMTE0MDllYTRhYzBiZjFkYWZiMTQzNzcxMDIzMDY0NzIwNjM0MDFkNDIyYmExOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGE5ZDdiZDZmODcxY2YxYWMwYjkwZmIwMTY3YjA4NWM2NjZlNTQ4OWY1MjNlZTIwZDEzMzcwZmJiMDIwM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0M2YwODY0YTJlZDM4NDBmY2M2MTYzOGQzYWQ4OTMyZDIxMjkzODA0YjZjNWM4ZGI5MTI2ZTY5YWI3NDY2MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4YWQ0NDJjZGM1Nzg1M2FmZDFlNjhmYmU5NjY3YzQ1YjQxNDA2ZjRhMGVmYTM2MzY5ODUxNzA2NzRjNzA4OGYifQ"
         },
         {
           "resource": "repo://AGENTS.md#L15-L15",
@@ -419,7 +431,7 @@
       "statement": "CI never compiles the configuration with neither mcp nor server, which is exactly the arm where src/database.rs selects max_connections = 1 and PRAGMA locking_mode = EXCLUSIVE instead of 5 connections with NORMAL: the first clippy pass always enables server and the second always enables mcp, so a cfg_if mistake on the single-connection branch surfaces only for packagers and bare cargo builds.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L51-L58",
+          "resource": "repo://.github/workflows/continuous_integration.yml#L103-L110",
           "version": "repo-lines-v1:sha256:7cffa17e31c314f8ff91d9a499593b14e18b3fb792e305adf7e904ab7e3d803b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxMTI5M2ZmNTNiZWZkNjcwYWRjMzlkNWI5NTQ1MTRkZjU4ZjgxMzgwOTM2YzFhZWNjYzc2ODFhODVhZTc3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ1MjkxN2U3Y2EwZDRhMjFjMjVjZjg1YzA0ZjRmMmUxMzVhMzZmNmM4NDVmNzk3Y2MzNGE0NzYxNTdiZGVhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM2Mjc0NjQzNWNjOWI4ZDVhOTlkOGQ3YTgzY2Y3M2Y4MDhlZjAzYTNlOWE0Mjg1NTgxZTU3ZDI0NGFhYjU3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
         },
         {
@@ -447,8 +459,12 @@
       "statement": "The apt packages are build-and-test-only: the shipped oxyromon binary shells out to none of them, since get_version() in src/chd.rs, src/cia.rs, src/xdelta.rs, src/xps.rs, src/xso.rs, src/archive.rs, src/nsz.rs and src/rvz.rs returns \"built-in\" and the work runs through the workspace crates; no module invokes an external tool.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L32",
-          "version": "repo-lines-v1:sha256:a72d0c526332640881f549fbdc09143de5d32d273af5e898a54d06b850e26309:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMGMzNDQ2ZTRjOGEwNzNhNDFjZmRjODMzMTFhOGQwNWRmYThjNzgzYTU4ZDU4YzQ3MWYyN2E5YTEzNDc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UzOGQyNmYxNzJhY2NiNTk5OWI5Y2NhMmU3N2E3MGIwMGFlNTM4MzA5NjdkZTZhYzI2MDE0OTFlNjNkMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzN2RjZjYzNTBmMGU3ZDg3NmIzYmRmNWEzYzE4ZjNmM2Y0N2QyNzcyODAwNzI1YTNhYThiODQ4Y2VkMzU1YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMjY0MDQ3NjA1ZjM2N2MwNDU5Zjg5NWM3ZGJkZTYyNzdmNmNjNTAzZTgxODljOGQ3YzMwNGMyZjllOGMzOTgifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L126-L130",
+          "version": "repo-lines-v1:sha256:f3b3e44b3fe0d117020c5a04b3d078b88fb3151c761813628235d6da7bfb131a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRmNDNiYzkwNjkyYmNlZTVjMDMyZTkyZWRhNGZmNGJlNWZhOTQ5MWMwZjI5YzE3NWM4ZDUxNGNkMjU1ZGVlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L86-L91",
+          "version": "repo-lines-v1:sha256:a387ab8ee02abc3bb37a08f20b085fde3bc5005efa377e2c087b5a806708ee4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQwYzM0NDZlNGM4YTA3M2E0MWNmZGM4MzMxMWE4ZDA1ZGZhOGM3ODNhNThkNThjNDcxZjI3YTlhMTM0NzQ4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTM4ZDI2ZjE3MmFjY2I1OTk5YjljY2EyZTc3YTcwYjAwYWU1MzgzMDk2N2RlNmFjMjYwMTQ5MWU2M2QwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWUyNjQwNDc2MDVmMzY3YzA0NTlmODk1YzdkYmRlNjI3N2Y2Y2M1MDNlODE4OWM4ZDdjMzA0YzJmOWU4YzM5OCJ9"
         },
         {
           "resource": "repo://src/chd.rs#L896-L898",
@@ -507,16 +523,16 @@
       "statement": "The repository's CI surface contains exactly two workflow files; AGENTS.md's OpenWiki block refers to a scheduled OpenWiki GitHub Actions workflow that refreshes openwiki/, but no such file exists in .github/workflows, so the wiki refresh cadence is not defined or gated by anything in the current tree.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L1-L69",
-          "version": "repo-lines-v1:sha256:4aa4752a5e0b6e18e172eec21c593ec826cf95cf0357182a21afc87c1bf3a4c3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZTFiMzJmYTA5MDc5YWUyZjAwMDFmZmYwZWNhMjdiNDk4NTk1N2Q0ZWI0ODU3OTI5YjNjZjA1OGZhYWU1NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOTYzM2MzNzYxOTYyZWEyYjlhMWMzZWRkYzAxY2Y2NmMzMTE2ODcxYTk4M2Q4NzBkYTQ0N2U5NzRhNGEwZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L1-L155",
+          "version": "repo-lines-v1:sha256:1965763e7c54e3d81e03c09ff090a3e9cbb6687f62c9141a83312efb111b85e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNmUxYjMyZmEwOTA3OWFlMmYwMDAxZmZmMGVjYTI3YjQ5ODU5NTdkNGViNDg1NzkyOWIzY2YwNThmYWFlNTQxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0YTc3YTFlNGZmMjBjNjc2NDAxZWRmMjZlZTM5YjU2ZjNhYjNkOTg1ZTc2YWFhZDFmM2E4NDU4MTFjODNkMDI3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         },
         {
           "resource": "repo://.github/workflows/docker.yml#L1-L34",
           "version": "repo-lines-v1:sha256:7262b6657d4bd10f86df828d7f58e973aca8d9643cc52fd86019bf7c48c0009a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwYjVhNGQwOWE3YTU1Y2U1YTgxMDFmM2U5NjNiZmIyMWJiZTBhNjU2YThjYzc2ZTZjZWJhMDBjNzU5NjM1NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDBkZTFiODIwMWUzYjYxYmI5NGM0YWQ3MWVkM2ZjOTE4NGFhMjBjYjY0NjNlZWVlYzQyZmU5YTQ4NTk4MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L291-L305",
-          "version": "repo-lines-v1:sha256:ed40de1aa2efc2d4e9a5fe58d31c177d5caf2642587c78f1d67a7023950b16f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTM5NTNiZmI3MmMxMjYyYmJhZTJlYWNhNzJjYWJmMWFmNDk5MjdhMGJiYTExNTdiMmQ1YmRiMjg1YzRiZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4ZmI5N2I2ZWIwMWMyY2ZiMWI2MWFkMzdlOTQwNWQyOGJmMGY3NDYyM2QyOGVlOGFhM2Y3NTZkNjQyNDdhZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODlkZjkzZjhiYTU3YTRkZGJmZDhmMDEzOTYyYzM5NzhjZTRkYjY4MTk5YzRkYTY2NjY0OWIwOTk2Y2VkYTkifQ"
+          "resource": "repo://AGENTS.md#L302-L315",
+          "version": "repo-lines-v1:sha256:db1b26b491c1761e0571874a35b094ce206e904596088364a0ab7d7b2c5360ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ODM2ZWQ3ZTAwNTM3NzVhMGE5NjZjZTg2MTM0YjIzNDdkODUxYTdiMDJmNDgxMmJlYjJjNTlkMWM2OGQ1MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Zjc4NzE0ODkzYWE3Nzk0MmNlYTFjNGEyZTAyMzFkYmI3ZmEyYTQxYTcwYzgxNDYwYTNjNjc1NjJkYTNhYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViMWJjNWJjNGEyMzdmNTc4ZTZhZjRhNDE1ZDA2NDdmOTkxMGIwM2IzNjRlMWUyN2MxZjFkYmFhNzQzZDAzYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -550,17 +566,71 @@
     },
     {
       "id": "claim_4c709b5a5a3c44168a8d56328603ee4e",
-      "statement": "CI's third clippy pass runs `cargo clippy --target wasm32-unknown-unknown --all-targets` inside frontend/, because the web UI declares its own workspace and is outside the root `--workspace` pass.",
+      "statement": "CI's web UI clippy pass runs `cargo clippy --target wasm32-unknown-unknown --all-targets` inside frontend/, in the Web UI job, because the web UI declares its own workspace and is outside the root `--workspace` pass.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/continuous_integration.yml#L59-L61",
-          "version": "repo-lines-v1:sha256:069b8c20d148e0d760a95bfe93382f21407d2b89b6a8b60b11d2c0bee9dc3a91:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFlNGQ2NmU5YmZkMGM1OWU1YzVkMzczNmNmOGI3N2EyZDI1Y2E5MTAwMzBiNzI4MjRhMTZhZDNlODE5YWNkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNlMDBlNDQ5OTMyN2RlNzBlMTBiOGU5M2RiYmQ1ZTdjOWIxYzhmMmIyOWJhODExMDJmZDQ0YmFlNDczNGJlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZkYTllOTk1NjdmM2RmZTExMjdmNThiNTc5M2QxMjUzMGRlMDk2ZTcyMzFlOTc2ZDg2YmI1M2QyNzc3ZTRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODA5ZWE4MDViMTlmMmNlMzM4MjQ4ZDlkYzMyYzljNTRhMDYyNzZjMTZjNGVlNmZlZTdiZDhkYzI5M2I2YWZkNiJ9"
+          "resource": "repo://.github/workflows/continuous_integration.yml#L68-L70",
+          "version": "repo-lines-v1:sha256:690a96757f733a11c2bfc304787a28343d995e46ab49a47af78a463d42de411d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFlNGQ2NmU5YmZkMGM1OWU1YzVkMzczNmNmOGI3N2EyZDI1Y2E5MTAwMzBiNzI4MjRhMTZhZDNlODE5YWNkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNlMDBlNDQ5OTMyN2RlNzBlMTBiOGU5M2RiYmQ1ZTdjOWIxYzhmMmIyOWJhODExMDJmZDQ0YmFlNDczNGJlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzFhNmJjODM0M2YxYTMwYTU2MDk0ODA4MzllYmYwYjQ4YzU0ZGU0MmY5ZjE1OGFmZjBmN2Y2ZTIyNTRlNDI2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNlMGE5NzZlNzQwZjE2NGNjY2NhZDM2ZTRiMDVjOWE3ZThhZjdmNzczYmZkOTZhN2QwODk2YzdlNzNjMWM0OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f8c1fee543e479e8d16f757d2daefc8",
+      "statement": "A dedicated Format job checks formatting with `cargo fmt --check` in the root workspace and separately in frontend/ and desktop/, which declare their own [workspace] and are not reached by the root's `--all`; any rustfmt diff fails the job.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L41",
+          "version": "repo-lines-v1:sha256:1a303b4ee4485ca59741c5ed5fcc3e62ae265951e04f38443e36529c42560983:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyNWM2NmMwMTRjZDQ0NmVkNGNkNmZlZmMzNzAzMjRmNDY1NDRjMmIwZmNiNGMzZWQ5YWM2NmFjYmEwZDFkMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNDlkOTQ1NDI4OWJhMWIzYzY1ZjJhNjI5YmZiNmI2ZDkzNzMzYjM2MmRlNDkyYzRhOTU1ZTNlZjA0OTA1MTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5NjJiMWVlNWJlNjRmYzQwODg1MDg2ZWMxOTEwZGNmNDQ2MmNmOGY4NWQ1ZTBkZWIwNTEyNjRjNjEzNTY4NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NmU5NzdhYTQ1MGQzYWZkNDRmMDZjM2IzOGJmYTMyNjA2NDk1NzFmY2NkN2NlZjEzMjM2OWU4MjIxNzlmNWQifQ"
+        },
+        {
+          "resource": "repo://desktop/Cargo.toml#L1-L12",
+          "version": "repo-lines-v1:sha256:1fc41913ed509199ebf9403088957979259829a9c358712ac2279024f9fa0a6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2NkNWE4MWIzZjlhNjIxYWE0OTNkOTBjNDVmNDJhYjU3MWQ0ZTQyYjhhZTVhZmYzNTFjYjBhMDJkMDZkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ZGE3YzkyMDExNDBhZmNiZTNlMzllY2I3ZmYyNDIwOTI2MThiNjdlM2I4ODY4YjMxY2EwZjU5MjNiNDNhYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZmExZWUxOTI0Y2RjN2Q1ODAzZWE2MTE0ZjUxNDgwOWQzNzQ2ODg2NWM5OTkxMmUyMDU1NjdiYzQ0YjZiM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a4882901de844c38ecc2a1591d426a8",
+      "statement": "The release job lints the Tauri desktop shell with `cargo clippy --all-targets` in desktop/ after running desktop/scripts/stage-sidecar.sh, because tauri-build refuses to compile until the externalBin sidecar exists; only that job installs libwebkit2gtk-4.1-dev and libxdo-dev, and each job's rust-cache lists only the workspaces it builds.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L118-L155",
+          "version": "repo-lines-v1:sha256:e640460ab9f7d7b93d36136ca5ae5ebfac51d3364ba185333ef912f3d645149e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzMmUyNTRlMDAzZGRiMzY4ZjUxYWM3NTg0MTc3YjdhY2RiYmZjYTQzYTcyMGJmZWIyYTY1MWYxZTFjNDBjNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNzdhMWU0ZmYyMGM2NzY0MDFlZGYyNmVlMzliNTZmM2FiM2Q5ODVlNzZhYWFkMWYzYTg0NTgxMWM4M2QwMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMzkwOWQ4Mjg3Y2QwMmFkNTI4ZjMzM2Q0ZmYyYTAxMDc5MTIzMmJiMTQzOTcxYTFjNjVlYjM3MGIzZDJiYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://desktop/scripts/stage-sidecar.sh#L1-L22",
+          "version": "repo-lines-v1:sha256:b65559e5788d0886e4a8adc967136d8759088cebcd7f547a0a80c13c640cbdcd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MDc2ZDNkMjhkMjFlMDIwMTJiMjBlYWY3ZGJmNzU0MDlhNjI3NzEzNDQzOTAyNWYyODJlMzY4ZTMzMDVhYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjMGNkNDA1NjExMjFiZDY4ZTU1MGRkNGM5M2QxNTcyMWRkNTY5YmNiNjdhMzZjOGI5ZjhkYzBmZTA3YzQ4NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://desktop/tauri.conf.json#L1-L30",
+          "version": "repo-lines-v1:sha256:09c4ca261a109f7ffb34f95968fc0623b10d5c2bfe3b1d37c5625ab8b5b34086:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMzkzYjIyMjY1ZjFmMjJlODEyOGVlYzc4MzEwN2VjZTY2MDI4N2ZiYzAxMjlmMDRlYmYyZjE1MmUwOWU5YjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e52fed89bf2482ea70f67cdd866511f",
+      "statement": "Every CI job sets timeout-minutes (10 for Format, 30 for Web UI, 60 for lint and test and for the release job), so a hung process fails its job instead of holding the runner for GitHub's six-hour default.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L118-L122",
+          "version": "repo-lines-v1:sha256:07abd016f355da4507db7f6dd08237cd2710118143cd8a0281e9bf0a692e15e2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjMyZTI1NGUwMDNkZGIzNjhmNTFhYzc1ODQxNzdiN2FjZGJiZmNhNDNhNzIwYmZlYjJhNjUxZjFlMWM0MGM0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EyYzg4ZmU0OTNjNTdhNzJlNzUyODlkZWM1OTUxNzMwZDU4MzQzM2MzOTc3OTIwNDJmZDMxMGM1MGE5MTkzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIzOTA5ZDgyODdjZDAyYWQ1MjhmMzMzZDRmZjJhMDEwNzkxMjMyYmIxNDM5NzFhMWM2NWViMzcwYjNkMmJiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L23-L26",
+          "version": "repo-lines-v1:sha256:fbf5b50d7f488a90dca69cdcd2ebf23622b4879f321d6528f072c0eec8e5c46c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDI1YzY2YzAxNGNkNDQ2ZWQ0Y2Q2ZmVmYzM3MDMyNGY0NjU0NGMyYjBmY2I0YzNlZDlhYzY2YWNiYTBkMWQyYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGE2NGM0MzY2YTZmN2Q0YTM2NzFjNzE5MzQwNzI5MDgzMGU2MTIxYzM3NjFhNWE3YTQwNTQ1NDQ4ZTBlMjg4MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk2MmIxZWU1YmU2NGZjNDA4ODUwODZlYzE5MTBkY2Y0NDYyY2Y4Zjg1ZDVlMGRlYjA1MTI2NGM2MTM1Njg2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L43-L46",
+          "version": "repo-lines-v1:sha256:828dc7264361e7f31c18064c5f16870a28fc7c8396156116058d699fb65df8ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAxMjk3OWRjNmI3ZWM0NDlhM2EyZDU2NDlhYTg1Y2Y4NjhhNjNhNmE3NWMyMmRhMTljMDJiZTVlODdhNTNkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFmNGZmNWZkZmY4MDA4MjU0YTg5ZTdjMzk1ZjFhNDU2OTAwYjA3ZTQ3ZDAxNjkzMjE0NTVhMzViZDk2MzA1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2YyZTQxOTViYmM3ZDFiYjBiMGNiM2UwNDVjYTg2OTJmZjgyZGNhMDExNzhkMjlkM2Y2ZjE0Y2JiYTQzMThiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/continuous_integration.yml#L79-L82",
+          "version": "repo-lines-v1:sha256:320de420b67102de8c0c7b4652bd49c6159b1500dc2014ae53bb4f20301a2306:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjIwMDU3Nzc3NmM2NjhiNzAxZDcxNjVhOTcyY2JhYmI2ZWRlZDEyOGJiODVmYTcwYzMyNjBiNThlMGU5YjA0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EyYzg4ZmU0OTNjNTdhNzJlNzUyODlkZWM1OTUxNzMwZDU4MzQzM2MzOTc3OTIwNDJmZDMxMGM1MGE5MTkzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjlhZGI0NjE3Y2JmZjQxNDQ2YjE5ZTNmNDIyYWJjMjkyYzliZDg5OTU5NTE1MzA0ODY3ODBjMTZlMTY0Mzg0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM3ZGNmNjM1MGYwZTdkODc2YjNiZGY1YTNjMThmM2YzZjQ3ZDI3NzI4MDA3MjVhM2FhOGI4NDhjZWQzNTViMyJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-28T08:10:36.025Z"
+    "at": "2026-10-28T12:28:25.132Z"
   }
 }

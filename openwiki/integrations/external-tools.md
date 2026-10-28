@@ -41,10 +41,10 @@ sources:
     resource: repo://src/util.rs
   - id: openwiki-source-a849c4f3cbc8a6dbd38563a0
     resource: repo://src/wux.rs
-generated: { by: "claude-code", at: "2026-10-25T14:55:31.619Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-26T20:09:06.498Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 
@@ -114,7 +114,7 @@ tool is absent, so a contributor without them still gets a green run.
 | `xps-rs` | `flips` | `flips --version` on `$PATH` |
 | `xdelta-rs` | `xdelta3` | `xdelta3 -V` on `$PATH` |
 
-CI installs `mame-tools`, `xdelta3` and `ffmpeg` in its one install step, after an
+CI installs `mame-tools`, `xdelta3` and `ffmpeg` in the lint and test job, after an
 `apt-get update` with retries, and the workflow comments that all three are only
 for the crates' tests. `ctrtool`, `maxcso` and `flips` are not installed, so those
 interop suites skip on the runner. The CIA import test in oxyromon itself no
