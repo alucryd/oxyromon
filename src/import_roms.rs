@@ -3186,6 +3186,8 @@ mod test_sevenzip_single_file_headered;
 #[cfg(test)]
 mod test_single_track_chd;
 #[cfg(test)]
+mod test_unknown_system;
+#[cfg(test)]
 mod test_wua;
 #[cfg(test)]
 mod test_wux;
@@ -3195,7 +3197,5 @@ mod test_zip_single_file;
 mod test_zip_single_file_extract;
 #[cfg(test)]
 mod test_zip_special_characters;
-#[cfg(test)]
-mod test_unknown_system;
 #[cfg(test)]
 mod test_zso;
