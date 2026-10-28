@@ -97,7 +97,11 @@ async fn test() {
 
     // then the clone has its parent's extensionless file, loose like its own
     assert!(system_directory.join("Test Clone/Test Common").is_file());
-    assert!(system_directory.join("Test Clone/Test Clones.rom").is_file());
+    assert!(
+        system_directory
+            .join("Test Clone/Test Clones.rom")
+            .is_file()
+    );
     assert!(!system_directory.join("Test Clone.zip").exists());
 
     // and check-roms reads the extensionless files without trashing them
