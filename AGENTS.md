@@ -30,6 +30,8 @@ cargo test --release -p xso-rs -- --ignored                  # its slow tests
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp # the stdio-only MCP build
 (cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets) # the web UI
+(cd desktop && cargo clippy --all-targets)   # the desktop shell: stage the sidecar first
+cargo fmt --all && (cd frontend && cargo fmt) && (cd desktop && cargo fmt) # each workspace on its own
 
 cargo sqlx prepare -- --all-targets --features server  # after any query change; --all-targets keeps test-only queries
 ```
@@ -37,11 +39,17 @@ cargo sqlx prepare -- --all-targets --features server  # after any query change;
 Helper scripts at the root: `build.sh`, `desktop.sh`, `dist.sh`, `docker.sh`,
 `test.sh` (the test suite under `cargo llvm-cov`).
 
-CI runs the three clippy invocations above, a release build with `--features
-server`, and the workspace tests under `cargo llvm-cov`. It installs
-`mame-tools`, `ffmpeg` and `xdelta3` only as reference tools for the format
-crates' tests, and runs `apt-get update` first: the runner's package lists go
-stale within days and installs then 404.
+CI runs four parallel jobs. **Format** checks `cargo fmt` in all three
+workspaces. **Web UI** builds it with trunk, lints it, and uploads it as an
+artifact. **Lint and test** runs the two root clippy invocations and the
+workspace tests under `cargo llvm-cov`, against an empty UI. **Release build
+and desktop** waits for the web UI, then builds the release binary with it
+through `desktop/scripts/stage-sidecar.sh` and lints the desktop shell, which
+`tauri-build` refuses to compile until that sidecar exists. Only that job
+installs the webkit2gtk and xdo development packages, and only the test job
+installs `mame-tools`, `ffmpeg` and `xdelta3`, as reference tools for the
+format crates' tests. Each runs `apt-get update` first: the runner's package
+lists go stale within days and installs then 404.
 
 ## Invariants
 

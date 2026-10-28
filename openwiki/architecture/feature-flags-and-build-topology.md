@@ -76,10 +76,10 @@ sources:
     resource: repo://test.sh
   - id: openwiki-source-9a02c1f55f47430403921057
     resource: repo://tests/mcp_stdio.rs
-generated: { by: "claude-code", at: "2026-10-28T08:10:36.025Z" }
+generated: { by: "claude-code", at: "2026-10-28T12:28:25.132Z" }
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-28T08:10:36.025Z
+    at: 2026-10-28T12:28:25.132Z
 ---
 
 # Feature Flags and Build Topology
@@ -268,17 +268,22 @@ rather than a `server`-only one.
 ## CI and release composition
 
 `.github/workflows/continuous_integration.yml` sets `SKIP_TRUNK: "true"` for the
-whole job and builds the web UI once in a dedicated step
-(`cd frontend && trunk build --release`), with `TRUNK_VERSION` pinned to 0.21.14
-and the `wasm32-unknown-unknown` target installed. Every later cargo invocation
-then reuses `target/assets` instead of recompiling the wasm several times.
+whole workflow, so no cargo invocation runs trunk. Its four jobs run in
+parallel, except that the release job waits for the web UI. The *Web UI* job
+builds the UI once (`cd frontend && trunk build --release`, with `TRUNK_VERSION`
+pinned to 0.21.14 and the `wasm32-unknown-unknown` target installed) and uploads
+`target/assets` as an artifact. The *Release build and desktop* job downloads it
+into `target/assets` before building. The *Lint and test* job never sees it:
+`build.rs` creates an empty `target/assets`, which is all `rust-embed` needs to
+compile, and no test reads the embedded UI.
 
-Three clippy passes guard the feature matrix and the separate web UI workspace:
+Four clippy passes guard the feature matrix and the two separate workspaces:
 
 ```
 cargo clippy --workspace --all-targets --features oxyromon/server
 cargo clippy --no-default-features --features use-rustls,mcp --all-targets
 (cd frontend && cargo clippy --target wasm32-unknown-unknown --all-targets)
+(cd desktop && cargo clippy --all-targets)
 ```
 
 The first uses the package-qualified feature name because a workspace with
@@ -286,8 +291,13 @@ several selected packages requires it. The second is the point of interest: it
 lints the MCP stdio server **without** the web server, so `mcp`-only builds —
 which nothing else in CI compiles — cannot silently rot. The third lints the
 Leptos frontend, which declares its own `[workspace]` and so is outside the
-first pass, for the browser target. The job then builds
-`--release --features server` and runs workspace tests under
+first pass, for the browser target. The fourth lints the Tauri desktop shell,
+also its own workspace; it runs after the release build, because `tauri-build`
+refuses to compile until `desktop/scripts/stage-sidecar.sh` has staged that
+binary as the sidecar. The first two and the tests run in the *Lint and test*
+job, the third in the *Web UI* job and the fourth in the release job, after it
+builds `--release --features server`. A separate *Format* job runs
+`cargo fmt --check` in all three workspaces. Workspace tests run under
 `cargo llvm-cov --workspace --features oxyromon/server`. Feature-gated tests
 follow the same split: `tests/mcp_stdio.rs` opens with `#![cfg(feature = "mcp")]`
 and drives the real binary over stdin/stdout with raw JSON-RPC, so the stdio
